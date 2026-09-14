@@ -79,6 +79,8 @@ Vive en `src/proxy.ts`. Su lógica exacta, en orden:
 
 Las cuatro rutas de panel abiertas al personal son propinas, albaranes, escáner y eventos.
 
+La RPC `upsert_tip_pool` (y la política de mutación de `tip_pools`) admite a quien puede abrir `/staff/propinas` (`staff`, `supervisor`, `chef`, `manager`, `admin`) y a `tip_pool_editors`. No abre overrides ni `confirm_tip_distribution`.
+
 ---
 
 ## 5. Rutas de máquina

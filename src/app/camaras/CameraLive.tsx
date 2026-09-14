@@ -2,10 +2,13 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const CAMERA_MP4_URL = 'https://video.barlamarbella.com/api/stream.mp4?src=reolink';
 const RECONNECT_DELAY_MS = 2500;
 const WAITING_RECONNECT_DELAY_MS = 5000;
+const STARTUP_WATCHDOG_MS = 8000;
 
 type IOSVideoElement = HTMLVideoElement & {
   webkitEnterFullscreen?: () => void;
@@ -16,7 +19,7 @@ export default function CameraLive() {
   const frameRef = useRef<HTMLDivElement>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [streamVersion, setStreamVersion] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const streamUrl = useMemo(
     () => `${CAMERA_MP4_URL}&reload=${streamVersion}`,
@@ -30,28 +33,35 @@ export default function CameraLive() {
     }
   }, []);
 
+  const markUnavailable = useCallback(() => {
+    setIsPlaying(false);
+  }, []);
+
   const refreshStream = useCallback(() => {
     clearReconnectTimer();
-    setLoading(true);
+    markUnavailable();
     setStreamVersion((version) => version + 1);
-  }, [clearReconnectTimer]);
+  }, [clearReconnectTimer, markUnavailable]);
 
   const ensurePlaying = useCallback(async () => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video) return false;
 
     try {
       video.muted = true;
       await video.play();
+      return true;
     } catch {
-      setLoading(true);
+      markUnavailable();
+      return false;
     }
-  }, []);
+  }, [markUnavailable]);
 
   const scheduleReconnect = useCallback(
     (delay = RECONNECT_DELAY_MS) => {
       clearReconnectTimer();
       reconnectTimerRef.current = setTimeout(() => {
+        reconnectTimerRef.current = null;
         refreshStream();
       }, delay);
     },
@@ -62,7 +72,7 @@ export default function CameraLive() {
     const video = videoRef.current;
     if (!video) return;
 
-    setLoading(true);
+    markUnavailable();
     video.load();
     void ensurePlaying();
 
@@ -70,10 +80,10 @@ export default function CameraLive() {
       if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.paused) {
         refreshStream();
       }
-    }, 8000);
+    }, STARTUP_WATCHDOG_MS);
 
     return () => clearTimeout(watchdog);
-  }, [ensurePlaying, refreshStream, streamVersion]);
+  }, [ensurePlaying, markUnavailable, refreshStream, streamVersion]);
 
   useEffect(() => {
     const resume = () => {
@@ -81,6 +91,10 @@ export default function CameraLive() {
 
       const video = videoRef.current;
       if (!video) return;
+
+      if (video.paused || video.ended || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        markUnavailable();
+      }
 
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
         void ensurePlaying();
@@ -101,30 +115,40 @@ export default function CameraLive() {
       window.removeEventListener('online', handleOnline);
       clearReconnectTimer();
     };
-  }, [clearReconnectTimer, ensurePlaying, refreshStream]);
+  }, [clearReconnectTimer, ensurePlaying, markUnavailable, refreshStream]);
 
   const handlePlaying = () => {
     clearReconnectTimer();
-    setLoading(false);
+    setIsPlaying(true);
   };
 
   const handleWaiting = () => {
-    setLoading(true);
+    markUnavailable();
     scheduleReconnect(WAITING_RECONNECT_DELAY_MS);
   };
 
   const handleStalled = () => {
-    setLoading(true);
+    markUnavailable();
     scheduleReconnect();
   };
 
+  const handlePause = () => {
+    markUnavailable();
+    if (document.visibilityState !== 'visible') return;
+
+    void (async () => {
+      const resumed = await ensurePlaying();
+      if (!resumed) scheduleReconnect();
+    })();
+  };
+
   const handleError = () => {
-    setLoading(true);
+    markUnavailable();
     scheduleReconnect(1000);
   };
 
   const handleEnded = () => {
-    setLoading(true);
+    markUnavailable();
     scheduleReconnect(500);
   };
 
@@ -152,17 +176,6 @@ export default function CameraLive() {
   return (
     <main className="min-h-screen px-2 pb-4 pt-header-safe md:px-3">
       <div className="mx-auto flex w-full max-w-none flex-col items-center">
-        <header className="flex h-[58px] w-full items-start justify-center pt-0.5" aria-label="Cámara en directo">
-          <Image
-            src="/icons/live.png"
-            alt="LIVE"
-            width={52}
-            height={12}
-            className="h-auto w-[44px] object-contain sm:w-[52px]"
-            priority
-          />
-        </header>
-
         <section className="w-full">
           <div
             ref={frameRef}
@@ -180,37 +193,53 @@ export default function CameraLive() {
               preload="auto"
               disablePictureInPicture
               aria-label="Cámara sala en directo"
-              onLoadStart={() => setLoading(true)}
+              onLoadStart={markUnavailable}
               onCanPlay={() => void ensurePlaying()}
               onPlaying={handlePlaying}
               onWaiting={handleWaiting}
               onStalled={handleStalled}
+              onPause={handlePause}
               onError={handleError}
               onEnded={handleEnded}
             />
 
-            {loading ? (
-              <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-black/35" aria-label="Cargando vídeo">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            {isPlaying ? (
+              <Image
+                src="/icons/live.png"
+                alt=""
+                width={160}
+                height={72}
+                className="pointer-events-none absolute right-2 top-2 z-20 h-4 w-auto object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-5"
+                aria-hidden
+                priority
+              />
+            ) : (
+              <div
+                className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-black/35"
+                aria-label="Cargando vídeo"
+              >
+                <LoadingSpinner size="lg" className="text-white" />
               </div>
-            ) : null}
+            )}
           </div>
 
-          <div className="mt-3 grid w-full grid-cols-2 gap-2">
-            <button
+          <div className="mt-ds-3 flex flex-wrap items-center justify-center gap-ds-2">
+            <Button
+              variant="tertiary"
+              instance="camaras-actualizar"
               type="button"
               onClick={refreshStream}
-              className="min-h-11 rounded-xl border-[0.5px] border-white/90 bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white transition-opacity active:opacity-75"
             >
               Actualizar
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              instance="camaras-pantalla-completa"
               type="button"
               onClick={() => void handleFullscreen()}
-              className="min-h-11 rounded-xl border-[0.5px] border-white/90 bg-green-600 px-3 py-2.5 text-sm font-semibold text-white transition-opacity active:opacity-75"
             >
               Pantalla completa
-            </button>
+            </Button>
           </div>
         </section>
       </div>

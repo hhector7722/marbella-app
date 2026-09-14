@@ -24,6 +24,7 @@ import {
 } from '@/lib/tip-distribution-display';
 import { StaffTipRepartoPanel } from '@/components/tips/StaffTipRepartoPanel';
 import { StaffTipDistributionDetailModal } from '@/components/tips/StaffTipDistributionDetailModal';
+import { TipPoolCashModal, type TipPoolType } from '@/components/tips/TipPoolCashModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { Button } from '@/components/ui/button';
 import { Surface } from '@/components/ui/Surface';
@@ -36,6 +37,13 @@ type EmployeeOption = {
   first_name: string;
   last_name: string;
   avatar_url?: string | null;
+};
+
+type TipPoolRow = {
+  pool_type: TipPoolType;
+  cash_total: number;
+  cash_breakdown: Record<string, number> | null;
+  notes: string | null;
 };
 
 export default function StaffPropinasView({
@@ -60,6 +68,9 @@ export default function StaffPropinasView({
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(viewerUserId);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
 
+  const [cashModal, setCashModal] = useState<{ open: boolean; poolType: TipPoolType } | null>(null);
+  const [poolsByType, setPoolsByType] = useState<Partial<Record<TipPoolType, TipPoolRow>>>({});
+
   const lastEntry = useMemo(() => history[0] ?? null, [history]);
 
   const viewingOther = canSelectEmployee && selectedEmployeeId !== viewerUserId;
@@ -67,6 +78,43 @@ export default function StaffPropinasView({
   const headerEmployeeLabel = viewingOther
     ? firstGivenName(selectedEmployee?.first_name, 'Trabajador')
     : firstGivenName(viewerFirstName) || firstGivenName(selectedEmployee?.first_name, 'Mis propinas');
+
+  const fetchPools = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('tip_pools')
+      .select('pool_type, cash_total, cash_breakdown, notes');
+
+    if (error) {
+      console.error(error);
+      toast.error('No se pudieron cargar los botes de propinas.');
+      return;
+    }
+
+    const next: Partial<Record<TipPoolType, TipPoolRow>> = {};
+    for (const row of data ?? []) {
+      const rawType = row.pool_type;
+      const poolType: TipPoolType | null =
+        rawType === 'weekday' || rawType === 'weekend' ? rawType : null;
+      if (!poolType) continue;
+      next[poolType] = {
+        pool_type: poolType,
+        cash_total: Number(row.cash_total) || 0,
+        cash_breakdown:
+          row.cash_breakdown && typeof row.cash_breakdown === 'object'
+            ? (row.cash_breakdown as Record<string, number>)
+            : null,
+        notes: row.notes ?? null,
+      };
+    }
+    setPoolsByType(next);
+  }, [supabase]);
+
+  const openCash = (poolType: TipPoolType) => {
+    void (async () => {
+      await fetchPools();
+      setCashModal({ open: true, poolType });
+    })();
+  };
 
   const fetchHistoryForUser = useCallback(
     async (userId: string) => {
@@ -113,11 +161,50 @@ export default function StaffPropinasView({
   useEffect(() => {
     if (!canSelectEmployee) return;
     if (selectedEmployeeId === viewerUserId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- al volver al propio usuario se restaura el historial SSR
       setHistory(initialHistory);
       return;
     }
     void fetchHistoryForUser(selectedEmployeeId);
   }, [canSelectEmployee, selectedEmployeeId, viewerUserId, initialHistory, fetchHistoryForUser]);
+
+  const handleSaveCash = async (
+    poolType: TipPoolType,
+    total: number,
+    breakdown: Record<string, number>,
+    notes: string
+  ) => {
+    try {
+      const normalizedTotal = Number.isFinite(total) ? Number(total.toFixed(2)) : 0;
+      const normalizedBreakdown = breakdown ?? {};
+      const normalizedNotes = (notes || '').trim() || null;
+
+      const { error } = await supabase.rpc('upsert_tip_pool', {
+        p_pool_type: poolType,
+        p_cash_total: normalizedTotal,
+        p_cash_breakdown: normalizedBreakdown,
+        p_notes: normalizedNotes,
+      });
+      if (error) throw error;
+
+      setPoolsByType((prev) => ({
+        ...prev,
+        [poolType]: {
+          pool_type: poolType,
+          cash_total: normalizedTotal,
+          cash_breakdown: normalizedBreakdown,
+          notes: normalizedNotes,
+        },
+      }));
+
+      toast.success('Bote guardado correctamente');
+      setCashModal(null);
+      await fetchPools();
+    } catch (e: unknown) {
+      console.error(e);
+      toast.error('Error crítico guardando propina en BD (permiso o validación).');
+    }
+  };
 
   const emptyLastMessage = viewingOther
     ? 'Este trabajador aún no tiene repartos confirmados.'
@@ -126,6 +213,8 @@ export default function StaffPropinasView({
   const emptyHistoryMessage = viewingOther
     ? 'Sin repartos anteriores para este trabajador.'
     : 'Sin repartos anteriores.';
+
+  const activePoolType = cashModal?.poolType ?? 'weekday';
 
   return (
     <>
@@ -165,8 +254,28 @@ export default function StaffPropinasView({
         }
       >
         <Surface variant="block" instance="staff-propinas-last">
-          <div data-element="header">
+          <div data-element="header" className="flex items-center justify-between gap-2">
             <span data-element="title">Último reparto</span>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Button
+                type="button"
+                variant="primary"
+                layout="hug"
+                instance="staff-propinas-pool-weekday"
+                onClick={() => openCash('weekday')}
+              >
+                Bote lun - vie
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                layout="hug"
+                instance="staff-propinas-pool-weekend"
+                onClick={() => openCash('weekend')}
+              >
+                Bote sab - dom
+              </Button>
+            </div>
           </div>
           <div className="p-4">
             {historyLoading ? (
@@ -185,32 +294,30 @@ export default function StaffPropinasView({
           </div>
         </Surface>
 
-        <Surface variant="block" instance="staff-propinas-history">
-          <div data-element="header">
-            <span data-element="title">Historial</span>
-          </div>
-          <div className="px-4 pb-2">
-            {historyLoading ? (
-              <div className="flex justify-center py-6">
-                <LoadingSpinner className="text-ds-marca" />
-              </div>
-            ) : history.length === 0 ? (
-              <EmptyState
-                instance="staff-propinas-history-empty"
-                variant="none"
-                title={emptyHistoryMessage}
-              />
-            ) : (
-              <ul className="divide-y divide-zinc-100">
-                {history.map((entry) => (
-                  <li key={entry.lineId}>
+        <div data-instance="staff-propinas-history" className="flex flex-col gap-3">
+          <div data-element="title">Historial</div>
+          {historyLoading ? (
+            <div className="flex justify-center py-6">
+              <LoadingSpinner className="text-ds-marca" />
+            </div>
+          ) : history.length === 0 ? (
+            <EmptyState
+              instance="staff-propinas-history-empty"
+              variant="none"
+              title={emptyHistoryMessage}
+            />
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {history.map((entry) => (
+                <li key={entry.lineId}>
+                  <Surface variant="block" instance="staff-propinas-history-entry">
                     <button
                       type="button"
                       onClick={() => setSelectedEntry(entry)}
-                      className="flex min-h-12 w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-zinc-50/80 active:scale-[0.99] first:pt-3 last:pb-3"
+                      className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-4 text-left transition-opacity active:scale-[0.99]"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-zinc-900">
+                        <p className="text-sm font-bold">
                           {formatLocalIsoDateLabel(entry.periodStart, 'd MMM')} –{' '}
                           {formatLocalIsoDateLabel(entry.periodEnd, 'd MMM yyyy')}
                         </p>
@@ -219,21 +326,32 @@ export default function StaffPropinasView({
                         <span className="text-base font-black tabular-nums text-emerald-600">
                           {formatRoundedTipMoney(entry.totalAmount)}
                         </span>
-                        <ChevronRight size={18} className="text-zinc-300" strokeWidth={2.5} />
+                        <ChevronRight size={18} className="opacity-50" strokeWidth={2.5} />
                       </div>
                     </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </Surface>
+                  </Surface>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </DashboardDetailLayout>
 
       <StaffTipDistributionDetailModal
         entry={selectedEntry}
         onClose={() => setSelectedEntry(null)}
       />
+
+      {cashModal?.open ? (
+        <TipPoolCashModal
+          key={activePoolType}
+          open
+          poolType={activePoolType}
+          cashBreakdown={poolsByType[activePoolType]?.cash_breakdown}
+          onClose={() => setCashModal(null)}
+          onSave={(total, breakdown, notes) => handleSaveCash(activePoolType, total, breakdown, notes)}
+        />
+      ) : null}
 
       {canSelectEmployee ? (
         <StaffSelectionModal

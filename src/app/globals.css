@@ -1480,12 +1480,23 @@
   color: var(--color-texto);
 }
 /*
- * /staff/propinas — mismas cards que sáb/dom del widget de horario:
- * --home-widget-fill-secondary sobre el envolvente; tinta invertida.
+ * /staff/propinas — «Último reparto» es papel blanco (Surface block por defecto).
+ * Historial: título flotante sobre el envolvente; cada tramo en card con el
+ * relleno secundario del mosaico (--home-widget-fill-secondary) e tinta invertida.
  * El modal de detalle sigue en papel (StaffTipRepartoPanel sin estos selectores).
  */
-[data-component='Surface'][data-instance='staff-propinas-last'],
-[data-component='Surface'][data-instance='staff-propinas-history'] {
+[data-instance='staff-propinas-history'] > [data-element='title'] {
+  margin: 0;
+  min-width: 0;
+  padding-inline: var(--espacio-3);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-texto-invertido) 72%, transparent);
+}
+[data-component='Surface'][data-instance='staff-propinas-history-entry'] {
   --home-widget-fill-secondary: rgb(255 255 255 / 0.1);
   --home-widget-ink: var(--color-texto-invertido);
   --home-widget-ink-secondary: color-mix(in srgb, var(--color-texto-invertido) 72%, transparent);
@@ -1495,25 +1506,7 @@
   box-shadow: none;
   color: var(--home-widget-ink);
 }
-[data-component='Surface'][data-instance='staff-propinas-last'] > [data-element='header'],
-[data-component='Surface'][data-instance='staff-propinas-history'] > [data-element='header'] {
-  border-bottom-color: var(--home-widget-separator);
-  color: var(--home-widget-ink);
-}
-[data-component='Surface'][data-instance='staff-propinas-last'] > [data-element='header'] [data-element='title'],
-[data-component='Surface'][data-instance='staff-propinas-history'] > [data-element='header'] [data-element='title'] {
-  color: var(--home-widget-ink-secondary);
-}
-[data-component='Surface'][data-instance='staff-propinas-last'] :is(
-  .text-zinc-900,
-  .text-zinc-800,
-  .text-zinc-700,
-  .text-zinc-600,
-  .text-gray-900,
-  .text-gray-800,
-  .text-gray-700
-),
-[data-component='Surface'][data-instance='staff-propinas-history'] :is(
+[data-component='Surface'][data-instance='staff-propinas-history-entry'] :is(
   .text-zinc-900,
   .text-zinc-800,
   .text-zinc-700,
@@ -1524,15 +1517,7 @@
 ) {
   color: var(--home-widget-ink);
 }
-[data-component='Surface'][data-instance='staff-propinas-last'] :is(
-  .text-zinc-500,
-  .text-zinc-400,
-  .text-zinc-300,
-  .text-gray-500,
-  .text-gray-400,
-  .text-gray-300
-),
-[data-component='Surface'][data-instance='staff-propinas-history'] :is(
+[data-component='Surface'][data-instance='staff-propinas-history-entry'] :is(
   .text-zinc-500,
   .text-zinc-400,
   .text-zinc-300,
@@ -1542,46 +1527,11 @@
 ) {
   color: var(--home-widget-ink-secondary);
 }
-[data-component='Surface'][data-instance='staff-propinas-last'] :is(
-  .text-\[\#36606F\],
-  .text-ds-marca
-),
-[data-component='Surface'][data-instance='staff-propinas-history'] :is(
-  .text-\[\#36606F\],
-  .text-ds-marca
-) {
-  color: var(--home-widget-ink);
-}
-[data-component='Surface'][data-instance='staff-propinas-last'] :is(.text-emerald-600, .text-emerald-700),
-[data-component='Surface'][data-instance='staff-propinas-history'] :is(.text-emerald-600, .text-emerald-700) {
+[data-component='Surface'][data-instance='staff-propinas-history-entry'] :is(.text-emerald-600, .text-emerald-700) {
   color: var(--color-positivo);
 }
-[data-component='Surface'][data-instance='staff-propinas-last'] :is(.text-rose-600, .text-rose-700, .text-rose-800),
-[data-component='Surface'][data-instance='staff-propinas-history'] :is(.text-rose-600, .text-rose-700, .text-rose-800) {
-  color: var(--color-negativo);
-}
-[data-component='Surface'][data-instance='staff-propinas-last'] :is(.border-zinc-100, .border-rose-200),
-[data-component='Surface'][data-instance='staff-propinas-history'] :is(.border-zinc-100) {
-  border-color: var(--home-widget-separator);
-}
-[data-component='Surface'][data-instance='staff-propinas-history'] .divide-zinc-100 > :not([hidden]) ~ :not([hidden]) {
-  border-color: var(--home-widget-separator);
-}
-[data-component='Surface'][data-instance='staff-propinas-last'] :is(.hover\:bg-zinc-50\/80:hover, .hover\:bg-zinc-50:hover),
-[data-component='Surface'][data-instance='staff-propinas-history'] :is(.hover\:bg-zinc-50\/80:hover, .hover\:bg-zinc-50:hover) {
-  background-color: rgb(255 255 255 / 0.08);
-}
-[data-component='Surface'][data-instance='staff-propinas-last'] [data-component='EmptyState'] :is([data-element='title'], [data-element='description']),
-[data-component='Surface'][data-instance='staff-propinas-history'] [data-component='EmptyState'] :is([data-element='title'], [data-element='description']) {
-  color: var(--home-widget-ink-secondary);
-}
-[data-component='Surface'][data-instance='staff-propinas-last'] [role='alert'].bg-rose-50,
-[data-component='Surface'][data-instance='staff-propinas-last'] [role='alert'].bg-rose-50 * {
-  color: var(--color-negativo);
-}
-[data-component='Surface'][data-instance='staff-propinas-last'] [role='alert'].bg-rose-50 {
-  background-color: color-mix(in srgb, var(--color-negativo) 18%, transparent);
-  border-color: color-mix(in srgb, var(--color-negativo) 45%, transparent);
+[data-instance='staff-propinas-history'] [data-component='EmptyState'] :is([data-element='title'], [data-element='description']) {
+  color: color-mix(in srgb, var(--color-texto-invertido) 72%, transparent);
 }
 [data-component='PageScreen'] [data-element='period'] {
   min-width: 0;

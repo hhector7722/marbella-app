@@ -16,14 +16,12 @@ import {
   timeFilterBounds,
   type TimeFilterValue,
 } from '@/components/time/time-filter-types';
-import { CashDenominationForm, TIP_POOL_CASH_FORM_ID } from '@/components/CashDenominationForm';
-import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
 import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
 import { TipDistributionHistorySection } from '@/components/tips/TipDistributionHistorySection';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { TipExpandBadge, TipSinRegHeaderBadge } from '@/components/tips/TipColumnToggleBadge';
-import { Modal } from '@/components/ui/modal';
+import { TipPoolCashModal, type TipPoolType } from '@/components/tips/TipPoolCashModal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { Surface } from '@/components/ui/Surface';
@@ -39,7 +37,7 @@ import {
   type TipDistributionHistoryRow,
 } from '@/lib/tip-distribution-display';
 
-type PoolType = 'weekday' | 'weekend';
+type PoolType = TipPoolType;
 
 type TipPreviewStaffRow = {
   id: string;
@@ -163,13 +161,6 @@ function buildTipTableColWidths(flags: {
   >;
 }
 
-function breakdownToInitialCounts(b: Record<string, number> | null | undefined): Record<number, number> {
-  if (!b || typeof b !== 'object') return {};
-  return Object.fromEntries(
-    Object.entries(b).map(([k, v]) => [Number(k), Number(v)]).filter(([k]) => !isNaN(k))
-  );
-}
-
 export default function TipsDashboardView({
   canEditPools = true,
   canEditOverrides = false,
@@ -201,7 +192,6 @@ export default function TipsDashboardView({
 
   const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
   const [cashModal, setCashModal] = useState<{ open: boolean; poolType: PoolType } | null>(null);
-  const [cashModalTotal, setCashModalTotal] = useState(0);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [overrideModal, setOverrideModal] = useState<{
@@ -238,20 +228,6 @@ export default function TipsDashboardView({
   const tipNameTdClass = cn(TIP_TABLE_NAME_TD, tableCompact && TIP_TABLE_COMPACT_NAME);
   const tipBodyTextClass = cn(TIP_TABLE_BODY_TEXT, tableCompact && 'text-[8px] md:text-[9px]');
 
-  const cashModalInitialCounts = useMemo(() => {
-    if (!cashModal?.open) return {};
-    return breakdownToInitialCounts(
-      cashModal.poolType === 'weekday'
-        ? preview?.pools?.weekday?.cashBreakdown
-        : preview?.pools?.weekend?.cashBreakdown
-    );
-  }, [
-    cashModal?.open,
-    cashModal?.poolType,
-    preview?.pools?.weekday?.cashBreakdown,
-    preview?.pools?.weekend?.cashBreakdown,
-  ]);
-
   const applyTimeFilter = useCallback((v: TimeFilterValue) => {
     const bounds = timeFilterBounds(v);
     if (!bounds) return;
@@ -286,6 +262,7 @@ export default function TipsDashboardView({
   }, [supabase, startDate, endDate]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga del preview al cambiar el rango
     void fetchPreview();
   }, [fetchPreview]);
 
@@ -912,50 +889,20 @@ export default function TipsDashboardView({
     </DashboardDetailLayout>
 
       {cashModal?.open ? (
-        <Modal
+        <TipPoolCashModal
+          key={cashModal.poolType}
           open
-          onClose={() => {
-            setCashModal(null);
-            setCashModalTotal(0);
-          }}
-          title={cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'}
-          variant="amplify"
-          layer="base"
-          instance={cashModal.poolType === 'weekday' ? 'tips-cash-weekday' : 'tips-cash-weekend'}
-          headerTone="petroleum"
-          usageId={`tips-cash-${cashModal.poolType}`}
-          usageLabel={
-            cashModal.poolType === 'weekday' ? 'Bote propina entre semana' : 'Bote propina fin de semana'
+          poolType={cashModal.poolType}
+          cashBreakdown={
+            cashModal.poolType === 'weekend'
+              ? preview?.pools?.weekend?.cashBreakdown
+              : preview?.pools?.weekday?.cashBreakdown
           }
-          footer={
-            <CashCountFooter
-              total={cashModalTotal}
-              instancePrefix={`tips-cash-${cashModal.poolType}`}
-              onCancel={() => {
-                setCashModal(null);
-                setCashModalTotal(0);
-              }}
-              saveType="submit"
-              saveForm={TIP_POOL_CASH_FORM_ID}
-            />
+          onClose={() => setCashModal(null)}
+          onSave={(total, breakdown, notes) =>
+            handleSaveCash(cashModal.poolType, total, breakdown, notes)
           }
-        >
-          <CashDenominationForm
-            key={`tip-cash-${cashModal.poolType}-${startDate}-${endDate}`}
-            type="in"
-            boxName={cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'}
-            onCancel={() => {
-              setCashModal(null);
-              setCashModalTotal(0);
-            }}
-            onSubmit={(total, breakdown, notes) => handleSaveCash(cashModal.poolType, total, breakdown, notes)}
-            onTotalChange={setCashModalTotal}
-            initialCounts={cashModalInitialCounts}
-            availableStock={{}}
-            submitLabel="Guardar bote"
-            variant="tipPool"
-          />
-        </Modal>
+        />
       ) : null}
 
       {overrideModal?.open && (

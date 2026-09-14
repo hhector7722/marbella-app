@@ -112,6 +112,8 @@ El token de un encargo es la única credencial: quien tiene el enlace, tiene acc
 - **`staff` y `supervisor`**: dentro del panel de gestión solo alcanzan propinas, albaranes, escáner y eventos. Cualquier otra ruta les devuelve a su panel de equipo.
 - **Master**: todo lo anterior más analítica de uso, analítica web, panel maestro y edición de condiciones de contrato.
 
+Desde `/staff/propinas`, cualquier rol con acceso a esa página (`staff`, `supervisor`, `chef`, `manager`, `admin`) puede abrir y guardar los botes de propina (lun–vie y sáb–dom). La tabla `tip_pool_editors` sigue permitiendo el mismo alcance de botes sin abrir overrides. La pantalla de gestión `/dashboard/propinas`, los overrides por persona y la confirmación del reparto siguen acotados a `manager`/`admin` (más `tip_pool_editors` solo para botes en gestión).
+
 ### Captura y confirmación de compras
 
 - Cualquier persona autenticada con acceso actual al escáner puede capturar o subir un albarán y consultar su propia captura.

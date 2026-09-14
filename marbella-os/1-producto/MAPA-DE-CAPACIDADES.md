@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-13
+revisado: 2026-09-14
 caducidad: 3 meses
 supersede: —
 ---
@@ -162,8 +162,8 @@ Conocer y revisar la programación de la instalación deportiva.
 Repartir lo que se ha ganado en común.
 
 - **Actores**: persona en turno, responsable de operación.
-- **Superficies**: propinas del equipo, propinas propias.
-- **Reglas propias**: el reparto se agrupa por periodo; las deducciones son visibles y justificadas; la plantilla operativa determina quién participa.
+- **Superficies**: propinas del equipo (`/dashboard/propinas`), propinas propias (`/staff/propinas`).
+- **Reglas propias**: el reparto se agrupa por periodo; las deducciones son visibles y justificadas; la plantilla operativa determina quién participa. Quien puede abrir `/staff/propinas` puede capturar y guardar los botes lun–vie y sáb–dom (mismos datos que en gestión). Overrides por persona y confirmación del reparto siguen reservados a `manager`/`admin`.
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 

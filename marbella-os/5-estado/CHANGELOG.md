@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-14
+
+- **Staff propinas: botes desde el último reparto.** En `/staff/propinas`, «Último reparto» vuelve a papel blanco; el historial flota y cada tramo es su propia card de cristal. En la cabecera, dos botones `primary` abren el mismo modal de desglose que en gestión y guardan los botes. Puede hacerlo quien ya entra en la página.
+
 ## 2026-09-13
 
 - **El Writer cubre fichajes anteriores al alta sin romper la semilla 0.** Esas semanas se persisten como cadena aislada (`pre_alta`); el arrastre no entra en el lunes de alta. El historial de esos meses deja de fallar por proyección v2 ausente. [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md) INV-C01.
