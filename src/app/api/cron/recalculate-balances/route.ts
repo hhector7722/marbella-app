@@ -7,7 +7,7 @@ import {
 import { writeWeeklyProjection } from '@/lib/hours-engine/projection';
 import type { CivilDate } from '@/lib/hours-engine/types';
 import { mondayOnOrBefore, weekBounds } from '@/lib/hours-engine/week-dates';
-import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
+import { formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
@@ -33,19 +33,26 @@ function ymdKey(value: unknown): CivilDate {
 }
 
 /**
- * Cron semanal: solo materializa la semana en curso para perfiles activos en ella.
+ * Cron semanal: materializa la semana en curso para perfiles activos en ella
+ * y para cualquier usuario que tenga hechos de asistencia en esa semana.
+ *
+ * La segunda condición es importante: un fichaje real es un hecho autoritativo y
+ * no puede quedarse sin proyección solo porque `end_date` ya haya pasado. El read
+ * model debe poder seguir siendo SELECT puro y detectar únicamente huecos reales.
  *
  * `writeWeeklyProjection` sigue reconstruyendo correctamente el carry desde los
  * hechos históricos, pero al fijar from=to=currentWeek evitamos reescribir todas
  * las semanas de todos los empleados cada lunes (causa de los timeouts de 300 s).
  */
-async function writeCurrentWeekProjectionForActiveEmployees(
+async function writeCurrentWeekProjectionForRelevantEmployees(
   supabase: SupabaseClient,
 ): Promise<{
   weekStart: CivilDate;
   weekEnd: CivilDate;
   weeksWritten: number;
   employeeCount: number;
+  activeEmployeeCount: number;
+  attendanceEmployeeCount: number;
 }> {
   const todayMadrid = formatYmdInMadrid(new Date());
   if (!todayMadrid) {
@@ -54,18 +61,27 @@ async function writeCurrentWeekProjectionForActiveEmployees(
 
   const weekStart = mondayOnOrBefore(ymdKey(todayMadrid));
   const { weekEnd } = weekBounds(weekStart);
+  const { startIso, endIso } = madridRangeUtcIso(weekStart, weekEnd);
 
-  const { data: profiles, error: profilesErr } = await supabase
-    .from('profiles')
-    .select('id, joining_date, end_date');
+  const [profilesRes, logsRes] = await Promise.all([
+    supabase.from('profiles').select('id, joining_date, end_date'),
+    supabase
+      .from('time_logs')
+      .select('user_id')
+      .gte('clock_in', startIso)
+      .lte('clock_in', endIso),
+  ]);
 
-  if (profilesErr) {
-    throw new Error(`Listado de perfiles activos: ${profilesErr.message}`);
+  if (profilesRes.error) {
+    throw new Error(`Listado de perfiles activos: ${profilesRes.error.message}`);
+  }
+  if (logsRes.error) {
+    throw new Error(`Fichajes de la semana actual: ${logsRes.error.message}`);
   }
 
-  const userIds = [
+  const activeUserIds = [
     ...new Set(
-      (profiles ?? [])
+      (profilesRes.data ?? [])
         .filter((row) => {
           const joiningDate = row.joining_date ? ymdKey(row.joining_date) : null;
           const endDate = row.end_date ? ymdKey(row.end_date) : null;
@@ -78,6 +94,12 @@ async function writeCurrentWeekProjectionForActiveEmployees(
         .filter(Boolean),
     ),
   ] as string[];
+
+  const attendanceUserIds = [
+    ...new Set((logsRes.data ?? []).map((row) => row.user_id).filter(Boolean)),
+  ] as string[];
+
+  const userIds = [...new Set([...activeUserIds, ...attendanceUserIds])];
 
   const failures: string[] = [];
   let weeksWritten = 0;
@@ -109,6 +131,8 @@ async function writeCurrentWeekProjectionForActiveEmployees(
     weekEnd,
     weeksWritten,
     employeeCount: userIds.length,
+    activeEmployeeCount: activeUserIds.length,
+    attendanceEmployeeCount: attendanceUserIds.length,
   };
 }
 
@@ -119,7 +143,7 @@ async function writeCurrentWeekProjectionForActiveEmployees(
  *
  * Query:
  * - slot=winter|summer → guarda DST Madrid (CET=1 / CEST=2)
- * - mode omitido/current-week → escribe solo la semana actual de perfiles activos
+ * - mode omitido/current-week → escribe la semana actual de perfiles activos o con fichajes
  * - mode=full → recálculo histórico global manual
  * - mode=persist-only → compatibilidad legacy: Writer para empleados con snapshots
  */
@@ -203,7 +227,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[CRON_RECALC] Writer semana actual', { slot });
-    const result = await writeCurrentWeekProjectionForActiveEmployees(supabase);
+    const result = await writeCurrentWeekProjectionForRelevantEmployees(supabase);
     console.log('[CRON_RECALC] Current-week OK', result);
     return NextResponse.json({
       success: true,
