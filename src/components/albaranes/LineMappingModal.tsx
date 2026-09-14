@@ -317,16 +317,6 @@ export function LineMappingModal({
     loadResolve,
   ])
 
-  useEffect(() => {
-    if (!open) return
-    setMappingVersionId(null)
-    setSavedProposalFingerprint(null)
-    setOrderOptions([])
-    setAllocationDraft({})
-    setReceiptPreview(null)
-    setConfirmationKey(null)
-  }, [open, line?.id])
-
   async function runSearch(q: string) {
     const query = q.trim()
     setSearchQuery(q)
@@ -587,10 +577,20 @@ export function LineMappingModal({
       }
       toast.success('Recepción confirmada.')
       await onSuccess()
-      onClose()
+      handleClose()
     } finally {
       setConfirming(false)
     }
+  }
+
+  function handleClose() {
+    setMappingVersionId(null)
+    setSavedProposalFingerprint(null)
+    setOrderOptions([])
+    setAllocationDraft({})
+    setReceiptPreview(null)
+    setConfirmationKey(null)
+    onClose()
   }
 
   if (!open || !line) return null
@@ -600,7 +600,7 @@ export function LineMappingModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       variant="work"
       layer="derived"
       instance="albaran-line-mapping"
@@ -618,7 +618,7 @@ export function LineMappingModal({
             type="button"
             variant="tertiary"
             instance="albaran-line-mapping-cancel"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={saving || previewing || confirming || busy}
           >
             Cancelar

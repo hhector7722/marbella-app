@@ -72,7 +72,7 @@ La actualización automática **solo cambia el importe**. No modifica la unidad 
 
 Esto protege una configuración que ha costado establecer. Un escáner o un mapeo automático no debe deshacer el trabajo de quien configuró el ingrediente.
 
-La pantalla de revisión de precios sí puede reconfigurar unidades, pero solo cuando una persona completa el asistente y lo aplica de forma explícita.
+La configuración de unidades pertenece al asistente de ingredientes, con aplicación explícita. La pantalla histórica de precios desde albarán no aplica cambios en K4; una recepción solo cambia el importe canónico sin reconfigurar la unidad ni el pack.
 
 Además, el precio solo se escribe **si el valor calculado difiere del actual**, con una tolerancia mínima. Evita historial de ruido.
 

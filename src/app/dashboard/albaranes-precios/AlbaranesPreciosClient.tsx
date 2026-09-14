@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Camera, Loader2, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { Surface } from '@/components/ui/Surface'
 import {
-  applyAlbaranPriceUpdatesAction,
   extractAlbaranPricesFromImageAction,
   type ProposalLine,
 } from './actions'
@@ -139,11 +138,8 @@ export default function AlbaranesPreciosClient({
 }) {
   const [rows, setRows] = useState<RowState[]>([])
   const [extracting, setExtracting] = useState(false)
-  const [applying, setApplying] = useState(false)
   /** Mensaje visible siempre bajo el botón (complemento a sonner). */
   const [statusLine, setStatusLine] = useState<string | null>(null)
-
-  const acceptedRows = useMemo(() => rows.filter((r) => r.decision === 'accepted'), [rows])
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -194,44 +190,10 @@ export default function AlbaranesPreciosClient({
     return null
   }
 
-  async function applyBatch() {
-    const payload = acceptedRows
-      .filter((r) => r.selectedIngredientId)
-      .map((r) => ({
-        ingredientId: r.selectedIngredientId!,
-        pricingMode: r.pricingMode,
-        // En per_purchase_unit, esto es current_price. En per_pack, es pack_price.
-        price: r.editedPrice,
-        purchaseUnit: r.editedUnit,
-        packUnits: r.pricingMode === 'per_pack' ? r.packUnits : null,
-        packUnitSizeQty: r.pricingMode === 'per_pack' ? r.packUnitSizeQty : null,
-        packUnitSizeUnit: r.pricingMode === 'per_pack' ? r.packUnitSizeUnit : null,
-      }))
-    if (payload.length === 0) {
-      toast.error('Marca al menos una línea como aceptada con ingrediente seleccionado')
-      return
-    }
-    setApplying(true)
-    try {
-      const res = await applyAlbaranPriceUpdatesAction(payload, { allowUnitChanges: true })
-      if (!res.success) {
-        toast.error(res.message)
-        if (res.errors?.length) toast.error(res.errors.slice(0, 3).join(' · '))
-        return
-      }
-      toast.success(res.message)
-      setRows((prev) => prev.filter((r) => r.decision !== 'accepted'))
-    } catch {
-      toast.error('Error al guardar')
-    } finally {
-      setApplying(false)
-    }
-  }
-
   return (
     <DashboardDetailLayout
       title="Precios desde albarán"
-      subtitle="Sube una foto del albarán. La IA propone líneas; confirma ingrediente y precio con el mismo asistente que en Ingredientes."
+      subtitle="Consulta propuestas de una foto. En K4, el precio y el stock solo se confirman desde el albarán revisado."
       backHref="/dashboard"
       template="form"
       maxWidthClass="max-w-4xl"
@@ -276,18 +238,9 @@ export default function AlbaranesPreciosClient({
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black uppercase tracking-widest text-zinc-900">Líneas propuestas</h2>
-              <Button
-                type="button"
-                variant="primary"
-                instance="albaranes-precios-aplicar-aceptadas"
-                onClick={applyBatch}
-                disabled={applying || acceptedRows.length === 0}
-                loading={applying}
-                loadingLabel={`Aplicar aceptadas (${acceptedRows.length})`}
-                className="shrink-0"
-              >
-                {`Aplicar aceptadas (${acceptedRows.length})`}
-              </Button>
+              <p className="max-w-sm rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
+                K4 no aplica precios desde aquí. Revisa y confirma cada recepción en Albaranes.
+              </p>
             </div>
 
             {rows.map((row) => {

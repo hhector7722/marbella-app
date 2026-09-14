@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-14
 
+- **Actividades: el PDF del día vuelve a abrirse.** Una policy RESTRICTIVE de Storage pensada solo para albaranes bloqueaba el resto de buckets privados; el botón PDF del modal de un día respondía «Object not found». Queda acotada a `albaranes` y deja pasar `pavilion_activities` (y los demás) a quien ya tenía permiso. [SEGURIDAD](../3-ingenieria/SEGURIDAD.md).
+
 - **Nombre operativo vs nombre de nómina.** `profiles.first_name` es cómo se ve a la persona en toda la interfaz; `payroll_name` es solo para gestoría cuando discrepa. Guillem Ruiz Homet pasa a mostrarse como Willy sin tocar el emparejado de nóminas. [ADR-0006](../4-decisiones/ADR-0006-pipeline-nominas-y-dashboard.md).
 
 - **Cámaras: zoom libre en el directo.** En `/camaras` se puede ampliar el vídeo (pinch o rueda, 1×–4×) y panear sin reiniciar el stream. LIVE y el spinner quedan fijos sobre el frame. «Actualizar» usa el Button `secondary` y resetea el zoom.

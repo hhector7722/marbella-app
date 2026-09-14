@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
@@ -9,8 +11,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8')
 const receiptMigration = read('supabase/migrations/20260914105546_k4_apply_receipt_line_canonical.sql')
 const immutableFactsMigration = read('supabase/migrations/20260914110738_k4_protect_confirmed_receipt_facts.sql')
 const legacyDuplicateMigration = read('supabase/migrations/20260914111242_k4_block_legacy_purchase_duplicate.sql')
+const legacyCacheMigration = read('supabase/migrations/20260914153619_k4_bypass_legacy_stock_cache_for_receipts.sql')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const mappingModal = read('src/components/albaranes/LineMappingModal.tsx')
+const legacyPricesClient = read('src/app/dashboard/albaranes-precios/AlbaranesPreciosClient.tsx')
+const legacyPricesActions = read('src/app/dashboard/albaranes-precios/actions.ts')
 
 test('K4 expone una única confirmación económica y conserva stock_movements como ledger', () => {
   assert.match(receiptMigration, /CREATE OR REPLACE FUNCTION private\.apply_receipt_line\(/)
@@ -50,6 +55,8 @@ test('K4 inmoviliza los hechos confirmados y bloquea duplicar un PURCHASE legacy
   assert.match(immutableFactsMigration, /La línea ya está confirmada económicamente/)
   assert.match(legacyDuplicateMigration, /K4_NEEDS_REVIEW/)
   assert.match(legacyDuplicateMigration, /ALB-LINE-' \|\| NEW\.reference_id/)
+  assert.match(legacyCacheMigration, /NEW\.origin = 'receipt_confirmation'/)
+  assert.match(legacyCacheMigration, /UPDATE public\.ingredients/)
 })
 
 test('la pantalla usa propuesta, vista previa y confirmación canónica, sin reparaciones legacy', () => {
@@ -61,4 +68,6 @@ test('la pantalla usa propuesta, vista previa y confirmación canónica, sin rep
   assert.match(mappingModal, /Conciliación con pedidos \(opcional\)/)
   assert.doesNotMatch(mappingModal, /Aplicar stock pendiente/)
   assert.doesNotMatch(mappingModal, /Rectificar stock/)
+  assert.doesNotMatch(legacyPricesClient, /applyAlbaranPriceUpdatesAction/)
+  assert.match(legacyPricesActions, /directReceiptPriceWritesAreDisabled/)
 })
