@@ -39,6 +39,11 @@ async function gateAuthenticated(): Promise<GateResult> {
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 
+/** K4 retira rutas que combinaban mapeo, precio y stock fuera del comando canónico. */
+function legacyReceiptActionsAreDisabled(): boolean {
+  return true
+}
+
 function isMissingReferenceDocColumnError(message: string): boolean {
   const m = String(message ?? '')
   return /reference_doc/i.test(m) && /does not exist|schema cache|PGRST204|could not find/i.test(m)
@@ -307,7 +312,7 @@ export async function listPurchaseInvoicesAction(params?: {
   | { success: false; message: string }
 > {
   const gate = await gateAuthenticated()
-  if (!gate.ok) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
 
   const limit = Math.min(Math.max(Number(params?.limit ?? PURCHASE_INVOICES_INITIAL_LIMIT) || PURCHASE_INVOICES_INITIAL_LIMIT, 1), 200)
 
@@ -399,7 +404,7 @@ export async function listPurchaseInvoicesDefaultWeekAction(): Promise<
   | { success: false; message: string }
 > {
   const gate = await gateAuthenticated()
-  if (!gate.ok) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
 
   try {
     const cur = await queryPurchaseInvoicesList(gate, {
@@ -419,7 +424,7 @@ export async function listPurchaseInvoicesDefaultWeekAction(): Promise<
 
 export async function listSuppliersForFilterAction(): Promise<{ success: true; suppliers: { id: number; name: string }[] } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
-  if (!gate.ok) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
 
   const { data, error } = await gate.supabase.from('suppliers').select('id,name').order('name').limit(2000)
   if (error) return { success: false, message: error.message }
@@ -480,7 +485,7 @@ export async function getPurchaseInvoiceDetailAction(
   invoiceId: string
 ): Promise<{ success: true; detail: PurchaseInvoiceDetail } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
-  if (!gate.ok) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
 
   const id = String(invoiceId ?? '').trim()
   if (!id) return { success: false, message: 'ID inválido' }
@@ -649,7 +654,7 @@ export async function searchSuppliersForInvoiceAction(params: {
   limit?: number
 }): Promise<{ success: true; suppliers: SupplierListItem[] } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
-  if (!gate.ok) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
 
   const q = String(params?.query ?? '').trim()
   if (q.length < 2) return { success: true, suppliers: [] }
@@ -745,35 +750,8 @@ export async function updatePurchaseInvoiceLineAction(params: {
   if (updErr) return { success: false, message: updErr.message }
   if (!updated) return { success: false, message: 'No se pudo actualizar (RLS o no existe)' }
 
-  // 2) Si la línea está mapeada y tiene unit_price, re-sincronizar precio automáticamente
-  const ingredientId = (updated as any).mapped_ingredient_id as string | null
-  const unitPrice = (updated as any).unit_price as number | null
-  const originalName = (updated as any).original_name as string | null
-  const invoiceId = (updated as any).invoice_id as string | null
-
-  if (!ingredientId || unitPrice == null || !Number.isFinite(unitPrice) || unitPrice <= 0 || !invoiceId || !originalName) {
-    return { success: true }
-  }
-
-  const { data: invoiceRow, error: invErr } = await gate.supabase
-    .from('purchase_invoices')
-    .select('supplier_id')
-    .eq('id', invoiceId)
-    .maybeSingle()
-  if (invErr) return { success: false, message: invErr.message }
-
-  const supplierId = (invoiceRow as any)?.supplier_id as number | null
-  if (supplierId == null) return { success: true, warning: 'La línea está mapeada, pero el albarán no tiene proveedor; no se actualiza precio.' }
-
-  const priceRes = await resyncIngredientPriceForMappedLine(gate.supabase, {
-    supplierId,
-    originalName,
-    ingredientId,
-    unitPrice,
-  })
-  if (!priceRes.ok) return { success: false, message: priceRes.message }
-  if (priceRes.warning) return { success: true, warning: priceRes.warning }
-
+  // K4: editar evidencia nunca modifica precios ni stock. La confirmación
+  // económica solo pasa por apply_receipt_line tras una vista previa explícita.
   return { success: true }
 }
 
@@ -797,21 +775,27 @@ export async function getInvoiceStockStatusesAction(params: {
   const ensure = await ensureStockMovementsReferenceDocColumn(gate.supabase)
   if (!ensure.ok) return { success: false, message: ensure.message }
 
-  // 1) Movimientos aplicados (referencia exacta ALB-LINE-<id>)
+  // 1) Movimientos aplicados: K4 usa una referencia tipada; el histórico
+  // conserva `ALB-LINE-*` para que la lectura siga siendo compatible.
   const appliedRefs = lineIds.map((id) => `ALB-LINE-${id}`)
   const { data: appliedRows, error: appliedErr } = await gate.supabase
     .from('stock_movements')
-    .select('reference_doc, quantity')
+    .select('reference_doc, reference_id, quantity')
     .eq('movement_type', 'PURCHASE')
-    .in('reference_doc', appliedRefs)
+    .or(`reference_doc.in.(${appliedRefs.map((ref) => `\"${ref}\"`).join(',')}),and(reference_type.eq.purchase_invoice_line,reference_id.in.(${lineIds.map((id) => `\"${id}\"`).join(',')}))`)
   if (appliedErr) return { success: false, message: appliedErr.message }
 
   const appliedMap = new Map<string, number>()
   for (const r of appliedRows ?? []) {
     const ref = String((r as any).reference_doc ?? '')
+    const lineId = String((r as any).reference_id ?? '')
     const qty = Number((r as any).quantity)
-    if (!ref) continue
-    if (Number.isFinite(qty)) appliedMap.set(ref, qty)
+    if (!Number.isFinite(qty)) continue
+    if (lineId && lineIds.includes(lineId)) {
+      appliedMap.set(`ALB-LINE-${lineId}`, qty)
+    } else if (ref) {
+      appliedMap.set(ref, qty)
+    }
   }
 
   // 2) Rectificaciones (ALB-LINE-<id>-REVn-...)
@@ -1271,6 +1255,14 @@ export async function confirmInvoiceLineMappingAction(params: {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
+  if (legacyReceiptActionsAreDisabled()) {
+    return {
+      success: false,
+      message: 'Esta ruta histórica está retirada. Guarda una propuesta y confirma desde la vista previa de recepción.',
+    }
+  }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
+
   const isManager = gate.role === 'manager' || gate.role === 'admin'
   const lineId = String(params?.lineId ?? '').trim()
   const invoiceId = String(params?.invoiceId ?? '').trim()
@@ -1359,6 +1351,14 @@ export async function updateMappedLineConversionFactorAction(params: {
 > {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
+
+  if (legacyReceiptActionsAreDisabled()) {
+    return {
+      success: false,
+      message: 'La calibración histórica está retirada. Crea una nueva propuesta y confírmala desde la recepción.',
+    }
+  }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
   const invoiceId = String(params?.invoiceId ?? '').trim()
@@ -1469,6 +1469,14 @@ export async function rectifyInvoiceLineStockAction(params: {
 }): Promise<{ success: true } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
+
+  if (legacyReceiptActionsAreDisabled()) {
+    return {
+      success: false,
+      message: 'K4 no rectifica recepciones desde esta pantalla. Las rectificaciones append-only se habilitarán en una fase posterior.',
+    }
+  }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
   const lineId = String(params?.lineId ?? '').trim()
@@ -1784,6 +1792,14 @@ export async function repairOrphanLineStockAction(params: {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
+  if (legacyReceiptActionsAreDisabled()) {
+    return {
+      success: false,
+      message: 'La reparación histórica de stock está retirada. Confirma la recepción desde su vista previa.',
+    }
+  }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
+
   const isManager = gate.role === 'manager' || gate.role === 'admin'
   const lineId = String(params?.lineId ?? '').trim()
   if (!lineId) return { success: false, message: 'ID de línea inválido' }
@@ -1817,6 +1833,14 @@ export async function repairOrphanLinesInInvoiceAction(params: {
 }): Promise<{ success: true; report: RepairOrphanInvoiceReport } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
+
+  if (legacyReceiptActionsAreDisabled()) {
+    return {
+      success: false,
+      message: 'La reparación masiva histórica está retirada. Cada recepción se confirma de forma atómica por línea.',
+    }
+  }
+  if (!gate.ok) return { success: false, message: 'No autorizado' }
 
   const isManager = gate.role === 'manager' || gate.role === 'admin'
   const invoiceId = String(params?.invoiceId ?? '').trim()

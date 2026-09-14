@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "f26e75c16a3d700c",
+  "_huella": "8ab59277d57fa0af",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -170,6 +170,20 @@
       ]
     },
     {
+      "ruta": "marbella-os/4-decisiones/ADR-0012-recepcion-trazable-y-evidencia-documental.md",
+      "documento": "ADR-0012",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0001"
+      ]
+    },
+    {
       "ruta": "marbella-os/1-producto/PRINCIPIOS.md",
       "documento": "PRINCIPIOS",
       "clase": "constitucional",
@@ -241,7 +255,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-01-29",
+      "vence": "2027-03-14",
       "depende_de": []
     },
     {
@@ -361,7 +375,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-13",
+      "vence": "2027-03-14",
       "depende_de": []
     },
     {
@@ -433,7 +447,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-01-29",
+      "vence": "2027-03-14",
       "depende_de": []
     },
     {
@@ -505,7 +519,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-13",
+      "vence": "2027-03-14",
       "depende_de": []
     },
     {
@@ -567,7 +581,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-12-13",
+      "vence": "2026-12-14",
       "depende_de": []
     },
     {
@@ -579,7 +593,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-09-13",
+      "vence": "2027-09-14",
       "depende_de": []
     },
     {

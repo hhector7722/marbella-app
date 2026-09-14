@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-14
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -56,9 +56,9 @@ precio nuevo = precio unitario de la línea / factor de conversión del mapeo
 
 El resultado debe ser euros por unidad de compra del ingrediente. Si no lo es, el factor está mal.
 
-**Un albarán no cambia el precio de un ingrediente hasta que existen dos cosas: un mapeo entre el nombre del proveedor y el ingrediente, y un factor de conversión válido.** Sin factor válido no se actualiza nada y el sistema lo avisa.
+**Un albarán no cambia el precio de un ingrediente hasta que existen tres cosas: un mapeo versionado entre el nombre del proveedor y el ingrediente, un factor de conversión válido y una confirmación económica explícita de `manager` o `admin`.** Sin una de ellas no se actualiza nada.
 
-El precio se actualiza al insertar una línea de albarán y al editar una línea ya mapeada. Los dos caminos aplican la misma fórmula y registran el mismo historial. Es deliberado: dos caminos, una regla.
+Capturar una línea, extraerla con visión artificial o proponer un mapeo nunca actualiza el precio. K1–K3 neutralizan los disparadores heredados que lo hacían al insertar o mapear una línea; la confirmación central que aplicará la fórmula queda fuera de estas fases. Cuando exista, registrará el histórico con el actor, el documento y la versión de mapeo que justifican el cambio.
 
 ### Precio fijo
 
@@ -115,3 +115,5 @@ La conversión existe en dos sitios, cliente y base de datos, y **deben dar el m
 4. Un ingrediente con precio fijo no cambia nunca desde un albarán.
 5. Una actualización desde albarán no altera unidades ni modo de precio.
 6. El coste de una receta calculado en cliente y en base de datos coincide.
+7. Ninguna extracción automática ni captura de albarán cambia un precio o un saldo de stock.
+8. Un cambio confirmado conserva el documento, la evidencia y la versión de mapeo que lo justifican.

@@ -46,6 +46,10 @@ async function gateManager() {
   return { ok: true as const, supabase }
 }
 
+function directReceiptPriceWritesAreDisabled(): boolean {
+  return true
+}
+
 export async function extractAlbaranPricesFromImageAction(
   formData: FormData
 ): Promise<{ success: true; lines: ProposalLine[] } | { success: false; message: string }> {
@@ -235,6 +239,15 @@ export async function applyAlbaranPriceUpdatesAction(
 ): Promise<{ success: boolean; message: string; applied?: number; errors?: string[] }> {
   const gate = await gateManager()
   if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
+
+  if (directReceiptPriceWritesAreDisabled()) {
+    return {
+      success: false,
+      message: 'La aplicación directa de precios desde albaranes está retirada en K4. Confirma cada recepción desde su vista previa.',
+    }
+  }
+  if (!gate.ok || !gate.supabase) return { success: false, message: 'No autorizado' }
+
   const supabase = gate.supabase
 
   if (!updates?.length) {

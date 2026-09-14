@@ -1640,26 +1640,6 @@ export default function AlbaranesHistoricoClient({
                     })()
                   ) : null}
 
-                  {mappedLinesWithoutStockCount > 0 && detail && !isLoadingDetail ? (
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-amber-200/80 bg-amber-50/90 px-2 py-1.5">
-                      <p className="text-[11px] font-medium text-amber-900 leading-snug min-w-0 flex-1">
-                        {mappedLinesWithoutStockCount} línea
-                        {mappedLinesWithoutStockCount === 1 ? '' : 's'} sin movimiento
-                      </p>
-                      <Button
-                        type="button"
-                        variant="primary"
-                        instance="albaran-detail-repair-all-stock"
-                        className="shrink-0"
-                        onClick={() => void repairAllMappedLinesWithoutStock()}
-                        disabled={repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy}
-                        loading={repairingInvoiceStockBatch}
-                        loadingLabel="Reparar"
-                      >
-                        Reparar
-                      </Button>
-                    </div>
-                  ) : null}
 
                   {/* 3. BLOQUE DE INFORMACIÓN DEL DOCUMENTO */}
                   {detail && !isLoadingDetail && (
@@ -1790,20 +1770,7 @@ export default function AlbaranesHistoricoClient({
                                       <span className="inline-flex text-zinc-400" aria-label="Portes o ajuste" title="Portes / ajuste / sin cargo"><MinusCircle className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {needsRepair ? (
-                                      <Button
-                                        type="button"
-                                        variant="primary"
-                                        instance={`albaran-detail-repair-line-${l.id}`}
-                                        className="shrink-0"
-                                        icon={<AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} />}
-                                        aria-label="Sin stock aplicado — reparar"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          void repairStockForLine(l.id)
-                                        }}
-                                        disabled={repairingStockLineId !== null || lineActionBusy}
-                                        loading={repairingStockLineId === l.id}
-                                      />
+                                      <span className="inline-flex text-amber-600" aria-label="Pendiente de confirmar" title="Pendiente de confirmar"><AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {stockApplied ? (
                                       <span className="inline-flex text-emerald-600" aria-label="Stock aplicado" title="Stock aplicado"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>
@@ -1875,7 +1842,6 @@ export default function AlbaranesHistoricoClient({
                       ? Boolean(stockStatusByLineId[lineForMappingModal.id]?.stockApplied)
                       : false
                   }
-                  needsRepair={lineForMappingModal ? lineNeedsStockRepair(lineForMappingModal) : false}
                   busy={lineActionBusy || repairingStockLineId !== null}
                   onClose={() => {
                     reopenEvidenceFromContext()
@@ -1891,20 +1857,6 @@ export default function AlbaranesHistoricoClient({
                       ingredientId: lineForMappingModal.ingredient_id ? String(lineForMappingModal.ingredient_id) : null,
                       initialName: null,
                     })
-                  }}
-                  onRepairStock={() => {
-                    if (lineForMappingModal) void repairStockForLine(lineForMappingModal.id)
-                  }}
-                  onRectifyStock={() => {
-                    if (lineForMappingModal) void rectifyLine(lineForMappingModal.id)
-                  }}
-                  onEditMapping={() => {
-                    if (lineForMappingModal) void editMapping(lineForMappingModal.id)
-                  }}
-                  onRemoveMapping={() => {
-                    if (lineForMappingModal) {
-                      setDestructiveConfirm({ kind: 'removeMapping', lineId: lineForMappingModal.id })
-                    }
                   }}
                 />
 
@@ -2318,4 +2270,3 @@ export default function AlbaranesHistoricoClient({
     </DashboardDetailLayout>
   )
 }
-

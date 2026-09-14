@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-14
 caducidad: 6 meses
 supersede: —
 ---
@@ -111,6 +111,13 @@ El token de un encargo es la única credencial: quien tiene el enlace, tiene acc
 - **Solo `manager` y `admin`**: análisis de negocio.
 - **`staff` y `supervisor`**: dentro del panel de gestión solo alcanzan propinas, albaranes, escáner y eventos. Cualquier otra ruta les devuelve a su panel de equipo.
 - **Master**: todo lo anterior más analítica de uso, analítica web, panel maestro y edición de condiciones de contrato.
+
+### Captura y confirmación de compras
+
+- Cualquier persona autenticada con acceso actual al escáner puede capturar o subir un albarán y consultar su propia captura.
+- La extracción y el mapeo pueden quedar como propuesta, sin efectos económicos.
+- Solo `manager` y `admin` pueden confirmar una recepción: esa será la única acción que podrá crear entrada de stock o cambio de precio.
+- `chef`, `supervisor` y `staff` no pueden producir esos efectos, aunque puedan acceder a la captura según su superficie.
 
 ---
 

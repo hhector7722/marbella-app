@@ -764,9 +764,9 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
       return { success: false, message: 'Sin imagen para reintentar. Sustituye la foto.' }
     }
 
-    // Borrar líneas y re-encolar OCR de cabecera + todas las hojas
+    // El reintento conserva las líneas/evidencias anteriores. K1/K3 no
+    // reescriben hechos: una futura corrección deberá crear una versión.
     if (st === 'ocr_failed') {
-      await gate.supabase.from('purchase_invoice_lines').delete().eq('invoice_id', id)
       await gate.supabase
         .from('purchase_invoice_attachments')
         .update({ ocr_status: 'pending', ocr_error: null })
@@ -803,98 +803,15 @@ export async function replaceScannerImageAction(params: {
   base64DataUri: string
   filename: string
 }): Promise<ProcessScannerImageResult> {
-  try {
-    const gate = await gateAuthenticated()
-    if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
-    const supabase = gate.supabase
-    const userId = gate.userId
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
 
-    const invoiceId = String(params.invoiceId ?? '').trim()
-    if (!invoiceId) return { success: false, message: 'ID inválido' }
-
-    const parsed = parseBase64DataUri(params.base64DataUri)
-    if (!parsed) return { success: false, message: 'Formato de imagen inválido' }
-
-    const { mimeType, buffer } = parsed
-    const contentSha256 = createHash('sha256').update(buffer).digest('hex')
-
-    const { data: inv, error: invErr } = await supabase
-      .from('purchase_invoices')
-      .select('id, status, file_path, content_sha256')
-      .eq('id', invoiceId)
-      .maybeSingle()
-
-    if (invErr) return { success: false, message: invErr.message }
-    if (!inv) return { success: false, message: 'Albarán no encontrado' }
-
-    try {
-      const { data: dupData, error: dupFnError } = await supabase.rpc('check_purchase_invoice_duplicate', {
-        p_content_sha256: contentSha256,
-        p_supplier_id: null,
-        p_invoice_number: null,
-        p_invoice_date: null,
-      })
-      if (!dupFnError && Boolean((dupData as { dup_by_hash?: boolean })?.dup_by_hash)) {
-        const existingSha = String((inv as { content_sha256?: string }).content_sha256 ?? '')
-        if (existingSha !== contentSha256) {
-          return { success: false, message: 'Esta imagen ya pertenece a otro albarán.' }
-        }
-      }
-    } catch (e) {
-      console.error('replaceScannerImage duplicate check:', e)
-    }
-
-    const d = new Date()
-    const filePath = `${userId}/${d.getFullYear()}/${d.getMonth() + 1}/${Date.now()}_replace_${params.filename}`
-
-    const { error: uploadError } = await supabase.storage.from('albaranes').upload(filePath, buffer, {
-      contentType: mimeType,
-    })
-    if (uploadError) return { success: false, message: `Error Storage: ${uploadError.message}` }
-
-    // Limpiar líneas y re-encolar OCR de hojas adjuntas (la cabecera se relee)
-    await supabase.from('purchase_invoice_lines').delete().eq('invoice_id', invoiceId)
-    await supabase
-      .from('purchase_invoice_attachments')
-      .update({ ocr_status: 'pending', ocr_error: null })
-      .eq('invoice_id', invoiceId)
-
-    const oldPath = String((inv as { file_path?: string }).file_path ?? '').trim()
-    const { error: updErr } = await supabase
-      .from('purchase_invoices')
-      .update({
-        file_path: filePath,
-        content_sha256: contentSha256,
-        status: 'processing',
-        ocr_error: null,
-        duplicate_of_invoice_id: null,
-        invoice_number: 'PROCESANDO…',
-        total_amount: 0,
-        base_amount: null,
-        tax_amount: null,
-        tax_rate: null,
-      })
-      .eq('id', invoiceId)
-
-    if (updErr) {
-      console.error('replaceScannerImage update:', updErr)
-      return { success: false, message: 'Error actualizando la imagen del albarán' }
-    }
-
-    if (oldPath && oldPath !== filePath) {
-      void supabase.storage.from('albaranes').remove([oldPath]).catch((e) => {
-        console.error('replaceScannerImage remove old:', e)
-      })
-    }
-
-    after(async () => {
-      await runOcrForInvoice(invoiceId)
-    })
-
-    revalidateScannerPaths()
-    return { success: true, invoiceId }
-  } catch (err) {
-    console.error('replaceScannerImageAction unexpected:', err)
-    return { success: false, message: 'Error inesperado al sustituir la foto. Reintenta.' }
+  // Hasta que exista la versión documental/superseding, sustituir el original
+  // implicaría ocultar el documento y la evidencia que originó una extracción.
+  // K1–K3 lo bloquean explícitamente para mantener la trazabilidad aprobada.
+  void params
+  return {
+    success: false,
+    message: 'La sustitución de un albarán queda bloqueada hasta disponer de versionado documental. Sube un nuevo albarán y conserva el original.',
   }
 }

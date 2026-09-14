@@ -3,15 +3,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export type WasteLine = {
-  ingredient_id: string
-  quantity: number
-  unit: string
-}
-
-export async function processWasteEntries(lines: WasteLine[]) {
+async function requireManagerStockWrite() {
   const supabase = await createClient()
-
   const {
     data: { user },
     error: authError,
@@ -21,20 +14,49 @@ export async function processWasteEntries(lines: WasteLine[]) {
     throw new Error('Sesión no válida. Vuelve a iniciar sesión.')
   }
 
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profileError || (profile?.role !== 'manager' && profile?.role !== 'admin')) {
+    throw new Error('Solo mánager o administración puede registrar movimientos de stock.')
+  }
+
+  return { supabase, user }
+}
+
+export type WasteLine = {
+  ingredient_id: string
+  quantity: number
+  unit: string
+}
+
+export async function processWasteEntries(lines: WasteLine[]) {
+  const { supabase, user } = await requireManagerStockWrite()
+
   const actionable = lines.filter((l) => Number.isFinite(l.quantity) && l.quantity > 0)
   if (actionable.length === 0) {
     return { success: true, message: 'No hay cantidades de merma que registrar.' }
   }
 
-  const stamp = Date.now()
+  const correlationId = crypto.randomUUID()
   const movements = actionable.map((line, idx) => ({
     movement_type: 'WASTE' as const,
     ingredient_id: line.ingredient_id,
     quantity: line.quantity,
     unit: line.unit,
-    reference_doc: `WASTE-${stamp}-${idx}`,
+    reference_doc: `WASTE-${correlationId}-${idx}`,
     original_description: 'Merma manual (ingredientes)',
     processed_by: user.email ?? user.id,
+    reference_type: 'waste_entry' as const,
+    reference_external_id: `WASTE-${correlationId}-${idx}`,
+    idempotency_key: `waste:${correlationId}:${idx}`,
+    origin: 'manager_adjustment' as const,
+    actor_profile_id: user.id,
+    correlation_id: correlationId,
+    provenance: { source: 'dashboard_waste', schema_version: 'k2' },
   }))
 
   const { error } = await supabase.from('stock_movements').insert(movements)
@@ -69,16 +91,7 @@ function ingredientUnitFromRow(row: RecipeLineRow): string | null {
 }
 
 export async function processRecipeWaste(recipeId: string, units: number) {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    throw new Error('Sesión no válida. Vuelve a iniciar sesión.')
-  }
+  const { supabase, user } = await requireManagerStockWrite()
 
   if (!Number.isFinite(units) || units <= 0) {
     throw new Error('Indica un número de unidades mayor que cero.')
@@ -132,7 +145,7 @@ export async function processRecipeWaste(recipeId: string, units: number) {
     throw new Error('No se pudo calcular consumo para esta receta.')
   }
 
-  const stamp = Date.now()
+  const correlationId = crypto.randomUUID()
   const desc = `Merma receta: ${recipe.name} × ${units} ud`
 
   const movements = Array.from(merged.entries()).map(([ingredient_id, { quantity, unit }], idx) => ({
@@ -140,9 +153,16 @@ export async function processRecipeWaste(recipeId: string, units: number) {
     ingredient_id,
     quantity,
     unit,
-    reference_doc: `WASTE-RCP-${stamp}-${idx}`,
+    reference_doc: `WASTE-RCP-${correlationId}-${idx}`,
     original_description: desc,
     processed_by: user.email ?? user.id,
+    reference_type: 'waste_entry' as const,
+    reference_external_id: `WASTE-RCP-${correlationId}-${idx}`,
+    idempotency_key: `waste-recipe:${correlationId}:${idx}`,
+    origin: 'manager_adjustment' as const,
+    actor_profile_id: user.id,
+    correlation_id: correlationId,
+    provenance: { source: 'dashboard_recipe_waste', schema_version: 'k2' },
   }))
 
   const { error } = await supabase.from('stock_movements').insert(movements)

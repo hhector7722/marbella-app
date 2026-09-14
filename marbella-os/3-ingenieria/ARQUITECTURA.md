@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-13
+revisado: 2026-09-14
 caducidad: 6 meses
 supersede: —
 ---
@@ -27,6 +27,7 @@ Vista de conjunto. Responde dónde vive cada cosa y en qué orden se toca. Las r
 | Pasarela | Receptor HTTP que escribe el estado de sala | `integrations/gateway/` |
 | Scripts de correo | Tres procesos de Google que leen adjuntos entrantes | `integrations/apps-script/` |
 | Servidor de voz | Proceso independiente y opcional para conversación en tiempo real | `voice-server/` |
+| Worker Docling | Conversión local de documentos a evidencia, sin acceso a la Data API | `integrations/docling-worker/` |
 
 **El punto de venta es un sistema ajeno del que solo se lee.** Marbella nunca escribe en él. Ver [VISION](../1-producto/VISION.md).
 
@@ -147,9 +148,20 @@ fichaje → registro de tiempo → motor de horas → motor de coste
 ### Precio de ingrediente
 
 ```
-albarán (papel o correo) → lectura por visión artificial → líneas
-   → mapeo con el ingrediente → factor de conversión → precio actual
+albarán (papel o correo) → captura autenticada → evidencia versionada
+   → propuesta de mapeo → confirmación manager/admin → precio y stock
 ```
+
+Capturar, extraer o proponer no cambia una magnitud económica. La confirmación es el único punto que podrá escribir precio y el ledger de stock; durante K1–K3 todavía no existe y las rutas heredadas de efectos automáticos están neutralizadas.
+
+### Evidencia Docling (K3)
+
+```
+documento privado → cola durable → Edge Function con token de worker
+  → URL firmada efímera → Docling local → evidencia versionada + métricas
+```
+
+El mini-PC ejecuta Docling en CPU dentro de Docker y el worker solo conoce la URL de la Edge Function y su token. La Edge Function reclama un trabajo con lease, firma el documento durante diez minutos y persiste el resultado mediante `persist_document_evidence`. No hay cliente de Supabase ni credenciales de base de datos en el worker. Una respuesta de Docling no puede atravesar la frontera hacia ingredientes, precios, stock, mapeos definitivos o escandallos.
 
 ---
 

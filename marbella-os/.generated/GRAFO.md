@@ -1,5 +1,5 @@
-<!-- Generado desde 226 documentos de marbella-os/.
-     Huella del origen: ff4582c1fa140cca
+<!-- Generado desde 227 documentos de marbella-os/.
+     Huella del origen: 515f2c059fb6627c
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -15,7 +15,7 @@ para responder a la pregunta que surge al cambiar algo.
 
 | Si cambia | Documento | Hay que revisar |
 |---|---|---|
-| `ADR-0001` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | `ADR-0011`, `CONTRATO-PROYECCION-v1`, `CONTRATO-PROYECCION-v2` |
+| `ADR-0001` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | `ADR-0011`, `ADR-0012`, `CONTRATO-PROYECCION-v1`, `CONTRATO-PROYECCION-v2` |
 | `ADR-0002` | `marbella-os/4-decisiones/ADR-0002-metadatos-operables-y-validador.md` | `ADR-0003`, `ADR-0004`, `ADR-0005` |
 | `ADR-0007` | `marbella-os/4-decisiones/ADR-0007-modal-superficie-derivada.md` | `ADR-0008`, `ADR-0009` |
 | `ADR-0008` | `marbella-os/4-decisiones/ADR-0008-modal-backdrop-capas.md` | `ADR-0009` |

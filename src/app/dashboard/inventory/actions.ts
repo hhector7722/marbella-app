@@ -29,7 +29,7 @@ async function requireManagerInventorySettings() {
     return { ok: false as const, supabase, error: 'Forbidden' as const }
   }
 
-  return { ok: true as const, supabase }
+  return { ok: true as const, supabase, userId: user.id }
 }
 
 export async function saveIngredientsInventoryVisibility(
@@ -69,7 +69,11 @@ interface CountPayload {
 }
 
 export async function processInventoryCounts(counts: CountPayload[]) {
-  const supabase = await createClient()
+  const gate = await requireManagerInventorySettings()
+  if (!gate.ok) {
+    throw new Error(gate.error === 'Forbidden' ? 'Solo mánager o administración puede certificar un recuento.' : 'No autorizado.')
+  }
+  const supabase = gate.supabase
   
   const actionableCounts = counts.filter(
     (c) => c.physical_stock !== c.theoretical_stock
@@ -83,17 +87,26 @@ export async function processInventoryCounts(counts: CountPayload[]) {
     }
   }
 
-  const movements = actionableCounts.map((count) => {
+  const correlationId = crypto.randomUUID()
+  const movements = actionableCounts.map((count, index) => {
     const delta = count.physical_stock - count.theoretical_stock
+    const referenceExternalId = `INV-${correlationId}-${count.ingredient_id}`
 
     return {
       movement_type: 'INVENTORY_COUNT',
       ingredient_id: count.ingredient_id,
       quantity: delta,
       unit: count.unit,
-      reference_doc: `INV-${new Date().getTime()}`,
+      reference_doc: referenceExternalId,
       original_description: `Recuento físico (${count.physical_stock} ${count.unit})`,
-      processed_by: 'Mánager (Dashboard)'
+      processed_by: 'Mánager (Dashboard)',
+      reference_type: 'inventory_count' as const,
+      reference_external_id: referenceExternalId,
+      idempotency_key: `inventory-count:${correlationId}:${index}`,
+      origin: 'inventory_count' as const,
+      actor_profile_id: gate.userId,
+      correlation_id: correlationId,
+      provenance: { source: 'dashboard_inventory', schema_version: 'k2' },
     }
   })
 

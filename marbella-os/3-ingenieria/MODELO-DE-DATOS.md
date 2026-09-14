@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-13
+revisado: 2026-09-14
 caducidad: 6 meses
 supersede: —
 ---
@@ -117,13 +117,20 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 
 `recipes`, `recipe_ingredients`, `ingredients`, `ingredient_price_history`, `categories`, `stock_movements`, `map_tpv_receta`, `digital_menu_overrides`, `menu_category_overrides`, `carta_editors`, `carta_ui_labels`.
 
-- `ingredients.current_price` es el precio vigente; `ingredient_price_history`, su histórico.
+- `ingredients.current_price` es el precio vigente; `ingredient_price_history`, su histórico. Ambos solo cambian desde una confirmación económica autorizada; la captura y evidencia no son ese hecho.
+- `stock_movements` es el **único ledger canónico de stock**. Es append-only: las correcciones son nuevos movimientos reversores. Cada hecho nuevo lleva referencia tipada, idempotencia, origen, actor y procedencia. `stock_current` es su proyección regenerable.
 - `map_tpv_receta` une el artículo del punto de venta con la receta. **Sin este puente no hay descuento de existencias ni margen por producto.**
 - Las tablas de anulación permiten que la carta pública muestre algo distinto del dato interno sin duplicar la receta.
 
-### Compras — 7 tablas
+### Compras y evidencia documental
 
-`suppliers`, `supplier_item_mappings`, `purchase_invoices`, `purchase_invoice_lines`, `purchase_invoice_attachments`, `purchase_orders`, `purchase_order_items`.
+`suppliers`, `supplier_item_mappings`, `purchase_invoices`, `purchase_invoice_lines`, `purchase_invoice_attachments`, `purchase_orders`, `purchase_order_items`, `purchase_mapping_versions`, `purchase_order_item_receipt_allocations`, `document_processing_jobs` y `document_processing_job_events`.
+
+- `purchase_invoices` y sus adjuntos identifican el documento recibido; no constituyen por sí mismos una recepción económica.
+- `purchase_invoice_lines` conserva la línea capturada del documento. Una línea puede repartirse entre varios pedidos; una línea de pedido puede acumular recepciones parciales mediante `purchase_order_item_receipt_allocations`.
+- `purchase_mapping_versions` guarda propuestas y confirmaciones de mapeo sin sobrescribir la versión anterior. La conciliación sólo suma asignaciones confirmadas y no sustituidas.
+- `document_extractions` y sus tablas hijas son evidencia append-only. `document_processing_jobs` es estado operativo mutable de la cola; sus eventos son append-only.
+- Ni el documento, ni la evidencia, ni una versión de mapeo, ni un movimiento se eliminan para corregir un hecho.
 
 Detalle del cálculo en [dominio/PRECIOS-Y-COMPRAS](./dominio/PRECIOS-Y-COMPRAS.md).
 
@@ -157,6 +164,8 @@ Los encargos de cliente se editan **con un identificador en el enlace, sin sesi�
 | `v_treasury_movements_balance` | Movimientos con saldo corrido |
 | `v_manager_ledger_with_running` | Libro con saldo corrido |
 | `v_public_menu_items`, `v_digital_menu_items` | Carta ya resuelta con anulaciones |
+| `stock_current` | Proyección regenerable del saldo a partir de `stock_movements` |
+| `purchase_order_item_reconciliation`, `purchase_invoice_line_reconciliation` | Lecturas de pedido, recibido, pendiente y diferencia por conciliación confirmada |
 
 Una vista **no es autoridad**, es una forma de leer. Si una vista contradice a su tabla de origen, la vista está mal.
 

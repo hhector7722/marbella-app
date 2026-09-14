@@ -6,7 +6,7 @@ capa: decisiones
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-13
+revisado: 2026-09-14
 caducidad: 12 meses
 ---
 
@@ -49,6 +49,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0009](./ADR-0009-modal-subordinacion.md) | Subordinación visual del panel Modal cubierto | Vigente |
 | [0010](./ADR-0010-jerarquia-visual-canonica.md) | Jerarquía visual canónica: primitivas y plantillas de pantalla | Vigente |
 | [0011](./ADR-0011-proyeccion-diaria-hija-y-carry-out.md) | Proyección diaria hija y `carry_out` para lecturas SELECT | Vigente |
+| [0012](./ADR-0012-recepcion-trazable-y-evidencia-documental.md) | Recepción trazable y evidencia documental sin efectos automáticos | Vigente |
 
 ## Decisiones tomadas sin registrar
 

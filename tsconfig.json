@@ -42,6 +42,7 @@
   ],
   "exclude": [
     "node_modules",
+    "supabase/functions",
     "ai-voice-worker",
     "scripts",
     "src/scripts",

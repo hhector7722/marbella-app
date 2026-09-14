@@ -20,11 +20,17 @@ import {
 } from '@/lib/ingredient-pack-pricing'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import {
-  confirmInvoiceLineMappingAction,
   resolveLineMappingAction,
   searchIngredientsForMappingAction,
-  updateMappedLineConversionFactorAction,
 } from '@/app/dashboard/albaranes/actions'
+import {
+  applyReceiptLineAction,
+  listReceiptOrderAllocationOptionsAction,
+  previewReceiptLineAction,
+  saveReceiptMappingProposalAction,
+  type ReceiptAllocationInput,
+  type ReceiptPreview,
+} from '@/app/dashboard/albaranes/receipt-actions'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
@@ -46,6 +52,16 @@ type IngredientMappingSearchItem = IngredientDimensionalSource & {
   purchase_unit: string
   current_price: number
 }
+
+type ReceiptOrderOption = {
+  purchaseOrderItemId: string
+  purchaseOrderId: string
+  label: string
+  orderUnit: string
+  quantityPending: number
+}
+
+type ReceiptAllocationDraft = Record<string, { orderQuantity: string; lineQuantity: string }>
 
 function parseDimensionalPayload(dim: LineDimensionalDraft): {
   lineBillingUnit: string | null
@@ -71,16 +87,11 @@ export type LineMappingModalProps = {
   invoiceId: string | null
   supplierId: number | null
   stockApplied?: boolean
-  needsRepair?: boolean
   busy?: boolean
   onClose: () => void
   onSuccess: () => void | Promise<void>
   onOpenWizardNew?: () => void
   onOpenWizardPrice?: () => void
-  onRepairStock?: () => void
-  onRectifyStock?: () => void
-  onEditMapping?: () => void
-  onRemoveMapping?: () => void
 }
 
 /** Una sola superficie derivada a la vez (ADR-0007). */
@@ -91,16 +102,11 @@ export function LineMappingModal({
   invoiceId,
   supplierId,
   stockApplied = false,
-  needsRepair = false,
   busy = false,
   onClose,
   onSuccess,
   onOpenWizardNew,
   onOpenWizardPrice,
-  onRepairStock,
-  onRectifyStock,
-  onEditMapping,
-  onRemoveMapping,
 }: LineMappingModalProps) {
   useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
   const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Mapear línea albarán')
@@ -119,6 +125,14 @@ export function LineMappingModal({
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<IngredientMappingSearchItem[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [mappingVersionId, setMappingVersionId] = useState<string | null>(null)
+  const [savedProposalFingerprint, setSavedProposalFingerprint] = useState<string | null>(null)
+  const [orderOptions, setOrderOptions] = useState<ReceiptOrderOption[]>([])
+  const [allocationDraft, setAllocationDraft] = useState<ReceiptAllocationDraft>({})
+  const [receiptPreview, setReceiptPreview] = useState<ReceiptPreview | null>(null)
+  const [previewing, setPreviewing] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmationKey, setConfirmationKey] = useState<string | null>(null)
 
   const applySuggestion = useCallback(
     (
@@ -303,6 +317,16 @@ export function LineMappingModal({
     loadResolve,
   ])
 
+  useEffect(() => {
+    if (!open) return
+    setMappingVersionId(null)
+    setSavedProposalFingerprint(null)
+    setOrderOptions([])
+    setAllocationDraft({})
+    setReceiptPreview(null)
+    setConfirmationKey(null)
+  }, [open, line?.id])
+
   async function runSearch(q: string) {
     const query = q.trim()
     setSearchQuery(q)
@@ -393,14 +417,17 @@ export function LineMappingModal({
     isAutoSameFamilyMode,
   ])
 
-  const alreadyMappedSameIngredient = useMemo(() => {
-    if (!line || !ingredientId) return false
-    return (
-      String(line.status ?? '') === 'mapped' &&
-      Boolean(line.ingredient_id) &&
-      String(line.ingredient_id) === String(ingredientId)
-    )
-  }, [line, ingredientId])
+  const proposalFingerprint = useMemo(
+    () =>
+      JSON.stringify({
+        ingredientId,
+        factor: String(factor).trim(),
+        lineBillingUnit: dimensional.lineBillingUnit.trim().toLowerCase(),
+        lineContentQty: dimensional.lineContentQty.trim().replace(',', '.'),
+        lineContentUnit: dimensional.lineContentUnit.trim().toLowerCase(),
+      }),
+    [ingredientId, factor, dimensional]
+  )
 
   async function handleSave() {
     if (!line || !invoiceId || !ingredientId) {
@@ -453,40 +480,30 @@ export function LineMappingModal({
 
     setSaving(true)
     try {
-      const payload = { lineBillingUnit, lineContentQty, lineContentUnit }
-      const res = alreadyMappedSameIngredient
-        ? await updateMappedLineConversionFactorAction({
-            invoiceId,
-            lineId: line.id,
-            conversionFactor: factorNum,
-            ...payload,
-          })
-        : await confirmInvoiceLineMappingAction({
-            lineId: line.id,
-            invoiceId,
-            ingredientId,
-            conversionFactor: factorNum,
-            ...payload,
-          })
+      const res = await saveReceiptMappingProposalAction({
+        invoiceId,
+        lineId: line.id,
+        ingredientId,
+        conversionFactor: factorNum,
+        lineBillingUnit,
+        lineContentQty,
+        lineContentUnit,
+      })
 
       if (!res.success) {
         toast.error(res.message)
         return
       }
 
-      if (alreadyMappedSameIngredient) {
-        if ('stockRectified' in res && res.stockRectified) {
-          toast.success('Calibración guardada y stock rectificado.')
-        } else {
-          toast.success('Calibración guardada.')
-        }
-        if ('warning' in res) {
-          const w = res.warning
-          if (typeof w === 'string' && w.trim()) toast.info(w)
-        }
-      } else {
-        toast.success('Línea vinculada al catálogo.')
-      }
+      setMappingVersionId(res.mappingVersionId)
+      setSavedProposalFingerprint(proposalFingerprint)
+      setReceiptPreview(null)
+      setConfirmationKey(null)
+      const orderRes = await listReceiptOrderAllocationOptionsAction({ ingredientId })
+      if (orderRes.success) setOrderOptions(orderRes.items)
+      else toast.error(orderRes.message)
+
+      toast.success('Propuesta guardada. Revisa el efecto antes de confirmar.')
 
       const lineLabel = line.original_name?.trim() || line.id
       const ingredientName = ingredientLabel?.trim() || ingredientId || '?'
@@ -496,9 +513,83 @@ export function LineMappingModal({
       })
 
       await onSuccess()
-      onClose()
     } finally {
       setSaving(false)
+    }
+  }
+
+  function buildAllocations(): ReceiptAllocationInput[] | null {
+    const allocations: ReceiptAllocationInput[] = []
+    for (const option of orderOptions) {
+      const draft = allocationDraft[option.purchaseOrderItemId]
+      const orderRaw = draft?.orderQuantity.trim() ?? ''
+      const lineRaw = draft?.lineQuantity.trim() ?? ''
+      if (!orderRaw && !lineRaw) continue
+      const orderQuantity = Number(orderRaw.replace(',', '.'))
+      const lineQuantity = Number(lineRaw.replace(',', '.'))
+      if (!Number.isFinite(orderQuantity) || orderQuantity <= 0 || !Number.isFinite(lineQuantity) || lineQuantity <= 0) {
+        toast.error('Cada asignación debe indicar ambas cantidades positivas.')
+        return null
+      }
+      allocations.push({
+        purchase_order_item_id: option.purchaseOrderItemId,
+        quantity_in_order_unit: orderQuantity,
+        quantity_in_invoice_line_unit: lineQuantity,
+      })
+    }
+    return allocations
+  }
+
+  async function handlePreview() {
+    if (!line || !mappingVersionId) {
+      toast.error('Guarda primero la propuesta de mapeo.')
+      return
+    }
+    if (savedProposalFingerprint !== proposalFingerprint) {
+      toast.error('La presentación cambió. Guarda de nuevo la propuesta antes de revisar el efecto.')
+      return
+    }
+    const allocations = buildAllocations()
+    if (!allocations) return
+    setPreviewing(true)
+    try {
+      const res = await previewReceiptLineAction({ lineId: line.id, mappingVersionId, allocations })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      setReceiptPreview(res.preview)
+      setConfirmationKey(crypto.randomUUID())
+      toast.success('Vista previa lista para confirmar.')
+    } finally {
+      setPreviewing(false)
+    }
+  }
+
+  async function handleConfirm() {
+    if (!line || !mappingVersionId || !receiptPreview || !confirmationKey) {
+      toast.error('Prepara y revisa la vista previa antes de confirmar.')
+      return
+    }
+    const allocations = buildAllocations()
+    if (!allocations) return
+    setConfirming(true)
+    try {
+      const res = await applyReceiptLineAction({
+        lineId: line.id,
+        mappingVersionId,
+        allocations,
+        idempotencyKey: confirmationKey,
+      })
+      if (!res.success) {
+        toast.error(res.message)
+        return
+      }
+      toast.success('Recepción confirmada.')
+      await onSuccess()
+      onClose()
+    } finally {
+      setConfirming(false)
     }
   }
 
@@ -528,21 +619,48 @@ export function LineMappingModal({
             variant="tertiary"
             instance="albaran-line-mapping-cancel"
             onClick={onClose}
-            disabled={saving || busy}
+            disabled={saving || previewing || confirming || busy}
           >
             Cancelar
           </Button>
-          <Button
-            type="button"
-            variant="primary"
-            instance="albaran-line-mapping-save"
-            onClick={() => void handleSave()}
-            disabled={!canSave || loading || busy}
-            loading={saving}
-            loadingLabel="Guardando…"
-          >
-            {alreadyMappedSameIngredient ? 'Guardar' : 'Vincular'}
-          </Button>
+          {!stockApplied && mappingVersionId ? (
+            <Button
+              type="button"
+              variant={receiptPreview ? 'secondary' : 'primary'}
+              instance="albaran-line-mapping-preview-receipt"
+              onClick={() => void handlePreview()}
+              disabled={saving || previewing || confirming || busy}
+              loading={previewing}
+              loadingLabel="Validando…"
+            >
+              {receiptPreview ? 'Actualizar vista previa' : 'Ver efecto'}
+            </Button>
+          ) : null}
+          {!stockApplied && receiptPreview ? (
+            <Button
+              type="button"
+              variant="primary"
+              instance="albaran-line-mapping-confirm-receipt"
+              onClick={() => void handleConfirm()}
+              disabled={saving || previewing || confirming || busy}
+              loading={confirming}
+              loadingLabel="Confirmando…"
+            >
+              Confirmar recepción
+            </Button>
+          ) : !stockApplied ? (
+            <Button
+              type="button"
+              variant="primary"
+              instance="albaran-line-mapping-save"
+              onClick={() => void handleSave()}
+              disabled={!canSave || loading || saving || previewing || confirming || busy}
+              loading={saving}
+              loadingLabel="Guardando…"
+            >
+              Guardar propuesta
+            </Button>
+          ) : null}
         </>
       }
     >
@@ -825,61 +943,92 @@ export function LineMappingModal({
                 </p>
               ) : null}
 
-              {line.ingredient_id ? (
-                <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-1.5">
-                  <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                    Acciones de vínculo / stock
-                  </p>
-                  {needsRepair && onRepairStock ? (
-                    <Button
-                      type="button"
-                      variant="primary"
-                      className="w-full"
-                      instance="albaran-line-mapping-repair-stock"
-                      onClick={() => void onRepairStock()}
-                      disabled={busy || saving}
-                    >
-                      Aplicar stock pendiente
-                    </Button>
-                  ) : null}
-                  <div className="flex flex-wrap gap-1.5">
-                    {stockApplied && onRectifyStock ? (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        instance="albaran-line-mapping-rectify-stock"
-                        className="flex-1 min-w-[8rem]"
-                        onClick={() => void onRectifyStock()}
-                        disabled={busy || saving}
-                      >
-                        Rectificar stock
-                      </Button>
-                    ) : null}
-                    {onEditMapping ? (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        instance="albaran-line-mapping-edit-match"
-                        className="flex-1 min-w-[8rem]"
-                        onClick={() => void onEditMapping()}
-                        disabled={busy || saving}
-                      >
-                        Editar match
-                      </Button>
-                    ) : null}
-                    {onRemoveMapping ? (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        instance="albaran-line-mapping-remove-match"
-                        className="flex-1 min-w-[8rem]"
-                        onClick={() => void onRemoveMapping()}
-                        disabled={busy || saving}
-                      >
-                        Eliminar match
-                      </Button>
-                    ) : null}
+              {stockApplied ? (
+                <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-[10px] font-semibold text-emerald-900">
+                  Esta línea ya tiene una recepción registrada. K4 no permite reescribirla desde esta pantalla.
+                </p>
+              ) : null}
+
+              {mappingVersionId ? (
+                <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-2">
+                  <div className="px-1">
+                    <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
+                      Conciliación con pedidos (opcional)
+                    </p>
+                    <p className="mt-0.5 text-[10px] leading-snug text-zinc-600">
+                      Deja todo vacío si este albarán no procede de un pedido. Una línea puede repartirse entre varios pedidos.
+                    </p>
                   </div>
+                  {orderOptions.length === 0 ? (
+                    <p className="px-1 text-[10px] text-zinc-500">No hay líneas de pedido pendientes para este ingrediente.</p>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      {orderOptions.map((option) => {
+                        const draft = allocationDraft[option.purchaseOrderItemId] ?? { orderQuantity: '', lineQuantity: '' }
+                        return (
+                          <div key={option.purchaseOrderItemId} className="rounded-lg border border-zinc-200 bg-zinc-50 p-2">
+                            <p className="text-[10px] font-semibold text-zinc-800">
+                              Pedido {option.purchaseOrderId.slice(0, 8)} · pendiente {option.quantityPending} {option.orderUnit}
+                            </p>
+                            <div className="mt-1 flex flex-wrap gap-1.5">
+                              <label className="min-w-[8rem] flex-1 text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
+                                Del pedido ({option.orderUnit})
+                                <input
+                                  inputMode="decimal"
+                                  value={draft.orderQuantity}
+                                  onChange={(event) => {
+                                    setAllocationDraft((current) => ({
+                                      ...current,
+                                      [option.purchaseOrderItemId]: { ...draft, orderQuantity: event.target.value },
+                                    }))
+                                    setReceiptPreview(null)
+                                  }}
+                                  className="mt-0.5 min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-2 text-xs font-medium tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
+                                />
+                              </label>
+                              <label className="min-w-[8rem] flex-1 text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
+                                Recibido ({line.line_unit || 'unidad línea'})
+                                <input
+                                  inputMode="decimal"
+                                  value={draft.lineQuantity}
+                                  onChange={(event) => {
+                                    setAllocationDraft((current) => ({
+                                      ...current,
+                                      [option.purchaseOrderItemId]: { ...draft, lineQuantity: event.target.value },
+                                    }))
+                                    setReceiptPreview(null)
+                                  }}
+                                  className="mt-0.5 min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-2 text-xs font-medium tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </section>
+              ) : null}
+
+              {receiptPreview ? (
+                <section className="rounded-lg border border-[#36606F]/30 bg-[#eef5f7] p-2">
+                  <p className="px-1 text-[9px] font-black uppercase tracking-wider text-[#36606F]">Efecto a confirmar</p>
+                  <dl className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 px-1 text-[10px] text-zinc-700">
+                    <div><dt className="text-zinc-500">Entrada</dt><dd className="font-semibold">{receiptPreview.physical_quantity} {receiptPreview.base_unit}</dd></div>
+                    <div><dt className="text-zinc-500">Compra</dt><dd className="font-semibold">{receiptPreview.purchase_quantity} {receiptPreview.purchase_unit}</dd></div>
+                    <div><dt className="text-zinc-500">Precio albarán</dt><dd className="font-semibold">{receiptPreview.observed_unit_price} €/{receiptPreview.line_billing_unit}</dd></div>
+                    <div><dt className="text-zinc-500">Precio normalizado</dt><dd className="font-semibold">{receiptPreview.normalized_unit_price} €/{receiptPreview.purchase_unit}</dd></div>
+                    <div><dt className="text-zinc-500">Precio actual → nuevo</dt><dd className="font-semibold">{receiptPreview.price_before} € → {receiptPreview.price_after} €</dd></div>
+                    <div><dt className="text-zinc-500">Pedidos vinculados</dt><dd className="font-semibold">{receiptPreview.allocation_count}</dd></div>
+                  </dl>
+                  <p className="mt-1 rounded-md bg-white/80 px-2 py-1 text-[10px] font-medium text-zinc-700">
+                    {receiptPreview.price_locked
+                      ? 'Precio bloqueado: se registrará la recepción, sin cambiar el precio.'
+                      : receiptPreview.price_changed
+                        ? 'Se creará un único PURCHASE y se actualizará el precio con esta procedencia.'
+                        : 'Se creará un único PURCHASE; el precio ya coincide.'}
+                    {receiptPreview.mapping_will_be_confirmed ? ' La propuesta de mapeo quedará versionada y confirmada.' : ''}
+                  </p>
                 </section>
               ) : null}
             </>

@@ -1,0 +1,64 @@
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+const test = require('node:test')
+
+const root = path.resolve(__dirname, '../..')
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8')
+
+const receiptMigration = read('supabase/migrations/20260914105546_k4_apply_receipt_line_canonical.sql')
+const immutableFactsMigration = read('supabase/migrations/20260914110738_k4_protect_confirmed_receipt_facts.sql')
+const legacyDuplicateMigration = read('supabase/migrations/20260914111242_k4_block_legacy_purchase_duplicate.sql')
+const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
+const mappingModal = read('src/components/albaranes/LineMappingModal.tsx')
+
+test('K4 expone una única confirmación económica y conserva stock_movements como ledger', () => {
+  assert.match(receiptMigration, /CREATE OR REPLACE FUNCTION private\.apply_receipt_line\(/)
+  assert.match(receiptMigration, /CREATE OR REPLACE FUNCTION public\.apply_receipt_line\(/)
+  assert.match(receiptMigration, /SECURITY INVOKER/)
+  assert.match(receiptMigration, /SECURITY DEFINER/)
+  assert.match(receiptMigration, /SET search_path = ''/)
+  assert.match(receiptMigration, /INSERT INTO public\.stock_movements/)
+  assert.doesNotMatch(receiptMigration, /CREATE TABLE[^;]+stock_movements_v2/i)
+  assert.match(receiptMigration, /purchase_receipt_confirmations[\s\S]+purchase_invoice_line_id uuid NOT NULL UNIQUE/)
+})
+
+test('K4 rechaza datos inciertos antes de escribir y no introduce valores por defecto peligrosos', () => {
+  const beforeWrite = receiptMigration.slice(0, receiptMigration.indexOf('IF p_dry_run THEN'))
+  assert.match(beforeWrite, /'needs_review'/)
+  assert.match(beforeWrite, /v_line\.quantity IS NULL OR v_line\.quantity <= 0/)
+  assert.match(beforeWrite, /v_line\.unit_price IS NULL OR v_line\.unit_price <= 0/)
+  assert.match(beforeWrite, /v_effective_mapping\.conversion_factor - v_content_in_purchase_unit/)
+  assert.match(beforeWrite, /Las asignaciones superan la cantidad recibida en la línea/)
+  assert.doesNotMatch(beforeWrite, /conversion_factor\s*:=\s*1/i)
+  assert.doesNotMatch(beforeWrite, /unit_price\s*:=\s*0/i)
+})
+
+test('K4 aplica idempotencia, bloqueo de precio, procedencia y reconciliación a nivel de línea', () => {
+  assert.match(receiptMigration, /pg_advisory_xact_lock/)
+  assert.match(receiptMigration, /idempotency_key text NOT NULL UNIQUE/)
+  assert.match(receiptMigration, /price_locked/)
+  assert.match(receiptMigration, /ingredient_price_history[\s\S]+receipt_confirmation_id/)
+  assert.match(receiptMigration, /purchase_order_item_receipt_allocations/)
+  assert.match(receiptMigration, /quantity_in_order_unit/)
+  assert.match(receiptMigration, /quantity_in_invoice_line_unit/)
+  assert.match(receiptMigration, /stock_reference_type/)
+})
+
+test('K4 inmoviliza los hechos confirmados y bloquea duplicar un PURCHASE legacy', () => {
+  assert.match(immutableFactsMigration, /purchase_invoice_lines_confirmed_receipt_facts_immutable/)
+  assert.match(immutableFactsMigration, /La línea ya está confirmada económicamente/)
+  assert.match(legacyDuplicateMigration, /K4_NEEDS_REVIEW/)
+  assert.match(legacyDuplicateMigration, /ALB-LINE-' \|\| NEW\.reference_id/)
+})
+
+test('la pantalla usa propuesta, vista previa y confirmación canónica, sin reparaciones legacy', () => {
+  assert.match(receiptActions, /rpc\('apply_receipt_line'/)
+  assert.match(mappingModal, /saveReceiptMappingProposalAction/)
+  assert.match(mappingModal, /previewReceiptLineAction/)
+  assert.match(mappingModal, /applyReceiptLineAction/)
+  assert.match(mappingModal, /Confirmar recepción/)
+  assert.match(mappingModal, /Conciliación con pedidos \(opcional\)/)
+  assert.doesNotMatch(mappingModal, /Aplicar stock pendiente/)
+  assert.doesNotMatch(mappingModal, /Rectificar stock/)
+})

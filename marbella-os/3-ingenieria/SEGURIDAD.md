@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-13
+revisado: 2026-09-14
 caducidad: 3 meses
 supersede: —
 ---
@@ -107,6 +107,21 @@ Las rutas que sirven documentos sensibles —nóminas, documento de identidad—
 - De las 56 creadas por migración, **52 la activan en la misma migración**. Es la norma en la práctica.
 - Los ayudantes `is_manager()` e `is_manager_or_admin()` consultan `profiles`, no el testigo. Es lo correcto: leen el estado actual, no una copia.
 
+### Compras, inventario y evidencia (K1)
+
+Las tablas de compras, evidencia y stock tienen RLS y permisos de tabla mínimos. `anon` no tiene ningún permiso sobre `ingredients`, `stock_movements`, albaranes, líneas, evidencia, mapeos, pedidos ni el contenedor privado `albaranes`.
+
+| Sujeto | Puede | No puede |
+|---|---|---|
+| `staff` y `chef` | Leer el ámbito de captura permitido y crear su propio albarán | Cambiar ingrediente o precio, insertar stock, confirmar/mutar líneas económicas o escribir evidencia directa |
+| `supervisor` | Igual que `staff` para captura | Los mismos efectos económicos: no recibe el privilegio heredado de supervisor |
+| `manager` y `admin` | Leer el conjunto, revisar y preparar propuestas; registrar movimientos manuales autorizados | Borrar documento, evidencia, mapeo versionado o movimiento |
+| Procesos de servidor | Ejecutar RPC cerradas con la clave de servicio: venta, consumo de personal y persistencia de evidencia | Exponer la clave o conceder acceso al navegador |
+
+La función específica `is_purchase_manager_or_admin()` excluye deliberadamente a `supervisor`; no se altera el ayudante global heredado porque gobierna otros dominios. La captura y el mapeo no producen precio ni stock: esos efectos esperan una confirmación explícita de `manager` o `admin`.
+
+El worker Docling entra por una Edge Function con token de worker obligatorio, no por la Data API. La función usa la clave de servicio únicamente en el servidor para firmar una URL efímera y persistir evidencia mediante RPC. La URL no se guarda en errores nuevos.
+
 ### Lo que no está cubierto
 
 **Tres tablas sin políticas y con permiso total para quien no tiene sesión.** Creadas el 2026-04-08, nunca corregidas:
@@ -159,7 +174,7 @@ Once contenedores de almacenamiento. Cinco son públicos:
 
 **Todo lo que empieza por `NEXT_PUBLIC_` viaja al navegador.** Vale para la dirección del proyecto y la clave pública, que están diseñadas para ser públicas; **no vale para nada más**.
 
-Privadas: clave de servicio, secreto de webhook, secreto de tarea programada, clave de OpenAI, claves de notificación, credenciales del ERP.
+Privadas: clave de servicio, secreto de webhook, secreto de tarea programada, clave de OpenAI, claves de notificación, credenciales del ERP, token del worker Docling y clave de su API local.
 
 Reglas:
 
