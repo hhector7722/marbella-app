@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 const TZ_MADRID = 'Europe/Madrid'
+const STALE_DAY_MIN_LAG_MS = 18 * 60 * 60 * 1000
+const STALE_DAY_MAX_LAG_MS = 40 * 60 * 60 * 1000
 
 function parseIso(value: unknown): Date | null {
   if (value == null || value === '') return null
@@ -18,6 +20,66 @@ function ymdMadrid(date: Date): string {
   }).format(date)
 }
 
+function addYmdDays(ymd: string, days: number): string | null {
+  const [year, month, day] = ymd.split('-').map(Number)
+  if (![year, month, day].every(Number.isFinite)) return null
+  const d = new Date(Date.UTC(year, month - 1, day + days))
+  return [
+    d.getUTCFullYear(),
+    String(d.getUTCMonth() + 1).padStart(2, '0'),
+    String(d.getUTCDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+function madridDateTimeParts(date: Date): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const part of new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ_MADRID,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date)) {
+    if (part.type !== 'literal') out[part.type] = part.value
+  }
+  return out
+}
+
+/** Conserva la hora local de Madrid, pero la coloca en otro día de calendario. */
+function moveMadridTimeToDay(sourceInstant: Date, targetYmd: string): Date {
+  const sourceParts = madridDateTimeParts(sourceInstant)
+  const [year, month, day] = targetYmd.split('-').map(Number)
+  const targetWallClockUtc = Date.UTC(
+    year,
+    month - 1,
+    day,
+    Number(sourceParts.hour),
+    Number(sourceParts.minute),
+    Number(sourceParts.second),
+    sourceInstant.getUTCMilliseconds()
+  )
+
+  let result = new Date(targetWallClockUtc)
+  for (let i = 0; i < 3; i++) {
+    const projected = madridDateTimeParts(result)
+    const projectedWallClockUtc = Date.UTC(
+      Number(projected.year),
+      Number(projected.month) - 1,
+      Number(projected.day),
+      Number(projected.hour),
+      Number(projected.minute),
+      Number(projected.second),
+      result.getUTCMilliseconds()
+    )
+    result = new Date(result.getTime() + (targetWallClockUtc - projectedWallClockUtc))
+  }
+
+  return result
+}
+
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
 }
@@ -27,25 +89,52 @@ function isComprobanteDocumento(numeroDocumento: unknown): boolean {
   return String(numeroDocumento ?? '').trim().toUpperCase() === 'COMPROBANTE'
 }
 
-/** Día contable desde fecha_sistema; hora desde hora_cierre TPV (no recepción). */
-function resolveVentaTimestamps(v: {
-  fecha?: string
-  fecha_sistema?: string
-  hora_cierre?: string
-}) {
+/**
+ * Un ticket existente conserva su día contable. Si un ticket nuevo llega con la fecha BDP
+ * exactamente un día atrasada y su hora cuadra con una venta en vivo, se mueve al día actual
+ * conservando la hora/minuto reales del TPV.
+ */
+function resolveVentaTimestamps(
+  v: {
+    fecha?: string
+    fecha_sistema?: string
+    hora_cierre?: string
+  },
+  existingFecha: string | null = null
+) {
+  const receivedAt = new Date()
   const dayInstant =
-    parseIso(v.fecha_sistema) || parseIso(v.fecha) || new Date()
+    parseIso(v.fecha_sistema) || parseIso(v.fecha) || receivedAt
 
-  const horaCierreInstant =
+  const rawCierreInstant =
     parseIso(v.hora_cierre) || parseIso(v.fecha) || dayInstant
 
-  const diaNegocio = ymdMadrid(dayInstant)
+  const sourceDay = ymdMadrid(dayInstant)
+  const receivedDay = ymdMadrid(receivedAt)
+  const previousReceivedDay = addYmdDays(receivedDay, -1)
+  const existingDay = existingFecha ? String(existingFecha).slice(0, 10) : null
+  const lagMs = receivedAt.getTime() - rawCierreInstant.getTime()
+
+  const sourceIsYesterday = sourceDay === previousReceivedDay
+  const existingAlreadyCorrected = existingDay === receivedDay && sourceIsYesterday
+  const newLikelyStaleDay =
+    !existingDay &&
+    sourceIsYesterday &&
+    lagMs >= STALE_DAY_MIN_LAG_MS &&
+    lagMs <= STALE_DAY_MAX_LAG_MS
+  const correctedStaleDay = existingAlreadyCorrected || newLikelyStaleDay
+
+  const diaNegocio = existingDay || (correctedStaleDay ? receivedDay : sourceDay)
+  const horaCierreInstant = correctedStaleDay
+    ? moveMadridTimeToDay(rawCierreInstant, receivedDay)
+    : rawCierreInstant
 
   return {
     fecha: diaNegocio,
     hora_cierre: horaCierreInstant.toISOString(),
     fecha_real: horaCierreInstant.toISOString(),
     diaNegocio,
+    correctedStaleDay,
   }
 }
 
@@ -72,10 +161,24 @@ export async function POST(req: Request) {
         continue
       }
 
-      const ts = resolveVentaTimestamps(v)
+      const { data: existingTicket, error: existingErr } = await supabase
+        .from('tickets_marbella')
+        .select('fecha')
+        .eq('numero_documento', v.numero_documento)
+        .maybeSingle()
+
+      if (existingErr) {
+        console.error(`[BDP Webhook] Error consultando ticket ${v.numero_documento}:`, existingErr.message)
+      }
+
+      const ts = resolveVentaTimestamps(v, existingTicket?.fecha || null)
       const cobroEfectivo = roundMoney(Number(v.cobro_efectivo) || 0)
       const cobroTarjeta = roundMoney(Number(v.cobro_tarjeta) || 0)
       const cobroPendiente = roundMoney(Number(v.cobro_pendiente) || 0)
+
+      if (ts.correctedStaleDay) {
+        console.log(`[BDP Webhook] ${v.numero_documento} | fecha BDP atrasada corregida -> ${ts.diaNegocio}`)
+      }
 
       const { error: errCab } = await supabase.from('tickets_marbella').upsert(
         [
@@ -124,7 +227,7 @@ export async function POST(req: Request) {
 
         const { error: errLin } = await supabase.from('ticket_lines_marbella').upsert(
           lineasTransformadas,
-          { onConflict: 'numero_documento, linea' }
+          { onConflict: 'numero_documento,linea' }
         )
         if (errLin) {
           console.error(`[BDP Webhook] Error líneas de ${v.numero_documento}:`, errLin.message)
