@@ -58,7 +58,7 @@ El resultado debe ser euros por unidad de compra del ingrediente. Si no lo es, e
 
 **Un albarán no cambia el precio de un ingrediente hasta que existen tres cosas: un mapeo versionado entre el nombre del proveedor y el ingrediente, un factor de conversión válido y una confirmación económica explícita de `manager` o `admin`.** Sin una de ellas no se actualiza nada.
 
-Capturar una línea, extraerla con visión artificial o proponer un mapeo nunca actualiza el precio. K1–K3 neutralizan los disparadores heredados que lo hacían al insertar o mapear una línea; la confirmación central que aplicará la fórmula queda fuera de estas fases. Cuando exista, registrará el histórico con el actor, el documento y la versión de mapeo que justifican el cambio.
+Capturar una línea, extraerla con visión artificial o proponer un mapeo nunca actualiza el precio. `apply_receipt_line(...)` aplica la fórmula solo después de una vista previa y una confirmación autorizada; registra el histórico con actor, documento, línea, movimiento y versión de mapeo. Los disparadores heredados que cambiaban precio al insertar o mapear una línea están retirados de este flujo.
 
 ### Precio fijo
 

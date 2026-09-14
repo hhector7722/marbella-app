@@ -152,7 +152,7 @@ albarán (papel o correo) → captura autenticada → evidencia versionada
    → propuesta de mapeo → confirmación manager/admin → precio y stock
 ```
 
-Capturar, extraer o proponer no cambia una magnitud económica. La confirmación es el único punto que podrá escribir precio y el ledger de stock; durante K1–K3 todavía no existe y las rutas heredadas de efectos automáticos están neutralizadas.
+Capturar, extraer o proponer no cambia una magnitud económica. `apply_receipt_line(...)` es la confirmación atómica única para `manager` y `admin`: valida primero y crea el `PURCHASE`, la conciliación y, si procede, el histórico de precio en una sola transacción. Las rutas heredadas de efectos automáticos están retiradas; Docling no puede invocar esta confirmación.
 
 ### Evidencia Docling (K3)
 

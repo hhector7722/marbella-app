@@ -7,7 +7,7 @@ const mappings = [
   { first_name: 'Hernan David', last_name: 'Gutierrez', payroll_name: 'GUTIERREZ HERNAN DAVID' },
   { first_name: 'Juan Jesus', last_name: 'Alvez de Olivera', payroll_name: 'ALVEZ DE OLIVERA JUAN JESUS' },
   { first_name: 'Lucia', last_name: 'Rodero', payroll_name: 'RODERO PEREZ, LUCIA' },
-  { first_name: 'Willy', last_name: 'Ruiz', payroll_name: 'GUILLEM RUIZ HOMET' },
+  { first_name: 'Willy', last_name: 'Ruiz Homet', payroll_name: 'GUILLEM RUIZ HOMET' },
   { first_name: 'Hugo Rubio', last_name: 'Larripa', payroll_name: 'LARRIPA HUGO RUBIO' },
   { first_name: 'Pau Costa', last_name: 'Guirguet', payroll_name: 'ACOSTA PAU GUIRIGUET' },
   { first_name: 'Martí', last_name: 'Esteve', payroll_name: 'ESTEVE ORELL MARTI' },

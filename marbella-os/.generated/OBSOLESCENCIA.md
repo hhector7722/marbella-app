@@ -1,5 +1,5 @@
 <!-- Generado desde 43 documentos de marbella-os/.
-     Huella del origen: 11dc271f88422111
+     Huella del origen: 538be291a46f56cc
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -39,11 +39,11 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-03-07 | `marbella-os/3-ingenieria/dominio/HORAS.md` | 2026-09-07 | 6 meses | propiedad del producto |
 | 2027-03-12 | `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` | 2026-09-12 | 6 meses | propiedad del producto |
 | 2027-03-13 | `marbella-os/3-ingenieria/dominio/COSTE-LABORAL.md` | 2026-09-13 | 6 meses | propiedad del producto |
-| 2027-03-13 | `marbella-os/GLOSARIO.md` | 2026-09-13 | 6 meses | propiedad del producto |
 | 2027-03-14 | `marbella-os/1-producto/ACTORES-Y-ROLES.md` | 2026-09-14 | 6 meses | propiedad del producto |
 | 2027-03-14 | `marbella-os/3-ingenieria/ARQUITECTURA.md` | 2026-09-14 | 6 meses | propiedad del producto |
 | 2027-03-14 | `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` | 2026-09-14 | 6 meses | propiedad del producto |
 | 2027-03-14 | `marbella-os/3-ingenieria/MODELO-DE-DATOS.md` | 2026-09-14 | 6 meses | propiedad del producto |
+| 2027-03-14 | `marbella-os/GLOSARIO.md` | 2026-09-14 | 6 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/PRINCIPIOS.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/VISION.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/2-diseno/DOCUMENTOS-IMPRESOS.md` | 2026-07-29 | 12 meses | propiedad del producto |

@@ -117,10 +117,10 @@ Las tablas de compras, evidencia y stock tienen RLS y permisos de tabla mínimos
 |---|---|---|
 | `staff` y `chef` | Leer el ámbito de captura permitido y crear su propio albarán | Cambiar ingrediente o precio, insertar stock, confirmar/mutar líneas económicas o escribir evidencia directa |
 | `supervisor` | Igual que `staff` para captura | Los mismos efectos económicos: no recibe el privilegio heredado de supervisor |
-| `manager` y `admin` | Leer el conjunto, revisar y preparar propuestas; registrar movimientos manuales autorizados | Borrar documento, evidencia, mapeo versionado o movimiento |
+| `manager` y `admin` | Leer el conjunto, revisar, preparar propuestas y confirmar una recepción mediante `apply_receipt_line(...)` | Borrar documento, evidencia, mapeo versionado o movimiento |
 | Procesos de servidor | Ejecutar RPC cerradas con la clave de servicio: venta, consumo de personal y persistencia de evidencia | Exponer la clave o conceder acceso al navegador |
 
-La función específica `is_purchase_manager_or_admin()` excluye deliberadamente a `supervisor`; no se altera el ayudante global heredado porque gobierna otros dominios. La captura y el mapeo no producen precio ni stock: esos efectos esperan una confirmación explícita de `manager` o `admin`.
+La función específica `is_purchase_manager_or_admin()` excluye deliberadamente a `supervisor`; no se altera el ayudante global heredado porque gobierna otros dominios. La captura y el mapeo no producen precio ni stock. La única confirmación económica expuesta es `apply_receipt_line(...)`, que conserva el contexto autenticado, ejecuta internamente el comando atómico privado y rechaza a cualquier rol distinto de `manager` o `admin`.
 
 El worker Docling entra por una Edge Function con token de worker obligatorio, no por la Data API. La función usa la clave de servicio únicamente en el servidor para firmar una URL efímera y persistir evidencia mediante RPC. La URL no se guarda en errores nuevos.
 

@@ -55,6 +55,14 @@ Las 72 tablas tipadas se agrupan en nueve dominios.
 
 `profiles` conserva además los datos de la ficha de empleado: `dni` (NIF/NIE/Pasaporte), `afiliacion_seguridad_social`, `nacionalidad`, `fecha_nacimiento`, `domicilio`, `phone` y `email`. Son datos introducidos a mano, sin productor que los calcule. Conserva también `camera_fov_notice_acked_at`: el instante en que esa persona confirmó su primer fichaje de entrada viendo el aviso del campo de visión de la cámara. NULL significa que el aviso sigue pendiente. Cancelar el modal no escribe este campo.
 
+#### Nombre operativo frente a nombre de nómina
+
+`profiles.first_name` (con `last_name`) es el **nombre operativo**: cómo se conoce a la persona en el bar y cómo aparece en toda la interfaz (plantilla, horarios, fichajes, selecciones). Puede ser un apodo o el nombre habitual si eso evita confusiones entre personas.
+
+`profiles.payroll_name` es el **nombre de nómina**: el nombre oficial de la gestoría cuando discrepa del operativo. Solo lo consumen el emparejado de liquidaciones y procesos que necesitan la identidad contable. Si es NULL, el emparejado cae al algoritmo estándar sobre nombre y apellidos. Ver [ADR-0006](../4-decisiones/ADR-0006-pipeline-nominas-y-dashboard.md).
+
+No se inventa un campo de «alias» paralelo: el operativo vive en `first_name`; el de gestoría, en `payroll_name`.
+
 #### La duplicación de condiciones laborales
 
 `profiles` conserva columnas que las tablas con vigencia ya cubren: `contracted_hours_weekly`, `is_fixed_salary`, `prefer_stock_hours`, `monthly_cost`, `overtime_cost_per_hour`, `hours_balance`.
@@ -124,11 +132,12 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 
 ### Compras y evidencia documental
 
-`suppliers`, `supplier_item_mappings`, `purchase_invoices`, `purchase_invoice_lines`, `purchase_invoice_attachments`, `purchase_orders`, `purchase_order_items`, `purchase_mapping_versions`, `purchase_order_item_receipt_allocations`, `document_processing_jobs` y `document_processing_job_events`.
+`suppliers`, `supplier_item_mappings`, `purchase_invoices`, `purchase_invoice_lines`, `purchase_invoice_attachments`, `purchase_orders`, `purchase_order_items`, `purchase_mapping_versions`, `purchase_receipt_confirmations`, `purchase_order_item_receipt_allocations`, `document_processing_jobs` y `document_processing_job_events`.
 
 - `purchase_invoices` y sus adjuntos identifican el documento recibido; no constituyen por sí mismos una recepción económica.
 - `purchase_invoice_lines` conserva la línea capturada del documento. Una línea puede repartirse entre varios pedidos; una línea de pedido puede acumular recepciones parciales mediante `purchase_order_item_receipt_allocations`.
 - `purchase_mapping_versions` guarda propuestas y confirmaciones de mapeo sin sobrescribir la versión anterior. La conciliación sólo suma asignaciones confirmadas y no sustituidas.
+- `purchase_receipt_confirmations` audita la confirmación económica única de una línea: actor, idempotencia, cantidades físicas, precio observado y normalizado, bloqueo, movimiento y versión de mapeo. No es un segundo ledger.
 - `document_extractions` y sus tablas hijas son evidencia append-only. `document_processing_jobs` es estado operativo mutable de la cola; sus eventos son append-only.
 - Ni el documento, ni la evidencia, ni una versión de mapeo, ni un movimiento se eliminan para corregir un hecho.
 

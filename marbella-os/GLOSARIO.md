@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-13
+revisado: 2026-09-14
 caducidad: 6 meses
 supersede: —
 ---
@@ -46,6 +46,8 @@ Reglas de uso:
 | **Plantilla** | El conjunto de personas visibles en las vistas operativas del equipo. ⚠ conflicto: también se llama «plantilla» al documento impreso de jornada. En documentación, «plantilla» es siempre el equipo; el documento se llama **hoja de jornada**. | `profiles.visible_in_plantilla` |
 | **Baja** | Fin de la relación laboral de un perfil. Una fecha de baja igual a la de alta indica dato erróneo, no baja real. | `profiles.end_date` |
 | **Ficha de empleado** | Datos personales de una persona en el perfil: documento (NIF/NIE/Pasaporte), afiliación a la Seguridad Social, nacionalidad, fecha de nacimiento, domicilio, teléfono y correo. Se introducen a mano, no se calculan. | `profiles.dni`, `profiles.afiliacion_seguridad_social`, `profiles.nacionalidad`, `profiles.fecha_nacimiento`, `profiles.domicilio` |
+| **Nombre operativo** | Cómo se conoce a la persona en el bar y cómo aparece en la interfaz (plantilla, horarios, fichajes). Puede ser un apodo o el nombre habitual. No es el nombre de la gestoría. | `profiles.first_name`, `profiles.last_name` |
+| **Nombre de nómina** | Nombre oficial de la gestoría cuando discrepa del nombre operativo. Solo para emparejar liquidaciones y procesos contables. | `profiles.payroll_name` |
 
 ---
 
@@ -153,6 +155,8 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Albarán** | Documento de entrega de mercancía. Es el documento que se escanea. | `purchase_invoices` |
 | **Línea de albarán** | Artículo concreto de un albarán, con cantidad y precio. | — |
 | **Mapeo** | Correspondencia aprendida entre el artículo de un proveedor y un ingrediente de Marbella. | `supplier_item_mappings` |
+| **Versión de mapeo** | Propuesta o confirmación inmutable del mapeo, con presentación y factor de conversión. | `purchase_mapping_versions` |
+| **Confirmación de recepción** | Hecho económico atómico que convierte una línea revisada en un `PURCHASE`, conciliación y, si corresponde, cambio de precio trazado. | `purchase_receipt_confirmations`, `apply_receipt_line(...)` |
 | **Ingrediente** | Materia prima con precio y unidades. | `ingredients` |
 | **Precio actual** | Precio de compra vigente de un ingrediente. Fuente de verdad del coste de materia prima. | `ingredients.current_price` |
 | **Precio por unidad de compra** | Modo de precio en el que el importe se refiere a la unidad en que se compra. | `per_purchase_unit` |

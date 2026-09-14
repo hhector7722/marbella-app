@@ -50,6 +50,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0010](./ADR-0010-jerarquia-visual-canonica.md) | Jerarquía visual canónica: primitivas y plantillas de pantalla | Vigente |
 | [0011](./ADR-0011-proyeccion-diaria-hija-y-carry-out.md) | Proyección diaria hija y `carry_out` para lecturas SELECT | Vigente |
 | [0012](./ADR-0012-recepcion-trazable-y-evidencia-documental.md) | Recepción trazable y evidencia documental sin efectos automáticos | Vigente |
+| [0013](./ADR-0013-confirmacion-atomica-de-recepcion.md) | Confirmación atómica de recepción por línea | Vigente |
 
 ## Decisiones tomadas sin registrar
 

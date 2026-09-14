@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-14
 
+- **Nombre operativo vs nombre de nómina.** `profiles.first_name` es cómo se ve a la persona en toda la interfaz; `payroll_name` es solo para gestoría cuando discrepa. Guillem Ruiz Homet pasa a mostrarse como Willy sin tocar el emparejado de nóminas. [ADR-0006](../4-decisiones/ADR-0006-pipeline-nominas-y-dashboard.md).
+
 - **Cámaras: zoom libre en el directo.** En `/camaras` se puede ampliar el vídeo (pinch o rueda, 1×–4×) y panear sin reiniciar el stream. LIVE y el spinner quedan fijos sobre el frame. «Actualizar» usa el Button `secondary` y resetea el zoom.
 
 - **Staff propinas: botes desde el último reparto.** En `/staff/propinas`, «Último reparto» vuelve a papel blanco; el historial flota y cada tramo es su propia card de cristal. En la cabecera, dos botones `primary` abren el mismo modal de desglose que en gestión y guardan los botes. Puede hacerlo quien ya entra en la página.
