@@ -16,6 +16,8 @@ const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
 /** fecha_sistema (default) | tpv (legacy: confiar en v.fecha del bridge) */
 const VENTAS_FECHA_MODO = (process.env.VENTAS_FECHA_MODO || 'fecha_sistema').toLowerCase();
 const TZ_MADRID = 'Europe/Madrid';
+const STALE_DAY_MIN_LAG_MS = 18 * 60 * 60 * 1000;
+const STALE_DAY_MAX_LAG_MS = 40 * 60 * 60 * 1000;
 
 if (!supabaseUrl || !supabaseKey) {
     console.error("❌ ERROR CRÍTICO: No se han encontrado las variables de Supabase en el archivo .env");
@@ -48,31 +50,116 @@ function ymdMadrid(date) {
     }).format(date);
 }
 
+function addYmdDays(ymd, days) {
+    const [year, month, day] = String(ymd).split('-').map(Number);
+    if (![year, month, day].every(Number.isFinite)) return null;
+    const d = new Date(Date.UTC(year, month - 1, day + days));
+    return [
+        d.getUTCFullYear(),
+        String(d.getUTCMonth() + 1).padStart(2, '0'),
+        String(d.getUTCDate()).padStart(2, '0'),
+    ].join('-');
+}
+
+function madridDateTimeParts(date) {
+    const out = {};
+    for (const part of new Intl.DateTimeFormat('en-CA', {
+        timeZone: TZ_MADRID,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23',
+    }).formatToParts(date)) {
+        if (part.type !== 'literal') out[part.type] = part.value;
+    }
+    return out;
+}
+
+/** Conserva la hora local de Madrid, pero la coloca en otro día de calendario. */
+function moveMadridTimeToDay(sourceInstant, targetYmd) {
+    const sourceParts = madridDateTimeParts(sourceInstant);
+    const [year, month, day] = targetYmd.split('-').map(Number);
+    const targetWallClockUtc = Date.UTC(
+        year,
+        month - 1,
+        day,
+        Number(sourceParts.hour),
+        Number(sourceParts.minute),
+        Number(sourceParts.second),
+        sourceInstant.getUTCMilliseconds()
+    );
+
+    let result = new Date(targetWallClockUtc);
+    for (let i = 0; i < 3; i++) {
+        const projected = madridDateTimeParts(result);
+        const projectedWallClockUtc = Date.UTC(
+            Number(projected.year),
+            Number(projected.month) - 1,
+            Number(projected.day),
+            Number(projected.hour),
+            Number(projected.minute),
+            Number(projected.second),
+            result.getUTCMilliseconds()
+        );
+        result = new Date(result.getTime() + (targetWallClockUtc - projectedWallClockUtc));
+    }
+
+    return result;
+}
+
 function webhookAuthorized(req) {
     if (!WEBHOOK_SECRET) return true;
     return req.headers.authorization === `Bearer ${WEBHOOK_SECRET}`;
 }
 
 /**
- * Día contable (fecha) desde Fecha_Sistema — inmune a Fecha TPV desfasada.
- * Hora desde Hora_Cierre del payload — no la hora de recepción en el servidor.
+ * Regla de fecha:
+ * - Un ticket ya existente conserva siempre su día contable.
+ * - Un ticket nuevo cuya fecha BDP sigue exactamente en ayer se considera de hoy solo si
+ *   su hora está cerca de la recepción (caso caja no cerrada al cambiar de día).
+ * - La hora real conserva la hora/minuto del TPV y solo corrige el día de calendario.
  */
-function resolveVentaTimestamps(v) {
+function resolveVentaTimestamps(v, existingFecha = null) {
+    const receivedAt = new Date();
     const dayInstant =
         VENTAS_FECHA_MODO === 'tpv'
-            ? (parseIso(v.fecha) || parseIso(v.fecha_sistema) || new Date())
-            : (parseIso(v.fecha_sistema) || parseIso(v.fecha) || new Date());
+            ? (parseIso(v.fecha) || parseIso(v.fecha_sistema) || receivedAt)
+            : (parseIso(v.fecha_sistema) || parseIso(v.fecha) || receivedAt);
 
-    const horaCierreInstant =
+    const rawCierreInstant =
         parseIso(v.hora_cierre) || parseIso(v.fecha) || dayInstant;
 
-    const diaNegocio = ymdMadrid(dayInstant);
+    const sourceDay = ymdMadrid(dayInstant);
+    const receivedDay = ymdMadrid(receivedAt);
+    const previousReceivedDay = addYmdDays(receivedDay, -1);
+    const existingDay = existingFecha ? String(existingFecha).slice(0, 10) : null;
+    const lagMs = receivedAt.getTime() - rawCierreInstant.getTime();
+
+    const sourceIsYesterday = sourceDay === previousReceivedDay;
+    const existingAlreadyCorrected =
+        existingDay === receivedDay && sourceIsYesterday;
+    const newLikelyStaleDay =
+        !existingDay &&
+        sourceIsYesterday &&
+        lagMs >= STALE_DAY_MIN_LAG_MS &&
+        lagMs <= STALE_DAY_MAX_LAG_MS;
+    const correctedStaleDay = existingAlreadyCorrected || newLikelyStaleDay;
+
+    const diaNegocio =
+        existingDay || (correctedStaleDay ? receivedDay : sourceDay);
+    const horaCierreInstant = correctedStaleDay
+        ? moveMadridTimeToDay(rawCierreInstant, receivedDay)
+        : rawCierreInstant;
 
     return {
         fecha: diaNegocio,
         hora_cierre: horaCierreInstant.toISOString(),
         fecha_real: horaCierreInstant.toISOString(),
         diaNegocio,
+        correctedStaleDay,
     };
 }
 
@@ -114,13 +201,23 @@ app.post('/api/ventas', async (req, res) => {
                 continue;
             }
 
-            const ts = resolveVentaTimestamps(v);
+            const { data: existingTicket, error: existingErr } = await supabase
+                .from('tickets_marbella')
+                .select('fecha')
+                .eq('numero_documento', v.numero_documento)
+                .maybeSingle();
+
+            if (existingErr) {
+                console.error(`[VENTAS] Error consultando ticket ${v.numero_documento}:`, existingErr.message);
+            }
+
+            const ts = resolveVentaTimestamps(v, existingTicket?.fecha || null);
             const cobroEfectivo = roundMoney(v.cobro_efectivo);
             const cobroTarjeta = roundMoney(v.cobro_tarjeta);
             const cobroPendiente = roundMoney(v.cobro_pendiente);
 
             console.log(
-                `[VENTAS] ${v.numero_documento} | modo=${VENTAS_FECHA_MODO} | ef=${cobroEfectivo} | tj=${cobroTarjeta} | pend=${cobroPendiente} | dia=${ts.diaNegocio}`
+                `[VENTAS] ${v.numero_documento} | modo=${VENTAS_FECHA_MODO} | ef=${cobroEfectivo} | tj=${cobroTarjeta} | pend=${cobroPendiente} | dia=${ts.diaNegocio}${ts.correctedStaleDay ? ' | fecha-corregida=1' : ''}`
             );
 
             const { error: errCab } = await supabase.from('tickets_marbella').upsert([{
@@ -155,7 +252,7 @@ app.post('/api/ventas', async (req, res) => {
 
                 const { error: errLin } = await supabase.from('ticket_lines_marbella').upsert(
                     lineasTransformadas,
-                    { onConflict: 'numero_documento, linea' }
+                    { onConflict: 'numero_documento,linea' }
                 );
 
                 if (errLin) console.error(`Error líneas de ${v.numero_documento}:`, errLin.message);
