@@ -107,7 +107,7 @@ export default function Navbar() {
                             className="absolute left-1/2 top-1/2 z-20 grid h-[44px] w-[56px] -translate-x-1/2 -translate-y-1/2 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
                         >
                             <img
-                                src="/icons/live-icon.png"
+                                src="/icons/live-icon.png?v=250be3aa"
                                 alt="LIVE"
                                 width="48"
                                 height="24"
