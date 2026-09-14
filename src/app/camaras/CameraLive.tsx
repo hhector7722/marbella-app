@@ -8,13 +8,13 @@ export default function CameraLive() {
   return (
     <main className="min-h-screen px-2 pb-4 pt-header-safe md:px-3">
       <div className="mx-auto flex w-full max-w-none flex-col items-center">
-        <header className="flex w-full items-center justify-center py-1.5" aria-label="Cámara en directo">
+        <header className="flex h-[58px] w-full items-start justify-center pt-0.5" aria-label="Cámara en directo">
           <Image
             src="/icons/live.png"
             alt="LIVE"
-            width={64}
-            height={14}
-            className="h-auto w-[56px] object-contain sm:w-[64px]"
+            width={52}
+            height={12}
+            className="h-auto w-[44px] object-contain sm:w-[52px]"
             priority
           />
         </header>
