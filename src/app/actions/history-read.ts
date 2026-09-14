@@ -32,6 +32,14 @@ async function authorizeEmployeeHistoryRead(targetUserId: string) {
   return { ok: true as const, supabase };
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isMissingProjectionError(message: string): boolean {
+  return message.startsWith('Proyección v2 ausente para la semana ');
+}
+
 export async function getEmployeeHistoryMonth(input: {
   userId: string;
   filterYear: number;
@@ -46,7 +54,7 @@ export async function getEmployeeHistoryMonth(input: {
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : String(e),
+      error: errorMessage(e),
     };
   }
 }
@@ -79,7 +87,7 @@ export async function getWeekDetailDto(input: {
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : String(e),
+      error: errorMessage(e),
     };
   }
 }
@@ -105,13 +113,13 @@ export async function getEmployeeHistoryWeek(input: {
   const auth = await authorizeEmployeeHistoryRead(input.userId);
   if (!auth.ok) return { success: false, error: auth.error };
 
-  try {
-    const monday = input.weekStart.split('T')[0]!;
-    const [y, m] = monday.split('-').map(Number);
-    if (!y || !m) {
-      return { success: false, error: 'weekStart inválido' };
-    }
+  const monday = input.weekStart.split('T')[0]!;
+  const [y, m] = monday.split('-').map(Number);
+  if (!y || !m) {
+    return { success: false, error: 'weekStart inválido' };
+  }
 
+  try {
     const [{ data: profile }, week] = await Promise.all([
       auth.supabase
         .from('profiles')
@@ -135,9 +143,49 @@ export async function getEmployeeHistoryWeek(input: {
       filterMonth: m - 1,
     };
   } catch (e) {
+    const message = errorMessage(e);
+
+    // El lector de una sola semana es estricto y exige snapshot. Para semanas
+    // sin proyección reutilizamos el lector mensual, que ya distingue el caso
+    // normal "sin snapshot y sin fichajes" (semana vacía) del caso realmente
+    // inconsistente "hay fichajes pero falta proyección" (error visible).
+    if (isMissingProjectionError(message)) {
+      try {
+        const [{ data: profile }, weeks] = await Promise.all([
+          auth.supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', input.userId)
+            .maybeSingle(),
+          buildEmployeeHistoryMonthFromEngine(auth.supabase, {
+            userId: input.userId,
+            filterYear: y,
+            filterMonth: m - 1,
+          }),
+        ]);
+        const week = weeks.find((candidate) => candidate.startDate.split('T')[0] === monday);
+        if (week) {
+          const workerName =
+            `${profile?.first_name ?? ''} ${profile?.last_name ?? ''}`.trim() || '—';
+          return {
+            success: true,
+            workerName,
+            week,
+            filterYear: y,
+            filterMonth: m - 1,
+          };
+        }
+      } catch (fallbackError) {
+        return {
+          success: false,
+          error: errorMessage(fallbackError),
+        };
+      }
+    }
+
     return {
       success: false,
-      error: e instanceof Error ? e.message : String(e),
+      error: message,
     };
   }
 }
@@ -160,7 +208,7 @@ export async function getEmployeeHistoryRange(input: {
   } catch (e) {
     return {
       success: false,
-      error: e instanceof Error ? e.message : String(e),
+      error: errorMessage(e),
     };
   }
 }
