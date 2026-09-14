@@ -104,14 +104,14 @@ export default function Navbar() {
                             aria-label="Abrir cámaras"
                             title="Cámara"
                             onClick={() => router.push('/camaras')}
-                            className="absolute left-1/2 top-1/2 z-20 grid h-[44px] w-[56px] -translate-x-1/2 -translate-y-1/2 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
+                            className="absolute left-1/2 top-1/2 z-20 grid h-[44px] w-[64px] -translate-x-1/2 -translate-y-1/2 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
                         >
                             <img
-                                src="/icons/live-icon.png?v=7663216c"
+                                src="/icons/live-icon.png?v=header-300x104"
                                 alt="LIVE"
-                                width="48"
-                                height="24"
-                                className="block h-auto w-[48px] max-w-none object-contain"
+                                width="60"
+                                height="21"
+                                className="block h-auto w-[60px] max-w-none object-contain"
                             />
                         </button>
                     ) : null}
