@@ -6,6 +6,7 @@ import {
   multiplyExact,
   parseExactDecimal,
   percentageMultiplier,
+  roundExactToScale,
   toFiniteDecimalString,
   withinExactTolerance,
 } from './exact-decimal.ts'
@@ -39,6 +40,17 @@ test('una división no terminante nunca se redondea silenciosamente', () => {
   const quotient = divideExact(decimal('10'), decimal('3'))
   assert.ok(quotient)
   assert.equal(toFiniteDecimalString(quotient), null)
+})
+
+test('el redondeo explícito replica la frontera numeric(18,8)', () => {
+  const panabad = divideExact(divideExact(decimal('167.95'), decimal('8'))!, decimal('60'))
+  assert.ok(panabad)
+  assert.equal(toFiniteDecimalString(panabad), null)
+  assert.equal(roundExactToScale(panabad, 8), '0.34989583')
+
+  const twoThirds = divideExact(decimal('2'), decimal('3'))
+  assert.ok(twoThirds)
+  assert.equal(roundExactToScale(twoThirds, 8), '0.66666667')
 })
 
 test('suma exacta sin error binario', () => {
