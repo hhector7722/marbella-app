@@ -1,0 +1,44 @@
+name: K5 Interpretation
+
+on:
+  push:
+    branches:
+      - 'k5-*'
+    paths:
+      - 'src/lib/albaranes/k5/**'
+      - 'src/lib/albaranes/supplier-profiles/**'
+      - 'src/app/dashboard/albaranes/interpretation-actions.ts'
+      - 'src/app/dashboard/albaranes/receipt-actions.ts'
+      - 'src/components/albaranes/InterpretationProposalPanel.tsx'
+      - 'scripts/k5/**'
+      - 'supabase/migrations/*k5*'
+      - '.github/workflows/k5.yml'
+  pull_request:
+    paths:
+      - 'src/lib/albaranes/k5/**'
+      - 'src/lib/albaranes/supplier-profiles/**'
+      - 'src/app/dashboard/albaranes/interpretation-actions.ts'
+      - 'src/app/dashboard/albaranes/receipt-actions.ts'
+      - 'scripts/k5/**'
+      - 'supabase/migrations/*k5*'
+
+jobs:
+  contracts:
+    name: K5 deterministic contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Exact arithmetic and normalizer
+        run: >-
+          node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test
+          src/lib/albaranes/k5/exact-decimal.test.ts
+          src/lib/albaranes/k5/normalizer.test.ts
+      - name: Supplier profiles
+        run: >-
+          node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test
+          src/lib/albaranes/supplier-profiles/supplier-profiles.test.ts
+      - name: K5/K4 safety contract
+        run: node --test scripts/k5/k5-interpretation-contract.test.cjs
