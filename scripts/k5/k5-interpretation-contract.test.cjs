@@ -8,6 +8,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8')
 
 const migration = read('supabase/migrations/20260915194500_k5_interpretation_proposals.sql')
 const profileMissingMigration = read('supabase/migrations/20260915194600_k5_optional_profile_guard.sql')
+const supersessionMigration = read('supabase/migrations/20260915194700_k5_supersession_chain.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const normalizer = read('src/lib/albaranes/k5/normalizer.ts')
@@ -23,6 +24,13 @@ test('K5 persiste propuestas append-only con extracción y versiones explícitas
   assert.match(profileMissingMigration, /ALTER COLUMN supplier_profile_id DROP NOT NULL/)
   assert.match(profileMissingMigration, /k5_profile_triplet_consistent/)
   assert.match(profileMissingMigration, /k5_ready_requires_profile/)
+})
+
+test('recalcular crea un nuevo hecho y la supersesión no puede bifurcarse', () => {
+  assert.match(supersessionMigration, /DROP INDEX IF EXISTS public\.purchase_interpretation_proposals_input_fingerprint_uidx/)
+  assert.match(supersessionMigration, /purchase_interpretation_proposals_single_successor_uidx/)
+  assert.match(interpretationActions, /\.from\('purchase_interpretation_proposals'\)[\s\S]*\.insert\(payloads\)/)
+  assert.doesNotMatch(interpretationActions, /existingByFingerprint|const missing = payloads/)
 })
 
 test('RLS bloquea anon y restringe propuestas a manager/admin', () => {
