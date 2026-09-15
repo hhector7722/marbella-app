@@ -9,6 +9,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8')
 const migration = read('supabase/migrations/20260915194500_k5_interpretation_proposals.sql')
 const profileMissingMigration = read('supabase/migrations/20260915194600_k5_optional_profile_guard.sql')
 const supersessionMigration = read('supabase/migrations/20260915194700_k5_supersession_chain.sql')
+const idempotentRetryMigration = read('supabase/migrations/20260915194800_k5_idempotent_receipt_retry.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const normalizer = read('src/lib/albaranes/k5/normalizer.ts')
@@ -63,6 +64,14 @@ test('K4 acepta proposal opcional y la revalida antes del efecto económico', ()
   assert.match(migration, /private\.apply_receipt_line\([\s\S]*true[\s\S]*physical_quantity/)
   assert.match(migration, /purchase_receipt_interpretation_links/)
   assert.match(receiptActions, /p_interpretation_proposal_id: proposalId/)
+})
+
+test('reintento K4 con proposal conserva idempotencia y exige el mismo vínculo K5', () => {
+  assert.match(idempotentRetryMigration, /purchase_receipt_confirmations/)
+  assert.match(idempotentRetryMigration, /purchase_receipt_interpretation_links/)
+  assert.match(idempotentRetryMigration, /interpretation_proposal_id IS DISTINCT FROM p_interpretation_proposal_id/)
+  assert.match(idempotentRetryMigration, /proposal_validated/)
+  assert.match(idempotentRetryMigration, /private\.apply_receipt_line_with_proposal_idempotent/)
 })
 
 test('normalizador no contiene fallbacks económicos de factor 1 ni latest', () => {
