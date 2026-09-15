@@ -7,6 +7,10 @@ import { isMasterDashboardUser } from '@/lib/master-dashboard';
 export const dynamic = 'force-dynamic';
 const CAMERA_ID = 'reolink-duo-3';
 const APP_VIEWER_STALE_MS = 20_000;
+const VIEWER_NAMES: Record<string, string> = {
+  'hhector7722@gmail.com': 'Héctor',
+  'fogotorrat@gmail.com': 'Ramón',
+};
 
 export async function GET() {
   const supabase = await createClient();
@@ -39,7 +43,7 @@ export async function GET() {
       .limit(200),
     admin
       .from('camera_app_viewer_sessions')
-      .select('session_id, started_at, ended_at, last_seen_at')
+      .select('session_id, started_at, ended_at, viewer_email')
       .eq('camera_id', CAMERA_ID)
       .order('started_at', { ascending: false })
       .limit(200),
@@ -54,14 +58,19 @@ export async function GET() {
     started_at: row.started_at,
     ended_at: row.ended_at,
     source: 'reolink' as const,
+    viewer: 'Usuario Reolink',
   }));
 
-  const appRecords = (appResult.data ?? []).map((row) => ({
-    id: `app-${row.session_id}`,
-    started_at: row.started_at,
-    ended_at: row.ended_at,
-    source: 'marbella_app' as const,
-  }));
+  const appRecords = (appResult.data ?? []).map((row) => {
+    const email = row.viewer_email?.trim().toLowerCase() ?? '';
+    return {
+      id: `app-${row.session_id}`,
+      started_at: row.started_at,
+      ended_at: row.ended_at,
+      source: 'marbella_app' as const,
+      viewer: VIEWER_NAMES[email] ?? 'Usuario Marbella App',
+    };
+  });
 
   const records = [...externalRecords, ...appRecords]
     .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
