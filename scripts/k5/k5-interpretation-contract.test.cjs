@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '../..')
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8')
 
 const migration = read('supabase/migrations/20260915194500_k5_interpretation_proposals.sql')
-const profileMissingMigration = read('supabase/migrations/20260915194600_k5_profile_missing_is_review.sql')
+const profileMissingMigration = read('supabase/migrations/20260915194600_k5_optional_profile_guard.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const normalizer = read('src/lib/albaranes/k5/normalizer.ts')
@@ -20,7 +20,9 @@ test('K5 persiste propuestas append-only con extracción y versiones explícitas
   assert.match(migration, /normalizer_version text NOT NULL/)
   assert.match(migration, /supersedes_proposal_id uuid/)
   assert.match(migration, /purchase_interpretation_proposals_append_only/)
-  assert.match(profileMissingMigration, /supplier_profile_missing|DROP NOT NULL|profile_metadata_all_or_none/)
+  assert.match(profileMissingMigration, /ALTER COLUMN supplier_profile_id DROP NOT NULL/)
+  assert.match(profileMissingMigration, /k5_profile_triplet_consistent/)
+  assert.match(profileMissingMigration, /k5_ready_requires_profile/)
 })
 
 test('RLS bloquea anon y restringe propuestas a manager/admin', () => {
