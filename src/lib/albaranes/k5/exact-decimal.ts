@@ -11,35 +11,47 @@ export type ExactRatio = Readonly<{
   denominator: bigint
 }>
 
+const BI_ZERO = BigInt(0)
+const BI_ONE = BigInt(1)
+const BI_TWO = BigInt(2)
+const BI_FIVE = BigInt(5)
+const BI_TEN = BigInt(10)
+
 function absBigInt(value: bigint): bigint {
-  return value < 0n ? -value : value
+  return value < BI_ZERO ? -value : value
 }
 
 function gcd(a: bigint, b: bigint): bigint {
   let x = absBigInt(a)
   let y = absBigInt(b)
-  while (y !== 0n) {
+  while (y !== BI_ZERO) {
     const next = x % y
     x = y
     y = next
   }
-  return x === 0n ? 1n : x
+  return x === BI_ZERO ? BI_ONE : x
 }
 
-export function ratio(numerator: bigint, denominator: bigint = 1n): ExactRatio {
-  if (denominator === 0n) throw new Error('División por cero')
-  const sign = denominator < 0n ? -1n : 1n
+export function ratio(numerator: bigint, denominator: bigint = BI_ONE): ExactRatio {
+  if (denominator === BI_ZERO) throw new Error('División por cero')
+  const sign = denominator < BI_ZERO ? -BI_ONE : BI_ONE
   const n = numerator * sign
   const d = absBigInt(denominator)
   const common = gcd(n, d)
   return { numerator: n / common, denominator: d / common }
 }
 
+function powBigInt(base: bigint, exponent: number): bigint {
+  let result = BI_ONE
+  for (let index = 0; index < exponent; index += 1) result *= base
+  return result
+}
+
 function pow10(scale: number): bigint {
   if (!Number.isInteger(scale) || scale < 0 || scale > 60) {
     throw new Error('Escala decimal inválida')
   }
-  return 10n ** BigInt(scale)
+  return powBigInt(BI_TEN, scale)
 }
 
 /**
@@ -76,7 +88,7 @@ export function parseExactDecimal(value: string | bigint | null | undefined): Ex
   const unsigned = normalized.replace(/^[-+]/, '')
   const [whole, fraction = ''] = unsigned.split('.')
   const digits = `${whole}${fraction}`.replace(/^0+(?=\d)/, '') || '0'
-  const n = BigInt(digits) * (negative ? -1n : 1n)
+  const n = BigInt(digits) * (negative ? -BI_ONE : BI_ONE)
   return ratio(n, pow10(fraction.length))
 }
 
@@ -99,7 +111,7 @@ export function multiplyExact(a: ExactRatio, b: ExactRatio): ExactRatio {
 }
 
 export function divideExact(a: ExactRatio, b: ExactRatio): ExactRatio | null {
-  if (b.numerator === 0n) return null
+  if (b.numerator === BI_ZERO) return null
   return ratio(a.numerator * b.denominator, a.denominator * b.numerator)
 }
 
@@ -112,7 +124,7 @@ export function compareExact(a: ExactRatio, b: ExactRatio): -1 | 0 | 1 {
 }
 
 export function isPositiveExact(value: ExactRatio | null | undefined): value is ExactRatio {
-  return value != null && value.numerator > 0n
+  return value != null && value.numerator > BI_ZERO
 }
 
 /** Devuelve null si el racional no tiene representación decimal finita. */
@@ -120,20 +132,20 @@ export function toFiniteDecimalString(value: ExactRatio): string | null {
   let denominator = value.denominator
   let twos = 0
   let fives = 0
-  while (denominator % 2n === 0n) {
-    denominator /= 2n
+  while (denominator % BI_TWO === BI_ZERO) {
+    denominator /= BI_TWO
     twos += 1
   }
-  while (denominator % 5n === 0n) {
-    denominator /= 5n
+  while (denominator % BI_FIVE === BI_ZERO) {
+    denominator /= BI_FIVE
     fives += 1
   }
-  if (denominator !== 1n) return null
+  if (denominator !== BI_ONE) return null
 
   const scale = Math.max(twos, fives)
-  const multiplier = (2n ** BigInt(scale - twos)) * (5n ** BigInt(scale - fives))
+  const multiplier = powBigInt(BI_TWO, scale - twos) * powBigInt(BI_FIVE, scale - fives)
   const scaled = value.numerator * multiplier
-  const negative = scaled < 0n
+  const negative = scaled < BI_ZERO
   const digits = absBigInt(scaled).toString().padStart(scale + 1, '0')
   if (scale === 0) return `${negative ? '-' : ''}${digits}`
 
@@ -148,7 +160,7 @@ export function exactDecimalString(value: string | bigint | null | undefined): s
 }
 
 export function percentageMultiplier(discountPercent: ExactRatio): ExactRatio | null {
-  const hundred = ratio(100n)
+  const hundred = ratio(BigInt(100))
   return divideExact(subtractExact(hundred, discountPercent), hundred)
 }
 
