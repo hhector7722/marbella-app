@@ -1,0 +1,10 @@
+# Runtime validado en el canary real de Marbella App (CT 105, Debian 12, Python 3.11).
+# No relajar estos pins sin repetir el canary scanner -> Docling -> evidencia.
+docling-serve==1.21.0
+docling==2.96.1
+docling-core==2.78.0
+docling-ibm-models==3.13.2
+docling-jobkit==1.20.1
+docling-mcp==2.0.1
+docling-parse==6.2.0
+docling-slim==2.96.1

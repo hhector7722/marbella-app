@@ -2,6 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
+import { compareExact, parseExactDecimal } from '@/lib/albaranes/k5/exact-decimal'
+import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
+import { K5_NORMALIZER_VERSION, proposalInputFingerprint } from '@/lib/albaranes/k5/normalizer'
 
 export type ReceiptAllocationInput = {
   purchase_order_item_id: string
@@ -32,6 +35,8 @@ export type ReceiptPreview = {
   price_locked: boolean
   price_changed: boolean
   allocation_count: number
+  interpretation_proposal_id?: string
+  proposal_validated?: boolean
 }
 
 export type ReceiptApplyResult =
@@ -70,6 +75,189 @@ function text(value: unknown): string {
   return String(value ?? '').trim()
 }
 
+function sameExactDecimal(left: unknown, right: unknown): boolean {
+  const a = parseExactDecimal(text(left))
+  const b = parseExactDecimal(text(right))
+  return Boolean(a && b && compareExact(a, b) === 0)
+}
+
+async function interpretationProposalIdForLine(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  lineId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('purchase_invoice_lines')
+    .select('interpretation_proposal_id')
+    .eq('id', lineId)
+    .maybeSingle()
+  if (error) throw new Error('No se pudo comprobar la propuesta de interpretación de la línea.')
+  return text(data?.interpretation_proposal_id) || null
+}
+
+type K5MappingRevision = {
+  id: string
+  status: 'ready_for_review' | 'needs_review'
+}
+
+async function supersedeK5ProposalWithMapping(params: {
+  supabase: Awaited<ReturnType<typeof createClient>>
+  userId: string
+  line: Record<string, unknown>
+  mappingVersionId: string
+  ingredientId: string
+  conversionFactor: number
+  lineBillingUnit: string
+  lineContentQty: number
+  lineContentUnit: string
+}): Promise<K5MappingRevision | null> {
+  const currentProposalId = text(params.line.interpretation_proposal_id)
+  if (!currentProposalId) return null
+
+  const { data: current, error: currentError } = await params.supabase
+    .from('purchase_interpretation_proposals')
+    .select('*')
+    .eq('id', currentProposalId)
+    .maybeSingle()
+  if (currentError || !current) throw new Error('No se pudo leer la propuesta K5 vinculada a la línea.')
+
+  const { data: successor, error: successorError } = await params.supabase
+    .from('purchase_interpretation_proposals')
+    .select('id,mapping_version_id,status')
+    .eq('supersedes_proposal_id', currentProposalId)
+    .limit(1)
+    .maybeSingle()
+  if (successorError) throw new Error('No se pudo comprobar si la propuesta K5 ya fue revisada.')
+  if (successor?.id) {
+    if (text(successor.mapping_version_id) !== params.mappingVersionId) {
+      throw new Error('La propuesta ya tiene una revisión posterior distinta. Vuelve a abrir el albarán.')
+    }
+    const successorStatus = text(successor.status)
+    if (successorStatus !== 'ready_for_review' && successorStatus !== 'needs_review') {
+      throw new Error('La revisión K5 existente no tiene un estado confirmable de mapeo.')
+    }
+    return { id: text(successor.id), status: successorStatus }
+  }
+
+  const { data: ingredient, error: ingredientError } = await params.supabase
+    .from('ingredients')
+    .select('purchase_unit,base_unit')
+    .eq('id', params.ingredientId)
+    .maybeSingle()
+  if (ingredientError || !ingredient?.purchase_unit || !ingredient?.base_unit) {
+    throw new Error('El ingrediente no tiene unidades canónicas completas.')
+  }
+
+  const lineQuantity = text(current.line_quantity) || text(params.line.quantity)
+  const observedUnitPrice = text(current.observed_unit_price) || text(params.line.unit_price)
+  const snapshot = buildExactMappedSnapshot({
+    lineQuantity,
+    observedUnitPrice,
+    mapping: {
+      conversionFactor: String(params.conversionFactor),
+      lineContentQty: String(params.lineContentQty),
+      lineContentUnit: params.lineContentUnit,
+      purchaseUnit: text(ingredient.purchase_unit),
+      baseUnit: text(ingredient.base_unit),
+    },
+  })
+
+  const previousReasons: string[] = Array.isArray(current.review_reasons)
+    ? (current.review_reasons as unknown[]).map(text).filter(Boolean)
+    : []
+  const semanticReasons = previousReasons.filter((reason: string) =>
+    reason !== 'mapping_missing'
+    && reason !== 'mapping_presentation_incompatible'
+    && reason !== 'price_not_normalizable'
+  )
+  const reviewReasons: string[] = snapshot
+    ? semanticReasons
+    : [...semanticReasons, 'mapping_presentation_incompatible']
+  const status: K5MappingRevision['status'] = snapshot && reviewReasons.length === 0
+    ? 'ready_for_review'
+    : 'needs_review'
+
+  const normalized = snapshot
+    ? {
+        physical_quantity: snapshot.physicalQuantity,
+        base_unit: snapshot.baseUnit,
+        purchase_quantity: snapshot.purchaseQuantity,
+        purchase_unit: snapshot.purchaseUnit,
+        normalized_unit_price: snapshot.normalizedUnitPrice,
+      }
+    : {}
+
+  const fingerprint = proposalInputFingerprint({
+    previous_proposal_id: currentProposalId,
+    mapping_version_id: params.mappingVersionId,
+    ingredient_id: params.ingredientId,
+    normalized,
+    status,
+    review_reasons: reviewReasons,
+  })
+
+  const { data: existing, error: existingError } = await params.supabase
+    .from('purchase_interpretation_proposals')
+    .select('id,status')
+    .eq('input_fingerprint', fingerprint)
+    .maybeSingle()
+  if (existingError) throw new Error('No se pudo comprobar la revisión K5 del mapeo.')
+  if (existing?.id) {
+    const existingStatus = text(existing.status)
+    if (existingStatus !== 'ready_for_review' && existingStatus !== 'needs_review') {
+      throw new Error('La revisión K5 idempotente tiene un estado inesperado.')
+    }
+    return { id: text(existing.id), status: existingStatus }
+  }
+
+  const { data: inserted, error: insertError } = await params.supabase
+    .from('purchase_interpretation_proposals')
+    .insert({
+      proposal_set_id: crypto.randomUUID(),
+      purchase_invoice_id: current.purchase_invoice_id,
+      document_extraction_id: current.document_extraction_id,
+      supplier_id: current.supplier_id,
+      supplier_profile_id: current.supplier_profile_id,
+      supplier_profile_version: current.supplier_profile_version,
+      supplier_profile_hash: current.supplier_profile_hash,
+      normalizer_version: text(current.normalizer_version) || K5_NORMALIZER_VERSION,
+      source_file_hash: current.source_file_hash,
+      input_fingerprint: fingerprint,
+      source_table_index: current.source_table_index,
+      source_row_index: current.source_row_index,
+      source_item_name: current.source_item_name,
+      mapping_version_id: params.mappingVersionId,
+      ingredient_id: params.ingredientId,
+      status,
+      observed: current.observed ?? {},
+      interpreted: current.interpreted ?? {},
+      normalized,
+      pricing: current.pricing ?? {},
+      proposed_allocations: current.proposed_allocations ?? [],
+      review_reasons: reviewReasons,
+      warnings: current.warnings ?? [],
+      line_quantity: lineQuantity,
+      line_unit: params.lineBillingUnit,
+      observed_unit_price: observedUnitPrice,
+      line_total: current.line_total,
+      physical_quantity: snapshot?.physicalQuantity ?? null,
+      base_unit: snapshot?.baseUnit ?? null,
+      purchase_quantity: snapshot?.purchaseQuantity ?? null,
+      purchase_unit: snapshot?.purchaseUnit ?? null,
+      normalized_unit_price: snapshot?.normalizedUnitPrice ?? null,
+      supersedes_proposal_id: currentProposalId,
+      created_by: params.userId,
+      provenance: {
+        ...(current.provenance && typeof current.provenance === 'object' ? current.provenance : {}),
+        revision: 'human_mapping_selection',
+        economic_effects: false,
+      },
+    })
+    .select('id,status')
+    .maybeSingle()
+  if (insertError || !inserted?.id) throw new Error('No se pudo versionar la propuesta K5 con el mapeo revisado.')
+  return { id: text(inserted.id), status }
+}
+
 /**
  * Prepara una propuesta de mapeo immutable. No toca precio, stock, histórico
  * ni conciliación: esos hechos pertenecen exclusivamente a apply_receipt_line.
@@ -84,7 +272,7 @@ export async function saveReceiptMappingProposalAction(params: {
   lineContentUnit: string
 }): Promise<{ success: true; mappingVersionId: string } | { success: false; message: string }> {
   const gate = await requirePurchaseManager()
-  if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: gate.message }
 
   const invoiceId = text(params?.invoiceId)
   const lineId = text(params?.lineId)
@@ -102,7 +290,7 @@ export async function saveReceiptMappingProposalAction(params: {
 
   const { data: line, error: lineError } = await gate.supabase
     .from('purchase_invoice_lines')
-    .select('id, invoice_id, original_name, unit_price')
+    .select('id,invoice_id,original_name,quantity,unit_price,total_price,line_unit,interpretation_proposal_id')
     .eq('id', lineId)
     .maybeSingle()
   if (lineError || !line || line.invoice_id !== invoiceId || !text(line.original_name)) {
@@ -138,25 +326,33 @@ export async function saveReceiptMappingProposalAction(params: {
     .maybeSingle()
   if (legacyError) return { success: false, message: 'No se pudo guardar la propuesta de producto del proveedor.' }
 
-  const { data: latest, error: latestError } = await gate.supabase
+  // No se selecciona "latest". La versión activa es la hoja del grafo de
+  // supersesión; si hay más de una hoja, la ambigüedad se detiene.
+  const { data: versionRows, error: versionError } = await gate.supabase
     .from('purchase_mapping_versions')
-    .select('id, ingredient_id, conversion_factor, line_billing_unit, line_content_qty, line_content_unit')
+    .select('id,ingredient_id,conversion_factor,line_billing_unit,line_content_qty,line_content_unit,status,supersedes_id')
     .eq('supplier_id', supplierId)
     .ilike('supplier_item_name', line.original_name)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  if (latestError) return { success: false, message: 'No se pudo leer la versión actual de mapeo.' }
+  if (versionError) return { success: false, message: 'No se pudieron leer las versiones de mapeo.' }
+
+  const versions = versionRows ?? []
+  const superseded = new Set(versions.map((row) => text(row.supersedes_id)).filter(Boolean))
+  const active = versions.filter((row) => !superseded.has(text(row.id)))
+  if (active.length > 1) {
+    return { success: false, message: 'Hay más de una versión activa de mapeo. Requiere revisión antes de continuar.' }
+  }
+  const current = active[0] ?? null
 
   const unchanged =
-    latest &&
-    latest.ingredient_id === ingredientId &&
-    Number(latest.conversion_factor) === conversionFactor &&
-    text(latest.line_billing_unit).toLowerCase() === lineBillingUnit.toLowerCase() &&
-    Number(latest.line_content_qty) === lineContentQty &&
-    text(latest.line_content_unit).toLowerCase() === lineContentUnit.toLowerCase()
+    current &&
+    current.status !== 'rejected' &&
+    current.ingredient_id === ingredientId &&
+    sameExactDecimal(current.conversion_factor, conversionFactor) &&
+    text(current.line_billing_unit).toLowerCase() === lineBillingUnit.toLowerCase() &&
+    sameExactDecimal(current.line_content_qty, lineContentQty) &&
+    text(current.line_content_unit).toLowerCase() === lineContentUnit.toLowerCase()
 
-  let mappingVersionId = latest?.id ?? null
+  let mappingVersionId = current?.id ?? null
   if (!unchanged) {
     const { data: inserted, error: insertError } = await gate.supabase
       .from('purchase_mapping_versions')
@@ -170,7 +366,7 @@ export async function saveReceiptMappingProposalAction(params: {
         line_content_qty: lineContentQty,
         line_content_unit: lineContentUnit,
         status: 'proposed',
-        supersedes_id: latest?.id ?? null,
+        supersedes_id: current?.id ?? null,
         idempotency_key: `mapping-proposal:${lineId}:${crypto.randomUUID()}`,
         proposed_by: gate.userId,
         note: 'Propuesta revisada desde la línea de albarán',
@@ -185,9 +381,30 @@ export async function saveReceiptMappingProposalAction(params: {
 
   if (!mappingVersionId) return { success: false, message: 'No se pudo resolver la versión de mapeo.' }
 
+  let revisedProposal: K5MappingRevision | null = null
+  try {
+    revisedProposal = await supersedeK5ProposalWithMapping({
+      supabase: gate.supabase,
+      userId: gate.userId,
+      line: line as unknown as Record<string, unknown>,
+      mappingVersionId,
+      ingredientId,
+      conversionFactor,
+      lineBillingUnit,
+      lineContentQty,
+      lineContentUnit,
+    })
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo revisar la propuesta K5.' }
+  }
+
   const { error: updateError } = await gate.supabase
     .from('purchase_invoice_lines')
-    .update({ mapped_ingredient_id: ingredientId, status: 'mapped' })
+    .update({
+      mapped_ingredient_id: ingredientId,
+      status: revisedProposal ? (revisedProposal.status === 'ready_for_review' ? 'mapped' : 'pending') : 'mapped',
+      ...(revisedProposal ? { interpretation_proposal_id: revisedProposal.id } : {}),
+    })
     .eq('id', lineId)
   if (updateError) return { success: false, message: 'La propuesta se guardó, pero no se pudo vincular a la línea.' }
 
@@ -211,7 +428,7 @@ export async function listReceiptOrderAllocationOptionsAction(params: {
   | { success: false; message: string }
 > {
   const gate = await requirePurchaseManager()
-  if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: gate.message }
   const ingredientId = text(params?.ingredientId)
   if (!ingredientId) return { success: true, items: [] }
 
@@ -241,13 +458,22 @@ export async function previewReceiptLineAction(params: {
   allocations: ReceiptAllocationInput[]
 }): Promise<{ success: true; preview: ReceiptPreview } | { success: false; code?: string; message: string }> {
   const gate = await requirePurchaseManager()
-  if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  let proposalId: string | null
+  try {
+    proposalId = await interpretationProposalIdForLine(gate.supabase, text(params?.lineId))
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo comprobar K5.' }
+  }
+
   const { data, error } = await gate.supabase.rpc('apply_receipt_line', {
     p_invoice_line_id: text(params?.lineId),
     p_mapping_version_id: text(params?.mappingVersionId),
     p_allocations: (params?.allocations ?? []) as never,
     p_idempotency_key: `receipt-preview:${crypto.randomUUID()}`,
     p_dry_run: true,
+    p_interpretation_proposal_id: proposalId,
   })
   if (error || !data || typeof data !== 'object') {
     return { success: false, message: 'No se pudo validar esta recepción. Revísala antes de confirmar.' }
@@ -264,13 +490,22 @@ export async function applyReceiptLineAction(params: {
   idempotencyKey: string
 }): Promise<{ success: true; result: ReceiptApplyResult } | { success: false; code?: string; message: string }> {
   const gate = await requirePurchaseManager()
-  if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  let proposalId: string | null
+  try {
+    proposalId = await interpretationProposalIdForLine(gate.supabase, text(params?.lineId))
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo comprobar K5.' }
+  }
+
   const { data, error } = await gate.supabase.rpc('apply_receipt_line', {
     p_invoice_line_id: text(params?.lineId),
     p_mapping_version_id: text(params?.mappingVersionId),
     p_allocations: (params?.allocations ?? []) as never,
     p_idempotency_key: text(params?.idempotencyKey),
     p_dry_run: false,
+    p_interpretation_proposal_id: proposalId,
   })
   if (error || !data || typeof data !== 'object') {
     return { success: false, message: 'No se pudo confirmar la recepción. No se aplicó ningún cambio.' }
