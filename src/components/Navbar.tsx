@@ -60,9 +60,9 @@ export default function Navbar() {
 
     return <nav data-component="AppNavbar" data-hidden={topHidden ? 'true' : undefined} className={cn('marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden')}>
         <div className="relative max-w-7xl lg:max-w-none mx-auto flex items-center justify-between px-1 lg:px-4 w-full min-w-0">
-            {canSeeCamera ? <button type="button" aria-label="Abrir cámaras" title="Cámara" onClick={() => router.push('/camaras')} className="absolute left-1/2 top-1/2 z-20 grid h-[44px] w-[64px] -translate-x-1/2 -translate-y-1/2 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70">
-                <span className="relative block">
-                    <img src="/icons/live-icon.png?v=header-300x104" alt="LIVE" width="60" height="21" className="block h-auto w-[60px] max-w-none object-contain" />
+            {canSeeCamera ? <button type="button" aria-label="Abrir cámaras" title="Cámara" onClick={() => router.push('/camaras')} className="absolute left-1/2 top-1/2 z-20 flex h-[44px] -translate-x-1/2 -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70">
+                <span className="flex items-center gap-2">
+                    <img src="/icons/live-icon.png?v=header-300x104" alt="LIVE" width="60" height="21" className="block h-auto w-[60px] max-w-none shrink-0 object-contain" />
                     {canSeeCameraStatus ? <CameraOnlineDot /> : null}
                 </span>
             </button> : null}
