@@ -10,9 +10,11 @@ const migration = read('supabase/migrations/20260915194500_k5_interpretation_pro
 const profileMissingMigration = read('supabase/migrations/20260915194600_k5_optional_profile_guard.sql')
 const supersessionMigration = read('supabase/migrations/20260915194700_k5_supersession_chain.sql')
 const idempotentRetryMigration = read('supabase/migrations/20260915194800_k5_idempotent_receipt_retry.sql')
+const priceScaleMigration = read('supabase/migrations/20260915195000_k5_compare_price_at_canonical_scale.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const normalizer = read('src/lib/albaranes/k5/normalizer.ts')
+const mappedSnapshot = read('src/lib/albaranes/k5/mapped-snapshot.ts')
 
 test('K5 persiste propuestas append-only con extracción y versiones explícitas', () => {
   assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.purchase_interpretation_proposals/)
@@ -79,6 +81,14 @@ test('una línea K5 no puede omitir proposal y una revisión vieja no se puede c
   assert.match(idempotentRetryMigration, /debe confirmarse con su propuesta de interpretación explícita/)
   assert.match(idempotentRetryMigration, /newer\.proposal_set_id IS DISTINCT FROM v_proposal\.proposal_set_id/)
   assert.match(idempotentRetryMigration, /Existe un recálculo K5 posterior/)
+})
+
+test('precio normalizado usa exactamente la frontera persistida numeric(18,8)', () => {
+  assert.match(mappedSnapshot, /roundExactToScale\(normalizedUnitPrice, 8\)/)
+  assert.match(priceScaleMigration, /round\(\(v_preview->>'normalized_unit_price'\)::numeric, 8\)/)
+  assert.match(priceScaleMigration, /round\(v_proposal\.normalized_unit_price, 8\)/)
+  assert.doesNotMatch(priceScaleMigration, /physical_quantity[^\n]*round/i)
+  assert.doesNotMatch(priceScaleMigration, /purchase_quantity[^\n]*round/i)
 })
 
 test('normalizador no contiene fallbacks económicos de factor 1 ni latest', () => {
