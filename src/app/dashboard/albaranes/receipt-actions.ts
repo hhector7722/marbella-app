@@ -272,7 +272,7 @@ export async function saveReceiptMappingProposalAction(params: {
   lineContentUnit: string
 }): Promise<{ success: true; mappingVersionId: string } | { success: false; message: string }> {
   const gate = await requirePurchaseManager()
-  if (!gate.ok || !gate.supabase || !gate.userId) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: gate.message }
 
   const invoiceId = text(params?.invoiceId)
   const lineId = text(params?.lineId)
@@ -428,7 +428,7 @@ export async function listReceiptOrderAllocationOptionsAction(params: {
   | { success: false; message: string }
 > {
   const gate = await requirePurchaseManager()
-  if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: gate.message }
   const ingredientId = text(params?.ingredientId)
   if (!ingredientId) return { success: true, items: [] }
 
@@ -458,7 +458,7 @@ export async function previewReceiptLineAction(params: {
   allocations: ReceiptAllocationInput[]
 }): Promise<{ success: true; preview: ReceiptPreview } | { success: false; code?: string; message: string }> {
   const gate = await requirePurchaseManager()
-  if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: gate.message }
 
   let proposalId: string | null
   try {
@@ -490,7 +490,7 @@ export async function applyReceiptLineAction(params: {
   idempotencyKey: string
 }): Promise<{ success: true; result: ReceiptApplyResult } | { success: false; code?: string; message: string }> {
   const gate = await requirePurchaseManager()
-  if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
+  if (!gate.ok) return { success: false, message: gate.message }
 
   let proposalId: string | null
   try {
