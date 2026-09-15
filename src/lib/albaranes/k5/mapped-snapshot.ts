@@ -4,6 +4,7 @@ import {
   multiplyExact,
   parseExactDecimal,
   ratio,
+  roundExactToScale,
   toFiniteDecimalString,
   type ExactRatio,
 } from './exact-decimal.ts'
@@ -59,6 +60,10 @@ function convert(quantity: ExactRatio, fromValue: string, toValue: string): Exac
 /**
  * Misma frontera dimensional que K4: el factor debe ser exactamente el
  * contenido físico expresado en la unidad de compra. No hay fallback a 1.
+ *
+ * El precio normalizado se calcula como racional exacto y solo se redondea en
+ * la frontera persistida `numeric(18,8)`, que es la escala canónica de precio
+ * de ingredientes, histórico y confirmaciones de recepción.
  */
 export function buildExactMappedSnapshot(params: {
   lineQuantity: string
@@ -85,7 +90,7 @@ export function buildExactMappedSnapshot(params: {
 
   const purchase = toFiniteDecimalString(purchaseQuantity)
   const physical = toFiniteDecimalString(physicalQuantity)
-  const price = toFiniteDecimalString(normalizedUnitPrice)
+  const price = toFiniteDecimalString(normalizedUnitPrice) ?? roundExactToScale(normalizedUnitPrice, 8)
   if (!purchase || !physical || !price) return null
 
   return {
