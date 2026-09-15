@@ -51,3 +51,9 @@ ALTER TABLE public.purchase_interpretation_proposals
       AND supplier_profile_hash ~ '^[0-9a-f]{64}$'
     )
   );
+
+-- Una línea revisable pertenece a una sola propuesta K5. El historial se
+-- conserva en la cadena de propuestas, no duplicando líneas operativas.
+CREATE UNIQUE INDEX IF NOT EXISTS purchase_invoice_lines_interpretation_proposal_uidx
+  ON public.purchase_invoice_lines(interpretation_proposal_id)
+  WHERE interpretation_proposal_id IS NOT NULL;
