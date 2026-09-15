@@ -24,5 +24,5 @@ export function CameraOnlineDot() {
   }, []);
 
   if (!online) return null;
-  return <span aria-label="Conexión externa activa" title="Conexión externa activa" className="absolute right-[-1px] top-[7px] h-2.5 w-2.5 rounded-full bg-green-400 ring-2 ring-white/90 shadow-sm" />;
+  return <span aria-label="Conexión externa activa" title="Conexión externa activa" className="block h-2.5 w-2.5 shrink-0 rounded-full bg-green-400" />;
 }
