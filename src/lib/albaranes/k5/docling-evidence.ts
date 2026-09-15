@@ -68,13 +68,28 @@ export function extractDoclingTables(rawArtifact: unknown): K5EvidenceTable[] {
     const maxRow = Math.max(...cells.map((cell) => cell.row + cell.rowSpan - 1))
     const maxColumn = Math.max(...cells.map((cell) => cell.column + cell.columnSpan - 1))
     const grid = Array.from({ length: maxRow + 1 }, () => Array(maxColumn + 1).fill('') as string[])
+    const priorities = Array.from(
+      { length: maxRow + 1 },
+      () => Array(maxColumn + 1).fill(Number.NEGATIVE_INFINITY) as number[]
+    )
 
     for (const cell of cells) {
+      const area = cell.rowSpan * cell.columnSpan
       for (let rowOffset = 0; rowOffset < cell.rowSpan; rowOffset += 1) {
         for (let colOffset = 0; colOffset < cell.columnSpan; colOffset += 1) {
           const row = cell.row + rowOffset
           const column = cell.column + colOffset
-          if (!grid[row][column]) grid[row][column] = cell.text
+          // Docling puede devolver cabeceras solapadas: una celda amplia como
+          // `Unidades` puede abarcar columnas que también tienen celdas
+          // explícitas `Precio` e `Importe`. El ancla real de una celda debe
+          // prevalecer siempre sobre el texto heredado de un span; entre spans,
+          // la celda más específica (menor área) gana de forma determinista.
+          const isAnchor = rowOffset === 0 && colOffset === 0
+          const priority = (isAnchor ? 1_000_000 : 0) - area
+          if (priority > priorities[row]![column]!) {
+            priorities[row]![column] = priority
+            grid[row]![column] = cell.text
+          }
         }
       }
     }

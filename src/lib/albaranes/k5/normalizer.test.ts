@@ -164,7 +164,7 @@ test('mapping de presentación incompatible queda bloqueado', () => {
   assert.equal(proposal.mappingVersionId, null)
 })
 
-test('Videla conserva medidas coexistentes y fuerza needs_review', () => {
+test('Videla conserva medidas coexistentes, respeta cabeceras solapadas y fuerza needs_review', () => {
   const videlaProfile: SupplierProfile = {
     ...directProfile,
     id: 'supplier:3:videla',
@@ -199,7 +199,9 @@ test('Videla conserva medidas coexistentes y fuerza needs_review', () => {
       data: {
         table_cells: [
           cell(0, 0, '%Iva', true),
-          cell(0, 1, 'Unidades', true, 2),
+          // Replica el Docling real de Videla: `Unidades` abarca también las
+          // columnas donde existen celdas explícitas `Precio` e `Importe`.
+          cell(0, 1, 'Unidades', true, 4),
           cell(0, 3, 'Precio', true),
           cell(0, 4, 'Importe', true),
           cell(1, 0, '10'),
@@ -222,6 +224,8 @@ test('Videla conserva medidas coexistentes y fuerza needs_review', () => {
   const proposal = result.proposals[0]!
   assert.equal(proposal.status, 'needs_review')
   assert.equal(proposal.sourceItemName, null)
+  assert.equal(proposal.observedUnitPrice, '9.75')
+  assert.equal(proposal.lineTotal, '152.1')
   assert.ok(proposal.reviewReasons.includes('mixed_measurement_requires_review'))
   assert.ok(proposal.warnings.some((warning) => warning.includes('3,00BU') && warning.includes('15,60 KG')))
   assert.equal(proposal.mappingVersionId, null)
