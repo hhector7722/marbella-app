@@ -105,13 +105,39 @@ export function normalizeEvidenceLabel(value: string): string {
     .replace(/\s+/g, ' ')
 }
 
-function aliasMatches(header: string, alias: string): boolean {
+function aliasMatchScore(header: string, alias: string): number {
   const normalizedHeader = normalizeEvidenceLabel(header)
   const normalizedAlias = normalizeEvidenceLabel(alias)
-  if (!normalizedHeader || !normalizedAlias) return false
-  return normalizedHeader === normalizedAlias
-    || normalizedHeader.includes(normalizedAlias)
-    || normalizedAlias.includes(normalizedHeader)
+  if (!normalizedHeader || !normalizedAlias) return 0
+  if (normalizedHeader === normalizedAlias) return 3
+  if (normalizedHeader.includes(normalizedAlias)) return 2
+  if (normalizedAlias.includes(normalizedHeader)) return 1
+  return 0
+}
+
+/**
+ * Elige la columna por la coincidencia semántica más fuerte. Una coincidencia
+ * exacta siempre gana a una inclusión parcial (p. ej. `Precio con descuento`
+ * no puede resolverse como `Precio`). Si dos columnas empatan con la misma
+ * fuerza, la resolución se considera ambigua y no se inventa una elección.
+ */
+function bestHeaderColumn(headers: readonly string[], aliases: readonly string[]): number {
+  let bestColumn = -1
+  let bestScore = 0
+  let tied = false
+
+  headers.forEach((header, column) => {
+    const score = Math.max(0, ...aliases.map((alias) => aliasMatchScore(header, alias)))
+    if (score > bestScore) {
+      bestScore = score
+      bestColumn = column
+      tied = false
+    } else if (score > 0 && score === bestScore) {
+      tied = true
+    }
+  })
+
+  return tied ? -1 : bestColumn
 }
 
 export type ProfileTableMatch = {
@@ -134,9 +160,7 @@ export function matchProfileTable(
       FieldName,
       NonNullable<SupplierProfile['fields'][FieldName]>
     ]>) {
-      const column = table.headers.findIndex((header) =>
-        definition.aliases.some((alias) => aliasMatches(header, alias))
-      )
+      const column = bestHeaderColumn(table.headers, definition.aliases)
       if (column >= 0) {
         fieldColumns[fieldName] = column
         score += fieldName === 'product' ? 3 : 1
