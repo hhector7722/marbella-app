@@ -41,14 +41,18 @@ function convert(quantity: ExactRatio, fromValue: string, toValue: string): Exac
   if (!from || !to) return null
   if (from === to) return quantity
 
-  if (from === 'kg' && to === 'g') return multiplyExact(quantity, ratio(1000n))
-  if (from === 'g' && to === 'kg') return divideExact(quantity, ratio(1000n))
-  if (from === 'l' && to === 'ml') return multiplyExact(quantity, ratio(1000n))
-  if (from === 'l' && to === 'cl') return multiplyExact(quantity, ratio(100n))
-  if (from === 'ml' && to === 'l') return divideExact(quantity, ratio(1000n))
-  if (from === 'ml' && to === 'cl') return divideExact(quantity, ratio(10n))
-  if (from === 'cl' && to === 'ml') return multiplyExact(quantity, ratio(10n))
-  if (from === 'cl' && to === 'l') return divideExact(quantity, ratio(100n))
+  const thousand = ratio(BigInt(1000))
+  const hundred = ratio(BigInt(100))
+  const ten = ratio(BigInt(10))
+
+  if (from === 'kg' && to === 'g') return multiplyExact(quantity, thousand)
+  if (from === 'g' && to === 'kg') return divideExact(quantity, thousand)
+  if (from === 'l' && to === 'ml') return multiplyExact(quantity, thousand)
+  if (from === 'l' && to === 'cl') return multiplyExact(quantity, hundred)
+  if (from === 'ml' && to === 'l') return divideExact(quantity, thousand)
+  if (from === 'ml' && to === 'cl') return divideExact(quantity, ten)
+  if (from === 'cl' && to === 'ml') return multiplyExact(quantity, ten)
+  if (from === 'cl' && to === 'l') return divideExact(quantity, hundred)
   return null
 }
 
