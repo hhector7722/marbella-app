@@ -64,11 +64,15 @@ export async function POST(request: NextRequest) {
     session_id: sessionId,
     camera_id: CAMERA_ID,
     user_id: auth.user.id,
+    viewer_email: auth.user.email?.trim().toLowerCase() ?? null,
     last_seen_at: now.toISOString(),
   };
 
   const { error } = existing
-    ? await admin.from('camera_app_viewer_sessions').update({ last_seen_at: payload.last_seen_at }).eq('session_id', sessionId)
+    ? await admin
+        .from('camera_app_viewer_sessions')
+        .update({ last_seen_at: payload.last_seen_at, viewer_email: payload.viewer_email })
+        .eq('session_id', sessionId)
     : await admin.from('camera_app_viewer_sessions').insert(payload);
 
   if (error) return NextResponse.json({ error: 'Write failed' }, { status: 500 });
