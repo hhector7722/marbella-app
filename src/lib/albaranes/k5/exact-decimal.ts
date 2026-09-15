@@ -66,7 +66,10 @@ export function parseExactDecimal(value: string | bigint | null | undefined): Ex
   const raw = String(value).trim()
   if (!raw) return null
 
-  const token = raw.match(/[-+]?\d[\d\s.'’]*(?:[.,]\d+)?/)?.[0]
+  // Capturamos ambos separadores dentro del mismo token. El patrón anterior
+  // cortaba `1,234.56` en `1,234`, perdiendo la parte decimal antes de poder
+  // decidir cuál de los dos separadores era el decimal.
+  const token = raw.match(/[-+]?\d[\d\s.,'’]*/)?.[0]
   if (!token) return null
 
   let normalized = token.replace(/[\s'’]/g, '')
