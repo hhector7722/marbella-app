@@ -147,7 +147,17 @@ test('Nestlé conserva CJ como caja aunque Docling deje Cantidad sin sufijo', ()
     }],
   }).proposals[0]!
 
-  assert.equal(proposal.status, 'ready_for_review')
+  assert.equal(
+    proposal.status,
+    'ready_for_review',
+    JSON.stringify({
+      reasons: proposal.reviewReasons,
+      warnings: proposal.warnings,
+      observed: proposal.observed,
+      interpreted: proposal.interpreted,
+      normalized: proposal.normalized,
+    })
+  )
   assert.equal(proposal.mappingVersionId, 'mapping-nestle')
   assert.equal(proposal.lineUnit, 'case')
   assert.equal(proposal.lineQuantity, '2')
