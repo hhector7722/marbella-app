@@ -8,11 +8,11 @@ import type {
   SupplierProfile,
 } from '../supplier-profiles/types.ts'
 import {
+  addExact,
   divideExact,
   isPositiveExact,
   multiplyExact,
   parseExactDecimal,
-  ratio,
   toFiniteDecimalString,
   withinExactTolerance,
   type ExactRatio,
@@ -24,6 +24,7 @@ import {
   rowByProfileFields,
   type K5EvidenceTable,
 } from './docling-evidence.ts'
+import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-snapshot.ts'
 
 export const K5_NORMALIZER_VERSION = 'k5-normalizer-v1' as const
 
@@ -151,35 +152,6 @@ function canonicalBillingUnit(value: string): string | null {
   return billingAliases[normalized] ?? (normalized || null)
 }
 
-function canonicalPhysicalUnit(value: string): 'kg' | 'g' | 'l' | 'ml' | 'cl' | 'ud' | null {
-  const normalized = canonicalBillingUnit(value)
-  if (normalized === 'kg' || normalized === 'g' || normalized === 'l' || normalized === 'ml' || normalized === 'cl' || normalized === 'ud') return normalized
-  return null
-}
-
-function convertExactUnit(quantity: ExactRatio, fromUnit: string, toUnit: string): ExactRatio | null {
-  const from = canonicalPhysicalUnit(fromUnit)
-  const to = canonicalPhysicalUnit(toUnit)
-  if (!from || !to) return null
-  if (from === to) return quantity
-
-  const mass = new Set(['kg', 'g'])
-  const volume = new Set(['l', 'ml', 'cl'])
-  if (mass.has(from) && mass.has(to)) {
-    if (from === 'kg' && to === 'g') return multiplyExact(quantity, ratio(1000n))
-    if (from === 'g' && to === 'kg') return divideExact(quantity, ratio(1000n))
-  }
-  if (volume.has(from) && volume.has(to)) {
-    if (from === 'l' && to === 'ml') return multiplyExact(quantity, ratio(1000n))
-    if (from === 'l' && to === 'cl') return multiplyExact(quantity, ratio(100n))
-    if (from === 'ml' && to === 'l') return divideExact(quantity, ratio(1000n))
-    if (from === 'ml' && to === 'cl') return divideExact(quantity, ratio(10n))
-    if (from === 'cl' && to === 'ml') return multiplyExact(quantity, ratio(10n))
-    if (from === 'cl' && to === 'l') return divideExact(quantity, ratio(100n))
-  }
-  return null
-}
-
 function compatibleMapping(
   mappings: readonly K5MappingSnapshot[],
   product: string | null,
@@ -218,11 +190,10 @@ function exactLineEconomics(
   let resultTotal: ExactRatio | null = amount
 
   switch (profile.interpretation.kind) {
-    case 'case_discount': {
-      if (isPositiveExact(amount) && isPositiveExact(quantity)) resultPrice = divideExact(amount, quantity)
-      break
-    }
+    case 'case_discount':
     case 'discounted_unit_line': {
+      // El importe neto conciliado por el perfil es la verdad económica de la
+      // línea; K5 deriva de él el precio neto facturado, no del precio bruto.
       if (isPositiveExact(amount) && isPositiveExact(quantity)) resultPrice = divideExact(amount, quantity)
       break
     }
@@ -230,12 +201,10 @@ function exactLineEconomics(
       const tax = profile.interpretation.tax_percent
       if (isPositiveExact(amountWithTax) && typeof tax === 'number') {
         const taxRatio = parseExactDecimal(String(tax))
-        if (taxRatio) {
-          const denominator = divideExact(
-            { numerator: 100n, denominator: 1n },
-            { numerator: 100n * taxRatio.denominator + taxRatio.numerator, denominator: taxRatio.denominator }
-          )
-          if (denominator) resultTotal = multiplyExact(amountWithTax, denominator)
+        const hundred = parseExactDecimal('100')
+        if (taxRatio && hundred) {
+          const grossMultiplier = divideExact(addExact(hundred, taxRatio), hundred)
+          if (grossMultiplier) resultTotal = divideExact(amountWithTax, grossMultiplier)
         }
       }
       if (isPositiveExact(resultTotal) && isPositiveExact(quantity)) resultPrice = divideExact(resultTotal, quantity)
@@ -285,39 +254,21 @@ function mappingNormalization(
   mapping: K5MappingSnapshot,
   lineQuantity: ExactRatio,
   unitPrice: ExactRatio
-): {
-  physicalQuantity: string
-  baseUnit: string
-  purchaseQuantity: string
-  purchaseUnit: string
-  normalizedUnitPrice: string
-} | null {
-  const factor = parseExactDecimal(mapping.conversionFactor)
-  const content = parseExactDecimal(mapping.lineContentQty)
-  if (!isPositiveExact(factor) || !isPositiveExact(content)) return null
-
-  const contentInPurchaseUnit = convertExactUnit(content, mapping.lineContentUnit, mapping.purchaseUnit)
-  if (!contentInPurchaseUnit || contentInPurchaseUnit.numerator !== factor.numerator || contentInPurchaseUnit.denominator !== factor.denominator) {
-    return null
-  }
-
-  const purchaseQuantity = multiplyExact(lineQuantity, factor)
-  const physicalQuantity = convertExactUnit(purchaseQuantity, mapping.purchaseUnit, mapping.baseUnit)
-  const normalizedPrice = divideExact(unitPrice, factor)
-  if (!physicalQuantity || !normalizedPrice) return null
-
-  const purchase = toFiniteDecimalString(purchaseQuantity)
-  const physical = toFiniteDecimalString(physicalQuantity)
-  const price = toFiniteDecimalString(normalizedPrice)
-  if (!purchase || !physical || !price) return null
-
-  return {
-    physicalQuantity: physical,
-    baseUnit: mapping.baseUnit,
-    purchaseQuantity: purchase,
-    purchaseUnit: mapping.purchaseUnit,
-    normalizedUnitPrice: price,
-  }
+): ExactMappedSnapshot | null {
+  const quantity = toFiniteDecimalString(lineQuantity)
+  const price = toFiniteDecimalString(unitPrice)
+  if (!quantity || !price) return null
+  return buildExactMappedSnapshot({
+    lineQuantity: quantity,
+    observedUnitPrice: price,
+    mapping: {
+      conversionFactor: mapping.conversionFactor,
+      lineContentQty: mapping.lineContentQty,
+      lineContentUnit: mapping.lineContentUnit,
+      purchaseUnit: mapping.purchaseUnit,
+      baseUnit: mapping.baseUnit,
+    },
+  })
 }
 
 function allObservedMeasures(table: K5EvidenceTable, rowIndex: number): string[] {
@@ -423,7 +374,7 @@ export function normalizeDoclingEvidence(params: {
     const lineQuantity = parseExactDecimal(observedQuantityText)
     const unitPrice = economics.unitPrice
     const lineTotal = economics.lineTotal
-    let normalization: ReturnType<typeof mappingNormalization> = null
+    let normalization: ExactMappedSnapshot | null = null
 
     if (mapping && isPositiveExact(lineQuantity) && isPositiveExact(unitPrice)) {
       normalization = mappingNormalization(mapping, lineQuantity, unitPrice)
