@@ -512,31 +512,24 @@ export async function generateInterpretationProposalsAction(params: {
     })
   })
 
-  const fingerprints = payloads.map((payload) => text(payload.input_fingerprint))
-  const { data: existingRows, error: existingError } = await gate.supabase
+  // Cada recálculo explícito es un nuevo hecho interpretativo append-only. El
+  // fingerprint conserva la reproducibilidad del input, pero no se usa como
+  // identidad única: volver a la misma interpretación después de una revisión
+  // anterior debe crear una nueva propuesta que supersede a la vigente.
+  const { data: inserted, error: insertError } = await gate.supabase
     .from('purchase_interpretation_proposals')
+    .insert(payloads)
     .select('*')
-    .in('input_fingerprint', fingerprints)
-  if (existingError) return { success: false, message: 'No se pudo comprobar la idempotencia de K5.' }
-  const existingByFingerprint = new Map(
-    ((existingRows ?? []) as Array<Record<string, unknown>>).map((row) => [text(row.input_fingerprint), row])
-  )
-
-  const missing = payloads.filter((payload) => !existingByFingerprint.has(text(payload.input_fingerprint)))
-  let insertedRows: Array<Record<string, unknown>> = []
-  if (missing.length > 0) {
-    const { data: inserted, error: insertError } = await gate.supabase
-      .from('purchase_interpretation_proposals')
-      .insert(missing)
-      .select('*')
-    if (insertError) return { success: false, message: `No se pudieron persistir las propuestas K5: ${insertError.message}` }
-    insertedRows = (inserted ?? []) as Array<Record<string, unknown>>
+  if (insertError) {
+    const concurrent = /single_successor|duplicate key|unique/i.test(insertError.message)
+    return {
+      success: false,
+      message: concurrent
+        ? 'La propuesta cambió mientras se recalculaba. Recarga el albarán antes de continuar.'
+        : `No se pudieron persistir las propuestas K5: ${insertError.message}`,
+    }
   }
-
-  const persisted = payloads.map((payload) =>
-    existingByFingerprint.get(text(payload.input_fingerprint))
-    ?? insertedRows.find((row) => text(row.input_fingerprint) === text(payload.input_fingerprint))
-  ).filter((row): row is Record<string, unknown> => Boolean(row))
+  const persisted = (inserted ?? []) as Array<Record<string, unknown>>
 
   for (const proposal of persisted) {
     const previous = activeBySource.get(sourceKey(proposal.source_table_index, proposal.source_row_index))
@@ -553,7 +546,8 @@ export async function generateInterpretationProposalsAction(params: {
   }
 
   revalidatePath('/dashboard/albaranes')
+  revalidatePath('/dashboard/albaranes/k5')
   const context = await listInterpretationContextAction({ invoiceId })
   if (!context.success) return context
-  return { success: true, proposals: context.proposals, created: missing.length }
+  return { success: true, proposals: context.proposals, created: persisted.length }
 }
