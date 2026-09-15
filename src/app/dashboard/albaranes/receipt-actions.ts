@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
+import { compareExact, parseExactDecimal } from '@/lib/albaranes/k5/exact-decimal'
 import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
 import { K5_NORMALIZER_VERSION, proposalInputFingerprint } from '@/lib/albaranes/k5/normalizer'
 
@@ -74,9 +75,10 @@ function text(value: unknown): string {
   return String(value ?? '').trim()
 }
 
-function sameDecimal(left: unknown, right: number): boolean {
-  const parsed = decimal(left)
-  return parsed != null && parsed === right
+function sameExactDecimal(left: unknown, right: unknown): boolean {
+  const a = parseExactDecimal(text(left))
+  const b = parseExactDecimal(text(right))
+  return Boolean(a && b && compareExact(a, b) === 0)
 }
 
 async function interpretationProposalIdForLine(
@@ -92,6 +94,11 @@ async function interpretationProposalIdForLine(
   return text(data?.interpretation_proposal_id) || null
 }
 
+type K5MappingRevision = {
+  id: string
+  status: 'ready_for_review' | 'needs_review'
+}
+
 async function supersedeK5ProposalWithMapping(params: {
   supabase: Awaited<ReturnType<typeof createClient>>
   userId: string
@@ -102,7 +109,7 @@ async function supersedeK5ProposalWithMapping(params: {
   lineBillingUnit: string
   lineContentQty: number
   lineContentUnit: string
-}): Promise<string | null> {
+}): Promise<K5MappingRevision | null> {
   const currentProposalId = text(params.line.interpretation_proposal_id)
   if (!currentProposalId) return null
 
@@ -115,7 +122,7 @@ async function supersedeK5ProposalWithMapping(params: {
 
   const { data: successor, error: successorError } = await params.supabase
     .from('purchase_interpretation_proposals')
-    .select('id,mapping_version_id')
+    .select('id,mapping_version_id,status')
     .eq('supersedes_proposal_id', currentProposalId)
     .limit(1)
     .maybeSingle()
@@ -124,7 +131,11 @@ async function supersedeK5ProposalWithMapping(params: {
     if (text(successor.mapping_version_id) !== params.mappingVersionId) {
       throw new Error('La propuesta ya tiene una revisión posterior distinta. Vuelve a abrir el albarán.')
     }
-    return text(successor.id)
+    const successorStatus = text(successor.status)
+    if (successorStatus !== 'ready_for_review' && successorStatus !== 'needs_review') {
+      throw new Error('La revisión K5 existente no tiene un estado confirmable de mapeo.')
+    }
+    return { id: text(successor.id), status: successorStatus }
   }
 
   const { data: ingredient, error: ingredientError } = await params.supabase
@@ -150,18 +161,20 @@ async function supersedeK5ProposalWithMapping(params: {
     },
   })
 
-  const previousReasons = Array.isArray(current.review_reasons)
-    ? current.review_reasons.map(text).filter(Boolean)
+  const previousReasons: string[] = Array.isArray(current.review_reasons)
+    ? (current.review_reasons as unknown[]).map(text).filter(Boolean)
     : []
-  const semanticReasons = previousReasons.filter((reason) =>
+  const semanticReasons = previousReasons.filter((reason: string) =>
     reason !== 'mapping_missing'
     && reason !== 'mapping_presentation_incompatible'
     && reason !== 'price_not_normalizable'
   )
-  const reviewReasons = snapshot
+  const reviewReasons: string[] = snapshot
     ? semanticReasons
     : [...semanticReasons, 'mapping_presentation_incompatible']
-  const status = snapshot && reviewReasons.length === 0 ? 'ready_for_review' : 'needs_review'
+  const status: K5MappingRevision['status'] = snapshot && reviewReasons.length === 0
+    ? 'ready_for_review'
+    : 'needs_review'
 
   const normalized = snapshot
     ? {
@@ -184,11 +197,17 @@ async function supersedeK5ProposalWithMapping(params: {
 
   const { data: existing, error: existingError } = await params.supabase
     .from('purchase_interpretation_proposals')
-    .select('id')
+    .select('id,status')
     .eq('input_fingerprint', fingerprint)
     .maybeSingle()
   if (existingError) throw new Error('No se pudo comprobar la revisión K5 del mapeo.')
-  if (existing?.id) return text(existing.id)
+  if (existing?.id) {
+    const existingStatus = text(existing.status)
+    if (existingStatus !== 'ready_for_review' && existingStatus !== 'needs_review') {
+      throw new Error('La revisión K5 idempotente tiene un estado inesperado.')
+    }
+    return { id: text(existing.id), status: existingStatus }
+  }
 
   const { data: inserted, error: insertError } = await params.supabase
     .from('purchase_interpretation_proposals')
@@ -233,10 +252,10 @@ async function supersedeK5ProposalWithMapping(params: {
         economic_effects: false,
       },
     })
-    .select('id')
+    .select('id,status')
     .maybeSingle()
   if (insertError || !inserted?.id) throw new Error('No se pudo versionar la propuesta K5 con el mapeo revisado.')
-  return text(inserted.id)
+  return { id: text(inserted.id), status }
 }
 
 /**
@@ -326,10 +345,11 @@ export async function saveReceiptMappingProposalAction(params: {
 
   const unchanged =
     current &&
+    current.status !== 'rejected' &&
     current.ingredient_id === ingredientId &&
-    sameDecimal(current.conversion_factor, conversionFactor) &&
+    sameExactDecimal(current.conversion_factor, conversionFactor) &&
     text(current.line_billing_unit).toLowerCase() === lineBillingUnit.toLowerCase() &&
-    sameDecimal(current.line_content_qty, lineContentQty) &&
+    sameExactDecimal(current.line_content_qty, lineContentQty) &&
     text(current.line_content_unit).toLowerCase() === lineContentUnit.toLowerCase()
 
   let mappingVersionId = current?.id ?? null
@@ -361,9 +381,9 @@ export async function saveReceiptMappingProposalAction(params: {
 
   if (!mappingVersionId) return { success: false, message: 'No se pudo resolver la versión de mapeo.' }
 
-  let revisedProposalId: string | null = null
+  let revisedProposal: K5MappingRevision | null = null
   try {
-    revisedProposalId = await supersedeK5ProposalWithMapping({
+    revisedProposal = await supersedeK5ProposalWithMapping({
       supabase: gate.supabase,
       userId: gate.userId,
       line: line as unknown as Record<string, unknown>,
@@ -382,8 +402,8 @@ export async function saveReceiptMappingProposalAction(params: {
     .from('purchase_invoice_lines')
     .update({
       mapped_ingredient_id: ingredientId,
-      status: revisedProposalId ? 'mapped' : 'mapped',
-      ...(revisedProposalId ? { interpretation_proposal_id: revisedProposalId } : {}),
+      status: revisedProposal ? (revisedProposal.status === 'ready_for_review' ? 'mapped' : 'pending') : 'mapped',
+      ...(revisedProposal ? { interpretation_proposal_id: revisedProposal.id } : {}),
     })
     .eq('id', lineId)
   if (updateError) return { success: false, message: 'La propuesta se guardó, pero no se pudo vincular a la línea.' }
