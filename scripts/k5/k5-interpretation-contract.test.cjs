@@ -74,6 +74,13 @@ test('reintento K4 con proposal conserva idempotencia y exige el mismo vínculo 
   assert.match(idempotentRetryMigration, /private\.apply_receipt_line_with_proposal_idempotent/)
 })
 
+test('una línea K5 no puede omitir proposal y una revisión vieja no se puede confirmar', () => {
+  assert.match(idempotentRetryMigration, /v_line_proposal_id IS NOT NULL/)
+  assert.match(idempotentRetryMigration, /debe confirmarse con su propuesta de interpretación explícita/)
+  assert.match(idempotentRetryMigration, /newer\.proposal_set_id IS DISTINCT FROM v_proposal\.proposal_set_id/)
+  assert.match(idempotentRetryMigration, /Existe un recálculo K5 posterior/)
+})
+
 test('normalizador no contiene fallbacks económicos de factor 1 ni latest', () => {
   assert.doesNotMatch(normalizer, /conversionFactor\s*\?\?\s*1/)
   assert.doesNotMatch(normalizer, /conversion_factor\s*:\s*1/)
