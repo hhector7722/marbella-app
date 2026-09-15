@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 
-type RecordRow = { id: number; started_at: string; ended_at: string | null };
+type RecordRow = {
+  id: string;
+  started_at: string;
+  ended_at: string | null;
+  source: 'reolink' | 'marbella_app';
+};
 
 function duration(start: string, end: string | null) {
   if (!end) return 'En curso';
@@ -35,7 +40,7 @@ export default function CameraRecordsButton() {
       <div className="flex max-h-[78vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between bg-[#123f46] px-5 py-4 text-white"><h2 className="text-base font-bold">Registros de conexiones</h2><button type="button" onClick={() => setOpen(false)} aria-label="Cerrar" className="grid h-9 w-9 place-items-center rounded-full hover:bg-white/10"><X size={20}/></button></div>
         <div className="overflow-y-auto p-4 text-sm text-slate-800">
-          {loading ? <p className="py-8 text-center text-slate-500">Cargando…</p> : records.length === 0 ? <p className="py-8 text-center text-slate-500">Todavía no hay conexiones registradas.</p> : <div className="space-y-2">{records.map((r) => <div key={r.id} className="rounded-xl border border-slate-200 p-3"><div className="font-semibold">{fmt(r.started_at)}</div><div className="mt-1 text-slate-500">{r.ended_at ? `Fin: ${fmt(r.ended_at)}` : 'Conexión activa'}</div><div className="mt-1 font-medium">Duración: {duration(r.started_at, r.ended_at)}</div></div>)}</div>}
+          {loading ? <p className="py-8 text-center text-slate-500">Cargando…</p> : records.length === 0 ? <p className="py-8 text-center text-slate-500">Todavía no hay conexiones registradas.</p> : <div className="space-y-2">{records.map((r) => <div key={r.id} className="rounded-xl border border-slate-200 p-3"><div className="flex items-center justify-between gap-3"><div className="font-semibold">{fmt(r.started_at)}</div><div className="text-xs font-medium text-slate-500">{r.source === 'marbella_app' ? 'Marbella App' : 'Reolink'}</div></div><div className="mt-1 text-slate-500">{r.ended_at ? `Fin: ${fmt(r.ended_at)}` : 'Conexión activa'}</div><div className="mt-1 font-medium">Duración: {duration(r.started_at, r.ended_at)}</div></div>)}</div>}
         </div>
       </div>
     </div> : null}
