@@ -16,6 +16,13 @@ const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const normalizer = read('src/lib/albaranes/k5/normalizer.ts')
 const mappedSnapshot = read('src/lib/albaranes/k5/mapped-snapshot.ts')
 
+test('las migraciones K5 tienen una versión única por timestamp', () => {
+  const names = fs.readdirSync(path.join(root, 'supabase/migrations'))
+    .filter((name) => /_k5_.*\.sql$/.test(name))
+  const versions = names.map((name) => name.slice(0, 14))
+  assert.equal(new Set(versions).size, versions.length, `timestamps K5 duplicados: ${names.join(', ')}`)
+})
+
 test('K5 persiste propuestas append-only con extracción y versiones explícitas', () => {
   assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.purchase_interpretation_proposals/)
   assert.match(migration, /document_extraction_id uuid NOT NULL/)
@@ -27,6 +34,7 @@ test('K5 persiste propuestas append-only con extracción y versiones explícitas
   assert.match(profileMissingMigration, /ALTER COLUMN supplier_profile_id DROP NOT NULL/)
   assert.match(profileMissingMigration, /k5_profile_triplet_consistent/)
   assert.match(profileMissingMigration, /k5_ready_requires_profile/)
+  assert.match(profileMissingMigration, /purchase_invoice_lines_interpretation_proposal_uidx/)
 })
 
 test('recalcular crea un nuevo hecho y la supersesión no puede bifurcarse', () => {
