@@ -3,7 +3,7 @@
  *
  * No usa Number para producir magnitudes económicas. Una división cuyo
  * resultado decimal no termina no se redondea silenciosamente: el llamador
- * debe detener la propuesta en needs_review o aportar una regla explícita.
+ * debe detener la propuesta o aplicar una regla de redondeo explícita.
  */
 
 export type ExactRatio = Readonly<{
@@ -155,6 +155,24 @@ export function toFiniteDecimalString(value: ExactRatio): string | null {
   const whole = digits.slice(0, -scale) || '0'
   const fraction = digits.slice(-scale).replace(/0+$/, '')
   return `${negative ? '-' : ''}${whole}${fraction ? `.${fraction}` : ''}`
+}
+
+/**
+ * Redondeo decimal explícito, mitades alejándose de cero, igual que
+ * `round(numeric, scale)` de PostgreSQL. Se usa solo en fronteras cuyo esquema
+ * declara una escala concreta; nunca como fallback implícito del parser.
+ */
+export function roundExactToScale(value: ExactRatio, scale: number): string {
+  const factor = pow10(scale)
+  const negative = value.numerator < BI_ZERO
+  const scaledNumerator = absBigInt(value.numerator) * factor
+  let whole = scaledNumerator / value.denominator
+  const remainder = scaledNumerator % value.denominator
+  if (remainder * BI_TWO >= value.denominator) whole += BI_ONE
+  const rounded = ratio(whole * (negative ? -BI_ONE : BI_ONE), factor)
+  const result = toFiniteDecimalString(rounded)
+  if (result == null) throw new Error('El redondeo explícito debe producir un decimal finito')
+  return result
 }
 
 export function exactDecimalString(value: string | bigint | null | undefined): string | null {
