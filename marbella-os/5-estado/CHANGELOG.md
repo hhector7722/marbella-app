@@ -36,6 +36,14 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-15
+
+- **Interpretación de albaranes: perfiles versionados y revisables.** Los 16
+  formatos actuales de proveedor tienen contrato determinista, fixtures y
+  pruebas independientes de Docling. La interpretación queda separada de la
+  evidencia, del mapeo de artículo y de K4; una duda se detiene en
+  `needs_review`. [ADR-0014](../4-decisiones/ADR-0014-perfiles-versionados-interpretacion-albaranes.md).
+
 ## 2026-09-14
 
 - **Detalle de asistencia: Horas, H Extras y Total día en una fila.** En el modal del día esas tres magnitudes viven en la misma card; ya no hay una card inferior solo para el total. Quien gestiona sigue abriendo la semana desde un botón aparte.

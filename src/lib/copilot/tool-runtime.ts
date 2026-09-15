@@ -34,7 +34,8 @@ export function buildCopilotRpcPayload(
   actionName: CopilotAction,
   parsedData: unknown,
   role: RoleName,
-  userId: string
+  userId: string,
+  commandId: string | null
 ): Record<string, unknown> {
   let rpcPayload: Record<string, unknown> = {
     ...((parsedData ?? {}) as Record<string, unknown>),
@@ -52,6 +53,16 @@ export function buildCopilotRpcPayload(
     rpcPayload = { ...rpcPayload, p_user_id: userId };
   }
 
+  if (actionName === "actualizar_stock") {
+    if (!commandId) {
+      throw new Error("Falta la clave de idempotencia del comando de ajuste.");
+    }
+    rpcPayload = {
+      ...rpcPayload,
+      p_idempotency_key: `copilot:${userId}:${commandId}`,
+    };
+  }
+
   return rpcPayload;
 }
 
@@ -62,9 +73,10 @@ export async function executeCopilotTool(params: {
   toolName: unknown;
   args: unknown;
   sessionId?: string | null;
+  commandId?: string | null;
   mode: "chat" | "voice";
 }): Promise<CopilotToolResult> {
-  const { supabase, role, userId, toolName, args, sessionId = null, mode } = params;
+  const { supabase, role, userId, toolName, args, sessionId = null, commandId = null, mode } = params;
 
   if (typeof toolName !== "string" || !ACTION_SCHEMA[toolName as CopilotAction]) {
     return { ok: false, status: 404, error: "Herramienta no encontrada" };
@@ -102,7 +114,18 @@ export async function executeCopilotTool(params: {
     };
   }
 
-  const rpcPayload = buildCopilotRpcPayload(actionName, parsed.data, role, userId);
+  let rpcPayload: Record<string, unknown>;
+  try {
+    rpcPayload = buildCopilotRpcPayload(actionName, parsed.data, role, userId, commandId);
+  } catch (error) {
+    return {
+      ok: false,
+      actionName,
+      rpc: def.rpc,
+      status: 400,
+      error: error instanceof Error ? error.message : "No se pudo preparar el ajuste de stock.",
+    };
+  }
   const { data: rpcResult, error: rpcErr } = await supabase.rpc(def.rpc, rpcPayload);
   const resultData = rpcErr ? { error: `Error en base de datos: ${rpcErr.message}` } : rpcResult;
 

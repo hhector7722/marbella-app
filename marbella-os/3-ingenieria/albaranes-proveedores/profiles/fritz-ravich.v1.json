@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:12:fritz-ravich",
+  "version": "1.0.0",
+  "supplier": { "id": 12, "canonical_name": "Fritz Ravich", "aliases": ["Frit Ravich"], "observed_document_identities": ["Frit Ravich"] },
+  "reference": { "file": "../Fritz Ravich.png", "sha256": "a4773f4b36e7e879fe3220eb226777083f9220c1ef30008235f1973dd8fdfdbf" },
+  "document_formats": [{ "id": "fritz-unidades", "description": "UNID es la cantidad física; IMP.UNI.EUROS es precio unitario y IMP.TOT.NETO importe sin IVA." }],
+  "fields": { "code": { "aliases": ["COD. ART"], "meaning": "código" }, "product": { "aliases": ["DESCRIPCIÓN"], "meaning": "producto" }, "cases": { "aliases": ["ENV."], "meaning": "envases informativos" }, "quantity": { "aliases": ["UNID."], "meaning": "unidades" }, "unit_price": { "aliases": ["IMP. UNI. EUROS"], "meaning": "EUR/unidad" }, "discount_value": { "aliases": ["DTO."], "meaning": "descuento si consta" }, "line_amount": { "aliases": ["IMP. TOT. NETO"], "meaning": "importe de línea sin IVA" }, "tax_percent": { "aliases": ["%IVA"], "meaning": "IVA" } },
+  "interpretation": { "kind": "direct_line", "quantity_unit": "unit", "price_unit": "EUR/unit", "amount_tax_basis": "without_tax" },
+  "needs_review": ["DTO no se normaliza si rompe la conciliación de IMP.TOT.NETO."],
+  "examples": [{ "description": "84 unidades × 0,775 EUR", "expected": "65,10 EUR sin IVA" }]
+}

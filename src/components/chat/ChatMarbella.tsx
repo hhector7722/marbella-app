@@ -452,7 +452,7 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ toolName: name, args, sessionId: sessionIdRef.current }),
+                body: JSON.stringify({ toolName: name, args, sessionId: sessionIdRef.current, idempotencyKey: call_id }),
               });
               let data: unknown;
               try {

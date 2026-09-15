@@ -1072,6 +1072,7 @@ export type Database = {
           lease_expires_at: string | null
           lease_token: string | null
           requested_by: string | null
+          source_attachment_id: string | null
           status: Database["public"]["Enums"]["docling_job_status"]
           storage_bucket: string
           storage_path: string
@@ -1091,6 +1092,7 @@ export type Database = {
           lease_expires_at?: string | null
           lease_token?: string | null
           requested_by?: string | null
+          source_attachment_id?: string | null
           status?: Database["public"]["Enums"]["docling_job_status"]
           storage_bucket?: string
           storage_path: string
@@ -1110,6 +1112,7 @@ export type Database = {
           lease_expires_at?: string | null
           lease_token?: string | null
           requested_by?: string | null
+          source_attachment_id?: string | null
           status?: Database["public"]["Enums"]["docling_job_status"]
           storage_bucket?: string
           storage_path?: string
@@ -1127,6 +1130,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "purchase_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_processing_jobs_source_attachment_id_fkey"
+            columns: ["source_attachment_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_invoice_attachments"
             referencedColumns: ["id"]
           },
           {
@@ -4354,40 +4364,70 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          category: string | null
+          contact_name: string | null
           created_at: string | null
           delivery_schedule: string | null
           email_domains: string[] | null
           id: number
           image_url: string | null
+          instructions: string | null
           lead_time: string | null
+          min_order: string | null
           name: string
           notes: string | null
+          observations: string | null
+          order_channel: string | null
+          order_deadline: string | null
+          payment_method: string | null
           phone: string | null
           reliability: string | null
+          reliability_review_required: boolean | null
+          reliability_score: number | null
         }
         Insert: {
+          category?: string | null
+          contact_name?: string | null
           created_at?: string | null
           delivery_schedule?: string | null
           email_domains?: string[] | null
           id?: number
           image_url?: string | null
+          instructions?: string | null
           lead_time?: string | null
+          min_order?: string | null
           name: string
           notes?: string | null
+          observations?: string | null
+          order_channel?: string | null
+          order_deadline?: string | null
+          payment_method?: string | null
           phone?: string | null
           reliability?: string | null
+          reliability_review_required?: boolean | null
+          reliability_score?: number | null
         }
         Update: {
+          category?: string | null
+          contact_name?: string | null
           created_at?: string | null
           delivery_schedule?: string | null
           email_domains?: string[] | null
           id?: number
           image_url?: string | null
+          instructions?: string | null
           lead_time?: string | null
+          min_order?: string | null
           name?: string
           notes?: string | null
+          observations?: string | null
+          order_channel?: string | null
+          order_deadline?: string | null
+          payment_method?: string | null
           phone?: string | null
           reliability?: string | null
+          reliability_review_required?: boolean | null
+          reliability_score?: number | null
         }
         Relationships: []
       }
@@ -5368,10 +5408,6 @@ export type Database = {
       }
     }
     Functions: {
-      actualizar_stock: {
-        Args: { p_cantidad: number; p_producto_id: string }
-        Returns: Json
-      }
       apply_receipt_line: {
         Args: {
           p_allocations?: Json
@@ -5565,6 +5601,16 @@ export type Database = {
       ensure_stock_movements_reference_doc_column: {
         Args: never
         Returns: undefined
+      }
+      enqueue_docling_evidence_job: {
+        Args: {
+          p_extractor_version: string
+          p_file_version_hash: string
+          p_invoice_id: string
+          p_source_attachment_id?: string
+          p_storage_path: string
+        }
+        Returns: Json
       }
       fn_calculate_and_insert_delta:
         | {
@@ -6102,6 +6148,24 @@ export type Database = {
         Args: { p_numero_documento: string }
         Returns: undefined
       }
+      record_inventory_count_movements: {
+        Args: { p_correlation_id: string; p_items: Json }
+        Returns: Json
+      }
+      record_stock_adjustment: {
+        Args: {
+          p_idempotency_key: string
+          p_ingredient_id: string
+          p_quantity_base: number
+          p_reason: string
+          p_unit: string
+        }
+        Returns: Json
+      }
+      record_waste_movements: {
+        Args: { p_correlation_id: string; p_items: Json; p_source?: string }
+        Returns: Json
+      }
       recipe_qty_to_base_unit: {
         Args: {
           p_base_unit: string
@@ -6154,6 +6218,10 @@ export type Database = {
       revert_ticket_stock_deduction: {
         Args: { p_numero_documento: string }
         Returns: undefined
+      }
+      retry_docling_evidence_jobs: {
+        Args: { p_invoice_id: string }
+        Returns: Json
       }
       rpc_recalculate_all_balances: { Args: never; Returns: Json }
       rpc_recalculate_all_balances_from_week: {

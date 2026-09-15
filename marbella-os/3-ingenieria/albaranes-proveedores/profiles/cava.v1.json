@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:18:cava",
+  "version": "1.0.0",
+  "supplier": { "id": 18, "canonical_name": "Cava", "aliases": ["Llopart Guell"], "observed_document_identities": ["Llopart Güell SL", "Vins i Caves Jaume Llopart Alemany"] },
+  "reference": { "file": "../Cava.png", "sha256": "1e815a6830201fb7925e40223eff382b48a933d8af269c96947be4d1f6b894b7" },
+  "document_formats": [{ "id": "cava-botella", "description": "Cantidad son botellas; Precio e Importe de línea son sin IVA." }],
+  "fields": { "code": { "aliases": ["Artículo"], "meaning": "código" }, "product": { "aliases": ["Descripción"], "meaning": "producto" }, "quantity": { "aliases": ["Cantidad"], "meaning": "botellas" }, "unit_price": { "aliases": ["Precio"], "meaning": "EUR/botella sin IVA" }, "line_amount": { "aliases": ["Importe"], "meaning": "importe sin IVA" }, "tax_percent": { "aliases": ["% Iva"], "meaning": "tipo de IVA" } },
+  "interpretation": { "kind": "direct_line", "quantity_unit": "unit", "price_unit": "EUR/unit", "amount_tax_basis": "without_tax" },
+  "needs_review": ["No inferir volumen de una botella si no aparece en el artículo o mapping."],
+  "examples": [{ "description": "30 botellas × 6 EUR", "expected": "180 EUR sin IVA" }]
+}

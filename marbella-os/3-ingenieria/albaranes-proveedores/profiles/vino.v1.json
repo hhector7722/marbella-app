@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:14:vino",
+  "version": "1.0.0",
+  "supplier": { "id": 14, "canonical_name": "Vino", "aliases": ["Celler de Capçanes", "Celler de Capcanes"], "observed_document_identities": ["Celler de Capçanes"] },
+  "reference": { "file": "../Vino.png", "sha256": "2884712fe0cb439d05b40de163c3f8dc5a1890a919b97a59db6c373e8d8c8a1b" },
+  "document_formats": [{ "id": "capcanes-botellas-descuento", "description": "Cajas son envases informativos; Unidades son botellas. Precio es EUR/botella, Dto es porcentaje e Importe es neto sin IVA." }],
+  "fields": { "code": { "aliases": ["Producto"], "meaning": "código" }, "product": { "aliases": ["Descripción"], "meaning": "producto" }, "cases": { "aliases": ["Cajas"], "meaning": "cajas" }, "quantity": { "aliases": ["Unidades"], "meaning": "botellas" }, "unit_price": { "aliases": ["Precio"], "meaning": "EUR/botella antes de descuento" }, "discount_percent": { "aliases": ["Dto"], "meaning": "porcentaje de descuento" }, "line_amount": { "aliases": ["Importe"], "meaning": "importe neto sin IVA" } },
+  "interpretation": { "kind": "discounted_unit_line", "quantity_unit": "unit", "price_unit": "EUR/unit", "amount_tax_basis": "without_tax", "rounding_tolerance": 0.01 },
+  "needs_review": ["No usar Cajas como cantidad económica cuando Unidades ya expresa las botellas facturadas."],
+  "examples": [{ "description": "60 botellas × 2,98 EUR × (1−10%)", "expected": "160,92 EUR sin IVA" }]
+}

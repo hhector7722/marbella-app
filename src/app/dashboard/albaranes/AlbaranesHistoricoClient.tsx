@@ -1592,7 +1592,7 @@ export default function AlbaranesHistoricoClient({
                           <div className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4">
                             <Loader2 className="h-6 w-6 shrink-0 animate-spin text-sky-700" />
                             <p className="text-sm font-black text-sky-900 leading-snug">
-                              Leyendo el albarán en segundo plano. Las líneas aparecerán en unos segundos.
+                              Docling está extrayendo evidencia documental en segundo plano. El documento original ya está conservado.
                             </p>
                           </div>
                         )
@@ -1605,7 +1605,7 @@ export default function AlbaranesHistoricoClient({
                               <div className="min-w-0">
                                 <p className="text-sm font-black text-rose-900">No se pudo leer el albarán</p>
                                 <p className="mt-1 text-sm font-medium text-rose-800">
-                                  {detail.ocr_error?.trim() || 'Error de OCR. Reintenta o sustituye la foto.'}
+                                  {detail.ocr_error?.trim() || 'Docling no pudo procesar el documento. Puedes reintentar sin perder el original.'}
                                 </p>
                               </div>
                             </div>
@@ -1710,10 +1710,12 @@ export default function AlbaranesHistoricoClient({
                       {detail.lines.length === 0 ? (
                         <div className="py-8 text-center text-sm font-bold text-zinc-500">
                           {String(detail.status ?? '').toLowerCase() === 'processing'
-                            ? 'Esperando lectura OCR…'
+                            ? 'Docling está extrayendo evidencia documental…'
                             : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
-                              ? 'Sin líneas: corrige la foto o reintenta la lectura.'
-                              : 'No hay líneas guardadas.'}
+                              ? 'No hay líneas: la evidencia falló y el original se conserva para reintentar.'
+                              : String(detail.status ?? '').toLowerCase() === 'pending_mapping'
+                                ? 'La evidencia documental está disponible. Su interpretación y creación de líneas no forman parte de esta fase.'
+                                : 'No hay líneas guardadas.'}
                         </div>
                       ) : (
                         <div className="flex flex-col gap-0 min-w-0">

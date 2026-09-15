@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:2:panabad",
+  "version": "1.0.0",
+  "supplier": { "id": 2, "canonical_name": "Panabad", "aliases": ["Panabad S.A."], "observed_document_identities": ["Panabad", "IFS Food"] },
+  "reference": { "file": "../Panabad.png", "sha256": "3f0190203186b0d22890d20ea345de24252edc1cb88274858da72f8f92bd950c" },
+  "document_formats": [{ "id": "panabad-cajas-descuento", "description": "Lliurat es número de cajas; la descripción contiene Uds. Precio es EUR/caja antes de descuento; % es descuento porcentual; Import es neto de línea." }],
+  "fields": { "code": { "aliases": ["Article"], "meaning": "código" }, "product": { "aliases": ["Descripció"], "meaning": "producto y Uds/caja" }, "quantity": { "aliases": ["Lliurat"], "meaning": "cajas" }, "unit_price": { "aliases": ["Preu"], "meaning": "EUR/caja antes de descuento" }, "discount_percent": { "aliases": ["%"], "meaning": "descuento porcentual" }, "line_amount": { "aliases": ["Import"], "meaning": "importe neto de línea" } },
+  "interpretation": { "kind": "case_discount", "price_unit": "EUR/unit", "amount_tax_basis": "without_tax", "units_per_case_from_description": true, "rounding_tolerance": 0.01 },
+  "needs_review": ["No aplicar el precio de caja a cada unidad; si no aparecen Uds/caja, requiere revisión."],
+  "examples": [{ "description": "8 cajas de 60 Uds × 33,86 EUR × (1−38%)", "expected": "167,95 EUR netos; 480 unidades físicas" }]
+}

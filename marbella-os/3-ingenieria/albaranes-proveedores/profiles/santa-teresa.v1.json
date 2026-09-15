@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:7:santa-teresa",
+  "version": "1.0.0",
+  "supplier": { "id": 7, "canonical_name": "Santa Teresa", "aliases": ["Grup Santa Teresa"], "observed_document_identities": ["Grup Santa Teresa"] },
+  "reference": { "file": "../Santa Teresa.png", "sha256": "3e7667cd09bf5e445f6cc939f803092c4b8be9a9439651c65836dcf1668e1b76" },
+  "document_formats": [{ "id": "santa-teresa-unidades-cajas", "description": "Unidades y Cajas coexisten. Precio e Importe son sin IVA. PretIva es precio unitario con IVA, nunca total de línea." }],
+  "fields": { "quantity": { "aliases": ["Unidades"], "meaning": "unidades facturadas" }, "cases": { "aliases": ["Cajas"], "meaning": "cajas informativas" }, "product": { "aliases": ["Artículo"], "meaning": "producto" }, "unit_price": { "aliases": ["Precio"], "meaning": "EUR/unidad sin IVA" }, "line_amount": { "aliases": ["Importe"], "meaning": "importe de línea sin IVA" }, "price_with_tax": { "aliases": ["PretIva"], "meaning": "EUR/unidad con IVA" } },
+  "interpretation": { "kind": "direct_line", "quantity_unit": "unit", "price_unit": "EUR/unit", "amount_tax_basis": "without_tax" },
+  "needs_review": ["PretIva no puede usarse como importe de línea ni sustituir a Precio."],
+  "examples": [{ "description": "48 unidades × 0,55 EUR", "expected": "26,40 EUR sin IVA; PretIva 0,61 EUR es unitario" }]
+}

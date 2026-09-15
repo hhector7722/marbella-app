@@ -11,7 +11,6 @@ import json
 import os
 import re
 import time
-import traceback
 from collections.abc import Iterable
 from dataclasses import dataclass
 from time import monotonic
@@ -275,9 +274,8 @@ def process_one(settings: Settings) -> bool:
                 "error": None,
             },
         )
-    except Exception as error:  # El fallo queda trazado como evidencia/job, no se oculta.
+    except Exception as error:  # El fallo queda trazado en el job; no se fabrica evidencia de error.
         safe_error = redact_error(error)
-        safe_traceback = redact_error(traceback.format_exc(limit=8))
         metrics = {
             "elapsed_ms": round((monotonic() - started) * 1000),
             "docling_status": "failed",
@@ -289,7 +287,6 @@ def process_one(settings: Settings) -> bool:
                 "jobId": job["id"],
                 "leaseToken": job["leaseToken"],
                 "status": "failed",
-                "rawArtifact": {"error": safe_error, "traceback": safe_traceback},
                 "tables": None,
                 "metrics": metrics,
                 "error": safe_error,

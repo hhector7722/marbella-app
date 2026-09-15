@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "id": "supplier:11:sant-aniol",
+  "version": "1.0.0",
+  "supplier": { "id": 11, "canonical_name": "Sant Aniol", "aliases": ["Prat Munne", "Aigua de Sant Aniol"], "observed_document_identities": ["Prat Munne SL", "Sant Aniol"] },
+  "reference": { "file": "../Sant Aniol.png", "sha256": "31d9a35dd81d37bad2a39bde21fa5d4e7105ac2e4b85443b2f73af2af9c22993" },
+  "document_formats": [{ "id": "sant-aniol-precio-no-util", "description": "El precio e importe mostrados no aportan una economía de compra utilizable." }],
+  "fields": { "code": { "aliases": ["Cod."], "meaning": "código" }, "product": { "aliases": ["Descripción"], "meaning": "producto" }, "cases": { "aliases": ["Cajas"], "meaning": "cajas" }, "quantity": { "aliases": ["Und."], "meaning": "unidades totales" } },
+  "interpretation": { "kind": "internal_water", "quantity_unit": "unit", "price_unit": "EUR/bottle" },
+  "exclusions": [{ "when_description_includes": "PET 1 LITRO", "reason": "personal_purchase_no_stock_or_recipe" }],
+  "needs_review": ["PET 50 cl se propone a 0,28 EUR/botella por regla interna; PET 1 L se excluye de stock y escandallos."],
+  "examples": [{ "description": "PET 50 cc", "expected": "elegible para stock/escandallo con 0,28 EUR/botella" }, { "description": "PET 1 litro", "expected": "compra personal excluida" }]
+}

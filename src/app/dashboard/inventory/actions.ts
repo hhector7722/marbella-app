@@ -88,41 +88,33 @@ export async function processInventoryCounts(counts: CountPayload[]) {
   }
 
   const correlationId = crypto.randomUUID()
-  const movements = actionableCounts.map((count, index) => {
+  const items = actionableCounts.map((count) => {
     const delta = count.physical_stock - count.theoretical_stock
-    const referenceExternalId = `INV-${correlationId}-${count.ingredient_id}`
-
     return {
-      movement_type: 'INVENTORY_COUNT',
       ingredient_id: count.ingredient_id,
-      quantity: delta,
-      unit: count.unit,
-      reference_doc: referenceExternalId,
-      original_description: `Recuento físico (${count.physical_stock} ${count.unit})`,
-      processed_by: 'Mánager (Dashboard)',
-      reference_type: 'inventory_count' as const,
-      reference_external_id: referenceExternalId,
-      idempotency_key: `inventory-count:${correlationId}:${index}`,
-      origin: 'inventory_count' as const,
-      actor_profile_id: gate.userId,
-      correlation_id: correlationId,
-      provenance: { source: 'dashboard_inventory', schema_version: 'k2' },
+      quantity_base: delta,
+      unit_base: count.unit,
+      physical_stock: count.physical_stock,
+      theoretical_stock: count.theoretical_stock,
     }
   })
 
-  const { error } = await supabase
-    .from('stock_movements')
-    .insert(movements)
+  const { data, error } = await supabase.rpc('record_inventory_count_movements', {
+    p_items: items,
+    p_correlation_id: correlationId,
+  })
 
   if (error) {
-    throw new Error(`Fallo crítico al insertar movimientos: ${error.message}`)
+    throw new Error(`Fallo crítico al registrar el recuento: ${error.message}`)
   }
+
+  const inserted = Number((data as { inserted_count?: number } | null)?.inserted_count ?? 0)
 
   revalidatePath('/dashboard/inventory')
   return {
     success: true,
-    message: `Recuento aplicado: ${movements.length} ${
-      movements.length === 1 ? 'actualización' : 'actualizaciones'
+    message: `Recuento aplicado: ${inserted} ${
+      inserted === 1 ? 'actualización' : 'actualizaciones'
     } de stock.`,
   }
 }

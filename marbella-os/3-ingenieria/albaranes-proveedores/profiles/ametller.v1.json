@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:1:ametller",
+  "version": "1.0.0",
+  "supplier": { "id": 1, "canonical_name": "Ametller", "aliases": ["Ametller Origen"], "observed_document_identities": ["Ametller Origen S.L."] },
+  "reference": { "file": "../Ametller.png", "sha256": "fb232ab6767bc2939668b447d25e6bcd99adf40c2928766aff5eb57d1f068205" },
+  "document_formats": [{ "id": "ametller-mixto", "description": "Cantidad puede ser UNI o KG; el precio se lee junto con la unidad de la línea." }],
+  "fields": { "code": { "aliases": ["Código"], "meaning": "código" }, "product": { "aliases": ["Descripción"], "meaning": "producto" }, "quantity": { "aliases": ["Cantidad"], "meaning": "cantidad facturada" }, "unit_price": { "aliases": ["Precio por unidad / kg", "P.U.", "Precio"], "meaning": "precio por UNI o KG" }, "discount_value": { "aliases": ["Descuento"], "meaning": "descuento mostrado; requiere conciliación" }, "line_amount": { "aliases": ["Importe"], "meaning": "importe de línea" }, "tax_percent": { "aliases": ["% IVA"], "meaning": "tipo de IVA" } },
+  "interpretation": { "kind": "direct_line", "accepted_quantity_units": ["unit", "kg"], "amount_tax_basis": "without_tax" },
+  "needs_review": ["Si hay descuento, solo se acepta cuando Cantidad, Precio, descuento e Importe concilian; no se presupone porcentaje."],
+  "examples": [{ "description": "Líneas de verdura por KG y referencias por UNI", "expected": "la unidad observada gobierna cada línea" }]
+}

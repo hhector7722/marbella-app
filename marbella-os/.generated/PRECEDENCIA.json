@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "00e7aeddd33ec498",
+  "_huella": "568f029a306c1c88",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -198,6 +198,21 @@
       ]
     },
     {
+      "ruta": "marbella-os/4-decisiones/ADR-0014-perfiles-versionados-interpretacion-albaranes.md",
+      "documento": "ADR-0014",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0012",
+        "ADR-0013"
+      ]
+    },
+    {
       "ruta": "marbella-os/1-producto/PRINCIPIOS.md",
       "documento": "PRINCIPIOS",
       "clase": "constitucional",
@@ -381,6 +396,23 @@
       "depende_de": []
     },
     {
+      "ruta": "marbella-os/3-ingenieria/albaranes-proveedores/README.md",
+      "documento": "PERFILES-ALBARANES-PROVEEDORES",
+      "clase": "vivo",
+      "estado": "vigente",
+      "capa": "ingenieria",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 20,
+      "vence": "2027-03-15",
+      "depende_de": [
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ADR-0012",
+        "ADR-0013",
+        "ADR-0014"
+      ]
+    },
+    {
       "ruta": "marbella-os/3-ingenieria/ARQUITECTURA.md",
       "documento": "ARQUITECTURA",
       "clase": "vivo",
@@ -389,7 +421,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-14",
+      "vence": "2027-03-15",
       "depende_de": []
     },
     {
@@ -461,7 +493,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-14",
+      "vence": "2027-03-15",
       "depende_de": []
     },
     {
@@ -607,7 +639,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-09-14",
+      "vence": "2027-09-15",
       "depende_de": []
     },
     {
@@ -727,7 +759,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-14",
+      "vence": "2027-03-15",
       "depende_de": []
     },
     {

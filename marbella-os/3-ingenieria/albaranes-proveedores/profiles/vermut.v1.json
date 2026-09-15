@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:17:vermut",
+  "version": "1.0.0",
+  "supplier": { "id": 17, "canonical_name": "Vermut", "aliases": ["Vins Pons"], "observed_document_identities": ["Vins Pons"] },
+  "reference": { "file": "../Vermut.png", "sha256": "c92595f90367c24f909d3ceb30232a0cb6b9fb4613ab643c68704379e3bd6dfb" },
+  "document_formats": [{ "id": "vins-pons-litros", "description": "Unitats expresa litros. La descripción permite comprobar envases×litros/envase; PREU BASE es EUR/litro y TOTAL BASE importe sin IVA." }],
+  "fields": { "code": { "aliases": ["CODI"], "meaning": "código" }, "product": { "aliases": ["DESCRIPCIÓ"], "meaning": "producto y bombonas" }, "quantity": { "aliases": ["UNITATS"], "meaning": "litros" }, "unit_price": { "aliases": ["PREU BASE"], "meaning": "EUR/litro" }, "line_amount": { "aliases": ["TOTAL BASE"], "meaning": "importe base sin IVA" }, "tax_percent": { "aliases": ["IVA"], "meaning": "IVA" } },
+  "interpretation": { "kind": "volume_container", "price_unit": "EUR/l", "amount_tax_basis": "without_tax" },
+  "needs_review": ["Si la descripción no declara envases y litros por envase, no inferir litros solo desde el importe."],
+  "examples": [{ "description": "8 bombonas × 10 litros", "expected": "80 L; 80 L × 3 EUR/L = 240 EUR" }]
+}

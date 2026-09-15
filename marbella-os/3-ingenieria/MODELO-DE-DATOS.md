@@ -140,6 +140,7 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 - `purchase_receipt_confirmations` audita la confirmación económica única de una línea: actor, idempotencia, cantidades físicas, precio observado y normalizado, bloqueo, movimiento y versión de mapeo. No es un segundo ledger.
 - `document_extractions` y sus tablas hijas son evidencia append-only. `document_processing_jobs` es estado operativo mutable de la cola; sus eventos son append-only.
 - Ni el documento, ni la evidencia, ni una versión de mapeo, ni un movimiento se eliminan para corregir un hecho.
+- `suppliers` es el maestro operativo de contacto y pedido: categoría, plazo, mínimo, canal, contacto, pago, instrucciones y observaciones viven en sus columnas de texto. `notes` conserva literalmente el contenido legado y no se sincroniza de nuevo. `reliability` conserva el literal fuente; `reliability_score` sólo proyecta los literales `1` a `5`, y cualquier otro literal no vacío activa `reliability_review_required` para revisión explícita.
 
 Detalle del cálculo en [dominio/PRECIOS-Y-COMPRAS](./dominio/PRECIOS-Y-COMPRAS.md).
 

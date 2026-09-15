@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:16:meritem",
+  "version": "1.0.0",
+  "supplier": { "id": 16, "canonical_name": "Meritem", "aliases": ["IFS Food"], "observed_document_identities": ["Meritem, S.L.", "IFS Food"] },
+  "reference": { "file": "../Meritem.png", "sha256": "c8861209f580e08fcd82453e7db9e1c012d3f27bacf1b4d240857b5eb4167703" },
+  "document_formats": [{ "id": "meritem-unidades", "description": "Cant. son unidades; Precio unitario e Importe total son sin IVA; SCRAP no es IVA." }],
+  "fields": { "code": { "aliases": ["Artículo"], "meaning": "código" }, "product": { "aliases": ["Denominación"], "meaning": "producto" }, "quantity": { "aliases": ["Cant."], "meaning": "unidades" }, "unit_price": { "aliases": ["Precio unitario EUR"], "meaning": "EUR/unidad sin IVA" }, "line_amount": { "aliases": ["Precio total EUR"], "meaning": "importe de línea sin IVA" }, "tax_percent": { "aliases": ["IVA"], "meaning": "IVA de la línea" } },
+  "interpretation": { "kind": "direct_line", "quantity_unit": "unit", "price_unit": "EUR/unit", "amount_tax_basis": "without_tax" },
+  "needs_review": ["El SCRAP/recargo se conserva como evidencia de documento y no se convierte en precio de línea."],
+  "examples": [{ "description": "12 UN × 7,35 EUR", "expected": "88,20 EUR sin IVA; total fiscal 97,07 EUR con IVA y SCRAP" }]
+}

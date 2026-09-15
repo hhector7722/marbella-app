@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-14
+revisado: 2026-09-15
 caducidad: 6 meses
 supersede: —
 ---
@@ -154,6 +154,8 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Proveedor** | Empresa que suministra mercancía. | `suppliers` |
 | **Albarán** | Documento de entrega de mercancía. Es el documento que se escanea. | `purchase_invoices` |
 | **Línea de albarán** | Artículo concreto de un albarán, con cantidad y precio. | — |
+| **Evidencia documental** | Extracción versionada de un documento: texto, tablas, filas, celdas y layout observados. No contiene una decisión económica. | `document_evidence_extractions`, `document_evidence_*` |
+| **Perfil de proveedor** | Regla versionada y determinista que interpreta el formato documental de un proveedor a partir de evidencia. No es un mapeo ni evidencia. | `marbella-os/3-ingenieria/albaranes-proveedores/profiles/` |
 | **Mapeo** | Correspondencia aprendida entre el artículo de un proveedor y un ingrediente de Marbella. | `supplier_item_mappings` |
 | **Versión de mapeo** | Propuesta o confirmación inmutable del mapeo, con presentación y factor de conversión. | `purchase_mapping_versions` |
 | **Confirmación de recepción** | Hecho económico atómico que convierte una línea revisada en un `PURCHASE`, conciliación y, si corresponde, cambio de precio trazado. | `purchase_receipt_confirmations`, `apply_receipt_line(...)` |

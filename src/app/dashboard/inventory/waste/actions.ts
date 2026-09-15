@@ -34,7 +34,7 @@ export type WasteLine = {
 }
 
 export async function processWasteEntries(lines: WasteLine[]) {
-  const { supabase, user } = await requireManagerStockWrite()
+  const { supabase } = await requireManagerStockWrite()
 
   const actionable = lines.filter((l) => Number.isFinite(l.quantity) && l.quantity > 0)
   if (actionable.length === 0) {
@@ -42,24 +42,18 @@ export async function processWasteEntries(lines: WasteLine[]) {
   }
 
   const correlationId = crypto.randomUUID()
-  const movements = actionable.map((line, idx) => ({
-    movement_type: 'WASTE' as const,
+  const items = actionable.map((line) => ({
     ingredient_id: line.ingredient_id,
-    quantity: line.quantity,
-    unit: line.unit,
-    reference_doc: `WASTE-${correlationId}-${idx}`,
-    original_description: 'Merma manual (ingredientes)',
-    processed_by: user.email ?? user.id,
-    reference_type: 'waste_entry' as const,
-    reference_external_id: `WASTE-${correlationId}-${idx}`,
-    idempotency_key: `waste:${correlationId}:${idx}`,
-    origin: 'manager_adjustment' as const,
-    actor_profile_id: user.id,
-    correlation_id: correlationId,
-    provenance: { source: 'dashboard_waste', schema_version: 'k2' },
+    quantity_base: line.quantity,
+    unit_base: line.unit,
+    description: 'Merma manual (ingredientes)',
   }))
 
-  const { error } = await supabase.from('stock_movements').insert(movements)
+  const { error } = await supabase.rpc('record_waste_movements', {
+    p_items: items,
+    p_correlation_id: correlationId,
+    p_source: 'dashboard_waste',
+  })
 
   if (error) {
     console.error('processWasteEntries:', error)
@@ -91,7 +85,7 @@ function ingredientUnitFromRow(row: RecipeLineRow): string | null {
 }
 
 export async function processRecipeWaste(recipeId: string, units: number) {
-  const { supabase, user } = await requireManagerStockWrite()
+  const { supabase } = await requireManagerStockWrite()
 
   if (!Number.isFinite(units) || units <= 0) {
     throw new Error('Indica un número de unidades mayor que cero.')
@@ -148,24 +142,18 @@ export async function processRecipeWaste(recipeId: string, units: number) {
   const correlationId = crypto.randomUUID()
   const desc = `Merma receta: ${recipe.name} × ${units} ud`
 
-  const movements = Array.from(merged.entries()).map(([ingredient_id, { quantity, unit }], idx) => ({
-    movement_type: 'WASTE' as const,
+  const items = Array.from(merged.entries()).map(([ingredient_id, { quantity, unit }]) => ({
     ingredient_id,
-    quantity,
-    unit,
-    reference_doc: `WASTE-RCP-${correlationId}-${idx}`,
-    original_description: desc,
-    processed_by: user.email ?? user.id,
-    reference_type: 'waste_entry' as const,
-    reference_external_id: `WASTE-RCP-${correlationId}-${idx}`,
-    idempotency_key: `waste-recipe:${correlationId}:${idx}`,
-    origin: 'manager_adjustment' as const,
-    actor_profile_id: user.id,
-    correlation_id: correlationId,
-    provenance: { source: 'dashboard_recipe_waste', schema_version: 'k2' },
+    quantity_base: quantity,
+    unit_base: unit,
+    description: desc,
   }))
 
-  const { error } = await supabase.from('stock_movements').insert(movements)
+  const { error } = await supabase.rpc('record_waste_movements', {
+    p_items: items,
+    p_correlation_id: correlationId,
+    p_source: 'dashboard_recipe_waste',
+  })
 
   if (error) {
     console.error('processRecipeWaste insert:', error)
@@ -178,6 +166,6 @@ export async function processRecipeWaste(recipeId: string, units: number) {
 
   return {
     success: true,
-    message: `Merma registrada: ${recipe.name} × ${units} ud (${movements.length} ingredientes).`,
+    message: `Merma registrada: ${recipe.name} × ${units} ud (${items.length} ingredientes).`,
   }
 }

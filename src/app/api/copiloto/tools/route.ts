@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       toolName: body?.toolName,
       args: body?.args,
       sessionId: typeof body?.sessionId === "string" ? body.sessionId : null,
+      commandId: typeof body?.idempotencyKey === "string" ? body.idempotencyKey : null,
       mode: "voice",
     });
 

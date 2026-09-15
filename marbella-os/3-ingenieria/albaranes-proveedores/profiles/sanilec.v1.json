@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:9:sanilec",
+  "version": "1.0.0",
+  "supplier": { "id": 9, "canonical_name": "Sanilec", "aliases": ["Sanilec Detergentes"], "observed_document_identities": ["Sanilec"] },
+  "reference": { "file": "../Sanilec.png", "sha256": "2fe7cedab5bcb5f35e0e737e273ee4f1343944efd5f1aa73c485b81ea4c129bb" },
+  "document_formats": [{ "id": "sanilec-presentacion", "description": "La descripción puede contener 1x5 L, 3x5 L o 1x6 K. Cantidad es la magnitud facturada; Precio es por esa unidad, no necesariamente por caja." }],
+  "fields": { "code": { "aliases": ["Artículo"], "meaning": "código" }, "product": { "aliases": ["Descripción"], "meaning": "producto y presentación" }, "presentation": { "aliases": ["Formato"], "meaning": "presentación si se extrae separada" }, "quantity": { "aliases": ["Cantidad"], "meaning": "magnitud facturada" }, "unit_price": { "aliases": ["Precio"], "meaning": "precio por unidad facturada" }, "line_amount": { "aliases": ["Importe"], "meaning": "importe de línea sin IVA" } },
+  "interpretation": { "kind": "direct_line", "accepted_quantity_units": ["l", "kg", "unit"], "amount_tax_basis": "without_tax", "presentation_from_description": true, "rounding_tolerance": 0.01 },
+  "needs_review": ["La presentación 3x5 L significa 15 L físicos; si Cantidad, presentación y precio no concilian, no elegir una unidad por defecto."],
+  "examples": [{ "description": "3×5 L", "expected": "15 L, no tres unidades de stock" }]
+}

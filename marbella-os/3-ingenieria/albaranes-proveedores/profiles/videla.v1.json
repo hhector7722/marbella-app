@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:3:videla",
+  "version": "1.0.0",
+  "supplier": { "id": 3, "canonical_name": "Videla", "aliases": ["Pescados Videla"], "observed_document_identities": ["Pescados Videla S.A."] },
+  "reference": { "file": "../Videla.png", "sha256": "78b22b77d423e8d503f404aedb29c28e3e0780707816cf783e2849614f446aac" },
+  "document_formats": [{ "id": "videla-peso-variable", "description": "Una línea puede incluir tara, piezas, bultos y kg. Se conservan medidas separadas; no se reduce a una cantidad única sin relación inequívoca." }],
+  "fields": { "product": { "aliases": ["Artículo"], "meaning": "producto y datos descriptivos" }, "tare": { "aliases": ["Tara"], "meaning": "peso de embalaje" }, "quantity": { "aliases": ["Unidades"], "meaning": "medidas observadas (PZ, BU, KG)" }, "unit_price": { "aliases": ["Precio"], "meaning": "precio según unidad económica de línea" }, "line_amount": { "aliases": ["Importe"], "meaning": "importe de línea" } },
+  "interpretation": { "kind": "mixed_measure_review", "amount_tax_basis": "without_tax" },
+  "needs_review": ["Cuando coexisten kg, piezas/bultos o tara, determinar unidad económica y cantidad física por revisión; nunca fusionarlas automáticamente."],
+  "examples": [{ "description": "2,09 PZ y 6,76 KG en una misma línea", "expected": "preservar ambas medidas y devolver needs_review" }]
+}

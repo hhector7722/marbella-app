@@ -6,7 +6,7 @@ capa: decisiones
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-14
+revisado: 2026-09-15
 caducidad: 12 meses
 ---
 
@@ -51,6 +51,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0011](./ADR-0011-proyeccion-diaria-hija-y-carry-out.md) | Proyección diaria hija y `carry_out` para lecturas SELECT | Vigente |
 | [0012](./ADR-0012-recepcion-trazable-y-evidencia-documental.md) | Recepción trazable y evidencia documental sin efectos automáticos | Vigente |
 | [0013](./ADR-0013-confirmacion-atomica-de-recepcion.md) | Confirmación atómica de recepción por línea | Vigente |
+| [0014](./ADR-0014-perfiles-versionados-interpretacion-albaranes.md) | Perfiles versionados para interpretación de albaranes | Vigente |
 
 ## Decisiones tomadas sin registrar
 

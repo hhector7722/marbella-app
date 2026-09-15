@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:13:hielo-fenix",
+  "version": "1.0.0",
+  "supplier": { "id": 13, "canonical_name": "Hielo Fenix", "aliases": ["Hielo Fénix"], "observed_document_identities": ["Hielo Fenix"] },
+  "reference": { "file": "../Hielo Fenix.png", "sha256": "8b3db9c7853c602720a4c25755a70c42314fa6871e886d0c7bc93e49a0abe948" },
+  "document_formats": [{ "id": "hielo-manual-iva-incluido", "description": "Albarán manuscrito: Lliurament son bolsas y el total incluye IVA 10%." }],
+  "fields": { "product": { "aliases": ["Producte"], "meaning": "producto" }, "quantity": { "aliases": ["Lliurament"], "meaning": "bolsas" }, "line_amount_tax_included": { "aliases": ["a cobrar"], "meaning": "importe de línea con IVA" } },
+  "interpretation": { "kind": "vat_included_pack", "quantity_unit": "bag", "price_unit": "EUR/kg", "amount_tax_basis": "with_tax", "tax_percent": 10 },
+  "needs_review": ["No usar total/cantidad como coste sin IVA; la bolsa debe declarar sus kg."],
+  "examples": [{ "description": "25 bolsas de 2 kg, total 28,75 EUR con IVA", "expected": "50 kg; coste sin IVA por kg derivado de 28,75/(1,10×50)" }]
+}

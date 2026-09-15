@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:10:nestle",
+  "version": "1.0.0",
+  "supplier": { "id": 10, "canonical_name": "Nestle", "aliases": ["Nestlé", "Helados Nestlé"], "observed_document_identities": ["Nestlé"] },
+  "reference": { "file": "../Nestle.png", "sha256": "12e73b1643659e4306c2c8f2f381055023d5799c42b9b4dd1e0465b94a2a67f3" },
+  "document_formats": [{ "id": "nestle-cajas-descuento", "description": "Cantidad en CJ; el nombre contiene unidades por caja y contenido por unidad. Precio es EUR/caja antes de %Dto; Precio con descuento es importe neto de línea." }],
+  "fields": { "quantity": { "aliases": ["Cantidad"], "meaning": "cajas (CJ)" }, "product": { "aliases": ["Producto"], "meaning": "producto, unidades por caja y contenido" }, "unit_price": { "aliases": ["Precio"], "meaning": "EUR/caja antes de descuento" }, "discount_percent": { "aliases": ["%Dto"], "meaning": "porcentaje de descuento" }, "line_amount": { "aliases": ["Precio con descuento"], "meaning": "importe neto de línea" } },
+  "interpretation": { "kind": "case_discount", "price_unit": "EUR/unit", "amount_tax_basis": "without_tax", "units_per_case_from_description": true, "content_per_unit_from_description": true, "rounding_tolerance": 0.01 },
+  "needs_review": ["Si faltan unidades por caja, contenido o %Dto, no dividir precio de caja por una cantidad inventada."],
+  "examples": [{ "description": "2 CJ × 27 EUR × (1−20%)", "expected": "43,20 EUR netos; 20 unidades/caja implica 1,08 EUR/unidad" }]
+}

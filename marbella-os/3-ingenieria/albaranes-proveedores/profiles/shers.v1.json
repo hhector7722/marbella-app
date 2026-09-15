@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:8:shers",
+  "version": "1.0.0",
+  "supplier": { "id": 8, "canonical_name": "Shers", "aliases": ["SERHS", "Serhs Distribucio"], "observed_document_identities": ["SERHS Distribució i Logística, S.L."] },
+  "reference": { "file": "../Shers.png", "sha256": "7320a9035b7d1db64628a51639b95c7498629a838a825039c4262586ae5bda0a" },
+  "document_formats": [{ "id": "serhs-tip-preu-dto-pun", "description": "TIP declara el tipo de unidad. PREU, DTO y P.UN se leen juntos: P.UN es precio unitario neto/acordado cuando la línea concilia; DTO no se presupone porcentaje." }],
+  "fields": { "code": { "aliases": ["CODIGO"], "meaning": "código" }, "product": { "aliases": ["DESCRIPCIÓN"], "meaning": "producto" }, "quantity": { "aliases": ["CANTIDAD"], "meaning": "cantidad" }, "unit_type": { "aliases": ["TIP"], "meaning": "tipo de unidad facturada" }, "unit_price": { "aliases": ["PREU"], "meaning": "precio mostrado" }, "discount_value": { "aliases": ["DTO"], "meaning": "descuento de semántica no porcentual" }, "net_unit_price": { "aliases": ["P.UN"], "meaning": "precio unitario neto/acordado" }, "line_amount": { "aliases": ["IMPORTE"], "meaning": "importe económico de línea" }, "tax_percent": { "aliases": ["%/IVA"], "meaning": "IVA" } },
+  "interpretation": { "kind": "net_unit_review", "amount_tax_basis": "without_tax" },
+  "needs_review": ["DTO no se trata como porcentaje. Si Cantidad × P.UN no explica IMPORTE, la línea queda needs_review."],
+  "examples": [{ "description": "TIP UN/CA con PREU, DTO y P.UN", "expected": "preservar las tres cifras y exigir conciliación" }]
+}

@@ -27,14 +27,16 @@ interface Supplier {
     name: string;
     delivery_schedule: string | null;
     lead_time: string | null;
+    // Literal fuente. Puede requerir revisión si no es una puntuación 1–5.
     reliability: string | null;
+    reliability_score?: number | null;
+    reliability_review_required?: boolean | null;
     phone: string | null;
     notes: string | null;
     email_domains: string[] | null;
     image_url: string | null;
-    // Derivado (no existe en BD): se guarda dentro de notes como "Categoría (app): ..."
+    // Campos operativos normalizados. `notes` sólo conserva contenido legado.
     category: string | null;
-    // Campos extendidos serializados
     order_deadline?: string | null;
     min_order?: string | null;
     order_channel?: string | null;
@@ -113,6 +115,11 @@ function buildNotesWithJSON(fields: SupplierNotesFields): string {
     return JSON.stringify(fields);
 }
 
+function reliabilityScoreFromLiteral(value: string | null | undefined): number | null {
+    const normalized = value?.trim() ?? '';
+    return /^[1-5]$/.test(normalized) ? Number(normalized) : null;
+}
+
 const CATEGORIES = ['Alimentos', 'Bebidas', 'Limpieza', 'Mantenimiento', 'Suministros', 'Otros'];
 
 const INITIAL_SUPPLIERS: Partial<Supplier>[] = INITIAL_SUPPLIER_SEED.map((seed) => ({
@@ -156,7 +163,7 @@ export default function SuppliersPage() {
             if (showLoading) setLoading(true);
             let { data, error } = await supabase
                 .from('suppliers')
-                .select('id,created_at,name,delivery_schedule,lead_time,reliability,phone,notes,email_domains,image_url,category,order_deadline,min_order,order_channel,contact_name,payment_method,instructions,observations')
+                .select('id,created_at,name,delivery_schedule,lead_time,reliability,reliability_score,reliability_review_required,phone,notes,email_domains,image_url,category,order_deadline,min_order,order_channel,contact_name,payment_method,instructions,observations')
                 .order('name');
             
             // Si las columnas nuevas aún no existen en el esquema físico (migración pendiente de correr), caemos a la consulta segura legada
@@ -173,6 +180,8 @@ export default function SuppliersPage() {
                 data = (legacyData || []).map((row) => ({
                     ...row,
                     category: null,
+                    reliability_score: null,
+                    reliability_review_required: null,
                     order_deadline: null,
                     min_order: null,
                     order_channel: null,
@@ -195,17 +204,8 @@ export default function SuppliersPage() {
             const dbSuppliers: Supplier[] = (data || []).map((r: any) => {
                 const fields = parseSupplierNotes(r.notes ?? null);
                 
-                let deadline = r.order_deadline ?? fields.order_deadline ?? null;
-                if (deadline && /^\d{2}:\d{2}:\d{2}$/.test(deadline)) {
-                    deadline = deadline.slice(0, 5);
-                }
-
-                let minOrder = null;
-                if (r.min_order != null) {
-                    minOrder = `${Number(r.min_order).toFixed(2).replace('.00', '')} €`;
-                } else if (fields.min_order != null) {
-                    minOrder = fields.min_order;
-                }
+                const deadline = r.order_deadline ?? fields.order_deadline ?? null;
+                const minOrder = r.min_order ?? fields.min_order ?? null;
 
                 return {
                     id: String(r.id),
@@ -214,6 +214,10 @@ export default function SuppliersPage() {
                     delivery_schedule: r.delivery_schedule ?? null,
                     lead_time: r.lead_time ?? null,
                     reliability: r.reliability != null ? String(r.reliability) : null,
+                    reliability_score: r.reliability_score != null
+                        ? Number(r.reliability_score)
+                        : reliabilityScoreFromLiteral(r.reliability != null ? String(r.reliability) : null),
+                    reliability_review_required: r.reliability_review_required === true,
                     phone: r.phone ?? null,
                     notes: r.notes ?? null,
                     email_domains: Array.isArray(r.email_domains) ? r.email_domains : null,
@@ -368,18 +372,18 @@ export default function SuppliersPage() {
                 instructions: null,
                 observations: null,
             };
-            const notes = buildNotesWithJSON(notesObj);
+            const legacyNotes = buildNotesWithJSON(notesObj);
             const { error } = await supabase.from('suppliers').insert({
                 name,
                 phone,
                 category: newSupplier.category ?? 'Alimentos',
-                notes,
+                notes: null,
             });
             if (error && (error.message.includes('category') || error.message.includes('column') || error.message.includes('does not exist'))) {
                 const { error: legacyError } = await supabase.from('suppliers').insert({
                     name,
                     phone,
-                    notes,
+                    notes: legacyNotes,
                 });
                 if (legacyError) throw legacyError;
             } else if (error) {
@@ -468,16 +472,16 @@ export default function SuppliersPage() {
         const fields = parseSupplierNotes(s.notes);
         resetImageEditState();
         setEditSupplier(s);
-        setEditNotes(fields.observations ?? '');
+        setEditNotes(s.observations ?? fields.observations ?? '');
         setEditEmailDomainsText(Array.isArray(s.email_domains) ? s.email_domains.join(', ') : '');
         
         // Cargar campos extendidos
-        setEditOrderDeadline(fields.order_deadline ?? '');
-        setEditMinOrder(fields.min_order ?? '');
-        setEditOrderChannel(fields.order_channel ?? '');
-        setEditContactName(fields.contact_name ?? '');
-        setEditPaymentMethod(fields.payment_method ?? '');
-        setEditInstructions(fields.instructions ?? '');
+        setEditOrderDeadline(s.order_deadline ?? fields.order_deadline ?? '');
+        setEditMinOrder(s.min_order ?? fields.min_order ?? '');
+        setEditOrderChannel(s.order_channel ?? fields.order_channel ?? '');
+        setEditContactName(s.contact_name ?? fields.contact_name ?? '');
+        setEditPaymentMethod(s.payment_method ?? fields.payment_method ?? '');
+        setEditInstructions(s.instructions ?? fields.instructions ?? '');
     }
 
     function closeEditModal() {
@@ -528,7 +532,8 @@ export default function SuppliersPage() {
         const previousImageUrl = editSupplier.image_url?.trim() || null;
         const previousStoragePath = extractSupplierStoragePath(previousImageUrl);
         
-        // Serializar campos extendidos
+        // Sólo se usa si un despliegue anterior a la sucesora devuelve un error
+        // de columna. En el esquema actual `notes` legado nunca se sobrescribe.
         const notesObj: SupplierNotesFields = {
             category: editSupplier.category ?? 'Alimentos',
             order_deadline: editOrderDeadline.trim() || null,
@@ -539,7 +544,7 @@ export default function SuppliersPage() {
             instructions: editInstructions.trim() || null,
             observations: editNotes.trim() || null,
         };
-        const notes = buildNotesWithJSON(notesObj);
+        const legacyNotes = buildNotesWithJSON(notesObj);
 
         const emailDomains = editEmailDomainsText
             .split(',')
@@ -548,11 +553,11 @@ export default function SuppliersPage() {
 
         let nextImageUrl: string | null = previousImageUrl;
 
-        const deadlineMatch = editOrderDeadline.trim().match(/(\d{1,2}):(\d{2})/);
-        const orderDeadlineValue = deadlineMatch ? `${deadlineMatch[1].padStart(2, '0')}:${deadlineMatch[2]}:00` : null;
-
-        const minOrderValue = editMinOrder.trim() ? parseFloat(editMinOrder.replace(',', '.').replace(/[^0-9.]/g, '')) || null : null;
-        const reliabilityValue = editSupplier.reliability ? parseInt(String(editSupplier.reliability).replace(/\D/g, ''), 10) || null : null;
+        const orderDeadlineValue = editOrderDeadline.trim() || null;
+        const minOrderValue = editMinOrder.trim() || null;
+        const reliabilityValue = editSupplier.reliability?.trim() || null;
+        const reliabilityScore = reliabilityScoreFromLiteral(reliabilityValue);
+        const reliabilityReviewRequired = reliabilityValue !== null && reliabilityScore === null;
 
         try {
             setIsSavingEdit(true);
@@ -608,7 +613,6 @@ export default function SuppliersPage() {
                         delivery_schedule: editSupplier.delivery_schedule || null,
                         lead_time: editSupplier.lead_time || null,
                         reliability: reliabilityValue,
-                        notes,
                         image_url: nextImageUrl,
                         email_domains: emailDomains.length ? emailDomains : null,
                         category: editSupplier.category ?? 'Alimentos',
@@ -632,7 +636,7 @@ export default function SuppliersPage() {
                             delivery_schedule: editSupplier.delivery_schedule || null,
                             lead_time: editSupplier.lead_time || null,
                             reliability: editSupplier.reliability || null,
-                            notes,
+                            notes: legacyNotes,
                             image_url: nextImageUrl,
                             email_domains: emailDomains.length ? emailDomains : null,
                         })
@@ -655,7 +659,7 @@ export default function SuppliersPage() {
                             delivery_schedule: editSupplier.delivery_schedule || null,
                             lead_time: editSupplier.lead_time || null,
                             reliability: reliabilityValue,
-                            notes,
+                            notes: null,
                             image_url: nextImageUrl,
                             email_domains: emailDomains.length ? emailDomains : null,
                             category: editSupplier.category ?? 'Alimentos',
@@ -681,7 +685,7 @@ export default function SuppliersPage() {
                             delivery_schedule: editSupplier.delivery_schedule || null,
                             lead_time: editSupplier.lead_time || null,
                             reliability: editSupplier.reliability || null,
-                            notes,
+                            notes: legacyNotes,
                             image_url: nextImageUrl,
                             email_domains: emailDomains.length ? emailDomains : null,
                         });
@@ -696,6 +700,9 @@ export default function SuppliersPage() {
             if (detailSupplier && detailSupplier.id === editSupplier.id) {
                 setDetailSupplier({
                     ...editSupplier,
+                    reliability: reliabilityValue,
+                    reliability_score: reliabilityScore,
+                    reliability_review_required: reliabilityReviewRequired,
                     image_url: nextImageUrl,
                     email_domains: emailDomains.length ? emailDomains : null,
                     category: editSupplier.category ?? 'Alimentos',
@@ -924,6 +931,10 @@ export default function SuppliersPage() {
                     const hasInstructions = Boolean(detailSupplier.instructions?.trim());
                     const hasObservations = Boolean(detailSupplier.observations?.trim());
                     const hasOperationalInfo = hasInstructions || hasObservations;
+                    const reliabilityScore = detailSupplier.reliability_score
+                        ?? reliabilityScoreFromLiteral(detailSupplier.reliability);
+                    const reliabilityNeedsReview = detailSupplier.reliability_review_required === true
+                        || (detailSupplier.reliability !== null && reliabilityScore === null);
 
                     return (
                         <div className="space-y-2.5 px-1 py-1">
@@ -949,18 +960,23 @@ export default function SuppliersPage() {
                                             <span className="text-zinc-300 select-none">·</span>
                                             <div className="flex items-center gap-1">
                                                 <span className="text-[8px] font-black uppercase tracking-wider !text-zinc-400">Fiab</span>
-                                                <div className="flex gap-0.5" aria-label={`Fiabilidad: ${Number(detailSupplier.reliability) || 0} de 5 estrellas`}>
-                                                    {Array.from({ length: 5 }).map((_, idx) => {
-                                                        const rating = Number(detailSupplier.reliability) || 0;
-                                                        return (
+                                                {reliabilityScore !== null ? (
+                                                    <div className="flex gap-0.5" aria-label={`Fiabilidad: ${reliabilityScore} de 5 estrellas`}>
+                                                        {Array.from({ length: 5 }).map((_, idx) => (
                                                             <Star
                                                                 key={idx}
                                                                 size={9}
-                                                                className={idx < rating ? "fill-amber-400 text-amber-400" : "text-zinc-200"}
+                                                                className={idx < reliabilityScore ? "fill-amber-400 text-amber-400" : "text-zinc-200"}
                                                             />
-                                                        );
-                                                    })}
-                                                </div>
+                                                        ))}
+                                                    </div>
+                                                ) : reliabilityNeedsReview ? (
+                                                    <span className="text-[9px] font-semibold !text-zinc-500">
+                                                        {detailSupplier.reliability} · revisar
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[9px] !text-zinc-400">Sin valorar</span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -1197,6 +1213,11 @@ export default function SuppliersPage() {
                                             onChange={(e) => setEditSupplier({ ...editSupplier, reliability: e.target.value || null })}
                                         >
                                             <option value="">Sin valorar</option>
+                                            {editSupplier.reliability && reliabilityScoreFromLiteral(editSupplier.reliability) === null ? (
+                                                <option value={editSupplier.reliability}>
+                                                    {editSupplier.reliability} · pendiente de revisión
+                                                </option>
+                                            ) : null}
                                             <option value="1">1 estrella</option>
                                             <option value="2">2 estrellas</option>
                                             <option value="3">3 estrellas</option>

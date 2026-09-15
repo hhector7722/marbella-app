@@ -15,7 +15,7 @@ type CompletionPayload = {
   jobId: string
   leaseToken: string
   status: "success" | "no_table" | "failed"
-  rawArtifact: unknown
+  rawArtifact?: unknown
   tables: unknown[] | null
   metrics?: Record<string, unknown>
   error?: string | null
@@ -50,11 +50,12 @@ function errorMessage(error: unknown): string {
 function isCompletionPayload(value: unknown): value is CompletionPayload {
   if (!value || typeof value !== "object") return false
   const input = value as Record<string, unknown>
-  return (
+  const base = (
     typeof input.jobId === "string" &&
     typeof input.leaseToken === "string" &&
     (input.status === "success" || input.status === "no_table" || input.status === "failed")
   )
+  return base && (input.status === "failed" || Object.hasOwn(input, "rawArtifact"))
 }
 
 Deno.serve(async (request) => {

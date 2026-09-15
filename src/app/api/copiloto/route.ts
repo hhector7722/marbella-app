@@ -902,6 +902,10 @@ Rol: ${role}.`;
 
           const toolCallId =
             `${toolName}-${step}-${Math.random().toString(36).slice(2, 10)}`;
+          const commandId =
+            typeof (call as { id?: unknown }).id === "string"
+              ? (call as unknown as { id: string }).id
+              : toolCallId;
 
           if (!def?.rpc) {
             const toolError = {
@@ -936,6 +940,7 @@ Rol: ${role}.`;
             toolName: actionName,
             args: toolArgs,
             sessionId: activeSessionId,
+            commandId,
             mode: "chat",
           });
 

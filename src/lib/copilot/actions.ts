@@ -116,11 +116,13 @@ export const ACTION_SCHEMA: Record<CopilotAction, ActionDefinition> = {
   },
   actualizar_stock: {
     module: "inventario",
-    rpc: "actualizar_stock",
-    description: "Ajuste de stock_current de un ingrediente (UUID del producto, delta numérico).",
+    rpc: "record_stock_adjustment",
+    description: "Registra un ajuste append-only de stock en la unidad base del ingrediente. Requiere motivo y nunca escribe un saldo directamente.",
     schema: z.object({
-      p_producto_id: z.string().uuid(),
-      p_cantidad: z.number(),
+      p_ingredient_id: z.string().uuid(),
+      p_quantity_base: z.number().finite().refine((value) => value !== 0, "La cantidad no puede ser cero."),
+      p_unit: z.string().trim().min(1).max(16),
+      p_reason: z.string().trim().min(3).max(500),
     }),
   },
   gestionar_carta: {

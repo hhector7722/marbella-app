@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:6:carnicas-pijuan",
+  "version": "1.0.0",
+  "supplier": { "id": 6, "canonical_name": "Carnicas Pijuan", "aliases": ["Pijuan d'Artesa"], "observed_document_identities": ["Carnicas Pijuan S.L."] },
+  "reference": { "file": "../Carnicas Pijuan.png", "sha256": "cf104ea4be151d44fe939ea3323b0a8cdbb60ca39fb040f2bce7faf902027011" },
+  "document_formats": [{ "id": "pijuan-pesaje", "description": "El campo CAIXA del formato ejemplificado expresa el peso en kg facturado." }],
+  "fields": { "code": { "aliases": ["CODI"], "meaning": "código" }, "product": { "aliases": ["DESCRIPCIÓ"], "meaning": "producto" }, "quantity": { "aliases": ["CAIXA"], "meaning": "kg facturados en este formato" }, "unit_price": { "aliases": ["PREU"], "meaning": "precio por kg" }, "line_amount": { "aliases": ["IMPORT"], "meaning": "importe de línea sin IVA" }, "tax_percent": { "aliases": ["%IVA"], "meaning": "tipo de IVA" } },
+  "interpretation": { "kind": "direct_line", "quantity_unit": "kg", "price_unit": "EUR/kg", "amount_tax_basis": "without_tax" },
+  "needs_review": ["Si CAIXA cambia de semántica documental, detener la interpretación."],
+  "examples": [{ "description": "4,96 kg × 11,00 EUR/kg", "expected": "54,56 EUR sin IVA" }]
+}

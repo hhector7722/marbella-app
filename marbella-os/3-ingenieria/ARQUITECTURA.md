@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-14
+revisado: 2026-09-15
 caducidad: 6 meses
 supersede: —
 ---
@@ -159,9 +159,16 @@ Capturar, extraer o proponer no cambia una magnitud económica. `apply_receipt_l
 ```
 documento privado → cola durable → Edge Function con token de worker
   → URL firmada efímera → Docling local → evidencia versionada + métricas
+  → perfil versionado de proveedor → mapeo de artículo → revisión humana → K4
 ```
 
 El mini-PC ejecuta Docling en CPU dentro de Docker y el worker solo conoce la URL de la Edge Function y su token. La Edge Function reclama un trabajo con lease, firma el documento durante diez minutos y persiste el resultado mediante `persist_document_evidence`. No hay cliente de Supabase ni credenciales de base de datos en el worker. Una respuesta de Docling no puede atravesar la frontera hacia ingredientes, precios, stock, mapeos definitivos o escandallos.
+
+El perfil de proveedor es una etapa posterior, pura y versionada: toma evidencia
+estructurada, reconoce la semántica documental y devuelve una propuesta o
+`needs_review`. No se ejecuta dentro del worker, no modifica la evidencia y no
+puede invocar ninguna escritura. El mapeo de un artículo concreto y la
+confirmación K4 siguen siendo fronteras distintas.
 
 ---
 

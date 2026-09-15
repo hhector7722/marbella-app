@@ -23,4 +23,4 @@ python3 worker_test.py
 docker compose --env-file .env ps
 ```
 
-Los documentos originales y la evidencia no se borran. Un fallo queda en `document_processing_jobs`, su secuencia de eventos y —cuando Docling llega a responder— una extracción con estado `failed`.
+Los documentos originales y la evidencia no se borran. Un fallo queda en `document_processing_jobs` y su secuencia de eventos; no se fabrica una extracción de error. Así el reintento reanuda el mismo trabajo sin sobrescribir evidence previa.

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "supplier:5:abril",
+  "version": "1.0.0",
+  "supplier": { "id": 5, "canonical_name": "Abril", "aliases": ["Disabril"], "observed_document_identities": ["Abril Distribucions Alimentaries"] },
+  "reference": { "file": "../Abril.png", "sha256": "ce28e56b8bb08546cc794ad118c4cdf748c2008217c88eca8866092520b46782" },
+  "document_formats": [{ "id": "abril-pesaje", "description": "Albarán cárnico: QUILOS y PREU se expresan por kg; IMPORT es el importe de línea sin IVA." }],
+  "fields": { "code": { "aliases": ["COD."], "meaning": "código del artículo" }, "product": { "aliases": ["ARTICLE"], "meaning": "descripción" }, "quantity": { "aliases": ["QUILOS"], "meaning": "peso facturado" }, "unit_price": { "aliases": ["PREU"], "meaning": "precio por kg" }, "line_amount": { "aliases": ["IMPORT"], "meaning": "importe de línea sin IVA" } },
+  "interpretation": { "kind": "direct_line", "quantity_unit": "kg", "price_unit": "EUR/kg", "amount_tax_basis": "without_tax" },
+  "needs_review": ["Si QUILOS o PREU no explican IMPORT, no estimar peso ni precio."],
+  "examples": [{ "description": "3,76 kg × 5,95 EUR/kg", "expected": "22,37 EUR sin IVA" }]
+}

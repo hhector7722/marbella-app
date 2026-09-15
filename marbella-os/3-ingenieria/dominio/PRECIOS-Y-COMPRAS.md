@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-14
+revisado: 2026-09-15
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -75,6 +75,15 @@ Esto protege una configuración que ha costado establecer. Un escáner o un mape
 La configuración de unidades pertenece al asistente de ingredientes, con aplicación explícita. La pantalla histórica de precios desde albarán no aplica cambios en K4; una recepción solo cambia el importe canónico sin reconfigurar la unidad ni el pack.
 
 Además, el precio solo se escribe **si el valor calculado difiere del actual**, con una tolerancia mínima. Evita historial de ruido.
+
+### Interpretación antes del mapeo
+
+La semántica del formato documental de cada proveedor vive en los
+[perfiles versionados de albarán](../albaranes-proveedores/README.md). El
+perfil interpreta evidencia estructurada y entrega una propuesta o
+`needs_review`; no es un mapeo de artículo a ingrediente ni puede cambiar una
+magnitud económica. La propuesta conserva la versión de perfil y solo puede
+seguir hacia un mapeo seguro, revisión humana y la confirmación K4.
 
 ---
 
