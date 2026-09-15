@@ -26,7 +26,7 @@ import {
 } from './docling-evidence.ts'
 import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-snapshot.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v1' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v2' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -132,6 +132,12 @@ function defaultBillingUnit(unit?: QuantityUnit): string | null {
   if (!unit) return null
   if (unit === 'unit') return 'ud'
   return unit
+}
+
+function profileBillingFallback(profile: SupplierProfile): QuantityUnit | undefined {
+  if (profile.interpretation.quantity_unit) return profile.interpretation.quantity_unit
+  if (profile.interpretation.kind === 'case_discount') return 'case'
+  return undefined
 }
 
 export function observedBillingUnit(value: string | null, fallback?: QuantityUnit): string | null {
@@ -324,7 +330,7 @@ export function normalizeDoclingEvidence(params: {
   const proposals = semanticRows.map((semanticRow, index): K5NormalizedProposal => {
     const product = semanticText(semanticRow, 'product')
     const observedQuantityText = value(semanticRow, 'quantity')
-    const billingUnit = observedBillingUnit(observedQuantityText, profile.interpretation.quantity_unit)
+    const billingUnit = observedBillingUnit(observedQuantityText, profileBillingFallback(profile))
     const mapping = compatibleMapping(mappings, product, billingUnit)
     const fixture: SupplierEvidenceFixture = {
       supplier_id: supplierId,
