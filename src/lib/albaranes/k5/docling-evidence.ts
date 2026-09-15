@@ -115,13 +115,19 @@ function aliasMatchScore(header: string, alias: string): number {
   return 0
 }
 
+type HeaderResolution = {
+  column: number
+  matched: boolean
+}
+
 /**
  * Elige la columna por la coincidencia semántica más fuerte. Una coincidencia
  * exacta siempre gana a una inclusión parcial (p. ej. `Precio con descuento`
  * no puede resolverse como `Precio`). Si dos columnas empatan con la misma
- * fuerza, la resolución se considera ambigua y no se inventa una elección.
+ * fuerza, el campo cuenta para identificar la tabla pero no se selecciona una
+ * columna: la evidencia ambigua debe permanecer ambigua.
  */
-function bestHeaderColumn(headers: readonly string[], aliases: readonly string[]): number {
+function bestHeaderColumn(headers: readonly string[], aliases: readonly string[]): HeaderResolution {
   let bestColumn = -1
   let bestScore = 0
   let tied = false
@@ -137,7 +143,10 @@ function bestHeaderColumn(headers: readonly string[], aliases: readonly string[]
     }
   })
 
-  return tied ? -1 : bestColumn
+  return {
+    column: tied ? -1 : bestColumn,
+    matched: bestScore > 0,
+  }
 }
 
 export type ProfileTableMatch = {
@@ -160,11 +169,9 @@ export function matchProfileTable(
       FieldName,
       NonNullable<SupplierProfile['fields'][FieldName]>
     ]>) {
-      const column = bestHeaderColumn(table.headers, definition.aliases)
-      if (column >= 0) {
-        fieldColumns[fieldName] = column
-        score += fieldName === 'product' ? 3 : 1
-      }
+      const resolution = bestHeaderColumn(table.headers, definition.aliases)
+      if (resolution.matched) score += fieldName === 'product' ? 3 : 1
+      if (resolution.column >= 0) fieldColumns[fieldName] = resolution.column
     }
 
     const candidate = { table, fieldColumns, score }
