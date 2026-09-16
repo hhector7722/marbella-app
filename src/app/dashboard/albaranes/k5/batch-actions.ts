@@ -1,0 +1,367 @@
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { createClient } from '@/utils/supabase/server'
+import { classifyK5BatchCandidate, type K5BatchDisposition } from '@/lib/albaranes/k5/batch-review'
+import { proposalInputFingerprint } from '@/lib/albaranes/k5/normalizer'
+import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
+import {
+  applyReceiptLineAction,
+  previewReceiptLineAction,
+  type ReceiptPreview,
+} from '../receipt-actions'
+
+export type K5BatchReviewRow = {
+  proposalId: string
+  lineId: string | null
+  sourceItemName: string
+  ingredientId: string | null
+  ingredientName: string | null
+  mappingVersionId: string | null
+  status: string
+  disposition: K5BatchDisposition
+  reviewReasons: string[]
+  warnings: string[]
+  confirmed: boolean
+  pendingOrderCount: number
+  lineQuantity: number | null
+  lineUnit: string | null
+  observedUnitPrice: number | null
+  lineTotal: number | null
+}
+
+export type K5BatchReviewSummary = {
+  total: number
+  ready: number
+  confirmed: number
+  exceptions: number
+  excluded: number
+}
+
+export type K5BatchPreviewItem = {
+  proposalId: string
+  lineId: string
+  mappingVersionId: string
+  lineName: string
+  ingredientName: string
+  fingerprint: string
+  preview: ReceiptPreview
+}
+
+type ManagerGate =
+  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>> }
+  | { ok: false; message: string }
+
+function text(value: unknown): string {
+  return String(value ?? '').trim()
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (value == null || value === '') return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+async function requireManager(): Promise<ManagerGate> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+  if (userError || !user) return { ok: false, message: 'Inicia sesión para continuar.' }
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (error || (profile?.role !== 'manager' && profile?.role !== 'admin')) {
+    return { ok: false, message: 'Solo manager o administración puede revisar recepciones por lote.' }
+  }
+  return { ok: true, supabase }
+}
+
+async function loadBatchState(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  invoiceId: string
+): Promise<{ rows: K5BatchReviewRow[]; summary: K5BatchReviewSummary }> {
+  const { data: invoice, error: invoiceError } = await supabase
+    .from('purchase_invoices')
+    .select('id')
+    .eq('id', invoiceId)
+    .maybeSingle()
+  if (invoiceError || !invoice) throw new Error('No se pudo abrir este albarán.')
+
+  const { data: proposalRows, error: proposalError } = await supabase
+    .from('purchase_interpretation_proposals')
+    .select('id,proposal_set_id,supersedes_proposal_id,provenance,created_at,source_table_index,source_row_index,source_item_name,mapping_version_id,ingredient_id,status,review_reasons,warnings,line_quantity,line_unit,observed_unit_price,line_total')
+    .eq('purchase_invoice_id', invoiceId)
+    .order('created_at', { ascending: true })
+  if (proposalError) throw new Error('No se pudieron leer las propuestas K5.')
+
+  const active = selectCurrentProposalLineage((proposalRows ?? []) as Array<Record<string, unknown>>)
+  const proposalIds = active.map((row) => text(row.id)).filter(Boolean)
+
+  const { data: lineRows, error: lineError } = proposalIds.length
+    ? await supabase
+        .from('purchase_invoice_lines')
+        .select('id,interpretation_proposal_id')
+        .eq('invoice_id', invoiceId)
+        .in('interpretation_proposal_id', proposalIds)
+    : { data: [] as Array<Record<string, unknown>>, error: null }
+  if (lineError) throw new Error('No se pudieron resolver las líneas revisables.')
+
+  const lineByProposal = new Map(
+    ((lineRows ?? []) as Array<Record<string, unknown>>).map((row) => [text(row.interpretation_proposal_id), text(row.id)])
+  )
+  const lineIds = [...lineByProposal.values()].filter(Boolean)
+
+  const { data: confirmations, error: confirmationError } = lineIds.length
+    ? await supabase
+        .from('purchase_receipt_confirmations')
+        .select('purchase_invoice_line_id')
+        .in('purchase_invoice_line_id', lineIds)
+    : { data: [] as Array<Record<string, unknown>>, error: null }
+  if (confirmationError) throw new Error('No se pudo comprobar qué líneas ya están confirmadas.')
+  const confirmedLineIds = new Set(
+    ((confirmations ?? []) as Array<Record<string, unknown>>).map((row) => text(row.purchase_invoice_line_id)).filter(Boolean)
+  )
+
+  const ingredientIds = [...new Set(active.map((row) => text(row.ingredient_id)).filter(Boolean))]
+  const { data: ingredients, error: ingredientError } = ingredientIds.length
+    ? await supabase.from('ingredients').select('id,name').in('id', ingredientIds)
+    : { data: [] as Array<Record<string, unknown>>, error: null }
+  if (ingredientError) throw new Error('No se pudieron cargar los ingredientes revisados.')
+  const ingredientNameById = new Map(
+    ((ingredients ?? []) as Array<Record<string, unknown>>).map((row) => [text(row.id), text(row.name)])
+  )
+
+  const { data: pendingOrders, error: orderError } = ingredientIds.length
+    ? await supabase
+        .from('purchase_order_item_reconciliation')
+        .select('ingredient_id,purchase_order_item_id')
+        .in('ingredient_id', ingredientIds)
+        .gt('quantity_pending', 0)
+    : { data: [] as Array<Record<string, unknown>>, error: null }
+  if (orderError) throw new Error('No se pudo comprobar la conciliación con pedidos.')
+  const pendingOrderCount = new Map<string, number>()
+  for (const row of (pendingOrders ?? []) as Array<Record<string, unknown>>) {
+    const ingredientId = text(row.ingredient_id)
+    if (!ingredientId) continue
+    pendingOrderCount.set(ingredientId, (pendingOrderCount.get(ingredientId) ?? 0) + 1)
+  }
+
+  const rows = active
+    .map((proposal): K5BatchReviewRow => {
+      const proposalId = text(proposal.id)
+      const lineId = lineByProposal.get(proposalId) || null
+      const ingredientId = text(proposal.ingredient_id) || null
+      const confirmed = Boolean(lineId && confirmedLineIds.has(lineId))
+      const pending = ingredientId ? pendingOrderCount.get(ingredientId) ?? 0 : 0
+      const status = text(proposal.status)
+      const mappingVersionId = text(proposal.mapping_version_id) || null
+      const disposition = classifyK5BatchCandidate({
+        status,
+        mappingVersionId,
+        ingredientId,
+        lineId,
+        confirmed,
+        pendingOrderCount: pending,
+      })
+
+      return {
+        proposalId,
+        lineId,
+        sourceItemName: text(proposal.source_item_name) || 'Fila sin producto',
+        ingredientId,
+        ingredientName: ingredientId ? ingredientNameById.get(ingredientId) || null : null,
+        mappingVersionId,
+        status,
+        disposition,
+        reviewReasons: Array.isArray(proposal.review_reasons) ? proposal.review_reasons.map(text).filter(Boolean) : [],
+        warnings: Array.isArray(proposal.warnings) ? proposal.warnings.map(text).filter(Boolean) : [],
+        confirmed,
+        pendingOrderCount: pending,
+        lineQuantity: numberOrNull(proposal.line_quantity),
+        lineUnit: text(proposal.line_unit) || null,
+        observedUnitPrice: numberOrNull(proposal.observed_unit_price),
+        lineTotal: numberOrNull(proposal.line_total),
+      }
+    })
+    .sort((a, b) => a.sourceItemName.localeCompare(b.sourceItemName, 'es'))
+
+  const summary: K5BatchReviewSummary = {
+    total: rows.length,
+    ready: rows.filter((row) => row.disposition === 'ready').length,
+    confirmed: rows.filter((row) => row.disposition === 'confirmed').length,
+    exceptions: rows.filter((row) => ['needs_mapping', 'needs_review', 'order_review', 'unavailable'].includes(row.disposition)).length,
+    excluded: rows.filter((row) => row.disposition === 'excluded').length,
+  }
+
+  return { rows, summary }
+}
+
+function previewFingerprint(row: K5BatchReviewRow, preview: ReceiptPreview): string {
+  return proposalInputFingerprint({
+    schema: 'k5-batch-preview-v1',
+    proposal_id: row.proposalId,
+    line_id: row.lineId,
+    mapping_version_id: row.mappingVersionId,
+    ingredient_id: preview.ingredient_id,
+    physical_quantity: preview.physical_quantity,
+    base_unit: preview.base_unit,
+    purchase_quantity: preview.purchase_quantity,
+    purchase_unit: preview.purchase_unit,
+    observed_unit_price: preview.observed_unit_price,
+    normalized_unit_price: preview.normalized_unit_price,
+    price_before: preview.price_before,
+    price_after: preview.price_after,
+    price_locked: preview.price_locked,
+    price_changed: preview.price_changed,
+    allocation_count: preview.allocation_count,
+  })
+}
+
+export async function listK5BatchReviewAction(params: { invoiceId: string }): Promise<
+  | { success: true; rows: K5BatchReviewRow[]; summary: K5BatchReviewSummary }
+  | { success: false; message: string }
+> {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false, message: gate.message }
+  const invoiceId = text(params?.invoiceId)
+  if (!invoiceId) return { success: false, message: 'Albarán inválido.' }
+  try {
+    const state = await loadBatchState(gate.supabase, invoiceId)
+    return { success: true, ...state }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo preparar la revisión por lote.' }
+  }
+}
+
+export async function previewK5BatchReceiptsAction(params: {
+  invoiceId: string
+  proposalIds: string[]
+}): Promise<
+  | { success: true; items: K5BatchPreviewItem[] }
+  | { success: false; message: string }
+> {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false, message: gate.message }
+  const invoiceId = text(params?.invoiceId)
+  const proposalIds = [...new Set((params?.proposalIds ?? []).map(text).filter(Boolean))]
+  if (!invoiceId || proposalIds.length === 0) return { success: false, message: 'Selecciona al menos una línea lista.' }
+  if (proposalIds.length > 80) return { success: false, message: 'El lote es demasiado grande. Divide la revisión.' }
+
+  let state: Awaited<ReturnType<typeof loadBatchState>>
+  try {
+    state = await loadBatchState(gate.supabase, invoiceId)
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo validar el lote.' }
+  }
+  const byId = new Map(state.rows.map((row) => [row.proposalId, row]))
+  const selected = proposalIds.map((id) => byId.get(id)).filter((row): row is K5BatchReviewRow => Boolean(row))
+  if (selected.length !== proposalIds.length || selected.some((row) => row.disposition !== 'ready' || !row.lineId || !row.mappingVersionId)) {
+    return { success: false, message: 'Alguna línea ya no está lista para confirmación automática. Actualiza la revisión.' }
+  }
+
+  const items: K5BatchPreviewItem[] = []
+  for (const row of selected) {
+    const result = await previewReceiptLineAction({
+      lineId: row.lineId!,
+      mappingVersionId: row.mappingVersionId!,
+      allocations: [],
+    })
+    if (!result.success) {
+      return { success: false, message: `${row.sourceItemName}: ${result.message}` }
+    }
+    items.push({
+      proposalId: row.proposalId,
+      lineId: row.lineId!,
+      mappingVersionId: row.mappingVersionId!,
+      lineName: row.sourceItemName,
+      ingredientName: row.ingredientName || result.preview.ingredient_name,
+      fingerprint: previewFingerprint(row, result.preview),
+      preview: result.preview,
+    })
+  }
+
+  return { success: true, items }
+}
+
+export async function applyK5BatchReceiptsAction(params: {
+  invoiceId: string
+  items: Array<{ proposalId: string; fingerprint: string }>
+  idempotencyKey: string
+}): Promise<
+  | { success: true; applied: number }
+  | { success: false; message: string; applied: number }
+> {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false, message: gate.message, applied: 0 }
+  const invoiceId = text(params?.invoiceId)
+  const batchKey = text(params?.idempotencyKey)
+  const requested = (params?.items ?? [])
+    .map((item) => ({ proposalId: text(item.proposalId), fingerprint: text(item.fingerprint) }))
+    .filter((item) => item.proposalId && item.fingerprint)
+  const uniqueIds = new Set(requested.map((item) => item.proposalId))
+  if (!invoiceId || !batchKey || requested.length === 0 || uniqueIds.size !== requested.length) {
+    return { success: false, message: 'El lote de confirmación no es válido.', applied: 0 }
+  }
+  if (requested.length > 80) return { success: false, message: 'El lote es demasiado grande.', applied: 0 }
+
+  let state: Awaited<ReturnType<typeof loadBatchState>>
+  try {
+    state = await loadBatchState(gate.supabase, invoiceId)
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo revalidar el lote.', applied: 0 }
+  }
+  const byId = new Map(state.rows.map((row) => [row.proposalId, row]))
+
+  const validated: Array<{ row: K5BatchReviewRow; fingerprint: string }> = []
+  for (const request of requested) {
+    const row = byId.get(request.proposalId)
+    if (!row || row.disposition !== 'ready' || !row.lineId || !row.mappingVersionId) {
+      return { success: false, message: 'El lote cambió desde la vista previa. No se confirmó ninguna línea nueva.', applied: 0 }
+    }
+    const previewResult = await previewReceiptLineAction({
+      lineId: row.lineId,
+      mappingVersionId: row.mappingVersionId,
+      allocations: [],
+    })
+    if (!previewResult.success) {
+      return { success: false, message: `${row.sourceItemName}: ${previewResult.message}`, applied: 0 }
+    }
+    if (previewFingerprint(row, previewResult.preview) !== request.fingerprint) {
+      return { success: false, message: `${row.sourceItemName}: el efecto cambió desde la vista previa. Revisa de nuevo el lote.`, applied: 0 }
+    }
+    validated.push({ row, fingerprint: request.fingerprint })
+  }
+
+  let applied = 0
+  for (const { row } of validated) {
+    const result = await applyReceiptLineAction({
+      lineId: row.lineId!,
+      mappingVersionId: row.mappingVersionId!,
+      allocations: [],
+      idempotencyKey: `receipt-batch:${batchKey}:${row.proposalId}`,
+    })
+    if (!result.success) {
+      revalidatePath('/dashboard/albaranes')
+      revalidatePath('/dashboard/albaranes/k5')
+      return {
+        success: false,
+        message: applied > 0
+          ? `${row.sourceItemName}: no se pudo confirmar. ${applied} línea(s) anteriores sí quedaron confirmadas de forma idempotente.`
+          : `${row.sourceItemName}: ${result.message}`,
+        applied,
+      }
+    }
+    applied += 1
+  }
+
+  revalidatePath('/dashboard/albaranes')
+  revalidatePath('/dashboard/albaranes/k5')
+  revalidatePath('/dashboard/inventory')
+  revalidatePath('/dashboard/inventory/ledger')
+  return { success: true, applied }
+}
