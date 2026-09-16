@@ -124,7 +124,7 @@ const billingAliases: Record<string, string> = {
   ml: 'ml', cl: 'cl', g: 'g', gr: 'g',
   ud: 'ud', uds: 'ud', u: 'ud', un: 'ud', uni: 'ud', unidad: 'ud', unidades: 'ud',
   cj: 'case', caja: 'case', cajas: 'case', case: 'case',
-  bolsa: 'bag', bolsas: 'bag', bag: 'bag',
+  bol: 'bag', bolsa: 'bag', bolsas: 'bag', bag: 'bag',
   pz: 'piece', pieza: 'piece', piezas: 'piece', piece: 'piece',
   bu: 'bundle', bulto: 'bundle', bultos: 'bundle', bundle: 'bundle',
 }
@@ -374,10 +374,13 @@ export function normalizeDoclingEvidence(params: {
     // K5 vuelve a conciliar cantidad × precio con aritmética exacta. El
     // intérprete de perfil conserva Number para su capa descriptiva legacy y
     // puede producir falsos mismatch cuando Docling expresa decimales con
-    // punto (p. ej. `4.000UNI` o `1.300KG`). En K5, este motivo económico solo
-    // es válido si también lo reproduce la capa exacta.
+    // punto (p. ej. `4.000UNI` o `1.300KG`). Un mapping confirmado también
+    // resuelve una unidad de envase desconocida si la unidad observada (p. ej.
+    // BOL→bag) coincide exactamente con la presentación versionada.
     const interpretedReasons = interpreted.needs_review.filter(
-      (reason) => reason !== 'line_amount_mismatch' || economics.reasons.includes('line_amount_mismatch')
+      (reason) =>
+        (reason !== 'line_amount_mismatch' || economics.reasons.includes('line_amount_mismatch'))
+        && (reason !== 'unknown_quantity_unit' || !mapping)
     )
     const reasons = unique([...interpretedReasons, ...economics.reasons])
     const warnings: string[] = []
