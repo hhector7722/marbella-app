@@ -24,6 +24,20 @@ function createdAtMs(row: K5ProposalLineageRow): number {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+export function proposalAncestryIds<T extends K5ProposalLineageRow>(rows: readonly T[], startId: string): string[] {
+  const byId = new Map(rows.map((row) => [text(row.id), row]))
+  const ids: string[] = []
+  const seen = new Set<string>()
+  let cursor = text(startId)
+  while (cursor && !seen.has(cursor)) {
+    seen.add(cursor)
+    ids.push(cursor)
+    const row = byId.get(cursor)
+    cursor = text(row?.supersedes_proposal_id)
+  }
+  return ids
+}
+
 /**
  * Devuelve las hojas del último proposal_set base y de sus revisiones humanas
  * descendientes. El historial anterior sigue intacto, pero deja de contaminar
