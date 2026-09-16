@@ -11,6 +11,7 @@ const ingredients = [
   { id: 'aquarius', name: 'Aquarius naranja', current_price: 2.6, purchase_unit: 'ud', base_unit: 'ud' },
   { id: 'patata', name: 'Patata agria', current_price: 0.91, purchase_unit: 'kg', base_unit: 'g' },
   { id: 'arroz', name: 'Arroz', current_price: 1.73, purchase_unit: 'kg', base_unit: 'g' },
+  { id: 'pan-rallado', name: 'Pan rallado', current_price: 2.6, purchase_unit: 'kg', base_unit: 'g' },
 ]
 
 const legacyMappings = [
@@ -107,14 +108,31 @@ test('si factura por kg, el tamaño del saco no multiplica otra vez la cantidad'
   assert.equal(suggestion.conversionFactor, 1)
 })
 
-test('no inventa un ingrediente cuando no hay candidato único y seguro', () => {
+test('un ingrediente recién creado puede resolver nombres concatenados del proveedor', () => {
   const result = buildMappingAssistantSuggestions({
     supplierId: 1,
     rows: [row('pan-row', 'L092615C12B PanRalladoSANTA RITA 500g', 'UNI')],
     ingredients,
     legacyMappings,
   })
+  assert.equal(result.suggestions.length, 1)
+  const suggestion = result.suggestions[0]!
+  assert.equal(suggestion.ingredientId, 'pan-rallado')
+  assert.equal(suggestion.ingredientName, 'Pan rallado')
+  assert.equal(suggestion.lineBillingUnit, 'ud')
+  assert.equal(suggestion.lineContentQty, 500)
+  assert.equal(suggestion.lineContentUnit, 'g')
+  assert.equal(suggestion.conversionFactor, 0.5)
+})
+
+test('no inventa un ingrediente cuando no hay candidato único y seguro', () => {
+  const result = buildMappingAssistantSuggestions({
+    supplierId: 1,
+    rows: [row('unknown-row', 'L092615C99B ProductoEspecialXYZ 750g', 'UNI')],
+    ingredients,
+    legacyMappings,
+  })
   assert.equal(result.suggestions.length, 0)
   assert.equal(result.unresolved.length, 1)
-  assert.equal(result.unresolved[0]!.proposalId, 'pan-row')
+  assert.equal(result.unresolved[0]!.proposalId, 'unknown-row')
 })
