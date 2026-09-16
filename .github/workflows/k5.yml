@@ -12,6 +12,7 @@ on:
       - 'src/app/dashboard/albaranes/k5/**'
       - 'src/components/albaranes/InterpretationProposalPanel.tsx'
       - 'src/components/albaranes/K5BatchReceiptReview.tsx'
+      - 'src/components/albaranes/K5MappingAssistant.tsx'
       - 'scripts/k5/**'
       - 'supabase/migrations/*k5*'
       - '.github/workflows/k5.yml'
@@ -24,6 +25,7 @@ on:
       - 'src/app/dashboard/albaranes/k5/**'
       - 'src/components/albaranes/InterpretationProposalPanel.tsx'
       - 'src/components/albaranes/K5BatchReceiptReview.tsx'
+      - 'src/components/albaranes/K5MappingAssistant.tsx'
       - 'scripts/k5/**'
       - 'supabase/migrations/*k5*'
       - '.github/workflows/k5.yml'
@@ -45,6 +47,7 @@ jobs:
           src/lib/albaranes/k5/case-discount-normalizer.test.ts
           src/lib/albaranes/k5/proposal-lineage.test.ts
           src/lib/albaranes/k5/batch-review.test.ts
+          src/lib/albaranes/k5/mapping-assistant.test.ts
       - name: Supplier profiles
         run: >-
           node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test
