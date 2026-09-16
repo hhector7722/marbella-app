@@ -125,13 +125,18 @@ function deriveDimensional(
   }
 
   // Si factura por unidad/bolsa, el contenido explícito del nombre permite
-  // construir una presentación exacta: 1 kg, 500 g, 12 uds, etc.
+  // construir una presentación exacta: 1 kg, 500 g, 12 uds, etc. Algunos
+  // extractores antiguos no conservaron BOL como lineUnit; "Bolsa" en el
+  // nombre es suficiente para proponer bag, pero sigue requiriendo aprobación.
   const pack = packageMeasure(row.sourceItemName, supplierId)
   if (pack) {
     const factor = convert(pack.qty, pack.unit, purchase)
     if (factor != null && Number.isFinite(factor) && factor > 0) {
+      const explicitBag = /\bbolsa\b/i.test(stripSupplierTechnicalPrefix(row.sourceItemName, supplierId))
       return {
-        lineBillingUnit: line === 'bag' ? 'bag' : (line === 'ud' ? 'ud' : String(row.lineUnit ?? 'ud').trim().toLowerCase()),
+        lineBillingUnit: line === 'bag' || (!line && explicitBag)
+          ? 'bag'
+          : (line === 'ud' ? 'ud' : String(row.lineUnit ?? 'ud').trim().toLowerCase()),
         lineContentQty: pack.qty,
         lineContentUnit: pack.unit,
         conversionFactor: factor,
