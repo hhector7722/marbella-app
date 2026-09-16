@@ -231,3 +231,95 @@ test('Videla conserva medidas coexistentes, respeta cabeceras solapadas y fuerza
   assert.equal(proposal.mappingVersionId, null)
   assert.equal(proposal.normalizedUnitPrice, null)
 })
+
+test('Ametller elige la cabecera de líneas dentro de una tabla con secciones de metadatos', () => {
+  const ametllerProfile: SupplierProfile = {
+    ...directProfile,
+    id: 'supplier:1:ametller',
+    supplier: {
+      id: 1,
+      canonical_name: 'Ametller',
+      aliases: ['Ametller Origen'],
+      observed_document_identities: ['Ametller Origen S.L.'],
+    },
+    fields: {
+      code: { aliases: ['Código'], meaning: 'código' },
+      product: { aliases: ['Descripción'], meaning: 'producto' },
+      quantity: { aliases: ['Cantidad'], meaning: 'cantidad facturada' },
+      unit_price: { aliases: ['Precio por unidad / kg', 'P.U.', 'Precio'], meaning: 'precio' },
+      discount_value: { aliases: ['Descuento'], meaning: 'descuento' },
+      line_amount: { aliases: ['Importe'], meaning: 'importe' },
+      tax_percent: { aliases: ['% IVA'], meaning: 'IVA' },
+    },
+    interpretation: {
+      kind: 'direct_line',
+      accepted_quantity_units: ['unit', 'kg'],
+      amount_tax_basis: 'without_tax',
+      rounding_tolerance: 0.01,
+    },
+    needs_review: [],
+  }
+
+  const raw = artifact([
+    {
+      data: {
+        table_cells: [
+          cell(0, 0, 'Albaran', true, 2),
+          cell(0, 2, 'Fecha', true),
+          cell(0, 3, 'CIF', true),
+          cell(0, 4, 'Pedido Cliente', true, 3),
+          cell(0, 6, 'Observaciones', true, 3),
+          cell(1, 0, '01/0263729', true, 2),
+          cell(1, 2, '15/09/2026', true),
+          cell(1, 3, 'B09761628', true),
+          cell(1, 4, '5011079', true, 3),
+          cell(4, 1, 'Codiga', true),
+          cell(4, 2, 'Descripcion', true),
+          cell(4, 4, 'Cantidad', true),
+          cell(4, 5, 'Precio', true),
+          cell(4, 6, 'Importe', true),
+          cell(4, 7, 'Neto', true),
+          cell(4, 8, '%IVA', true),
+          cell(5, 3, 'Pedido2026-51-118396 deFecha 14/09/2026', true),
+          cell(6, 0, '16082'),
+          cell(6, 1, 'A00260915 Cebolla Gorda', false, 2),
+          cell(6, 4, '3,900KG'),
+          cell(6, 5, '0,590'),
+          cell(6, 6, '2,30'),
+          cell(6, 7, '2,30'),
+          cell(6, 8, '4,00%'),
+        ],
+      },
+    },
+    {
+      data: {
+        table_cells: [
+          cell(0, 0, 'Imp.Bruto', true),
+          cell(0, 1, 'Descuentos', true),
+          cell(0, 2, 'Bases IVA', true),
+          cell(0, 3, '%IVA', true),
+          cell(1, 2, '158,52'),
+          cell(1, 3, '4,00'),
+        ],
+      },
+    },
+  ], 'Ametller Origen S.L.')
+
+  const proposals = normalizeDoclingEvidence({
+    profile: ametllerProfile,
+    rawArtifact: raw,
+    supplierId: 1,
+    mappings: [],
+  }).proposals
+
+  assert.equal(proposals.length, 1)
+  const proposal = proposals[0]!
+  assert.equal(proposal.sourceTableIndex, 0)
+  assert.equal(proposal.sourceRowIndex, 6)
+  assert.equal(proposal.sourceItemName, 'A00260915 Cebolla Gorda')
+  assert.equal(proposal.lineQuantity, '3.9')
+  assert.equal(proposal.lineUnit, 'kg')
+  assert.equal(proposal.observedUnitPrice, '0.59')
+  assert.equal(proposal.lineTotal, '2.3')
+  assert.equal(proposal.status, 'needs_mapping')
+})
