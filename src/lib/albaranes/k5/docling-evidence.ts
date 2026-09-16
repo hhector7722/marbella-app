@@ -56,6 +56,40 @@ function tableCells(table: unknown): K5EvidenceCell[] {
   })
 }
 
+function selectExplicitHeaderRow(cells: readonly K5EvidenceCell[]): number {
+  const headerRows = [...new Set(cells.filter((cell) => cell.columnHeader).map((cell) => cell.row))]
+  if (headerRows.length === 0) return 0
+
+  let bestRow = headerRows[0]!
+  let bestScore = -1
+
+  for (const row of headerRows) {
+    const anchors = cells.filter((cell) => cell.columnHeader && cell.row === row && cell.text)
+    const coveredColumns = new Set<number>()
+    for (const cell of anchors) {
+      for (let offset = 0; offset < cell.columnSpan; offset += 1) coveredColumns.add(cell.column + offset)
+    }
+
+    // Los albaranes reales pueden contener varias secciones marcadas como
+    // column_header dentro de una misma tabla (metadatos arriba y líneas de
+    // producto después). Preferimos la sección de cabecera más densa. Así una
+    // fila como `Código | Descripción | Cantidad | Precio | Importe | ...`
+    // gana sobre `Albarán | Fecha | CIF | ...` sin usar conocimiento de negocio.
+    const score = anchors.length * 100 + coveredColumns.size
+    if (score > bestScore || (score === bestScore && row > bestRow)) {
+      bestScore = score
+      bestRow = row
+    }
+  }
+
+  return bestRow
+}
+
+function isHeaderOnlyRow(cells: readonly K5EvidenceCell[], row: number): boolean {
+  const anchors = cells.filter((cell) => cell.row === row && cell.text)
+  return anchors.length > 0 && anchors.every((cell) => cell.columnHeader)
+}
+
 export function extractDoclingTables(rawArtifact: unknown): K5EvidenceTable[] {
   const document = doclingDocument(rawArtifact)
   const rawTables = document?.tables
@@ -94,12 +128,15 @@ export function extractDoclingTables(rawArtifact: unknown): K5EvidenceTable[] {
       }
     }
 
-    const explicitHeaderRows = new Set(cells.filter((cell) => cell.columnHeader).map((cell) => cell.row))
-    const headerRow = explicitHeaderRows.size > 0 ? Math.min(...explicitHeaderRows) : 0
+    const headerRow = selectExplicitHeaderRow(cells)
     const headers = grid[headerRow].map((value, column) => value.trim() || `column_${column}`)
     const rows = grid
       .map((row, rowIndex) => ({ row, rowIndex }))
-      .filter(({ rowIndex, row }) => rowIndex > headerRow && row.some((value) => value.trim()))
+      .filter(({ rowIndex, row }) =>
+        rowIndex > headerRow
+        && row.some((value) => value.trim())
+        && !isHeaderOnlyRow(cells, rowIndex)
+      )
       .map(({ row, rowIndex }) => ({
         index: rowIndex,
         cells: row,
