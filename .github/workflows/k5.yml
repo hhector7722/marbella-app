@@ -45,6 +45,7 @@ jobs:
           src/lib/albaranes/k5/exact-decimal.test.ts
           src/lib/albaranes/k5/normalizer.test.ts
           src/lib/albaranes/k5/normalizer-ametller-decimals.test.ts
+          src/lib/albaranes/k5/normalizer-ametller-bag.test.ts
           src/lib/albaranes/k5/case-discount-normalizer.test.ts
           src/lib/albaranes/k5/proposal-lineage.test.ts
           src/lib/albaranes/k5/batch-review.test.ts
