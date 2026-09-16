@@ -25,8 +25,9 @@ import {
   type K5EvidenceTable,
 } from './docling-evidence.ts'
 import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-snapshot.ts'
+import { canonicalSupplierItemKey } from './supplier-item-key.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v3' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v4' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -158,18 +159,45 @@ function canonicalBillingUnit(value: string): string | null {
   return billingAliases[normalized] ?? (normalized || null)
 }
 
+function exactKey(value: string): string {
+  const parsed = parseExactDecimal(value)
+  return parsed ? (toFiniteDecimalString(parsed) ?? value.trim()) : value.trim()
+}
+
+function mappingSignature(mapping: K5MappingSnapshot): string {
+  return JSON.stringify([
+    mapping.ingredientId,
+    exactKey(mapping.conversionFactor),
+    canonicalBillingUnit(mapping.lineBillingUnit),
+    exactKey(mapping.lineContentQty),
+    canonicalBillingUnit(mapping.lineContentUnit),
+    canonicalBillingUnit(mapping.purchaseUnit),
+    canonicalBillingUnit(mapping.baseUnit),
+  ])
+}
+
 function compatibleMapping(
   mappings: readonly K5MappingSnapshot[],
   product: string | null,
-  observedUnit: string | null
+  observedUnit: string | null,
+  supplierId: number
 ): K5MappingSnapshot | null {
   if (!product || !observedUnit) return null
-  const item = normalizeEvidenceLabel(product)
+  const item = canonicalSupplierItemKey(product, supplierId)
   const matching = mappings.filter((mapping) =>
-    normalizeEvidenceLabel(mapping.supplierItemName) === item
+    canonicalSupplierItemKey(mapping.supplierItemName, supplierId) === item
     && canonicalBillingUnit(mapping.lineBillingUnit) === canonicalBillingUnit(observedUnit)
   )
-  return matching.length === 1 ? matching[0]! : null
+
+  // Distintos documentos pueden haber confirmado la misma presentación bajo
+  // códigos técnicos distintos. Se reutiliza solo si todas las coincidencias
+  // canónicas describen exactamente el mismo ingrediente y dimensionalidad.
+  const uniqueBySemantics = new Map<string, K5MappingSnapshot>()
+  for (const mapping of matching) {
+    const signature = mappingSignature(mapping)
+    if (!uniqueBySemantics.has(signature)) uniqueBySemantics.set(signature, mapping)
+  }
+  return uniqueBySemantics.size === 1 ? [...uniqueBySemantics.values()][0]! : null
 }
 
 function value(row: EvidenceRow, field: FieldName): string | null {
@@ -331,7 +359,7 @@ export function normalizeDoclingEvidence(params: {
     const product = semanticText(semanticRow, 'product')
     const observedQuantityText = value(semanticRow, 'quantity')
     const billingUnit = observedBillingUnit(observedQuantityText, profileBillingFallback(profile))
-    const mapping = compatibleMapping(mappings, product, billingUnit)
+    const mapping = compatibleMapping(mappings, product, billingUnit, supplierId)
     const fixture: SupplierEvidenceFixture = {
       supplier_id: supplierId,
       observed_issuer: observedIssuer ?? '',
