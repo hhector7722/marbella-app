@@ -2,6 +2,7 @@
 
 import { InterpretationProposalPanel } from '@/components/albaranes/InterpretationProposalPanel'
 import { K5BatchReceiptReview } from '@/components/albaranes/K5BatchReceiptReview'
+import { K5MappingAssistant } from '@/components/albaranes/K5MappingAssistant'
 import type { K5InvoiceCandidate } from './actions'
 
 type Props = {
@@ -15,6 +16,7 @@ export default function K5ReviewClient({ initialInvoices, initialSelectedId }: P
 
   return (
     <div className="space-y-3">
+      <K5MappingAssistant invoiceId={selected.id} />
       <K5BatchReceiptReview invoiceId={selected.id} />
       <details className="rounded-2xl border border-zinc-200 bg-white p-3">
         <summary className="cursor-pointer text-xs font-black text-zinc-700">
