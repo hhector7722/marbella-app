@@ -99,28 +99,42 @@ async function loadBatchState(
     .order('created_at', { ascending: true })
   if (proposalError) throw new Error('No se pudieron leer las propuestas K5.')
 
-  const active = selectCurrentProposalLineage((proposalRows ?? []) as Array<Record<string, unknown>>)
-  const proposalIds = active.map((row) => text(row.id)).filter(Boolean)
+  const allProposals = (proposalRows ?? []) as Array<Record<string, unknown>>
+  const active = selectCurrentProposalLineage(allProposals)
+  const proposalById = new Map(allProposals.map((row) => [text(row.id), row]))
 
-  const { data: lineRows, error: lineError } = proposalIds.length
-    ? await supabase
-        .from('purchase_invoice_lines')
-        .select('id,interpretation_proposal_id')
-        .eq('invoice_id', invoiceId)
-        .in('interpretation_proposal_id', proposalIds)
-    : { data: [] as Array<Record<string, unknown>>, error: null }
+  // Una línea económica ya confirmada no puede cambiar su proposal_id por una
+  // recalculación posterior. Por eso resolvemos la línea recorriendo también
+  // los ancestros de la propuesta actual; así una nueva interpretación nunca
+  // hace que una recepción ya aplicada reaparezca como pendiente.
+  const { data: lineRows, error: lineError } = await supabase
+    .from('purchase_invoice_lines')
+    .select('id,interpretation_proposal_id')
+    .eq('invoice_id', invoiceId)
   if (lineError) throw new Error('No se pudieron resolver las líneas revisables.')
-
   const lineByProposal = new Map(
     ((lineRows ?? []) as Array<Record<string, unknown>>).map((row) => [text(row.interpretation_proposal_id), text(row.id)])
   )
-  const lineIds = [...lineByProposal.values()].filter(Boolean)
 
-  const { data: confirmations, error: confirmationError } = lineIds.length
+  function lineIdForProposal(proposalId: string): string | null {
+    let cursor = proposalId
+    const seen = new Set<string>()
+    while (cursor && !seen.has(cursor)) {
+      seen.add(cursor)
+      const direct = lineByProposal.get(cursor)
+      if (direct) return direct
+      const parent = proposalById.get(cursor)
+      cursor = text(parent?.supersedes_proposal_id)
+    }
+    return null
+  }
+
+  const resolvedLineIds = active.map((proposal) => lineIdForProposal(text(proposal.id))).filter((id): id is string => Boolean(id))
+  const { data: confirmations, error: confirmationError } = resolvedLineIds.length
     ? await supabase
         .from('purchase_receipt_confirmations')
         .select('purchase_invoice_line_id')
-        .in('purchase_invoice_line_id', lineIds)
+        .in('purchase_invoice_line_id', [...new Set(resolvedLineIds)])
     : { data: [] as Array<Record<string, unknown>>, error: null }
   if (confirmationError) throw new Error('No se pudo comprobar qué líneas ya están confirmadas.')
   const confirmedLineIds = new Set(
@@ -154,7 +168,7 @@ async function loadBatchState(
   const rows = active
     .map((proposal): K5BatchReviewRow => {
       const proposalId = text(proposal.id)
-      const lineId = lineByProposal.get(proposalId) || null
+      const lineId = lineIdForProposal(proposalId)
       const ingredientId = text(proposal.ingredient_id) || null
       const confirmed = Boolean(lineId && confirmedLineIds.has(lineId))
       const pending = ingredientId ? pendingOrderCount.get(ingredientId) ?? 0 : 0
