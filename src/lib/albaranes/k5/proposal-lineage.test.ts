@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { selectCurrentProposalLineage } from './proposal-lineage.ts'
+import { proposalAncestryIds, selectCurrentProposalLineage } from './proposal-lineage.ts'
 
 test('oculta hojas antiguas sin sucesor cuando una recalculación cambia las filas', () => {
   const rows = [
@@ -37,4 +37,14 @@ test('una revisión humana posterior no se confunde con una nueva generación ba
   ]
 
   assert.deepEqual(selectCurrentProposalLineage(rows).map((row) => row.id), ['new-review'])
+})
+
+test('una recalculación puede resolver la línea económica inmutable a través de su ancestro confirmado', () => {
+  const rows = [
+    { id: 'base-v2', proposal_set_id: 'set-v2', supersedes_proposal_id: null, provenance: { source: 'docling_evidence' }, created_at: '2026-09-16T00:20:00Z' },
+    { id: 'human-confirmed', proposal_set_id: 'review', supersedes_proposal_id: 'base-v2', provenance: { revision: 'human_mapping_selection' }, created_at: '2026-09-16T00:25:00Z' },
+    { id: 'base-v3', proposal_set_id: 'set-v3', supersedes_proposal_id: 'human-confirmed', provenance: { source: 'docling_evidence' }, created_at: '2026-09-16T00:30:00Z' },
+  ]
+
+  assert.deepEqual(proposalAncestryIds(rows, 'base-v3'), ['base-v3', 'human-confirmed', 'base-v2'])
 })
