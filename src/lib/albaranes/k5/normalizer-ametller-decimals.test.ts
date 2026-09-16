@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { supplierProfileForId } from './profile-registry.ts'
-import { normalizeDoclingEvidence } from './normalizer.ts'
+import { normalizeDoclingEvidence, type K5MappingSnapshot } from './normalizer.ts'
 
 function cell(row: number, column: number, text: string, columnHeader = false) {
   return {
@@ -57,6 +57,20 @@ function ametllerArtifact() {
   }
 }
 
+function atunMapping(id: string, supplierItemName: string, ingredientId = 'atun'): K5MappingSnapshot {
+  return {
+    id,
+    supplierItemName,
+    ingredientId,
+    conversionFactor: '1',
+    lineBillingUnit: 'ud',
+    lineContentQty: '1',
+    lineContentUnit: 'kg',
+    purchaseUnit: 'kg',
+    baseUnit: 'g',
+  }
+}
+
 test('Ametller no hereda falsos line_amount_mismatch del intérprete Number cuando K5 exacto concilia', () => {
   const profile = supplierProfileForId(1)
   assert.ok(profile)
@@ -68,7 +82,7 @@ test('Ametller no hereda falsos line_amount_mismatch del intérprete Number cuan
     mappings: [],
   })
 
-  assert.equal(result.normalizerVersion, 'k5-normalizer-v3')
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v4')
   assert.equal(result.proposals.length, 3)
 
   const byName = new Map(result.proposals.map((proposal) => [proposal.sourceItemName, proposal]))
@@ -93,4 +107,52 @@ test('Ametller no hereda falsos line_amount_mismatch del intérprete Number cuan
   assert.equal(tomate.lineTotal, '50.4')
   assert.equal(tomate.status, 'needs_mapping')
   assert.deepEqual(tomate.reviewReasons, ['mapping_missing'])
+})
+
+test('Ametller reutiliza un mapping confirmado aunque cambie el prefijo técnico del producto', () => {
+  const profile = supplierProfileForId(1)
+  assert.ok(profile)
+
+  const result = normalizeDoclingEvidence({
+    profile,
+    rawArtifact: ametllerArtifact(),
+    supplierId: 1,
+    mappings: [atunMapping('mapping-old-prefix', 'L082515C03B AtunAceite Bolsa 1Kg')],
+  })
+  const atun = result.proposals.find((proposal) => proposal.sourceItemName?.includes('AtunAceite'))!
+  assert.equal(atun.mappingVersionId, 'mapping-old-prefix')
+  assert.equal(atun.ingredientId, 'atun')
+  assert.equal(atun.status, 'ready_for_review')
+  assert.equal(atun.purchaseQuantity, '4')
+  assert.equal(atun.physicalQuantity, '4000')
+  assert.equal(atun.normalizedUnitPrice, '6.66')
+})
+
+test('Ametller tolera duplicados semánticamente iguales pero bloquea mappings canónicos en conflicto', () => {
+  const profile = supplierProfileForId(1)
+  assert.ok(profile)
+
+  const same = normalizeDoclingEvidence({
+    profile,
+    rawArtifact: ametllerArtifact(),
+    supplierId: 1,
+    mappings: [
+      atunMapping('mapping-a', 'L082515C03B AtunAceite Bolsa 1Kg'),
+      atunMapping('mapping-b', 'L072415C03B AtunAceite Bolsa 1Kg'),
+    ],
+  })
+  assert.equal(same.proposals.find((proposal) => proposal.sourceItemName?.includes('AtunAceite'))!.status, 'ready_for_review')
+
+  const conflict = normalizeDoclingEvidence({
+    profile,
+    rawArtifact: ametllerArtifact(),
+    supplierId: 1,
+    mappings: [
+      atunMapping('mapping-a', 'L082515C03B AtunAceite Bolsa 1Kg'),
+      atunMapping('mapping-conflict', 'L072415C03B AtunAceite Bolsa 1Kg', 'otro-atun'),
+    ],
+  })
+  const atun = conflict.proposals.find((proposal) => proposal.sourceItemName?.includes('AtunAceite'))!
+  assert.equal(atun.status, 'needs_mapping')
+  assert.deepEqual(atun.reviewReasons, ['mapping_missing'])
 })
