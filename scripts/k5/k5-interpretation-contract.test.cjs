@@ -44,6 +44,12 @@ test('recalcular crea un nuevo hecho y la supersesión no puede bifurcarse', () 
   assert.doesNotMatch(interpretationActions, /existingByFingerprint|const missing = payloads/)
 })
 
+test('panel técnico y recálculo usan solo la lineage operativa actual', () => {
+  assert.match(interpretationActions, /selectCurrentProposalLineage/)
+  assert.match(interpretationActions, /return selectCurrentProposalLineage\(rows\)/)
+  assert.doesNotMatch(interpretationActions, /return rows\.filter\(\(row\) => !supersededIds\.has/)
+})
+
 test('RLS bloquea anon y restringe propuestas a manager/admin', () => {
   assert.match(migration, /ENABLE ROW LEVEL SECURITY/)
   assert.match(migration, /REVOKE ALL ON TABLE public\.purchase_interpretation_proposals FROM PUBLIC, anon, authenticated/)

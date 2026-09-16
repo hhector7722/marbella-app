@@ -13,6 +13,7 @@ import {
   hashSupplierProfile,
   versionedSupplierProfileForId,
 } from '@/lib/albaranes/k5/profile-registry'
+import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
 
 export type InterpretationProposalView = {
   id: string
@@ -147,8 +148,7 @@ async function activeProposalsForInvoice(
     .order('created_at', { ascending: true })
   if (error) throw new Error('No se pudieron leer las propuestas K5.')
   const rows = (data ?? []) as Array<Record<string, unknown>>
-  const supersededIds = new Set(rows.map((row) => text(row.supersedes_proposal_id)).filter(Boolean))
-  return rows.filter((row) => !supersededIds.has(text(row.id)))
+  return selectCurrentProposalLineage(rows)
 }
 
 function proposalPayload(params: {
