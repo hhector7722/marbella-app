@@ -16,6 +16,10 @@ function normalizeName(s: string): string {
     .replace(/\s+/g, ' ')
 }
 
+function compactName(s: string): string {
+  return normalizeName(s).replace(/\s+/g, '')
+}
+
 function levenshtein(a: string, b: string): number {
   const m = a.length
   const n = b.length
@@ -39,6 +43,17 @@ function scoreMatch(extracted: string, ingredientName: string): number {
   if (!e || !n) return 0
   if (e === n) return 100
   if (n.includes(e) || e.includes(n)) return 88
+
+  // Algunos proveedores concatenan nombre + marca sin espacios (p. ej.
+  // "PanRalladoSANTA RITA 500g"). Para nombres suficientemente específicos,
+  // aceptar que el nombre canónico del ingrediente sea el prefijo compacto
+  // evita dejar un ingrediente recién creado permanentemente como pendiente.
+  // El mínimo de 8 caracteres evita coincidencias peligrosas de nombres cortos
+  // como "sal" dentro de "salsa".
+  const eCompact = compactName(extracted)
+  const nCompact = compactName(ingredientName)
+  if (nCompact.length >= 8 && eCompact.startsWith(nCompact)) return 92
+
   const te = new Set(e.split(' ').filter(Boolean))
   const tn = new Set(n.split(' ').filter(Boolean))
   let inter = 0
