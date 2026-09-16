@@ -111,7 +111,26 @@ function deriveDimensional(
   const purchase = unit(ingredient.purchase_unit)
   if (!purchase || purchase === 'bag') return null
 
-  // Si el propio albarán factura por kg/l/ud, esa unidad manda. El texto de
+  const cleanName = stripSupplierTechnicalPrefix(row.sourceItemName, supplierId)
+  const explicitBag = /\bbolsa\b/i.test(cleanName)
+  const pack = packageMeasure(row.sourceItemName, supplierId)
+
+  // Cuando el proveedor factura una unidad/envase, un contenido explícito del
+  // nombre gobierna la presentación: 1 kg, 500 g, 12 uds, etc. Esto evita el
+  // antiguo error de tratar una docena de huevos como una sola unidad.
+  if (pack && (line === 'ud' || line === 'bag' || (!line && explicitBag))) {
+    const factor = convert(pack.qty, pack.unit, purchase)
+    if (factor != null && Number.isFinite(factor) && factor > 0) {
+      return {
+        lineBillingUnit: line === 'bag' || (!line && explicitBag) ? 'bag' : 'ud',
+        lineContentQty: pack.qty,
+        lineContentUnit: pack.unit,
+        conversionFactor: factor,
+      }
+    }
+  }
+
+  // Si el propio albarán factura por kg/l, esa unidad manda. El texto de
   // presentación (p. ej. "saco 10 kg") es informativo y no multiplica otra vez.
   if (line && line !== 'bag' && family(line) && family(line) === family(purchase)) {
     const factor = convert(1, line, purchase)
@@ -124,19 +143,13 @@ function deriveDimensional(
     }
   }
 
-  // Si factura por unidad/bolsa, el contenido explícito del nombre permite
-  // construir una presentación exacta: 1 kg, 500 g, 12 uds, etc. Algunos
-  // extractores antiguos no conservaron BOL como lineUnit; "Bolsa" en el
-  // nombre es suficiente para proponer bag, pero sigue requiriendo aprobación.
-  const pack = packageMeasure(row.sourceItemName, supplierId)
+  // Para extractores antiguos que perdieron el sufijo de unidad, la presencia
+  // explícita de una bolsa + contenido permite proponerla para revisión humana.
   if (pack) {
     const factor = convert(pack.qty, pack.unit, purchase)
     if (factor != null && Number.isFinite(factor) && factor > 0) {
-      const explicitBag = /\bbolsa\b/i.test(stripSupplierTechnicalPrefix(row.sourceItemName, supplierId))
       return {
-        lineBillingUnit: line === 'bag' || (!line && explicitBag)
-          ? 'bag'
-          : (line === 'ud' ? 'ud' : String(row.lineUnit ?? 'ud').trim().toLowerCase()),
+        lineBillingUnit: explicitBag ? 'bag' : String(row.lineUnit ?? 'ud').trim().toLowerCase(),
         lineContentQty: pack.qty,
         lineContentUnit: pack.unit,
         conversionFactor: factor,
