@@ -164,10 +164,14 @@ async function supersedeK5ProposalWithMapping(params: {
   const previousReasons: string[] = Array.isArray(current.review_reasons)
     ? (current.review_reasons as unknown[]).map(text).filter(Boolean)
     : []
+  // Una selección humana explícita incluye unidad facturada, contenido y
+  // unidad de contenido. Si esa presentación supera la frontera dimensional
+  // exacta, también resuelve el antiguo unknown_quantity_unit de Docling.
   const semanticReasons = previousReasons.filter((reason: string) =>
     reason !== 'mapping_missing'
     && reason !== 'mapping_presentation_incompatible'
     && reason !== 'price_not_normalizable'
+    && reason !== 'unknown_quantity_unit'
   )
   const reviewReasons: string[] = snapshot
     ? semanticReasons

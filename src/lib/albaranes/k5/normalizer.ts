@@ -25,8 +25,9 @@ import {
   type K5EvidenceTable,
 } from './docling-evidence.ts'
 import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-snapshot.ts'
+import { canonicalSupplierItemKey } from './supplier-item-key.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v3' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v4' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -123,7 +124,7 @@ const billingAliases: Record<string, string> = {
   ml: 'ml', cl: 'cl', g: 'g', gr: 'g',
   ud: 'ud', uds: 'ud', u: 'ud', un: 'ud', uni: 'ud', unidad: 'ud', unidades: 'ud',
   cj: 'case', caja: 'case', cajas: 'case', case: 'case',
-  bolsa: 'bag', bolsas: 'bag', bag: 'bag',
+  bol: 'bag', bolsa: 'bag', bolsas: 'bag', bag: 'bag',
   pz: 'piece', pieza: 'piece', piezas: 'piece', piece: 'piece',
   bu: 'bundle', bulto: 'bundle', bultos: 'bundle', bundle: 'bundle',
 }
@@ -158,18 +159,45 @@ function canonicalBillingUnit(value: string): string | null {
   return billingAliases[normalized] ?? (normalized || null)
 }
 
+function exactKey(value: string): string {
+  const parsed = parseExactDecimal(value)
+  return parsed ? (toFiniteDecimalString(parsed) ?? value.trim()) : value.trim()
+}
+
+function mappingSignature(mapping: K5MappingSnapshot): string {
+  return JSON.stringify([
+    mapping.ingredientId,
+    exactKey(mapping.conversionFactor),
+    canonicalBillingUnit(mapping.lineBillingUnit),
+    exactKey(mapping.lineContentQty),
+    canonicalBillingUnit(mapping.lineContentUnit),
+    canonicalBillingUnit(mapping.purchaseUnit),
+    canonicalBillingUnit(mapping.baseUnit),
+  ])
+}
+
 function compatibleMapping(
   mappings: readonly K5MappingSnapshot[],
   product: string | null,
-  observedUnit: string | null
+  observedUnit: string | null,
+  supplierId: number
 ): K5MappingSnapshot | null {
   if (!product || !observedUnit) return null
-  const item = normalizeEvidenceLabel(product)
+  const item = canonicalSupplierItemKey(product, supplierId)
   const matching = mappings.filter((mapping) =>
-    normalizeEvidenceLabel(mapping.supplierItemName) === item
+    canonicalSupplierItemKey(mapping.supplierItemName, supplierId) === item
     && canonicalBillingUnit(mapping.lineBillingUnit) === canonicalBillingUnit(observedUnit)
   )
-  return matching.length === 1 ? matching[0]! : null
+
+  // Distintos documentos pueden haber confirmado la misma presentación bajo
+  // códigos técnicos distintos. Se reutiliza solo si todas las coincidencias
+  // canónicas describen exactamente el mismo ingrediente y dimensionalidad.
+  const uniqueBySemantics = new Map<string, K5MappingSnapshot>()
+  for (const mapping of matching) {
+    const signature = mappingSignature(mapping)
+    if (!uniqueBySemantics.has(signature)) uniqueBySemantics.set(signature, mapping)
+  }
+  return uniqueBySemantics.size === 1 ? [...uniqueBySemantics.values()][0]! : null
 }
 
 function value(row: EvidenceRow, field: FieldName): string | null {
@@ -331,7 +359,7 @@ export function normalizeDoclingEvidence(params: {
     const product = semanticText(semanticRow, 'product')
     const observedQuantityText = value(semanticRow, 'quantity')
     const billingUnit = observedBillingUnit(observedQuantityText, profileBillingFallback(profile))
-    const mapping = compatibleMapping(mappings, product, billingUnit)
+    const mapping = compatibleMapping(mappings, product, billingUnit, supplierId)
     const fixture: SupplierEvidenceFixture = {
       supplier_id: supplierId,
       observed_issuer: observedIssuer ?? '',
@@ -346,10 +374,13 @@ export function normalizeDoclingEvidence(params: {
     // K5 vuelve a conciliar cantidad × precio con aritmética exacta. El
     // intérprete de perfil conserva Number para su capa descriptiva legacy y
     // puede producir falsos mismatch cuando Docling expresa decimales con
-    // punto (p. ej. `4.000UNI` o `1.300KG`). En K5, este motivo económico solo
-    // es válido si también lo reproduce la capa exacta.
+    // punto (p. ej. `4.000UNI` o `1.300KG`). Un mapping confirmado también
+    // resuelve una unidad de envase desconocida si la unidad observada (p. ej.
+    // BOL→bag) coincide exactamente con la presentación versionada.
     const interpretedReasons = interpreted.needs_review.filter(
-      (reason) => reason !== 'line_amount_mismatch' || economics.reasons.includes('line_amount_mismatch')
+      (reason) =>
+        (reason !== 'line_amount_mismatch' || economics.reasons.includes('line_amount_mismatch'))
+        && (reason !== 'unknown_quantity_unit' || !mapping)
     )
     const reasons = unique([...interpretedReasons, ...economics.reasons])
     const warnings: string[] = []
