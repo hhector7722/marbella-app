@@ -26,7 +26,7 @@ import {
 } from './docling-evidence.ts'
 import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-snapshot.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v2' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v3' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -343,7 +343,15 @@ export function normalizeDoclingEvidence(params: {
     }
     const interpreted = interpretSupplierEvidence(profile, fixture).lines[0]!
     const economics = exactLineEconomics(profile, semanticRow, interpreted)
-    const reasons = unique([...interpreted.needs_review, ...economics.reasons])
+    // K5 vuelve a conciliar cantidad × precio con aritmética exacta. El
+    // intérprete de perfil conserva Number para su capa descriptiva legacy y
+    // puede producir falsos mismatch cuando Docling expresa decimales con
+    // punto (p. ej. `4.000UNI` o `1.300KG`). En K5, este motivo económico solo
+    // es válido si también lo reproduce la capa exacta.
+    const interpretedReasons = interpreted.needs_review.filter(
+      (reason) => reason !== 'line_amount_mismatch' || economics.reasons.includes('line_amount_mismatch')
+    )
+    const reasons = unique([...interpretedReasons, ...economics.reasons])
     const warnings: string[] = []
 
     if (profile.interpretation.kind === 'mixed_measure_review') {
