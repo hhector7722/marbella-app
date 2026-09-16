@@ -32,7 +32,8 @@ export async function GET() {
       .select('session_id', { count: 'exact', head: true })
       .eq('camera_id', CAMERA_ID)
       .is('ended_at', null)
-      .gte('last_seen_at', staleBefore),
+      .gte('last_seen_at', staleBefore)
+      .neq('user_id', user.id),
   ]);
 
   if (error || appViewerError) return NextResponse.json({ error: 'Read failed' }, { status: 500 });
