@@ -91,8 +91,8 @@ function convert(quantity: number, fromRaw: string, toRaw: string): number | nul
   return null
 }
 
-function packageMeasure(sourceItemName: string): { qty: number; unit: string } | null {
-  const clean = stripSupplierTechnicalPrefix(sourceItemName, 1)
+function packageMeasure(sourceItemName: string, supplierId: number): { qty: number; unit: string } | null {
+  const clean = stripSupplierTechnicalPrefix(sourceItemName, supplierId)
   const matches = [...clean.matchAll(/(\d+(?:[.,]\d+)?)\s*(kg|grs?|g|litros?|lt|l|ml|cl|uds?|unidades?)\b/gi)]
   if (matches.length === 0) return null
   const match = matches.at(-1)!
@@ -102,11 +102,17 @@ function packageMeasure(sourceItemName: string): { qty: number; unit: string } |
   return { qty, unit: canonical }
 }
 
-function deriveDimensional(row: MappingAssistantRow, ingredient: MappingAssistantIngredient): Dimensional | null {
+function deriveDimensional(
+  row: MappingAssistantRow,
+  ingredient: MappingAssistantIngredient,
+  supplierId: number
+): Dimensional | null {
   const line = unit(row.lineUnit)
   const purchase = unit(ingredient.purchase_unit)
   if (!purchase || purchase === 'bag') return null
 
+  // Si el propio albarán factura por kg/l/ud, esa unidad manda. El texto de
+  // presentación (p. ej. "saco 10 kg") es informativo y no multiplica otra vez.
   if (line && line !== 'bag' && family(line) && family(line) === family(purchase)) {
     const factor = convert(1, line, purchase)
     if (factor == null || !Number.isFinite(factor) || factor <= 0) return null
@@ -118,7 +124,9 @@ function deriveDimensional(row: MappingAssistantRow, ingredient: MappingAssistan
     }
   }
 
-  const pack = packageMeasure(row.sourceItemName)
+  // Si factura por unidad/bolsa, el contenido explícito del nombre permite
+  // construir una presentación exacta: 1 kg, 500 g, 12 uds, etc.
+  const pack = packageMeasure(row.sourceItemName, supplierId)
   if (pack) {
     const factor = convert(pack.qty, pack.unit, purchase)
     if (factor != null && Number.isFinite(factor) && factor > 0) {
@@ -151,8 +159,8 @@ function uniqueEnough(scores: Array<{ score: number }>, minScore: number): boole
   return best.score - second.score >= 8 || second.score < 40
 }
 
-function ingredientScore(sourceItemName: string, ingredient: MappingAssistantIngredient): number {
-  return matchIngredientCandidates(stripSupplierTechnicalPrefix(sourceItemName, 1), [ingredient], 1)[0]?.score ?? 0
+function ingredientScore(sourceItemName: string, ingredient: MappingAssistantIngredient, supplierId: number): number {
+  return matchIngredientCandidates(stripSupplierTechnicalPrefix(sourceItemName, supplierId), [ingredient], 1)[0]?.score ?? 0
 }
 
 export function buildMappingAssistantSuggestions(params: {
@@ -180,8 +188,8 @@ export function buildMappingAssistantSuggestions(params: {
     if (legacyMatch) {
       const legacy = params.legacyMappings[Number(legacyMatch.id)]
       const ingredient = legacy ? ingredientById.get(legacy.ingredient_id) : null
-      if (legacy && ingredient && ingredientScore(row.sourceItemName, ingredient) >= 80) {
-        const dimensional = deriveDimensional(row, ingredient)
+      if (legacy && ingredient && ingredientScore(row.sourceItemName, ingredient, params.supplierId) >= 80) {
+        const dimensional = deriveDimensional(row, ingredient, params.supplierId)
         if (dimensional) {
           suggestions.push({
             proposalId: row.proposalId,
@@ -205,7 +213,7 @@ export function buildMappingAssistantSuggestions(params: {
     const catalogMatches = matchIngredientCandidates(cleanedName, params.ingredients, 4)
     const catalogMatch = uniqueEnough(catalogMatches, 80) ? catalogMatches[0] : null
     const ingredient = catalogMatch ? ingredientById.get(catalogMatch.id) : null
-    const dimensional = ingredient ? deriveDimensional(row, ingredient) : null
+    const dimensional = ingredient ? deriveDimensional(row, ingredient, params.supplierId) : null
 
     if (catalogMatch && ingredient && dimensional) {
       suggestions.push({
