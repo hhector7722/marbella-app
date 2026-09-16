@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
 
 export type K5InvoiceCandidate = {
   id: string
@@ -71,7 +72,7 @@ export async function listK5InvoiceCandidatesAction(): Promise<
       .eq('status', 'success'),
     gate.supabase
       .from('purchase_interpretation_proposals')
-      .select('id,purchase_invoice_id,supersedes_proposal_id')
+      .select('id,proposal_set_id,purchase_invoice_id,supersedes_proposal_id,provenance,created_at')
       .in('purchase_invoice_id', invoiceIds),
   ])
 
@@ -89,13 +90,18 @@ export async function listK5InvoiceCandidatesAction(): Promise<
     extractionCount.set(invoiceId, (extractionCount.get(invoiceId) ?? 0) + 1)
   }
 
-  const proposals = (proposalRows ?? []) as Array<Record<string, unknown>>
-  const superseded = new Set(proposals.map((row) => text(row.supersedes_proposal_id)).filter(Boolean))
-  const activeProposalCount = new Map<string, number>()
-  for (const row of proposals) {
-    if (superseded.has(text(row.id))) continue
+  const proposalsByInvoice = new Map<string, Array<Record<string, unknown>>>()
+  for (const row of (proposalRows ?? []) as Array<Record<string, unknown>>) {
     const invoiceId = text(row.purchase_invoice_id)
-    activeProposalCount.set(invoiceId, (activeProposalCount.get(invoiceId) ?? 0) + 1)
+    if (!invoiceId) continue
+    const list = proposalsByInvoice.get(invoiceId) ?? []
+    list.push(row)
+    proposalsByInvoice.set(invoiceId, list)
+  }
+
+  const activeProposalCount = new Map<string, number>()
+  for (const [invoiceId, proposals] of proposalsByInvoice) {
+    activeProposalCount.set(invoiceId, selectCurrentProposalLineage(proposals).length)
   }
 
   return {
