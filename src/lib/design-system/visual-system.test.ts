@@ -957,6 +957,14 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             css,
             /\[data-component='Modal'\]\[data-instance='albaranes-options-modal'\] \[data-element='footer'\] \{[\s\S]*?justify-content:\s*center/,
         );
+        assert.match(
+            css,
+            /\[data-component='Modal'\]\[data-instance='albaranes-options-modal'\] \[data-component='Button'\]\[data-layout='hug'\][\s\S]*?font-size:\s*12px/,
+            'Albaranes y Escanear usan el tipo del Button, no el 1.25 rem del fichaje'
+        );
+        assert.match(modal, /\/dashboard\/scanner\?start=1/, 'Escanear arranca el proceso, no deja un segundo botón');
+        const scannerPage = readFileSync(join(SRC_ROOT, 'app/dashboard/scanner/page.tsx'), 'utf8');
+        assert.match(scannerPage, /autoStart=\{start === '1'\}/);
     });
 
     it('el comunicado del aviso de la cámara abre un Modal de sistema, no una pestaña', () => {
@@ -1394,6 +1402,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(pedido, /from '@\/components\/suppliers\/SupplierSelectionModal'/, 'pedido reexporta el mismo modal');
         assert.match(scanner, /SupplierSelectionModal/, 'el albarán abre el mismo modal');
         assert.match(scanner, /instance="scanner-supplier"/, 'el albarán conserva su instancia');
+        assert.match(scanner, /autoStart/, 'el acceso Escanear del mosaico arranca el proceso');
         assert.match(suppliers, /SupplierPickerGrid/, 'el detalle monta la misma rejilla');
         assert.match(modal, /CatalogTileUnificado|SupplierPickerGrid/, 'el modal usa la celda unificada');
     });
@@ -1556,6 +1565,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(tools, /aspect-square/);
         assert.doesNotMatch(tools, /min-h-\[16rem\]/);
         assert.match(tools, /h-12 min-h-12 w-full min-w-0/);
+        assert.match(tools, /QUICK_PANEL_H/);
+        assert.match(tools, /<DenominationCountGrid[\s\S]*?compact/);
+        assert.doesNotMatch(tools, /max-h-\[min\(55dvh,28rem\)\]/);
     });
 
     it('las barras de cantidad usan QuantityStepper (P10)', () => {

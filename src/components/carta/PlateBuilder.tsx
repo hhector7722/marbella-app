@@ -7,6 +7,7 @@ import {
   platoMarbellaPlateSlotLabels,
   type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
+import { useStudioCutout } from '@/components/carta/useStudioCutout'
 
 /** Alimento colocado en una zona del plato (null = zona vacía). */
 export type PlateZoneItem = {
@@ -49,12 +50,19 @@ const COMPARTMENT_PATH: Record<PlatoMarbellaSlot, string> = {
   guarnicion: `M ${rightDiv} ${FLOOR.divY} A ${FLOOR.rx} ${FLOOR.ry} 0 0 1 ${FLOOR.cx} ${floorBottom} L ${FLOOR.cx} ${FLOOR.divY} L ${rightDiv} ${FLOOR.divY} Z`,
 }
 
-/** Caja donde se sirve cada alimento dentro de su tramo (posición y escala propias). */
+/**
+ * Caja de cada alimento: un poco mayor que el tramo. El clipPath recorta a la
+ * porcelana; `slice` + escala meten la comida en el hueco y ocultan el plato
+ * original de la foto de estudio.
+ */
 const FOOD_SLOT: Record<PlatoMarbellaSlot, { x: number; y: number; w: number; h: number }> = {
-  entrante: { x: FLOOR.cx - 48, y: FLOOR.cy - FLOOR.ry + 2, w: 96, h: 46 },
-  principal: { x: FLOOR.cx - FLOOR.rx + 9, y: FLOOR.divY + 11, w: 68, h: 82 },
-  guarnicion: { x: FLOOR.cx + 13, y: FLOOR.divY + 14, w: 68, h: 76 },
+  entrante: { x: FLOOR.cx - 80, y: FLOOR.cy - FLOOR.ry - 4, w: 160, h: 64 },
+  principal: { x: FLOOR.cx - FLOOR.rx - 4, y: FLOOR.divY - 6, w: 96, h: 112 },
+  guarnicion: { x: FLOOR.cx - 4, y: FLOOR.divY - 6, w: 96, h: 112 },
 }
+
+/** Recorte extra hacia el interior de la foto (el reborde de la vajilla original se va). */
+const FOOD_COVER_SCALE = 1.22
 
 const ZONE_LABEL_POS: Record<PlatoMarbellaSlot, { x: number; y: number }> = {
   entrante: { x: FLOOR.cx, y: 62 },
@@ -241,37 +249,31 @@ export function PlateBuilder({
         {SLOT_ORDER.map((s) => {
           const item = zones.get(s)
           if (!item?.photoUrl) return null
-          const slot = FOOD_SLOT[s]
           return (
-            <g key={s} clipPath={`url(#${compartmentClipId(s)})`}>
-              {/* Sombra de contacto muy sutil bajo el alimento. */}
-              <ellipse
-                cx={slot.x + slot.w / 2}
-                cy={slot.y + slot.h * 0.82}
-                rx={slot.w * 0.28}
-                ry={slot.h * 0.1}
-                fill="#0f172a"
-                opacity="0.07"
-                filter={`url(#${blurSoftId})`}
-              />
-              <g
-                key={item.id ?? `${item.label}:${item.photoUrl}`}
-                className={foodAnim}
-                style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-              >
-                <image
-                  href={item.photoUrl}
-                  x={slot.x}
-                  y={slot.y}
-                  width={slot.w}
-                  height={slot.h}
-                  preserveAspectRatio="xMidYMid meet"
-                  style={{ mixBlendMode: 'multiply' }}
-                />
-              </g>
-            </g>
+            <PlateFoodLayer
+              key={s}
+              slot={s}
+              item={item}
+              clipId={compartmentClipId(s)}
+              foodAnim={foodAnim}
+              blurSoftId={blurSoftId}
+            />
           )
         })}
+
+        {/* Sombra interior sobre la comida, para que se hunda en el hueco. */}
+        <g clipPath={`url(#${floorClipId})`} pointerEvents="none">
+          <ellipse
+            cx={FLOOR.cx}
+            cy={FLOOR.cy}
+            rx={FLOOR.rx}
+            ry={FLOOR.ry}
+            fill="none"
+            stroke="rgba(15, 23, 42, 0.18)"
+            strokeWidth="8"
+            filter={`url(#${blurSoftId})`}
+          />
+        </g>
 
         {/* Separadores moldeados entre tramos (relieve con luz y sombra proyectada). */}
         <g clipPath={`url(#${floorClipId})`}>
@@ -334,6 +336,58 @@ export function PlateBuilder({
         })}
       </svg>
     </div>
+  )
+}
+
+function PlateFoodLayer({
+  slot,
+  item,
+  clipId,
+  foodAnim,
+  blurSoftId,
+}: {
+  slot: PlatoMarbellaSlot
+  item: PlateZoneItem
+  clipId: string
+  foodAnim: string
+  blurSoftId: string
+}) {
+  const cutout = useStudioCutout(item.photoUrl)
+  const box = FOOD_SLOT[slot]
+  if (!cutout) return null
+  const cx = box.x + box.w / 2
+  const cy = box.y + box.h / 2
+  return (
+    <g clipPath={`url(#${clipId})`}>
+      <ellipse
+        cx={cx}
+        cy={box.y + box.h * 0.78}
+        rx={box.w * 0.36}
+        ry={box.h * 0.12}
+        fill="#0f172a"
+        opacity="0.14"
+        filter={`url(#${blurSoftId})`}
+      />
+      <g
+        key={item.id ?? `${item.label}:${cutout.href}`}
+        className={foodAnim}
+        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+      >
+        <g
+          transform={`translate(${cx} ${cy}) scale(${FOOD_COVER_SCALE}) translate(${-cx} ${-cy})`}
+        >
+          <image
+            href={cutout.href}
+            x={box.x}
+            y={box.y}
+            width={box.w}
+            height={box.h}
+            preserveAspectRatio="xMidYMid slice"
+            style={cutout.isolated ? undefined : { mixBlendMode: 'multiply' }}
+          />
+        </g>
+      </g>
+    </g>
   )
 }
 

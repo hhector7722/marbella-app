@@ -31,6 +31,7 @@ export function ScannerClient({
   renderTrigger,
   hideBatchActions = false,
   onBatchChange,
+  autoStart = false,
   ref,
 }: {
   onSuccess?: () => void
@@ -46,13 +47,15 @@ export function ScannerClient({
   hideBatchActions?: boolean
   /** Notifica si hay un borrador pendiente de guardar. */
   onBatchChange?: (hasPending: boolean) => void
+  /** Abre de inmediato el selector de proveedor (acceso Escanear del mosaico). */
+  autoStart?: boolean
   ref?: React.Ref<ScannerClientHandle>
 }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [messageTone, setMessageTone] = useState<'error' | 'success' | 'info'>('info')
-  const [showSupplierModal, setShowSupplierModal] = useState(false)
+  const [showSupplierModal, setShowSupplierModal] = useState(autoStart)
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null)
   /** Borrador: fotos validadas listas para guardar en un solo albarán (1ª = cabecera, resto = adjuntos). */
   const [pendingBatch, setPendingBatch] = useState<{ supplierId: number; items: PendingItem[] } | null>(null)
@@ -129,6 +132,15 @@ export function ScannerClient({
       }
     })
   }, [pendingBatch])
+
+  useEffect(() => {
+    if (!autoStart) return
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('start') !== '1') return
+    url.searchParams.delete('start')
+    const query = url.searchParams.toString()
+    window.history.replaceState(null, '', `${url.pathname}${query ? `?${query}` : ''}`)
+  }, [autoStart])
 
   const triggerNativeImagePicker = () => {
     setTimeout(() => fileInputRef.current?.click(), 200)
@@ -286,7 +298,7 @@ export function ScannerClient({
   }, [pendingBatch, onBatchChange])
 
   const hugTrigger = compactTrigger || Boolean(renderTrigger)
-  const triggerButton = !pendingBatch ? (
+  const triggerButton = !pendingBatch && !showSupplierModal ? (
     <Button
       type="button"
       variant="primary"

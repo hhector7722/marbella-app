@@ -38,6 +38,12 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-17
 
+- **Plat Marbella: la comida llena la vajilla, sin recuadro blanco.** En el configurador, cada elección se recorta del fondo de estudio y ocupa su tramo del plato. No hace falta volver a subir las fotos. Las altas nuevas conservan transparencia.
+
+- **Albaranes: Escanear arranca el proceso.** Desde el modal de opciones ya no hay un segundo botón: sale el selector de proveedor y la cámara. Albaranes y Escanear usan el tipo de 12 px del Button. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **Desglose de borrador: misma altura que la calculadora.** La rejilla se compacta (cinco columnas, celdas más bajas) para igualar el panel; el recuento de caja no cambia. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **Teclado de calculadora: pastillas, no círculos.** Las teclas son anchas y bajas (48 px) para que el panel ocupe menos alto. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **Iconos de calculadora y desglose: canto inferior de la pantalla.** En recuentos y arqueos dejan de flotar dentro del modal; van en la última fila visible. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).

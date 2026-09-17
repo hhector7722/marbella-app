@@ -44,7 +44,7 @@ export function AlbaranesOptionsModal({
                         instance="albaranes-options-scan"
                         onClick={() => {
                             onClose();
-                            router.push('/dashboard/scanner');
+                            router.push('/dashboard/scanner?start=1');
                         }}
                     >
                         Escanear

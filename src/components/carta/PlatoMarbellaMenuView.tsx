@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { PlateBuilder, PlateZone, type PlateZoneItem } from '@/components/carta/PlateBuilder'
+import { useStudioCutout } from '@/components/carta/useStudioCutout'
 import { formatCartaPrice } from '@/lib/carta-price-display'
 import {
   chunkCartaProductGridRows,
@@ -102,7 +103,9 @@ function BuilderOptionCard({
 }) {
   const name = getCartaDisplayName(row, lang)
   const photo = row.photo_url?.trim() || null
+  const cutout = useStudioCutout(photo)
   const hideName = Boolean(row.plato_marbella_hide_name)
+  const photoSrc = cutout?.href ?? photo
   return (
     <button
       type="button"
@@ -114,16 +117,18 @@ function BuilderOptionCard({
       )}
     >
       <span className="relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-xl bg-zinc-50">
-        {photo ? (
+        {photoSrc ? (
           // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
           <img
-            src={photo}
+            src={photoSrc}
             alt={name}
             loading="eager"
             decoding="async"
             className="pointer-events-none h-full w-full object-contain"
+            crossOrigin={photoSrc.startsWith('http') ? 'anonymous' : undefined}
             style={{
               transform: `scale(${getCartaProductPhotoScaleFactor(row.carta_photo_scale, false)})`,
+              ...(cutout?.isolated ? {} : { mixBlendMode: 'multiply' as const }),
             }}
           />
         ) : (

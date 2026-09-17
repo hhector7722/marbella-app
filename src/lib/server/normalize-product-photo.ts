@@ -8,7 +8,8 @@ const MAX_INPUT_BYTES = 10 * 1024 * 1024
 /** Umbral trim: recorta bordes casi blancos (fondo estudio). */
 const TRIM_THRESHOLD = 20
 
-const WHITE = { r: 255, g: 255, b: 255, alpha: 1 as const }
+/** Lienzo 4:5 transparente: el marco de carta ya es blanco; la vajilla no debe heredar un rectángulo. */
+const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 as const }
 
 export function isAllowedPhotoMime(mime: string): boolean {
   return mime === 'image/jpeg' || mime === 'image/png' || mime === 'image/webp' || mime === 'image/gif'
@@ -16,6 +17,8 @@ export function isAllowedPhotoMime(mime: string): boolean {
 
 /**
  * Trim de márgenes blancos + encajar entero en 1200×1500 (sin recortar el producto).
+ * El relleno del lienzo es transparente para que el configurador de Plat Marbella
+ * no reciba un bloque blanco alrededor del alimento.
  */
 export async function normalizeProductPhotoBuffer(input: Buffer): Promise<Buffer> {
   if (input.length > MAX_INPUT_BYTES) {
@@ -34,10 +37,10 @@ export async function normalizeProductPhotoBuffer(input: Buffer): Promise<Buffer
   return pipeline
     .resize(PRODUCT_PHOTO_WIDTH, PRODUCT_PHOTO_HEIGHT, {
       fit: 'contain',
-      background: WHITE,
+      background: TRANSPARENT,
       withoutEnlargement: false,
     })
-    .webp({ quality: 85, effort: 4 })
+    .webp({ quality: 85, effort: 4, alphaQuality: 80 })
     .toBuffer()
 }
 

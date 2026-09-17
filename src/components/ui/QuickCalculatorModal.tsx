@@ -17,6 +17,9 @@ const BREAKDOWN_ICON = '/icons/desglose.png';
 const INSET_VAR = '--quick-tool-inset';
 const FAB_DOCK_VAR = '--quick-fab-dock';
 
+/** Alto común del panel (calculadora y desglose), sin el área segura. */
+const QUICK_PANEL_H = 'h-[16.625rem]';
+
 /** Estética iOS pedida por producto para esta herramienta (no es cromo de Modal). */
 const CALC = {
     bg: '#000000',
@@ -270,7 +273,8 @@ function IosCalculator({
     const copyTarget = resultLabel === ' ' ? '0' : resultLabel;
 
     return (
-        <div className="flex flex-col gap-1.5 px-2 pb-[env(safe-area-inset-bottom,0px)] pt-0.5">
+        <div className="pb-[env(safe-area-inset-bottom,0px)]">
+        <div className={cn('flex flex-col gap-1.5 px-2 pt-0.5', QUICK_PANEL_H)}>
             <div className="relative flex items-end gap-2">
                 <div className="flex shrink-0 items-center gap-0.5">
                     <button
@@ -344,6 +348,7 @@ function IosCalculator({
                 )}
             </div>
         </div>
+        </div>
     );
 }
 
@@ -352,12 +357,14 @@ function BreakdownDraft({ onMinimize }: { onMinimize: () => void }) {
     const total = DENOMINATIONS.reduce((sum, d) => sum + d * (counts[d] || 0), 0);
 
     return (
-        <div className="flex max-h-[min(55dvh,28rem)] min-h-0 flex-col bg-white pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <div className="bg-white pb-[env(safe-area-inset-bottom,0px)]">
+        <div className={cn('flex min-h-0 flex-col', QUICK_PANEL_H)}>
             <div className="flex shrink-0 justify-center">
                 <MinimizeHandle onMinimize={onMinimize} tone="light" />
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-2">
+            <div className="min-h-0 flex-1 overflow-hidden px-1.5">
                 <DenominationCountGrid
+                    compact
                     counts={counts}
                     onAdjust={(denom, delta) => {
                         setCounts((prev) => ({
@@ -371,12 +378,13 @@ function BreakdownDraft({ onMinimize }: { onMinimize: () => void }) {
                     }}
                 />
             </div>
-            <div className="flex shrink-0 items-center justify-between gap-2 border-t border-zinc-100 px-3 py-2">
+            <div className="flex h-8 shrink-0 items-center justify-between gap-2 border-t border-zinc-100 px-3">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total</span>
-                <span className="text-lg font-black tabular-nums text-zinc-800">
+                <span className="text-base font-black tabular-nums text-zinc-800">
                     {total > 0.005 ? formatCurrencySpanish(total) : ' '}
                 </span>
             </div>
+        </div>
         </div>
     );
 }

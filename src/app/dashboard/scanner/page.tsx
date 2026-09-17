@@ -3,14 +3,19 @@ import { ScannerClient } from './ScannerClient'
 
 export const dynamic = 'force-dynamic'
 
-export default function ScannerPage() {
+export default async function ScannerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ start?: string }>
+}) {
+  const { start } = await searchParams
   return (
     <DashboardDetailLayout
       title="Escáner"
       maxWidthClass="max-w-lg"
       showBackButton={false}
     >
-      <ScannerClient />
+      <ScannerClient autoStart={start === '1'} />
     </DashboardDetailLayout>
   )
 }
