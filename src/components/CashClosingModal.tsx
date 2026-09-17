@@ -482,7 +482,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 totalSales: 0, cardSales: 0, pendingSales: 0,
                 debtRecovered: 0, ticketsCount: 0,
             });
-            setBdpEfectivo(0);
             setWeatherId(null);
             setCounts({});
             resetClosingPhotos();
