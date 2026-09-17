@@ -414,7 +414,7 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 
 La herramienta **no es una capa Modal**. Es un panel inferior simultáneo: el modal o la página padre siguen usables, no se subordinan ni se cubren con backdrop. El overlay de Modal cede `--quick-tool-inset` y alinea el panel al canto de la herramienta. Cuando el contenido cabe (cierre de caja, paso 1), se compacta para verse entero. Escape cierra primero la herramienta.
 
-Los dos flotantes miden lo mismo, viven en **una sola fila** y no se superponen a botones (pie del modal, teclado, tab bar): quedan a la izquierda, por encima de esa franja.
+Los dos flotantes miden lo mismo y viven en **una sola fila** al canto inferior de la pantalla visible, centrados en el ancho, **fuera del modal**. No son cromo de Modal: son iconos auxiliares de viewport. El overlay cede `--quick-fab-dock` mientras los iconos están visibles. Con el panel abierto, los flotantes quedan detrás: no se ven y no tapan teclas ni rejilla. Un chevron sutil (V) en el canto superior, de 48 px de toque, minimiza el panel y los devuelve.
 
 La calculadora reproduce el teclado de la imagen de producto (números, AC, retroceso, %, ⁺⁄₋, coma, operadores naranja). El reloj oculta las teclas y muestra el historial de cálculos; copiar pone el valor actual en el portapapeles. La estética iOS de este teclado es excepción explícita de producto: no usa tokens de petróleo. El desglose de borrador reutiliza `DenominationCountGrid` (el mismo del arqueo).
 

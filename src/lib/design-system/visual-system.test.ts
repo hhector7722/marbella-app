@@ -1534,9 +1534,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(tools, /html-to-image|toPng|WhatsApp/);
         assert.doesNotMatch(tools, /registerModalSurface/);
         assert.match(tools, /flex-nowrap/);
+        assert.match(tools, /justify-center/);
+        assert.match(tools, /--quick-fab-dock/);
+        assert.match(tools, /data-component="QuickCashToolsFabs"/);
         assert.doesNotMatch(tools, /flex-col-reverse/);
+        assert.doesNotMatch(tools, /left-4/);
         assert.match(tools, /object-contain/);
         assert.doesNotMatch(tools, /object-cover/);
+        assert.match(tools, /aria-label="Minimizar"/);
+        assert.match(tools, /ChevronDown/);
+        assert.match(tools, /if \(!mounted \|\| isOpen\) return null/);
     });
 
     it('las barras de cantidad usan QuantityStepper (P10)', () => {

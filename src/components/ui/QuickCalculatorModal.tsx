@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Clock, Copy, Delete } from 'lucide-react';
+import { Clock, Copy, Delete, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { DENOMINATIONS } from '@/lib/constants';
@@ -15,6 +15,7 @@ export type QuickCashTool = 'calculator' | 'breakdown';
 const CALCULATOR_ICON = '/icons/calculadora.png';
 const BREAKDOWN_ICON = '/icons/desglose.png';
 const INSET_VAR = '--quick-tool-inset';
+const FAB_DOCK_VAR = '--quick-fab-dock';
 
 /** Estética iOS pedida por producto para esta herramienta (no es cromo de Modal). */
 const CALC = {
@@ -37,6 +38,19 @@ function clearToolInset() {
     const root = document.documentElement;
     root.style.setProperty(INSET_VAR, '0px');
     root.removeAttribute('data-quick-tool');
+}
+
+function applyFabDock(px: number) {
+    const root = document.documentElement;
+    root.style.setProperty(FAB_DOCK_VAR, `${Math.max(0, Math.round(px))}px`);
+    if (px > 0) root.setAttribute('data-quick-fab', 'open');
+    else root.removeAttribute('data-quick-fab');
+}
+
+function clearFabDock() {
+    const root = document.documentElement;
+    root.style.setProperty(FAB_DOCK_VAR, '0px');
+    root.removeAttribute('data-quick-fab');
 }
 
 function toEvalExpr(expr: string): string {
@@ -114,6 +128,28 @@ const KEYPAD: { key: string; label: ReactNode; tone: KeyTone }[][] = [
 
 const OPS = new Set(['+', '-', '×', '÷']);
 
+function MinimizeHandle({
+    onMinimize,
+    tone,
+}: {
+    onMinimize: () => void;
+    tone: 'dark' | 'light';
+}) {
+    return (
+        <button
+            type="button"
+            aria-label="Minimizar"
+            onClick={onMinimize}
+            className={cn(
+                'flex h-12 w-12 min-h-12 min-w-12 items-center justify-center border-0 bg-transparent p-0',
+                tone === 'dark' ? 'text-[#8e8e93]' : 'text-zinc-400',
+            )}
+        >
+            <ChevronDown size={18} strokeWidth={1.75} />
+        </button>
+    );
+}
+
 function IosCalcKey({
     tone,
     children,
@@ -146,7 +182,13 @@ function IosCalcKey({
     );
 }
 
-function IosCalculator({ onCopyValue }: { onCopyValue: (value: string) => void }) {
+function IosCalculator({
+    onCopyValue,
+    onMinimize,
+}: {
+    onCopyValue: (value: string) => void;
+    onMinimize: () => void;
+}) {
     const [expr, setExpr] = useState('');
     const [justEvaluated, setJustEvaluated] = useState(false);
     const [historyOpen, setHistoryOpen] = useState(false);
@@ -228,8 +270,8 @@ function IosCalculator({ onCopyValue }: { onCopyValue: (value: string) => void }
     const copyTarget = resultLabel === ' ' ? '0' : resultLabel;
 
     return (
-        <div className="flex flex-col gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
-            <div className="flex items-end gap-2">
+        <div className="flex flex-col gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
+            <div className="relative flex items-end gap-2">
                 <div className="flex shrink-0 items-center gap-0.5">
                     <button
                         type="button"
@@ -251,6 +293,11 @@ function IosCalculator({ onCopyValue }: { onCopyValue: (value: string) => void }
                     >
                         <Copy size={20} strokeWidth={2.2} />
                     </button>
+                </div>
+                <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
+                    <div className="pointer-events-auto">
+                        <MinimizeHandle onMinimize={onMinimize} tone="dark" />
+                    </div>
                 </div>
                 <div className="min-w-0 flex-1 text-right">
                     <div className="truncate text-[13px] font-medium tabular-nums text-[#8e8e93]">
@@ -303,13 +350,16 @@ function IosCalculator({ onCopyValue }: { onCopyValue: (value: string) => void }
     );
 }
 
-function BreakdownDraft() {
+function BreakdownDraft({ onMinimize }: { onMinimize: () => void }) {
     const [counts, setCounts] = useState<Record<number, number>>({});
     const total = DENOMINATIONS.reduce((sum, d) => sum + d * (counts[d] || 0), 0);
 
     return (
         <div className="flex max-h-[min(55dvh,28rem)] min-h-0 flex-col bg-white pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-            <div className="min-h-0 flex-1 overflow-y-auto px-2 pt-2">
+            <div className="flex shrink-0 justify-center">
+                <MinimizeHandle onMinimize={onMinimize} tone="light" />
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-2">
                 <DenominationCountGrid
                     counts={counts}
                     onAdjust={(denom, delta) => {
@@ -413,16 +463,19 @@ export function QuickCalculatorModal({
             data-component="QuickCashToolsPanel"
             data-tab={resolvedTab}
             className={cn(
-                'fixed inset-x-0 bottom-0 z-[var(--z-modal-sheet)] select-none',
+                'fixed inset-x-0 z-[var(--z-modal-sheet)] select-none',
                 overlayClassName,
             )}
-            style={{ background: resolvedTab === 'calculator' ? CALC.bg : '#ffffff' }}
+            style={{
+                background: resolvedTab === 'calculator' ? CALC.bg : '#ffffff',
+                bottom: 0,
+            }}
         >
             {resolvedTab === 'calculator' && allowCalculator ? (
-                <IosCalculator onCopyValue={handleCopy} />
+                <IosCalculator onCopyValue={handleCopy} onMinimize={onClose} />
             ) : null}
             {resolvedTab === 'breakdown' && allowBreakdown ? (
-                <BreakdownDraft />
+                <BreakdownDraft onMinimize={onClose} />
             ) : null}
         </div>,
         document.body,
@@ -464,6 +517,7 @@ function ToolFab({
 export function QuickCashToolsFabs({
     calculator,
     breakdown,
+    isOpen,
     openTab,
     onOpen,
     className,
@@ -475,36 +529,59 @@ export function QuickCashToolsFabs({
     onOpen: (tab: QuickCashTool) => void;
     className?: string;
 }) {
+    const dockRef = useRef<HTMLDivElement>(null);
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    useLayoutEffect(() => {
+        if (!mounted) return;
+        if (isOpen) {
+            clearFabDock();
+            return;
+        }
+        const el = dockRef.current;
+        if (!el) return;
+        const sync = () => applyFabDock(el.getBoundingClientRect().height);
+        sync();
+        const observer = new ResizeObserver(sync);
+        observer.observe(el);
+        return () => {
+            observer.disconnect();
+            clearFabDock();
+        };
+    }, [mounted, calculator, breakdown, isOpen]);
+
     if (!calculator && !breakdown) return null;
-    if (!mounted) return null;
+    if (!mounted || isOpen) return null;
     return createPortal(
         <div
+            ref={dockRef}
+            data-component="QuickCashToolsFabs"
             className={cn(
-                'fixed left-4 z-[208] flex shrink-0 flex-nowrap items-center gap-2 sm:left-6',
-                'bottom-[calc(var(--quick-tool-inset,0px)+5.75rem)]',
+                'pointer-events-none fixed inset-x-0 bottom-0 z-[208] flex justify-center',
                 className,
             )}
         >
-            {calculator ? (
-                <ToolFab
-                    src={CALCULATOR_ICON}
-                    ariaLabel={openTab === 'calculator' ? 'Cerrar calculadora' : 'Abrir calculadora'}
-                    pressed={openTab === 'calculator'}
-                    onClick={() => onOpen('calculator')}
-                />
-            ) : null}
-            {breakdown ? (
-                <ToolFab
-                    src={BREAKDOWN_ICON}
-                    ariaLabel={openTab === 'breakdown' ? 'Cerrar desglose' : 'Abrir desglose'}
-                    pressed={openTab === 'breakdown'}
-                    onClick={() => onOpen('breakdown')}
-                />
-            ) : null}
+            <div className="pointer-events-auto flex shrink-0 flex-nowrap items-center justify-center gap-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1">
+                {calculator ? (
+                    <ToolFab
+                        src={CALCULATOR_ICON}
+                        ariaLabel={openTab === 'calculator' ? 'Cerrar calculadora' : 'Abrir calculadora'}
+                        pressed={openTab === 'calculator'}
+                        onClick={() => onOpen('calculator')}
+                    />
+                ) : null}
+                {breakdown ? (
+                    <ToolFab
+                        src={BREAKDOWN_ICON}
+                        ariaLabel={openTab === 'breakdown' ? 'Cerrar desglose' : 'Abrir desglose'}
+                        pressed={openTab === 'breakdown'}
+                        onClick={() => onOpen('breakdown')}
+                    />
+                ) : null}
+            </div>
         </div>,
         document.body,
     );

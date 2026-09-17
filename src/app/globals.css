@@ -86,6 +86,8 @@
   );
   /* Hueco que reserva el panel inferior de calculadora/desglose. 0px si está cerrado. */
   --quick-tool-inset: 0px;
+  /* Franja de iconos auxiliares (calculadora/desglose), fuera del modal. */
+  --quick-fab-dock: 0px;
   /* ADR-0008 — backdrop base vs elevado */
   --modal-overlay-base: rgba(0, 0, 0, 0.32);
   --modal-overlay-base-filter: blur(8px) saturate(65%);
@@ -207,16 +209,22 @@
 /*
  * Calculadora/desglose: panel inferior simultáneo. El modal padre no se
  * subordina (no es una capa Modal). El overlay cede el hueco y alinea el
- * panel al canto superior de la herramienta.
+ * panel al canto de la herramienta. Los iconos viven en una franja inferior
+ * de viewport, centrados, fuera del modal.
  */
+html[data-quick-fab='open'] [data-component='Modal'],
 html[data-quick-tool='open'] [data-component='Modal'] {
   align-items: flex-end;
 }
+html[data-quick-fab='open'] [data-component='Modal'] [data-element='frame'],
 html[data-quick-tool='open'] [data-component='Modal'] [data-element='frame'] {
   justify-content: flex-end;
 }
+html[data-quick-fab='open'] main,
 html[data-quick-tool='open'] main {
-  padding-bottom: calc(var(--quick-tool-inset, 0px) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(
+    var(--quick-fab-dock, 0px) + var(--quick-tool-inset, 0px) + env(safe-area-inset-bottom, 0px)
+  );
 }
 
 /*

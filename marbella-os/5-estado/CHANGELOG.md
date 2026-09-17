@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-17
 
+- **Calculadora y desglose abiertos: los iconos quedan detrás.** Con el panel abierto no se ven los flotantes. Un chevron sutil (V) arriba minimiza y los devuelve. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **Iconos de calculadora y desglose: franja inferior, centrados, fuera del modal.** Van al canto visible de la pantalla, en una fila, el par centrado. No forman parte del modal; el panel cede hueco. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **Albaranes: Albaranes y Escanear van centrados.** En el modal de opciones el par queda en el centro del ancho, como el fichaje staff; ya no se pegan a un lado.
 
 - **Calculadora y desglose: mismos iconos, una fila, sin tapar botones.** Los dos flotantes miden igual, van juntos a la izquierda y no cubren el pie ni el teclado. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
