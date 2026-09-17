@@ -17,7 +17,7 @@ import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineag
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-type AdminClient = ReturnType<typeof createClient>
+type AdminClient = ReturnType<typeof createClient<any>>
 
 type AutoProposalRequest = {
   invoiceId: string
@@ -488,7 +488,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'Payload inválido.' }, { status: 400 })
   }
 
-  const supabase = createClient(url, serviceRoleKey, {
+  const supabase = createClient<any>(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 
