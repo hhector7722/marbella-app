@@ -54,6 +54,17 @@ function pow10(scale: number): bigint {
   return powBigInt(BI_TEN, scale)
 }
 
+function hasAmbiguousWhitespaceGrouping(token: string): boolean {
+  const trimmed = token.trim().replace(/\s+/g, ' ')
+  if (!trimmed.includes(' ')) return false
+  const unsigned = trimmed.replace(/^[-+]/, '')
+
+  // Los espacios internos solo son aceptables como agrupación de miles real:
+  // 1 234,56 / 12 345 / 1 234 567. Una secuencia Docling como
+  // `1 1 6 6 7 12 18 24` son múltiples celdas colapsadas, no un número.
+  return !/^\d{1,3}(?: \d{3})+(?:[.,]\d+)?$/.test(unsigned)
+}
+
 /**
  * Normaliza un token numérico observado. Para evidencia de proveedor se acepta
  * coma decimal y punto decimal; si aparecen ambos, el último separador es el
@@ -70,7 +81,7 @@ export function parseExactDecimal(value: string | bigint | null | undefined): Ex
   // cortaba `1,234.56` en `1,234`, perdiendo la parte decimal antes de poder
   // decidir cuál de los dos separadores era el decimal.
   const token = raw.match(/[-+]?\d[\d\s.,'’]*/)?.[0]
-  if (!token) return null
+  if (!token || hasAmbiguousWhitespaceGrouping(token)) return null
 
   let normalized = token.replace(/[\s'’]/g, '')
   const comma = normalized.lastIndexOf(',')
