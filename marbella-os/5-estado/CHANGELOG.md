@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-17
 
+- **Teclado de calculadora: pastillas, no círculos.** Las teclas son anchas y bajas (48 px) para que el panel ocupe menos alto. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **Iconos de calculadora y desglose: canto inferior de la pantalla.** En recuentos y arqueos dejan de flotar dentro del modal; van en la última fila visible. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **Calculadora y desglose abiertos: los iconos quedan detrás.** Con el panel abierto no se ven los flotantes. Un chevron sutil (V) arriba minimiza y los devuelve. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **Iconos de calculadora y desglose: franja inferior, centrados, fuera del modal.** Van al canto visible de la pantalla, en una fila, el par centrado. No forman parte del modal; el panel cede hueco. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).

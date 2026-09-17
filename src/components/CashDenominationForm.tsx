@@ -205,11 +205,7 @@ export const CashDenominationForm = ({
             }}
         >
             <div className="relative flex min-h-0 flex-col bg-white">
-                <QuickCashTools
-                    calculator
-                    breakdown
-                    className="bottom-20 right-4 sm:bottom-24 sm:right-6"
-                />
+                <QuickCashTools calculator breakdown />
                 {zoomDenom !== null && (
                     <DenominationZoomModal
                         isOpen

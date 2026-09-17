@@ -1523,7 +1523,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(selectBlock, /QuickCashTools/, 'el selector de cajas no monta calculadora ni desglose');
         assert.match(change, /<QuickCashTools calculator breakdown \/>/);
 
+        const denomination = readFileSync(join(SRC_ROOT, 'components/CashDenominationForm.tsx'), 'utf8');
+        assert.doesNotMatch(
+            denomination,
+            /<QuickCashTools[^>]*className/,
+            'el recuento no desplaza los flotantes',
+        );
+
         const tools = readFileSync(join(SRC_ROOT, 'components/ui/QuickCalculatorModal.tsx'), 'utf8');
+        assert.match(tools, /fixed inset-x-0 bottom-0/);
+        assert.doesNotMatch(tools, /bottom-20|right-4/);
         assert.match(tools, /\/icons\/calculadora\.png/);
         assert.match(tools, /\/icons\/desglose\.png/);
         assert.match(tools, /DenominationCountGrid/);
@@ -1544,6 +1553,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tools, /aria-label="Minimizar"/);
         assert.match(tools, /ChevronDown/);
         assert.match(tools, /if \(!mounted \|\| isOpen\) return null/);
+        assert.doesNotMatch(tools, /aspect-square/);
+        assert.doesNotMatch(tools, /min-h-\[16rem\]/);
+        assert.match(tools, /h-12 min-h-12 w-full min-w-0/);
     });
 
     it('las barras de cantidad usan QuantityStepper (P10)', () => {

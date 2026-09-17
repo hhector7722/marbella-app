@@ -167,10 +167,10 @@ function IosCalcKey({
             aria-label={ariaLabel}
             onClick={onClick}
             className={cn(
-                'flex h-full min-h-12 min-w-12 w-full items-center justify-center rounded-full text-[22px] font-medium tabular-nums transition-transform active:scale-95',
+                'flex h-12 min-h-12 w-full min-w-0 items-center justify-center rounded-full text-[20px] font-medium tabular-nums transition-transform active:scale-95',
                 tone === 'num' && 'text-white',
-                tone === 'fn' && 'text-[#1c1c1e] text-[17px] font-semibold',
-                tone === 'op' && 'text-white text-[26px]',
+                tone === 'fn' && 'text-[#1c1c1e] text-[16px] font-semibold',
+                tone === 'op' && 'text-white text-[22px]',
             )}
             style={{
                 background:
@@ -270,7 +270,7 @@ function IosCalculator({
     const copyTarget = resultLabel === ' ' ? '0' : resultLabel;
 
     return (
-        <div className="flex flex-col gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
+        <div className="flex flex-col gap-1.5 px-2 pb-[env(safe-area-inset-bottom,0px)] pt-0.5">
             <div className="relative flex items-end gap-2">
                 <div className="flex shrink-0 items-center gap-0.5">
                     <button
@@ -303,13 +303,13 @@ function IosCalculator({
                     <div className="truncate text-[13px] font-medium tabular-nums text-[#8e8e93]">
                         {expr || ' '}
                     </div>
-                    <div className="truncate text-[44px] font-light leading-none tabular-nums tracking-tight text-white">
+                    <div className="truncate text-[32px] font-light leading-none tabular-nums tracking-tight text-white">
                         {resultLabel}
                     </div>
                 </div>
             </div>
 
-            <div className="h-[min(18.5rem,46dvh)] min-h-[16rem]">
+            <div className="h-[13.125rem]">
                 {historyOpen ? (
                     <div className="flex h-full flex-col overflow-y-auto px-1">
                         {history.map((entry, i) => (
@@ -329,19 +329,16 @@ function IosCalculator({
                         ))}
                     </div>
                 ) : (
-                    <div className="grid h-full grid-cols-5 grid-rows-4 gap-2">
+                    <div className="grid h-full grid-cols-5 grid-rows-4 gap-1.5">
                         {KEYPAD.flat().map((cell, i) => (
-                            <div key={`${cell.key}-${i}`} className="flex min-h-12 min-w-12 items-center justify-center">
-                                <div className="aspect-square h-full max-w-full">
-                                    <IosCalcKey
-                                        tone={cell.tone}
-                                        ariaLabel={cell.key === 'back' ? 'Borrar' : cell.key === 'AC' ? 'Borrar todo' : String(cell.key)}
-                                        onClick={() => handleKey(cell.key)}
-                                    >
-                                        {cell.label}
-                                    </IosCalcKey>
-                                </div>
-                            </div>
+                            <IosCalcKey
+                                key={`${cell.key}-${i}`}
+                                tone={cell.tone}
+                                ariaLabel={cell.key === 'back' ? 'Borrar' : cell.key === 'AC' ? 'Borrar todo' : String(cell.key)}
+                                onClick={() => handleKey(cell.key)}
+                            >
+                                {cell.label}
+                            </IosCalcKey>
                         ))}
                     </div>
                 )}
@@ -560,11 +557,11 @@ export function QuickCashToolsFabs({
             ref={dockRef}
             data-component="QuickCashToolsFabs"
             className={cn(
-                'pointer-events-none fixed inset-x-0 bottom-0 z-[208] flex justify-center',
                 className,
+                'pointer-events-none fixed inset-x-0 bottom-0 z-[208] flex justify-center',
             )}
         >
-            <div className="pointer-events-auto flex shrink-0 flex-nowrap items-center justify-center gap-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1">
+            <div className="pointer-events-auto flex shrink-0 flex-nowrap items-center justify-center gap-2 pb-[env(safe-area-inset-bottom,0px)]">
                 {calculator ? (
                     <ToolFab
                         src={CALCULATOR_ICON}
