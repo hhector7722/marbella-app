@@ -1508,6 +1508,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(tools, /fixed inset-0/);
         assert.doesNotMatch(tools, /html-to-image|toPng|WhatsApp/);
         assert.doesNotMatch(tools, /registerModalSurface/);
+        assert.match(tools, /flex-nowrap/);
+        assert.doesNotMatch(tools, /flex-col-reverse/);
+        assert.match(tools, /object-contain/);
+        assert.doesNotMatch(tools, /object-cover/);
     });
 
     it('las barras de cantidad usan QuantityStepper (P10)', () => {

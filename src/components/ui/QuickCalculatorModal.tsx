@@ -446,9 +446,17 @@ function ToolFab({
             onClick={onClick}
             aria-label={ariaLabel}
             aria-pressed={pressed}
-            className="h-14 w-14 min-h-[56px] min-w-[56px] shrink-0 overflow-hidden rounded-[var(--radio-superficie)] border-0 bg-transparent p-0 shadow-2xl shadow-black/25 transition-all hover:brightness-110 active:scale-95"
+            className="flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radio-superficie)] border-0 bg-transparent p-0 transition-all hover:brightness-110 active:scale-95"
         >
-            <img src={src} alt="" draggable={false} className="pointer-events-none h-full w-full object-cover" />
+            <img
+                src={src}
+                alt=""
+                draggable={false}
+                className={cn(
+                    'pointer-events-none h-full w-full object-contain',
+                    src === BREAKDOWN_ICON && 'p-[13%]',
+                )}
+            />
         </button>
     );
 }
@@ -456,7 +464,6 @@ function ToolFab({
 export function QuickCashToolsFabs({
     calculator,
     breakdown,
-    isOpen,
     openTab,
     onOpen,
     className,
@@ -477,10 +484,8 @@ export function QuickCashToolsFabs({
     return createPortal(
         <div
             className={cn(
-                'fixed right-4 z-[208] flex shrink-0 flex-col-reverse items-center gap-3 sm:right-6',
-                isOpen
-                    ? 'bottom-[calc(var(--quick-tool-inset,0px)+0.75rem)]'
-                    : 'bottom-4 sm:bottom-6',
+                'fixed left-4 z-[208] flex shrink-0 flex-nowrap items-center gap-2 sm:left-6',
+                'bottom-[calc(var(--quick-tool-inset,0px)+5.75rem)]',
                 className,
             )}
         >
@@ -581,7 +586,7 @@ export function CalculatorHeaderButton({
                 className,
             )}
         >
-            <img src={CALCULATOR_ICON} alt="" draggable={false} className="pointer-events-none h-9 w-9 object-cover" />
+            <img src={CALCULATOR_ICON} alt="" draggable={false} className="pointer-events-none h-9 w-9 object-contain" />
         </button>
     );
 }
