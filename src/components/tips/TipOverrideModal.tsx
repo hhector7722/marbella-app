@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 
@@ -47,7 +47,6 @@ export function TipOverrideModal({
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<{ first_name: string; avatar_url: string | null } | null>(null);
-  const [calculatorOpen, setCalculatorOpen] = useState(false);
 
   const trackTipOverrideSave = useTrackModalApply('tip-override', 'Ajuste propina');
 
@@ -257,8 +256,7 @@ export function TipOverrideModal({
       </Modal>
 
       {/* Residual compartido: no migrar en esta oleada (igual que Caja). */}
-      <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-      <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+      <QuickCashTools calculator breakdown />
     </>
   );
 }

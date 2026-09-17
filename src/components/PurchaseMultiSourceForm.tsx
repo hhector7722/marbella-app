@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { DENOMINATIONS } from '@/lib/constants';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 import { Button } from '@/components/ui/button';
 import { ScannerClient, type ScannerClientHandle } from '@/app/dashboard/scanner/ScannerClient';
@@ -128,7 +128,6 @@ export function PurchaseMultiSourceForm({
     const [hasPendingBatch, setHasPendingBatch] = useState(false);
     const [savingBatch, setSavingBatch] = useState(false);
     const scannerRef = useRef<ScannerClientHandle>(null);
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [zoomContext, setZoomContext] = useState<'change' | string | null>(null);
 
@@ -283,8 +282,7 @@ export function PurchaseMultiSourceForm({
             </div>
             ) : null}
 
-            <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-            <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+            <QuickCashTools calculator breakdown />
             {zoomDenom !== null && zoomContext !== null && (
                 <DenominationZoomModal
                     isOpen={true}

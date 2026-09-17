@@ -1462,6 +1462,54 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
     });
 
+    it('calculadora y desglose se declaran por superficie', () => {
+        const both = [
+            'components/CashDenominationForm.tsx',
+            'components/PurchaseMultiSourceForm.tsx',
+            'components/CashClosingModal.tsx',
+            'components/MovementDetailModal.tsx',
+            'components/tips/TipOverrideModal.tsx',
+            'components/cash/CashBreakdownModal.tsx',
+            'app/dashboard/history/page.tsx',
+            'components/staff/StaffCajaCambioModal.tsx',
+        ];
+        for (const rel of both) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(
+                source,
+                /<QuickCashTools[\s\S]*?calculator[\s\S]*?breakdown/,
+                `${rel} monta calculadora y desglose`,
+            );
+        }
+
+        const calculatorOnly = [
+            'app/dashboard/inventory/InventoryClient.tsx',
+            'app/dashboard/overtime/page.tsx',
+            'components/orders/OrderSummaryModal.tsx',
+        ];
+        for (const rel of calculatorOnly) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /<QuickCashTools calculator \/>/, `${rel} solo monta calculadora`);
+            assert.doesNotMatch(source, /<QuickCashTools[^>]*breakdown/, `${rel} no monta desglose`);
+        }
+
+        const change = readFileSync(join(SRC_ROOT, 'components/CashChangeModal.tsx'), 'utf8');
+        const selectBlock = change.split('instance="cash-change-select"')[1]?.split('instance="cash-change-count"')[0] ?? '';
+        assert.doesNotMatch(selectBlock, /QuickCashTools/, 'el selector de cajas no monta calculadora ni desglose');
+        assert.match(change, /<QuickCashTools calculator breakdown \/>/);
+
+        const tools = readFileSync(join(SRC_ROOT, 'components/ui/QuickCalculatorModal.tsx'), 'utf8');
+        assert.match(tools, /\/icons\/calculadora\.png/);
+        assert.match(tools, /\/icons\/desglose\.png/);
+        assert.match(tools, /DenominationCountGrid/);
+        assert.match(tools, /Mostrar historial/);
+        assert.match(tools, /Copiar valor/);
+        assert.match(tools, /--quick-tool-inset/);
+        assert.doesNotMatch(tools, /fixed inset-0/);
+        assert.doesNotMatch(tools, /html-to-image|toPng|WhatsApp/);
+        assert.doesNotMatch(tools, /registerModalSurface/);
+    });
+
     it('las barras de cantidad usan QuantityStepper (P10)', () => {
         const hosts = [
             'app/dashboard/inventory/InventoryClient.tsx',

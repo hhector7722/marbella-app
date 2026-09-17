@@ -84,6 +84,8 @@
   --modal-max-height: calc(
     100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem
   );
+  /* Hueco que reserva el panel inferior de calculadora/desglose. 0px si está cerrado. */
+  --quick-tool-inset: 0px;
   /* ADR-0008 — backdrop base vs elevado */
   --modal-overlay-base: rgba(0, 0, 0, 0.32);
   --modal-overlay-base-filter: blur(8px) saturate(65%);
@@ -200,6 +202,21 @@
 [data-component='Modal'][data-layer='sheet'],
 [data-component='ConsumptionBottomSheet'][data-layer='sheet'] {
   z-index: var(--z-modal-sheet);
+}
+
+/*
+ * Calculadora/desglose: panel inferior simultáneo. El modal padre no se
+ * subordina (no es una capa Modal). El overlay cede el hueco y alinea el
+ * panel al canto superior de la herramienta.
+ */
+html[data-quick-tool='open'] [data-component='Modal'] {
+  align-items: flex-end;
+}
+html[data-quick-tool='open'] [data-component='Modal'] [data-element='frame'] {
+  justify-content: flex-end;
+}
+html[data-quick-tool='open'] main {
+  padding-bottom: calc(var(--quick-tool-inset, 0px) + env(safe-area-inset-bottom, 0px));
 }
 
 /*

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { cn, firstGivenName } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -127,7 +127,6 @@ export const CashChangeModal = ({
     const [exchangeHistoryList, setExchangeHistoryList] = useState<ExchangeHistoryItem[]>([]);
     const [exchangeHistoryLoading, setExchangeHistoryLoading] = useState(false);
     const [selectedExchangeDetail, setSelectedExchangeDetail] = useState<ExchangeHistoryItem | null>(null);
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [canViewExchangeHistory, setCanViewExchangeHistory] = useState(false);
 
@@ -508,8 +507,7 @@ export const CashChangeModal = ({
                             </div>
                         </div>
                     </div>
-                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-                    <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                <QuickCashTools calculator breakdown />
                     <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
                         <div className="flex flex-col">
                             {ALL_DENOMS.map((denom) => (
@@ -568,7 +566,6 @@ export const CashChangeModal = ({
                     <button
                         type="button"
                         onClick={() => {
-                            setCalculatorOpen(false);
                             setZoomDenom(null);
                             setShowExchangeHistoryModal(true);
                         }}
@@ -590,8 +587,6 @@ export const CashChangeModal = ({
                     </Button>
                 }
             >
-                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                     <div className="flex-1 overflow-y-auto bg-white p-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-3">
@@ -817,7 +812,7 @@ export const CashChangeModal = ({
                 />
             }
         >
-                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                <QuickCashTools calculator breakdown />
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2 flex flex-col">
                     <div className="flex justify-center mb-3 mt-1 relative">
@@ -852,7 +847,6 @@ export const CashChangeModal = ({
                         showAvailable={Boolean(fromBox?.hasInventory)}
                     />
                 </div>
-                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
         </Modal>
     );
 };

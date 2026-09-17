@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Calculator, Calendar, Clock, FileText, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
@@ -27,14 +27,12 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const supabase = createClient();
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [editTotal, setEditTotal] = useState(0);
     const [editDate, setEditDate] = useState(formatCashCountDateInput);
 
     useEffect(() => {
         setIsEditing(false);
         setIsDeleting(false);
-        setCalculatorOpen(false);
         const d = movement?.created_at ? new Date(movement.created_at) : new Date();
         setEditDate(Number.isNaN(d.getTime()) ? formatCashCountDateInput() : formatCashCountDateInput(d));
         setEditTotal(Number(movement?.amount ?? 0));
@@ -339,8 +337,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         <EmptyState instance="movement-detail-none" variant="none" title="Sin desglose disponible" />
                     )}
                 </div>
-                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
-                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+                <QuickCashTools calculator breakdown />
         </Modal>
     );
 }

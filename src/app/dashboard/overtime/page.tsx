@@ -20,7 +20,7 @@ import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { periodTodayClassName } from '@/components/time/MonthPickerGrid';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { overtimeWeekDetailUsageLabel } from '@/lib/usage/modal-apply';
@@ -106,7 +106,6 @@ export default function OvertimePage() {
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string; weekId: string } | null>(null);
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     useEffect(() => {
         const nextPaid: Record<string, boolean> = {};
@@ -315,8 +314,7 @@ export default function OvertimePage() {
                                 metrics={[]}
                                 total={weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
                             />
-                            <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-                            <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                            <QuickCashTools calculator />
                             <div>
                                 {weekStaff.map((s: any) => (
                                     <StaffOvertimeRow

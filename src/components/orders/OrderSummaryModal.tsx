@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
@@ -22,8 +21,6 @@ interface OrderSummaryModalProps {
 }
 
 export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcessing }: OrderSummaryModalProps) {
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
-
     return (
         <>
             <Modal
@@ -89,8 +86,7 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                     </tbody>
                 </table>
             </Modal>
-            <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-            <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+            <QuickCashTools calculator />
         </>
     );
 }

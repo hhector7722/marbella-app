@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { BILLS, COINS } from '@/components/CashClosingModal';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
@@ -43,7 +43,6 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
     const [step1Counts, setStep1Counts] = useState<Record<number, number>>({});
     const [step2Counts, setStep2Counts] = useState<Record<number, number>>({});
     const [stock, setStock] = useState<Record<number, number>>({});
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [didTrySave, setDidTrySave] = useState(false);
 
@@ -210,8 +209,7 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
                 />
             }
         >
-            <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-            <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+            <QuickCashTools calculator breakdown />
 
             {step === 'importe' ? (
                 <DenominationCountGrid

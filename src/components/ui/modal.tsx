@@ -585,7 +585,7 @@ export function Modal({
             )}
             style={{
                 paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
-                paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+                paddingBottom: 'calc(max(1rem, env(safe-area-inset-bottom, 0px)) + var(--quick-tool-inset, 0px))',
                 paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
                 paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
             }}
@@ -607,6 +607,7 @@ export function Modal({
                 onClick={closeOnBackdrop ? () => requestCloseRef.current() : undefined}
             />
             <div
+                data-element="frame"
                 className={cn(
                     'relative z-10 flex h-full max-h-full min-h-0 w-full max-w-full flex-col items-center justify-center pointer-events-none',
                     layout.maxWidthClass,

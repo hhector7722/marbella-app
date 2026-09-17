@@ -24,7 +24,7 @@ import { cn, getBusinessHourFromTicket } from '@/lib/utils';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
 import CashClosingModal from '@/components/CashClosingModal';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { MonthPickerGrid } from '@/components/time/MonthPickerGrid';
@@ -837,7 +837,6 @@ export default function HistoryPage() {
     const [closingPhotosLoading, setClosingPhotosLoading] = useState(false);
     const [closingPhotosError, setClosingPhotosError] = useState<string | null>(null);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-    const [closingCalculatorOpen, setClosingCalculatorOpen] = useState(false);
 
     const closingPhotoSlides = useMemo((): ImageLightboxSlide[] => {
         const slides: ImageLightboxSlide[] = [];
@@ -1284,7 +1283,6 @@ export default function HistoryPage() {
             toast.success("Cierre eliminado");
             setSelectedClosing(null);
             setLightboxIndex(null);
-            setClosingCalculatorOpen(false);
             fetchHistory();
         } catch (err: any) {
             toast.error("Error al eliminar: " + err.message);
@@ -1773,20 +1771,9 @@ export default function HistoryPage() {
                         </div>
         </DashboardDetailLayout>
 
-            {selectedClosing && (
-                <>
-                    <QuickCalculatorModal
-                        isOpen={closingCalculatorOpen}
-                        onClose={() => setClosingCalculatorOpen(false)}
-                        overlayClassName="z-[320]"
-                    />
-                    <FloatingCalculatorFab
-                        isOpen={closingCalculatorOpen}
-                        onToggle={() => setClosingCalculatorOpen(true)}
-                        className="z-[310]"
-                    />
-                </>
-            )}
+            {selectedClosing && !(showCashDetails && isEditing) ? (
+                <QuickCashTools calculator breakdown />
+            ) : null}
 
             {selectedClosing && (
                 <Modal
@@ -1794,7 +1781,6 @@ export default function HistoryPage() {
                     onClose={() => {
                         setSelectedClosing(null);
                         setLightboxIndex(null);
-                        setClosingCalculatorOpen(false);
                         setIsEditing(false);
                     }}
                     variant="standard"

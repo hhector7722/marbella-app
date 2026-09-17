@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { X, Calendar, Check } from 'lucide-react';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools, type QuickCashTool } from '@/components/ui/QuickCalculatorModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -68,7 +68,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<ClosingStep>('tpv_data');
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
+    const [cashToolsOpen, setCashToolsOpen] = useState<QuickCashTool | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
     const [userFirstName, setUserFirstName] = useState<string | null>(null);
     const [instructionModal, setInstructionModal] = useState<{
@@ -326,7 +326,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         const hasSeen = localStorage.getItem(`cierre_warn_seen_tpv_v2_${userId}`);
         
         if (isTargetUser && !hasSeen) {
-            setCalculatorOpen(false);
+            setCashToolsOpen(null);
             setInstructionModal({
                 isOpen: true,
                 type: 'tpv',
@@ -348,7 +348,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         const hasSeen = localStorage.getItem(`cierre_warn_seen_dataphone_v2_${userId}`);
         
         if (isTargetUser && !hasSeen) {
-            setCalculatorOpen(false);
+            setCashToolsOpen(null);
             setInstructionModal({
                 isOpen: true,
                 type: 'tarjeta',
@@ -613,15 +613,19 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 )
             }
         >
-                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 {(step === 'tpv_data' || step === 'count') && (
-                    <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                    <QuickCashTools
+                        calculator
+                        breakdown
+                        open={cashToolsOpen}
+                        onOpenChange={setCashToolsOpen}
+                    />
                 )}
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {/* STEP 1: SALES DATA */}
                     {step === 'tpv_data' && (
-                        <div className="space-y-5">
+                        <div className={cashToolsOpen ? 'space-y-2' : 'space-y-5'}>
                             <ClosingWeatherPicker
                                 selectedId={weatherId}
                                 onSelect={setWeatherId}

@@ -1,19 +1,54 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
-import { X, Copy, Calculator, Delete, Minus, Plus, Banknote } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { Clock, Copy, Delete } from 'lucide-react';
 import { toast } from 'sonner';
-import { DENOMINATIONS, CURRENCY_IMAGES } from '@/lib/constants';
-import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { DENOMINATIONS } from '@/lib/constants';
+import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
+import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
-type ModalTab = 'calculator' | 'breakdown';
+export type QuickCashTool = 'calculator' | 'breakdown';
 
-/** Evalúa una expresión numérica segura (solo dígitos, ., +, -, *, /). */
+const CALCULATOR_ICON = '/icons/calculadora.png';
+const BREAKDOWN_ICON = '/icons/desglose.png';
+const INSET_VAR = '--quick-tool-inset';
+
+/** Estética iOS pedida por producto para esta herramienta (no es cromo de Modal). */
+const CALC = {
+    bg: '#000000',
+    num: '#333333',
+    fn: '#a5a5a5',
+    op: '#ff9f0a',
+} as const;
+
+type HistoryEntry = { expression: string; result: string };
+
+function applyToolInset(px: number) {
+    const root = document.documentElement;
+    root.style.setProperty(INSET_VAR, `${Math.max(0, Math.round(px))}px`);
+    if (px > 0) root.setAttribute('data-quick-tool', 'open');
+    else root.removeAttribute('data-quick-tool');
+}
+
+function clearToolInset() {
+    const root = document.documentElement;
+    root.style.setProperty(INSET_VAR, '0px');
+    root.removeAttribute('data-quick-tool');
+}
+
+function toEvalExpr(expr: string): string {
+    return expr
+        .replace(/÷/g, '/')
+        .replace(/×/g, '*')
+        .replace(/,/g, '.')
+        .replace(/−/g, '-');
+}
+
 function safeEval(expr: string): number | null {
-    const trimmed = expr.replace(/\s/g, '');
+    const trimmed = toEvalExpr(expr).replace(/\s/g, '');
     if (!trimmed) return null;
     if (!/^[\d.+*\-/]+$/.test(trimmed)) return null;
     try {
@@ -24,637 +59,513 @@ function safeEval(expr: string): number | null {
     }
 }
 
-interface QuickCalculatorModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    /** p. ej. z-[320] cuando hay otro overlay encima (lightbox) */
-    overlayClassName?: string;
+function formatCalcNumber(n: number): string {
+    if (!Number.isFinite(n)) return ' ';
+    const rounded = Math.abs(n - Math.round(n)) < 1e-10 ? Math.round(n) : Number(n.toFixed(10));
+    return String(rounded).replace('.', ',');
 }
 
-/** Denominaciones del desglose excepto 1c (fila final con total). */
-const BREAKDOWN_DENOMINATIONS_MAIN = DENOMINATIONS.filter((d) => d !== 0.01);
-const BREAKDOWN_DENOM_CENT = 0.01;
+function liveValue(expr: string): number | null {
+    const evalStr = toEvalExpr(expr).replace(/\s/g, '');
+    if (!evalStr) return null;
+    const ready = evalStr.replace(/[+\-*/.]+$/, '');
+    if (!ready) return null;
+    return safeEval(ready);
+}
 
-const BTN_VALUES: (string | 'back')[][] = [
-    ['C', 'back', '±', '%', '/'],
-    ['7', '8', '9', '*'],
-    ['4', '5', '6', '-'],
-    ['1', '2', '3', '+'],
-    ['.', '0', '=', ''],
+function lastNumberSpan(expr: string): { start: number; value: string } | null {
+    const match = expr.match(/([0-9]+(?:,[0-9]*)?)$/);
+    if (!match || match.index == null) return null;
+    return { start: match.index, value: match[1] };
+}
+
+type KeyTone = 'num' | 'fn' | 'op';
+
+const KEYPAD: { key: string; label: ReactNode; tone: KeyTone }[][] = [
+    [
+        { key: '7', label: '7', tone: 'num' },
+        { key: '8', label: '8', tone: 'num' },
+        { key: '9', label: '9', tone: 'num' },
+        { key: 'back', label: <Delete size={18} strokeWidth={2.4} />, tone: 'fn' },
+        { key: '÷', label: '÷', tone: 'op' },
+    ],
+    [
+        { key: '4', label: '4', tone: 'num' },
+        { key: '5', label: '5', tone: 'num' },
+        { key: '6', label: '6', tone: 'num' },
+        { key: 'AC', label: 'AC', tone: 'fn' },
+        { key: '×', label: '×', tone: 'op' },
+    ],
+    [
+        { key: '1', label: '1', tone: 'num' },
+        { key: '2', label: '2', tone: 'num' },
+        { key: '3', label: '3', tone: 'num' },
+        { key: '%', label: '%', tone: 'fn' },
+        { key: '-', label: '−', tone: 'op' },
+    ],
+    [
+        { key: '±', label: '⁺⁄₋', tone: 'num' },
+        { key: '0', label: '0', tone: 'num' },
+        { key: ',', label: ',', tone: 'num' },
+        { key: '=', label: '=', tone: 'op' },
+        { key: '+', label: '+', tone: 'op' },
+    ],
 ];
 
-export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: QuickCalculatorModalProps) {
-    const [tab, setTab] = useState<ModalTab>('calculator');
-    const [display, setDisplay] = useState('');
-    const [result, setResult] = useState<number | null>(null);
-    const [breakdownCounts, setBreakdownCounts] = useState<Record<number, number>>({});
-    const [zoomDenom, setZoomDenom] = useState<number | null>(null);
-    const [isSending, setIsSending] = useState(false);
-    const [showConfirmEnviar, setShowConfirmEnviar] = useState(false);
-    const [lastCaptureBlob, setLastCaptureBlob] = useState<Blob | null>(null);
-    const [lastCaptureCopied, setLastCaptureCopied] = useState(false);
-    const overlayRef = useRef<HTMLDivElement | null>(null);
-    const modalRef = useRef<HTMLDivElement | null>(null);
+const OPS = new Set(['+', '-', '×', '÷']);
 
-    useModalUsageTracking({
-        open: isOpen,
-        usageId: 'quick-calculator',
-        usageLabel: 'Calculadora rápida',
-    });
-
-    const handlePress = useCallback((key: string) => {
-        if (key === 'C') {
-            setDisplay('');
-            setResult(null);
-            return;
-        }
-        if (key === 'back') {
-            setResult(null);
-            setDisplay((prev) => prev.slice(0, -1));
-            return;
-        }
-        if (key === '=') {
-            const val = safeEval(display);
-            setResult(val);
-            if (val !== null) setDisplay(String(val));
-            return;
-        }
-        if (key === '±') {
-            const val = safeEval(display);
-            if (val !== null) setDisplay(String(-val));
-            return;
-        }
-        if (key === '%') {
-            const val = safeEval(display);
-            if (val !== null) setDisplay(String(val / 100));
-            return;
-        }
-        if (key === '' || key === 'back') return;
-        setResult(null);
-        setDisplay((prev) => prev + key);
-    }, [display]);
-
-    const handleCopy = useCallback(() => {
-        const toCopy = result !== null ? String(result) : (display || '0');
-        navigator.clipboard.writeText(toCopy).then(() => {
-            toast.success('Resultado copiado al portapapeles');
-        }).catch(() => {
-            toast.error('No se pudo copiar');
-        });
-    }, [result, display]);
-
-    const breakdownTotal = DENOMINATIONS.reduce((sum, d) => sum + d * (breakdownCounts[d] || 0), 0);
-    const breakdownTotalLabel =
-        breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : ' ';
-    const centQty = breakdownCounts[BREAKDOWN_DENOM_CENT] || 0;
-    const handleBreakdownAdjust = useCallback((denom: number, delta: number) => {
-        setBreakdownCounts((prev) => ({
-            ...prev,
-            [denom]: Math.max(0, (prev[denom] || 0) + delta),
-        }));
-    }, []);
-    const handleBreakdownCountChange = useCallback((denom: number, value: string) => {
-        const num = value === '' ? 0 : Math.max(0, parseInt(value, 10) || 0);
-        setBreakdownCounts((prev) => ({ ...prev, [denom]: num }));
-    }, []);
-    const whatsappMensaje = 'Aquí tienes el desglose.';
-
-    const BreakdownCaptureCard = useCallback(
-        ({
-            className,
-            showHeaderHint = false,
-        }: {
-            className?: string;
-            showHeaderHint?: boolean;
-        }) => (
-            <div className={cn('bg-white text-zinc-900 overflow-hidden', className)}>
-                <div className="bg-[#36606F] px-10 sm:px-12 py-8 sm:py-10">
-                    <div className="flex items-end justify-between gap-6">
-                        <div className="min-w-0">
-                            <div className="text-white text-3xl sm:text-4xl font-black uppercase tracking-[0.18em] leading-none">
-                                DESGLOSE
-                            </div>
-                            <div className="text-white/80 text-sm sm:text-base font-black uppercase tracking-[0.22em] mt-3">
-                                Bar La Marbella
-                            </div>
-                            {showHeaderHint && (
-                                <div className="text-white/70 text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] mt-2">
-                                    Haz captura y pégala en la conversación
-                                </div>
-                            )}
-                        </div>
-                        <div className="text-right shrink-0">
-                            <div className="text-white/70 text-[10px] sm:text-xs font-black uppercase tracking-[0.22em]">
-                                Total
-                            </div>
-                            <div className="text-white text-3xl sm:text-5xl font-black tabular-nums leading-none mt-1">
-                                {breakdownTotal > 0.005 ? `${breakdownTotal.toFixed(2)}€` : ' '}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-8 sm:p-10">
-                    <div className="grid grid-cols-5 gap-x-6 sm:gap-x-8 gap-y-6 sm:gap-y-8">
-                        {DENOMINATIONS.map((denom) => {
-                            const qty = breakdownCounts[denom] || 0;
-                            const label = denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`;
-                            const subtotal = denom * qty;
-                            return (
-                                <div
-                                    key={denom}
-                                    className="bg-white rounded-2xl sm:rounded-3xl border border-zinc-100 shadow-sm p-3 sm:p-4"
-                                >
-                                    <div className="flex items-center justify-center h-16 sm:h-24">
-                                        <img
-                                            src={CURRENCY_IMAGES[denom]}
-                                            alt={label}
-                                            width={260}
-                                            height={260}
-                                            className="h-full w-auto object-contain drop-shadow-lg"
-                                            draggable={false}
-                                        />
-                                    </div>
-                                    <div className="mt-2 sm:mt-3 flex items-center justify-between gap-2">
-                                        <div className="min-w-0">
-                                            <div className="text-[9px] sm:text-xs font-black text-zinc-500 uppercase tracking-widest">
-                                                {label}
-                                            </div>
-                                            <div className="text-lg sm:text-2xl font-black tabular-nums text-purple-600 leading-none">
-                                                {qty > 0 ? qty : ' '}
-                                            </div>
-                                        </div>
-                                        <div className="text-right shrink-0">
-                                            <div className="text-[9px] sm:text-xs font-black text-zinc-400 uppercase tracking-widest">
-                                                Sub
-                                            </div>
-                                            <div className="text-[11px] sm:text-base font-black tabular-nums text-emerald-600">
-                                                {subtotal > 0.005 ? `${subtotal.toFixed(2)}€` : ' '}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-        ),
-        [breakdownCounts, breakdownTotal]
-    );
-
-    /** Paso 2: tras confirmar, usar compartir nativo por defecto. */
-    const handleConfirmEnviar = useCallback(async () => {
-        if (lastCaptureBlob) {
-            try {
-                const file = new File([lastCaptureBlob], 'desglose.png', { type: 'image/png' });
-                if (navigator.canShare?.({ files: [file] }) && navigator.share) {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Desglose',
-                        text: whatsappMensaje,
-                    });
-                    setShowConfirmEnviar(false);
-                    return;
-                }
-            } catch {
-                // Si share nativo falla, seguimos con apertura WhatsApp web.
-            }
-        }
-
-        const waUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMensaje)}`;
-        const opened = window.open(waUrl, '_blank', 'noopener,noreferrer');
-        if (!opened) {
-            toast.info('WhatsApp bloqueado por el navegador. Ábrelo manualmente y pega la imagen.');
-        }
-        setShowConfirmEnviar(false);
-    }, [lastCaptureBlob, whatsappMensaje]);
-
-    /** Paso 1: generar PNG, copiar al portapapeles (si se puede) o descargar; luego abrir confirmación. */
-    const handleBreakdownSend = useCallback(async () => {
-        if (tab !== 'breakdown') {
-            toast.error('Abre primero la pestaña Desglose');
-            return;
-        }
-
-        // Captura del overlay completo para incluir el fondo difuminado detrás del modal.
-        const el = overlayRef.current || modalRef.current;
-        if (!el) {
-            toast.error('No se pudo capturar el modal');
-            return;
-        }
-
-        setIsSending(true);
-        const toastId = toast.loading('Generando captura…');
-        try {
-    const { toPng } = await import('html-to-image');
-
-            // Esperar a que carguen imágenes (Next/Image) para mejorar la fiabilidad del screenshot.
-            const imgs = Array.from(el.querySelectorAll('img'));
-            await Promise.all(
-                imgs.map((img) => {
-                    const elImg = img as HTMLImageElement;
-                    if (elImg.complete) return Promise.resolve();
-                    return new Promise<void>((resolve) => {
-                        elImg.onload = () => resolve();
-                        elImg.onerror = () => resolve();
-                    });
-                })
-            );
-
-            const rect = el.getBoundingClientRect();
-            const width = Math.max(1, Math.round(rect.width));
-            const height = Math.max(1, Math.round(rect.height));
-
-            const pixelRatio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-
-            // Generar PNG real (mejor compatibilidad con ClipboardItem)
-            const dataUrl = await toPng(el, {
-                backgroundColor: '#ffffff',
-                cacheBust: true,
-                pixelRatio,
-                width,
-                height,
-                style: {
-                    width: `${width}px`,
-                    height: `${height}px`,
-                },
-            });
-            if (!dataUrl) throw new Error('No se pudo generar la imagen');
-
-            // Convertimos el dataUrl a Blob SIN fetch (evita restricciones de "not allowed by the user agent").
-            const parts = dataUrl.split(',');
-            if (parts.length !== 2) throw new Error('Formato dataUrl inválido');
-            const header = parts[0];
-            const base64 = parts[1];
-            const mimeMatch = header.match(/data:(.*?);base64/);
-            const mime = mimeMatch?.[1] || 'image/png';
-            const byteString = atob(base64);
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-            const pngBlob =
-                mime === 'image/png' ? new Blob([ab], { type: mime }) : new Blob([ab], { type: 'image/png' });
-            setLastCaptureBlob(pngBlob);
-            setLastCaptureCopied(false);
-
-            // Ya no usamos copiar por defecto: en confirmación se prioriza compartir nativo.
-            toast.success('Captura lista para compartir.');
-
-            // Mostramos siempre confirmación para continuar flujo y abrir WhatsApp.
-            setShowConfirmEnviar(true);
-        } catch (e: any) {
-            const msg = e instanceof Error ? e.message : String(e);
-            toast.error(`Error al capturar: ${msg.slice(0, 80)}`);
-        } finally {
-            setIsSending(false);
-            try {
-                toast.dismiss(toastId);
-            } catch {
-                // No hacer nada: el estado ya se ha restaurado.
-            }
-        }
-    }, [tab]);
-
-    if (!isOpen) return null;
-
-    return (
-        <div
-            ref={overlayRef}
-            className={cn(
-                'fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200',
-                overlayClassName,
-            )}
-            onClick={onClose}
-        >
-            <div
-                ref={modalRef}
-                className={cn(
-                    'bg-white relative rounded-2xl shadow-2xl overflow-hidden w-full animate-in zoom-in-95 duration-200 flex flex-col max-h-[calc(100dvh-2rem)]',
-                    tab === 'breakdown' ? 'max-w-[420px]' : 'max-w-[280px]'
-                )}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="bg-[#36606F] px-3 py-2 flex items-center justify-end text-white shrink-0 relative min-h-[48px]">
-                    <div
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex rounded-xl bg-white/10 p-0.5 gap-0.5"
-                        role="tablist"
-                        aria-label="Calculadora o desglose"
-                    >
-                        <button
-                            type="button"
-                            role="tab"
-                            aria-selected={tab === 'calculator'}
-                            onClick={() => setTab('calculator')}
-                            className={cn(
-                                'px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all min-h-[40px]',
-                                tab === 'calculator' ? 'bg-white text-[#36606F]' : 'text-white/80 hover:text-white'
-                            )}
-                        >
-                            Calculadora
-                        </button>
-                        <button
-                            type="button"
-                            role="tab"
-                            aria-selected={tab === 'breakdown'}
-                            onClick={() => setTab('breakdown')}
-                            className={cn(
-                                'px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all min-h-[40px] flex items-center gap-1',
-                                tab === 'breakdown' ? 'bg-white text-[#36606F]' : 'text-white/80 hover:text-white'
-                            )}
-                        >
-                            <Banknote size={14} />
-                            Desglose
-                        </button>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[44px] min-w-[44px] shrink-0 relative z-10"
-                        aria-label="Cerrar"
-                    >
-                        <X size={18} strokeWidth={3} />
-                    </button>
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto min-h-0">
-                    {tab === 'calculator' ? (
-                        <div className="flex flex-col h-full bg-[#407080]">
-                            {/* Result cell — always white */}
-                            <div className="px-4 py-3 bg-white flex flex-col justify-end items-end min-h-[80px]">
-                                <div className="text-3xl font-black text-[#36606F] tracking-tighter tabular-nums truncate max-w-full">
-                                    {display || '0'}
-                                </div>
-                            </div>
-
-                            {/* Keypad */}
-                            <div className="flex-1 p-3">
-                                <div className="grid grid-cols-4 gap-1.5 mb-2">
-                                    {BTN_VALUES.flat().map((key, i) => (
-                                        <button
-                                            key={i}
-                                            type="button"
-                                            onClick={() => handlePress(key)}
-                                            className={cn(
-                                                'min-h-[48px] rounded-xl font-black text-sm transition-all active:scale-95 flex items-center justify-center',
-                                                key === 'C' && 'bg-rose-100 text-rose-700 hover:bg-rose-200',
-                                                key === 'back' && 'bg-rose-500 text-white hover:bg-rose-600',
-                                                ['+', '-', '*', '/', '±', '%'].includes(key) && 'bg-white text-[#36606F] border border-[#36606F]/20 hover:bg-zinc-100 shadow-sm',
-                                                key === '=' && 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20',
-                                                (!['C', 'back', '=', '', '+', '-', '*', '/', '±', '%'].includes(key)) && 'bg-[#407080] text-white border border-white/20 hover:brightness-110',
-                                                key === '' && 'invisible pointer-events-none'
-                                            )}
-                                        >
-                                            {key === 'back' ? <Delete size={18} strokeWidth={2.5} /> : (key || '')}
-                                        </button>
-                                    ))}
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={handleCopy}
-                                    className="w-full min-h-[48px] rounded-xl bg-white/20 text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-white/30 active:scale-[0.98] border border-white/20"
-                                >
-                                    <Copy size={16} />
-                                    Copiar resultado
-                                </button>
-                            </div>
-                        </div>
-                    ) : null}
-                    {tab === 'breakdown' && (
-                        <>
-                            {zoomDenom !== null && (
-                                <DenominationZoomModal
-                                    isOpen={true}
-                                    onClose={() => setZoomDenom(null)}
-                                    denomination={zoomDenom}
-                                    value={breakdownCounts[zoomDenom] || 0}
-                                    onValueChange={(v) => setBreakdownCounts((prev) => ({ ...prev, [zoomDenom]: v }))}
-                                />
-                            )}
-                            <div className="p-3 space-y-5">
-                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-5 gap-x-3">
-                                    {BREAKDOWN_DENOMINATIONS_MAIN.map((denom) => {
-                                        const qty = breakdownCounts[denom] || 0;
-                                        return (
-                                            <div key={denom} className="flex flex-col items-center gap-1.5 group transition-all">
-                                                <div
-                                                    role="button"
-                                                    tabIndex={0}
-                                                    onClick={() => setZoomDenom(denom)}
-                                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(denom); }}
-                                                    className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer focus:outline-none min-h-[44px]"
-                                                    aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
-                                                >
-                                                    <img
-                                                        src={CURRENCY_IMAGES[denom]}
-                                                        alt={`${denom}€`}
-                                                        width={140}
-                                                        height={140}
-                                                        className="h-full w-auto object-contain drop-shadow-md pointer-events-none"
-                                                        draggable={false}
-                                                    />
-                                                </div>
-                                                <div className="text-center w-full space-y-1">
-                                                    <span className="font-black text-gray-400 text-[8px] uppercase tracking-widest block">
-                                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                                    </span>
-                                                    <div className="flex items-center justify-between w-full h-10 min-h-[44px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleBreakdownAdjust(denom, -1)}
-                                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
-                                                        >
-                                                            <Minus size={12} strokeWidth={3} />
-                                                        </button>
-                                                        <input
-                                                            type="number"
-                                                            min={0}
-                                                            value={qty > 0 ? qty : ''}
-                                                            onChange={(e) => handleBreakdownCountChange(denom, e.target.value)}
-                                                            placeholder=""
-                                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 px-0.5 text-[11px] tracking-normal tabular-nums leading-none focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleBreakdownAdjust(denom, 1)}
-                                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
-                                                        >
-                                                            <Plus size={12} strokeWidth={3} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-x-3 items-end">
-                                    <div className="flex flex-col items-center gap-1.5 group transition-all">
-                                        <div
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => setZoomDenom(BREAKDOWN_DENOM_CENT)}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(BREAKDOWN_DENOM_CENT); }}
-                                            className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer focus:outline-none min-h-[44px]"
-                                            aria-label="Editar cantidad de 1 céntimo"
-                                        >
-                                            <img
-                                                src={CURRENCY_IMAGES[BREAKDOWN_DENOM_CENT]}
-                                                alt="1c"
-                                                width={140}
-                                                height={140}
-                                                className="h-full w-auto object-contain drop-shadow-md pointer-events-none"
-                                                draggable={false}
-                                            />
-                                        </div>
-                                        <div className="text-center w-full space-y-1">
-                                            <span className="font-black text-gray-400 text-[8px] uppercase tracking-widest block">
-                                                1c
-                                            </span>
-                                            <div className="flex items-center justify-between w-full h-10 min-h-[44px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleBreakdownAdjust(BREAKDOWN_DENOM_CENT, -1)}
-                                                    className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
-                                                >
-                                                    <Minus size={12} strokeWidth={3} />
-                                                </button>
-                                                <input
-                                                    type="number"
-                                                    min={0}
-                                                    value={centQty > 0 ? centQty : ''}
-                                                    onChange={(e) => handleBreakdownCountChange(BREAKDOWN_DENOM_CENT, e.target.value)}
-                                                    placeholder=""
-                                                    className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 px-0.5 text-[11px] tracking-normal tabular-nums leading-none focus:bg-blue-50/20 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleBreakdownAdjust(BREAKDOWN_DENOM_CENT, 1)}
-                                                    className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
-                                                >
-                                                    <Plus size={12} strokeWidth={3} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-3 sm:col-span-4 flex items-end justify-start min-h-[44px]">
-                                        <div
-                                            className="inline-flex w-fit max-w-full items-center gap-2 h-10 min-h-[44px] px-3 rounded-xl bg-[#36606F] shadow-lg border border-white/10"
-                                            aria-live="polite"
-                                        >
-                                            <span className="text-[10px] font-black text-white/70 uppercase tracking-[0.2em] whitespace-nowrap">
-                                                Total
-                                            </span>
-                                            <span className="text-base font-black text-white tabular-nums whitespace-nowrap">
-                                                {breakdownTotalLabel}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                    </>
-                )}
-                </div>
-
-                {/* Fixed Footer for Breakdown tab */}
-                    {tab === 'breakdown' && (
-                        <div className="p-4 bg-gray-50/80 backdrop-blur-sm border-t border-zinc-100 shrink-0">
-                            <button
-                                type="button"
-                                onClick={handleBreakdownSend}
-                                disabled={isSending || showConfirmEnviar}
-                                className={cn(
-                                    "mx-auto w-full min-h-[48px] rounded-xl bg-purple-600 text-white font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 hover:bg-purple-500 active:scale-[0.98] shadow-lg shadow-purple-900/20 transition-all",
-                                    isSending && "opacity-60 cursor-not-allowed"
-                                )}
-                            >
-                                <img
-                                    src="/icons/whatsapp.png"
-                                    alt=""
-                                    className="w-[20px] h-[20px] object-contain shrink-0"
-                                    draggable={false}
-                                />
-                                {isSending ? 'Generando…' : 'Enviar'}
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Modal de confirmación: abre WhatsApp para que el usuario pegue manualmente desde el portapapeles */}
-                {showConfirmEnviar && (
-                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-[90] rounded-[2.5rem] animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl p-6 mx-4 max-w-[280px] shadow-xl">
-                            <p className="text-center text-sm font-medium text-zinc-700 mb-4">
-                                ¿Abrimos WhatsApp para que pegues la imagen del desglose?
-                            </p>
-                            <div className="flex gap-3">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    instance="quick-calc-confirm-cancel"
-                                    layout="fill"
-                                    className="flex-1"
-                                    onClick={() => setShowConfirmEnviar(false)}
-                                >
-                                    Cancelar
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    instance="quick-calc-confirm-send"
-                                    layout="fill"
-                                    className="flex-1"
-                                    onClick={handleConfirmEnviar}
-                                >
-                                    Sí, enviar
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-        </div>
-    );
-}
-
-/** Botón discreto para cabecera de modal: abre la calculadora. Colocar a la izquierda de la X si hay cierre, o como elemento más a la derecha. */
-export function CalculatorHeaderButton({
-    isOpen,
-    onToggle,
-    className,
-    ariaLabel = 'Abrir calculadora',
+function IosCalcKey({
+    tone,
+    children,
+    onClick,
+    ariaLabel,
 }: {
-    isOpen: boolean;
-    onToggle: () => void;
-    className?: string;
-    ariaLabel?: string;
+    tone: KeyTone;
+    children: ReactNode;
+    onClick: () => void;
+    ariaLabel: string;
 }) {
     return (
         <button
             type="button"
-            onClick={onToggle}
             aria-label={ariaLabel}
+            onClick={onClick}
             className={cn(
-                'w-10 h-10 flex items-center justify-center rounded-xl min-h-[48px] min-w-[48px] shrink-0',
-                'text-white/80 hover:text-white hover:bg-white/10 transition-all active:scale-95',
-                className
+                'flex h-full min-h-12 min-w-12 w-full items-center justify-center rounded-full text-[22px] font-medium tabular-nums transition-transform active:scale-95',
+                tone === 'num' && 'text-white',
+                tone === 'fn' && 'text-[#1c1c1e] text-[17px] font-semibold',
+                tone === 'op' && 'text-white text-[26px]',
             )}
+            style={{
+                background:
+                    tone === 'num' ? CALC.num : tone === 'fn' ? CALC.fn : CALC.op,
+            }}
         >
-            <Calculator size={20} strokeWidth={2.5} />
+            {children}
         </button>
     );
 }
 
-/**
- * Botón flotante tipo "chat" para abrir la calculadora mientras un modal está abierto.
- * Úsalo dentro del overlay del modal (idealmente en un contenedor `relative`).
- */
-export function FloatingCalculatorFab({
+function IosCalculator({ onCopyValue }: { onCopyValue: (value: string) => void }) {
+    const [expr, setExpr] = useState('');
+    const [justEvaluated, setJustEvaluated] = useState(false);
+    const [historyOpen, setHistoryOpen] = useState(false);
+    const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+    const result = liveValue(expr);
+    const resultLabel = result == null ? (expr ? ' ' : '0') : formatCalcNumber(result);
+
+    const handleKey = useCallback((key: string) => {
+        if (key === 'AC') {
+            setExpr('');
+            setJustEvaluated(false);
+            return;
+        }
+        if (key === 'back') {
+            setJustEvaluated(false);
+            setExpr((prev) => prev.slice(0, -1));
+            return;
+        }
+        if (key === '=') {
+            const val = liveValue(expr);
+            if (val == null || !expr) return;
+            const shown = formatCalcNumber(val);
+            setHistory((prev) => [{ expression: expr, result: shown }, ...prev].slice(0, 40));
+            setExpr(shown);
+            setJustEvaluated(true);
+            return;
+        }
+        if (key === '±') {
+            setJustEvaluated(false);
+            setExpr((prev) => {
+                const span = lastNumberSpan(prev);
+                if (!span) return prev.startsWith('−') ? prev.slice(1) : prev ? `−${prev}` : prev;
+                const before = prev.slice(0, span.start);
+                if (before.endsWith('−')) return `${before.slice(0, -1)}${span.value}`;
+                return `${before}−${span.value}`;
+            });
+            return;
+        }
+        if (key === '%') {
+            setJustEvaluated(false);
+            setExpr((prev) => {
+                const span = lastNumberSpan(prev);
+                if (!span) return prev;
+                const n = Number(span.value.replace(',', '.'));
+                if (!Number.isFinite(n)) return prev;
+                return `${prev.slice(0, span.start)}${formatCalcNumber(n / 100)}`;
+            });
+            return;
+        }
+        if (key === ',') {
+            const startFresh = justEvaluated;
+            setJustEvaluated(false);
+            setExpr((prev) => {
+                if (startFresh) return '0,';
+                const span = lastNumberSpan(prev);
+                if (span?.value.includes(',')) return prev;
+                if (!span) return `${prev}0,`;
+                return `${prev},`;
+            });
+            return;
+        }
+        if (OPS.has(key)) {
+            const op = key === '-' ? '−' : key;
+            setJustEvaluated(false);
+            setExpr((prev) => {
+                if (!prev) return op === '−' ? '−' : prev;
+                const last = prev.slice(-1);
+                if (OPS.has(last) || last === '−') return `${prev.slice(0, -1)}${op}`;
+                return `${prev}${op}`;
+            });
+            return;
+        }
+        const startFresh = justEvaluated;
+        setJustEvaluated(false);
+        setExpr((prev) => (startFresh ? key : `${prev}${key}`));
+    }, [expr, justEvaluated]);
+
+    const copyTarget = resultLabel === ' ' ? '0' : resultLabel;
+
+    return (
+        <div className="flex flex-col gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+            <div className="flex items-end gap-2">
+                <div className="flex shrink-0 items-center gap-0.5">
+                    <button
+                        type="button"
+                        aria-label={historyOpen ? 'Mostrar teclado' : 'Mostrar historial'}
+                        aria-pressed={historyOpen}
+                        onClick={() => setHistoryOpen((v) => !v)}
+                        className={cn(
+                            'flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-full',
+                            historyOpen ? 'text-white' : 'text-[#8e8e93]',
+                        )}
+                    >
+                        <Clock size={22} strokeWidth={2.2} />
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="Copiar valor"
+                        onClick={() => onCopyValue(copyTarget)}
+                        className="flex h-12 w-12 min-h-12 min-w-12 items-center justify-center rounded-full text-[#8e8e93]"
+                    >
+                        <Copy size={20} strokeWidth={2.2} />
+                    </button>
+                </div>
+                <div className="min-w-0 flex-1 text-right">
+                    <div className="truncate text-[13px] font-medium tabular-nums text-[#8e8e93]">
+                        {expr || ' '}
+                    </div>
+                    <div className="truncate text-[44px] font-light leading-none tabular-nums tracking-tight text-white">
+                        {resultLabel}
+                    </div>
+                </div>
+            </div>
+
+            <div className="h-[min(18.5rem,46dvh)] min-h-[16rem]">
+                {historyOpen ? (
+                    <div className="flex h-full flex-col overflow-y-auto px-1">
+                        {history.map((entry, i) => (
+                            <button
+                                key={`${entry.expression}-${i}`}
+                                type="button"
+                                className="flex min-h-12 w-full shrink-0 items-baseline justify-between gap-3 border-0 border-b border-white/10 bg-transparent px-1 py-2 text-left"
+                                onClick={() => {
+                                    setExpr(entry.result);
+                                    setJustEvaluated(true);
+                                    setHistoryOpen(false);
+                                }}
+                            >
+                                <span className="min-w-0 truncate text-[13px] text-[#8e8e93]">{entry.expression}</span>
+                                <span className="shrink-0 text-[18px] font-medium tabular-nums text-white">{entry.result}</span>
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid h-full grid-cols-5 grid-rows-4 gap-2">
+                        {KEYPAD.flat().map((cell, i) => (
+                            <div key={`${cell.key}-${i}`} className="flex min-h-12 min-w-12 items-center justify-center">
+                                <div className="aspect-square h-full max-w-full">
+                                    <IosCalcKey
+                                        tone={cell.tone}
+                                        ariaLabel={cell.key === 'back' ? 'Borrar' : cell.key === 'AC' ? 'Borrar todo' : String(cell.key)}
+                                        onClick={() => handleKey(cell.key)}
+                                    >
+                                        {cell.label}
+                                    </IosCalcKey>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function BreakdownDraft() {
+    const [counts, setCounts] = useState<Record<number, number>>({});
+    const total = DENOMINATIONS.reduce((sum, d) => sum + d * (counts[d] || 0), 0);
+
+    return (
+        <div className="flex max-h-[min(55dvh,28rem)] min-h-0 flex-col bg-white pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <div className="min-h-0 flex-1 overflow-y-auto px-2 pt-2">
+                <DenominationCountGrid
+                    counts={counts}
+                    onAdjust={(denom, delta) => {
+                        setCounts((prev) => ({
+                            ...prev,
+                            [denom]: Math.max(0, (prev[denom] || 0) + delta),
+                        }));
+                    }}
+                    onChange={(denom, raw) => {
+                        const num = raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0);
+                        setCounts((prev) => ({ ...prev, [denom]: num }));
+                    }}
+                />
+            </div>
+            <div className="flex shrink-0 items-center justify-between gap-2 border-t border-zinc-100 px-3 py-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total</span>
+                <span className="text-lg font-black tabular-nums text-zinc-800">
+                    {total > 0.005 ? formatCurrencySpanish(total) : ' '}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+export function QuickCalculatorModal({
     isOpen,
+    onClose,
+    overlayClassName,
+    tab = 'calculator',
+    allowCalculator = true,
+    allowBreakdown = true,
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    overlayClassName?: string;
+    tab?: QuickCashTool;
+    onTabChange?: (tab: QuickCashTool) => void;
+    allowCalculator?: boolean;
+    allowBreakdown?: boolean;
+}) {
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const resolvedTab: QuickCashTool = !allowCalculator
+        ? 'breakdown'
+        : !allowBreakdown
+            ? 'calculator'
+            : tab;
+
+    useModalUsageTracking({
+        open: isOpen,
+        usageId: resolvedTab === 'breakdown' ? 'quick-breakdown' : 'quick-calculator',
+        usageLabel: resolvedTab === 'breakdown' ? 'Desglose de borrador' : 'Calculadora rápida',
+    });
+
+    useLayoutEffect(() => {
+        if (!isOpen) {
+            clearToolInset();
+            return;
+        }
+        const el = panelRef.current;
+        if (!el) return;
+        const sync = () => applyToolInset(el.getBoundingClientRect().height);
+        sync();
+        const observer = new ResizeObserver(sync);
+        observer.observe(el);
+        return () => {
+            observer.disconnect();
+            clearToolInset();
+        };
+    }, [isOpen, resolvedTab, mounted]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            onClose();
+        };
+        window.addEventListener('keydown', onKey, true);
+        return () => window.removeEventListener('keydown', onKey, true);
+    }, [isOpen, onClose]);
+
+    const handleCopy = useCallback((value: string) => {
+        navigator.clipboard.writeText(value).then(() => {
+            toast.success('Valor copiado');
+        }).catch(() => {
+            toast.error('No se pudo copiar');
+        });
+    }, []);
+
+    if (!isOpen || !mounted) return null;
+
+    return createPortal(
+        <div
+            ref={panelRef}
+            data-component="QuickCashToolsPanel"
+            data-tab={resolvedTab}
+            className={cn(
+                'fixed inset-x-0 bottom-0 z-[var(--z-modal-sheet)] select-none',
+                overlayClassName,
+            )}
+            style={{ background: resolvedTab === 'calculator' ? CALC.bg : '#ffffff' }}
+        >
+            {resolvedTab === 'calculator' && allowCalculator ? (
+                <IosCalculator onCopyValue={handleCopy} />
+            ) : null}
+            {resolvedTab === 'breakdown' && allowBreakdown ? (
+                <BreakdownDraft />
+            ) : null}
+        </div>,
+        document.body,
+    );
+}
+
+function ToolFab({
+    src,
+    ariaLabel,
+    onClick,
+    pressed,
+}: {
+    src: string;
+    ariaLabel: string;
+    onClick: () => void;
+    pressed?: boolean;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-label={ariaLabel}
+            aria-pressed={pressed}
+            className="h-14 w-14 min-h-[56px] min-w-[56px] shrink-0 overflow-hidden rounded-[var(--radio-superficie)] border-0 bg-transparent p-0 shadow-2xl shadow-black/25 transition-all hover:brightness-110 active:scale-95"
+        >
+            <img src={src} alt="" draggable={false} className="pointer-events-none h-full w-full object-cover" />
+        </button>
+    );
+}
+
+export function QuickCashToolsFabs({
+    calculator,
+    breakdown,
+    isOpen,
+    openTab,
+    onOpen,
+    className,
+}: {
+    calculator: boolean;
+    breakdown: boolean;
+    isOpen: boolean;
+    openTab?: QuickCashTool | null;
+    onOpen: (tab: QuickCashTool) => void;
+    className?: string;
+}) {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+    if (!calculator && !breakdown) return null;
+    if (!mounted) return null;
+    return createPortal(
+        <div
+            className={cn(
+                'fixed right-4 z-[208] flex shrink-0 flex-col-reverse items-center gap-3 sm:right-6',
+                isOpen
+                    ? 'bottom-[calc(var(--quick-tool-inset,0px)+0.75rem)]'
+                    : 'bottom-4 sm:bottom-6',
+                className,
+            )}
+        >
+            {calculator ? (
+                <ToolFab
+                    src={CALCULATOR_ICON}
+                    ariaLabel={openTab === 'calculator' ? 'Cerrar calculadora' : 'Abrir calculadora'}
+                    pressed={openTab === 'calculator'}
+                    onClick={() => onOpen('calculator')}
+                />
+            ) : null}
+            {breakdown ? (
+                <ToolFab
+                    src={BREAKDOWN_ICON}
+                    ariaLabel={openTab === 'breakdown' ? 'Cerrar desglose' : 'Abrir desglose'}
+                    pressed={openTab === 'breakdown'}
+                    onClick={() => onOpen('breakdown')}
+                />
+            ) : null}
+        </div>,
+        document.body,
+    );
+}
+
+/**
+ * Acceso flotante a calculadora y/o desglose de borrador.
+ * Cada superficie declara qué botones monta.
+ */
+export function QuickCashTools({
+    calculator = false,
+    breakdown = false,
+    overlayClassName,
+    className,
+    open,
+    onOpenChange,
+}: {
+    calculator?: boolean;
+    breakdown?: boolean;
+    overlayClassName?: string;
+    className?: string;
+    open?: QuickCashTool | null;
+    onOpenChange?: (next: QuickCashTool | null) => void;
+}) {
+    const [internalOpen, setInternalOpen] = useState<QuickCashTool | null>(null);
+    const isControlled = open !== undefined;
+    const openTab = isControlled ? open : internalOpen;
+    const setOpenTab = (next: QuickCashTool | null) => {
+        if (!isControlled) setInternalOpen(next);
+        onOpenChange?.(next);
+    };
+
+    if (!calculator && !breakdown) return null;
+
+    const resolvedTab: QuickCashTool = openTab
+        ?? (calculator ? 'calculator' : 'breakdown');
+
+    return (
+        <>
+            <QuickCalculatorModal
+                isOpen={openTab !== null}
+                onClose={() => setOpenTab(null)}
+                overlayClassName={overlayClassName}
+                tab={resolvedTab}
+                allowCalculator={calculator}
+                allowBreakdown={breakdown}
+            />
+            <QuickCashToolsFabs
+                calculator={calculator}
+                breakdown={breakdown}
+                isOpen={openTab !== null}
+                openTab={openTab}
+                onOpen={(tab) => setOpenTab(openTab === tab ? null : tab)}
+                className={className}
+            />
+        </>
+    );
+}
+
+/** Botón discreto para cabecera de modal: abre la calculadora. */
+export function CalculatorHeaderButton({
     onToggle,
     className,
     ariaLabel = 'Abrir calculadora',
 }: {
-    isOpen: boolean;
+    isOpen?: boolean;
     onToggle: () => void;
     className?: string;
     ariaLabel?: string;
@@ -665,15 +576,12 @@ export function FloatingCalculatorFab({
             onClick={onToggle}
             aria-label={ariaLabel}
             className={cn(
-                'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[220]',
-                'w-14 h-14 min-h-[56px] min-w-[56px] rounded-full shadow-2xl shadow-black/20',
-                'bg-purple-600 text-white border border-white/10',
-                'hover:brightness-110 active:scale-95 transition-all',
-                isOpen && 'opacity-0 pointer-events-none',
-                className
+                'flex h-12 w-12 min-h-[48px] min-w-[48px] shrink-0 items-center justify-center overflow-hidden rounded-[var(--radio-superficie)]',
+                'border-0 bg-transparent p-0 transition-all hover:brightness-110 active:scale-95',
+                className,
             )}
         >
-            <Calculator size={22} strokeWidth={2.75} className="mx-auto" />
+            <img src={CALCULATOR_ICON} alt="" draggable={false} className="pointer-events-none h-9 w-9 object-cover" />
         </button>
     );
 }

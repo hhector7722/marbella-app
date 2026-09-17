@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { toast } from 'sonner'
 import { AlertCircle, Filter, Package } from 'lucide-react'
-import { FloatingCalculatorFab, QuickCalculatorModal } from '@/components/ui/QuickCalculatorModal'
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal'
 import { Button } from '@/components/ui/button'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -181,7 +181,6 @@ export function InventoryClient({
   const [physicalCountsCamara, setPhysicalCountsCamara] = useState<Record<string, string>>({})
   const [numericByIdCamara, setNumericByIdCamara] = useState<Record<string, number>>({})
   const [locationMode, setLocationMode] = useState<'BARRA' | 'CAMARA'>('BARRA')
-  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
   const [draftVisibility, setDraftVisibility] = useState<Record<string, boolean>>({})
 
   const [ingredientQuery, setIngredientQuery] = useState('')
@@ -602,14 +601,7 @@ export function InventoryClient({
 
       {!visibilityEditMode && (
         <>
-          <FloatingCalculatorFab
-            isOpen={isCalculatorOpen}
-            onToggle={() => setIsCalculatorOpen(true)}
-          />
-          <QuickCalculatorModal
-            isOpen={isCalculatorOpen}
-            onClose={() => setIsCalculatorOpen(false)}
-          />
+          <QuickCashTools calculator />
         </>
       )}
     </div>

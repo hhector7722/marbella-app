@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-12
+revisado: 2026-09-17
 caducidad: 6 meses
 supersede: —
 ---
@@ -410,9 +410,13 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 
 **Propósito**: apoyar el recuento de efectivo y el cálculo puntual sin salir de la tarea.
 
-**Reglas**: cifras grandes, legibles a distancia de brazo, con teclado de tamaño de dedo.
+**Reglas**: el acceso es por **dos botones flotantes distintos**: calculadora (`/icons/calculadora.png`) y desglose de borrador (`/icons/desglose.png`). Cada superficie declara cuáles monta. Recuentos de caja, cierre, cambio (salvo el selector de cajas), tesorería, historial de cierres y propinas montan los dos. Inventario, detalle de semana de horas extras y resumen de pedido montan solo calculadora. El selector de cajas del cambio no monta ninguno.
 
-**Estado**: existen.
+La herramienta **no es una capa Modal**. Es un panel inferior simultáneo: el modal o la página padre siguen usables, no se subordinan ni se cubren con backdrop. El overlay de Modal cede `--quick-tool-inset` y alinea el panel al canto de la herramienta. Cuando el contenido cabe (cierre de caja, paso 1), se compacta para verse entero. Escape cierra primero la herramienta.
+
+La calculadora reproduce el teclado de la imagen de producto (números, AC, retroceso, %, ⁺⁄₋, coma, operadores naranja). El reloj oculta las teclas y muestra el historial de cálculos; copiar pone el valor actual en el portapapeles. La estética iOS de este teclado es excepción explícita de producto: no usa tokens de petróleo. El desglose de borrador reutiliza `DenominationCountGrid` (el mismo del arqueo).
+
+**Estado**: existe (`QuickCashTools`). No se registra en la pila Modal. `DenominationZoomModal` sigue residual por el techo `base → derived`.
 
 ---
 
@@ -510,7 +514,7 @@ El widget no elige un ancho libre: entra en la misma retícula. Las tres homes u
 
 La jerarquía visual canónica está decidida ([ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md)): tokens → primitivas → plantillas de pantalla → pantallas de negocio. **No se reabren** Modal, Button, PetroleumSegmented, DocumentListRow ni ADR-0007/0008/0009.
 
-Hoy existen: Button, Modal, Surface, Field, SearchField, EmptyState, Notice, KpiStat, PageScreen, DocumentListRow, PetroleumSegmented, DashboardShortcut, HomeScreen. La insignia de estado sigue sin pieza (D27 chips). En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
+Hoy existen: Button, Modal, Surface, Field, SearchField, EmptyState, Notice, KpiStat, PageScreen, DocumentListRow, PetroleumSegmented, DashboardShortcut, HomeScreen. La insignia de estado sigue sin pieza (D27 chips). En Caja/Tesorería, `QuickCashTools` es panel inferior simultáneo (no capa Modal). `DenominationZoomModal` permanece residual: el contrato no admite un tercer nivel sobre `base → derived`.
 
 Consecuencias observables:
 - Las pantallas principales de gestión (Labor, Albaranes, Reservas, Propinas, Carta, Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil, Sala) usan `PageScreen`.

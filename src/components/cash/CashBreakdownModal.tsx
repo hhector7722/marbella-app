@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -9,7 +9,7 @@ import { DENOMINATIONS, CURRENCY_IMAGES } from '@/lib/constants';
 import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 
 function parseLocalDateSafe(dateInput?: string | Date | null): Date {
     if (!dateInput) return new Date();
@@ -52,7 +52,6 @@ export function CashBreakdownModal({
     instance,
     parentInstance,
 }: CashBreakdownModalProps) {
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     const displayBreakdown = useMemo(() => {
         if (isEditing) {
@@ -105,12 +104,9 @@ export function CashBreakdownModal({
                 ) : undefined
             }
         >
-            {isEditing && (
-                <>
-                    <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-                    <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
-                </>
-            )}
+            {isEditing ? (
+                <QuickCashTools calculator breakdown />
+            ) : null}
             {isEditing ? (
                 <DenominationCountGrid
                     counts={editCounts}

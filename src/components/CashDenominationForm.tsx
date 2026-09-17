@@ -5,7 +5,7 @@ import { Wand2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { DENOMINATIONS } from '@/lib/constants';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 import { getBoxInventoryForAutofill } from '@/app/actions/cash-box-inventory';
 import { greedyCashBreakdown, hasAnyInventoryStock } from '@/lib/greedy-cash-breakdown';
@@ -77,7 +77,6 @@ export const CashDenominationForm = ({
     const [purchasePrice, setPurchasePrice] = useState<number | ''>('');
     const [receivedCounts, setReceivedCounts] = useState<Record<number, number>>({});
     const [purchaseTab, setPurchaseTab] = useState<'given' | 'received'>('given');
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [outTargetAmount, setOutTargetAmount] = useState<number | ''>('');
     const [autofillLoading, setAutofillLoading] = useState(false);
@@ -206,10 +205,9 @@ export const CashDenominationForm = ({
             }}
         >
             <div className="relative flex min-h-0 flex-col bg-white">
-                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-                <FloatingCalculatorFab
-                    isOpen={calculatorOpen}
-                    onToggle={() => setCalculatorOpen(true)}
+                <QuickCashTools
+                    calculator
+                    breakdown
                     className="bottom-20 right-4 sm:bottom-24 sm:right-6"
                 />
                 {zoomDenom !== null && (
