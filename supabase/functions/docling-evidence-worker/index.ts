@@ -31,8 +31,18 @@ type K5AutomationResult = {
   proposalSetId?: string | null
 }
 
+type K4AutoApplyResult = {
+  ok: boolean
+  eligible?: number
+  applied?: number
+  blocked?: unknown[]
+  error?: string
+}
+
 const DEFAULT_K5_AUTOMATION_URL =
   "https://marbella-app-hhector7722s-projects.vercel.app/api/internal/albaranes/k5/auto-propose"
+const DEFAULT_K5_AUTO_APPLY_URL =
+  "https://marbella-app-hhector7722s-projects.vercel.app/api/internal/albaranes/k5/auto-apply"
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -129,6 +139,46 @@ async function triggerK5AutoProposal(params: {
   return parsed
 }
 
+async function triggerK4AutoApply(params: {
+  jobId: string
+  leaseToken: string
+  invoiceId: string
+  extractionId: string
+}): Promise<K4AutoApplyResult> {
+  const body = JSON.stringify({
+    jobId: params.jobId,
+    leaseToken: params.leaseToken,
+    invoiceId: params.invoiceId,
+    extractionId: params.extractionId,
+  })
+  const timestamp = String(Math.floor(Date.now() / 1000))
+  const signature = await hmacSha256Hex(params.leaseToken, `${timestamp}.${body}`)
+  const endpoint = Deno.env.get("K5_AUTO_APPLY_URL")?.trim() || DEFAULT_K5_AUTO_APPLY_URL
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "x-k5-timestamp": timestamp,
+      "x-k5-signature": signature,
+    },
+    body,
+  })
+  const responseText = await response.text()
+  let parsed: K4AutoApplyResult | null = null
+  try {
+    parsed = JSON.parse(responseText) as K4AutoApplyResult
+  } catch {
+    parsed = null
+  }
+
+  if (!response.ok || !parsed?.ok) {
+    const detail = responseText.slice(0, 1000) || `HTTP ${response.status}`
+    throw new Error(`K4 auto-apply: ${detail}`)
+  }
+  return parsed
+}
+
 Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "Método no permitido" }, 405)
   if (!hasWorkerToken(request)) return json({ error: "No autorizado" }, 401)
@@ -202,6 +252,7 @@ Deno.serve(async (request) => {
       const failure = payload.status === "failed"
       let evidenceExtractionId: string | null = null
       let k5Automation: K5AutomationResult | null = null
+      let k4AutoApply: K4AutoApplyResult | null = null
 
       if (payload.rawArtifact !== undefined) {
         const { data: evidence, error: evidenceError } = await supabase.rpc("persist_document_evidence", {
@@ -216,10 +267,8 @@ Deno.serve(async (request) => {
         evidenceExtractionId = String((evidence as { extraction_id?: string } | null)?.extraction_id ?? "") || null
       }
 
-      // K5 es un paso downstream de interpretación, pero forma parte del mismo
-      // contrato durable del job: si falla por red/servidor no cerramos el lease.
-      // `persist_document_evidence` es idempotente y la ruta K5 también lo es,
-      // así que el reintento no duplica evidencia ni propuestas.
+      // La propuesta K5 forma parte del contrato durable: si falla, se reintenta
+      // el job completo de forma idempotente y no se cierra el lease.
       if (payload.status === "success" && evidenceExtractionId) {
         k5Automation = await triggerK5AutoProposal({
           jobId: payload.jobId,
@@ -228,6 +277,21 @@ Deno.serve(async (request) => {
           extractionId: evidenceExtractionId,
           correlationId: job.correlation_id ?? null,
         })
+
+        // La aplicación económica es deliberadamente best-effort. Cualquier
+        // duda o error deja la propuesta disponible para revisión humana, pero
+        // nunca convierte una extracción Docling válida en OCR fallido.
+        try {
+          k4AutoApply = await triggerK4AutoApply({
+            jobId: payload.jobId,
+            leaseToken: payload.leaseToken,
+            invoiceId: job.invoice_id,
+            extractionId: evidenceExtractionId,
+          })
+        } catch (error) {
+          console.error("docling-evidence-worker k4-auto-apply", error)
+          k4AutoApply = { ok: false, error: errorMessage(error) }
+        }
       }
 
       const { error: completionError } = await supabase.rpc("complete_docling_evidence_job", {
@@ -235,12 +299,16 @@ Deno.serve(async (request) => {
         p_lease_token: payload.leaseToken,
         p_evidence_extraction_id: evidenceExtractionId,
         p_succeeded: !failure,
-        p_metrics: { ...metrics, k5_auto_proposal: k5Automation },
+        p_metrics: {
+          ...metrics,
+          k5_auto_proposal: k5Automation,
+          k4_auto_apply: k4AutoApply,
+        },
         p_error: payload.error?.slice(0, 5000) ?? null,
       })
       if (completionError) throw new Error(`complete_docling_evidence_job: ${completionError.message}`)
 
-      return json({ ok: true, evidenceExtractionId, k5Automation })
+      return json({ ok: true, evidenceExtractionId, k5Automation, k4AutoApply })
     }
 
     return json({ error: "Ruta no encontrada" }, 404)
