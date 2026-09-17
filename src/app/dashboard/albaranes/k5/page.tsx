@@ -35,9 +35,14 @@ export default async function K5ReviewPage({
   }
 
   const query = await searchParams
-  const selectedId = query.id && result.invoices.some((invoice) => invoice.id === query.id)
-    ? query.id
+  const requestedId = query.id?.trim() || null
+  const requestedInvoice = requestedId
+    ? result.invoices.find((invoice) => invoice.id === requestedId) ?? null
+    : null
+  const selectedId = requestedId
+    ? requestedInvoice?.id ?? null
     : result.invoices[0]?.id ?? null
+  const requestedInvoiceUnavailable = Boolean(requestedId && !requestedInvoice)
 
   return (
     <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-5">
@@ -80,7 +85,13 @@ export default async function K5ReviewPage({
           </div>
 
           <div className="min-w-0">
-            <K5ReviewClient initialInvoices={result.invoices} initialSelectedId={selectedId} />
+            {requestedInvoiceUnavailable ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-bold text-amber-900">
+                Este albarán no tiene una extracción Docling correcta disponible para Revisión K5.
+              </div>
+            ) : (
+              <K5ReviewClient initialInvoices={result.invoices} initialSelectedId={selectedId} />
+            )}
           </div>
         </div>
       )}
