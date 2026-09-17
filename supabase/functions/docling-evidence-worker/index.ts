@@ -21,6 +21,19 @@ type CompletionPayload = {
   error?: string | null
 }
 
+type K5AutomationResult = {
+  ok: boolean
+  created?: number
+  materialized?: number
+  idempotent?: boolean
+  skipped?: string
+  normalizerVersion?: string
+  proposalSetId?: string | null
+}
+
+const DEFAULT_K5_AUTOMATION_URL =
+  "https://marbella-app.vercel.app/api/internal/albaranes/k5/auto-propose"
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -56,6 +69,61 @@ function isCompletionPayload(value: unknown): value is CompletionPayload {
     (input.status === "success" || input.status === "no_table" || input.status === "failed")
   )
   return base && (input.status === "failed" || Object.hasOwn(input, "rawArtifact"))
+}
+
+function bytesToHex(value: ArrayBuffer): string {
+  return [...new Uint8Array(value)].map((byte) => byte.toString(16).padStart(2, "0")).join("")
+}
+
+async function hmacSha256Hex(secret: string, message: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  )
+  return bytesToHex(await crypto.subtle.sign("HMAC", key, encoder.encode(message)))
+}
+
+async function triggerK5AutoProposal(params: {
+  serviceRoleKey: string
+  invoiceId: string
+  extractionId: string
+  correlationId: string | null
+}): Promise<K5AutomationResult> {
+  const body = JSON.stringify({
+    invoiceId: params.invoiceId,
+    extractionId: params.extractionId,
+    correlationId: params.correlationId,
+  })
+  const timestamp = String(Math.floor(Date.now() / 1000))
+  const signature = await hmacSha256Hex(params.serviceRoleKey, `${timestamp}.${body}`)
+  const endpoint = Deno.env.get("K5_AUTOMATION_URL")?.trim() || DEFAULT_K5_AUTOMATION_URL
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "x-k5-timestamp": timestamp,
+      "x-k5-signature": signature,
+    },
+    body,
+  })
+  const responseText = await response.text()
+  let parsed: K5AutomationResult | null = null
+  try {
+    parsed = JSON.parse(responseText) as K5AutomationResult
+  } catch {
+    parsed = null
+  }
+
+  if (!response.ok || !parsed?.ok) {
+    const detail = responseText.slice(0, 1000) || `HTTP ${response.status}`
+    throw new Error(`K5 auto-proposal: ${detail}`)
+  }
+  return parsed
 }
 
 Deno.serve(async (request) => {
@@ -119,7 +187,7 @@ Deno.serve(async (request) => {
 
       const { data: job, error: jobError } = await supabase
         .from("document_processing_jobs")
-        .select("id, invoice_id, file_version_hash, extractor_version, status, lease_token")
+        .select("id, invoice_id, file_version_hash, extractor_version, correlation_id, status, lease_token")
         .eq("id", payload.jobId)
         .eq("status", "leased")
         .eq("lease_token", payload.leaseToken)
@@ -130,6 +198,7 @@ Deno.serve(async (request) => {
       const metrics = payload.metrics ?? {}
       const failure = payload.status === "failed"
       let evidenceExtractionId: string | null = null
+      let k5Automation: K5AutomationResult | null = null
 
       if (payload.rawArtifact !== undefined) {
         const { data: evidence, error: evidenceError } = await supabase.rpc("persist_document_evidence", {
@@ -144,17 +213,30 @@ Deno.serve(async (request) => {
         evidenceExtractionId = String((evidence as { extraction_id?: string } | null)?.extraction_id ?? "") || null
       }
 
+      // K5 es un paso downstream de interpretación, pero forma parte del mismo
+      // contrato durable del job: si falla por red/servidor no cerramos el lease.
+      // `persist_document_evidence` es idempotente y la ruta K5 también lo es,
+      // así que el reintento no duplica evidencia ni propuestas.
+      if (payload.status === "success" && evidenceExtractionId) {
+        k5Automation = await triggerK5AutoProposal({
+          serviceRoleKey,
+          invoiceId: job.invoice_id,
+          extractionId: evidenceExtractionId,
+          correlationId: job.correlation_id ?? null,
+        })
+      }
+
       const { error: completionError } = await supabase.rpc("complete_docling_evidence_job", {
         p_job_id: payload.jobId,
         p_lease_token: payload.leaseToken,
         p_evidence_extraction_id: evidenceExtractionId,
         p_succeeded: !failure,
-        p_metrics: metrics,
+        p_metrics: { ...metrics, k5_auto_proposal: k5Automation },
         p_error: payload.error?.slice(0, 5000) ?? null,
       })
       if (completionError) throw new Error(`complete_docling_evidence_job: ${completionError.message}`)
 
-      return json({ ok: true, evidenceExtractionId })
+      return json({ ok: true, evidenceExtractionId, k5Automation })
     }
 
     return json({ error: "Ruta no encontrada" }, 404)
