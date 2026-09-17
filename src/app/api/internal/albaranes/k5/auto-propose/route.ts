@@ -1,7 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/supabase'
 import {
   K5_NORMALIZER_VERSION,
   normalizeDoclingEvidence,
@@ -18,7 +17,7 @@ import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineag
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-type AdminClient = ReturnType<typeof createClient<Database>>
+type AdminClient = ReturnType<typeof createClient>
 
 type AutoProposalRequest = {
   invoiceId: string
@@ -252,7 +251,8 @@ async function materializeProposalLine(params: {
       .select('id')
       .eq('purchase_invoice_line_id', text(line.id))
       .maybeSingle()
-    if (confirmation?.id) return text(line.id)
+    const confirmationRow = confirmation as { id?: string } | null
+    if (confirmationRow?.id) return text(line.id)
   }
 
   const lineStatus = status === 'ready_for_review'
@@ -261,14 +261,14 @@ async function materializeProposalLine(params: {
       ? 'excluded'
       : 'pending'
 
-  const patch: Database['public']['Tables']['purchase_invoice_lines']['Update'] = {
+  const patch: Record<string, unknown> = {
     interpretation_proposal_id: proposalId,
     original_name: sourceItemName,
-    quantity: proposal.line_quantity == null ? null : Number(proposal.line_quantity),
-    line_unit: text(proposal.line_unit) || null,
-    unit_price: proposal.observed_unit_price == null ? null : Number(proposal.observed_unit_price),
-    total_price: proposal.line_total == null ? null : Number(proposal.line_total),
-    mapped_ingredient_id: status === 'ready_for_review' ? text(proposal.ingredient_id) || null : null,
+    quantity: proposal.line_quantity,
+    line_unit: proposal.line_unit,
+    unit_price: proposal.observed_unit_price,
+    total_price: proposal.line_total,
+    mapped_ingredient_id: status === 'ready_for_review' ? proposal.ingredient_id : null,
     status: lineStatus,
   }
 
@@ -283,21 +283,12 @@ async function materializeProposalLine(params: {
 
   const { data: inserted, error } = await supabase
     .from('purchase_invoice_lines')
-    .insert({
-      invoice_id: invoiceId,
-      interpretation_proposal_id: proposalId,
-      original_name: sourceItemName,
-      quantity: patch.quantity ?? null,
-      line_unit: patch.line_unit ?? null,
-      unit_price: patch.unit_price ?? null,
-      total_price: patch.total_price ?? null,
-      mapped_ingredient_id: patch.mapped_ingredient_id ?? null,
-      status: lineStatus,
-    })
+    .insert({ invoice_id: invoiceId, ...patch })
     .select('id')
     .maybeSingle()
-  if (error || !inserted?.id) throw new Error('La propuesta se guardó, pero no se pudo crear su línea revisable.')
-  return text(inserted.id)
+  const insertedRow = inserted as { id?: string } | null
+  if (error || !insertedRow?.id) throw new Error('La propuesta se guardó, pero no se pudo crear su línea revisable.')
+  return text(insertedRow.id)
 }
 
 async function generateAutomaticProposals(
@@ -306,11 +297,17 @@ async function generateAutomaticProposals(
 ): Promise<Record<string, unknown>> {
   const { invoiceId, extractionId, correlationId = null } = params
 
-  const { data: invoice, error: invoiceError } = await supabase
+  const { data: invoiceData, error: invoiceError } = await supabase
     .from('purchase_invoices')
     .select('id,supplier_id,content_sha256,created_by')
     .eq('id', invoiceId)
     .maybeSingle()
+  const invoice = invoiceData as {
+    id?: string
+    supplier_id?: number | null
+    content_sha256?: string | null
+    created_by?: string | null
+  } | null
   if (invoiceError || !invoice) throw new Error('No se pudo abrir el albarán para K5.')
   if (invoice.supplier_id == null) {
     return { ok: true, skipped: 'supplier_missing', created: 0, materialized: 0 }
@@ -320,12 +317,20 @@ async function generateAutomaticProposals(
     return { ok: true, skipped: 'invoice_created_by_missing', created: 0, materialized: 0 }
   }
 
-  const { data: extraction, error: extractionError } = await supabase
+  const { data: extractionData, error: extractionError } = await supabase
     .from('document_extractions')
     .select('id,invoice_id,file_version_hash,extractor_version,raw_json_artifact,status')
     .eq('id', extractionId)
     .eq('invoice_id', invoiceId)
     .maybeSingle()
+  const extraction = extractionData as {
+    id?: string
+    invoice_id?: string
+    file_version_hash?: string | null
+    extractor_version?: string
+    raw_json_artifact?: unknown
+    status?: string
+  } | null
   if (extractionError || !extraction) throw new Error('No se pudo cargar la extracción Docling para K5.')
   if (extraction.status !== 'success') {
     return { ok: true, skipped: 'extraction_not_success', created: 0, materialized: 0 }
@@ -426,7 +431,7 @@ async function generateAutomaticProposals(
   if (missingPayloads.length > 0) {
     const { data, error } = await supabase
       .from('purchase_interpretation_proposals')
-      .insert(missingPayloads as Database['public']['Tables']['purchase_interpretation_proposals']['Insert'][])
+      .insert(missingPayloads)
       .select('*')
     if (error) {
       const concurrent = /single_successor|duplicate key|unique/i.test(error.message)
@@ -483,7 +488,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'Payload inválido.' }, { status: 400 })
   }
 
-  const supabase = createClient<Database>(url, serviceRoleKey, {
+  const supabase = createClient(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 
