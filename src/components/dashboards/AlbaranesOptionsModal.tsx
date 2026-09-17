@@ -24,7 +24,7 @@ export function AlbaranesOptionsModal({
             hideHeader
             hideCloseButton
             footer={
-                <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2">
+                <>
                     <Button
                         type="button"
                         variant="secondary"
@@ -49,7 +49,7 @@ export function AlbaranesOptionsModal({
                     >
                         Escanear
                     </Button>
-                </div>
+                </>
             }
         >
             {null}

@@ -710,12 +710,25 @@ html[data-quick-tool='open'] main {
 
 /*
  * Albaranes options: botones idénticos al fichaje staff (misma fuente,
- * mismo relleno visual a toda la hit-area).
+ * mismo relleno visual a toda la hit-area). El conjunto se centra en el
+ * ancho del modal; no hereda el flex-end del pie.
  */
+[data-component='Modal'][data-instance='albaranes-options-modal'] [data-element='body']:empty {
+  display: none;
+  padding: 0;
+  min-height: 0;
+}
+[data-component='Modal'][data-instance='albaranes-options-modal'] [data-element='body']:empty ~ [data-element='footer'] {
+  border-top: none;
+}
 [data-component='Modal'][data-instance='albaranes-options-modal'] [data-element='footer'] {
   border-top: none;
   padding-top: var(--espacio-4);
   padding-bottom: var(--espacio-4);
+  justify-content: center;
+}
+[data-component='Modal'][data-instance='albaranes-options-modal'] [data-element='footer'] > [data-element='footer-actions'] {
+  margin-inline: auto;
 }
 [data-component='Modal'][data-instance='albaranes-options-modal'] [data-component='Button'][data-layout='hug'] {
   font-size: 1.25rem;

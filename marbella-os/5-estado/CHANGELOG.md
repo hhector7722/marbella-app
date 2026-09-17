@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-17
 
+- **Albaranes: Albaranes y Escanear van centrados.** En el modal de opciones el par queda en el centro del ancho, como el fichaje staff; ya no se pegan a un lado.
+
 - **Calculadora y desglose: mismos iconos, una fila, sin tapar botones.** Los dos flotantes miden igual, van juntos a la izquierda y no cubren el pie ni el teclado. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **Calculadora y desglose conviven con el modal padre.** Dejan de ser un overlay a pantalla completa. El teclado queda anclado abajo (estética iOS de producto: reloj = historial, copiar = portapapeles) y el cierre de caja compacta el paso 1 para verse entero. El desglose de borrador es la misma rejilla que el arqueo. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).

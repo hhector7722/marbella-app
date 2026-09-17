@@ -934,6 +934,31 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
     });
 
+    it('las opciones de Albaranes centran el par de botones en el modal', () => {
+        const modal = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/AlbaranesOptionsModal.tsx'),
+            'utf8'
+        );
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(modal, /instance="albaranes-options-modal"/);
+        assert.match(modal, /instance="albaranes-options-list"/);
+        assert.match(modal, /instance="albaranes-options-scan"/);
+        assert.doesNotMatch(
+            modal,
+            /footer=\{\s*<div className="flex w-full/,
+            'el par no se estira a todo el pie'
+        );
+        assert.match(
+            css,
+            /\[data-component='Modal'\]\[data-instance='albaranes-options-modal'\] \[data-element='footer'\] > \[data-element='footer-actions'\][\s\S]*?margin-inline:\s*auto/,
+            'el conjunto se centra como el fichaje staff'
+        );
+        assert.match(
+            css,
+            /\[data-component='Modal'\]\[data-instance='albaranes-options-modal'\] \[data-element='footer'\] \{[\s\S]*?justify-content:\s*center/,
+        );
+    });
+
     it('el comunicado del aviso de la cámara abre un Modal de sistema, no una pestaña', () => {
         const comunicados = readFileSync(
             join(SRC_ROOT, 'components/profile/ComunicadosModal.tsx'),
