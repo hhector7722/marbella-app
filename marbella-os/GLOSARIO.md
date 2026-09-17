@@ -134,10 +134,11 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | Término | Significado | Identificador técnico |
 |---|---|---|
 | **Cierre de caja** | Proceso diario de cuadre del efectivo y los cobros. | `cash_closings` |
-| **Esperado** | Efectivo que debería haber según ventas, tarjeta y pendiente. | — |
-| **Descuadre** | Diferencia entre el efectivo contado y el esperado. | — |
-| **Pendiente** | Importe de tickets no cobrados todavía. | — |
-| **Cobros** | Importes cobrados de deuda anterior. | — |
+| **Esperado** | Efectivo que debería haber: ventas − pendiente + cobros − tarjeta. | — |
+| **Descuadre** | Efectivo contado menos esperado. Positivo: sobra en el cajón. | — |
+| **Tarjeta** | Importe cobrado con datáfonos hoy, incluidos cobros de otra fecha pagados con tarjeta. | — |
+| **Pendiente** | Ventas facturadas hoy que no se pagan hoy. Van en ventas. | — |
+| **Cobros** | Ingresos de hoy que liquidan pendiente de otra fecha. No van en ventas. | — |
 | **Caja de cambio** | Cajón con efectivo destinado a dar cambio. | `cash_boxes` |
 | **Arqueo** | Recuento del efectivo de una caja. | — |
 | **Cambio** | Traslado de efectivo entre dos cajas. Genera dos apuntes cruzados. | `treasury_log`, tipo `EXCHANGE` |

@@ -14,6 +14,10 @@ import {
     weatherIdFromLabel,
     type ClosingWeatherId,
 } from '@/lib/cash-closing-weather';
+import {
+    closingMagnitudesFromBreakdown,
+    computeCashClosingBalance,
+} from '@/lib/cash-closing-balance';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
@@ -104,9 +108,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         debtRecovered: 0,
         ticketsCount: initialTicketsCount || 0,
     });
-    /** Efectivo BDP (sum cobro_efectivo). Fallback si ventas−tarjeta−pendiente queda negativo. */
-    const [bdpEfectivo, setBdpEfectivo] = useState(0);
-
     const [weatherId, setWeatherId] = useState<ClosingWeatherId | null>(null);
 
     // 2. STATE: COUNT
@@ -231,11 +232,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         }
     }, [tpvData, counts, weatherId, userId]);
 
-    function roundMoney(n: number): number {
-        return Math.round(n * 100) / 100;
-    }
-
-    /** Autorellena desde RPC get_closing_sales_breakdown (tickets + cobros deuda 107). */
+    /** Autorellena desde RPC get_closing_sales_breakdown (tickets + cobros de otra fecha). */
     async function applyVentasAndTicketsAutoFill() {
         const dateObj = parseDateTimeLocal(selectedDateTime);
         const dateStr = format(dateObj, 'yyyy-MM-dd');
@@ -248,33 +245,25 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
             if (error) throw error;
 
-            const row = (data ?? {}) as {
+            const magnitudes = closingMagnitudesFromBreakdown((data ?? {}) as {
                 total_bruto?: number
-                total_efectivo?: number
                 total_tarjeta?: number
                 total_pendiente?: number
+                total_cobros?: number
                 total_cobros_deuda?: number
                 recuento_tickets?: number
-            };
+            });
 
-            const totalBruto = Math.max(0, roundMoney(Number(row.total_bruto) || 0));
-            const totalEfectivo = Math.max(0, roundMoney(Number(row.total_efectivo) || 0));
-            const totalTarjeta = Math.max(0, roundMoney(Number(row.total_tarjeta) || 0));
-            const totalPendiente = Math.max(0, roundMoney(Number(row.total_pendiente) || 0));
-            const totalCobrosDeuda = Math.max(0, roundMoney(Number(row.total_cobros_deuda) || 0));
-            const recuento = Math.max(0, Number(row.recuento_tickets) || 0);
-
-            setBdpEfectivo(totalEfectivo);
             setTpvData((prev) => ({
                 ...prev,
-                totalSales: totalBruto,
-                ticketsCount: recuento,
-                cardSales: totalTarjeta,
-                pendingSales: totalPendiente,
-                debtRecovered: totalCobrosDeuda,
+                totalSales: magnitudes.ventas,
+                ticketsCount: magnitudes.tickets,
+                cardSales: magnitudes.tarjeta,
+                pendingSales: magnitudes.pendiente,
+                debtRecovered: magnitudes.cobros,
             }));
 
-            if (totalBruto === 0 && totalEfectivo === 0 && totalTarjeta === 0 && recuento === 0) {
+            if (magnitudes.ventas === 0 && magnitudes.tarjeta === 0 && magnitudes.tickets === 0) {
                 toast.message('Sin tickets BDP para esta fecha en Supabase');
             }
         } catch (error) {
@@ -287,17 +276,14 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     // --- CALCULATIONS ---
     const totalSalesGross = tpvData.totalSales;
-    // Esperado = ventas − tarjeta − pendiente + cobros.
-    // Si editan ventas/tarjeta del papel y dejan pendiente BDP, la resta puede ir negativa
-    // y el clamp a 0 dejaba Esperado vacío / descuadre = todo el efectivo. Fallback: cobro_efectivo BDP.
-    const derivedCashSales = roundMoney(tpvData.totalSales - tpvData.cardSales - tpvData.pendingSales);
-    const formulaCollapsed = derivedCashSales < -0.005;
-    const cashSalesToday = formulaCollapsed && bdpEfectivo > 0.005
-        ? bdpEfectivo
-        : Math.max(0, derivedCashSales);
-    const expectedCash = roundMoney(cashSalesToday + tpvData.debtRecovered);
     const totalCounted = Object.entries(counts).reduce((sum, [val, qty]) => sum + (parseFloat(val) * qty), 0);
-    const difference = totalCounted - expectedCash;
+    const { esperado: expectedCash, descuadre: difference } = computeCashClosingBalance({
+        ventas: tpvData.totalSales,
+        pendiente: tpvData.pendingSales,
+        cobros: tpvData.debtRecovered,
+        tarjeta: tpvData.cardSales,
+        efectivoContado: totalCounted,
+    });
     const cashToWithdraw = totalCounted; // Se retira TODO el efectivo contado
     const cashLeft = 0; // No queda nada en caja por defecto
 
@@ -389,11 +375,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         if (step === 'tpv_data') {
             if (!ensureWeatherSelected()) return;
             if (!ensurePhotosAttached()) return;
-            if (formulaCollapsed && bdpEfectivo > 0.005) {
-                toast.message(
-                    `Esperado usa efectivo BDP (${bdpEfectivo.toFixed(2)}€): ventas/tarjeta/pendiente no cuadran`,
-                );
-            }
             setStep('count');
             return;
         }
@@ -581,7 +562,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                             <div className="flex items-center gap-1.5">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Esperado</span>
                                 <span className="text-sm font-bold tabular-nums text-zinc-500">
-                                    {expectedCash > 0.005 ? `${expectedCash.toFixed(2)}€` : ' '}
+                                    {`${expectedCash.toFixed(2)}€`}
                                 </span>
                             </div>
                         }

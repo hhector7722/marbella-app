@@ -29,12 +29,14 @@ const config = {
 /**
  * Ventana de negocio BDP (Data Sistema). Funciona aunque Fecha (día TPV) vaya desfasada.
  * Ventas: tickets con Hora_Cierre (finalizados) o Pendiente=1 (a cuenta, sin cierre).
+ * Incluye cobros de deuda antigua si Hora_Cierre es reciente, aunque Fecha_Sistema sea de otro día.
  * Tickets abiertos sin pendiente quedan fuera (radar sala sigue por Comandas / DIRECTO reciente).
  */
 const VENTAS_WHERE = `
   WHERE (
     (Fecha_Sistema IS NOT NULL AND CAST(Fecha_Sistema AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE)))
     OR (Fecha_Sistema IS NULL AND CAST(Fecha AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE)))
+    OR (Hora_Cierre IS NOT NULL AND Hora_Cierre >= DATEADD(hour, -36, GETDATE()))
   )
   AND (Hora_Cierre IS NOT NULL OR Pendiente = 1)
   AND LTRIM(RTRIM(ISNULL(Numero_Documento, ''))) <> 'COMPROBANTE'
@@ -61,6 +63,7 @@ const RUN_CATCHUP =
 let memoriaTickets = new Map();
 let ultimoEstadoSala = '';
 let ventasPollBusy = false;
+let pendientesAntiguosPollBusy = false;
 let cajaPollBusy = false;
 let pollTick = 0;
 
@@ -364,6 +367,43 @@ async function pollVentasRecientes(pool) {
     }
 }
 
+async function pollPendientesAbiertosAntiguos(pool) {
+    if (pendientesAntiguosPollBusy) return;
+    pendientesAntiguosPollBusy = true;
+    try {
+        const res = await pool.request().query(`
+            SELECT TOP (30) ${CABECERA_SELECT}
+            FROM Documentos_Cabecera WITH (NOLOCK)
+            WHERE ISNULL(Pendiente, 0) = 1
+              AND LTRIM(RTRIM(ISNULL(Numero_Documento, ''))) <> 'COMPROBANTE'
+              AND CAST(COALESCE(Fecha_Sistema, Fecha) AS DATE) < CAST(GETDATE() AS DATE)
+              AND CAST(COALESCE(Fecha_Sistema, Fecha) AS DATE) >= DATEADD(day, -120, CAST(GETDATE() AS DATE))
+            ORDER BY COALESCE(Fecha_Sistema, Fecha) DESC, Numero_Documento DESC
+        `);
+
+        const candidatos = res.recordset || [];
+        let enviados = 0;
+        for (const t of candidatos) {
+            try {
+                const sent = await enviarTicket(pool, t);
+                if (sent) enviados++;
+            } catch (e) {
+                console.error(`❌ ERROR pendiente antiguo ${ticketKey(t.Numero_Documento)}:`, e.message);
+            }
+        }
+        if (enviados > 0) {
+            const ts = new Date().toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            });
+            console.log(`🔄 [${ts}] Poll pendientes antiguos: ${enviados} actualizado(s) | candidatos=${candidatos.length}`);
+        }
+    } finally {
+        pendientesAntiguosPollBusy = false;
+    }
+}
+
 async function pollCajaMovimientos(pool) {
     if (cajaPollBusy) return;
     cajaPollBusy = true;
@@ -430,11 +470,13 @@ async function start() {
         }
 
         void pollVentasRecientes(pool);
+        void pollPendientesAbiertosAntiguos(pool);
         void pollCajaMovimientos(pool);
 
         setInterval(async () => {
             try {
                 await pollVentasRecientes(pool);
+                await pollPendientesAbiertosAntiguos(pool);
             } catch (e) {
                 console.error('❌ ERROR EN VENTAS:', e.message);
             }

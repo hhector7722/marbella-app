@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-17
 caducidad: 6 meses
 supersede: context/DEPLOY_BDP_VENTAS.txt
 ---
@@ -53,8 +53,9 @@ pm2 logs receptor --lines 20
 - App: /dashboard/ventas filtro hoy (total = SUM total_documento, incluye a cuenta)
 
 ## Tickets a cuenta (Pendiente=1 sin Hora_Cierre)
-- VENTAS_WHERE: `(Hora_Cierre IS NOT NULL OR Pendiente = 1)` — no entran mesas abiertas sin pendiente.
-- Al cobrar: cambia Documentos_Pagos → firma distinta → re-upsert en Supabase (mismo numero_documento).
+- VENTAS_WHERE: `(Hora_Cierre IS NOT NULL OR Pendiente = 1)` y, además, `Hora_Cierre` de las últimas 36 h aunque `Fecha_Sistema` sea de otro día — así un cobro de deuda antigua entra el día que se cobra.
+- Poll aparte de pendientes abiertos de hasta 120 días: si cambian `Documentos_Pagos`, se reenvía el ticket.
+- Al cobrar: cambia Documentos_Pagos → firma distinta → re-upsert en Supabase (mismo numero_documento; el día contable se conserva).
 - pm2: `pm2 restart PuenteBDP` y `pm2 logs PuenteBDP --lines 30`
 
 ## COMPROBANTE (no es venta)

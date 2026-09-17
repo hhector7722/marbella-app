@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-17
 caducidad: 12 meses
 ---
 
@@ -27,12 +27,12 @@ Un documento de dominio se distingue de una capacidad en [1-producto/capacidades
 | [HORAS](./HORAS.md) | Balance semanal, deuda de asistencia y exención de agosto |
 | [JORNADA-FIJA](./JORNADA-FIJA.md) | Política de jornada completa independiente de fichajes |
 | [PRECIOS-Y-COMPRAS](./PRECIOS-Y-COMPRAS.md) | Precio de ingrediente y su actualización desde albaranes |
+| [TESORERIA](./TESORERIA.md) | Cuadre de caja: ventas, tarjeta, pendiente, cobros, esperado y descuadre |
 
 ## Pendientes
 
 Se escriben cuando se trabaje sobre ellos, no antes:
 
-- **TESORERIA** — Cuadre de caja, saldo objetivo, tratamiento del descuadre.
 - **PROPINAS** — Base de reparto y su relación con [JORNADA-FIJA](./JORNADA-FIJA.md).
 
 ## Estructura obligatoria

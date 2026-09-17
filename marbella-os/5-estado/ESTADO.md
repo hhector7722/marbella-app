@@ -52,7 +52,7 @@ El producto está en producción y sostiene la operación diaria del negocio. El
 - **Inventario.** Funciona, pero el rastro de movimientos y las correcciones tienen puntos débiles conocidos.
 - **Consumo personal.** Depende de conversiones de unidad que no siempre están definidas.
 - **Copiloto.** Operativo, con dependencia de un único proveedor de visión y sin contrato documentado.
-- **Cálculo del efectivo esperado.** Correcto en el caso general; hay casos en que el dato del terminal y el recuento no concuerdan y el descuadre resultante no es explicativo.
+- **Puente TPV de cobros antiguos.** Hasta copiar `index.js` al equipo del punto de venta, un cobro de deuda de otro día puede no actualizar el ticket. La tarjeta auto-rellenada se queda en las ventas de hoy; hay que copiar el total de los datáfonos. Fórmula en [TESORERIA](../3-ingenieria/dominio/TESORERIA.md).
 
 ## Legacy tolerado
 

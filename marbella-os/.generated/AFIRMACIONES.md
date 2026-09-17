@@ -1,12 +1,12 @@
-<!-- Generado desde 45 documentos de marbella-os/.
-     Huella del origen: de8aaecc81d575de
+<!-- Generado desde 51 documentos de marbella-os/.
+     Huella del origen: f02da58645744bc5
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
 
 # Afirmaciones citables
 
-Los 45 hechos del corpus que tienen identificador estable, con dónde
+Los 51 hechos del corpus que tienen identificador estable, con dónde
 viven y desde cuántos sitios se citan. Derivado. **No es norma**: la norma está
 en el documento de origen, y este índice solo dice dónde.
 
@@ -60,6 +60,12 @@ texto crea un segundo dueño, y eso es exactamente lo que prohíbe `CANON §5`.
 | `INV-P05` | Si `effectivePreferStock` y `netPayable = 0` ⇒ `estimatedValue = 0` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-P06` | `displayPendientes = carryIn` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-P07` | `displayHoras = hoursWorked` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 1 |
+| `INV-T01` | `esperado = round(ventas − pendiente + cobros − tarjeta)` | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
+| `INV-T02` | `descuadre = round(efectivo_contado − esperado)` | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
+| `INV-T03` | La tarjeta de auto-relleno es al menos la suma de `cobro_tarjeta` de los tickets facturados hoy | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
+| `INV-T04` | Los cobros no forman parte de ventas | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
+| `INV-T05` | El pendiente del día es solo de tickets facturados ese día y aún no cobrados | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
+| `INV-T06` | El esperado no se clampa a cero | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
 
 La columna de citas mide cuánto se apoya el corpus en cada hecho. Un
 identificador muy citado es un punto que no debería cambiar sin revisar quién

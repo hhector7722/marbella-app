@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-17
 
+- **Cierre de caja: un cobro con datáfono de otra fecha es tarjeta, no efectivo.** El esperado es ventas − pendiente + cobros − tarjeta y ya no se sustituye por el efectivo de los tickets del día cuando la resta queda negativa. [TESORERIA](../3-ingenieria/dominio/TESORERIA.md).
+
 - **Pedido a proveedor: el aviso dice quién lo tramitó.** El mensaje pasa a «Hoy ya se ha tramitado un pedido para este proveedor (Nombre)», con el nombre operativo de quien pulsó Descargar, Enviar o Proveedor. [precios y compras](../3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md).
 
 - **Iconos de calculadora y desglose: no tapan la TabBar.** Si la cápsula está visible, suben y se sientan encima; si está oculta o no hay barra, bajan al canto. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).

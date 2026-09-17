@@ -98,7 +98,7 @@ Es el recorrido más ejecutado del producto y el más corto. Su coste unitario m
 **Quién**: responsable de operación. **Cuándo**: al final de cada día, cansado y con prisa por marcharse.
 
 1. Contar el efectivo por denominación.
-2. El sistema muestra el esperado a partir de ventas, tarjeta, pendiente y cobros.
+2. El sistema muestra el esperado a partir de ventas, tarjeta, pendiente y cobros. La fórmula está en [dominio/TESORERIA](../3-ingenieria/dominio/TESORERIA.md).
 3. Ver el descuadre, si existe.
 4. Registrar el cierre y los movimientos de tesorería que correspondan.
 5. El cierre queda en el histórico y alimenta el análisis.
@@ -107,7 +107,7 @@ Es el recorrido más ejecutado del producto y el más corto. Su coste unitario m
 
 **Invariante**: un descuadre siempre se muestra y nunca se ajusta automáticamente. El cierre es inmutable una vez registrado; corregirlo produce un movimiento nuevo con su motivo.
 
-**Se rompe si**: el esperado se calcula con documentos que no son venta; el pendiente arrastra deuda ya cobrada; el recuento se pierde al interrumpirse el flujo; la pantalla acepta cerrar sin contar.
+**Se rompe si**: el esperado se calcula con documentos que no son venta; el pendiente arrastra deuda ya cobrada; un cobro con datáfono de otra fecha no entra en tarjeta y se imputa otra vez al efectivo; el recuento se pierde al interrumpirse el flujo; la pantalla acepta cerrar sin contar.
 
 ---
 

@@ -1,5 +1,5 @@
-<!-- Generado desde 62 documentos de marbella-os/.
-     Huella del origen: ceb41ae4ef80e9dc
+<!-- Generado desde 63 documentos de marbella-os/.
+     Huella del origen: 9aa7655d22297abe
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -25,6 +25,7 @@ corpus, gana el corpus.
 | Pruebas o verificación de un cambio | `marbella-os/3-ingenieria/CALIDAD.md` |
 | Una fórmula de negocio | `marbella-os/3-ingenieria/dominio/README.md`, `marbella-os/4-decisiones/README.md` |
 | Horas, nóminas o coste laboral | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md`, `marbella-os/3-ingenieria/dominio/HORAS.md`, `marbella-os/3-ingenieria/dominio/COSTE-LABORAL.md`, `marbella-os/3-ingenieria/dominio/JORNADA-FIJA.md` |
+| Cierre de caja o tesorería | `marbella-os/3-ingenieria/dominio/TESORERIA.md` |
 | Precios de ingredientes o albaranes | `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` |
 | Un sistema externo | `marbella-os/3-ingenieria/integraciones/README.md` |
 | Un despliegue o una tarea programada | `marbella-os/3-ingenieria/operacion/README.md` |
@@ -73,6 +74,7 @@ es `CANON §5`.
 | 20 | `marbella-os/3-ingenieria/dominio/HORAS.md` |
 | 20 | `marbella-os/3-ingenieria/dominio/JORNADA-FIJA.md` |
 | 20 | `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` |
+| 20 | `marbella-os/3-ingenieria/dominio/TESORERIA.md` |
 | 20 | `marbella-os/3-ingenieria/FRONTEND.md` |
 | 20 | `marbella-os/3-ingenieria/integraciones/BDP-TPV.md` |
 | 20 | `marbella-os/3-ingenieria/integraciones/NOMINAS.md` |
