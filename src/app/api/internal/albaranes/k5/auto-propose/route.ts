@@ -20,6 +20,8 @@ export const dynamic = 'force-dynamic'
 type AdminClient = ReturnType<typeof createClient<any>>
 
 type AutoProposalRequest = {
+  jobId: string
+  leaseToken: string
   invoiceId: string
   extractionId: string
   correlationId?: string | null
@@ -56,11 +58,13 @@ function verifyInternalSignature(request: Request, rawBody: string, secret: stri
 function parsePayload(rawBody: string): AutoProposalRequest | null {
   try {
     const parsed = JSON.parse(rawBody) as Record<string, unknown>
+    const jobId = text(parsed.jobId)
+    const leaseToken = text(parsed.leaseToken)
     const invoiceId = text(parsed.invoiceId)
     const extractionId = text(parsed.extractionId)
     const correlationId = text(parsed.correlationId) || null
-    if (!invoiceId || !extractionId) return null
-    return { invoiceId, extractionId, correlationId }
+    if (!jobId || !leaseToken || !invoiceId || !extractionId) return null
+    return { jobId, leaseToken, invoiceId, extractionId, correlationId }
   } catch {
     return null
   }
@@ -479,18 +483,36 @@ export async function POST(request: Request) {
   if (rawBody.length > 8192) {
     return NextResponse.json({ ok: false, error: 'Payload demasiado grande.' }, { status: 413 })
   }
-  if (!verifyInternalSignature(request, rawBody, serviceRoleKey)) {
-    return NextResponse.json({ ok: false, error: 'No autorizado.' }, { status: 401 })
-  }
 
   const payload = parsePayload(rawBody)
   if (!payload) {
     return NextResponse.json({ ok: false, error: 'Payload inválido.' }, { status: 400 })
   }
+  if (!verifyInternalSignature(request, rawBody, payload.leaseToken)) {
+    return NextResponse.json({ ok: false, error: 'No autorizado.' }, { status: 401 })
+  }
 
   const supabase = createClient<any>(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
+
+  const { data: leaseData, error: leaseError } = await supabase
+    .from('document_processing_jobs')
+    .select('id,invoice_id,status,lease_token,lease_expires_at')
+    .eq('id', payload.jobId)
+    .eq('invoice_id', payload.invoiceId)
+    .eq('status', 'leased')
+    .eq('lease_token', payload.leaseToken)
+    .maybeSingle()
+  if (leaseError) {
+    console.error('k5-auto-propose lease lookup', leaseError)
+    return NextResponse.json({ ok: false, error: 'No se pudo validar el lease Docling.' }, { status: 500 })
+  }
+  const lease = leaseData as { lease_expires_at?: string | null } | null
+  const leaseExpiresAt = Date.parse(text(lease?.lease_expires_at))
+  if (!lease || !Number.isFinite(leaseExpiresAt) || leaseExpiresAt <= Date.now()) {
+    return NextResponse.json({ ok: false, error: 'Lease Docling inválido o caducado.' }, { status: 401 })
+  }
 
   try {
     const result = await generateAutomaticProposals(supabase, payload)
