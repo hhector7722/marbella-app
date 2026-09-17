@@ -36,6 +36,9 @@ export type K5EvidenceIdentityInput = {
  */
 export function k5EvidenceIdentity(input: K5EvidenceIdentityInput): string | null {
   const extractionId = String(input.documentExtractionId ?? '').trim()
+  if (input.sourceTableIndex == null || input.sourceTableIndex === '' || input.sourceRowIndex == null || input.sourceRowIndex === '') {
+    return null
+  }
   const tableIndex = Number(input.sourceTableIndex)
   const rowIndex = Number(input.sourceRowIndex)
   if (!extractionId || !Number.isInteger(tableIndex) || tableIndex < 0 || !Number.isInteger(rowIndex) || rowIndex < 0) {
