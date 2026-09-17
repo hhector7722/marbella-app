@@ -12,7 +12,6 @@ import {
   MinusCircle,
   RefreshCw,
   RotateCcw,
-  Sparkles,
   Trash2,
   Truck,
   X,
@@ -57,7 +56,6 @@ import {
   PURCHASE_INVOICES_PAGE_SIZE,
 } from '@/lib/albaranes/purchase-invoices-list'
 import {
-  autoMapKnownLinesAction,
   deletePurchaseInvoiceAction,
   excludeInvoiceLineFromMappingAction,
   markInvoiceLineExpenseOnlyAction,
@@ -74,7 +72,6 @@ import {
   unmapInvoiceLineAction,
   updatePurchaseInvoiceLineAction,
 } from './actions'
-import type { AutoMapReport } from './actions'
 
 function formatDateTitle(v: string | null | undefined) {
   const t = String(v ?? '').trim()
@@ -171,9 +168,6 @@ export default function AlbaranesHistoricoClient({
   const [filterSupplierId, setFilterSupplierId] = useState<string>('') // '' = todos
   const [filterSuppliers, setFilterSuppliers] = useState<Array<{ id: number; name: string }>>([])
   const [filterSuppliersLoading, setFilterSuppliersLoading] = useState(false)
-  const [autoMapLoading, setAutoMapLoading] = useState(false)
-  const [autoMapReport, setAutoMapReport] = useState<AutoMapReport | null>(null)
-  const [autoMapError, setAutoMapError] = useState<string | null>(null)
   const [deletingInvoice, setDeletingInvoice] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [destructiveConfirm, setDestructiveConfirm] = useState<
@@ -1148,47 +1142,6 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
-  // Auto-mapeo masivo de líneas ya aprendidas (matches exactos en supplier_item_mappings).
-  // - Sin invoiceId  : limpieza global del backlog.
-  // - Con invoiceId  : solo ese albarán (botón dentro del modal).
-  async function runAutoMap(invoiceId?: string) {
-    setAutoMapError(null)
-    setAutoMapReport(null)
-    setAutoMapLoading(true)
-    try {
-      const res = await autoMapKnownLinesAction(invoiceId ? { invoiceId } : undefined)
-      if (!res.success) {
-        setAutoMapError(res.message)
-        return
-      }
-      setAutoMapReport(res.report)
-
-      // Refrescar la lista y, si hay un detalle abierto, también su contenido + estado de stock.
-      const lRes = await listPurchaseInvoicesAction(
-        buildListQueryParams(0, Math.max(items.length, PURCHASE_INVOICES_INITIAL_LIMIT))
-      )
-      if (lRes.success) {
-        setItems(lRes.items)
-        setHasMore(lRes.hasMore)
-      }
-      if (detail) {
-        const dRes = await getPurchaseInvoiceDetailAction(detail.id)
-        if (dRes.success) {
-          setDetail(dRes.detail)
-          const st = await getInvoiceStockStatusesAction({ lineIds: dRes.detail.lines.map((l) => l.id) })
-          if (st.success) {
-            const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
-            for (const s of st.statuses)
-              map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
-            setStockStatusByLineId(map)
-          }
-        }
-      }
-    } finally {
-      setAutoMapLoading(false)
-    }
-  }
-
   // Elimina el albarán y revierte sus efectos en stock.
   // Confirmación explícita: es una operación destructiva (DELETE en
   // stock_movements + Storage). Se permite solo a manager/admin.
@@ -1228,17 +1181,6 @@ export default function AlbaranesHistoricoClient({
   const headerActions = (
     <>
       <PeriodFilterButton instance="albaranes-filter-open" onClick={() => void openFilterModal()} />
-      <Button
-        type="button"
-        variant="tertiary"
-        instance="albaranes-header-auto-map"
-        onClick={() => void runAutoMap()}
-        disabled={autoMapLoading}
-        loading={autoMapLoading}
-        aria-label="Auto-mapear aprendidos"
-        className="shrink-0"
-        icon={<Sparkles className="h-5 w-5" />}
-      />
       <Button
         type="button"
         variant="tertiary"
@@ -1286,69 +1228,6 @@ export default function AlbaranesHistoricoClient({
       }
     >
     <div className="flex flex-col gap-2">
-
-      {/* Banners fijos bajo el buscador (no scrollean con la lista). */}
-      {autoMapError ? (
-        <div className="shrink-0">
-          <Notice instance="albaranes-automap-error" variant="negative">
-            Auto-mapeo: {autoMapError}
-          </Notice>
-        </div>
-      ) : null}
-      {autoMapReport ? (
-        <div className="shrink-0">
-          <Notice instance="albaranes-automap-report" variant="positive">
-          <div className="flex items-start gap-2">
-          <Sparkles className="h-4 w-4 mt-0.5 shrink-0" />
-          <div className="min-w-0">
-            <p className="leading-tight">
-              {autoMapReport.autoMapped} línea{autoMapReport.autoMapped === 1 ? '' : 's'} auto-mapeada{autoMapReport.autoMapped === 1 ? '' : 's'}
-              {' '}de {autoMapReport.linesScanned} pendiente{autoMapReport.linesScanned === 1 ? '' : 's'} en {autoMapReport.invoicesScanned} albarán{autoMapReport.invoicesScanned === 1 ? '' : 'es'}.
-            </p>
-            <p className="mt-1 text-[11px] font-bold text-emerald-700">
-              Sin match en diccionario: {autoMapReport.skippedNoMatch} · sin proveedor: {autoMapReport.skippedNoSupplier}
-              {autoMapReport.errors ? ` · errores: ${autoMapReport.errors}` : ''}
-            </p>
-            {autoMapReport.pendingInvoices.length > 0 ? (
-              <div className="mt-2.5 space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800/80">
-                  {autoMapReport.pendingInvoices.length === 1
-                    ? 'Albarán con líneas pendientes'
-                    : 'Albaranes con líneas pendientes'}
-                </p>
-                {autoMapReport.pendingInvoices.map((inv) => (
-                  <button
-                    key={inv.invoiceId}
-                    type="button"
-                    onClick={() => void openDetail(inv.invoiceId)}
-                    className="w-full min-h-12 rounded-lg border border-emerald-300/60 bg-white px-3 py-2 text-left text-[11px] font-bold text-emerald-950 hover:bg-emerald-100/50 active:scale-[0.99] transition flex items-center justify-between gap-2"
-                  >
-                    <span className="min-w-0 truncate">
-                      {inv.supplierName ?? 'Proveedor pendiente'}
-                      {inv.invoiceDate ? ` · ${formatDateTitle(inv.invoiceDate)}` : ''}
-                      {inv.invoiceNumber ? ` · ${inv.invoiceNumber}` : ''}
-                    </span>
-                    <span className="shrink-0 rounded-full bg-emerald-200/80 px-2 py-0.5 text-[10px] font-black tabular-nums">
-                      {inv.pendingLineCount} línea{inv.pendingLineCount === 1 ? '' : 's'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          <Button
-            type="button"
-            variant="tertiary"
-            instance="albaranes-auto-map-report-close"
-            onClick={() => setAutoMapReport(null)}
-            aria-label="Cerrar resumen"
-            className="ml-auto shrink-0"
-            icon={<X className="h-4 w-4" />}
-          />
-          </div>
-          </Notice>
-        </div>
-      ) : null}
 
       {error ? (
         <div className="shrink-0">
@@ -1528,21 +1407,6 @@ export default function AlbaranesHistoricoClient({
                       >
                         Revisión K5
                       </Link>
-                    ) : null}
-                    {detail?.id && detail?.supplier_id ? (
-                      <button
-                        type="button"
-                        onClick={() => void runAutoMap(detail.id)}
-                        disabled={autoMapLoading}
-                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                        aria-label="Auto-mapear aprendidos"
-                      >
-                        {autoMapLoading ? (
-                          <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
-                        ) : (
-                          <Sparkles size={18} strokeWidth={2.5} />
-                        )}
-                      </button>
                     ) : null}
                     {isManager && detail?.id ? (
                       <button
