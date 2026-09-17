@@ -115,11 +115,13 @@ async function autoApplyDeterministicReceipts(
     .eq('invoice_id', payload.invoiceId)
     .in('interpretation_proposal_id', proposalIds)
   if (lineError) throw new Error('No se pudieron resolver las líneas K5 materializadas.')
-  const lineByProposal = new Map(
-    ((lineRows ?? []) as Array<Record<string, unknown>>)
-      .map((row) => [text(row.interpretation_proposal_id), text(row.id)])
-      .filter(([proposalId, lineId]) => Boolean(proposalId && lineId))
-  )
+
+  const lineByProposal = new Map<string, string>()
+  for (const row of (lineRows ?? []) as Array<Record<string, unknown>>) {
+    const proposalId = text(row.interpretation_proposal_id)
+    const lineId = text(row.id)
+    if (proposalId && lineId) lineByProposal.set(proposalId, lineId)
+  }
   const lineIds = [...lineByProposal.values()]
 
   const { data: mappingRows, error: mappingError } = mappingIds.length
@@ -130,7 +132,7 @@ async function autoApplyDeterministicReceipts(
     : { data: [] as Array<Record<string, unknown>>, error: null }
   if (mappingError) throw new Error('No se pudieron validar las versiones de mapeo K5.')
   const mappingStatus = new Map(
-    ((mappingRows ?? []) as Array<Record<string, unknown>>).map((row) => [text(row.id), text(row.status)])
+    ((mappingRows ?? []) as Array<Record<string, unknown>>).map((row) => [text(row.id), text(row.status)] as const)
   )
 
   const { data: successorRows, error: successorError } = mappingIds.length
