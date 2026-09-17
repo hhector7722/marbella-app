@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { submitPersonalConsumption, getConsumptionRecipes } from './actions';
-import { toast } from 'sonner';
 import { Loader2, Package } from 'lucide-react';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { SearchField } from '@/components/ui/SearchField';
@@ -16,6 +15,12 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { consumptionCartSummary } from '@/lib/usage/modal-apply';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+
+/**
+ * El consumo es accesorio al fichaje. Si no podemos cargarlo con rapidez,
+ * liberamos la salida en vez de dejar al trabajador atrapado en un spinner.
+ */
+const CONSUMPTION_LOAD_FAIL_OPEN_MS = 6500;
 
 /** Bocadillos sin opción medio (nombre normalizado). */
 const BOCADILLO_SIN_MEDIO = new Set([
@@ -66,13 +71,60 @@ export function ConsumptionModal({
   const [showEmptyCartError, setShowEmptyCartError] = useState(false);
   const [step, setStep] = useState<ConsumptionStep>('drinks');
   const lastAddTimeRef = useRef<Map<string, number>>(new Map());
+  const failOpenTriggeredRef = useRef(false);
+
+  const failOpenClockOut = useCallback(
+    async (reason: string, error?: unknown) => {
+      if (failOpenTriggeredRef.current) return;
+      failOpenTriggeredRef.current = true;
+
+      console.error('[Consumption] fail-open: se continúa con el fichaje de salida', {
+        reason,
+        error: error instanceof Error ? error.message : error,
+      });
+
+      setIsLoading(false);
+      setIsSubmitting(true);
+      try {
+        await Promise.resolve(onConfirm());
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [onConfirm],
+  );
 
   useEffect(() => {
-    getConsumptionRecipes().then((data) => {
-      setRecipes(sortConsumptionRecipesForModal(data));
-      setIsLoading(false);
-    });
-  }, []);
+    let active = true;
+    const timer = window.setTimeout(() => {
+      if (!active) return;
+      void failOpenClockOut('recipes_load_timeout');
+    }, CONSUMPTION_LOAD_FAIL_OPEN_MS);
+
+    void getConsumptionRecipes()
+      .then((data) => {
+        if (!active || failOpenTriggeredRef.current) return;
+        window.clearTimeout(timer);
+
+        if (!Array.isArray(data) || data.length === 0) {
+          void failOpenClockOut('recipes_empty');
+          return;
+        }
+
+        setRecipes(sortConsumptionRecipesForModal(data));
+        setIsLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (!active || failOpenTriggeredRef.current) return;
+        window.clearTimeout(timer);
+        void failOpenClockOut('recipes_load_error', error);
+      });
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [failOpenClockOut]);
 
   const handleAdd = useCallback((recipe: Recipe, is_half: boolean) => {
     const key = `${recipe.id}:${is_half}`;
@@ -159,21 +211,26 @@ export function ConsumptionModal({
         if (res.code === 'NO_FOOD') {
           setShowEmptyCartError(true);
           setStep('food');
-        } else if (res.code === 'EMPTY_CART') {
+          setIsSubmitting(false);
+          return;
+        }
+        if (res.code === 'EMPTY_CART') {
           setShowEmptyCartError(true);
           setStep(cartHasDrink ? 'food' : 'drinks');
-        } else {
-          toast.error(res.message);
+          setIsSubmitting(false);
+          return;
         }
-        setIsSubmitting(false);
+
+        // AUTH/RPC son fallos técnicos del subsistema de consumo. Nunca deben
+        // bloquear el fichaje de salida ni mostrarse como error al trabajador.
+        await failOpenClockOut(`consumption_submit_${res.code}`);
         return;
       }
       trackConsumptionApply(consumptionCartSummary(cart));
       await Promise.resolve(onConfirm());
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Error al fichar la salida';
-      toast.error(message);
-      setIsSubmitting(false);
+      // Misma política fail-open para excepciones de red/Server Action.
+      await failOpenClockOut('consumption_submit_exception', error);
     }
   };
 
