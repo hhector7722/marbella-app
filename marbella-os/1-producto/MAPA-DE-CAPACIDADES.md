@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-14
+revisado: 2026-09-17
 caducidad: 3 meses
 supersede: —
 ---
@@ -94,7 +94,7 @@ Recibir mercancía, saber lo que cuesta y detectar cuándo sube.
 
 - **Actores**: responsable de operación, persona en turno con responsabilidad de recepción.
 - **Superficies**: escáner de albarán, histórico de albaranes, precios de albarán, pedido a proveedor, proveedores.
-- **Reglas propias**: el albarán es el documento de referencia; el artículo del proveedor se aprende una vez y se recuerda; el precio de un ingrediente se puede bloquear frente a actualizaciones; una subida relevante se avisa.
+- **Reglas propias**: el albarán es el documento de referencia; el artículo del proveedor se aprende una vez y se recuerda; el precio de un ingrediente se puede bloquear frente a actualizaciones; una subida relevante se avisa; un pedido a proveedor ya tramitado ese día se avisa sin bloquear.
 - **Estado**: consolidada.
 - **Gobernada por**: [dominio de precios y compras](../3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md).
 - **Especificación**: pendiente.

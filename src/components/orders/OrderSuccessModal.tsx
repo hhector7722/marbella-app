@@ -16,6 +16,7 @@ interface OrderSuccessModalProps {
     isGenerating?: boolean;
     onClose: () => void;
     onDownload: () => void;
+    onDispatched?: () => void;
 }
 
 export function OrderSuccessModal({
@@ -24,7 +25,8 @@ export function OrderSuccessModal({
     generatedBlob,
     supplierPhone,
     onClose,
-    onDownload
+    onDownload,
+    onDispatched
 }: OrderSuccessModalProps) {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
@@ -67,6 +69,7 @@ export function OrderSuccessModal({
     /** Paso 1: Copia imagen al portapapeles y muestra confirmación para abrir WhatsApp */
     const handleProveedor = async () => {
         if (!supplierPhone || !generatedBlob) return;
+        onDispatched?.();
 
         setIsCapturing(true);
         let blob = cachedPngBlob;
@@ -134,6 +137,7 @@ export function OrderSuccessModal({
 
     const handleShare = async () => {
         if (!generatedBlob) return;
+        onDispatched?.();
         try {
             const file = new File([generatedBlob], 'Pedido_Bar_La_Marbella.pdf', { type: 'application/pdf' });
 
@@ -208,7 +212,10 @@ export function OrderSuccessModal({
                             instance="order-success-download"
                             layout="hug"
                             disabled={actionsDisabled}
-                            onClick={onDownload}
+                            onClick={() => {
+                                onDispatched?.();
+                                onDownload();
+                            }}
                         >
                             Descargar
                         </Button>

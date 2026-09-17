@@ -3191,6 +3191,7 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string | null
+          dispatched_at: string | null
           expected_delivery_date: string | null
           id: string
           notes: string | null
@@ -3209,6 +3210,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_by?: string | null
+          dispatched_at?: string | null
           expected_delivery_date?: string | null
           id?: string
           notes?: string | null
@@ -3227,6 +3229,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_by?: string | null
+          dispatched_at?: string | null
           expected_delivery_date?: string | null
           id?: string
           notes?: string | null
@@ -6106,6 +6109,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_purchase_order_dispatched: {
+        Args: { p_order_id: string }
+        Returns: boolean
+      }
       normalize_kds_name: { Args: { p: string }; Returns: string }
       normalize_pricing_unit: { Args: { p_unit: string }; Returns: string }
       pack_price_for_target_current: {
@@ -6303,6 +6310,13 @@ export type Database = {
         Returns: {
           recipe_id: string
           usage_count: number
+        }[]
+      }
+      supplier_has_dispatched_order_today: {
+        Args: { p_supplier_id: string }
+        Returns: {
+          dispatched: boolean
+          first_name: string | null
         }[]
       }
       sync_purchase_invoice_status: {

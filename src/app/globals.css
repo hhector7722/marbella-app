@@ -88,6 +88,10 @@
   --quick-tool-inset: 0px;
   /* Franja de iconos auxiliares (calculadora/desglose), fuera del modal. */
   --quick-fab-dock: 0px;
+  /* Offset desde el canto: área segura; si hay TabBar visible, se suma la cápsula. */
+  --quick-fab-lift: env(safe-area-inset-bottom, 0px);
+  /* Hueco extra del overlay solo mientras los flotantes están visibles. */
+  --quick-fab-clearance: 0px;
   /* ADR-0008 — backdrop base vs elevado */
   --modal-overlay-base: rgba(0, 0, 0, 0.32);
   --modal-overlay-base-filter: blur(8px) saturate(65%);
@@ -210,8 +214,21 @@
  * Calculadora/desglose: panel inferior simultáneo. El modal padre no se
  * subordina (no es una capa Modal). El overlay cede el hueco y alinea el
  * panel al canto de la herramienta. Los iconos viven en una franja inferior
- * de viewport, centrados, fuera del modal.
+ * de viewport, centrados, fuera del modal. No tapan la TabBar: si la
+ * cápsula está visible, suben; si está oculta o no hay TabBar, bajan.
  */
+@media (max-width: 1023px) {
+  html:has([data-component='TabBar']:not([data-hidden='true'])) {
+    --quick-fab-lift: calc(var(--shell-bottom-inset) + var(--espacio-2));
+  }
+}
+html[data-quick-fab='open'] {
+  --quick-fab-clearance: var(--quick-fab-lift);
+}
+[data-component='QuickCashToolsFabs'] {
+  bottom: var(--quick-fab-lift, env(safe-area-inset-bottom, 0px));
+  transition: bottom 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
 html[data-quick-fab='open'] [data-component='Modal'],
 html[data-quick-tool='open'] [data-component='Modal'] {
   align-items: flex-end;
@@ -223,7 +240,7 @@ html[data-quick-tool='open'] [data-component='Modal'] [data-element='frame'] {
 html[data-quick-fab='open'] main,
 html[data-quick-tool='open'] main {
   padding-bottom: calc(
-    var(--quick-fab-dock, 0px) + var(--quick-tool-inset, 0px) + env(safe-area-inset-bottom, 0px)
+    var(--quick-fab-dock, 0px) + var(--quick-tool-inset, 0px) + var(--quick-fab-lift, env(safe-area-inset-bottom, 0px))
   );
 }
 
@@ -2143,10 +2160,18 @@ html[data-quick-tool='open'] main {
 }
 
 /*
- * Pedidos — una sola fila de cromo: logo, buscador y acciones (sin cabecera de título).
+ * Pedidos — cromo sin cabecera de título: aviso de pedido ya tramitado,
+ * luego logo, buscador y acciones.
  */
 [data-component='PageScreen'].page-orders-new [data-element='header'] {
   display: none;
+}
+[data-component='Notice'][data-instance='orders-already-dispatched-today'] {
+  padding-block: var(--espacio-1);
+  padding-inline: var(--espacio-2);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
 }
 [data-element='orders-toolbar'] [data-element='supplier-logo'] {
   height: var(--espacio-8);
@@ -5079,6 +5104,7 @@ button[data-element='catalog-filter'] {
   :root {
     --shell-sidebar-width: 5.5rem;
     --shell-bottom-inset: var(--espacio-4);
+    --quick-fab-lift: env(safe-area-inset-bottom, 0px);
     /* Fuera de @layer: debe ganar al token md (84px) sin capas. */
     --month-cal-cell-min-h: 68px;
   }

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/SearchField';
+import { Notice } from '@/components/ui/Notice';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { createClient } from "@/utils/supabase/client";
 import { OrderProductCard } from "@/components/orders/OrderProductCard";
@@ -35,6 +36,22 @@ import { OrderSummaryModal } from "@/components/orders/OrderSummaryModal";
 import { OrderSuccessModal } from "@/components/orders/OrderSuccessModal";
 import { generateOrderPDF } from "@/utils/orders/pdf-generator";
 
+function readDispatchedTodayRow(data: unknown): { dispatched: boolean; firstName: string | null } {
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || typeof row !== 'object') return { dispatched: false, firstName: null };
+    const rec = row as { dispatched?: unknown; first_name?: unknown };
+    const firstName = typeof rec.first_name === 'string' ? rec.first_name.trim() : '';
+    return {
+        dispatched: rec.dispatched === true,
+        firstName: firstName || null,
+    };
+}
+
+function formatDispatchedTodayNotice(firstName: string | null): string {
+    if (!firstName) return 'Hoy ya se ha tramitado un pedido para este proveedor.';
+    return `Hoy ya se ha tramitado un pedido para este proveedor (${firstName})`;
+}
+
 export default function NewOrderPage() {
     const supabase = createClient();
     const [userId, setUserId] = useState<string | null>(null);
@@ -58,6 +75,10 @@ export default function NewOrderPage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [supplierPhoneForSuccess, setSupplierPhoneForSuccess] = useState<string | null>(null);
     const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+    const [alreadyDispatchedToday, setAlreadyDispatchedToday] = useState(false);
+    const [dispatchedByFirstName, setDispatchedByFirstName] = useState<string | null>(null);
+    const currentOrderIdRef = useRef<string | null>(null);
+    const pendingDispatchRef = useRef(false);
 
     // supplierId for drafts (drafts are shared per supplier)
     const supplierId = selectedSupplier ? dbSuppliers.find(s => s.name === selectedSupplier)?.id ?? null : null;
@@ -126,6 +147,33 @@ export default function NewOrderPage() {
         };
     }, [supplierId]);
 
+    useEffect(() => {
+        if (!supplierId) {
+            setAlreadyDispatchedToday(false);
+            setDispatchedByFirstName(null);
+            return;
+        }
+        let cancelled = false;
+        const load = async () => {
+            const { data, error } = await supabase.rpc('supplier_has_dispatched_order_today', {
+                p_supplier_id: String(supplierId),
+            });
+            if (cancelled) return;
+            if (error) {
+                setAlreadyDispatchedToday(false);
+                setDispatchedByFirstName(null);
+                return;
+            }
+            const row = readDispatchedTodayRow(data);
+            setAlreadyDispatchedToday(row.dispatched);
+            setDispatchedByFirstName(row.firstName);
+        };
+        void load();
+        return () => {
+            cancelled = true;
+        };
+    }, [supplierId]);
+
     async function fetchData() {
         setLoading(true);
         try {
@@ -182,6 +230,39 @@ export default function NewOrderPage() {
         }
     };
 
+    const persistDispatch = async (orderId: string) => {
+        const { data, error } = await supabase.rpc('mark_purchase_order_dispatched', {
+            p_order_id: orderId,
+        });
+        if (error || data !== true) {
+            toast.error('No se ha podido registrar el pedido como tramitado');
+            return;
+        }
+        if (!supplierId) {
+            setAlreadyDispatchedToday(true);
+            return;
+        }
+        const { data: today, error: todayError } = await supabase.rpc('supplier_has_dispatched_order_today', {
+            p_supplier_id: String(supplierId),
+        });
+        if (todayError) {
+            setAlreadyDispatchedToday(true);
+            return;
+        }
+        const row = readDispatchedTodayRow(today);
+        setAlreadyDispatchedToday(true);
+        setDispatchedByFirstName(row.firstName);
+    };
+
+    const handleDispatched = () => {
+        const orderId = currentOrderIdRef.current;
+        if (!orderId) {
+            pendingDispatchRef.current = true;
+            return;
+        }
+        void persistDispatch(orderId);
+    };
+
     const handleFinalize = async () => {
         if (selectedItems.length === 0) {
             toast.error('No hay productos seleccionados');
@@ -199,6 +280,8 @@ export default function NewOrderPage() {
             return;
         }
 
+        currentOrderIdRef.current = null;
+        pendingDispatchRef.current = false;
         setIsProcessing(true);
         try {
             const orderNum = `ORD-${Date.now().toString().slice(-6)}`;
@@ -231,6 +314,12 @@ export default function NewOrderPage() {
             }).select().single();
 
             if (orderError) throw orderError;
+
+            currentOrderIdRef.current = order.id;
+            if (pendingDispatchRef.current) {
+                pendingDispatchRef.current = false;
+                void persistDispatch(order.id);
+            }
 
             const orderItems = selectedItems.map(i => ({
                 purchase_order_id: order.id,
@@ -286,7 +375,15 @@ export default function NewOrderPage() {
     const supplierLogo = getSupplierLogo(selectedSupplierRow?.image_url, selectedSupplier);
 
     const ordersToolbar = (
-        <div data-element="orders-toolbar" className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-col gap-1">
+            {alreadyDispatchedToday ? (
+                <div className="min-w-0 shrink-0">
+                    <Notice instance="orders-already-dispatched-today" variant="info">
+                        {formatDispatchedTodayNotice(dispatchedByFirstName)}
+                    </Notice>
+                </div>
+            ) : null}
+            <div data-element="orders-toolbar" className="flex min-w-0 shrink-0 items-center gap-2">
             <div
                 data-element="supplier-logo"
                 className="flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-white"
@@ -327,6 +424,7 @@ export default function NewOrderPage() {
             >
                 {totalSelected > 0 ? `Tramitar (${totalSelected})` : 'Tramitar'}
             </Button>
+            </div>
         </div>
     );
 
@@ -452,6 +550,7 @@ export default function NewOrderPage() {
                 isUploading={isUploading}
                 isGenerating={isGenerating}
                 onDownload={handleDownload}
+                onDispatched={handleDispatched}
                 onClose={() => {
                     setIsSuccessOpen(false);
                     setSupplierPhoneForSuccess(null);

@@ -569,7 +569,10 @@ export function QuickCashToolsFabs({
                 'pointer-events-none fixed inset-x-0 bottom-0 z-[208] flex justify-center',
             )}
         >
-            <div className="pointer-events-auto flex shrink-0 flex-nowrap items-center justify-center gap-2 pb-[env(safe-area-inset-bottom,0px)]">
+            <div
+                data-element="row"
+                className="pointer-events-auto flex shrink-0 flex-nowrap items-center justify-center gap-2"
+            >
                 {calculator ? (
                     <ToolFab
                         src={CALCULATOR_ICON}

@@ -38,6 +38,12 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-17
 
+- **Pedido a proveedor: el aviso dice quién lo tramitó.** El mensaje pasa a «Hoy ya se ha tramitado un pedido para este proveedor (Nombre)», con el nombre operativo de quien pulsó Descargar, Enviar o Proveedor. [precios y compras](../3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md).
+
+- **Iconos de calculadora y desglose: no tapan la TabBar.** Si la cápsula está visible, suben y se sientan encima; si está oculta o no hay barra, bajan al canto. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **Pedido a proveedor: aviso si ya se tramitó hoy.** Tras Descargar, Enviar o Proveedor, el pedido queda tramitado. Al volver a pedir a ese proveedor el mismo día (Europe/Madrid) aparece un aviso discreto: «Hoy ya se ha tramitado un pedido para este proveedor.» No bloquea. [precios y compras](../3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md).
+
 - **Plat Marbella: la comida llena la vajilla, sin recuadro blanco.** En el configurador, cada elección se recorta del fondo de estudio y ocupa su tramo del plato. No hace falta volver a subir las fotos. Las altas nuevas conservan transparencia.
 
 - **Albaranes: Escanear arranca el proceso.** Desde el modal de opciones ya no hay un segundo botón: sale el selector de proveedor y la cámara. Albaranes y Escanear usan el tipo de 12 px del Button. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).

@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-14
+revisado: 2026-09-17
 caducidad: 6 meses
 supersede: —
 ---
@@ -134,6 +134,7 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 
 `suppliers`, `supplier_item_mappings`, `purchase_invoices`, `purchase_invoice_lines`, `purchase_invoice_attachments`, `purchase_orders`, `purchase_order_items`, `purchase_mapping_versions`, `purchase_receipt_confirmations`, `purchase_order_item_receipt_allocations`, `document_processing_jobs` y `document_processing_job_events`.
 
+- `purchase_orders` registra el pedido a proveedor. `dispatched_at` es el instante en que se tramitó (Descargar, Enviar o Proveedor); generar el PDF no basta. El aviso del día en curso lo produce `supplier_has_dispatched_order_today`, que incluye el `first_name` de quien lo hizo.
 - `purchase_invoices` y sus adjuntos identifican el documento recibido; no constituyen por sí mismos una recepción económica.
 - `purchase_invoice_lines` conserva la línea capturada del documento. Una línea puede repartirse entre varios pedidos; una línea de pedido puede acumular recepciones parciales mediante `purchase_order_item_receipt_allocations`.
 - `purchase_mapping_versions` guarda propuestas y confirmaciones de mapeo sin sobrescribir la versión anterior. La conciliación sólo suma asignaciones confirmadas y no sustituidas.

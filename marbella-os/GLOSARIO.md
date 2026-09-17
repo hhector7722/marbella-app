@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-15
+revisado: 2026-09-17
 caducidad: 6 meses
 supersede: —
 ---
@@ -165,6 +165,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Precio por paquete** | Modo de precio en el que el importe se refiere al paquete completo. | `per_pack` |
 | **Precio bloqueado** | Marca que impide que un albarán sobrescriba el precio de un ingrediente. | `price_locked` |
 | **Pedido** | Solicitud de mercancía a un proveedor. ⚠ conflicto: «pedido» designa también el encargo de un cliente en el dominio de eventos. En documentación, distinguir **pedido a proveedor** y **encargo de cliente**. | `purchase_orders` |
+| **Pedido tramitado** | Pedido a proveedor que, en el último paso, se ha enviado con Descargar, Enviar o Proveedor. Generar el documento no basta. | `purchase_orders.dispatched_at` |
 | **Movimiento** | Cambio en el stock de un ingrediente. | — |
 | **Ajuste** | Movimiento de corrección manual del stock. | tipo `ADJUSTMENT` |
 | **Merma** | Producto perdido, caducado o inutilizable. | — |

@@ -1555,6 +1555,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tools, /justify-center/);
         assert.match(tools, /--quick-fab-dock/);
         assert.match(tools, /data-component="QuickCashToolsFabs"/);
+        assert.match(tools, /data-element="row"/);
         assert.doesNotMatch(tools, /flex-col-reverse/);
         assert.doesNotMatch(tools, /left-4/);
         assert.match(tools, /object-contain/);
@@ -1568,6 +1569,21 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tools, /QUICK_PANEL_H/);
         assert.match(tools, /<DenominationCountGrid[\s\S]*?compact/);
         assert.doesNotMatch(tools, /max-h-\[min\(55dvh,28rem\)\]/);
+
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(css, /--quick-fab-lift:/, 'el sistema reserva el lift de los flotantes');
+        assert.match(
+            css,
+            /html:has\(\[data-component='TabBar'\]:not\(\[data-hidden='true'\]\)\)/,
+            'con TabBar visible los flotantes suben',
+        );
+        assert.match(
+            css,
+            /\[data-component='QuickCashToolsFabs'\] \{[\s\S]*?bottom:\s*var\(--quick-fab-lift/,
+            'la posición inferior la fija el lift, no cada instancia',
+        );
+        const modal = readFileSync(join(SRC_ROOT, 'components/ui/modal.tsx'), 'utf8');
+        assert.match(modal, /--quick-fab-clearance/, 'el overlay cede el lift solo mientras los iconos están visibles');
     });
 
     it('las barras de cantidad usan QuantityStepper (P10)', () => {
@@ -1852,5 +1868,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /rounded-2xl border p-3 font-bold/,
             'el nombre no pinta una caja propia'
         );
+    });
+
+    it('pedido avisa el ya tramitado hoy con Notice', () => {
+        const orders = readFileSync(join(SRC_ROOT, 'app/orders/new/page.tsx'), 'utf8');
+        const success = readFileSync(join(SRC_ROOT, 'components/orders/OrderSuccessModal.tsx'), 'utf8');
+        assert.match(orders, /<Notice instance="orders-already-dispatched-today"/);
+        assert.match(orders, /formatDispatchedTodayNotice\(dispatchedByFirstName\)/);
+        assert.match(orders, /Hoy ya se ha tramitado un pedido para este proveedor \(\$\{firstName\}\)/);
+        assert.match(orders, /supplier_has_dispatched_order_today/);
+        assert.match(orders, /onDispatched=\{handleDispatched\}/);
+        assert.match(success, /onDispatched\?\.\(\)/);
     });
 });

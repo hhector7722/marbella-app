@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-15
+revisado: 2026-09-17
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -116,7 +116,17 @@ La conversión existe en dos sitios, cliente y base de datos, y **deben dar el m
 
 ---
 
-## 6. Invariantes
+## 6. Pedido a proveedor tramitado
+
+Un pedido a proveedor se considera **tramitado** cuando, en el último paso, se pulsa Descargar, Enviar o Proveedor. Generar el PDF o abrir el resumen no basta.
+
+El día es el civil en `Europe/Madrid`. Si ese día ya hay un pedido tramitado para el mismo proveedor, la pantalla de pedido avisa: «Hoy ya se ha tramitado un pedido para este proveedor (Nombre).» El nombre es `profiles.first_name` de quien lo tramitó. El aviso no impide hacer otro.
+
+El hecho se guarda en `purchase_orders.dispatched_at`. Lo produce `mark_purchase_order_dispatched`; la pantalla solo pregunta con `supplier_has_dispatched_order_today`.
+
+---
+
+## 7. Invariantes
 
 1. El precio de un ingrediente siempre está expresado en euros por su unidad de compra.
 2. En modo por pack, el precio actual es derivado y nunca se escribe directamente.
@@ -126,3 +136,4 @@ La conversión existe en dos sitios, cliente y base de datos, y **deben dar el m
 6. El coste de una receta calculado en cliente y en base de datos coincide.
 7. Ninguna extracción automática ni captura de albarán cambia un precio o un saldo de stock.
 8. Un cambio confirmado conserva el documento, la evidencia y la versión de mapeo que lo justifican.
+9. Un pedido a proveedor no está tramitado hasta Descargar, Enviar o Proveedor.
