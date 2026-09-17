@@ -13,6 +13,8 @@ const idempotentRetryMigration = read('supabase/migrations/20260915194800_k5_ide
 const priceScaleMigration = read('supabase/migrations/20260915195000_k5_compare_price_at_canonical_scale.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
+const autoProposalRoute = read('src/app/api/internal/albaranes/k5/auto-propose/route.ts')
+const doclingWorker = read('supabase/functions/docling-evidence-worker/index.ts')
 const normalizer = read('src/lib/albaranes/k5/normalizer.ts')
 const mappedSnapshot = read('src/lib/albaranes/k5/mapped-snapshot.ts')
 
@@ -64,6 +66,31 @@ test('generación K5 exige extractionId explícito y no selecciona latest implí
   assert.doesNotMatch(interpretationActions, /\.order\('extracted_at'[\s\S]{0,200}generateInterpretationProposalsAction/)
 })
 
+test('automatización Docling genera K5 solo para la extracción explícita y es idempotente', () => {
+  assert.match(autoProposalRoute, /invoiceId: string/)
+  assert.match(autoProposalRoute, /extractionId: string/)
+  assert.match(autoProposalRoute, /\.eq\('id', extractionId\)/)
+  assert.match(autoProposalRoute, /\.eq\('document_extraction_id', extractionId\)/)
+  assert.match(autoProposalRoute, /existingByFingerprint/)
+  assert.match(autoProposalRoute, /inserted\.length === 0/)
+  assert.match(autoProposalRoute, /selectCurrentProposalLineage/)
+  assert.doesNotMatch(autoProposalRoute, /\.order\('extracted_at'/)
+  assert.doesNotMatch(autoProposalRoute, /auto_map_invoice_lines_fuzzy/)
+})
+
+test('automatización Docling está firmada y ocurre entre evidencia persistida y cierre del lease', () => {
+  assert.match(autoProposalRoute, /createHmac\('sha256'/)
+  assert.match(autoProposalRoute, /x-k5-timestamp/)
+  assert.match(autoProposalRoute, /x-k5-signature/)
+  assert.match(doclingWorker, /crypto\.subtle\.sign\("HMAC"/)
+  assert.match(doclingWorker, /triggerK5AutoProposal/)
+  const persistAt = doclingWorker.indexOf('persist_document_evidence')
+  const k5At = doclingWorker.lastIndexOf('triggerK5AutoProposal({')
+  const completeAt = doclingWorker.lastIndexOf('complete_docling_evidence_job')
+  assert.ok(persistAt >= 0 && k5At > persistAt, 'K5 debe ejecutarse después de persistir evidencia')
+  assert.ok(completeAt > k5At, 'el lease solo se cierra después de K5')
+})
+
 test('K5 no escribe ledger, precios ni confirmaciones', () => {
   const forbidden = [
     "from('stock_movements')",
@@ -71,7 +98,11 @@ test('K5 no escribe ledger, precios ni confirmaciones', () => {
     "from('purchase_receipt_confirmations').insert",
     "rpc('apply_receipt_line'",
   ]
-  for (const token of forbidden) assert.equal(interpretationActions.includes(token), false, token)
+  for (const token of forbidden) {
+    assert.equal(interpretationActions.includes(token), false, `manual K5: ${token}`)
+    assert.equal(autoProposalRoute.includes(token), false, `auto K5: ${token}`)
+  }
+  assert.doesNotMatch(autoProposalRoute, /supplier_item_mappings[\s\S]{0,300}\.(?:insert|upsert|update|delete)\(/)
 })
 
 test('K4 acepta proposal opcional y la revalida antes del efecto económico', () => {
