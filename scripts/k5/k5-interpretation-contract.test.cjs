@@ -11,9 +11,11 @@ const profileMissingMigration = read('supabase/migrations/20260915194600_k5_opti
 const supersessionMigration = read('supabase/migrations/20260915194700_k5_supersession_chain.sql')
 const idempotentRetryMigration = read('supabase/migrations/20260915194800_k5_idempotent_receipt_retry.sql')
 const priceScaleMigration = read('supabase/migrations/20260915195000_k5_compare_price_at_canonical_scale.sql')
+const autoReceiptMigration = read('supabase/migrations/20260917215500_k5_service_auto_receipt_delegate.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const autoProposalRoute = read('src/app/api/internal/albaranes/k5/auto-propose/route.ts')
+const autoApplyRoute = read('src/app/api/internal/albaranes/k5/auto-apply/route.ts')
 const doclingWorker = read('supabase/functions/docling-evidence-worker/index.ts')
 const normalizer = read('src/lib/albaranes/k5/normalizer.ts')
 const mappedSnapshot = read('src/lib/albaranes/k5/mapped-snapshot.ts')
@@ -86,12 +88,15 @@ test('automatización Docling está firmada y ocurre entre evidencia persistida 
   assert.match(doclingWorker, /triggerK5AutoProposal/)
   const persistAt = doclingWorker.indexOf('persist_document_evidence')
   const k5At = doclingWorker.lastIndexOf('triggerK5AutoProposal({')
+  const autoApplyAt = doclingWorker.lastIndexOf('triggerK4AutoApply({')
   const completeAt = doclingWorker.lastIndexOf('complete_docling_evidence_job')
   assert.ok(persistAt >= 0 && k5At > persistAt, 'K5 debe ejecutarse después de persistir evidencia')
-  assert.ok(completeAt > k5At, 'el lease solo se cierra después de K5')
+  assert.ok(autoApplyAt > k5At, 'K4 automático solo puede evaluarse después de K5')
+  assert.ok(completeAt > autoApplyAt, 'el lease solo se cierra después de evaluar el autoaplicado')
+  assert.match(doclingWorker, /k4AutoApply = \{ ok: false, error: errorMessage\(error\) \}/)
 })
 
-test('K5 no escribe ledger, precios ni confirmaciones', () => {
+test('K5 no escribe ledger, precios ni confirmaciones directamente', () => {
   const forbidden = [
     "from('stock_movements')",
     "from('ingredient_price_history')",
@@ -102,7 +107,43 @@ test('K5 no escribe ledger, precios ni confirmaciones', () => {
     assert.equal(interpretationActions.includes(token), false, `manual K5: ${token}`)
     assert.equal(autoProposalRoute.includes(token), false, `auto K5: ${token}`)
   }
+  for (const token of [
+    "from('stock_movements')",
+    "from('ingredient_price_history')",
+    "from('purchase_receipt_confirmations').insert",
+  ]) {
+    assert.equal(autoApplyRoute.includes(token), false, `auto K4 coordinator: ${token}`)
+  }
   assert.doesNotMatch(autoProposalRoute, /supplier_item_mappings[\s\S]{0,300}\.(?:insert|upsert|update|delete)\(/)
+})
+
+test('autoaplicado K4 tiene gates duros y usa preview antes de confirmar', () => {
+  assert.match(autoApplyRoute, /MAX_PRICE_DELTA_RATIO = 0\.25/)
+  assert.match(autoApplyRoute, /status\) !== 'ready_for_review'/)
+  assert.match(autoApplyRoute, /review_reasons/)
+  assert.match(autoApplyRoute, /warnings_present/)
+  assert.match(autoApplyRoute, /mapping_not_confirmed_leaf/)
+  assert.match(autoApplyRoute, /pending_order_requires_allocation/)
+  assert.match(autoApplyRoute, /p_dry_run: true/)
+  assert.match(autoApplyRoute, /proposal_validated !== true/)
+  assert.match(autoApplyRoute, /mapping_will_be_confirmed === true/)
+  assert.match(autoApplyRoute, /price_delta_over_25_percent/)
+  assert.match(autoApplyRoute, /p_dry_run: false/)
+  assert.match(autoApplyRoute, /auto-k5:\$\{proposalId\}/)
+})
+
+test('delegado automático es service-role-only y el productor económico sigue siendo apply_receipt_line', () => {
+  assert.match(autoReceiptMigration, /auth\.role\(\) IS DISTINCT FROM 'service_role'/)
+  assert.match(autoReceiptMigration, /provenance->>'source'.*docling_evidence/)
+  assert.match(autoReceiptMigration, /provenance->>'trigger'.*docling_completion/)
+  assert.match(autoReceiptMigration, /p\.role IN \('manager', 'admin'\)/)
+  assert.match(autoReceiptMigration, /set_config\('request\.jwt\.claim\.sub'/)
+  assert.match(autoReceiptMigration, /v_result := public\.apply_receipt_line\(/)
+  assert.doesNotMatch(autoReceiptMigration, /INSERT INTO public\.stock_movements/)
+  assert.doesNotMatch(autoReceiptMigration, /UPDATE public\.ingredients/)
+  assert.doesNotMatch(autoReceiptMigration, /INSERT INTO public\.purchase_receipt_confirmations/)
+  assert.match(autoReceiptMigration, /REVOKE ALL ON FUNCTION public\.apply_receipt_line_automated[\s\S]*FROM PUBLIC, anon, authenticated/)
+  assert.match(autoReceiptMigration, /GRANT EXECUTE ON FUNCTION public\.apply_receipt_line_automated[\s\S]*TO service_role/)
 })
 
 test('K4 acepta proposal opcional y la revalida antes del efecto económico', () => {
