@@ -32,7 +32,7 @@ type K5AutomationResult = {
 }
 
 const DEFAULT_K5_AUTOMATION_URL =
-  "https://marbella-app.vercel.app/api/internal/albaranes/k5/auto-propose"
+  "https://marbella-app-hhector7722s-projects.vercel.app/api/internal/albaranes/k5/auto-propose"
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
