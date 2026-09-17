@@ -17,10 +17,27 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 
 /**
- * El consumo es accesorio al fichaje. Si no podemos cargarlo con rapidez,
- * liberamos la salida en vez de dejar al trabajador atrapado en un spinner.
+ * El consumo es accesorio al fichaje. Si no podemos cargarlo o guardarlo con
+ * rapidez, liberamos la salida en vez de dejar al trabajador atrapado.
  */
 const CONSUMPTION_LOAD_FAIL_OPEN_MS = 6500;
+const CONSUMPTION_SUBMIT_FAIL_OPEN_MS = 6500;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, reason: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(reason)), ms);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
 /** Bocadillos sin opción medio (nombre normalizado). */
 const BOCADILLO_SIN_MEDIO = new Set([
@@ -206,7 +223,11 @@ export function ConsumptionModal({
         quantity: c.quantity,
         is_half: c.is_half,
       }));
-      const res = await submitPersonalConsumption(payload);
+      const res = await withTimeout(
+        submitPersonalConsumption(payload),
+        CONSUMPTION_SUBMIT_FAIL_OPEN_MS,
+        'consumption_submit_timeout',
+      );
       if (!res.success) {
         if (res.code === 'NO_FOOD') {
           setShowEmptyCartError(true);
@@ -229,7 +250,7 @@ export function ConsumptionModal({
       trackConsumptionApply(consumptionCartSummary(cart));
       await Promise.resolve(onConfirm());
     } catch (error: unknown) {
-      // Misma política fail-open para excepciones de red/Server Action.
+      // Misma política fail-open para excepciones de red/Server Action/timeouts.
       await failOpenClockOut('consumption_submit_exception', error);
     }
   };
