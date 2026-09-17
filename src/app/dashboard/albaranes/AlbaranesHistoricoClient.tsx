@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import {
   AlertCircle,
@@ -1518,6 +1519,16 @@ export default function AlbaranesHistoricoClient({
         }
         headerTrailing={
           <>
+                    {isManager && detail?.id ? (
+                      <Link
+                        href={`/dashboard/albaranes/k5?id=${encodeURIComponent(detail.id)}`}
+                        className="relative flex h-full max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent px-2.5 text-[10px] font-black uppercase tracking-wide text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                        aria-label="Abrir Revisión K5"
+                        title="Revisión K5"
+                      >
+                        Revisión K5
+                      </Link>
+                    ) : null}
                     {detail?.id && detail?.supplier_id ? (
                       <button
                         type="button"
