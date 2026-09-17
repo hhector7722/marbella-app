@@ -88,18 +88,21 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
 }
 
 async function triggerK5AutoProposal(params: {
-  serviceRoleKey: string
+  jobId: string
+  leaseToken: string
   invoiceId: string
   extractionId: string
   correlationId: string | null
 }): Promise<K5AutomationResult> {
   const body = JSON.stringify({
+    jobId: params.jobId,
+    leaseToken: params.leaseToken,
     invoiceId: params.invoiceId,
     extractionId: params.extractionId,
     correlationId: params.correlationId,
   })
   const timestamp = String(Math.floor(Date.now() / 1000))
-  const signature = await hmacSha256Hex(params.serviceRoleKey, `${timestamp}.${body}`)
+  const signature = await hmacSha256Hex(params.leaseToken, `${timestamp}.${body}`)
   const endpoint = Deno.env.get("K5_AUTOMATION_URL")?.trim() || DEFAULT_K5_AUTOMATION_URL
 
   const response = await fetch(endpoint, {
@@ -219,7 +222,8 @@ Deno.serve(async (request) => {
       // así que el reintento no duplica evidencia ni propuestas.
       if (payload.status === "success" && evidenceExtractionId) {
         k5Automation = await triggerK5AutoProposal({
-          serviceRoleKey,
+          jobId: payload.jobId,
+          leaseToken: payload.leaseToken,
           invoiceId: job.invoice_id,
           extractionId: evidenceExtractionId,
           correlationId: job.correlation_id ?? null,
