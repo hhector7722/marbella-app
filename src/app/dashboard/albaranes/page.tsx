@@ -68,15 +68,26 @@ export default async function AlbaranesHistoricoPage() {
   })()
   const res = await ssrWithTimeout(listGuarded, 8000, listFallback)
 
+  // El auto-mapeo legacy está retirado. Esta protección evita que controles
+  // antiguos almacenados en el bundle del cliente vuelvan a exponerse mientras
+  // termina de desaparecer su código muerto; la RPC y el trigger ya no existen.
+  const retireLegacyAutoMapCss = `
+    button[aria-label="Auto-mapear aprendidos"] {
+      display: none !important;
+    }
+  `
+
   // El layout (cabecera "Albaranes" + slot derecho) se monta dentro del cliente
-  // para poder pasar como rightSlot filtro / Sparkles / Refresh.
+  // para poder pasar como rightSlot filtro / Refresh.
   return (
-    <AlbaranesHistoricoClient
-      initialItems={res.success ? res.items : []}
-      initialHasMore={res.success ? res.hasMore : false}
-      initialError={res.success ? null : res.message}
-      isManager={isManager}
-    />
+    <>
+      <style>{retireLegacyAutoMapCss}</style>
+      <AlbaranesHistoricoClient
+        initialItems={res.success ? res.items : []}
+        initialHasMore={res.success ? res.hasMore : false}
+        initialError={res.success ? null : res.message}
+        isManager={isManager}
+      />
+    </>
   )
 }
-
