@@ -2,7 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
-import { classifyK5BatchCandidate, type K5BatchDisposition } from '@/lib/albaranes/k5/batch-review'
+import {
+  classifyK5BatchCandidate,
+  K2_RECONCILIATION_TRUST_START,
+  k5EvidenceIdentity,
+  type K5BatchDisposition,
+} from '@/lib/albaranes/k5/batch-review'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/normalizer'
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
 import {
@@ -87,14 +92,14 @@ async function loadBatchState(
 ): Promise<{ rows: K5BatchReviewRow[]; summary: K5BatchReviewSummary }> {
   const { data: invoice, error: invoiceError } = await supabase
     .from('purchase_invoices')
-    .select('id')
+    .select('id,supplier_id')
     .eq('id', invoiceId)
     .maybeSingle()
   if (invoiceError || !invoice) throw new Error('No se pudo abrir este albarán.')
 
   const { data: proposalRows, error: proposalError } = await supabase
     .from('purchase_interpretation_proposals')
-    .select('id,proposal_set_id,supersedes_proposal_id,provenance,created_at,source_table_index,source_row_index,source_item_name,mapping_version_id,ingredient_id,status,review_reasons,warnings,line_quantity,line_unit,observed_unit_price,line_total')
+    .select('id,proposal_set_id,supersedes_proposal_id,provenance,created_at,document_extraction_id,source_table_index,source_row_index,source_item_name,mapping_version_id,ingredient_id,status,review_reasons,warnings,line_quantity,line_unit,observed_unit_price,line_total')
     .eq('purchase_invoice_id', invoiceId)
     .order('created_at', { ascending: true })
   if (proposalError) throw new Error('No se pudieron leer las propuestas K5.')
@@ -112,8 +117,12 @@ async function loadBatchState(
     .select('id,interpretation_proposal_id')
     .eq('invoice_id', invoiceId)
   if (lineError) throw new Error('No se pudieron resolver las líneas revisables.')
+  const invoiceLines = (lineRows ?? []) as Array<Record<string, unknown>>
   const lineByProposal = new Map(
-    ((lineRows ?? []) as Array<Record<string, unknown>>).map((row) => [text(row.interpretation_proposal_id), text(row.id)])
+    invoiceLines.map((row) => [text(row.interpretation_proposal_id), text(row.id)])
+  )
+  const proposalByLineId = new Map(
+    invoiceLines.map((row) => [text(row.id), text(row.interpretation_proposal_id)])
   )
 
   function lineIdForProposal(proposalId: string): string | null {
@@ -129,17 +138,38 @@ async function loadBatchState(
     return null
   }
 
-  const resolvedLineIds = active.map((proposal) => lineIdForProposal(text(proposal.id))).filter((id): id is string => Boolean(id))
-  const { data: confirmations, error: confirmationError } = resolvedLineIds.length
+  // Se consultan TODAS las líneas del albarán, no solo la línea enlazada a la
+  // propuesta activa. Durante la puesta en marcha hubo recalculaciones que
+  // crearon una segunda purchase_invoice_line para la misma fila Docling.
+  const allInvoiceLineIds = invoiceLines.map((row) => text(row.id)).filter(Boolean)
+  const { data: confirmations, error: confirmationError } = allInvoiceLineIds.length
     ? await supabase
         .from('purchase_receipt_confirmations')
         .select('purchase_invoice_line_id')
-        .in('purchase_invoice_line_id', [...new Set(resolvedLineIds)])
+        .in('purchase_invoice_line_id', allInvoiceLineIds)
     : { data: [] as Array<Record<string, unknown>>, error: null }
   if (confirmationError) throw new Error('No se pudo comprobar qué líneas ya están confirmadas.')
   const confirmedLineIds = new Set(
     ((confirmations ?? []) as Array<Record<string, unknown>>).map((row) => text(row.purchase_invoice_line_id)).filter(Boolean)
   )
+
+  // Una confirmación económica pertenece a la evidencia física de Docling,
+  // no al registro accidental de purchase_invoice_lines. Si otra línea apunta
+  // a la misma extracción/tabla/fila, se considera ya recibida y nunca puede
+  // reaparecer en el lote.
+  const confirmedEvidence = new Set<string>()
+  for (const lineId of confirmedLineIds) {
+    const proposalId = proposalByLineId.get(lineId)
+    const proposal = proposalId ? proposalById.get(proposalId) : null
+    const identity = proposal
+      ? k5EvidenceIdentity({
+          documentExtractionId: proposal.document_extraction_id,
+          sourceTableIndex: proposal.source_table_index,
+          sourceRowIndex: proposal.source_row_index,
+        })
+      : null
+    if (identity) confirmedEvidence.add(identity)
+  }
 
   const ingredientIds = [...new Set(active.map((row) => text(row.ingredient_id)).filter(Boolean))]
   const { data: ingredients, error: ingredientError } = ingredientIds.length
@@ -150,11 +180,26 @@ async function loadBatchState(
     ((ingredients ?? []) as Array<Record<string, unknown>>).map((row) => [text(row.id), text(row.name)])
   )
 
-  const { data: pendingOrders, error: orderError } = ingredientIds.length
+  // Los pedidos anteriores a K2 no tienen una historia de recepciones fiable:
+  // quedaron abiertos al migrar y bloquearían indefinidamente albaranes nuevos.
+  // Solo los pedidos creados ya dentro de la era K2 pueden exigir conciliación.
+  const supplierId = text(invoice.supplier_id)
+  const { data: trustedOrders, error: trustedOrderError } = ingredientIds.length && supplierId
+    ? await supabase
+        .from('purchase_orders')
+        .select('id')
+        .eq('supplier_id', supplierId)
+        .gte('created_at', K2_RECONCILIATION_TRUST_START)
+    : { data: [] as Array<Record<string, unknown>>, error: null }
+  if (trustedOrderError) throw new Error('No se pudo comprobar el periodo fiable de conciliación.')
+  const trustedOrderIds = ((trustedOrders ?? []) as Array<Record<string, unknown>>).map((row) => text(row.id)).filter(Boolean)
+
+  const { data: pendingOrders, error: orderError } = ingredientIds.length && trustedOrderIds.length
     ? await supabase
         .from('purchase_order_item_reconciliation')
-        .select('ingredient_id,purchase_order_item_id')
+        .select('ingredient_id,purchase_order_item_id,purchase_order_id')
         .in('ingredient_id', ingredientIds)
+        .in('purchase_order_id', trustedOrderIds)
         .gt('quantity_pending', 0)
     : { data: [] as Array<Record<string, unknown>>, error: null }
   if (orderError) throw new Error('No se pudo comprobar la conciliación con pedidos.')
@@ -170,7 +215,15 @@ async function loadBatchState(
       const proposalId = text(proposal.id)
       const lineId = lineIdForProposal(proposalId)
       const ingredientId = text(proposal.ingredient_id) || null
-      const confirmed = Boolean(lineId && confirmedLineIds.has(lineId))
+      const evidenceIdentity = k5EvidenceIdentity({
+        documentExtractionId: proposal.document_extraction_id,
+        sourceTableIndex: proposal.source_table_index,
+        sourceRowIndex: proposal.source_row_index,
+      })
+      const confirmed = Boolean(
+        (lineId && confirmedLineIds.has(lineId))
+        || (evidenceIdentity && confirmedEvidence.has(evidenceIdentity))
+      )
       const pending = ingredientId ? pendingOrderCount.get(ingredientId) ?? 0 : 0
       const status = text(proposal.status)
       const mappingVersionId = text(proposal.mapping_version_id) || null
