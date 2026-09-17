@@ -86,7 +86,9 @@ async function processStudioCutout(src: string): Promise<StudioCutoutView> {
     out.height = cropped.height
     const outCtx = out.getContext('2d')
     if (!outCtx) return { href: src, isolated: false }
-    outCtx.putImageData(new ImageData(cropped.data, cropped.width, cropped.height), 0, 0)
+    const imageData = outCtx.createImageData(cropped.width, cropped.height)
+    imageData.data.set(cropped.data)
+    outCtx.putImageData(imageData, 0, 0)
     return canvasToView(out, true)
   } finally {
     loaded.revoke?.()
