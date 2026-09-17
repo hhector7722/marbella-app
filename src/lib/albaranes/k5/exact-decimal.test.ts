@@ -21,6 +21,13 @@ test('parsea coma, punto y separadores de miles sin Number', () => {
   assert.equal(toFiniteDecimalString(decimal('15,60 KG')), '15.6')
   assert.equal(toFiniteDecimalString(decimal('1.234,56 €')), '1234.56')
   assert.equal(toFiniteDecimalString(decimal('1,234.56')), '1234.56')
+  assert.equal(toFiniteDecimalString(decimal('1 234,56 €')), '1234.56')
+})
+
+test('rechaza múltiples valores colapsados en una sola celda Docling', () => {
+  assert.equal(parseExactDecimal('1 1 6 6 7 12 18 24 24 48'), null)
+  assert.equal(parseExactDecimal('12.00 12.19 5.95 2.80'), null)
+  assert.equal(parseExactDecimal('12 34'), null)
 })
 
 test('multiplica cantidades y precios exactamente', () => {
