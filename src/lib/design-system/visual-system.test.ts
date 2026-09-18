@@ -1828,6 +1828,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(movements, /leadSlot=\{/, 'tesorería: KPI y acciones fuera del papel');
         assert.match(labor, /work="calendar"/, 'labor: el calendario flota');
         assert.match(labor, /leadSlot=\{/, 'labor: KPI fuera del papel');
+        assert.match(labor, /instance="labor-payroll-absence"/, 'labor: ausencia de nómina es Notice');
+        assert.doesNotMatch(labor, /toast\.warning/, 'labor: la ausencia de nómina no es un toast');
         assert.match(consumo, /leadSlot=\{/, 'consumo: KPI fuera del papel');
         assert.match(horario, /toolbarSlot=\{/, 'horario: segmented fuera del papel');
         assert.match(ledger, /leadSlot=\{/, 'libro mayor: KPI fuera del papel');

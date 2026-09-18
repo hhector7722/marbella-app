@@ -16,6 +16,41 @@ import { computeSettlementHash } from './settlement-hash.ts';
 
 export const PAYROLL_SUMMARY_PARSER_VERSION = 2;
 
+/** pdf2json expresa las coordenadas PDF en puntos / 16. */
+export const PDF2JSON_POINT_SCALE = 16;
+
+function roundPdf2json(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
+export type PdfJsViewportTextItem = {
+  str: string;
+  x: number;
+  y: number;
+};
+
+/**
+ * Convierte ítems ya proyectados al viewport (origen arriba-izquierda)
+ * al JSON que consume `parseCompanySummaryPdfData`.
+ */
+export function viewportItemsToPdf2jsonPage(input: {
+  width: number;
+  height: number;
+  items: PdfJsViewportTextItem[];
+}) {
+  return {
+    Width: input.width / PDF2JSON_POINT_SCALE,
+    Height: input.height / PDF2JSON_POINT_SCALE,
+    Texts: input.items
+      .filter((item) => item.str)
+      .map((item) => ({
+        x: roundPdf2json(item.x / PDF2JSON_POINT_SCALE),
+        y: roundPdf2json(item.y / PDF2JSON_POINT_SCALE),
+        R: [{ T: encodeURIComponent(item.str) }],
+      })),
+  };
+}
+
 export type PayrollSummaryParseOk = {
   ok: true;
   snapshot: PayrollMonthSnapshot;
@@ -58,7 +93,8 @@ export function parseEuroNumber(raw: string | null | undefined): number {
 }
 
 /**
- * Función PURA: Parsea la estructura JSON de pdf2json y devuelve PayrollMonthSnapshot.
+ * Función PURA: Parsea la estructura JSON de pdf2json (o el equivalente
+ * proyectado desde pdfjs-dist) y devuelve PayrollMonthSnapshot.
  */
 export function parseCompanySummaryPdfData(
   pdfData: any,
@@ -347,38 +383,123 @@ export function parseCompanySummaryPdfData(
   };
 }
 
+function isPdfJsTextItem(
+  item: unknown,
+): item is { str: string; transform: number[] } {
+  if (!item || typeof item !== 'object') return false;
+  const rec = item as { str?: unknown; transform?: unknown };
+  return typeof rec.str === 'string' && Array.isArray(rec.transform);
+}
+
+function loadPdf2jsonData(
+  pdfBuffer: Buffer,
+): Promise<{ ok: true; data: unknown } | { ok: false; error: string }> {
+  return new Promise((resolve) => {
+    // @ts-ignore
+    const ParserClass =
+      typeof PDFParser === 'function'
+        ? PDFParser
+        : (PDFParser as { default?: unknown }).default || PDFParser;
+    const pdfParser = new ParserClass(null, 0);
+    let settled = false;
+    const finish = (result: { ok: true; data: unknown } | { ok: false; error: string }) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+    pdfParser.on('pdfParser_dataError', (errData: { parserError?: string }) => {
+      finish({
+        ok: false,
+        error: errData.parserError ?? 'pdf2json error',
+      });
+    });
+    pdfParser.on('pdfParser_dataReady', (pdfData: unknown) => {
+      finish({ ok: true, data: pdfData });
+    });
+    pdfParser.parseBuffer(pdfBuffer);
+  });
+}
+
+async function loadPdfJsAsPdf2jsonData(pdfBuffer: Buffer): Promise<unknown> {
+  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const doc = await getDocument({
+    data: Uint8Array.from(pdfBuffer),
+    disableWorker: true,
+    isEvalSupported: false,
+    useSystemFonts: true,
+  }).promise;
+
+  try {
+    const pages = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const viewport = page.getViewport({ scale: 1 });
+      const content = await page.getTextContent();
+      const items: PdfJsViewportTextItem[] = [];
+      for (const raw of content.items) {
+        if (!isPdfJsTextItem(raw) || !raw.str) continue;
+        const x = raw.transform[4] ?? 0;
+        const y = raw.transform[5] ?? 0;
+        const [vx, vy] = viewport.convertToViewportPoint(x, y);
+        items.push({ str: raw.str, x: vx, y: vy });
+      }
+      pages.push(
+        viewportItemsToPdf2jsonPage({
+          width: viewport.width,
+          height: viewport.height,
+          items,
+        }),
+      );
+    }
+    return { Pages: pages };
+  } finally {
+    await doc.destroy();
+  }
+}
+
 /**
- * Función PURA: Conveniencia para parsear directamente desde un Buffer de PDF.
+ * Abre el PDF y lo entrega a `parseCompanySummaryPdfData`.
+ * pdf2json primero; si no puede leer el fichero (XRef, PDF girado/linealizado),
+ * pdfjs-dist proyecta el viewport y reutiliza el mismo parser de coordenadas.
  */
 export async function parseCompanySummaryPdfBuffer(
   pdfBuffer: Buffer,
   options?: { contentHash?: string; filename?: string; source?: string },
 ): Promise<PayrollSummaryParseResult> {
-  return new Promise<PayrollSummaryParseResult>((resolve) => {
-    // @ts-ignore
-    const ParserClass = typeof PDFParser === 'function' ? PDFParser : (PDFParser as any).default || PDFParser;
-    const pdfParser = new ParserClass(null, 0);
-    pdfParser.on('pdfParser_dataError', (errData: { parserError?: string }) => {
-      resolve({
+  const pdf2json = await loadPdf2jsonData(pdfBuffer);
+  if (pdf2json.ok) {
+    try {
+      return parseCompanySummaryPdfData(pdf2json.data, options);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error parseando datos de PDF';
+      return {
         ok: false,
-        error: errData.parserError ?? 'pdf2json error',
-        validationMessages: ['Fallo al procesar PDF con pdf2json'],
+        error: message,
+        validationMessages: [message],
         candidatesNearLabel: [],
-      });
-    });
-    pdfParser.on('pdfParser_dataReady', (pdfData: any) => {
-      try {
-        const result = parseCompanySummaryPdfData(pdfData, options);
-        resolve(result);
-      } catch (err: any) {
-        resolve({
-          ok: false,
-          error: err.message ?? 'Error parseando datos de PDF',
-          validationMessages: [err.message],
-          candidatesNearLabel: [],
-        });
-      }
-    });
-    pdfParser.parseBuffer(pdfBuffer);
-  });
+      };
+    }
+  }
+
+  try {
+    const pdfJsData = await loadPdfJsAsPdf2jsonData(pdfBuffer);
+    const parsed = parseCompanySummaryPdfData(pdfJsData, options);
+    if (parsed.ok) {
+      parsed.validationMessages.push(
+        `Lectura vía pdfjs-dist (pdf2json: ${pdf2json.error}).`,
+      );
+    }
+    return parsed;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      ok: false,
+      error: pdf2json.error,
+      validationMessages: [
+        'Fallo al procesar PDF con pdf2json',
+        `Respaldo pdfjs-dist: ${message}`,
+      ],
+      candidatesNearLabel: [],
+    };
+  }
 }

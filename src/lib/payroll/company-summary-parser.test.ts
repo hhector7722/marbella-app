@@ -4,6 +4,8 @@ import {
   PAYROLL_SUMMARY_PARSER_VERSION,
   parseCompanySummaryPdfData,
   parseEuroNumber,
+  PDF2JSON_POINT_SCALE,
+  viewportItemsToPdf2jsonPage,
 } from './company-summary-parser.ts';
 import { hashPayrollPdf } from './content-hash.ts';
 
@@ -125,6 +127,28 @@ describe('parseCompanySummaryPdfData (Parser v2 Estructurado por Coordenadas)', 
     assert.equal(res.totals.totalCompanyCost, 3389.95);
     assert.equal(res.totalCompanyCost, 3389.95);
     assert.equal(res.labelUsed, 'COST TOTAL');
+  });
+
+  it('reconstruye el snapshot si las coordenadas vienen en puntos de viewport (respaldo pdfjs)', () => {
+    const mock = createMockPdfData();
+    const items = (mock.Pages[0]!.Texts ?? []).map((text: { x: number; y: number; R: { T: string }[] }) => ({
+      str: decodeURIComponent(text.R[0]!.T),
+      x: text.x * PDF2JSON_POINT_SCALE,
+      y: text.y * PDF2JSON_POINT_SCALE,
+    }));
+    const page = viewportItemsToPdf2jsonPage({
+      width: 52.625 * PDF2JSON_POINT_SCALE,
+      height: 40 * PDF2JSON_POINT_SCALE,
+      items,
+    });
+    const res = parseCompanySummaryPdfData({ Pages: [page] });
+
+    assert.equal(res.ok, true);
+    if (!res.ok) return;
+    assert.equal(res.header.periodYm, '2026-07');
+    assert.equal(res.employees.length, 2);
+    assert.equal(res.employees[0]!.companyCost, 2449.0);
+    assert.equal(res.totals.totalCompanyCost, 3389.95);
   });
 
   it('rechaza el documento si la suma de costes de liquidaciones no coincide con COST TOTAL', () => {

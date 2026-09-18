@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { Notice } from '@/components/ui/Notice';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
@@ -39,6 +40,8 @@ import {
     getLaborCostDayDetailSsot,
     getLaborCostPeriodSsot,
 } from '@/app/actions/labor-cost-ssot';
+import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
+import { payrollAbsenceNotice } from '@/lib/payroll/payroll-month-status';
 
 type DayCell = { total: number; fixed: number; overtime: number };
 
@@ -50,6 +53,7 @@ type MonthSummaryPayload = {
     totalOvertime: number;
     totalCost: number;
     byDate: Record<string, DayCell>;
+    missingPayrollMonths: string[];
     reconciliation?: {
         status: 'NO_SUMMARY' | 'WAITING_PAYROLLS' | 'RECONCILED' | 'PENDING_RECONCILIATION';
         totalSummary: number;
@@ -231,6 +235,8 @@ function ReconciliationBadge({
         );
     }
 
+    if (status === 'NO_SUMMARY') return null;
+
     if (status === 'WAITING_PAYROLLS') {
         return (
             <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-sky-50 border border-sky-200/80 rounded-xl text-sky-900 text-xs font-semibold">
@@ -241,12 +247,7 @@ function ReconciliationBadge({
         );
     }
 
-    return (
-        <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-zinc-100 border border-zinc-200 rounded-xl text-zinc-600 text-xs font-medium">
-            <span className="inline-block w-2 h-2 rounded-full bg-zinc-400 shrink-0" />
-            <span>⚪ Sin nómina oficial de gestoría</span>
-        </div>
-    );
+    return null;
 }
 
 type ProfileOption = {
@@ -291,6 +292,7 @@ export default function LaborHistoryPage() {
         totalOvertime: number;
         totalCost: number;
         dayNetSales: number;
+        payrollPending: boolean;
         workers: WorkerRow[];
     } | null>(null);
 
@@ -301,13 +303,26 @@ export default function LaborHistoryPage() {
     }, [viewMonth]);
     const calendarWeeks = useMemo(() => chunkCalendarWeeks(calendarDays), [calendarDays]);
 
+    const todayStr = formatYmdInMadrid(new Date());
+    const missingPayrollMonths = summary?.missingPayrollMonths;
+    const ordinaryUnknown = (missingPayrollMonths?.length ?? 0) > 0;
+    const missingPayrollMonthSet = useMemo(
+        () => new Set(missingPayrollMonths ?? []),
+        [missingPayrollMonths],
+    );
+    const payrollNotice = useMemo(
+        () => payrollAbsenceNotice(missingPayrollMonths ?? [], todayStr),
+        [missingPayrollMonths, todayStr],
+    );
+    const dayPayrollNotice = dayDetail?.payrollPending
+        ? payrollAbsenceNotice([dayDetail.date.slice(0, 7)], todayStr)
+        : null;
+
     const laborPctOfPeriod = useMemo(() => {
-        if (!summary || periodNetSales === null) return null;
+        if (!summary || ordinaryUnknown || periodNetSales === null) return null;
         if (periodNetSales <= 0) return null;
         return (summary.totalCost / periodNetSales) * 100;
-    }, [summary, periodNetSales]);
-
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    }, [summary, ordinaryUnknown, periodNetSales]);
 
     useEffect(() => {
         console.log("[EFFECT] profiles fetch useEffect");
@@ -340,7 +355,7 @@ export default function LaborHistoryPage() {
             }
 
             const byDate: Record<string, DayCell> = {};
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
+            const todayStr = formatYmdInMadrid(new Date());
 
             const period = await getLaborCostPeriodSsot({
                 startDate: periodStart.split('T')[0],
@@ -358,12 +373,6 @@ export default function LaborHistoryPage() {
                 };
             }
 
-            if (period.missingPayrollMonths.length > 0) {
-                toast.warning(
-                    `Falta nómina oficial (payroll_monthly_totals) para: ${period.missingPayrollMonths.join(', ')}. El fijo de esos meses queda a 0.`,
-                );
-            }
-
             setSummary({
                 year: start.getFullYear(),
                 month: start.getMonth() + 1,
@@ -372,6 +381,7 @@ export default function LaborHistoryPage() {
                 totalOvertime: period.totalOvertime,
                 totalCost: period.totalCost,
                 byDate,
+                missingPayrollMonths: period.missingPayrollMonths,
                 reconciliation: period.reconciliation,
             });
 
@@ -482,12 +492,6 @@ export default function LaborHistoryPage() {
                     includeAllContracted: true,
                 });
 
-                if (labor.isPayrollPending) {
-                    toast.warning(
-                        'Falta nómina oficial para este mes: el coste fijo del día es 0 €.',
-                    );
-                }
-
                 const workers: WorkerRow[] = labor.workers.map((w) => ({
                     id: w.id,
                     name: w.name,
@@ -506,6 +510,7 @@ export default function LaborHistoryPage() {
                     totalOvertime: labor.totalOvertime,
                     totalCost: labor.totalCost,
                     dayNetSales: labor.netSales,
+                    payrollPending: labor.isPayrollPending,
                     workers,
                 });
             } catch (e) {
@@ -569,7 +574,7 @@ export default function LaborHistoryPage() {
                                     Coste
                                 </span>
                                 <span className="text-[11px] font-black leading-tight text-rose-500 tabular-nums sm:text-xs md:text-sm">
-                                    {summary ? formatEuroRead(summary.totalCost) : ' '}
+                                    {summary && !ordinaryUnknown ? formatEuroRead(summary.totalCost) : ' '}
                                 </span>
                             </div>
                             <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
@@ -577,7 +582,7 @@ export default function LaborHistoryPage() {
                                     Fijo
                                 </span>
                                 <span className="text-[11px] font-black leading-tight text-zinc-700 tabular-nums sm:text-xs md:text-sm">
-                                    {summary ? formatEuroRead(summary.totalFixed) : ' '}
+                                    {summary && !ordinaryUnknown ? formatEuroRead(summary.totalFixed) : ' '}
                                 </span>
                             </div>
                             <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
@@ -596,9 +601,17 @@ export default function LaborHistoryPage() {
                             </div>
                         </div>
 
-                        <div>
+                        {payrollNotice ? (
+                            <Notice
+                                instance="labor-payroll-absence"
+                                variant={payrollNotice.variant}
+                                title={payrollNotice.title}
+                            >
+                                {payrollNotice.body}
+                            </Notice>
+                        ) : (
                             <ReconciliationBadge reconciliation={summary?.reconciliation} />
-                        </div>
+                        )}
                 </>
             }
         >
@@ -617,7 +630,10 @@ export default function LaborHistoryPage() {
                                         const key = format(day, 'yyyy-MM-dd');
                                         const isFutureDay = key > todayStr;
                                         const cell = summary?.byDate[key];
-                                        const total = cell?.total ?? 0;
+                                        const dayOrdinaryUnknown = missingPayrollMonthSet.has(key.slice(0, 7));
+                                        const cellAmount = dayOrdinaryUnknown
+                                            ? (cell?.overtime ?? 0)
+                                            : (cell?.total ?? 0);
                                         const isViewMonthDay = isSameMonth(day, viewMonth);
                                         const inPeriod = dayInPeriod(key, periodStart, periodEnd);
                                         const showData =
@@ -664,7 +680,7 @@ export default function LaborHistoryPage() {
                                                             showData ? 'text-zinc-900' : 'text-zinc-400',
                                                         )}
                                                     >
-                                                        {showData ? formatEuroRead(total) : ' '}
+                                                        {showData ? formatEuroRead(cellAmount) : ' '}
                                                     </span>
                                                 </div>
                                             </button>
@@ -695,13 +711,24 @@ export default function LaborHistoryPage() {
                         </div>
                     ) : dayDetail ? (
                         <div className="flex flex-col">
+                            {dayPayrollNotice ? (
+                                <div className="mb-3">
+                                    <Notice
+                                        instance="labor-day-payroll-absence"
+                                        variant={dayPayrollNotice.variant}
+                                        title={dayPayrollNotice.title}
+                                    >
+                                        {dayPayrollNotice.body}
+                                    </Notice>
+                                </div>
+                            ) : null}
                             <WorkerListSummary
                                 metrics={[
-                                    { label: 'Fijo', value: formatEuroRead(dayDetail.totalFixed) },
+                                    { label: 'Fijo', value: dayDetail.payrollPending ? ' ' : formatEuroRead(dayDetail.totalFixed) },
                                     { label: 'Extras', value: formatEuroRead(dayDetail.totalOvertime) },
                                     { label: 'Ventas', value: formatEuroRead(dayDetail.dayNetSales) },
                                 ]}
-                                total={formatEuroRead(dayDetail.totalCost)}
+                                total={dayDetail.payrollPending ? ' ' : formatEuroRead(dayDetail.totalCost)}
                             />
 
                             <div className="mb-1 flex justify-end">
@@ -724,24 +751,36 @@ export default function LaborHistoryPage() {
                                         name={firstNameOnly(w.name)}
                                         muted={!w.hasActivity}
                                         subtitle={
-                                            <>
-                                                <span>Fijo {formatEuroRead(w.fixed)}</span>
-                                                {w.overtime > 0 ? (
-                                                    <>
-                                                        <span className="text-zinc-300">·</span>
-                                                        <span>Extras {formatEuroRead(w.overtime)}</span>
-                                                    </>
-                                                ) : null}
-                                            </>
+                                            dayDetail.payrollPending ? (
+                                                w.overtime > 0 ? (
+                                                    <span>Extras {formatEuroRead(w.overtime)}</span>
+                                                ) : undefined
+                                            ) : (
+                                                <>
+                                                    <span>Fijo {formatEuroRead(w.fixed)}</span>
+                                                    {w.overtime > 0 ? (
+                                                        <>
+                                                            <span className="text-zinc-300">·</span>
+                                                            <span>Extras {formatEuroRead(w.overtime)}</span>
+                                                        </>
+                                                    ) : null}
+                                                </>
+                                            )
                                         }
-                                        value={formatEuroRead(w.total)}
+                                        value={
+                                            dayDetail.payrollPending
+                                                ? formatEuroRead(w.overtime)
+                                                : formatEuroRead(w.total)
+                                        }
                                     />
                                 ))}
                             </div>
 
+                            {dayDetail.payrollPending ? null : (
                             <p className="mt-6 text-center text-[11px] leading-relaxed text-zinc-400">
                                 El coste fijo corresponde al prorrateo diario del coste laboral mensual.
                             </p>
+                            )}
                         </div>
                     ) : null}
                 </div>
