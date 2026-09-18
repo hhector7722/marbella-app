@@ -1,10 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-<<<<<<< Updated upstream
-  "_huella": "e295d6f2ccb21d13",
-=======
-  "_huella": "0097b43f4c8453ff",
->>>>>>> Stashed changes
+  "_huella": "eb0a63cb487c0a8a",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
