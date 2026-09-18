@@ -1131,9 +1131,12 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(plantilla, /PlantillaLogRow/);
         assert.match(plantilla, /data-element="plantilla-log-row"/);
+        assert.match(plantilla, /justify-between/);
         assert.match(plantilla, /h-\[1em\]/);
-        assert.match(css, /--color-superficie-hundida/);
         assert.match(css, /\[data-element='plantilla-log-row'\]/);
+        assert.match(css, /padding-inline: var\(--espacio-1\)/);
+        assert.match(css, /--color-superficie-inactiva/);
+        assert.match(css, /--color-borde-marcado/);
         assert.doesNotMatch(
             plantilla,
             /left-3\/4/,

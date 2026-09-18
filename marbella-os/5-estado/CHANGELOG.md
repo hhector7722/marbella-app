@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Asistencia de plantilla: la marca se lee a la derecha.** Horas, cruz y F/P quedan justificadas al canto de la columna, con `espacio.1` de margen. La card de cada fila usa `color.superficie.inactiva` y un filete `color.borde.marcado` para verse sobre el papel sin gritar. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
+
 - **Reporte: el logo sube y se agranda.** Sin el hueco de la barra de la app ni el título de PageScreen, el logo queda pegado al canto superior y se lee a 96 px, por encima de las cards del fin de semana.
 
 - **Alta laboral pública: anverso y reverso como el resto de datos.** Sin card azul ni caja blanca. El concepto es «Imagen del documento de identidad (DNI/NIE/Pasaporte)»; cada lado se elige con un botón a la izquierda.

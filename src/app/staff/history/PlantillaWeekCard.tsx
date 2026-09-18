@@ -73,13 +73,13 @@ function getFirstName(log: PlantillaDayLog): string {
 }
 
 const LOG_NAME_CLASS =
-    'min-w-0 truncate text-[6px] lg:text-[10px] font-normal leading-none text-zinc-600';
+    'min-w-0 flex-1 truncate text-[6px] lg:text-[10px] font-normal leading-none text-zinc-600';
 const LOG_HOURS_CLASS =
-    'flex shrink-0 items-center gap-0 text-[6px] lg:text-[10px] font-bold leading-none';
+    'flex shrink-0 items-center justify-end gap-0 text-[6px] lg:text-[10px] font-bold leading-none';
 
 /**
- * Card hundida que abraza nombre + marca: sin padding, ancho y alto del
- * contenido. La cruz de no registrado mide 1em, el mismo cuerpo que las horas.
+ * Card a ancho de columna: nombre a la izquierda, marca a la derecha.
+ * El margen derecho de la marca lo fija CSS (`espacio.1`).
  */
 function PlantillaLogRow({
     name,
@@ -91,7 +91,7 @@ function PlantillaLogRow({
     return (
         <div
             data-element="plantilla-log-row"
-            className="inline-flex max-w-full min-w-0 items-center gap-1 leading-none"
+            className="flex w-full min-w-0 items-center justify-between leading-none"
         >
             <span className={LOG_NAME_CLASS}>{name}</span>
             {trailing}
@@ -152,7 +152,7 @@ export function PlantillaWeekCard({
                                 {day.dayNumber}
                             </span>
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 lg:mt-6 lg:pb-1.5 w-full overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                <div className="flex h-full w-full flex-col items-start justify-evenly gap-[3px] lg:gap-1.5">
+                                <div className="flex h-full w-full flex-col items-stretch justify-evenly gap-[3px] lg:gap-1.5">
                                     {(() => {
                                         const logs = day.logs || [];
                                         const overflow = logs.length > maxRows ? logs.length - maxRows + 1 : 0;
