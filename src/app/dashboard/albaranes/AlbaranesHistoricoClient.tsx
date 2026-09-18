@@ -559,7 +559,7 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
-  async function openDetail(id: string) {
+  async function openDetail(id: string, focusLineId: string | null = null) {
     const reqId = ++detailReqRef.current
     setSelectedId(id)
     setDetail(null)
@@ -590,6 +590,11 @@ export default function AlbaranesHistoricoClient({
       }
       setDraftLines(nextDraft)
 
+      if (focusLineId && res.detail.lines.some((line) => line.id === focusLineId)) {
+        evidenceContextLineIdRef.current = focusLineId
+        setLineForEvidenceModal(focusLineId)
+      }
+
       const lineIds = res.detail.lines.map((l) => l.id)
       const st = await getInvoiceStockStatusesAction({ lineIds })
       if (st.success) {
@@ -607,9 +612,12 @@ export default function AlbaranesHistoricoClient({
 
   useEffect(() => {
     const targetId = searchParams.get('id')?.trim()
-    if (!targetId || deepLinkHandledRef.current === targetId) return
-    deepLinkHandledRef.current = targetId
-    void openDetail(targetId)
+    const targetLineId = searchParams.get('line')?.trim() || null
+    if (!targetId) return
+    const deepLinkKey = `${targetId}:${targetLineId ?? ''}`
+    if (deepLinkHandledRef.current === deepLinkKey) return
+    deepLinkHandledRef.current = deepLinkKey
+    void openDetail(targetId, targetLineId)
   }, [searchParams])
 
   async function handleAppendSheetFileChange(e: React.ChangeEvent<HTMLInputElement>) {
