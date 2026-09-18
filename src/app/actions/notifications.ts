@@ -72,7 +72,7 @@ export async function getPushSubscriptionStatus(): Promise<{ hasSubscription: bo
 
 export type UserShiftForNotification = { userId: string; start: string; end: string };
 
-const SCHEDULE_NOTIFY_ROLES = new Set(['manager', 'admin', 'supervisor']);
+const SCHEDULE_NOTIFY_ROLES = new Set(['manager', 'admin']);
 
 export async function sendScheduleNotifications(
     dateStr: string,
@@ -114,7 +114,7 @@ export async function sendScheduleNotifications(
     if (!callerProfile?.role || !SCHEDULE_NOTIFY_ROLES.has(callerProfile.role)) {
         return {
             success: false,
-            error: 'Solo manager, admin o supervisor pueden enviar avisos de horario.',
+            error: 'Solo manager o admin pueden enviar avisos de horario.',
             sentCount: 0,
             targetCount: userIds.length,
             missingSubscriptionUserIds: userIds,

@@ -593,7 +593,6 @@ export const StaffScheduleModal = ({
                             date={format(selectedDate, 'yyyy-MM-dd')}
                             isManager={
                                 userRole === 'manager' ||
-                                userRole === 'supervisor' ||
                                 userRole === 'admin'
                             }
                         />

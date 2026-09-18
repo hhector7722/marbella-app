@@ -115,7 +115,7 @@ Saber lo que cuesta lo que se sirve.
 
 - **Actores**: responsable de operación, responsable del negocio, supervisor.
 - **Superficies**: recetas, detalle de receta, ingredientes, importación de recetas, mapeo con el terminal de venta.
-- **Reglas propias**: el coste sale del precio actual del ingrediente; precio de venta y coste nunca se confunden; la ración es la unidad de comparación. `supervisor` ve precios y edita; `staff` ve la receta sin precio.
+- **Reglas propias**: el coste sale del precio actual del ingrediente; precio de venta y coste nunca se confunden; la ración es la unidad de comparación. Quién ve precios está en [ACTORES-Y-ROLES](./ACTORES-Y-ROLES.md).
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 
@@ -129,7 +129,7 @@ Publicar la oferta al cliente y consultarla en sala.
 
 - **Actores**: cliente, persona en turno, responsable de operación.
 - **Superficies**: carta pública sin sesión, carta interna, editor de carta.
-- **Reglas propias**: es superficie pública y no expone dato interno alguno; la ficha de plato tiene presentación propia; las fotografías se normalizan al subirse. `supervisor` edita la carta; `staff` la consulta.
+- **Reglas propias**: es superficie pública y no expone dato interno alguno; la ficha de plato tiene presentación propia; las fotografías se normalizan al subirse. Quién edita la carta está en [ACTORES-Y-ROLES](./ACTORES-Y-ROLES.md).
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 

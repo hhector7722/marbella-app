@@ -56,7 +56,7 @@ async function executeSaveDay(input: DaySaveActionInput): Promise<DaySaveActionR
         .maybeSingle();
 
     const role = profile?.role;
-    if (!(role === 'manager' || role === 'admin' || role === 'supervisor')) {
+    if (!(role === 'manager' || role === 'admin')) {
         return { ok: false, kind: 'auth', message: 'Solo un manager puede guardar horarios' };
     }
 

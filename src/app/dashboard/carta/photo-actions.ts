@@ -24,18 +24,7 @@ async function requirePhotoUploader() {
   const role = (profile?.role ?? null) as string | null
   if (canEditCartaMenu(role)) return { ok: true as const, supabase }
 
-  const { data: editor, error: editorError } = await supabase
-    .from('carta_editors')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (editorError) return { ok: false as const, error: editorError.message }
-  if (!canEditCartaMenu(role, Boolean(editor))) {
-    return { ok: false as const, error: 'Sin permisos para subir imágenes' }
-  }
-
-  return { ok: true as const, supabase }
+  return { ok: false as const, error: 'Sin permisos para subir imágenes' }
 }
 
 function slugifyBase(name: string, fallback: string): string {

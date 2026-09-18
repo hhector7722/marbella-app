@@ -98,7 +98,7 @@ Dejar las tablas con vigencia como única autoridad y convertir las columnas del
 - **Bajar la frontera de cliente a servidor** pantalla a pantalla, aprovechando cada intervención. Ver [D3](DEUDA.md#d3--mitad-del-código-innecesariamente-en-el-cliente).
 - **Descomponer las pantallas por encima del límite de complejidad**, al intervenir en ellas. Ver [D4](DEUDA.md#d4--pantallas-por-encima-del-límite-de-complejidad).
 - **Resolver la deuda de vocabulario**, dejando el renombrado de identificadores para el final porque afecta a datos históricos. Ver [D15](DEUDA.md#d15--deuda-de-vocabulario).
-- **Enumerar el rol en la base de datos** y dar contenido propio al rol de supervisor, o retirarlo. Ver [D10](DEUDA.md#d10--rol-sin-enumeración-en-la-base-de-datos).
+- **Enumerar el rol en la base de datos.** Ver [D10](DEUDA.md#d10--rol-sin-enumeración-en-la-base-de-datos).
 - **Decidir la identidad visual entre superficies**: un solo azul de marca o dos declarados para siempre. Requiere ADR. Ver [D13](DEUDA.md#d13--divergencia-visual-entre-pantalla-y-documento-impreso).
 
 ---

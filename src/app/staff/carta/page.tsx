@@ -47,31 +47,18 @@ export default async function StaffCartaPage() {
 
 
 
-    const [{ data: profile, error: profileError }, { data: cartaEditor, error: cartaEditorError }] =
-        await Promise.all([
-            supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
-            supabase.from('carta_editors').select('user_id').eq('user_id', user.id).maybeSingle(),
-        ]);
-
-
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
 
     if (profileError) {
-
         console.error('Error fetching profile role (staff/carta):', profileError);
-
     }
-
-    if (cartaEditorError) {
-
-        console.error('Error fetching carta editor flag (staff/carta):', cartaEditorError);
-
-    }
-
-
 
     const role = (profile?.role ?? null) as string | null;
-
-    const canEditMenu = canEditCartaMenu(role, Boolean(cartaEditor));
+    const canEditMenu = canEditCartaMenu(role);
 
     const canOpenMapeo = role === 'manager' || role === 'admin';
 

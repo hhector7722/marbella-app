@@ -27,7 +27,7 @@ type RawNoteRow = {
 type ScheduleNotesFooterProps = {
     /** yyyy-MM-dd del día visible en el modal. */
     date: string | null;
-    /** manager/supervisor: ve las notas de todos y el nombre de cada autor. */
+    /** manager/admin: ve las notas de todos y el nombre de cada autor. */
     isManager: boolean;
 };
 

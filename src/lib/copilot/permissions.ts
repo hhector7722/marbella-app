@@ -19,7 +19,6 @@ const SUPERVISOR_ACTIONS: CopilotAction[] = [
   "consultar_cambios_entre_cajas",
   "gestionar_cambios_entre_cajas",
   "consultar_inventario",
-  "gestionar_carta",
   "gestionar_recetas",
   "gestionar_ingredientes",
   "gestionar_proveedores",
@@ -29,12 +28,12 @@ const SUPERVISOR_ACTIONS: CopilotAction[] = [
   "consultar_manuales",
   "consultar_registros_asistencia",
   "consultar_registros_horas_extras",
-  "consultar_costes_mano_obra",
   "gestionar_horarios",
 ];
 
 /**
- * admin se trata igual que manager; chef alineado a supervisor (similar a políticas RLS inventario/carta).
+ * admin se trata igual que manager. Chef conserva carta y coste laboral en copiloto;
+ * supervisor no.
  */
 const PERMISSIONS: Record<RoleName, CopilotAction[]> = {
   staff: [
@@ -58,7 +57,7 @@ const PERMISSIONS: Record<RoleName, CopilotAction[]> = {
     "gestionar_horarios",
   ],
   supervisor: [...SUPERVISOR_ACTIONS],
-  chef: [...SUPERVISOR_ACTIONS],
+  chef: [...SUPERVISOR_ACTIONS, "gestionar_carta", "consultar_costes_mano_obra"],
   manager: [...(Object.keys(ACTION_SCHEMA) as CopilotAction[])],
   admin: [...(Object.keys(ACTION_SCHEMA) as CopilotAction[])],
 };

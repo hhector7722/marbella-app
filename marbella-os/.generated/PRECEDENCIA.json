@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "919ba5cf441ea917",
+  "_huella": "aa046b3117d56866",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -213,6 +213,18 @@
       ]
     },
     {
+      "ruta": "marbella-os/4-decisiones/ADR-0015-alta-laboral-por-token.md",
+      "documento": "ADR-0015",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": []
+    },
+    {
       "ruta": "marbella-os/1-producto/PRINCIPIOS.md",
       "documento": "PRINCIPIOS",
       "clase": "constitucional",
@@ -284,7 +296,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-14",
+      "vence": "2027-03-18",
       "depende_de": []
     },
     {
@@ -320,7 +332,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-12-17",
+      "vence": "2026-12-18",
       "depende_de": []
     },
     {
@@ -356,7 +368,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-07-29",
+      "vence": "2027-09-18",
       "depende_de": []
     },
     {
@@ -581,7 +593,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-17",
+      "vence": "2027-03-18",
       "depende_de": []
     },
     {
@@ -643,7 +655,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-12-14",
+      "vence": "2026-12-18",
       "depende_de": []
     },
     {
@@ -655,7 +667,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-09-15",
+      "vence": "2027-09-18",
       "depende_de": []
     },
     {
@@ -775,7 +787,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-17",
+      "vence": "2027-03-18",
       "depende_de": []
     },
     {
