@@ -2169,7 +2169,7 @@ html[data-quick-tool='open'] main {
   font-weight: 400;
 }
 [data-alta-doc-picks] {
-  column-gap: var(--espacio-8);
+  column-gap: var(--espacio-4);
 }
 [data-alta-doc-picks] [data-component='Field'] {
   align-items: center;
@@ -2235,14 +2235,13 @@ html[data-quick-tool='open'] main {
 [data-component='PageScreen'].alta-public-screen [data-alta-candidate-fields] {
   flex: 1 1 auto;
   align-content: space-between;
-  column-gap: var(--espacio-8);
+  column-gap: var(--espacio-4);
   row-gap: var(--espacio-4);
 }
-[data-component='PageScreen'].alta-public-screen [data-alta-pair] [data-component='Field'] {
-  width: calc(100% - var(--espacio-8));
-}
-[data-component='PageScreen'].alta-public-screen [data-alta-pair='end'] [data-component='Field'] {
-  margin-inline-start: auto;
+[data-component='PageScreen'].alta-public-screen [data-alta-candidate-fields] [data-element='label'] {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-texto-invertido);
 }
 [data-component='PageScreen'].alta-public-screen [data-instance='alta-public-dni-images'] > [data-element='control'] {
   display: none;

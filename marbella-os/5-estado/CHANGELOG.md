@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Alta laboral pública: hueco normal entre cajas de la misma fila y conceptos en blanco.** El espacio entre cajas emparejadas es `espacio.4`. Nombre, apellidos y el resto de conceptos se leen en blanco y negrita, con el mismo tipo que el valor.
+
 - **Alta laboral pública: más aire entre cajas de la misma fila.** Nombre y apellidos, documento y afiliación, nacionalidad y nacimiento, teléfono y correo dejan `espacio.8` entre sí. Anverso y reverso quedan centrados en su columna.
 
 - **Alta laboral pública: el valor se lee como la etiqueta, y el documento se ve.** El texto escrito en las cajas usa el mismo tamaño que el concepto, sin negrita. Anverso y reverso muestran miniatura y una cruz roja en la esquina para quitar el archivo.
