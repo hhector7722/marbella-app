@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Alta laboral pública: más aire entre cajas de la misma fila.** Nombre y apellidos, documento y afiliación, nacionalidad y nacimiento, teléfono y correo dejan `espacio.8` entre sí. Anverso y reverso quedan centrados en su columna.
+
+- **Alta laboral pública: el valor se lee como la etiqueta, y el documento se ve.** El texto escrito en las cajas usa el mismo tamaño que el concepto, sin negrita. Anverso y reverso muestran miniatura y una cruz roja en la esquina para quitar el archivo.
+
 - **Asistencia de plantilla: las cards de fila no llevan contorno.** El agrupado se lee solo con `color.superficie.inactiva`, sin filete. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
 
 - **Alta laboral pública: filas más aireadas, nacionalidad sin flecha y domicilio a la misma altura.** El formulario se reparte en el alto visible. Entre el concepto del documento y anverso/reverso hay más espacio. La nacionalidad ya no muestra la flecha nativa.

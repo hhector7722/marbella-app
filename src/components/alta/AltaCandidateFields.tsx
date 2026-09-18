@@ -68,8 +68,8 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
   const phone = digitsPhoneEs(values.phone);
 
   return (
-    <div data-alta-candidate-fields className="grid grid-cols-2 items-start gap-x-2">
-      <div className="min-w-0">
+    <div data-alta-candidate-fields className="grid grid-cols-2 items-start">
+      <div className="min-w-0" data-alta-pair="start">
         <Field instance={`${instancePrefix}-first-name`} label="Nombre" htmlFor={`${instancePrefix}-first-name`} error={errors.firstName}>
           <input
             id={`${instancePrefix}-first-name`}
@@ -80,7 +80,7 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
           />
         </Field>
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0" data-alta-pair="end">
         <Field instance={`${instancePrefix}-last-name`} label="Apellidos" htmlFor={`${instancePrefix}-last-name`} error={errors.lastName}>
           <input
             id={`${instancePrefix}-last-name`}
@@ -91,12 +91,12 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
           />
         </Field>
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0" data-alta-pair="start">
         <Field instance={`${instancePrefix}-dni`} label="NIF / NIE / Pasaporte" htmlFor={`${instancePrefix}-dni`} error={errors.dni}>
           <input id={`${instancePrefix}-dni`} value={values.dni} onChange={(e) => onChange('dni', e.target.value)} disabled={disabled} />
         </Field>
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0" data-alta-pair="end">
         <Field
           instance={`${instancePrefix}-ss`}
           label="Nº de afiliación a la S.S."
@@ -111,7 +111,7 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
           />
         </Field>
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0" data-alta-pair="start">
         <Field instance={`${instancePrefix}-nacionalidad`} label="Nacionalidad" htmlFor={`${instancePrefix}-nacionalidad`} error={errors.nacionalidad}>
           <select
             id={`${instancePrefix}-nacionalidad`}
@@ -128,7 +128,7 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
           </select>
         </Field>
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0" data-alta-pair="end">
         <Field
           instance={`${instancePrefix}-nacimiento`}
           label="Fecha de nacimiento"
@@ -154,7 +154,7 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
           />
         </Field>
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0" data-alta-pair="start">
         <Field instance={`${instancePrefix}-phone`} label="Teléfono" htmlFor={`${instancePrefix}-phone`} error={errors.phone}>
           <input
             id={`${instancePrefix}-phone`}
@@ -168,7 +168,7 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
           />
         </Field>
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0" data-alta-pair="end">
         <Field instance={`${instancePrefix}-email`} label="Correo electrónico" htmlFor={`${instancePrefix}-email`} error={errors.email}>
           <input
             id={`${instancePrefix}-email`}

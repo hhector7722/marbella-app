@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Notice } from '@/components/ui/Notice';
@@ -29,9 +30,18 @@ function fieldErrorsFromIssues(
   return next;
 }
 
-function fileButtonLabel(file: File | null, fallback: string) {
-  if (!file) return fallback;
-  return file.name.length > 18 ? `${file.name.slice(0, 15)}…` : file.name;
+function useFilePreview(file: File | null) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!file) {
+      setUrl(null);
+      return;
+    }
+    const next = URL.createObjectURL(file);
+    setUrl(next);
+    return () => URL.revokeObjectURL(next);
+  }, [file]);
+  return url;
 }
 
 function AltaIntakeFileField({
@@ -48,6 +58,7 @@ function AltaIntakeFileField({
   onFile: (file: File | null) => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
+  const previewUrl = useFilePreview(file);
   return (
     <div className="min-w-0">
       <input
@@ -59,15 +70,34 @@ function AltaIntakeFileField({
         onChange={(e) => onFile(e.target.files?.[0] ?? null)}
       />
       <Field instance={instance} label={label} htmlFor={htmlFor}>
-        <Button
-          type="button"
-          variant="secondary"
-          instance={`${instance}-pick`}
-          layout="hug"
-          onClick={() => ref.current?.click()}
-        >
-          {fileButtonLabel(file, 'Seleccionar archivo')}
-        </Button>
+        {previewUrl ? (
+          <div data-alta-doc-thumb>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={previewUrl} alt={label} />
+            <Button
+              type="button"
+              variant="destructive"
+              instance={`${instance}-clear`}
+              className="absolute"
+              aria-label={`Eliminar ${label}`}
+              icon={<X size={10} strokeWidth={3} />}
+              onClick={() => {
+                onFile(null);
+                if (ref.current) ref.current.value = '';
+              }}
+            />
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="secondary"
+            instance={`${instance}-pick`}
+            layout="hug"
+            onClick={() => ref.current?.click()}
+          >
+            Seleccionar archivo
+          </Button>
+        )}
       </Field>
     </div>
   );
@@ -172,7 +202,7 @@ export function AltaPublicForm({ token, state }: Props) {
             </Field>
           </div>
           <div className="col-span-2 min-w-0">
-            <div data-alta-doc-picks className="grid grid-cols-2 gap-x-2">
+            <div data-alta-doc-picks className="grid grid-cols-2">
               <AltaIntakeFileField
                 instance="alta-public-dni-front"
                 htmlFor="alta-public-dni-front"
