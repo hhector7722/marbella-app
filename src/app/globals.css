@@ -2933,13 +2933,26 @@ button[data-element='catalog-filter'] {
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail'] {
   margin-top: 2px;
+  width: 100%;
+  min-width: 0;
   border-left-color: #fb923c;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-row'] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'] {
+  min-width: 0;
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'][data-segment-kind='hours'] {
   border-left-color: #fb923c;
-  overflow: visible;
-  text-overflow: clip;
-  white-space: nowrap;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'][data-segment-kind='pax'] {
   border-left-color: #f472b6;

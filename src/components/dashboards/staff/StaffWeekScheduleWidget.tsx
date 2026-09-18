@@ -28,6 +28,7 @@ import { Check, X } from 'lucide-react';
 import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
+import { formatEventClock } from '@/components/dashboards/staff/format-event-clock';
 
 const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const;
 
@@ -194,7 +195,7 @@ function formatDayEventDetailRows(acts: BarActivity[] | undefined): EventDetailR
     const grouped = groupActivities(primary);
     if (grouped.length === 0) return [];
     return grouped.map((act) => ({
-        hours: `${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`,
+        hours: `${formatEventClock(act.startTime)} - ${formatEventClock(act.endTime)}`,
         pax:
             act.totalParticipants != null && act.totalParticipants > 0
                 ? `${act.totalParticipants} pax`
@@ -311,9 +312,13 @@ function WeekendDayColumn({
                         )}
                     </div>
                     {eventDetailRows.length > 0 ? (
-                        <div data-element="weekend-evento-detail" className="flex w-full flex-col">
+                        <div data-element="weekend-evento-detail" className="flex w-full min-w-0 flex-col">
                             {eventDetailRows.map((row, i) => (
-                                <div key={i} className="grid w-full grid-cols-[max-content_max-content_minmax(0,1fr)] gap-x-1">
+                                <div
+                                    key={i}
+                                    data-element="weekend-evento-detail-row"
+                                    className="grid w-full min-w-0 grid-cols-3"
+                                >
                                     {(
                                         [
                                             { kind: 'hours', text: row.hours },
@@ -326,10 +331,8 @@ function WeekendDayColumn({
                                             data-element="weekend-evento-detail-value"
                                             data-segment-kind={cell.kind}
                                             className={cn(
-                                                "text-center text-[6px] lg:text-[11px] font-medium leading-none opacity-80",
-                                                cell.kind === 'hours'
-                                                    ? cn("shrink-0 whitespace-nowrap", masterMode && "font-semibold")
-                                                    : "min-w-0 truncate"
+                                                "min-w-0 w-full truncate text-center text-[6px] lg:text-[11px] font-medium leading-none opacity-80",
+                                                cell.kind === 'hours' && masterMode && "font-semibold",
                                             )}
                                         >
                                             {cell.text}

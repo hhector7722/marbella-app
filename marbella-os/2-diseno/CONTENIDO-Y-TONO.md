@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-18
 caducidad: 6 meses
 supersede: .cursor/rules/BAR-LA-MARBELLA-AI-OPERATING-PROTOCOL.mdc (regla Zero-Display)
 ---
@@ -104,6 +104,7 @@ Distinción crítica: **«vacío» significa cero, nunca «no lo sé»**. Un dat
 - Fecha corta en tablas densas: día y mes abreviado.
 - Hora: veinticuatro horas, dos dígitos.
 - **Excepción compacta en el widget de asistencia del Master**: la hora va sin cero inicial y los minutos solo se muestran cuando son exactamente :30. Es una regla de densidad del mosaico, no del formato general.
+- **Excepción compacta en las cards sáb/dom del widget de horario**: el horario del evento va sin cero inicial; los minutos solo se muestran cuando son exactamente :30; si no, la hora lleva `h` (`8h - 21:30`). El turno de la misma card no usa esta regla.
 - **Todas las fechas y horas se muestran en el tiempo local del negocio.** Europa/Madrid.
 - Un rango se escribe con guion y sin repetir el mes cuando coincide.
 - Una fecha relativa («hace 5 min») solo se usa en paneles en vivo, donde el tiempo transcurrido es el dato.

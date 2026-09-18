@@ -841,21 +841,40 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             join(SRC_ROOT, 'components/dashboards/staff/StaffWeekScheduleWidget.tsx'),
             'utf8'
         );
+        const eventClock = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/staff/format-event-clock.ts'),
+            'utf8'
+        );
         const weekScheduleCss = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(
             weekSchedule,
-            /grid-cols-\[max-content_max-content_minmax\(0,1fr\)\]/,
-            'el horario del evento toma el ancho de su contenido, no tres columnas iguales'
+            /grid-cols-3/,
+            'horario, participantes y categoría ocupan tres columnas iguales'
+        );
+        assert.match(
+            weekSchedule,
+            /formatEventClock\(act\.startTime\)[\s\S]{0,40}formatEventClock\(act\.endTime\)/,
+            'el horario del evento usa el reloj compacto con h'
+        );
+        assert.match(
+            eventClock,
+            /mins === '30'[\s\S]{0,80}\$\{h\}:30[\s\S]{0,40}\$\{h\}h/,
+            'el horario del evento muestra minutos solo si son :30; si no, lleva h'
+        );
+        assert.match(
+            weekScheduleCss,
+            /\[data-element='weekend-evento-detail-row'\][\s\S]{0,160}grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/,
+            'las tres columnas del detalle del evento tienen el mismo ancho'
+        );
+        assert.match(
+            weekScheduleCss,
+            /\[data-element='weekend-evento-detail-value'\][\s\S]{0,200}text-align:\s*center/,
+            'cada valor del detalle del evento se centra en su columna'
         );
         assert.doesNotMatch(
             weekSchedule,
             /masterMode && cell\.kind === 'hours'/,
             'las horas del evento no se abrevian solo en Master'
-        );
-        assert.match(
-            weekSchedule,
-            /cell\.kind === 'hours'[\s\S]{0,120}whitespace-nowrap/,
-            'las horas del evento no se truncan en Staff ni en Master'
         );
         assert.match(
             weekSchedule,

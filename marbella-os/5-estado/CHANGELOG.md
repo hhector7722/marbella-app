@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Horario: el evento se lee en compacto.** En las cards de sáb/dom, el tramo del evento muestra minutos solo si son :30; si no, la hora lleva `h` (`8h - 21:30`). El turno no cambia. [CONTENIDO-Y-TONO](../2-diseno/CONTENIDO-Y-TONO.md).
+
+- **Horario: sáb/dom reparte horario, pax y categoría en tres columnas iguales.** En las cards del widget, esa fila ocupa todo el ancho y cada valor queda centrado en su columna. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **Supervisor ya no es staff con otro nombre.** Puede editar la carta y ver recetas con precio; no abre DNI ni nóminas ajenas, no guarda horarios ni avisos, no escribe la nota del día de otra persona y el copiloto no le deja gestionar carta ni consultar coste laboral. [ACTORES-Y-ROLES](../1-producto/ACTORES-Y-ROLES.md).
 
 - **Plat Marbella: el emplatado llena la vajilla.** El plato deja los aros dibujados. Las tres raciones se sirven grandes, juntas y hasta el reborde, como un plato de restaurante.
