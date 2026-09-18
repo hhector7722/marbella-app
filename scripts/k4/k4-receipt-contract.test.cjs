@@ -12,6 +12,7 @@ const receiptMigration = read('supabase/migrations/20260914110257_k4_apply_recei
 const immutableFactsMigration = read('supabase/migrations/20260914110805_k4_protect_confirmed_receipt_facts.sql')
 const legacyDuplicateMigration = read('supabase/migrations/20260914111259_k4_block_legacy_purchase_duplicate.sql')
 const legacyCacheMigration = read('supabase/migrations/20260914153637_k4_bypass_legacy_stock_cache_for_receipts.sql')
+const canonicalPriceMigration = read('supabase/migrations/20260918164000_k4_canonical_price_without_pack_writer.sql')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const mappingModal = read('src/components/albaranes/LineMappingModal.tsx')
 const legacyPricesClient = read('src/app/dashboard/albaranes-precios/AlbaranesPreciosClient.tsx')
@@ -57,6 +58,24 @@ test('K4 inmoviliza los hechos confirmados y bloquea duplicar un PURCHASE legacy
   assert.match(legacyDuplicateMigration, /ALB-LINE-' \|\| NEW\.reference_id/)
   assert.match(legacyCacheMigration, /NEW\.origin = 'receipt_confirmation'/)
   assert.match(legacyCacheMigration, /UPDATE public\.ingredients/)
+})
+
+test('K4 guarda siempre precio canónico y ya no depende del writer legacy de pack', () => {
+  assert.match(canonicalPriceMigration, /SET current_price = v_normalized_price/)
+  assert.match(canonicalPriceMigration, /'price_model', 'canonical_purchase_unit'/)
+  assert.doesNotMatch(canonicalPriceMigration, /SET pack_price =/)
+  assert.doesNotMatch(canonicalPriceMigration, /supplier_pricing_mode = 'per_pack'/)
+  assert.doesNotMatch(canonicalPriceMigration, /v_new_pack_price|v_pack_content_in_purchase_unit/)
+})
+
+test('el mapeo de albarán pide precio observado y contenido, no factor manual', () => {
+  assert.match(mappingModal, /Precio del albarán/)
+  assert.match(mappingModal, /Contenido de cada unidad facturada/)
+  assert.match(mappingModal, /deriveReceiptPresentationEconomics/)
+  assert.match(mappingModal, /Resultado automático/)
+  assert.match(mappingModal, /updatePurchaseInvoiceLineAction/)
+  assert.doesNotMatch(mappingModal, /Factor de conversión \(avanzado\)/)
+  assert.doesNotMatch(mappingModal, /onOpenWizardPrice/)
 })
 
 test('la pantalla usa propuesta, vista previa y confirmación canónica, sin reparaciones legacy', () => {

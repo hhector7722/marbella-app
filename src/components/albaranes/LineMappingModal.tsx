@@ -10,6 +10,7 @@ import {
   ALBARAN_LINE_CONTENT_UNITS,
   billingMassVolumeNormForAuto,
   buildAutomaticSameFamilyDimensional,
+  deriveReceiptPresentationEconomics,
   ingredientPurchaseUnitNormForMapping,
   isSimpleAlbaranUnitMapping,
   sameFamilyAutomaticConversionCaption,
@@ -22,6 +23,7 @@ import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import {
   resolveLineMappingAction,
   searchIngredientsForMappingAction,
+  updatePurchaseInvoiceLineAction,
 } from '@/app/dashboard/albaranes/actions'
 import {
   applyReceiptLineAction,
@@ -91,7 +93,6 @@ export type LineMappingModalProps = {
   onClose: () => void
   onSuccess: () => void | Promise<void>
   onOpenWizardNew?: () => void
-  onOpenWizardPrice?: () => void
 }
 
 /** Una sola superficie derivada a la vez (ADR-0007). */
@@ -106,7 +107,6 @@ export function LineMappingModal({
   onClose,
   onSuccess,
   onOpenWizardNew,
-  onOpenWizardPrice,
 }: LineMappingModalProps) {
   useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
   const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Mapear línea albarán')
@@ -121,6 +121,7 @@ export function LineMappingModal({
   const [showAdvancedCalibration, setShowAdvancedCalibration] = useState(false)
   const [factor, setFactor] = useState('1')
   const [dimensional, setDimensional] = useState<LineDimensionalDraft>(EMPTY_DIMENSIONAL)
+  const [observedUnitPriceDraft, setObservedUnitPriceDraft] = useState('')
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<IngredientMappingSearchItem[]>([])
@@ -207,6 +208,7 @@ export function LineMappingModal({
     setLoading(true)
     setSearchQuery('')
     setSearchResults([])
+    setObservedUnitPriceDraft(line.unit_price == null ? '' : String(line.unit_price))
     try {
       const res = await resolveLineMappingAction({ invoiceId, lineId: line.id })
       if (!res.success) {
@@ -338,6 +340,36 @@ export function LineMappingModal({
   }
 
   const dimensionalParsed = useMemo(() => parseDimensionalPayload(dimensional), [dimensional])
+  const observedUnitPrice = useMemo(() => {
+    const raw = observedUnitPriceDraft.trim().replace(',', '.')
+    if (!raw) return null
+    const value = Number(raw)
+    return Number.isFinite(value) && value > 0 ? value : null
+  }, [observedUnitPriceDraft])
+
+  const purchaseUnitForPresentation = useMemo(
+    () =>
+      ingredientPurchaseUnitNormForMapping(
+        selectedIngredientMeta ?? { purchase_unit: ingredientPurchaseUnit }
+      ),
+    [selectedIngredientMeta, ingredientPurchaseUnit]
+  )
+
+  const presentationEconomics = useMemo(
+    () =>
+      deriveReceiptPresentationEconomics({
+        contentQty: dimensionalParsed.lineContentQty,
+        contentUnit: dimensionalParsed.lineContentUnit,
+        purchaseUnit: purchaseUnitForPresentation,
+        observedUnitPrice,
+      }),
+    [
+      dimensionalParsed.lineContentQty,
+      dimensionalParsed.lineContentUnit,
+      purchaseUnitForPresentation,
+      observedUnitPrice,
+    ]
+  )
 
   const billingMassVolumeNorm = useMemo(
     () => billingMassVolumeNormForAuto(dimensional.lineBillingUnit, line?.line_unit),
@@ -388,35 +420,32 @@ export function LineMappingModal({
   ])
 
   const canSave = useMemo(() => {
-    if (!ingredientId || !invoiceId || supplierId == null) return false
-    if (isSimpleMode || isAutoSameFamilyMode) return true
-    const f = Number(String(factor).replace(',', '.'))
-    if (!Number.isFinite(f) || f <= 0) return false
+    if (!ingredientId || !invoiceId || supplierId == null || observedUnitPrice == null) return false
     const { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
     if (!lineBillingUnit) return false
     if (lineContentQty == null || !Number.isFinite(lineContentQty) || lineContentQty <= 0) return false
-    if (!lineContentUnit) return false
+    if (!lineContentUnit || !presentationEconomics) return false
     return true
   }, [
     ingredientId,
     invoiceId,
     supplierId,
-    factor,
+    observedUnitPrice,
     dimensionalParsed,
-    isSimpleMode,
-    isAutoSameFamilyMode,
+    presentationEconomics,
   ])
 
   const proposalFingerprint = useMemo(
     () =>
       JSON.stringify({
         ingredientId,
-        factor: String(factor).trim(),
-        lineBillingUnit: dimensional.lineBillingUnit.trim().toLowerCase(),
+        factor: presentationEconomics?.conversionFactor ?? factor,
+        observedUnitPrice,
+        lineBillingUnit: String(line?.line_unit ?? dimensional.lineBillingUnit).trim().toLowerCase(),
         lineContentQty: dimensional.lineContentQty.trim().replace(',', '.'),
         lineContentUnit: dimensional.lineContentUnit.trim().toLowerCase(),
       }),
-    [ingredientId, factor, dimensional]
+    [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor]
   )
 
   async function handleSave() {
@@ -429,8 +458,9 @@ export function LineMappingModal({
       return
     }
 
-    let factorNum = Number(String(factor).replace(',', '.'))
-    let { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
+    let factorNum = presentationEconomics?.conversionFactor ?? Number(String(factor).replace(',', '.'))
+    let { lineContentQty, lineContentUnit } = dimensionalParsed
+    let lineBillingUnit = String(line.line_unit ?? dimensionalParsed.lineBillingUnit ?? '').trim()
 
     if (isAutoSameFamilyMode && selectedIngredientMeta && billingMassVolumeNorm) {
       const auto = buildAutomaticSameFamilyDimensional(
@@ -467,9 +497,25 @@ export function LineMappingModal({
       toast.error('Selecciona la unidad de contenido.')
       return
     }
+    if (observedUnitPrice == null) {
+      toast.error('Indica un precio facturado válido.')
+      return
+    }
 
     setSaving(true)
     try {
+      const storedPrice = line.unit_price == null ? null : Number(line.unit_price)
+      if (storedPrice == null || Math.abs(storedPrice - observedUnitPrice) > 0.00000001) {
+        const priceUpdate = await updatePurchaseInvoiceLineAction({
+          lineId: line.id,
+          patch: { unit_price: observedUnitPrice },
+        })
+        if (!priceUpdate.success) {
+          toast.error(priceUpdate.message)
+          return
+        }
+      }
+
       const res = await saveReceiptMappingProposalAction({
         invoiceId,
         lineId: line.id,
@@ -658,7 +704,7 @@ export function LineMappingModal({
               loading={saving}
               loadingLabel="Guardando…"
             >
-              Guardar propuesta
+              Guardar y revisar
             </Button>
           ) : null}
         </>
@@ -713,19 +759,6 @@ export function LineMappingModal({
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {onOpenWizardPrice && (
-                        <Button
-                          type="button"
-                          variant="tertiary"
-                          instance="albaran-line-mapping-edit-price"
-                          className="shrink-0"
-                          onClick={() => {
-                            onOpenWizardPrice()
-                          }}
-                        >
-                          Precio
-                        </Button>
-                      )}
                       <Button
                         type="button"
                         variant="tertiary"
@@ -781,85 +814,73 @@ export function LineMappingModal({
               </section>
 
               {ingredientId ? (
+                <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-1.5">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
+                    Precio del albarán
+                  </p>
+                  <div className="flex items-center gap-2 px-1">
+                    <input
+                      inputMode="decimal"
+                      value={observedUnitPriceDraft}
+                      onChange={(e) => {
+                        setObservedUnitPriceDraft(e.target.value)
+                        setReceiptPreview(null)
+                      }}
+                      aria-label="Precio facturado por unidad de línea"
+                      className="min-h-12 w-28 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
+                    />
+                    <span className="text-xs font-semibold text-zinc-700">
+                      € por {String(line.line_unit || 'unidad').trim()}
+                    </span>
+                  </div>
+                  <p className="px-1 text-[10px] leading-snug text-zinc-500">
+                    Es el precio que figura en el albarán. Si Docling lo leyó mal, corrígelo aquí.
+                  </p>
+                </section>
+              ) : null}
+
+              {ingredientId ? (
                 <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-2">
-                  {isAutoSameFamilyMode ? (
-                    <>
-                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                        Unidades
-                      </p>
-                      <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2 py-1.5 mx-1">
-                        <p className="text-[11px] font-medium text-emerald-950 leading-snug">
-                          {autoSameFamilyCaption ??
-                            `Conversión automática: 1 ${billingMassVolumeNorm} = 1 ${purchaseMassVolumeNorm}`}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="tertiary"
-                        className="w-full"
-                        instance="albaran-line-mapping-advanced-calibration"
-                        onClick={() => setShowAdvancedCalibration(true)}
-                      >
-                        Caja, ud u otra conversión…
-                      </Button>
-                    </>
-                  ) : isSimpleMode ? (
-                    <>
-                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                        Unidades
-                      </p>
-                      <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2 py-1.5 mx-1">
-                        <p className="text-[11px] font-medium text-emerald-950 leading-snug">
-                          1 unidad en el albarán = 1 unidad en almacén
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="tertiary"
-                        className="w-full"
-                        instance="albaran-line-mapping-advanced-calibration-simple"
-                        onClick={() => setShowAdvancedCalibration(true)}
-                      >
-                        Caja, litros u otra conversión…
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                        Conversión albarán → almacén
-                      </p>
-                      <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
-                        Indica qué trae cada unidad de factura (ej. una garrafa contiene 5 litros).
-                      </p>
+                  <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
+                    Contenido de cada unidad facturada
+                  </p>
+                  <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
+                    Indica qué contiene una unidad del albarán. La conversión y el precio por {purchaseUnitForPresentation || 'unidad de compra'} se calculan solos.
+                  </p>
 
                   <div className="flex flex-wrap items-center gap-1.5 px-1">
-                    <input
-                      value={dimensional.lineBillingUnit}
-                      onChange={(e) =>
-                        setDimensional((d) => ({ ...d, lineBillingUnit: e.target.value }))
-                      }
-                      placeholder="Garrafa"
-                      aria-label="Unidad de facturación"
-                      className="min-h-12 min-w-[7rem] flex-1 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#36606F]/50"
-                    />
-                    <span className="text-[11px] font-normal text-zinc-500 shrink-0 px-0.5">contiene</span>
+                    <span className="text-[11px] font-semibold text-zinc-700 shrink-0">
+                      1 {String(line.line_unit || 'unidad').trim()} contiene
+                    </span>
                     <input
                       inputMode="decimal"
                       value={dimensional.lineContentQty}
-                      onChange={(e) =>
-                        setDimensional((d) => ({ ...d, lineContentQty: e.target.value }))
-                      }
-                      placeholder="5"
-                      aria-label="Cantidad por unidad"
-                      className="min-h-12 w-20 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-[11px] font-normal text-zinc-900 tabular-nums outline-none focus:border-[#36606F]/50"
+                      onChange={(e) => {
+                        setShowAdvancedCalibration(true)
+                        setDimensional((d) => ({
+                          ...d,
+                          lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
+                          lineContentQty: e.target.value,
+                        }))
+                        setReceiptPreview(null)
+                      }}
+                      placeholder="125"
+                      aria-label="Cantidad contenida en una unidad facturada"
+                      className="min-h-12 w-24 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 tabular-nums outline-none focus:border-[#36606F]/50"
                     />
                     <select
                       value={dimensional.lineContentUnit}
-                      onChange={(e) =>
-                        setDimensional((d) => ({ ...d, lineContentUnit: e.target.value }))
-                      }
-                      aria-label="Unidad de contenido"
-                      className="min-h-12 min-w-[5.5rem] shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#36606F]/50"
+                      onChange={(e) => {
+                        setShowAdvancedCalibration(true)
+                        setDimensional((d) => ({
+                          ...d,
+                          lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
+                          lineContentUnit: e.target.value,
+                        }))
+                        setReceiptPreview(null)
+                      }}
+                      aria-label="Unidad del contenido"
+                      className="min-h-12 min-w-[5.5rem] shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
                     >
                       <option value="">—</option>
                       {ALBARAN_LINE_CONTENT_UNITS.map((u) => (
@@ -870,69 +891,23 @@ export function LineMappingModal({
                     </select>
                   </div>
 
-                  <p className="text-[10px] font-normal text-zinc-500 leading-snug mx-1">
-                    Precio guardado por{' '}
-                    <span className="font-semibold text-[#36606F]">{ingredientPurchaseUnit || 'ud'}</span>.
-                  </p>
-
-                  <label className="block pt-0.5 px-1">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
-                      Factor de conversión (avanzado)
-                    </span>
-                    <input
-                      inputMode="decimal"
-                      value={factor}
-                      onChange={(e) => setFactor(e.target.value)}
-                      className="mt-0.5 w-full min-h-12 rounded-lg border border-zinc-200 bg-zinc-50 px-2 text-[11px] font-normal text-zinc-700 tabular-nums outline-none focus:border-[#36606F]/40"
-                    />
-                  </label>
-
-                      {selectedIngredientMeta &&
-                      billingMassVolumeNorm != null &&
-                      sameMassVolumeFamilyBillingAndIngredient(
-                        billingMassVolumeNorm,
-                        selectedIngredientMeta
-                      ) ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="w-full"
-                          instance="albaran-line-mapping-auto-conversion"
-                          onClick={() => {
-                            const auto = buildAutomaticSameFamilyDimensional(
-                              billingMassVolumeNorm,
-                              selectedIngredientMeta
-                            )
-                            if (auto) {
-                              setDimensional({
-                                lineBillingUnit: auto.lineBillingUnit,
-                                lineContentQty: auto.lineContentQty,
-                                lineContentUnit: auto.lineContentUnit,
-                              })
-                              setFactor(String(auto.conversionFactor))
-                            }
-                            setShowAdvancedCalibration(false)
-                          }}
-                        >
-                          Volver a conversión automática
-                        </Button>
-                      ) : selectedIngredientMeta &&
-                        isSimpleAlbaranUnitMapping(selectedIngredientMeta, dimensional, factor) ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="w-full"
-                          instance="albaran-line-mapping-simple-unit"
-                          onClick={() => {
-                            setDimensional({ ...SIMPLE_ALBARAN_UNIT_DIMENSIONAL })
-                            setFactor('1')
-                            setShowAdvancedCalibration(false)
-                          }}
-                        >
-                          Volver a modo unidad simple
-                        </Button>
-                      ) : null}
-                    </>
+                  {presentationEconomics ? (
+                    <div className="mx-1 rounded-lg border border-[#36606F]/25 bg-[#eef5f7] px-2 py-2">
+                      <p className="text-[10px] font-medium text-zinc-600">Resultado automático</p>
+                      <p className="mt-0.5 text-sm font-black text-[#284c59]">
+                        {presentationEconomics.conversionFactor.toLocaleString('es-ES', { maximumFractionDigits: 6 })}{' '}
+                        {presentationEconomics.purchaseUnit} por {String(line.line_unit || 'unidad').trim()}
+                        {' · '}
+                        {presentationEconomics.normalizedUnitPrice.toLocaleString('es-ES', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 4,
+                        })} €/{presentationEconomics.purchaseUnit}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mx-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-900">
+                      Completa el contenido físico para calcular automáticamente el precio de compra.
+                    </p>
                   )}
                 </section>
               ) : null}

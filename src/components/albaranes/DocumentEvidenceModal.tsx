@@ -291,7 +291,7 @@ export function DocumentEvidenceModal({
                             }}
                             disabled={needsManualValues}
                           >
-                            {data.line.mapped_ingredient_id ? 'Cambiar mapping' : 'Mapear producto'}
+                            Mapear / cambiar producto
                           </Button>
                         )}
                       </div>

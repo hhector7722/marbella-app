@@ -1736,13 +1736,6 @@ export default function AlbaranesHistoricoClient({
                     if (!lineForMappingModal) return
                     openWizardForLine(lineForMappingModal, { ingredientId: null, initialName: lineForMappingModal.original_name || '' })
                   }}
-                  onOpenWizardPrice={() => {
-                    if (!lineForMappingModal) return
-                    openWizardForLine(lineForMappingModal, {
-                      ingredientId: lineForMappingModal.ingredient_id ? String(lineForMappingModal.ingredient_id) : null,
-                      initialName: null,
-                    })
-                  }}
                 />
 
                 <DocumentEvidenceModal
