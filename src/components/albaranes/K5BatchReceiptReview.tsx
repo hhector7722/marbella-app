@@ -76,7 +76,13 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
     [context]
   )
   const exceptionRows = useMemo(
-    () => context?.rows.filter((row) => ['needs_mapping', 'needs_review', 'order_review', 'unavailable'].includes(row.disposition)) ?? [],
+    () => context?.rows.filter((row) => {
+      if (!['needs_mapping', 'needs_review', 'order_review', 'unavailable'].includes(row.disposition)) return false
+      const handledByMappingStep =
+        !row.ingredientId
+        && (row.disposition === 'needs_mapping' || row.reviewReasons.includes('mapping_missing'))
+      return !handledByMappingStep
+    }) ?? [],
     [context]
   )
 
@@ -223,21 +229,36 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
 
           <div className="space-y-1.5">
             {readyRows.map((row) => (
-              <label key={row.proposalId} className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5">
+              <div key={row.proposalId} className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5">
                 <input
                   type="checkbox"
+                  aria-label={`Seleccionar ${row.sourceItemName}`}
                   checked={selected.has(row.proposalId)}
                   onChange={() => toggle(row.proposalId)}
                   className="h-4 w-4 shrink-0"
                 />
-                <div className="min-w-0 flex-1">
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 text-left"
+                  onClick={() => toggle(row.proposalId)}
+                >
                   <div className="truncate text-xs font-black text-zinc-900">{row.sourceItemName}</div>
                   <div className="mt-0.5 truncate text-[10px] font-semibold text-zinc-500">
                     → {row.ingredientName || 'Ingrediente'} · {qty(row.lineQuantity, row.lineUnit)} · {money(row.observedUnitPrice, row.lineUnit)}
                   </div>
-                </div>
+                </button>
+                {onResolveLine && row.lineId ? (
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    instance="k5-change-mapping"
+                    onClick={() => onResolveLine(row.lineId!)}
+                  >
+                    Cambiar mapping
+                  </Button>
+                ) : null}
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-              </label>
+              </div>
             ))}
           </div>
 
@@ -310,7 +331,7 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700">
               <AlertTriangle className="h-4 w-4" />
-              Excepciones · {exceptionRows.length}
+              Otras incidencias · {exceptionRows.length}
             </div>
             <Link href={`/dashboard/albaranes?id=${encodeURIComponent(invoiceId)}`} className="text-[10px] font-black text-zinc-700 underline underline-offset-2">
               Abrir albarán para resolverlas
