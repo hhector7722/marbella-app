@@ -421,7 +421,6 @@ export function LineMappingModal({
 
   const canSave = useMemo(() => {
     if (!ingredientId || !invoiceId || supplierId == null || observedUnitPrice == null) return false
-    if (isSimpleMode || isAutoSameFamilyMode) return true
     const { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
     if (!lineBillingUnit) return false
     if (lineContentQty == null || !Number.isFinite(lineContentQty) || lineContentQty <= 0) return false
@@ -434,8 +433,6 @@ export function LineMappingModal({
     observedUnitPrice,
     dimensionalParsed,
     presentationEconomics,
-    isSimpleMode,
-    isAutoSameFamilyMode,
   ])
 
   const proposalFingerprint = useMemo(
@@ -844,144 +841,55 @@ export function LineMappingModal({
 
               {ingredientId ? (
                 <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-2">
-                  {isAutoSameFamilyMode ? (
-                    <>
-                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                        Unidades
-                      </p>
-                      <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2 py-1.5 mx-1">
-                        <p className="text-[11px] font-medium text-emerald-950 leading-snug">
-                          {autoSameFamilyCaption ??
-                            `Conversión automática: 1 ${billingMassVolumeNorm} = 1 ${purchaseMassVolumeNorm}`}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="tertiary"
-                        className="w-full"
-                        instance="albaran-line-mapping-advanced-calibration"
-                        onClick={() => setShowAdvancedCalibration(true)}
-                      >
-                        Cambiar contenido
-                      </Button>
-                    </>
-                  ) : isSimpleMode ? (
-                    <>
-                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                        Unidades
-                      </p>
-                      <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2 py-1.5 mx-1">
-                        <p className="text-[11px] font-medium text-emerald-950 leading-snug">
-                          1 unidad en el albarán = 1 unidad en almacén
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="tertiary"
-                        className="w-full"
-                        instance="albaran-line-mapping-advanced-calibration-simple"
-                        onClick={() => setShowAdvancedCalibration(true)}
-                      >
-                        Cambiar contenido
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                        Contenido de cada unidad facturada
-                      </p>
-                      <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
-                        Solo indica qué contiene una unidad del albarán. El sistema calcula la conversión y el precio automáticamente.
-                      </p>
+                  <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
+                    Contenido de cada unidad facturada
+                  </p>
+                  <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
+                    Indica qué contiene una unidad del albarán. La conversión y el precio por {purchaseUnitForPresentation || 'unidad de compra'} se calculan solos.
+                  </p>
 
-                      <div className="flex flex-wrap items-center gap-1.5 px-1">
-                        <span className="text-[11px] font-semibold text-zinc-700 shrink-0">
-                          1 {String(line.line_unit || 'unidad').trim()} contiene
-                        </span>
-                        <input
-                          inputMode="decimal"
-                          value={dimensional.lineContentQty}
-                          onChange={(e) => {
-                            setDimensional((d) => ({
-                              ...d,
-                              lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
-                              lineContentQty: e.target.value,
-                            }))
-                            setReceiptPreview(null)
-                          }}
-                          placeholder="125"
-                          aria-label="Cantidad contenida en una unidad facturada"
-                          className="min-h-12 w-24 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 tabular-nums outline-none focus:border-[#36606F]/50"
-                        />
-                        <select
-                          value={dimensional.lineContentUnit}
-                          onChange={(e) => {
-                            setDimensional((d) => ({
-                              ...d,
-                              lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
-                              lineContentUnit: e.target.value,
-                            }))
-                            setReceiptPreview(null)
-                          }}
-                          aria-label="Unidad del contenido"
-                          className="min-h-12 min-w-[5.5rem] shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
-                        >
-                          <option value="">—</option>
-                          {ALBARAN_LINE_CONTENT_UNITS.map((u) => (
-                            <option key={u} value={u}>
-                              {u}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {selectedIngredientMeta &&
-                      billingMassVolumeNorm != null &&
-                      sameMassVolumeFamilyBillingAndIngredient(
-                        billingMassVolumeNorm,
-                        selectedIngredientMeta
-                      ) ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="w-full"
-                          instance="albaran-line-mapping-auto-conversion"
-                          onClick={() => {
-                            const auto = buildAutomaticSameFamilyDimensional(
-                              billingMassVolumeNorm,
-                              selectedIngredientMeta
-                            )
-                            if (auto) {
-                              setDimensional({
-                                lineBillingUnit: auto.lineBillingUnit,
-                                lineContentQty: auto.lineContentQty,
-                                lineContentUnit: auto.lineContentUnit,
-                              })
-                              setFactor(String(auto.conversionFactor))
-                            }
-                            setShowAdvancedCalibration(false)
-                          }}
-                        >
-                          Volver a conversión automática
-                        </Button>
-                      ) : selectedIngredientMeta &&
-                        isSimpleAlbaranUnitMapping(selectedIngredientMeta, dimensional, factor) ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="w-full"
-                          instance="albaran-line-mapping-simple-unit"
-                          onClick={() => {
-                            setDimensional({ ...SIMPLE_ALBARAN_UNIT_DIMENSIONAL })
-                            setFactor('1')
-                            setShowAdvancedCalibration(false)
-                          }}
-                        >
-                          Volver a modo unidad simple
-                        </Button>
-                      ) : null}
-                    </>
-                  )}
+                  <div className="flex flex-wrap items-center gap-1.5 px-1">
+                    <span className="text-[11px] font-semibold text-zinc-700 shrink-0">
+                      1 {String(line.line_unit || 'unidad').trim()} contiene
+                    </span>
+                    <input
+                      inputMode="decimal"
+                      value={dimensional.lineContentQty}
+                      onChange={(e) => {
+                        setShowAdvancedCalibration(true)
+                        setDimensional((d) => ({
+                          ...d,
+                          lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
+                          lineContentQty: e.target.value,
+                        }))
+                        setReceiptPreview(null)
+                      }}
+                      placeholder="125"
+                      aria-label="Cantidad contenida en una unidad facturada"
+                      className="min-h-12 w-24 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 tabular-nums outline-none focus:border-[#36606F]/50"
+                    />
+                    <select
+                      value={dimensional.lineContentUnit}
+                      onChange={(e) => {
+                        setShowAdvancedCalibration(true)
+                        setDimensional((d) => ({
+                          ...d,
+                          lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
+                          lineContentUnit: e.target.value,
+                        }))
+                        setReceiptPreview(null)
+                      }}
+                      aria-label="Unidad del contenido"
+                      className="min-h-12 min-w-[5.5rem] shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
+                    >
+                      <option value="">—</option>
+                      {ALBARAN_LINE_CONTENT_UNITS.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   {presentationEconomics ? (
                     <div className="mx-1 rounded-lg border border-[#36606F]/25 bg-[#eef5f7] px-2 py-2">
