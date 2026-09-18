@@ -20,6 +20,9 @@ const autoApplyRoute = read('src/app/api/internal/albaranes/k5/auto-apply/route.
 const doclingWorker = read('supabase/functions/docling-evidence-worker/index.ts')
 const normalizer = read('src/lib/albaranes/k5/normalizer.ts')
 const mappedSnapshot = read('src/lib/albaranes/k5/mapped-snapshot.ts')
+const batchActions = read('src/app/dashboard/albaranes/k5/batch-actions.ts')
+const batchReview = read('src/components/albaranes/K5BatchReceiptReview.tsx')
+const evidenceModal = read('src/components/albaranes/DocumentEvidenceModal.tsx')
 
 test('las migraciones K5 tienen una versión única por timestamp', () => {
   const names = fs.readdirSync(path.join(root, 'supabase/migrations'))
@@ -206,4 +209,26 @@ test('normalizador no contiene fallbacks económicos de factor 1 ni latest', () 
   assert.match(normalizer, /mapping_presentation_incompatible/)
   assert.match(normalizer, /needs_mapping/)
   assert.match(normalizer, /needs_review/)
+})
+
+
+test('las excepciones K5 sin línea tienen salida manual sin efectos económicos', () => {
+  assert.match(batchActions, /prepareK5ManualReviewLineAction/)
+  assert.match(batchActions, /from\('purchase_invoice_lines'\)[\s\S]*\.insert\(payload\)/)
+  const manualStart = batchActions.indexOf('export async function prepareK5ManualReviewLineAction')
+  const manualEnd = batchActions.indexOf('export async function previewK5BatchReceiptsAction', manualStart)
+  const manualAction = batchActions.slice(manualStart, manualEnd)
+  assert.doesNotMatch(manualAction, /stock_movements|ingredient_price_history|purchase_receipt_confirmations|apply_receipt_line/)
+  assert.match(batchReview, /Completar manualmente/)
+  assert.match(batchReview, /dashboard\/albaranes\?id=.*&line=/)
+  assert.match(evidenceModal, /Completar datos/)
+  assert.match(evidenceModal, /Mapear producto/)
+})
+
+test('la corrección humana versiona los datos completados antes de K4', () => {
+  assert.match(receiptActions, /manual_line_override: humanLineOverride/)
+  assert.match(receiptActions, /source_item_name: hasResolvedName \? lineName : current\.source_item_name/)
+  assert.match(receiptActions, /reason === 'missing_quantity'/)
+  assert.match(receiptActions, /reason === 'missing_unit_price'/)
+  assert.match(receiptActions, /reason === 'missing_line_amount'/)
 })
