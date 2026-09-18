@@ -58,7 +58,7 @@ describe('carta-plate-composition', () => {
     assert.equal(pestoSolo.entrante?.top, a.entrante.top)
   })
 
-  it('pesto + calamares + verduras caben en la zona segura con vajilla entre ellos', () => {
+  it('pesto + calamares + verduras forman una ración compacta en zona segura', () => {
     const placed = bySlot([
       food('entrante', '141', 'PASTA AL PESTO'),
       food('principal', '146', 'CALAMARES'),
@@ -79,12 +79,27 @@ describe('carta-plate-composition', () => {
       assert.ok(box.right <= PLATE_SAFE_MAX + 0.05)
       assert.ok(box.bottom <= PLATE_SAFE_MAX + 0.05)
     }
-    assert.ok(b.right < m.left + 6, 'bol y calamares apenas se pisan')
-    assert.ok(s.top > b.bottom - 8, 'las verduras no tapan el bol')
-    assert.ok(s.top > m.bottom - 8, 'las verduras no tapan el principal')
-    assert.ok(bowl.scale < 1)
-    assert.ok(main.scale < 0.85)
-    assert.ok(side.scale < 0.85)
+
+    const overlapBowlMain = b.right - m.left
+    const overlapBowlSide = b.bottom - s.top
+    const overlapMainSide = m.bottom - s.top
+    assert.ok(overlapBowlMain > 4, 'bol y calamares se rozan')
+    assert.ok(overlapBowlMain < 26, 'bol y calamares no se tapan')
+    assert.ok(overlapBowlSide > 4, 'las verduras conviven con el bol')
+    assert.ok(overlapMainSide > 4, 'las verduras conviven con el principal')
+    assert.ok(s.top > b.top + (b.bottom - b.top) * 0.35, 'las verduras no tapan el bol')
+    assert.ok(s.top > m.top + (m.bottom - m.top) * 0.35, 'las verduras no tapan el principal')
+
+    assert.ok(bowl.scale >= 0.92)
+    assert.ok(main.scale >= 0.9)
+    assert.ok(side.scale >= 0.9)
+
+    const bowlCx = bowl.left + bowl.width / 2
+    const mainCx = main.left + main.width / 2
+    const sideCy = side.top + side.height / 2
+    assert.ok(bowlCx > 35 && bowlCx < 45, 'el bol baja hacia el centro')
+    assert.ok(mainCx > 58 && mainCx < 68, 'los calamares bajan hacia el centro')
+    assert.ok(sideCy > 58 && sideCy < 68, 'las verduras suben hacia el centro')
   })
 
   it('dos principales no comparten asiento', () => {

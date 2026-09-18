@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Alta laboral: el formulario público cabe de un vistazo.** Nombre y apellidos, documento y afiliación, nacionalidad y nacimiento, teléfono y correo, anverso y reverso van en la misma fila. La nacionalidad se elige de lista (España primero), el teléfono son 9 dígitos y el correo puede añadir `@gmail.com`. [ADR-0015](../4-decisiones/ADR-0015-alta-laboral-por-token.md).
+
+- **Plat Marbella: ración compacta, no miniaturas.** Bol, principal y guarnición se sirven más grandes y más juntos, con un solape ligero; la porcelana se ve alrededor del conjunto, no entre tres iconos.
+
 - **Plat Marbella: ración sobre vajilla, no a rebosar.** Las tres elecciones caben enteras en el hueco del plato, con porcelana visible alrededor; el bol, los calamares y las verduras ya no se comen el borde.
 
 - **Plat Marbella: un plato, no tres recortes.** Las raciones se colocan enteras sobre la vajilla según su tipo (bol, principal, guarnición), no según el orden de elección. El bol se ve completo.

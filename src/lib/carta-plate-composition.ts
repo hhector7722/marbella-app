@@ -53,23 +53,23 @@ export const PLATE_SAFE_MAX = 88
 /**
  * Ajustes por artículo real del Plat Marbella.
  * El tipo visual no tiene por qué coincidir con el tramo (p. ej. berenjena es principal).
- * Escala < 1: no se rellena el círculo; se sirve una ración sobre vajilla blanca.
+ * Escala cercana a 1: ración compacta sobre vajilla, no miniatura ni llenado a rebosar.
  */
 const VISUAL_BY_ARTICULO: Readonly<Record<number, PlateFoodVisual>> = {
-  141: { type: 'bowl', scale: 0.86, rotate: -4 }, // Pasta al pesto
-  142: { type: 'bowl', scale: 0.86, rotate: -3 }, // Pasta carbonara
-  207: { type: 'bowl', scale: 0.84 }, // Crema
-  191: { type: 'bowl', scale: 0.88 }, // Ensalada de atún
-  204: { type: 'bowl', scale: 0.86 }, // Revuelto con champiñones
-  138: { type: 'main', scale: 0.88, rotate: 4 }, // Berenjena a la parmesana
-  145: { type: 'main', scale: 0.9, rotate: 5 }, // Entraña
-  147: { type: 'main', scale: 0.88, rotate: 3 }, // Pollo
-  146: { type: 'main', scale: 0.78, rotate: -3 }, // Calamares
-  211: { type: 'main', scale: 0.88, rotate: 3 }, // Contramuslo
-  189: { type: 'main', scale: 0.88, rotate: 4 }, // Roastbeef
-  144: { type: 'main', scale: 0.86, rotate: -3 }, // Caballa
-  203: { type: 'side', scale: 0.86 }, // Patatas panadera
-  197: { type: 'side', scale: 0.76 }, // Verduras al horno
+  141: { type: 'bowl', scale: 0.98, rotate: -4 }, // Pasta al pesto
+  142: { type: 'bowl', scale: 0.98, rotate: -3 }, // Pasta carbonara
+  207: { type: 'bowl', scale: 0.94 }, // Crema
+  191: { type: 'bowl', scale: 0.96 }, // Ensalada de atún
+  204: { type: 'bowl', scale: 0.96 }, // Revuelto con champiñones
+  138: { type: 'main', scale: 0.96, rotate: 4 }, // Berenjena a la parmesana
+  145: { type: 'main', scale: 0.96, rotate: 5 }, // Entraña
+  147: { type: 'main', scale: 0.96, rotate: 3 }, // Pollo
+  146: { type: 'main', scale: 0.95, rotate: -2 }, // Calamares
+  211: { type: 'main', scale: 0.96, rotate: 3 }, // Contramuslo
+  189: { type: 'main', scale: 0.96, rotate: 4 }, // Roastbeef
+  144: { type: 'main', scale: 0.95, rotate: -3 }, // Caballa
+  203: { type: 'side', scale: 0.95 }, // Patatas panadera
+  197: { type: 'side', scale: 0.94 }, // Verduras al horno
 }
 
 const BOWL_NAME =
@@ -90,7 +90,7 @@ function seat(
   return { kind, cx, cy, w, h, z, rotate }
 }
 
-/** Layouts en % del hueco. Asientos pequeños: queda vajilla blanca entre raciones. */
+/** Layouts en % del hueco. El trío canónico es compacto: vajilla alrededor, no entre raciones. */
 const LAYOUTS: Readonly<Record<string, readonly Seat[]>> = {
   bowl: [seat('bowl', 50, 44, 36, 36, 2)],
   main: [seat('main', 50, 46, 36, 34, 3)],
@@ -122,9 +122,9 @@ const LAYOUTS: Readonly<Record<string, readonly Seat[]>> = {
   ],
 
   'bowl+main+side': [
-    seat('bowl', 33, 34, 34, 34, 2, -4),
-    seat('main', 67, 34, 34, 32, 3, 4),
-    seat('side', 50, 70, 36, 30, 4),
+    seat('bowl', 38, 40, 46, 46, 2, -2),
+    seat('main', 64, 41, 50, 48, 3, 2),
+    seat('side', 50, 64, 50, 42, 4),
   ],
   'bowl+main+main': [
     seat('bowl', 50, 32, 32, 32, 2),
@@ -359,7 +359,7 @@ export function placePlateFoods(inputs: readonly PlateFoodInput[]): PlateFoodPla
           kind: row.kind,
           ...box,
           rotate: box.rotate + (visual.rotate ?? 0),
-          scale: visual.scale ?? 0.9,
+          scale: visual.scale ?? 0.96,
           x: visual.x ?? 0,
           y: visual.y ?? 0,
         }),
