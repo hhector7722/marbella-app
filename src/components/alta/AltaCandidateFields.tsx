@@ -68,7 +68,7 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
   const phone = digitsPhoneEs(values.phone);
 
   return (
-    <div data-alta-candidate-fields className="grid grid-cols-2 items-start gap-x-2 gap-y-2">
+    <div data-alta-candidate-fields className="grid grid-cols-2 items-start gap-x-2">
       <div className="min-w-0">
         <Field instance={`${instancePrefix}-first-name`} label="Nombre" htmlFor={`${instancePrefix}-first-name`} error={errors.firstName}>
           <input
@@ -145,9 +145,9 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
       </div>
       <div className="col-span-2 min-w-0">
         <Field instance={`${instancePrefix}-domicilio`} label="Domicilio completo" htmlFor={`${instancePrefix}-domicilio`} error={errors.domicilio}>
-          <textarea
+          <input
             id={`${instancePrefix}-domicilio`}
-            rows={2}
+            autoComplete="street-address"
             value={values.domicilio}
             onChange={(e) => onChange('domicilio', e.target.value)}
             disabled={disabled}

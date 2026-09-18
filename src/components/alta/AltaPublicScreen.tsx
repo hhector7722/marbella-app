@@ -29,6 +29,7 @@ export function AltaPublicScreen({
       titleAlign="center"
       showBackButton={false}
       template="form"
+      fillViewport
       className="alta-public-screen"
       maxWidthClass="w-full"
       cardClassName="mx-auto max-w-lg"

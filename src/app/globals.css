@@ -2125,6 +2125,9 @@ html[data-quick-tool='open'] main {
 [data-component='Field'][data-invalid='true'] [data-element='control'] button {
   border-color: var(--color-negativo);
 }
+[data-alta-candidate-fields] {
+  row-gap: var(--espacio-2);
+}
 [data-alta-candidate-fields] [data-component='Field'] [data-element='control'] input,
 [data-alta-candidate-fields] [data-component='Field'] [data-element='control'] select,
 [data-alta-candidate-fields] [data-component='Field'] [data-element='control'] textarea {
@@ -2134,10 +2137,13 @@ html[data-quick-tool='open'] main {
   padding-inline: var(--espacio-2);
   line-height: 1;
 }
-[data-alta-candidate-fields] [data-component='Field'] [data-element='control'] textarea {
-  height: auto;
-  min-height: calc(var(--tactil-minimo) / 2);
-  line-height: 1.2;
+[data-alta-candidate-fields] [data-component='Field'] [data-element='control'] select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
+}
+[data-alta-candidate-fields] [data-component='Field'] [data-element='control'] select::-ms-expand {
+  display: none;
 }
 [data-alta-candidate-fields] [data-alta-date-wrap] {
   position: relative;
@@ -2177,6 +2183,28 @@ html[data-quick-tool='open'] main {
 }
 [data-component='PageScreen'].alta-public-screen [data-element='header'][data-title-align='center'] [data-element='title-block'] {
   padding-inline: calc(var(--espacio-4) + 3rem);
+}
+[data-component='PageScreen'].alta-public-screen[data-fill-viewport='true'] {
+  min-height: 100dvh;
+  padding-bottom: var(--espacio-4);
+}
+[data-component='PageScreen'].alta-public-screen [data-component='Surface'][data-variant='page'] {
+  align-self: center;
+  width: 100%;
+}
+[data-component='PageScreen'].alta-public-screen [data-element='body'] {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+[data-component='PageScreen'].alta-public-screen [data-alta-candidate-fields] {
+  flex: 1 1 auto;
+  align-content: space-between;
+  row-gap: var(--espacio-4);
+}
+[data-component='PageScreen'].alta-public-screen [data-instance='alta-public-dni-images'] > [data-element='control'] {
+  display: none;
 }
 
 /*

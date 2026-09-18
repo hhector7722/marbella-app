@@ -161,30 +161,33 @@ export function AltaPublicForm({ token, state }: Props) {
         </div>
       }
     >
-      <form id="alta-public-form" className="flex flex-col gap-3" onSubmit={onSubmit}>
+      <form id="alta-public-form" className="flex min-h-0 flex-1 flex-col gap-3" onSubmit={onSubmit}>
         <AltaCandidateFields values={values} errors={errors} onChange={onChange} instancePrefix="alta-public">
           <div className="col-span-2 min-w-0">
             <Field
               instance="alta-public-dni-images"
               label="Imagen del documento de identidad (DNI/NIE/Pasaporte)"
             >
-              <div data-alta-doc-picks className="grid grid-cols-2 gap-x-2">
-                <AltaIntakeFileField
-                  instance="alta-public-dni-front"
-                  htmlFor="alta-public-dni-front"
-                  label="Anverso"
-                  file={front}
-                  onFile={setFront}
-                />
-                <AltaIntakeFileField
-                  instance="alta-public-dni-back"
-                  htmlFor="alta-public-dni-back"
-                  label="Reverso"
-                  file={back}
-                  onFile={setBack}
-                />
-              </div>
+              {null}
             </Field>
+          </div>
+          <div className="col-span-2 min-w-0">
+            <div data-alta-doc-picks className="grid grid-cols-2 gap-x-2">
+              <AltaIntakeFileField
+                instance="alta-public-dni-front"
+                htmlFor="alta-public-dni-front"
+                label="Anverso"
+                file={front}
+                onFile={setFront}
+              />
+              <AltaIntakeFileField
+                instance="alta-public-dni-back"
+                htmlFor="alta-public-dni-back"
+                label="Reverso"
+                file={back}
+                onFile={setBack}
+              />
+            </div>
           </div>
         </AltaCandidateFields>
         {error ? (
