@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { sendScheduleNoteNotification } from '@/app/actions/notifications';
 import { Button } from '@/components/ui/button';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
@@ -203,6 +204,10 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                     .from('schedule_day_notes')
                     .insert({ user_id: effectiveUserId, date, content });
                 if (insertError) throw insertError;
+                void sendScheduleNoteNotification({
+                    date,
+                    authorUserId: effectiveUserId,
+                });
             }
             setComposing(false);
             setDraft('');

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { isSandboxRequest } from '@/lib/sandbox/server';
 import {
     NOTIFICATION_HECTOR_EMAIL,
@@ -10,6 +11,10 @@ import {
     cashClosingHistoryUrl,
     staffDashboardScheduleUrl,
 } from '@/lib/notification-routes';
+import {
+    buildScheduleNotePushPayload,
+    isCivilYmd,
+} from '@/lib/schedule-note-push';
 import webpush from 'web-push';
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -314,6 +319,136 @@ export async function sendClosingNotification(data: {
             .from('push_subscriptions')
             .delete()
             .in('user_id', expiredSubIds);
+    }
+
+    return { success: true, sentCount };
+}
+
+function getServiceSupabase() {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return null;
+    return createServiceClient(url, key, {
+        auth: { persistSession: false, autoRefreshToken: false },
+    });
+}
+
+/** Push a Héctor cuando alguien añade una nota nueva en el modal de un día del horario. */
+export async function sendScheduleNoteNotification(input: {
+    date: string;
+    authorUserId: string;
+}): Promise<{ success: boolean; sentCount?: number; error?: string }> {
+    if (await isSandboxRequest()) return { success: true, sentCount: 0 };
+    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+        return { success: false, error: 'Notificaciones push no configuradas (falta VAPID en el servidor)' };
+    }
+
+    const date = input.date?.trim() ?? '';
+    const authorUserId = input.authorUserId?.trim() ?? '';
+    if (!isCivilYmd(date) || !authorUserId) {
+        return { success: false, error: 'Datos de nota no válidos' };
+    }
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, error: 'Sesión no válida' };
+    }
+
+    if (authorUserId !== user.id) {
+        const { data: callerProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle();
+        if (!callerProfile?.role || !SCHEDULE_NOTIFY_ROLES.has(callerProfile.role)) {
+            return { success: false, error: 'Sin permiso para avisar de esta nota' };
+        }
+    }
+
+    const [noteResult, authorResult] = await Promise.all([
+        supabase
+            .from('schedule_day_notes')
+            .select('content')
+            .eq('user_id', authorUserId)
+            .eq('date', date)
+            .maybeSingle(),
+        supabase
+            .from('profiles')
+            .select('first_name')
+            .eq('id', authorUserId)
+            .maybeSingle(),
+    ]);
+
+    if (noteResult.error || !noteResult.data) {
+        return { success: false, error: 'No se encontró la nota' };
+    }
+
+    const admin = getServiceSupabase();
+    if (!admin) {
+        return { success: false, error: 'Faltan credenciales de servicio para el aviso' };
+    }
+
+    const { data: hectorProfile, error: hectorError } = await admin
+        .from('profiles')
+        .select('id, email')
+        .ilike('email', NOTIFICATION_HECTOR_EMAIL)
+        .maybeSingle();
+
+    if (hectorError || !hectorProfile?.id) {
+        console.error('Hector profile not found for schedule note notify:', hectorError);
+        return { success: false, error: 'No se encontró el perfil de Hector para el aviso' };
+    }
+
+    if (normalizeNotificationEmail(hectorProfile.email) !== NOTIFICATION_HECTOR_EMAIL) {
+        return { success: false, error: 'Perfil de Hector no coincide con el email esperado' };
+    }
+
+    const { data: subscriptions, error: subError } = await admin
+        .from('push_subscriptions')
+        .select('subscription, user_id')
+        .eq('user_id', hectorProfile.id);
+
+    if (subError) {
+        console.error('Error fetching Hector push subscription for schedule note:', subError);
+        return { success: false, error: subError.message };
+    }
+
+    if (!subscriptions || subscriptions.length === 0) {
+        return { success: true, sentCount: 0 };
+    }
+
+    const payload = JSON.stringify(
+        buildScheduleNotePushPayload({
+            authorFirstName: authorResult.data?.first_name,
+            dateYmd: date,
+            content: String(noteResult.data.content ?? ''),
+        }),
+    );
+
+    const results = await Promise.allSettled(
+        subscriptions.map((sub) =>
+            webpush.sendNotification(sub.subscription as any, payload),
+        ),
+    );
+
+    const sentCount = results.filter((r) => r.status === 'fulfilled').length;
+    const expiredSubIds = results
+        .map((r, idx) => {
+            if (r.status !== 'rejected') return null;
+            const statusCode = (r.reason as { statusCode?: number })?.statusCode;
+            if (statusCode === 404 || statusCode === 410) {
+                return subscriptions[idx].user_id;
+            }
+            return null;
+        })
+        .filter(Boolean);
+
+    if (expiredSubIds.length > 0) {
+        await admin
+            .from('push_subscriptions')
+            .delete()
+            .in('user_id', expiredSubIds as string[]);
     }
 
     return { success: true, sentCount };
