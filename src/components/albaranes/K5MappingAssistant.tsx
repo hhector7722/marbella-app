@@ -13,13 +13,13 @@ import {
   type K5MappingAssistantState,
 } from '@/app/dashboard/albaranes/k5/mapping-assistant-actions'
 
-type Props = { invoiceId: string }
+type Props = { invoiceId: string; onResolveLine?: (lineId: string) => void }
 
 function formatQty(value: number, unit: string): string {
   return `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 3 }).format(value)} ${unit}`
 }
 
-export function K5MappingAssistant({ invoiceId }: Props) {
+export function K5MappingAssistant({ invoiceId, onResolveLine }: Props) {
   const [state, setState] = useState<K5MappingAssistantState | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
@@ -112,10 +112,10 @@ export function K5MappingAssistant({ invoiceId }: Props) {
         <div>
           <div className="flex items-center gap-2 text-base font-black text-zinc-900">
             <WandSparkles className="h-4 w-4" />
-            Resolver productos nuevos de una vez
+            1 · Resolver productos nuevos o dudosos
           </div>
           <p className="mt-1 max-w-3xl text-xs font-medium leading-relaxed text-zinc-600">
-            K5 cruza el diccionario histórico con el catálogo y valida la presentación. Solo guarda mappings versionados; no toca stock ni precios hasta la confirmación posterior del lote.
+            Aquí decides solo los productos que K5 no puede resolver por sí solo. Las coincidencias seguras se pueden aceptar juntas; las dudosas se mapean una a una.
           </p>
         </div>
         <Button
@@ -126,7 +126,7 @@ export function K5MappingAssistant({ invoiceId }: Props) {
           disabled={saving}
         >
           <RefreshCw className="h-4 w-4" />
-          Actualizar
+          Recargar
         </Button>
       </div>
 
@@ -142,7 +142,7 @@ export function K5MappingAssistant({ invoiceId }: Props) {
         <div className="mt-4">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div className="text-[10px] font-black uppercase tracking-wider text-emerald-700">
-              Sugerencias validadas · {state.suggestions.length}
+              Coincidencias listas para aceptar · {state.suggestions.length}
             </div>
             <button
               type="button"
@@ -190,7 +190,7 @@ export function K5MappingAssistant({ invoiceId }: Props) {
               loading={saving}
               loadingLabel="Guardando…"
             >
-              Guardar {selected.size} mapping{selected.size === 1 ? '' : 's'}
+              Aceptar {selected.size} coincidencia{selected.size === 1 ? '' : 's'}
             </Button>
           </div>
         </div>
@@ -201,17 +201,29 @@ export function K5MappingAssistant({ invoiceId }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700">
               <AlertTriangle className="h-4 w-4" />
-              A revisar manualmente · {state.unresolved.length}
+              Necesitan una decisión · {state.unresolved.length}
             </div>
-            <Link href="/dashboard/albaranes" className="text-[10px] font-black text-zinc-700 underline underline-offset-2">
-              Abrir albarán
+            <Link href={`/dashboard/albaranes?id=${encodeURIComponent(invoiceId)}`} className="text-[10px] font-black text-zinc-700 underline underline-offset-2">
+              Abrir albarán completo
             </Link>
           </div>
           <div className="mt-2 space-y-1.5">
             {state.unresolved.map((item) => (
-              <div key={item.proposalId} className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2">
-                <div className="truncate text-xs font-black text-zinc-900">{item.sourceItemName}</div>
-                <div className="mt-0.5 text-[10px] font-semibold text-amber-900">{item.reason}</div>
+              <div key={item.proposalId} className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-black text-zinc-900">{item.sourceItemName}</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-amber-900">{item.reason}</div>
+                </div>
+                {onResolveLine ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    instance="k5-map-product"
+                    onClick={() => onResolveLine(item.lineId)}
+                  >
+                    Mapear producto
+                  </Button>
+                ) : null}
               </div>
             ))}
           </div>
