@@ -93,7 +93,7 @@ export type LineMappingModalProps = {
   onClose: () => void
   onSuccess: () => void | Promise<void>
   onOpenWizardNew?: () => void
- }
+}
 
 /** Una sola superficie derivada a la vez (ADR-0007). */
 
@@ -107,7 +107,7 @@ export function LineMappingModal({
   onClose,
   onSuccess,
   onOpenWizardNew,
- }: LineMappingModalProps) {
+}: LineMappingModalProps) {
   useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
   const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Mapear línea albarán')
   const [loading, setLoading] = useState(false)
