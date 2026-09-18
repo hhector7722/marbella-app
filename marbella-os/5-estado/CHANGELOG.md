@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Alta laboral pública: anverso y reverso como el resto de datos.** Sin card azul ni caja blanca. El concepto es «Imagen del documento de identidad (DNI/NIE/Pasaporte)»; cada lado se elige con un botón a la izquierda.
+
+- **Alta laboral pública: cajas a la mitad, fecha y nacionalidad en blanco, correo con `@gmail.com`.** Las cajas miden la mitad del táctil. Nacionalidad y nacimiento salen vacías; al pulsar se abre el desplegable o el calendario. El correo trae `@gmail.com` escrito y se puede borrar.
+
 - **Asistencia de plantilla: cada fichaje es una card hundida.** Nombre y marca (horas, F/P o cruz) van juntos, sin aire interior, sobre `color.superficie.hundida`. La cruz de no registrado mide lo mismo que la hora. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
 
 - **Reporte: participantes con teclado numérico y finalización en 15:30.** Al contar personas sale el teclado de dígitos. El desplegable de hora de fin se abre en 15:30; se puede subir o bajar por el mismo listado. La hora de inicio no cambia.

@@ -2123,19 +2123,37 @@ html[data-quick-tool='open'] main {
 [data-alta-candidate-fields] [data-component='Field'] [data-element='control'] input,
 [data-alta-candidate-fields] [data-component='Field'] [data-element='control'] select,
 [data-alta-candidate-fields] [data-component='Field'] [data-element='control'] textarea {
+  min-height: calc(var(--tactil-minimo) / 2);
+  height: calc(var(--tactil-minimo) / 2);
+  padding-block: 0;
   padding-inline: var(--espacio-2);
+  line-height: 1;
 }
-[data-alta-candidate-fields] [data-component='Button'][data-instance$='-gmail'] {
-  color: var(--color-texto-invertido);
+[data-alta-candidate-fields] [data-component='Field'] [data-element='control'] textarea {
+  height: auto;
+  min-height: calc(var(--tactil-minimo) / 2);
+  line-height: 1.2;
 }
-[data-alta-candidate-fields] [data-component='Button'][data-instance$='-gmail']::before {
-  background-color: transparent;
-  background-image: none;
-  border-color: var(--color-texto-invertido);
+[data-alta-candidate-fields] [data-alta-date-wrap] {
+  position: relative;
 }
-[data-alta-candidate-fields] [data-component='Button'][data-instance$='-gmail']:hover:not(:disabled)::before {
-  background-color: rgb(255 255 255 / 0.1);
-  background-image: none;
+[data-alta-candidate-fields] input[data-alta-date='cover'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+[data-alta-candidate-fields] input[data-alta-date='cover']:disabled {
+  pointer-events: none;
+}
+[data-alta-doc-picks] [data-element='control'] {
+  display: flex;
+  justify-content: flex-start;
 }
 [data-alta-doc-picks] [data-component='Button'] {
   color: var(--color-texto-invertido);

@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Notice } from '@/components/ui/Notice';
 import { AltaPublicScreen } from '@/components/alta/AltaPublicScreen';
 import { AltaCandidateFields, EMPTY_CANDIDATE } from '@/components/alta/AltaCandidateFields';
+import { Field } from '@/components/ui/Field';
 import { candidateFieldsSchema } from '@/lib/alta-laboral/schema.ts';
 import type { CandidateFields } from '@/lib/alta-laboral/types.ts';
 import type { PublicIntakeState } from '@/lib/alta-laboral/types.ts';
@@ -33,38 +34,41 @@ function fileButtonLabel(file: File | null, fallback: string) {
   return file.name.length > 18 ? `${file.name.slice(0, 15)}…` : file.name;
 }
 
-function AltaIntakeFileButton({
+function AltaIntakeFileField({
   instance,
-  caption,
+  label,
+  htmlFor,
   file,
   onFile,
 }: {
   instance: string;
-  caption: string;
+  label: string;
+  htmlFor: string;
   file: File | null;
   onFile: (file: File | null) => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
-    <div className="flex flex-col items-center gap-1">
-      <p className="text-[11px] font-black text-[var(--color-texto-invertido)]">{caption}</p>
+    <div className="min-w-0">
       <input
         ref={ref}
+        id={htmlFor}
         type="file"
         accept="image/jpeg,image/png,image/webp"
         className="sr-only"
         onChange={(e) => onFile(e.target.files?.[0] ?? null)}
       />
-      <Button
-        type="button"
-        variant="secondary"
-        instance={instance}
-        layout="hug"
-        className="mx-auto"
-        onClick={() => ref.current?.click()}
-      >
-        {fileButtonLabel(file, 'Seleccionar archivo')}
-      </Button>
+      <Field instance={instance} label={label} htmlFor={htmlFor}>
+        <Button
+          type="button"
+          variant="secondary"
+          instance={`${instance}-pick`}
+          layout="hug"
+          onClick={() => ref.current?.click()}
+        >
+          {fileButtonLabel(file, 'Seleccionar archivo')}
+        </Button>
+      </Field>
     </div>
   );
 }
@@ -158,11 +162,31 @@ export function AltaPublicForm({ token, state }: Props) {
       }
     >
       <form id="alta-public-form" className="flex flex-col gap-3" onSubmit={onSubmit}>
-        <AltaCandidateFields values={values} errors={errors} onChange={onChange} instancePrefix="alta-public" />
-        <div data-alta-doc-picks className="grid grid-cols-2 gap-2 rounded-[var(--radio-control)] bg-[var(--color-envolvente)] px-2 py-3">
-          <AltaIntakeFileButton instance="alta-public-dni-front" caption="Anverso" file={front} onFile={setFront} />
-          <AltaIntakeFileButton instance="alta-public-dni-back" caption="Reverso" file={back} onFile={setBack} />
-        </div>
+        <AltaCandidateFields values={values} errors={errors} onChange={onChange} instancePrefix="alta-public">
+          <div className="col-span-2 min-w-0">
+            <Field
+              instance="alta-public-dni-images"
+              label="Imagen del documento de identidad (DNI/NIE/Pasaporte)"
+            >
+              <div data-alta-doc-picks className="grid grid-cols-2 gap-x-2">
+                <AltaIntakeFileField
+                  instance="alta-public-dni-front"
+                  htmlFor="alta-public-dni-front"
+                  label="Anverso"
+                  file={front}
+                  onFile={setFront}
+                />
+                <AltaIntakeFileField
+                  instance="alta-public-dni-back"
+                  htmlFor="alta-public-dni-back"
+                  label="Reverso"
+                  file={back}
+                  onFile={setBack}
+                />
+              </div>
+            </Field>
+          </div>
+        </AltaCandidateFields>
         {error ? (
           <Notice instance="alta-public-error" variant="critical" title="No se ha enviado">
             {error}

@@ -1,10 +1,8 @@
 'use client';
 
-import { useRef } from 'react';
-import { Calendar } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Field } from '@/components/ui/Field';
-import { Button } from '@/components/ui/button';
-import { appendGmailAddress, digitsPhoneEs } from '@/lib/alta-laboral/contact.ts';
+import { digitsPhoneEs, DEFAULT_CANDIDATE_EMAIL } from '@/lib/alta-laboral/contact.ts';
 import { formatCivilDateEs } from '@/lib/alta-laboral/dates.ts';
 import { nacionalidadOptions } from '@/lib/alta-laboral/nacionalidades.ts';
 import type { CandidateFields } from '@/lib/alta-laboral/types.ts';
@@ -15,16 +13,12 @@ type Props = {
   onChange: (field: keyof CandidateFields, value: string) => void;
   instancePrefix: string;
   disabled?: boolean;
+  children?: ReactNode;
 };
 
-function openDatePicker(input: HTMLInputElement | null) {
-  if (!input) return;
-  const picker = input as HTMLInputElement & { showPicker?: () => void };
-  if (typeof picker.showPicker === 'function') picker.showPicker();
-  else {
-    input.focus();
-    input.click();
-  }
+function placeCaretAtStart(input: HTMLInputElement) {
+  if (input.value !== DEFAULT_CANDIDATE_EMAIL) return;
+  requestAnimationFrame(() => input.setSelectionRange(0, 0));
 }
 
 function AltaBirthDateControl({
@@ -32,46 +26,44 @@ function AltaBirthDateControl({
   value,
   onChange,
   disabled,
-  error,
 }: {
   id: string;
   value: string;
   onChange: (next: string) => void;
   disabled?: boolean;
-  error?: string;
 }) {
-  const ref = useRef<HTMLInputElement>(null);
-  const label = value ? formatCivilDateEs(value) : 'Elegir fecha';
-
   return (
-    <div className="relative">
-      <button
-        type="button"
-        id={id}
-        disabled={disabled}
-        onClick={() => openDatePicker(ref.current)}
-        className="flex w-full min-h-[var(--tactil-minimo)] items-center gap-1.5 rounded-[var(--radio-control)] border border-[var(--color-borde-marcado)] bg-[var(--color-superficie)] px-[var(--espacio-2)] text-left text-base font-bold text-[var(--color-texto)]"
-        aria-invalid={error ? true : undefined}
-      >
-        <Calendar size={14} className="shrink-0 opacity-80" aria-hidden />
-        <span className="min-w-0 truncate">{label}</span>
-      </button>
+    <div data-alta-date-wrap>
       <input
-        ref={ref}
-        type="date"
-        data-picker="overlay"
         tabIndex={-1}
+        readOnly
+        disabled={disabled}
+        value={value ? formatCivilDateEs(value) : ''}
         aria-hidden
+      />
+      <input
+        id={id}
+        type="date"
+        data-alta-date="cover"
         value={value}
         min="1920-01-01"
         onChange={(e) => onChange(e.target.value)}
+        onClick={(e) => {
+          const picker = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+          if (typeof picker.showPicker !== 'function') return;
+          try {
+            picker.showPicker();
+          } catch {
+            /* el clic nativo ya abre el calendario */
+          }
+        }}
         disabled={disabled}
       />
     </div>
   );
 }
 
-export function AltaCandidateFields({ values, errors, onChange, instancePrefix, disabled }: Props) {
+export function AltaCandidateFields({ values, errors, onChange, instancePrefix, disabled, children }: Props) {
   const nacionalidades = nacionalidadOptions(values.nacionalidad);
   const phone = digitsPhoneEs(values.phone);
 
@@ -127,7 +119,7 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
             onChange={(e) => onChange('nacionalidad', e.target.value)}
             disabled={disabled}
           >
-            <option value="">Elige nacionalidad</option>
+            <option value="" />
             {nacionalidades.map((name) => (
               <option key={name} value={name}>
                 {name}
@@ -148,7 +140,6 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
             value={values.fechaNacimiento}
             onChange={(next) => onChange('fechaNacimiento', next)}
             disabled={disabled}
-            error={errors.fechaNacimiento}
           />
         </Field>
       </div>
@@ -177,7 +168,7 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
           />
         </Field>
       </div>
-      <div className="flex min-w-0 flex-col">
+      <div className="min-w-0">
         <Field instance={`${instancePrefix}-email`} label="Correo electrónico" htmlFor={`${instancePrefix}-email`} error={errors.email}>
           <input
             id={`${instancePrefix}-email`}
@@ -185,20 +176,10 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
             autoComplete="email"
             value={values.email}
             onChange={(e) => onChange('email', e.target.value)}
+            onFocus={(e) => placeCaretAtStart(e.currentTarget)}
             disabled={disabled}
           />
         </Field>
-        <Button
-          type="button"
-          variant="secondary"
-          instance={`${instancePrefix}-gmail`}
-          layout="hug"
-          className="self-start"
-          disabled={disabled}
-          onClick={() => onChange('email', appendGmailAddress(values.email))}
-        >
-          @gmail.com
-        </Button>
       </div>
       <div className="col-span-2 min-w-0">
         <Field instance={`${instancePrefix}-iban`} label="IBAN" htmlFor={`${instancePrefix}-iban`} error={errors.bankAccount}>
@@ -211,6 +192,7 @@ export function AltaCandidateFields({ values, errors, onChange, instancePrefix, 
           />
         </Field>
       </div>
+      {children}
     </div>
   );
 }
@@ -224,6 +206,6 @@ export const EMPTY_CANDIDATE: CandidateFields = {
   fechaNacimiento: '',
   domicilio: '',
   phone: '',
-  email: '',
+  email: DEFAULT_CANDIDATE_EMAIL,
   bankAccount: '',
 };

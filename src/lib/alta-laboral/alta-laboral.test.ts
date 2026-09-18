@@ -4,7 +4,7 @@ import { canGenerateAltaPdf, missingAltaPdfFields } from './completeness.ts';
 import { formatCivilDateEs } from './dates.ts';
 import { candidateToRow, intakeToProfilePatch } from './mapping.ts';
 import { buildAltaLaboralPdf } from '../pdf/alta-laboral-pdf.ts';
-import { appendGmailAddress, digitsPhoneEs } from './contact.ts';
+import { appendGmailAddress, DEFAULT_CANDIDATE_EMAIL, digitsPhoneEs } from './contact.ts';
 import { NACIONALIDADES } from './nacionalidades.ts';
 import { candidateFieldsSchema, contractFieldsSchema } from './schema.ts';
 import { generateIntakeToken, hashIntakeToken } from './token.ts';
@@ -181,5 +181,6 @@ describe('alta laboral', () => {
   it('añade @gmail.com al correo', () => {
     assert.equal(appendGmailAddress('hector'), 'hector@gmail.com');
     assert.equal(appendGmailAddress('hector@outlook.com'), 'hector@gmail.com');
+    assert.equal(DEFAULT_CANDIDATE_EMAIL, '@gmail.com');
   });
 });

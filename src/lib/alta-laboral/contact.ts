@@ -6,10 +6,12 @@ export function digitsPhoneEs(raw: string): string {
   return digits.slice(0, 9);
 }
 
+export const DEFAULT_CANDIDATE_EMAIL = '@gmail.com';
+
 export function appendGmailAddress(value: string): string {
   const trimmed = value.trim();
-  if (!trimmed) return '@gmail.com';
+  if (!trimmed) return DEFAULT_CANDIDATE_EMAIL;
   const at = trimmed.indexOf('@');
-  if (at === -1) return `${trimmed}@gmail.com`;
-  return `${trimmed.slice(0, at)}@gmail.com`;
+  if (at === -1) return `${trimmed}${DEFAULT_CANDIDATE_EMAIL}`;
+  return `${trimmed.slice(0, at)}${DEFAULT_CANDIDATE_EMAIL}`;
 }
