@@ -72,6 +72,33 @@ function getFirstName(log: PlantillaDayLog): string {
     return first.split(/\s+/)[0] || '?';
 }
 
+const LOG_NAME_CLASS =
+    'min-w-0 truncate text-[6px] lg:text-[10px] font-normal leading-none text-zinc-600';
+const LOG_HOURS_CLASS =
+    'flex shrink-0 items-center gap-0 text-[6px] lg:text-[10px] font-bold leading-none';
+
+/**
+ * Card hundida que abraza nombre + marca: sin padding, ancho y alto del
+ * contenido. La cruz de no registrado mide 1em, el mismo cuerpo que las horas.
+ */
+function PlantillaLogRow({
+    name,
+    trailing,
+}: {
+    name: string;
+    trailing: React.ReactNode;
+}) {
+    return (
+        <div
+            data-element="plantilla-log-row"
+            className="inline-flex max-w-full min-w-0 items-center gap-1 leading-none"
+        >
+            <span className={LOG_NAME_CLASS}>{name}</span>
+            {trailing}
+        </div>
+    );
+}
+
 /** "08:30" → "8" · "14:00" → "14". Solo la hora, sin minutos ni cero inicial. */
 function formatHourOnly(time: string | null | undefined): string {
     if (!time) return '';
@@ -86,7 +113,7 @@ export function PlantillaWeekCard({
     onDayClick,
     maxRows = MAX_ROWS_DEFAULT,
     timeSeparator = '/',
-    showRowDividers = true,
+    showRowDividers: _showRowDividers = true,
     inTimeClassName = 'text-emerald-600',
     outTimeClassName = 'text-rose-600',
     timeMono = true,
@@ -125,7 +152,7 @@ export function PlantillaWeekCard({
                                 {day.dayNumber}
                             </span>
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 lg:mt-6 lg:pb-1.5 w-full overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                <div className="flex h-full w-full flex-col items-stretch justify-evenly gap-[3px] lg:gap-1.5">
+                                <div className="flex h-full w-full flex-col items-start justify-evenly gap-[3px] lg:gap-1.5">
                                     {(() => {
                                         const logs = day.logs || [];
                                         const overflow = logs.length > maxRows ? logs.length - maxRows + 1 : 0;
@@ -133,88 +160,77 @@ export function PlantillaWeekCard({
 
                                         return (
                                             <>
-                                                {displayLogs.map((log, idx) => {
+                                                {displayLogs.map((log) => {
                                                     const special = SPECIAL_EVENTS[log.event_type || 'regular'];
                                                     const isForgotClockOut = log.clock_out_show_no_registrada === true;
                                                     const name = getFirstName(log);
                                                     const inHour = formatHourOnly(log.in_time);
                                                     const outHour = formatHourOnly(log.out_time);
-                                                    const needsLineBelow = idx < displayLogs.length - 1 || overflow > 0;
 
                                                     if (special) {
                                                         return (
-                                                            <div
+                                                            <PlantillaLogRow
                                                                 key={log.id}
-                                                                className="relative flex w-full min-w-0 flex-row items-center"
-                                                            >
-                                                                <span className="min-w-0 max-w-[66%] flex-1 truncate text-[6px] lg:text-[10px] font-normal leading-none text-zinc-600">
-                                                                    {name}
-                                                                </span>
-                                                                <span className={cn("absolute left-3/4 -translate-x-1/2 text-[7px] lg:text-[10px] font-black leading-none", special.text)}>
-                                                                    {special.label}
-                                                                </span>
-                                                                {needsLineBelow && showRowDividers && (
-                                                                    <div className="absolute h-px bg-gray-100 left-0.5 right-0.5" style={{ top: 'calc(100% + 1px)' }} />
-                                                                )}
-                                                            </div>
+                                                                name={name}
+                                                                trailing={
+                                                                    <span
+                                                                        className={cn(LOG_HOURS_CLASS, 'font-black', special.text)}
+                                                                        data-week-log-hours
+                                                                    >
+                                                                        {special.label}
+                                                                    </span>
+                                                                }
+                                                            />
                                                         );
                                                     }
 
                                                     if (log.event_type === 'no_registered') {
                                                         return (
-                                                            <div
+                                                            <PlantillaLogRow
                                                                 key={log.id}
-                                                                className="relative flex w-full min-w-0 flex-row items-center"
-                                                            >
-                                                                <span className="min-w-0 max-w-[66%] flex-1 truncate text-[6px] lg:text-[10px] font-normal leading-none text-zinc-600">
-                                                                    {name}
-                                                                </span>
-                                                                <span
-                                                                    className="absolute left-3/4 inline-flex -translate-x-1/2 items-center justify-center"
-                                                                    data-week-log-hours
-                                                                    data-day-state="no-registered"
-                                                                    aria-label="No registrado"
-                                                                >
-                                                                    <X
-                                                                        data-element="no-registered-cross"
-                                                                        size={14}
-                                                                        strokeWidth={2.5}
-                                                                        className="h-3.5 w-3.5 shrink-0 text-red-600 lg:h-4 lg:w-4"
-                                                                        aria-hidden
-                                                                    />
-                                                                </span>
-                                                                {needsLineBelow && showRowDividers && (
-                                                                    <div className="absolute h-px bg-gray-100 left-0.5 right-0.5" style={{ top: 'calc(100% + 1px)' }} />
-                                                                )}
-                                                            </div>
+                                                                name={name}
+                                                                trailing={
+                                                                    <span
+                                                                        className={cn(LOG_HOURS_CLASS, 'text-red-600')}
+                                                                        data-week-log-hours
+                                                                        data-day-state="no-registered"
+                                                                        aria-label="No registrado"
+                                                                    >
+                                                                        <X
+                                                                            data-element="no-registered-cross"
+                                                                            strokeWidth={2}
+                                                                            className="block h-[1em] w-[1em] shrink-0"
+                                                                            aria-hidden
+                                                                        />
+                                                                    </span>
+                                                                }
+                                                            />
                                                         );
                                                     }
 
                                                     return (
-                                                        <div
+                                                        <PlantillaLogRow
                                                             key={log.id}
-                                                            className="relative flex w-full min-w-0 flex-row items-center justify-between gap-1"
-                                                        >
-                                                            <span className="min-w-0 flex-1 truncate text-[6px] lg:text-[10px] font-normal leading-none text-zinc-600">
-                                                                {name}
-                                                            </span>
-                                                            <span className={cn("flex shrink-0 items-center gap-0 text-[6px] lg:text-[10px] font-bold leading-none", timeMono && "font-mono")} data-week-log-hours>
-                                                                <span className={isForgotClockOut ? outTimeClassName : inTimeClassName}>
-                                                                    {inHour || '—'}
-                                                                </span>
-                                                                {outHour ? (
-                                                                    <>
+                                                            name={name}
+                                                            trailing={
+                                                                <span
+                                                                    className={cn(LOG_HOURS_CLASS, timeMono && 'font-mono')}
+                                                                    data-week-log-hours
+                                                                >
+                                                                    <span className={isForgotClockOut ? outTimeClassName : inTimeClassName}>
+                                                                        {inHour || '—'}
+                                                                    </span>
+                                                                    {outHour ? (
+                                                                        <>
+                                                                            <span className="font-normal text-zinc-600">-</span>
+                                                                            <span className={outTimeClassName}>{outHour}</span>
+                                                                        </>
+                                                                    ) : !hideSeparatorWhenNoOut ? (
                                                                         <span className="font-normal text-zinc-600">-</span>
-                                                                        <span className={outTimeClassName}>{outHour}</span>
-                                                                    </>
-                                                                ) : !hideSeparatorWhenNoOut ? (
-                                                                    <span className="font-normal text-zinc-600">-</span>
-                                                                ) : null}
-                                                            </span>
-                                                            {needsLineBelow && showRowDividers && (
-                                                                <div className="absolute h-px bg-gray-100 left-0.5 right-0.5" style={{ top: 'calc(100% + 1px)' }} />
-                                                            )}
-                                                        </div>
+                                                                    ) : null}
+                                                                </span>
+                                                            }
+                                                        />
                                                     );
                                                 })}
                                                 {overflow > 0 && (

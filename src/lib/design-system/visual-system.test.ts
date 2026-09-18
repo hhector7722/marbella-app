@@ -1123,6 +1123,24 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
     });
 
+    it('en plantilla, F/P y la cruz ocupan el hueco derecho de las horas', () => {
+        const plantilla = readFileSync(
+            join(SRC_ROOT, 'app/staff/history/PlantillaWeekCard.tsx'),
+            'utf8',
+        );
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(plantilla, /PlantillaLogRow/);
+        assert.match(plantilla, /data-element="plantilla-log-row"/);
+        assert.match(plantilla, /h-\[1em\]/);
+        assert.match(css, /--color-superficie-hundida/);
+        assert.match(css, /\[data-element='plantilla-log-row'\]/);
+        assert.doesNotMatch(
+            plantilla,
+            /left-3\/4/,
+            'F/X no se anclan al 75%: ocupan el hueco derecho de las horas',
+        );
+    });
+
     it('el detalle de un día de asistencia es overlay dark con cards de papel', () => {
         const detail = readFileSync(
             join(SRC_ROOT, 'components/modals/AttendanceDetailModal.tsx'),

@@ -9,6 +9,7 @@
 :root {
   background-color: var(--color-envolvente);
   --color-superficie: #ffffff;
+  --color-superficie-hundida: #fafafa;
   --color-borde: #f4f4f5;
   --color-borde-marcado: #e4e4e7;
   --color-texto: #18181b;
@@ -136,6 +137,15 @@
   .month-cal-cell {
     padding: 0.25rem;
   }
+}
+
+/* Plantilla: zona hundida que abraza nombre + marca, sin aire interior. */
+.month-cal-cell [data-element='plantilla-log-row'] {
+  background-color: var(--color-superficie-hundida);
+}
+.month-cal-cell [data-element='plantilla-log-row'] [data-element='no-registered-cross'] {
+  width: 1em;
+  height: 1em;
 }
 
 /* Cromo P3 de Cierres: franja zinc-50 + tarjeta al 97 %. */
