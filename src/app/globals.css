@@ -142,7 +142,6 @@
 /* Plantilla: zona hundida a ancho de columna; la marca no pega al canto. */
 .month-cal-cell [data-element='plantilla-log-row'] {
   background-color: var(--color-superficie-inactiva);
-  box-shadow: inset 0 0 0 1px var(--color-borde-marcado);
   padding-inline: var(--espacio-1);
 }
 .month-cal-cell [data-element='plantilla-log-row'] [data-week-log-hours] {

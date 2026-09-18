@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Asistencia de plantilla: las cards de fila no llevan contorno.** El agrupado se lee solo con `color.superficie.inactiva`, sin filete. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
+
 - **Alta laboral pública: filas más aireadas, nacionalidad sin flecha y domicilio a la misma altura.** El formulario se reparte en el alto visible. Entre el concepto del documento y anverso/reverso hay más espacio. La nacionalidad ya no muestra la flecha nativa.
 
 - **Asistencia de plantilla: la marca se lee a la derecha.** Horas, cruz y F/P quedan justificadas al canto de la columna, con `espacio.1` de margen. La card de cada fila usa `color.superficie.inactiva` y un filete `color.borde.marcado` para verse sobre el papel sin gritar. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).

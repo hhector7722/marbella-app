@@ -1136,7 +1136,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /\[data-element='plantilla-log-row'\]/);
         assert.match(css, /padding-inline: var\(--espacio-1\)/);
         assert.match(css, /--color-superficie-inactiva/);
-        assert.match(css, /--color-borde-marcado/);
+        assert.doesNotMatch(
+            css,
+            /\[data-element='plantilla-log-row'\] \{[^}]*box-shadow/,
+            'la card de plantilla no lleva filete',
+        );
         assert.doesNotMatch(
             plantilla,
             /left-3\/4/,
