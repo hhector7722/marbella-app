@@ -38,9 +38,13 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+<<<<<<< Updated upstream
 - **Alta laboral pública: anverso y reverso como el resto de datos.** Sin card azul ni caja blanca. El concepto es «Imagen del documento de identidad (DNI/NIE/Pasaporte)»; cada lado se elige con un botón a la izquierda.
 
 - **Alta laboral pública: cajas a la mitad, fecha y nacionalidad en blanco, correo con `@gmail.com`.** Las cajas miden la mitad del táctil. Nacionalidad y nacimiento salen vacías; al pulsar se abre el desplegable o el calendario. El correo trae `@gmail.com` escrito y se puede borrar.
+=======
+- **Reporte: el logo sube y se agranda.** Sin el hueco de la barra de la app ni el título de PageScreen, el logo queda pegado al canto superior y se lee a 96 px, por encima de las cards del fin de semana.
+>>>>>>> Stashed changes
 
 - **Asistencia de plantilla: cada fichaje es una card hundida.** Nombre y marca (horas, F/P o cruz) van juntos, sin aire interior, sobre `color.superficie.hundida`. La cruz de no registrado mide lo mismo que la hora. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
 

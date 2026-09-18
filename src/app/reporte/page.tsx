@@ -592,12 +592,13 @@ export default function ReportePage() {
       template="form"
       maxWidthClass="max-w-lg"
       contentClassName="p-0"
+      className="reporte-screen"
     >
     <div className="reporte-container px-3 overflow-x-hidden">
       <div className="max-w-lg mx-auto pt-0 pb-1">
         <form id="reportForm" className="space-y-1" onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}>
-          <div className="flex justify-center mb-1">
-            <img src="/icons/logo-white.png" alt="Bar La Marbella" className="h-10 w-auto object-contain" />
+          <div className="flex justify-center pt-2 mb-1">
+            <img src="/icons/logo-white.png" alt="Bar La Marbella" className="reporte-logo object-contain" />
           </div>
           <div id="daysContainer" className="space-y-4">
             {renderDayGroup('Dissabte')}

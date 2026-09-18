@@ -13,6 +13,8 @@ import {
 export default function MainWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isLogin = pathname === '/login' || pathname.startsWith('/alta');
+    const isPublicForm = pathname.startsWith('/reporte');
+    const hideAppChrome = isLogin || isPublicForm;
     const fullscreenCarta = isFullscreenCartaPath(pathname);
     const internalScrollShell = isInternalScrollShellPath(pathname);
     const appShellScroll = isAppShellScrollPage(pathname);
@@ -22,14 +24,14 @@ export default function MainWrapper({ children }: { children: React.ReactNode })
     return (
         <main
             data-app-shell={
-                !isLogin && !fullscreenCarta && !isDesignSystem ? 'true' : undefined
+                !hideAppChrome && !fullscreenCarta && !isDesignSystem ? 'true' : undefined
             }
             className={cn(
             'min-h-screen',
-            !isLogin && !fullscreenCarta && !isDesignSystem && (
+            !hideAppChrome && !fullscreenCarta && !isDesignSystem && (
                 dashboardMosaic ? 'pt-header-safe-tight' : 'pt-header-safe'
             ),
-            !isLogin && !fullscreenCarta && !appShellScroll && 'pb-[calc(var(--shell-bottom-inset)+var(--espacio-2))]'
+            !hideAppChrome && !fullscreenCarta && !appShellScroll && 'pb-[calc(var(--shell-bottom-inset)+var(--espacio-2))]'
         )}>
             <PullToRefresh enabled={!isLogin && !internalScrollShell}>
                 {children}

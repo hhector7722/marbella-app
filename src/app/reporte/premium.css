@@ -5,6 +5,19 @@ body:has(.reporte-container) {
     background-image: none !important;
 }
 
+[data-component='PageScreen'].reporte-screen [data-element='chrome'] {
+    display: none;
+}
+
+[data-component='PageScreen'].reporte-screen [data-element='body'] {
+    padding-top: 0;
+}
+
+.reporte-container .reporte-logo {
+    height: 6rem;
+    width: auto;
+}
+
 .reporte-container {
     --primary: #6366f1;
     --primary-hover: #4f46e5;
