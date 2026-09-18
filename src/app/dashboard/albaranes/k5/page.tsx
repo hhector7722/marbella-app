@@ -48,9 +48,9 @@ export default async function K5ReviewPage({
     <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-black text-zinc-900">Revisión K5 de albaranes</h1>
+          <h1 className="text-lg font-black text-zinc-900">Revisar albaranes</h1>
           <p className="mt-1 text-xs font-medium text-zinc-600">
-            Docling aporta evidencia; K5 propone; K4 sigue siendo el único productor económico.
+            Resuelve solo las excepciones y confirma las líneas reconocidas. El detalle técnico queda oculto al final.
           </p>
         </div>
         <Link href="/dashboard/albaranes" className="text-xs font-black text-zinc-700 underline underline-offset-4">
@@ -66,7 +66,7 @@ export default async function K5ReviewPage({
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[18rem_minmax(0,1fr)]">
           <div className="rounded-2xl border border-zinc-200 bg-white p-2">
             <div className="mb-2 px-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
-              Documentos · {result.invoices.length}
+              Albaranes para revisar · {result.invoices.length}
             </div>
             <div className="flex max-h-[72vh] flex-col gap-1 overflow-y-auto">
               {result.invoices.map((invoice) => (
