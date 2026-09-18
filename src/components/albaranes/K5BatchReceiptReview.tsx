@@ -374,9 +374,17 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
                     type="button"
                     variant="primary"
                     instance="k5-review-exception"
-                    onClick={() => onResolveLine(row.lineId!)}
+                    onClick={() => {
+                      if (row.disposition === 'needs_mapping') {
+                        onResolveLine(row.lineId!)
+                        return
+                      }
+                      window.location.assign(
+                        `/dashboard/albaranes?id=${encodeURIComponent(invoiceId)}&line=${encodeURIComponent(row.lineId!)}`
+                      )
+                    }}
                   >
-                    {row.disposition === 'needs_mapping' ? 'Mapear producto' : 'Revisar línea'}
+                    {row.disposition === 'needs_mapping' ? 'Mapear producto' : 'Completar / revisar'}
                   </Button>
                 ) : !row.lineId ? (
                   <Button
