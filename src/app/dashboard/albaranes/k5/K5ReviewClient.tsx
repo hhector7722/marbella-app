@@ -100,7 +100,7 @@ export default function K5ReviewClient({ initialInvoices, initialSelectedId }: P
         <K5BatchReceiptReview invoiceId={selected.id} onResolveLine={openMapping} />
       </div>
 
-      <details ${selected.activeProposals === 0 ? 'open' : ''} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
+      <details open={selected.activeProposals === 0} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
         <summary className="cursor-pointer text-xs font-black text-zinc-600">
           <span className="inline-flex items-center gap-1.5">
             <Wrench className="h-3.5 w-3.5" />
