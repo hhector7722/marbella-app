@@ -11,6 +11,7 @@ const profileMissingMigration = read('supabase/migrations/20260915194600_k5_opti
 const supersessionMigration = read('supabase/migrations/20260915194700_k5_supersession_chain.sql')
 const idempotentRetryMigration = read('supabase/migrations/20260915194800_k5_idempotent_receipt_retry.sql')
 const priceScaleMigration = read('supabase/migrations/20260915195000_k5_compare_price_at_canonical_scale.sql')
+const trustedLegacyMigration = read('supabase/migrations/20260918114615_k5_import_trusted_legacy_mappings.sql')
 const autoReceiptMigration = read('supabase/migrations/20260917215500_k5_service_auto_receipt_delegate.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
@@ -100,6 +101,22 @@ test('automatización Docling está firmada y ocurre entre evidencia persistida 
   assert.match(doclingWorker, /k4AutoApply = \{ ok: false, error: errorMessage\(error\) \}/)
 })
 
+test('legacy seguro se importa solo como proposed y sin efectos económicos', () => {
+  assert.match(trustedLegacyMigration, /'proposed'::public\.purchase_mapping_version_status/)
+  assert.match(trustedLegacyMigration, /'k5-legacy-import:' \|\| e\.id::text/)
+  assert.match(trustedLegacyMigration, /private\.k4_convert_quantity/)
+  assert.match(trustedLegacyMigration, /legacy_key_counts/)
+  assert.doesNotMatch(trustedLegacyMigration, /'confirmed'::public\.purchase_mapping_version_status/)
+  assert.doesNotMatch(trustedLegacyMigration, /stock_movements|ingredient_price_history|purchase_receipt_confirmations/)
+})
+
+test('auto-apply solo permite confirmar proposed con provenance legacy estructural', () => {
+  assert.match(autoProposalRoute, /isK5ReusableMappingVersion/)
+  assert.match(autoApplyRoute, /isTrustedLegacyImportedMappingVersion/)
+  assert.match(autoApplyRoute, /mapping_will_be_confirmed === true && !trustedLegacyImport/)
+  assert.match(autoApplyRoute, /mapping_not_reusable_leaf/)
+})
+
 test('K5 no escribe ledger, precios ni confirmaciones directamente', () => {
   const forbidden = [
     "from('stock_movements')",
@@ -126,11 +143,12 @@ test('autoaplicado K4 tiene gates duros y usa preview antes de confirmar', () =>
   assert.match(autoApplyRoute, /status\) !== 'ready_for_review'/)
   assert.match(autoApplyRoute, /review_reasons/)
   assert.match(autoApplyRoute, /warnings_present/)
-  assert.match(autoApplyRoute, /mapping_not_confirmed_leaf/)
+  assert.match(autoApplyRoute, /mapping_not_reusable_leaf/)
+  assert.match(autoApplyRoute, /isTrustedLegacyImportedMappingVersion/)
   assert.match(autoApplyRoute, /pending_order_requires_allocation/)
   assert.match(autoApplyRoute, /p_dry_run: true/)
   assert.match(autoApplyRoute, /proposal_validated !== true/)
-  assert.match(autoApplyRoute, /mapping_will_be_confirmed === true/)
+  assert.match(autoApplyRoute, /mapping_will_be_confirmed === true && !trustedLegacyImport/)
   assert.match(autoApplyRoute, /price_delta_over_25_percent/)
   assert.match(autoApplyRoute, /p_dry_run: false/)
   assert.match(autoApplyRoute, /auto-k5:\$\{proposalId\}/)
