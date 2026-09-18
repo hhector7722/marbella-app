@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Alta laboral pública: título centrado en EA Sports y logo a la derecha.** Se retira el subtítulo «Datos para tu contrato». El cromo ocupa el ancho visible; el formulario sigue a `max-w-lg`.
+
 - **Alta laboral: el formulario público cabe de un vistazo.** Nombre y apellidos, documento y afiliación, nacionalidad y nacimiento, teléfono y correo, anverso y reverso van en la misma fila. La nacionalidad se elige de lista (España primero), el teléfono son 9 dígitos y el correo puede añadir `@gmail.com`. [ADR-0015](../4-decisiones/ADR-0015-alta-laboral-por-token.md).
 
 - **Plat Marbella: ración compacta, no miniaturas.** Bol, principal y guarnición se sirven más grandes y más juntos, con un solape ligero; la porcelana se ve alrededor del conjunto, no entre tres iconos.

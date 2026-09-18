@@ -4,6 +4,8 @@ import { canGenerateAltaPdf, missingAltaPdfFields } from './completeness.ts';
 import { formatCivilDateEs } from './dates.ts';
 import { candidateToRow, intakeToProfilePatch } from './mapping.ts';
 import { buildAltaLaboralPdf } from '../pdf/alta-laboral-pdf.ts';
+import { appendGmailAddress, digitsPhoneEs } from './contact.ts';
+import { NACIONALIDADES } from './nacionalidades.ts';
 import { candidateFieldsSchema, contractFieldsSchema } from './schema.ts';
 import { generateIntakeToken, hashIntakeToken } from './token.ts';
 import type { EmploymentIntakeRow } from './types.ts';
@@ -24,7 +26,7 @@ function baseRow(overrides: Partial<EmploymentIntakeRow> = {}): EmploymentIntake
     last_name: 'Sanchez',
     dni: '47951446B',
     afiliacion_seguridad_social: '08 12535514 76',
-    nacionalidad: 'Española',
+    nacionalidad: 'España',
     fecha_nacimiento: '1992-11-04',
     domicilio: 'Avinguda Mare de Déu de Montserrat 143',
     phone: '+34647229309',
@@ -87,7 +89,7 @@ describe('alta laboral', () => {
       lastName: 'López',
       dni: '12345678Z',
       afiliacionSeguridadSocial: '08 12345678 90',
-      nacionalidad: 'Española',
+      nacionalidad: 'España',
       fechaNacimiento: '1990-01-15',
       domicilio: 'Carrer Exemple 1',
       phone: '600000000',
@@ -104,7 +106,7 @@ describe('alta laboral', () => {
       lastName: 'López',
       dni: '12345678Z',
       afiliacionSeguridadSocial: '08',
-      nacionalidad: 'Española',
+      nacionalidad: 'España',
       fechaNacimiento: '1990-13-40',
       domicilio: 'Carrer',
       phone: '600',
@@ -127,7 +129,7 @@ describe('alta laboral', () => {
       lastName: 'López',
       dni: '12345678Z',
       afiliacionSeguridadSocial: '08',
-      nacionalidad: 'Española',
+      nacionalidad: 'España',
       fechaNacimiento: '1990-01-15',
       domicilio: 'Carrer',
       phone: '600',
@@ -135,5 +137,49 @@ describe('alta laboral', () => {
       bankAccount: 'ES9121000418450200051332',
     });
     assert.equal(row.first_name, 'Ana');
+  });
+
+  it('pone España primera y el resto en orden alfabético', () => {
+    assert.equal(NACIONALIDADES[0], 'España');
+    const rest = NACIONALIDADES.slice(1);
+    const sorted = [...rest].toSorted((a, b) => a.localeCompare(b, 'es'));
+    assert.deepEqual(rest, sorted);
+  });
+
+  it('exige teléfono de 9 dígitos y acepta el prefijo 34', () => {
+    assert.equal(digitsPhoneEs('600 12 34 56'), '600123456');
+    assert.equal(digitsPhoneEs('+34600123456'), '600123456');
+    const short = candidateFieldsSchema.safeParse({
+      firstName: 'Ana',
+      lastName: 'López',
+      dni: '12345678Z',
+      afiliacionSeguridadSocial: '08',
+      nacionalidad: 'España',
+      fechaNacimiento: '1990-01-15',
+      domicilio: 'Carrer',
+      phone: '60012345',
+      email: 'ana@example.com',
+      bankAccount: 'ES9121000418450200051332',
+    });
+    assert.equal(short.success, false);
+    const prefixed = candidateFieldsSchema.safeParse({
+      firstName: 'Ana',
+      lastName: 'López',
+      dni: '12345678Z',
+      afiliacionSeguridadSocial: '08',
+      nacionalidad: 'España',
+      fechaNacimiento: '1990-01-15',
+      domicilio: 'Carrer',
+      phone: '+34600123456',
+      email: 'ana@example.com',
+      bankAccount: 'ES9121000418450200051332',
+    });
+    assert.equal(prefixed.success, true);
+    if (prefixed.success) assert.equal(prefixed.data.phone, '600123456');
+  });
+
+  it('añade @gmail.com al correo', () => {
+    assert.equal(appendGmailAddress('hector'), 'hector@gmail.com');
+    assert.equal(appendGmailAddress('hector@outlook.com'), 'hector@gmail.com');
   });
 });

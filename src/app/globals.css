@@ -2096,6 +2096,55 @@ html[data-quick-tool='open'] main {
   font-size: 12px;
   color: var(--color-texto-tenue);
 }
+[data-component='Field'] [data-element='control'] input[data-picker='overlay'] {
+  position: absolute;
+  width: 0;
+  height: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  background-color: transparent;
+}
+[data-component='Field'][data-invalid='true'] [data-element='control'] button {
+  border-color: var(--color-negativo);
+}
+[data-alta-candidate-fields] [data-component='Field'] [data-element='control'] input,
+[data-alta-candidate-fields] [data-component='Field'] [data-element='control'] select,
+[data-alta-candidate-fields] [data-component='Field'] [data-element='control'] textarea {
+  padding-inline: var(--espacio-2);
+}
+[data-alta-candidate-fields] [data-component='Button'][data-instance$='-gmail'] {
+  color: var(--color-texto-invertido);
+}
+[data-alta-candidate-fields] [data-component='Button'][data-instance$='-gmail']::before {
+  background-color: transparent;
+  background-image: none;
+  border-color: var(--color-texto-invertido);
+}
+[data-alta-candidate-fields] [data-component='Button'][data-instance$='-gmail']:hover:not(:disabled)::before {
+  background-color: rgb(255 255 255 / 0.1);
+  background-image: none;
+}
+[data-alta-doc-picks] [data-component='Button'] {
+  color: var(--color-texto-invertido);
+}
+[data-alta-doc-picks] [data-component='Button']::before {
+  background-color: transparent;
+  background-image: none;
+  border-color: var(--color-texto-invertido);
+}
+[data-alta-doc-picks] [data-component='Button']:hover:not(:disabled)::before {
+  background-color: rgb(255 255 255 / 0.1);
+  background-image: none;
+}
+[data-alta-public-footer] [data-component='Button'][data-instance='alta-public-enviar']::before {
+  border-color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'].alta-public-screen [data-element='header'][data-title-align='center'] [data-element='title-block'] {
+  padding-inline: calc(var(--espacio-4) + 3rem);
+}
 
 /*
  * SearchField — buscador compacto. No es Field (sin etiqueta).
@@ -5329,6 +5378,10 @@ html:has(.dashboard-mosaic-switcher) {
 
   [data-component='PageScreen'][data-work='catalog'] > div {
     max-width: min(72rem, 100%);
+  }
+
+  [data-component='PageScreen'].alta-public-screen > div {
+    max-width: none;
   }
 
   [data-component='PageScreen'][data-fill-viewport='true'] {

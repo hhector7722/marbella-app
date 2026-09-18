@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { parseCivilYmd } from '../hours-engine/labor-conditions.ts';
+import { digitsPhoneEs } from './contact.ts';
+import { isListedNacionalidad } from './nacionalidades.ts';
 
 const MAX_LENGTH = 200;
 const MAX_ADDRESS = 400;
@@ -33,10 +35,13 @@ export const candidateFieldsSchema = z.object({
   lastName: trimmed(MAX_LENGTH),
   dni: trimmed(32),
   afiliacionSeguridadSocial: trimmed(32),
-  nacionalidad: trimmed(MAX_LENGTH),
+  nacionalidad: trimmed(MAX_LENGTH).refine(isListedNacionalidad, 'Elige una nacionalidad de la lista'),
   fechaNacimiento: civilDate,
   domicilio: trimmed(MAX_ADDRESS),
-  phone: trimmed(32),
+  phone: z
+    .string()
+    .transform(digitsPhoneEs)
+    .refine((v) => /^\d{9}$/.test(v), 'El teléfono debe tener 9 dígitos'),
   email,
   bankAccount: iban,
 });
