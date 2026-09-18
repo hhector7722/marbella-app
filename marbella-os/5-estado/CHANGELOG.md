@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Cámaras: registros usa el Modal de sistema.** El listado de conexiones deja el overlay verde ad hoc; abre el panel oscuro de la app y deja cabecera y TabBar en segundo plano. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **Plat Marbella: emplatado, no collage.** El configurador deja los tres gajos. Cada elección se recorta y se sirve sobre un plato llano, solapando las demás como un plato de restaurante.
 
 ## 2026-09-17
