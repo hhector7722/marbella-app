@@ -167,6 +167,40 @@ export function billingMassVolumeNormForAuto(
 /**
  * Replica de `convert_pricing_qty` (Postgres) en TS para textos de UI y factores.
  */
+export type ReceiptPresentationEconomics = {
+  conversionFactor: number
+  normalizedUnitPrice: number
+  purchaseUnit: string
+}
+
+/**
+ * Economía de una unidad facturada:
+ * - el usuario declara el contenido físico de 1 unidad de línea;
+ * - el factor se deriva, nunca se pide a mano;
+ * - el precio normalizado queda en €/purchase_unit.
+ */
+export function deriveReceiptPresentationEconomics(args: {
+  contentQty: number | null | undefined
+  contentUnit: string | null | undefined
+  purchaseUnit: string | null | undefined
+  observedUnitPrice: number | null | undefined
+}): ReceiptPresentationEconomics | null {
+  const qty = Number(args.contentQty)
+  const observed = Number(args.observedUnitPrice)
+  const purchaseUnit = norm(args.purchaseUnit)
+  if (!Number.isFinite(qty) || qty <= 0) return null
+  if (!Number.isFinite(observed) || observed <= 0) return null
+  if (!purchaseUnit) return null
+
+  const conversionFactor = convertPricingQtyNumeric(qty, args.contentUnit, purchaseUnit)
+  if (conversionFactor == null || !Number.isFinite(conversionFactor) || conversionFactor <= 0) return null
+
+  const normalizedUnitPrice = observed / conversionFactor
+  if (!Number.isFinite(normalizedUnitPrice) || normalizedUnitPrice <= 0) return null
+
+  return { conversionFactor, normalizedUnitPrice, purchaseUnit }
+}
+
 export function convertPricingQtyNumeric(
   pQty: number,
   pFromUnit: string | null | undefined,

@@ -305,6 +305,80 @@ export async function listK5BatchReviewAction(params: { invoiceId: string }): Pr
   }
 }
 
+
+export async function prepareK5ManualReviewLineAction(params: {
+  invoiceId: string
+  proposalId: string
+}): Promise<
+  | { success: true; lineId: string; existing: boolean }
+  | { success: false; message: string }
+> {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const invoiceId = text(params?.invoiceId)
+  const proposalId = text(params?.proposalId)
+  if (!invoiceId || !proposalId) return { success: false, message: 'La excepción K5 no es válida.' }
+
+  let state: Awaited<ReturnType<typeof loadBatchState>>
+  try {
+    state = await loadBatchState(gate.supabase, invoiceId)
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo preparar la revisión manual.' }
+  }
+
+  const row = state.rows.find((item) => item.proposalId === proposalId)
+  if (!row) return { success: false, message: 'Esta propuesta ya no es la revisión K5 activa. Recarga la pantalla.' }
+  if (row.lineId) return { success: true, lineId: row.lineId, existing: true }
+  if (!['needs_mapping', 'needs_review', 'unavailable'].includes(row.disposition)) {
+    return { success: false, message: 'Esta línea ya no necesita una preparación manual.' }
+  }
+
+  const { data: proposal, error: proposalError } = await gate.supabase
+    .from('purchase_interpretation_proposals')
+    .select('id,purchase_invoice_id,source_item_name,line_quantity,line_unit,observed_unit_price,line_total,status')
+    .eq('id', proposalId)
+    .eq('purchase_invoice_id', invoiceId)
+    .maybeSingle()
+  if (proposalError || !proposal) {
+    return { success: false, message: 'No se pudo cargar la evidencia de esta excepción.' }
+  }
+
+  const originalName = text(proposal.source_item_name) || 'Producto pendiente de identificar'
+  const payload = {
+    invoice_id: invoiceId,
+    interpretation_proposal_id: proposalId,
+    original_name: originalName,
+    quantity: proposal.line_quantity,
+    line_unit: text(proposal.line_unit) || null,
+    unit_price: proposal.observed_unit_price,
+    total_price: proposal.line_total,
+    mapped_ingredient_id: null,
+    status: 'pending',
+  }
+
+  const { data: inserted, error: insertError } = await gate.supabase
+    .from('purchase_invoice_lines')
+    .insert(payload)
+    .select('id')
+    .maybeSingle()
+
+  if (insertError || !inserted?.id) {
+    const { data: existing } = await gate.supabase
+      .from('purchase_invoice_lines')
+      .select('id')
+      .eq('invoice_id', invoiceId)
+      .eq('interpretation_proposal_id', proposalId)
+      .maybeSingle()
+    if (existing?.id) return { success: true, lineId: text(existing.id), existing: true }
+    return { success: false, message: 'No se pudo crear la línea manual para esta excepción.' }
+  }
+
+  revalidatePath('/dashboard/albaranes')
+  revalidatePath('/dashboard/albaranes/k5')
+  return { success: true, lineId: text(inserted.id), existing: false }
+}
+
 export async function previewK5BatchReceiptsAction(params: {
   invoiceId: string
   proposalIds: string[]

@@ -153,6 +153,16 @@ export function DocumentEvidenceModal({
   if (!open) return null
 
   const lineName = data?.line.original_name || 'Sin nombre'
+  const needsManualValues = Boolean(
+    data
+      && (
+        !data.line.original_name?.trim()
+        || data.line.original_name.trim() === 'Producto pendiente de identificar'
+        || data.line.quantity == null
+        || data.line.unit_price == null
+        || data.line.total_price == null
+      )
+  )
 
   return (
     <Modal
@@ -255,27 +265,33 @@ export function DocumentEvidenceModal({
                   (data.line && data.line.status !== 'excluded' && data.line.status !== 'expense_only' && (onExcludeFromMapping || onMarkExpenseOnly)) ||
                   (data.line && (data.line.status === 'excluded' || data.line.status === 'expense_only') && onRestoreStatus) ? (
                     <div className="flex flex-col gap-1.5 pt-1 border-t border-zinc-100">
+                      {needsManualValues ? (
+                        <p className="text-[10px] font-semibold leading-relaxed text-amber-800">
+                          Primero completa nombre, cantidad, precio unitario e importe. Después podrás mapear el producto.
+                        </p>
+                      ) : null}
                       <div className="flex flex-wrap gap-1.5">
+                        {isManager && onOpenEditor && (
+                          <Button
+                            type="button"
+                            variant={needsManualValues ? 'primary' : 'secondary'}
+                            instance="albaran-document-evidence-open-editor"
+                            onClick={() => onOpenEditor()}
+                          >
+                            {needsManualValues ? 'Completar datos' : 'Corregir valores'}
+                          </Button>
+                        )}
                         {onOpenProduct && (
                           <Button
                             type="button"
-                            variant="tertiary"
+                            variant={needsManualValues ? 'tertiary' : 'primary'}
                             instance="albaran-document-evidence-open-product"
                             onClick={() => {
                               onOpenProduct()
                             }}
+                            disabled={needsManualValues}
                           >
-                            Ver producto
-                          </Button>
-                        )}
-                        {isManager && onOpenEditor && (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            instance="albaran-document-evidence-open-editor"
-                            onClick={() => onOpenEditor()}
-                          >
-                            Corregir valores
+                            Mapear / cambiar producto
                           </Button>
                         )}
                       </div>

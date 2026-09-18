@@ -147,8 +147,24 @@ async function supersedeK5ProposalWithMapping(params: {
     throw new Error('El ingrediente no tiene unidades canónicas completas.')
   }
 
-  const lineQuantity = text(current.line_quantity) || text(params.line.quantity)
-  const observedUnitPrice = text(current.observed_unit_price) || text(params.line.unit_price)
+  const lineName = text(params.line.original_name)
+  const hasResolvedName = Boolean(lineName && lineName !== 'Producto pendiente de identificar')
+  const lineQuantity = text(params.line.quantity) || text(current.line_quantity)
+  const observedUnitPrice = text(params.line.unit_price) || text(current.observed_unit_price)
+  const lineTotal = text(params.line.total_price) || text(current.line_total)
+  const quantityNumber = decimal(lineQuantity)
+  const unitPriceNumber = decimal(observedUnitPrice)
+  const lineTotalNumber = decimal(lineTotal)
+  const humanLineOverride = Boolean(
+    hasResolvedName
+    && (
+      lineName !== text(current.source_item_name)
+      || lineQuantity !== text(current.line_quantity)
+      || observedUnitPrice !== text(current.observed_unit_price)
+      || lineTotal !== text(current.line_total)
+    )
+  )
+
   const snapshot = buildExactMappedSnapshot({
     lineQuantity,
     observedUnitPrice,
@@ -164,15 +180,28 @@ async function supersedeK5ProposalWithMapping(params: {
   const previousReasons: string[] = Array.isArray(current.review_reasons)
     ? (current.review_reasons as unknown[]).map(text).filter(Boolean)
     : []
-  // Una selección humana explícita incluye unidad facturada, contenido y
-  // unidad de contenido. Si esa presentación supera la frontera dimensional
-  // exacta, también resuelve el antiguo unknown_quantity_unit de Docling.
-  const semanticReasons = previousReasons.filter((reason: string) =>
-    reason !== 'mapping_missing'
-    && reason !== 'mapping_presentation_incompatible'
-    && reason !== 'price_not_normalizable'
-    && reason !== 'unknown_quantity_unit'
-  )
+  // La revisión humana puede completar datos que Docling dejó vacíos. Esos
+  // valores quedan versionados en la propuesta sucesora; la evidencia original
+  // no se modifica y K4 seguirá revalidando antes de cualquier efecto económico.
+  const semanticReasons = previousReasons.filter((reason: string) => {
+    if ([
+      'mapping_missing',
+      'mapping_presentation_incompatible',
+      'price_not_normalizable',
+      'unknown_quantity_unit',
+    ].includes(reason)) return false
+    if (['missing_product', 'product_missing'].includes(reason) && hasResolvedName) return false
+    if (reason === 'missing_quantity' && quantityNumber != null && quantityNumber > 0) return false
+    if (reason === 'missing_unit_price' && unitPriceNumber != null && unitPriceNumber > 0) return false
+    if (reason === 'missing_line_amount' && lineTotalNumber != null && lineTotalNumber > 0) return false
+    if (snapshot && ['mixed_measurement_requires_review', 'unsupported_presentation'].includes(reason)) return false
+    if (
+      snapshot
+      && humanLineOverride
+      && ['discount_not_interpretable', 'discount_requires_review', 'line_amount_mismatch'].includes(reason)
+    ) return false
+    return true
+  })
   const reviewReasons: string[] = snapshot
     ? semanticReasons
     : [...semanticReasons, 'mapping_presentation_incompatible']
@@ -201,7 +230,7 @@ async function supersedeK5ProposalWithMapping(params: {
     line_quantity: lineQuantity,
     line_unit: params.lineBillingUnit,
     observed_unit_price: observedUnitPrice,
-    line_total: current.line_total,
+    line_total: lineTotal,
     physical_quantity: snapshot?.physicalQuantity ?? null,
     base_unit: snapshot?.baseUnit ?? null,
     purchase_quantity: snapshot?.purchaseQuantity ?? null,
@@ -238,7 +267,7 @@ async function supersedeK5ProposalWithMapping(params: {
       input_fingerprint: fingerprint,
       source_table_index: current.source_table_index,
       source_row_index: current.source_row_index,
-      source_item_name: current.source_item_name,
+      source_item_name: hasResolvedName ? lineName : current.source_item_name,
       mapping_version_id: params.mappingVersionId,
       ingredient_id: params.ingredientId,
       status,
@@ -252,7 +281,7 @@ async function supersedeK5ProposalWithMapping(params: {
       line_quantity: lineQuantity,
       line_unit: params.lineBillingUnit,
       observed_unit_price: observedUnitPrice,
-      line_total: current.line_total,
+      line_total: lineTotal,
       physical_quantity: snapshot?.physicalQuantity ?? null,
       base_unit: snapshot?.baseUnit ?? null,
       purchase_quantity: snapshot?.purchaseQuantity ?? null,
@@ -263,6 +292,7 @@ async function supersedeK5ProposalWithMapping(params: {
       provenance: {
         ...(current.provenance && typeof current.provenance === 'object' ? current.provenance : {}),
         revision: 'human_mapping_selection',
+        manual_line_override: humanLineOverride,
         economic_effects: false,
       },
     })
@@ -309,6 +339,22 @@ export async function saveReceiptMappingProposalAction(params: {
     .maybeSingle()
   if (lineError || !line || line.invoice_id !== invoiceId || !text(line.original_name)) {
     return { success: false, message: 'No se encontró la línea revisable de este albarán.' }
+  }
+
+  const k5ProposalId = text(line.interpretation_proposal_id)
+  if (k5ProposalId && text(line.original_name) === 'Producto pendiente de identificar') {
+    return { success: false, message: 'Completa primero el nombre real del producto.' }
+  }
+  if (
+    k5ProposalId
+    && (
+      decimal(line.quantity) == null
+      || decimal(line.quantity)! <= 0
+      || decimal(line.unit_price) == null
+      || decimal(line.unit_price)! <= 0
+    )
+  ) {
+    return { success: false, message: 'Completa primero cantidad y precio unitario antes de mapear.' }
   }
 
   const { data: invoice, error: invoiceError } = await gate.supabase

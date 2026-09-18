@@ -10,6 +10,7 @@ import { Surface } from '@/components/ui/Surface'
 import {
   applyK5BatchReceiptsAction,
   listK5BatchReviewAction,
+  prepareK5ManualReviewLineAction,
   previewK5BatchReceiptsAction,
   type K5BatchPreviewItem,
   type K5BatchReviewRow,
@@ -47,6 +48,7 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
   const [loading, setLoading] = useState(true)
   const [previewing, setPreviewing] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [preparingManualId, setPreparingManualId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -94,6 +96,25 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
       return next
     })
     setPreview([])
+  }
+
+  async function handlePrepareManual(proposalId: string) {
+    setPreparingManualId(proposalId)
+    setError(null)
+    try {
+      const result = await prepareK5ManualReviewLineAction({ invoiceId, proposalId })
+      if (!result.success) {
+        setError(result.message)
+        toast.error(result.message)
+        return
+      }
+      toast.success('Línea preparada. Completa sus datos y después mapea el producto.')
+      window.location.assign(
+        `/dashboard/albaranes?id=${encodeURIComponent(invoiceId)}&line=${encodeURIComponent(result.lineId)}`
+      )
+    } finally {
+      setPreparingManualId(null)
+    }
   }
 
   async function handlePreview() {
@@ -353,9 +374,29 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
                     type="button"
                     variant="primary"
                     instance="k5-review-exception"
-                    onClick={() => onResolveLine(row.lineId!)}
+                    onClick={() => {
+                      if (row.disposition === 'needs_mapping') {
+                        onResolveLine(row.lineId!)
+                        return
+                      }
+                      window.location.assign(
+                        `/dashboard/albaranes?id=${encodeURIComponent(invoiceId)}&line=${encodeURIComponent(row.lineId!)}`
+                      )
+                    }}
                   >
-                    {row.disposition === 'needs_mapping' ? 'Mapear producto' : 'Revisar línea'}
+                    {row.disposition === 'needs_mapping' ? 'Mapear producto' : 'Completar / revisar'}
+                  </Button>
+                ) : !row.lineId ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    instance="k5-prepare-manual-line"
+                    onClick={() => void handlePrepareManual(row.proposalId)}
+                    disabled={preparingManualId !== null}
+                    loading={preparingManualId === row.proposalId}
+                    loadingLabel="Preparando…"
+                  >
+                    Completar manualmente
                   </Button>
                 ) : null}
               </div>
