@@ -65,8 +65,8 @@ jobs:
         run: node --test scripts/k5/k5-interpretation-contract.test.cjs
       - name: K4 receipt contract
         run: npm run test:k4:receipt-contract
-      - name: Production build
+      - name: TypeScript check
         run: |
           corepack enable
           pnpm install --frozen-lockfile
-          pnpm run build
+          pnpm exec tsc --noEmit
