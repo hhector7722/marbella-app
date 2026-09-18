@@ -10,6 +10,7 @@ import {
   ALBARAN_LINE_CONTENT_UNITS,
   billingMassVolumeNormForAuto,
   buildAutomaticSameFamilyDimensional,
+  deriveReceiptPresentationEconomics,
   ingredientPurchaseUnitNormForMapping,
   isSimpleAlbaranUnitMapping,
   sameFamilyAutomaticConversionCaption,
@@ -22,6 +23,7 @@ import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import {
   resolveLineMappingAction,
   searchIngredientsForMappingAction,
+  updatePurchaseInvoiceLineAction,
 } from '@/app/dashboard/albaranes/actions'
 import {
   applyReceiptLineAction,
@@ -91,8 +93,7 @@ export type LineMappingModalProps = {
   onClose: () => void
   onSuccess: () => void | Promise<void>
   onOpenWizardNew?: () => void
-  onOpenWizardPrice?: () => void
-}
+ }
 
 /** Una sola superficie derivada a la vez (ADR-0007). */
 
@@ -106,8 +107,7 @@ export function LineMappingModal({
   onClose,
   onSuccess,
   onOpenWizardNew,
-  onOpenWizardPrice,
-}: LineMappingModalProps) {
+ }: LineMappingModalProps) {
   useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
   const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Mapear línea albarán')
   const [loading, setLoading] = useState(false)
@@ -121,6 +121,7 @@ export function LineMappingModal({
   const [showAdvancedCalibration, setShowAdvancedCalibration] = useState(false)
   const [factor, setFactor] = useState('1')
   const [dimensional, setDimensional] = useState<LineDimensionalDraft>(EMPTY_DIMENSIONAL)
+  const [observedUnitPriceDraft, setObservedUnitPriceDraft] = useState('')
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<IngredientMappingSearchItem[]>([])
@@ -207,6 +208,7 @@ export function LineMappingModal({
     setLoading(true)
     setSearchQuery('')
     setSearchResults([])
+    setObservedUnitPriceDraft(line.unit_price == null ? '' : String(line.unit_price))
     try {
       const res = await resolveLineMappingAction({ invoiceId, lineId: line.id })
       if (!res.success) {
@@ -338,6 +340,36 @@ export function LineMappingModal({
   }
 
   const dimensionalParsed = useMemo(() => parseDimensionalPayload(dimensional), [dimensional])
+  const observedUnitPrice = useMemo(() => {
+    const raw = observedUnitPriceDraft.trim().replace(',', '.')
+    if (!raw) return null
+    const value = Number(raw)
+    return Number.isFinite(value) && value > 0 ? value : null
+  }, [observedUnitPriceDraft])
+
+  const purchaseUnitForPresentation = useMemo(
+    () =>
+      ingredientPurchaseUnitNormForMapping(
+        selectedIngredientMeta ?? { purchase_unit: ingredientPurchaseUnit }
+      ),
+    [selectedIngredientMeta, ingredientPurchaseUnit]
+  )
+
+  const presentationEconomics = useMemo(
+    () =>
+      deriveReceiptPresentationEconomics({
+        contentQty: dimensionalParsed.lineContentQty,
+        contentUnit: dimensionalParsed.lineContentUnit,
+        purchaseUnit: purchaseUnitForPresentation,
+        observedUnitPrice,
+      }),
+    [
+      dimensionalParsed.lineContentQty,
+      dimensionalParsed.lineContentUnit,
+      purchaseUnitForPresentation,
+      observedUnitPrice,
+    ]
+  )
 
   const billingMassVolumeNorm = useMemo(
     () => billingMassVolumeNormForAuto(dimensional.lineBillingUnit, line?.line_unit),
@@ -388,21 +420,20 @@ export function LineMappingModal({
   ])
 
   const canSave = useMemo(() => {
-    if (!ingredientId || !invoiceId || supplierId == null) return false
+    if (!ingredientId || !invoiceId || supplierId == null || observedUnitPrice == null) return false
     if (isSimpleMode || isAutoSameFamilyMode) return true
-    const f = Number(String(factor).replace(',', '.'))
-    if (!Number.isFinite(f) || f <= 0) return false
     const { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
     if (!lineBillingUnit) return false
     if (lineContentQty == null || !Number.isFinite(lineContentQty) || lineContentQty <= 0) return false
-    if (!lineContentUnit) return false
+    if (!lineContentUnit || !presentationEconomics) return false
     return true
   }, [
     ingredientId,
     invoiceId,
     supplierId,
-    factor,
+    observedUnitPrice,
     dimensionalParsed,
+    presentationEconomics,
     isSimpleMode,
     isAutoSameFamilyMode,
   ])
@@ -411,12 +442,13 @@ export function LineMappingModal({
     () =>
       JSON.stringify({
         ingredientId,
-        factor: String(factor).trim(),
-        lineBillingUnit: dimensional.lineBillingUnit.trim().toLowerCase(),
+        factor: presentationEconomics?.conversionFactor ?? factor,
+        observedUnitPrice,
+        lineBillingUnit: String(line?.line_unit ?? dimensional.lineBillingUnit).trim().toLowerCase(),
         lineContentQty: dimensional.lineContentQty.trim().replace(',', '.'),
         lineContentUnit: dimensional.lineContentUnit.trim().toLowerCase(),
       }),
-    [ingredientId, factor, dimensional]
+    [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor]
   )
 
   async function handleSave() {
@@ -429,8 +461,9 @@ export function LineMappingModal({
       return
     }
 
-    let factorNum = Number(String(factor).replace(',', '.'))
-    let { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
+    let factorNum = presentationEconomics?.conversionFactor ?? Number(String(factor).replace(',', '.'))
+    let { lineContentQty, lineContentUnit } = dimensionalParsed
+    let lineBillingUnit = String(line.line_unit ?? dimensionalParsed.lineBillingUnit ?? '').trim()
 
     if (isAutoSameFamilyMode && selectedIngredientMeta && billingMassVolumeNorm) {
       const auto = buildAutomaticSameFamilyDimensional(
@@ -467,9 +500,25 @@ export function LineMappingModal({
       toast.error('Selecciona la unidad de contenido.')
       return
     }
+    if (observedUnitPrice == null) {
+      toast.error('Indica un precio facturado válido.')
+      return
+    }
 
     setSaving(true)
     try {
+      const storedPrice = line.unit_price == null ? null : Number(line.unit_price)
+      if (storedPrice == null || Math.abs(storedPrice - observedUnitPrice) > 0.00000001) {
+        const priceUpdate = await updatePurchaseInvoiceLineAction({
+          lineId: line.id,
+          patch: { unit_price: observedUnitPrice },
+        })
+        if (!priceUpdate.success) {
+          toast.error(priceUpdate.message)
+          return
+        }
+      }
+
       const res = await saveReceiptMappingProposalAction({
         invoiceId,
         lineId: line.id,
