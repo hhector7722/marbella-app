@@ -52,10 +52,11 @@ pm2 logs receptor --lines 20
 - Gateway: [VENTAS] ... | pend=... | dia=YYYY-MM-DD (hoy)
 - App: /dashboard/ventas filtro hoy (total = SUM total_documento, incluye a cuenta)
 
-## Tickets a cuenta (Pendiente=1 sin Hora_Cierre)
-- VENTAS_WHERE: `(Hora_Cierre IS NOT NULL OR Pendiente = 1)` y, además, `Hora_Cierre` de las últimas 36 h aunque `Fecha_Sistema` sea de otro día — así un cobro de deuda antigua entra el día que se cobra.
-- Poll aparte de pendientes abiertos de hasta 120 días: si cambian `Documentos_Pagos`, se reenvía el ticket.
-- Al cobrar: cambia Documentos_Pagos → firma distinta → re-upsert en Supabase (mismo numero_documento; el día contable se conserva).
+## Tickets a cuenta (Pendiente=1)
+- Un cobro no tiene plazo: dos días después o cuatro meses después es el mismo hecho. El día contable de la factura no cambia.
+- Ventas del servicio: `Fecha_Sistema` de ayer/hoy. Cobro recién cerrado: `Hora_Cierre` reciente (ventana de poll, no plazo del cliente).
+- Deudas abiertas de cualquier fecha: cada 30 s mira solo la cabecera (`Pendiente = 1`, `Importe_Entregado`, `CRC`). Si hay cobro, entonces lee `Documentos_Pagos` de ese ticket y lo reenvía.
+- Al cobrar: mismo `numero_documento`; el día contable se conserva.
 - pm2: `pm2 restart PuenteBDP` y `pm2 logs PuenteBDP --lines 30`
 
 ## COMPROBANTE (no es venta)

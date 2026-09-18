@@ -1,12 +1,12 @@
-<!-- Generado desde 51 documentos de marbella-os/.
-     Huella del origen: f02da58645744bc5
+<!-- Generado desde 52 documentos de marbella-os/.
+     Huella del origen: e1a1ceb97634af45
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
 
 # Afirmaciones citables
 
-Los 51 hechos del corpus que tienen identificador estable, con dónde
+Los 52 hechos del corpus que tienen identificador estable, con dónde
 viven y desde cuántos sitios se citan. Derivado. **No es norma**: la norma está
 en el documento de origen, y este índice solo dice dónde.
 
@@ -66,6 +66,7 @@ texto crea un segundo dueño, y eso es exactamente lo que prohíbe `CANON §5`.
 | `INV-T04` | Los cobros no forman parte de ventas | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
 | `INV-T05` | El pendiente del día es solo de tickets facturados ese día y aún no cobrados | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
 | `INV-T06` | El esperado no se clampa a cero | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
+| `INV-T07` | Un cobro de deuda no tiene tope de antigüedad: entra el día en que se cobra | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 20 |  |
 
 La columna de citas mide cuánto se apoya el corpus en cada hecho. Un
 identificador muy citado es un punto que no debería cambiar sin revisar quién

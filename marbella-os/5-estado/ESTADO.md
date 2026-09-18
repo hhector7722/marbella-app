@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-13
+revisado: 2026-09-17
 caducidad: 1 mes
 supersede: PROJECT_STATUS.md §ESTADO GENERAL
 ---
@@ -52,7 +52,7 @@ El producto está en producción y sostiene la operación diaria del negocio. El
 - **Inventario.** Funciona, pero el rastro de movimientos y las correcciones tienen puntos débiles conocidos.
 - **Consumo personal.** Depende de conversiones de unidad que no siempre están definidas.
 - **Copiloto.** Operativo, con dependencia de un único proveedor de visión y sin contrato documentado.
-- **Puente TPV de cobros antiguos.** Hasta copiar `index.js` al equipo del punto de venta, un cobro de deuda de otro día puede no actualizar el ticket. La tarjeta auto-rellenada se queda en las ventas de hoy; hay que copiar el total de los datáfonos. Fórmula en [TESORERIA](../3-ingenieria/dominio/TESORERIA.md).
+- **Puente TPV de cobros de otra fecha.** Hasta copiar `index.js` al equipo del punto de venta, un cobro (dos días o cuatro meses después) puede no actualizar el ticket. La tarjeta auto-rellenada se queda en las ventas de hoy; hay que copiar el total de los datáfonos. Fórmula en [TESORERIA](../3-ingenieria/dominio/TESORERIA.md).
 
 ## Legacy tolerado
 

@@ -36,7 +36,13 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-18
+
+- **Plat Marbella: emplatado, no collage.** El configurador deja los tres gajos. Cada elección se recorta y se sirve sobre un plato llano, solapando las demás como un plato de restaurante.
+
 ## 2026-09-17
+
+- **Cobro de deuda: no hay plazo.** Da igual dos días o cuatro meses: el puente vigila toda cuenta abierta y el cierre del día en que se cobra. [TESORERIA](../3-ingenieria/dominio/TESORERIA.md).
 
 - **Cierre de caja: un cobro con datáfono de otra fecha es tarjeta, no efectivo.** El esperado es ventas − pendiente + cobros − tarjeta y ya no se sustituye por el efectivo de los tickets del día cuando la resta queda negativa. [TESORERIA](../3-ingenieria/dominio/TESORERIA.md).
 

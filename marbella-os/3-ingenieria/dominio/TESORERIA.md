@@ -53,6 +53,7 @@ El productor de ventas, tarjeta, pendiente y cobros es `get_closing_sales_breakd
 
 - Un cobro de otra fecha pagado con datáfono **es tarjeta y es cobro**. Sube las dos líneas. No se imputa otra vez al efectivo esperado.
 - Un cobro de otra fecha pagado en efectivo **es cobro y no es tarjeta**. Sube el esperado.
+- Da igual si el cliente paga dos días después o cuatro meses después: entra el día en que se cobra, no hay tope de antigüedad.
 - Pendiente de hoy vive en ventas. Al cobrarse el mismo día deja de ser pendiente y pasa a tarjeta o a efectivo según la forma de pago.
 - El descuadre se muestra. No se ajusta solo. Un cierre confirmado no se edita en silencio: una corrección es un movimiento nuevo con motivo, salvo orden explícita de revertir el cálculo del día.
 - `COMPROBANTE` no es venta ni pendiente.
@@ -77,3 +78,4 @@ El productor de ventas, tarjeta, pendiente y cobros es `get_closing_sales_breakd
 | INV-T04 | Los cobros no forman parte de ventas |
 | INV-T05 | El pendiente del día es solo de tickets facturados ese día y aún no cobrados |
 | INV-T06 | El esperado no se clampa a cero |
+| INV-T07 | Un cobro de deuda no tiene tope de antigüedad: entra el día en que se cobra |

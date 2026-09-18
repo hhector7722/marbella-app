@@ -27,10 +27,12 @@ const config = {
 };
 
 /**
- * Ventana de negocio BDP (Data Sistema). Funciona aunque Fecha (día TPV) vaya desfasada.
- * Ventas: tickets con Hora_Cierre (finalizados) o Pendiente=1 (a cuenta, sin cierre).
- * Incluye cobros de deuda antigua si Hora_Cierre es reciente, aunque Fecha_Sistema sea de otro día.
+ * Ventana de poll (no es un plazo del cliente).
+ * - Fecha_Sistema de ayer/hoy: ventas del servicio.
+ * - Hora_Cierre reciente: se acaba de cobrar o cerrar, da igual de qué día es la factura
+ *   (dos días después o cuatro meses después).
  * Tickets abiertos sin pendiente quedan fuera (radar sala sigue por Comandas / DIRECTO reciente).
+ * Las deudas a cuenta de cualquier fecha las mira pollPendientesAbiertos.
  */
 const VENTAS_WHERE = `
   WHERE (
@@ -51,6 +53,7 @@ const CABECERA_SELECT = `
 
 const CATCHUP_PAGE_SIZE = 100;
 const POLL_INTERVAL_MS = 5000;
+const PENDIENTES_POLL_INTERVAL_MS = 30000;
 const CAJA_POLL_INTERVAL_MS = 12000;
 const AXIOS_TIMEOUT_MS = 45000;
 const POLL_TOP = 50;
@@ -61,9 +64,11 @@ const RUN_CATCHUP =
 
 /** key → firma de cobros (re-upsert si cambian pagos en Documentos_Pagos). */
 let memoriaTickets = new Map();
+/** key → Importe_Entregado|CRC de deudas abiertas (sin leer Documentos_Pagos). */
+let memoriaPendientesCabecera = new Map();
 let ultimoEstadoSala = '';
 let ventasPollBusy = false;
-let pendientesAntiguosPollBusy = false;
+let pendientesAbiertosPollBusy = false;
 let cajaPollBusy = false;
 let pollTick = 0;
 
@@ -367,29 +372,53 @@ async function pollVentasRecientes(pool) {
     }
 }
 
-async function pollPendientesAbiertosAntiguos(pool) {
-    if (pendientesAntiguosPollBusy) return;
-    pendientesAntiguosPollBusy = true;
+/**
+ * Deudas a cuenta de cualquier fecha. Solo lee cabecera (Pendiente=1):
+ * Importe_Entregado y CRC. Documentos_Pagos se pide al enviar ese ticket, no todas.
+ */
+async function pollPendientesAbiertos(pool) {
+    if (pendientesAbiertosPollBusy) return;
+    pendientesAbiertosPollBusy = true;
     try {
         const res = await pool.request().query(`
-            SELECT TOP (30) ${CABECERA_SELECT}
+            SELECT
+                Numero_Documento, Serie, Numero, Total_Documento,
+                Fecha, Fecha_Sistema, Hora_Cierre,
+                ISNULL(Mesa, 0) AS Mesa,
+                ISNULL(Pendiente, 0) AS Pendiente,
+                ISNULL(Importe_Entregado, 0) AS Importe_Entregado,
+                ISNULL(CRC, 0) AS CRC
             FROM Documentos_Cabecera WITH (NOLOCK)
             WHERE ISNULL(Pendiente, 0) = 1
               AND LTRIM(RTRIM(ISNULL(Numero_Documento, ''))) <> 'COMPROBANTE'
-              AND CAST(COALESCE(Fecha_Sistema, Fecha) AS DATE) < CAST(GETDATE() AS DATE)
-              AND CAST(COALESCE(Fecha_Sistema, Fecha) AS DATE) >= DATEADD(day, -120, CAST(GETDATE() AS DATE))
-            ORDER BY COALESCE(Fecha_Sistema, Fecha) DESC, Numero_Documento DESC
         `);
 
         const candidatos = res.recordset || [];
+        const vistos = new Set();
         let enviados = 0;
         for (const t of candidatos) {
             try {
+                const key = ticketKey(t.Numero_Documento);
+                if (!key) continue;
+                vistos.add(key);
+                const entregado = roundMoney(parseFloat(t.Importe_Entregado) || 0);
+                const crc = Number(t.CRC) || 0;
+                const firmaCabecera = `${entregado}|${crc}`;
+                const previa = memoriaPendientesCabecera.get(key);
+                const hayCobro = entregado > 0.005 || Boolean(t.Hora_Cierre);
+
+                if (previa === firmaCabecera) continue;
+                memoriaPendientesCabecera.set(key, firmaCabecera);
+                if (!hayCobro) continue;
+
                 const sent = await enviarTicket(pool, t);
                 if (sent) enviados++;
             } catch (e) {
-                console.error(`❌ ERROR pendiente antiguo ${ticketKey(t.Numero_Documento)}:`, e.message);
+                console.error(`❌ ERROR pendiente ${ticketKey(t.Numero_Documento)}:`, e.message);
             }
+        }
+        for (const key of memoriaPendientesCabecera.keys()) {
+            if (!vistos.has(key)) memoriaPendientesCabecera.delete(key);
         }
         if (enviados > 0) {
             const ts = new Date().toLocaleTimeString('es-ES', {
@@ -397,10 +426,10 @@ async function pollPendientesAbiertosAntiguos(pool) {
                 minute: '2-digit',
                 second: '2-digit',
             });
-            console.log(`🔄 [${ts}] Poll pendientes antiguos: ${enviados} actualizado(s) | candidatos=${candidatos.length}`);
+            console.log(`🔄 [${ts}] Poll pendientes: ${enviados} cobro(s) | abiertos=${candidatos.length}`);
         }
     } finally {
-        pendientesAntiguosPollBusy = false;
+        pendientesAbiertosPollBusy = false;
     }
 }
 
@@ -458,7 +487,7 @@ async function start() {
     try {
         const pool = await sql.connect(config);
         console.log(`✅ Sistema Activado → ${DOMINIO}`);
-        console.log(`📋 Poll ventas cada ${POLL_INTERVAL_MS / 1000}s | Poll caja cada ${CAJA_POLL_INTERVAL_MS / 1000}s`);
+        console.log(`📋 Poll ventas cada ${POLL_INTERVAL_MS / 1000}s | Poll pendientes cada ${PENDIENTES_POLL_INTERVAL_MS / 1000}s | Poll caja cada ${CAJA_POLL_INTERVAL_MS / 1000}s`);
         console.log(`📋 Catch-up arranque: ${RUN_CATCHUP ? 'SÍ' : 'NO'}`);
         console.log(`📋 Caja → ${URL_CAJA}`);
 
@@ -470,17 +499,24 @@ async function start() {
         }
 
         void pollVentasRecientes(pool);
-        void pollPendientesAbiertosAntiguos(pool);
+        void pollPendientesAbiertos(pool);
         void pollCajaMovimientos(pool);
 
         setInterval(async () => {
             try {
                 await pollVentasRecientes(pool);
-                await pollPendientesAbiertosAntiguos(pool);
             } catch (e) {
                 console.error('❌ ERROR EN VENTAS:', e.message);
             }
         }, POLL_INTERVAL_MS);
+
+        setInterval(async () => {
+            try {
+                await pollPendientesAbiertos(pool);
+            } catch (e) {
+                console.error('❌ ERROR EN PENDIENTES:', e.message);
+            }
+        }, PENDIENTES_POLL_INTERVAL_MS);
 
         setInterval(async () => {
             try {
