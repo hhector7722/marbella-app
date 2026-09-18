@@ -119,9 +119,7 @@ export default function K5ReviewClient({ initialInvoices, initialSelectedId }: P
         supplierId={selected.supplierId}
         onClose={() => setMappingLine(null)}
         onSuccess={async () => {
-          setMappingLine(null)
           await loadDetail()
-          window.location.reload()
         }}
       />
     </div>
