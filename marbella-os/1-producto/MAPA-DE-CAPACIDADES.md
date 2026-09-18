@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-17
+revisado: 2026-09-18
 caducidad: 3 meses
 supersede: —
 ---
@@ -113,9 +113,9 @@ Saber qué hay, qué se ha ido y por qué.
 
 Saber lo que cuesta lo que se sirve.
 
-- **Actores**: responsable de operación, responsable del negocio.
+- **Actores**: responsable de operación, responsable del negocio, supervisor.
 - **Superficies**: recetas, detalle de receta, ingredientes, importación de recetas, mapeo con el terminal de venta.
-- **Reglas propias**: el coste sale del precio actual del ingrediente; precio de venta y coste nunca se confunden; la ración es la unidad de comparación.
+- **Reglas propias**: el coste sale del precio actual del ingrediente; precio de venta y coste nunca se confunden; la ración es la unidad de comparación. `supervisor` ve precios y edita; `staff` ve la receta sin precio.
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 
@@ -129,7 +129,7 @@ Publicar la oferta al cliente y consultarla en sala.
 
 - **Actores**: cliente, persona en turno, responsable de operación.
 - **Superficies**: carta pública sin sesión, carta interna, editor de carta.
-- **Reglas propias**: es superficie pública y no expone dato interno alguno; la ficha de plato tiene presentación propia; las fotografías se normalizan al subirse.
+- **Reglas propias**: es superficie pública y no expone dato interno alguno; la ficha de plato tiene presentación propia; las fotografías se normalizan al subirse. `supervisor` edita la carta; `staff` la consulta.
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 
@@ -181,9 +181,9 @@ Imputar a cada persona lo que consume.
 
 Dar a cada persona acceso a lo suyo.
 
-- **Actores**: persona en turno, responsable de operación, master.
-- **Superficies**: perfil, documentos (nóminas, contratos, comunicados, sanciones), condiciones de contrato.
-- **Reglas propias**: cada persona ve solo sus documentos; las condiciones de contrato se versionan por tramos de vigencia y solo las edita el maestro; el maestro edita los datos personales de cualquier trabajador. El aviso del campo de visión de la cámara se abre en un Modal de sistema sobre Comunicados, no como imagen en una pestaña.
+- **Actores**: persona en turno, responsable de operación, master, candidato de alta (sin sesión).
+- **Superficies**: perfil, documentos (nóminas, contratos, comunicados, sanciones), condiciones de contrato, alta laboral (`/dashboard/altas` y formulario público `/alta/[token]`).
+- **Reglas propias**: cada persona ve solo sus documentos; las condiciones de contrato se versionan por tramos de vigencia y solo las edita el maestro; el maestro edita los datos personales de cualquier trabajador. El aviso del campo de visión de la cámara se abre en un Modal de sistema sobre Comunicados, no como imagen en una pestaña. El alta de quien aún no tiene cuenta es un expediente con token de un solo uso: [ADR-0015](../4-decisiones/ADR-0015-alta-laboral-por-token.md).
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 

@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 
 import { revalidatePath } from 'next/cache';
+import { canOpenPersonalDocument } from '@/lib/staff/personal-documents-access';
 
 
 
@@ -829,9 +830,7 @@ export async function fetchNominasListForUser(targetUserId: string): Promise<{ r
 
     const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
 
-    const allowed =
-
-        user.id === targetUserId || me?.role === 'manager' || me?.role === 'supervisor';
+    const allowed = canOpenPersonalDocument(me?.role, user.id, targetUserId);
 
     if (!allowed) return { rows: [], error: 'Sin permiso' };
 
@@ -1037,11 +1036,7 @@ export async function getNominaSignedDownloadUrl(input: {
 
     const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
 
-    const isManager = me?.role === 'manager' || me?.role === 'supervisor';
-
-    const isOwn = user.id === input.ownerUserId;
-
-    if (!isOwn && !isManager) return { error: 'Sin permiso' };
+    if (!canOpenPersonalDocument(me?.role, user.id, input.ownerUserId)) return { error: 'Sin permiso' };
 
 
 

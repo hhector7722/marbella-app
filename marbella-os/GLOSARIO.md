@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-17
+revisado: 2026-09-18
 caducidad: 6 meses
 supersede: —
 ---
@@ -46,6 +46,8 @@ Reglas de uso:
 | **Plantilla** | El conjunto de personas visibles en las vistas operativas del equipo. ⚠ conflicto: también se llama «plantilla» al documento impreso de jornada. En documentación, «plantilla» es siempre el equipo; el documento se llama **hoja de jornada**. | `profiles.visible_in_plantilla` |
 | **Baja** | Fin de la relación laboral de un perfil. Una fecha de baja igual a la de alta indica dato erróneo, no baja real. | `profiles.end_date` |
 | **Ficha de empleado** | Datos personales de una persona en el perfil: documento (NIF/NIE/Pasaporte), afiliación a la Seguridad Social, nacionalidad, fecha de nacimiento, domicilio, teléfono y correo. Se introducen a mano, no se calculan. | `profiles.dni`, `profiles.afiliacion_seguridad_social`, `profiles.nacionalidad`, `profiles.fecha_nacimiento`, `profiles.domicilio` |
+| **Alta laboral** | Proceso de recoger los datos de un trabajador nuevo, completar el contrato y enviarlos al gestor. Un solo expediente alimenta el formulario del candidato, el PDF y, al crear o vincular la cuenta, la ficha. | — |
+| **Expediente de alta** | Registro de ese proceso antes de que exista (o se vincule) el perfil. El candidato lo rellena por un enlace; el maestro completa categoría, tipo de contrato, horas y fechas. | `employment_intakes` |
 | **Nombre operativo** | Cómo se conoce a la persona en el bar y cómo aparece en la interfaz (plantilla, horarios, fichajes). Puede ser un apodo o el nombre habitual. No es el nombre de la gestoría. | `profiles.first_name`, `profiles.last_name` |
 | **Nombre de nómina** | Nombre oficial de la gestoría cuando discrepa del nombre operativo. Solo para emparejar liquidaciones y procesos contables. | `profiles.payroll_name` |
 

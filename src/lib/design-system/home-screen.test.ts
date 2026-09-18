@@ -502,6 +502,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             /label: 'Albaranes'[\s\S]*action: 'albaranes'/,
             'Albaranes sigue disponible en el modal Otros del Master'
         );
+        assert.match(otros, /label: 'Altas'/);
         assert.match(ops, /layout="ops-admin"/);
         assert.match(ops, /size="wide" instance="dashboard-ventas"/);
         assert.match(ops, /size="icon" instance="caja-inicial"/);

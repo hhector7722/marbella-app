@@ -151,11 +151,11 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 ## D10 · Rol sin enumeración en la base de datos
 
-**Prioridad: media.** La columna de rol admite cualquier cadena. Cinco valores están en uso y dos de ellos tienen exactamente el mismo alcance de permisos.
+**Prioridad: media.** La columna de rol admite cualquier cadena. Cinco valores están en uso, con alcance distinto; la matriz fiable sigue en [ACTORES-Y-ROLES](../1-producto/ACTORES-Y-ROLES.md), no en el esquema.
 
-**Coste**: un valor mal escrito degrada silenciosamente a los permisos mínimos, y la matriz de acceso solo es fiable en [ACTORES-Y-ROLES](../1-producto/ACTORES-Y-ROLES.md), no en el esquema.
+**Coste**: un valor mal escrito degrada silenciosamente a los permisos mínimos.
 
-**Disparador de pago**: cuando se dé contenido propio al rol de supervisor.
+**Disparador de pago**: al tocar el esquema de perfiles o al conceder un rol nuevo.
 
 ---
 
@@ -420,7 +420,7 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 **Coste**: un documento de identidad real subido a esa carpeta queda expuesto permanentemente. Contradice la regla de [SEGURIDAD §7](../3-ingenieria/SEGURIDAD.md) de proteger los documentos de identidad.
 
-**Disparador de pago**: mover las imágenes al almacenamiento privado (`employee-documents`) y servirlas a través de un manejador que verifique identidad y permiso, como ya hace `/api/employee-documents/open` para las nóminas. Decisión tomada a sabiendas el 2026-09-05.
+**Disparador de pago**: mover las imágenes al almacenamiento privado (`employee-documents`) y servirlas a través de un manejador que verifique identidad y permiso, como ya hace `/api/employee-documents/open` para las nóminas. Decisión tomada a sabiendas el 2026-09-05. Las altas laborales nuevas ya no escriben en esta carpeta: van al contenedor privado. El legado de quienes ya tenían foto pública sigue aquí.
 
 ---
 

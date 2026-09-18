@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-17
+revisado: 2026-09-18
 caducidad: 6 meses
 supersede: —
 ---
@@ -36,7 +36,7 @@ Consecuencia práctica para este documento: **es la única defensa que existe co
 
 Las 72 tablas tipadas se agrupan en nueve dominios.
 
-### Personas y jornada — 10 tablas
+### Personas y jornada — 11 tablas
 
 | Tabla | Autoridad sobre |
 |---|---|
@@ -47,13 +47,16 @@ Las 72 tablas tipadas se agrupan en nueve dominios.
 | `weekly_snapshots` | **Resultado semanal del motor de horas.** Única lectura válida de magnitudes semanales |
 | `weekly_snapshot_days` | **Resultado diario** (OT bruto y € extra del día), hijo de la proyección semanal |
 | `shifts` | Turnos planificados |
-| `schedule_day_notes` | Notas libres por día y por usuario en el horario. Una por usuario y día |
+| `schedule_day_notes` | Notas libres por día y por usuario en el horario. Una por usuario y día. Cada persona lee y escribe la suya; manager y admin, las de cualquiera |
 | `weekly_closings_log` | Registro de cierres semanales |
 | `employee_documents` | Documentos de la persona |
+| `employment_intakes` | Expediente de alta laboral (antes de existir o vincular el perfil) |
 
 **La regla que gobierna este dominio:** `time_logs` es hecho, `weekly_snapshots` y `weekly_snapshot_days` son resultado. Nada más produce horas ni el € extra del día. Ver [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md), [ADR-0011](../4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md).
 
 `profiles` conserva además los datos de la ficha de empleado: `dni` (NIF/NIE/Pasaporte), `afiliacion_seguridad_social`, `nacionalidad`, `fecha_nacimiento`, `domicilio`, `phone` y `email`. Son datos introducidos a mano, sin productor que los calcule. Conserva también `camera_fov_notice_acked_at`: el instante en que esa persona confirmó su primer fichaje de entrada viendo el aviso del campo de visión de la cámara. NULL significa que el aviso sigue pendiente. Cancelar el modal no escribe este campo.
+
+`employment_intakes` es el expediente de [alta laboral](../4-decisiones/ADR-0015-alta-laboral-por-token.md): datos del candidato, fotos del documento, categoría y tipo de contrato para el gestor, horas y fechas. No es la ficha. Al aplicar, los datos personales y el IBAN pasan a `profiles`; las horas y fechas, a `hours_contract_terms`. Categoría y tipo de contrato no tienen columna en el perfil: su dueño sigue siendo el expediente. Sin permiso a `anon`.
 
 #### Nombre operativo frente a nombre de nómina
 
@@ -129,6 +132,7 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 - `stock_movements` es el **único ledger canónico de stock**. Es append-only: las correcciones son nuevos movimientos reversores. Cada hecho nuevo lleva referencia tipada, idempotencia, origen, actor y procedencia. `stock_current` es su proyección regenerable.
 - `map_tpv_receta` une el artículo del punto de venta con la receta. **Sin este puente no hay descuento de existencias ni margen por producto.**
 - Las tablas de anulación permiten que la carta pública muestre algo distinto del dato interno sin duplicar la receta.
+- `carta_editors` es residual: ya no concede edición. Editan la carta `manager`, `admin` y `supervisor`.
 
 ### Compras y evidencia documental
 

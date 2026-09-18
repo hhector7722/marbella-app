@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-14
+revisado: 2026-09-18
 caducidad: 6 meses
 supersede: —
 ---
@@ -72,13 +72,13 @@ Cinco valores de rol están en uso, más una condición de acceso que no es un r
 |---|---|---|
 | `admin` | Responsable de operación con permisos plenos | Panel de gestión completo |
 | `manager` | Responsable de operación | Panel de gestión completo, incluida la analítica de negocio |
-| `supervisor` | Persona en turno con responsabilidad parcial | Área de equipo, más un subconjunto acotado de gestión |
-| `staff` | Persona en turno | Área de equipo, más el mismo subconjunto acotado |
+| `supervisor` | Persona en turno con responsabilidad parcial | Área de equipo, más carta y recetas completas |
+| `staff` | Persona en turno | Área de equipo, carta en lectura y recetas sin precio |
 | `user` | Valor residual sin semántica clara | Tratar como `staff` hasta que se resuelva |
 
 **Master** no es un rol: es una condición que se resuelve por dirección de correo electrónico. Da acceso a las superficies de gobierno del sistema (analítica de uso, analítica web, panel maestro, edición de contrato). Se decide así porque el usuario maestro puede no tener perfil en la base de datos, y su acceso no debe depender de que exista.
 
-`supervisor` y `staff` tienen hoy exactamente el mismo alcance de acceso. La distinción existe en los datos pero no en los permisos; hasta que se le dé contenido, es deuda de modelo y está registrada en [DEUDA](../5-estado/DEUDA.md).
+`supervisor` y `staff` no son el mismo rol. Comparten el panel de equipo y el mismo recorte de gestión (propinas, albaranes, escáner y eventos), y se separan en carta, recetas y en lo que no pueden tocar de otras personas.
 
 ---
 
@@ -94,6 +94,7 @@ Accesible por cualquiera con el enlace. No expone datos de personas ni de dinero
 - Formulario público de encargo por evento
 - Encargo privado por token en la dirección
 - Formulario público de reporte de actividades
+- Formulario de alta laboral por token de un solo uso ([ADR-0015](../4-decisiones/ADR-0015-alta-laboral-por-token.md))
 
 El token de un encargo es la única credencial: quien tiene el enlace, tiene acceso a ese encargo. Es una decisión consciente en favor de la ausencia de fricción para el cliente, y su límite está registrado como [D12](../5-estado/DEUDA.md).
 
@@ -111,6 +112,20 @@ El token de un encargo es la única credencial: quien tiene el enlace, tiene acc
 - **Solo `manager` y `admin`**: análisis de negocio.
 - **`staff` y `supervisor`**: dentro del panel de gestión solo alcanzan propinas, albaranes, escáner y eventos. Cualquier otra ruta les devuelve a su panel de equipo.
 - **Master**: todo lo anterior más analítica de uso, analítica web, panel maestro y edición de condiciones de contrato.
+
+#### Supervisor frente a staff
+
+Lo que `supervisor` puede y `staff` no:
+
+- Editar la carta.
+- Ver recetas completas, con precios, y editarlas.
+
+Lo que `supervisor` no puede, igual que `staff`:
+
+- Abrir DNI o nóminas de otra persona: solo las suyas.
+- Guardar horarios ni enviar avisos de horario.
+- Ver o escribir la nota del día de otra persona: solo la suya.
+- En el copiloto, gestionar la carta ni consultar costes laborales.
 
 Desde `/staff/propinas`, cualquier rol con acceso a esa página (`staff`, `supervisor`, `chef`, `manager`, `admin`) puede abrir y guardar los botes de propina (lun–vie y sáb–dom). La tabla `tip_pool_editors` sigue permitiendo el mismo alcance de botes sin abrir overrides. La pantalla de gestión `/dashboard/propinas`, los overrides por persona y la confirmación del reparto siguen acotados a `manager`/`admin` (más `tip_pool_editors` solo para botes en gestión).
 

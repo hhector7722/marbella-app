@@ -38,6 +38,7 @@ const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Uso app', instance: 'uso-app', href: '/dashboard/uso', img: '/icons/uso.png' },
     { label: 'Rentabilidad', instance: 'rentabilidad', href: '/dashboard/insights', img: '/icons/rent.png' },
     { label: 'Albaranes', instance: 'albaranes', action: 'albaranes', img: '/icons/scan.png' },
+    { label: 'Altas', instance: 'altas', href: '/dashboard/altas', img: '/icons/staff-card.png' },
 ];
 
 export function MasterMoreFunctionsModal({

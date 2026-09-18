@@ -18,6 +18,7 @@ Kit: [`src/lib/pdf/design-system-v2/`](src/lib/pdf/design-system-v2/)
 | Jornada / plantilla / simulación | **Migrado** → `timesheet-pdf.ts` |
 | Encargo + factura encargo | **Migrado** → `print-encargo-document.ts` |
 | Pedido a proveedor | **Legacy confirmado** (`pdf-generator.ts`). DS v2 rechazado — no migrar |
+| Alta laboral | **Migrado** → `alta-laboral-pdf.ts` |
 | PDF nuevos futuros | Obligatorio kit DS v2 |
 
 ## Reglas

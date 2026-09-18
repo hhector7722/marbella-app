@@ -12,7 +12,7 @@ import {
 
 export default function MainWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const isLogin = pathname === '/login';
+    const isLogin = pathname === '/login' || pathname.startsWith('/alta');
     const fullscreenCarta = isFullscreenCartaPath(pathname);
     const internalScrollShell = isInternalScrollShellPath(pathname);
     const appShellScroll = isAppShellScrollPage(pathname);

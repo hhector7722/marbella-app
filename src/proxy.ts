@@ -172,6 +172,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Alta laboral: formulario público por token de un solo uso.
+  if (path === "/alta" || path.startsWith("/alta/")) {
+    return NextResponse.next();
+  }
+
   // API vales: access check público (devuelve false si no hay sesión);
   // la descarga valida email en el handler.
   if (path.startsWith("/api/propuestas/")) {

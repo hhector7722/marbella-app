@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-18
 caducidad: 12 meses
 supersede: docs/design-system/README.md
 ---
@@ -80,6 +80,7 @@ Los documentos impresos comparten las reglas de [CONTENIDO-Y-TONO §4](CONTENIDO
 | Hoja de jornada, plantilla y simulación | Interna | Migrado al sistema |
 | Encargo y factura de encargo | Cliente | Migrado al sistema |
 | Pedido a proveedor | Proveedor | **Estilo heredado confirmado** |
+| Alta laboral | Gestoría | Migrado al sistema |
 
 **El pedido a proveedor no se migra.** Se evaluó y se rechazó por decisión explícita: su formato heredado funciona en la relación con los proveedores y cambiarlo tenía coste sin beneficio. Es una excepción con dueño y fecha, no deuda.
 

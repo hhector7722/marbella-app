@@ -20,6 +20,7 @@ export default function BottomNavWrapper() {
     // Rutas /staff/* usan la barra inferior de src/app/staff/layout.tsx
     if (pathname.startsWith('/staff')) return null;
     if (pathname.startsWith('/reporte')) return null;
+    if (pathname.startsWith('/alta')) return null;
     if (pathname.startsWith('/playground')) return null;
     if (pathname.startsWith('/design-system')) return null;
 

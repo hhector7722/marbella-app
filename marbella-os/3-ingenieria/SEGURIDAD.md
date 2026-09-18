@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-14
+revisado: 2026-09-18
 caducidad: 3 meses
 supersede: —
 ---
@@ -59,7 +59,7 @@ Registrado como [D9](../5-estado/DEUDA.md#d9--autorización-por-correo-electrón
 
 ### Los cinco roles
 
-`admin`, `manager`, `supervisor`, `staff`, `user`. La columna es texto libre, sin restricción: **un error de escritura crea un rol nuevo en silencio** y su portador pierde acceso sin explicación. Registrado como [D10](../5-estado/DEUDA.md); la matriz fiable está en [ACTORES-Y-ROLES](../1-producto/ACTORES-Y-ROLES.md).
+`admin`, `manager`, `supervisor`, `staff`, `user`. La columna es texto libre, sin restricción: **un error de escritura crea un rol nuevo en silencio** y su portador pierde acceso sin explicación. Registrado como [D10](../5-estado/DEUDA.md). `supervisor` y `staff` no comparten el mismo alcance: la matriz está en [ACTORES-Y-ROLES](../1-producto/ACTORES-Y-ROLES.md).
 
 ---
 
@@ -68,7 +68,7 @@ Registrado como [D9](../5-estado/DEUDA.md#d9--autorización-por-correo-electrón
 Vive en `src/proxy.ts`. Su lógica exacta, en orden:
 
 1. **Se aparta de `/api/*`.** Ninguna ruta de máquina pasa por él.
-2. Deja pasar sin sesión: `carta`, `eventos`, `pedido`, `reporte`, `propuestas`.
+2. Deja pasar sin sesión: `carta`, `eventos`, `pedido`, `reporte`, `propuestas`, `alta`.
 3. Una petición con cabecera `Next-Action` no se redirige a HTML (login o home): Next espera el payload de la acción, no una página.
 4. Sin sesión y ruta protegida → al acceso.
 5. Con sesión, comprueba por correo: acceso maestro, uso, analítica web, contrato.
@@ -198,6 +198,8 @@ Lo que la hace aceptable:
 - No hay datos de terceros detrás: el cliente ve lo suyo.
 
 Lo que hay que respetar al ampliarla: **el identificador no puede dar acceso a nada que no sea ese encargo.** Una función que reciba el identificador y devuelva más de lo estrictamente necesario rompe la premisa.
+
+Un **candidato de alta laboral** entra igual, con un token distinto: aleatorio, de un solo uso, caducable, y en base de datos solo el hash. Abre **un** expediente, nunca un perfil ajeno. La tabla no concede nada a `anon`; escribe el servidor tras validar el token. Las fotos van al contenedor privado. La decisión está en [ADR-0015](../4-decisiones/ADR-0015-alta-laboral-por-token.md).
 
 ---
 

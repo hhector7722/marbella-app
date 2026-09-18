@@ -38,9 +38,17 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Supervisor ya no es staff con otro nombre.** Puede editar la carta y ver recetas con precio; no abre DNI ni nóminas ajenas, no guarda horarios ni avisos, no escribe la nota del día de otra persona y el copiloto no le deja gestionar carta ni consultar coste laboral. [ACTORES-Y-ROLES](../1-producto/ACTORES-Y-ROLES.md).
+
 - **Plat Marbella: el emplatado llena la vajilla.** El plato deja los aros dibujados. Las tres raciones se sirven grandes, juntas y hasta el reborde, como un plato de restaurante.
 
 - **Home: en escritorio se cambia de panel con el scroll horizontal.** Entre `/dashboard`, `/master/dashboard` y `/staff/dashboard`, el trackpad o la rueda desplazan la misma pista que el deslizamiento del teléfono. Los indicadores de abajo siguen siendo un camino visible. [PATRONES](../2-diseno/PATRONES.md), [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **Alta laboral: un expediente, no tres documentos.** El maestro envía un enlace al candidato; él rellena ficha, IBAN y fotos; el maestro completa contrato y genera el PDF al gestor; al crear o vincular la cuenta, esos datos pasan al perfil. [ADR-0015](../4-decisiones/ADR-0015-alta-laboral-por-token.md).
+
+- **Coste laboral: el mes en curso sin resumen no es un error.** Coste, Fijo y M.O./Vtas quedan en blanco, se ven las extras y un aviso dice que la nómina está pendiente. Un mes ya cerrado sin resumen sí grita. [COSTE-LABORAL](../3-ingenieria/dominio/COSTE-LABORAL.md).
+
+- **Coste laboral: el resumen de agosto ya cuenta.** El PDF de gestoría que pdf2json no abría (cabecera XRef, página girada) se lee con pdfjs-dist y deja el coste oficial del mes. Agosto deja de aparecer como mes sin nómina.
 
 - **Horario: una nota nueva avisa a Héctor.** Al guardar una nota por primera vez en el modal de un día, llega un push solo a él: quién la escribió, el día del horario (no cuándo la creó) y el texto. Editar una nota ya existente no vuelve a avisar.
 

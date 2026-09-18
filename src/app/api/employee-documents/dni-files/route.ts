@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createClient } from '@/utils/supabase/server';
+import { canOpenPersonalDocument } from '@/lib/staff/personal-documents-access';
+import { createAltaServiceClient } from '@/lib/alta-laboral/service-client.ts';
+import { ALTA_BUCKET } from '@/lib/alta-laboral/storage.ts';
 import {
     PERSONAL_DOCUMENT_IMAGE_EXTS,
     personalDocumentFilePattern,
@@ -10,13 +13,26 @@ import {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+function openUrl(ownerUserId: string, storagePath: string): string {
+    const params = new URLSearchParams({
+        owner: ownerUserId,
+        path: storagePath,
+        tipo: 'dni',
+    });
+    return `/api/employee-documents/open?${params.toString()}`;
+}
+
+function sideFromName(name: string): 'delantera' | 'trasera' | null {
+    const base = name.replace(/\.[^.]+$/, '').toLowerCase();
+    if (base === 'delantera' || base.endsWith('-delantera')) return 'delantera';
+    if (base === 'trasera' || base.endsWith('-trasera')) return 'trasera';
+    if (base.startsWith('dni_')) return 'delantera';
+    return null;
+}
+
 /**
- * Resuelve las imágenes del documento de un empleado ubicadas en `/public/personal/`.
- *
- * El nombre del archivo es `<slug>-delantera.<ext>` y opcionalmente `<slug>-trasera.<ext>`,
- * donde el slug deriva del nombre completo del empleado (ver `personal-document-slug.ts`).
- * Puede haber una sola imagen (solo "delantera") o dos (delantera + trasera); un "trasera"
- * ausente no es un error.
+ * Resuelve las imágenes del documento: primero el contenedor privado,
+ * después el legado `/public/personal/` (D29).
  */
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -35,10 +51,28 @@ export async function GET(request: Request) {
     }
 
     const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    const isElevated = me?.role === 'manager' || me?.role === 'supervisor';
-    const isOwn = user.id === ownerUserId;
-    if (!isOwn && !isElevated) {
+    if (!canOpenPersonalDocument(me?.role, user.id, ownerUserId)) {
         return NextResponse.json({ error: 'Sin permiso' }, { status: 403 });
+    }
+
+    const bySide: Record<'delantera' | 'trasera', string | null> = { delantera: null, trasera: null };
+
+    try {
+        const admin = createAltaServiceClient();
+        const { data: objects } = await admin.storage.from(ALTA_BUCKET).list(`${ownerUserId}/dni`, {
+            limit: 50,
+        });
+        for (const object of objects ?? []) {
+            const side = sideFromName(object.name);
+            if (!side || bySide[side]) continue;
+            bySide[side] = openUrl(ownerUserId, `${ownerUserId}/dni/${object.name}`);
+        }
+    } catch {
+        // Sin servicio o sin carpeta: se cae al legado público.
+    }
+
+    if (bySide.delantera || bySide.trasera) {
+        return NextResponse.json(bySide);
     }
 
     const { data: ownerProfile } = await supabase
@@ -62,7 +96,6 @@ export async function GET(request: Request) {
         return NextResponse.json({ delantera: null, trasera: null });
     }
 
-    const bySide: Record<string, string | null> = { delantera: null, trasera: null };
     for (const pattern of patterns) {
         const hit = files.find((f) => {
             const dot = f.lastIndexOf('.');

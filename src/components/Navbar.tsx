@@ -46,7 +46,7 @@ export default function Navbar() {
         return () => subscription.unsubscribe();
     }, [supabase]);
 
-    if (pathname === '/login' || isFullscreenCartaPath(pathname) || pathname.startsWith('/reporte') || pathname.startsWith('/playground') || pathname.startsWith('/design-system')) return null;
+    if (pathname === '/login' || isFullscreenCartaPath(pathname) || pathname.startsWith('/reporte') || pathname.startsWith('/alta') || pathname.startsWith('/playground') || pathname.startsWith('/design-system')) return null;
 
     const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
     const effectiveCameraEmail = (identity?.effectiveEmail ?? userData?.email)?.trim().toLowerCase();

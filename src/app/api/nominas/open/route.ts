@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { canOpenPersonalDocument } from '@/lib/staff/personal-documents-access';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -43,9 +44,7 @@ export async function GET(request: Request) {
     }
 
     const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    const isElevated = me?.role === 'manager' || me?.role === 'supervisor';
-    const isOwn = user.id === ownerUserId;
-    if (!isOwn && !isElevated) {
+    if (!canOpenPersonalDocument(me?.role, user.id, ownerUserId)) {
         return NextResponse.json({ error: 'Sin permiso' }, { status: 403 });
     }
 
