@@ -14,6 +14,7 @@ import {
   versionedSupplierProfileForId,
 } from '@/lib/albaranes/k5/profile-registry'
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
+import { isK5ReusableMappingVersion } from '@/lib/albaranes/k5/trusted-mapping'
 
 export type InterpretationProposalView = {
   id: string
@@ -83,20 +84,20 @@ function sourceKey(tableIndex: unknown, rowIndex: unknown): string {
   return `${tableIndex == null ? 'document' : String(tableIndex)}:${rowIndex == null ? 'document' : String(rowIndex)}`
 }
 
-async function confirmedMappingSnapshots(
+async function reusableMappingSnapshots(
   supabase: Extract<PurchaseManagerGate, { ok: true }>['supabase'],
   supplierId: number
 ): Promise<K5MappingSnapshot[]> {
   const { data: versions, error } = await supabase
     .from('purchase_mapping_versions')
-    .select('id,supplier_item_name,ingredient_id,conversion_factor,line_billing_unit,line_content_qty,line_content_unit,status,supersedes_id')
+    .select('id,legacy_mapping_id,supplier_item_name,ingredient_id,conversion_factor,line_billing_unit,line_content_qty,line_content_unit,status,supersedes_id,idempotency_key')
     .eq('supplier_id', supplierId)
   if (error) throw new Error('No se pudieron leer las versiones de mapeo.')
 
   const rows = (versions ?? []) as Array<Record<string, unknown>>
   const supersededIds = new Set(rows.map((row) => text(row.supersedes_id)).filter(Boolean))
-  const confirmedLeaves = rows.filter((row) =>
-    row.status === 'confirmed'
+  const reusableLeaves = rows.filter((row) =>
+    isK5ReusableMappingVersion(row)
     && !supersededIds.has(text(row.id))
     && text(row.ingredient_id)
     && text(row.line_billing_unit)
@@ -104,7 +105,7 @@ async function confirmedMappingSnapshots(
     && text(row.line_content_unit)
   )
 
-  const ingredientIds = [...new Set(confirmedLeaves.map((row) => text(row.ingredient_id)).filter(Boolean))]
+  const ingredientIds = [...new Set(reusableLeaves.map((row) => text(row.ingredient_id)).filter(Boolean))]
   if (ingredientIds.length === 0) return []
 
   const { data: ingredients, error: ingredientError } = await supabase
@@ -117,7 +118,7 @@ async function confirmedMappingSnapshots(
     (ingredients ?? []).map((ingredient: Record<string, unknown>) => [text(ingredient.id), ingredient])
   )
 
-  return confirmedLeaves.flatMap((row): K5MappingSnapshot[] => {
+  return reusableLeaves.flatMap((row): K5MappingSnapshot[] => {
     const ingredientId = text(row.ingredient_id)
     const ingredient = ingredientById.get(ingredientId)
     const purchaseUnit = text(ingredient?.purchase_unit)
@@ -486,7 +487,7 @@ export async function generateInterpretationProposalsAction(params: {
     profileHash = hashSupplierProfile(versioned.profile)
     let mappings: K5MappingSnapshot[]
     try {
-      mappings = await confirmedMappingSnapshots(gate.supabase, supplierId)
+      mappings = await reusableMappingSnapshots(gate.supabase, supplierId)
     } catch (error) {
       return { success: false, message: error instanceof Error ? error.message : 'No se pudieron validar los mapeos.' }
     }
