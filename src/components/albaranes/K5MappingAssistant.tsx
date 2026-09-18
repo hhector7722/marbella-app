@@ -104,7 +104,19 @@ export function K5MappingAssistant({ invoiceId, onResolveLine }: Props) {
     )
   }
 
-  if (state.suggestions.length === 0 && state.unresolved.length === 0) return null
+  if (state.suggestions.length === 0 && state.unresolved.length === 0) {
+    return (
+      <Surface variant="block" instance="k5-mapping-assistant-complete" className="min-w-0 p-4">
+        <div className="flex items-center gap-2 text-sm font-black text-emerald-800">
+          <CheckCircle2 className="h-4 w-4" />
+          1 · No hay productos nuevos que resolver
+        </div>
+        <p className="mt-1 text-[11px] font-medium text-zinc-600">
+          Todos los productos tienen ya un mapping utilizable o están tratados en la revisión de abajo.
+        </p>
+      </Surface>
+    )
+  }
 
   return (
     <Surface variant="block" instance="k5-mapping-assistant" className="min-w-0 p-4">
