@@ -177,11 +177,23 @@ function proposalPayload(params: {
     source_table_index: n.sourceTableIndex,
     source_row_index: n.sourceRowIndex,
     mapping_version_id: n.mappingVersionId,
+    ingredient_id: n.ingredientId,
     observed: n.observed,
     interpreted: n.interpreted,
     normalized: n.normalized,
     pricing: n.pricing,
     status: n.status,
+    review_reasons: n.reviewReasons,
+    warnings: n.warnings,
+    line_quantity: n.lineQuantity,
+    line_unit: n.lineUnit,
+    observed_unit_price: n.observedUnitPrice,
+    line_total: n.lineTotal,
+    physical_quantity: n.physicalQuantity,
+    base_unit: n.baseUnit,
+    purchase_quantity: n.purchaseQuantity,
+    purchase_unit: n.purchaseUnit,
+    normalized_unit_price: n.normalizedUnitPrice,
   })
 
   return {
