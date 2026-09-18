@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Plat Marbella: el emplatado llena la vajilla.** El plato deja los aros dibujados. Las tres raciones se sirven grandes, juntas y hasta el reborde, como un plato de restaurante.
+
 - **Home: en escritorio se cambia de panel con el scroll horizontal.** Entre `/dashboard`, `/master/dashboard` y `/staff/dashboard`, el trackpad o la rueda desplazan la misma pista que el deslizamiento del teléfono. Los indicadores de abajo siguen siendo un camino visible. [PATRONES](../2-diseno/PATRONES.md), [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **Horario: una nota nueva avisa a Héctor.** Al guardar una nota por primera vez en el modal de un día, llega un push solo a él: quién la escribió, el día del horario (no cuándo la creó) y el texto. Editar una nota ya existente no vuelve a avisar.
