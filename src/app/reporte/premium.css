@@ -39,6 +39,20 @@ body:has(.reporte-container) {
     padding-bottom: 0 !important;
 }
 
+.reporte-container input[type='date'].reporte-date-input {
+    color-scheme: dark;
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    padding: 0;
+}
+
+.reporte-container [data-component='Button'][data-instance='reporte-enviar']::before {
+    border-color: var(--color-texto-invertido);
+}
+
 .reporte-container .btn-premium {
     background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
     border: none;

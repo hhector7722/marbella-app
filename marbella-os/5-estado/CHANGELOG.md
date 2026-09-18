@@ -40,9 +40,13 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 - **Asistencia de plantilla: cada fichaje es una card hundida.** Nombre y marca (horas, F/P o cruz) van juntos, sin aire interior, sobre `color.superficie.hundida`. La cruz de no registrado mide lo mismo que la hora. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
 
+- **Reporte: participantes con teclado numérico y finalización en 15:30.** Al contar personas sale el teclado de dígitos. El desplegable de hora de fin se abre en 15:30; se puede subir o bajar por el mismo listado. La hora de inicio no cambia.
+
 - **Asistencia de plantilla: F, P y la cruz alinean con las horas.** En `/staff/history`, la inicial de festivo/personal y la cruz de no registrado ocupan el mismo hueco derecho que la entrada y la salida. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
 
 - **Alta laboral pública: título centrado en EA Sports y logo a la derecha.** Se retira el subtítulo «Datos para tu contrato». El cromo ocupa el ancho visible; el formulario sigue a `max-w-lg`.
+
+- **Reporte: la fecha se alinea con el resto del formulario.** La caja de fecha usa el mismo aspecto que Horari y Activitat, el envío queda centrado con contorno blanco y un 0 de participantes no se muestra.
 
 - **Alta laboral: el formulario público cabe de un vistazo.** Nombre y apellidos, documento y afiliación, nacionalidad y nacimiento, teléfono y correo, anverso y reverso van en la misma fila. La nacionalidad se elige de lista (España primero), el teléfono son 9 dígitos y el correo puede añadir `@gmail.com`. [ADR-0015](../4-decisiones/ADR-0015-alta-laboral-por-token.md).
 

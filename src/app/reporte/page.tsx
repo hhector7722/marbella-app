@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { format, addDays, getDay, subDays } from 'date-fns';
 import { submitReporteAction, ReportePayload } from './actions';
 import { Button } from '@/components/ui/button';
-import { Field } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { randomId } from '@/lib/random-id';
@@ -49,33 +48,78 @@ function getNextWeekend() {
   };
 }
 
+function formatDateDisplay(iso: string): string {
+  if (!iso) return '';
+  const [year, month, day] = iso.split('-');
+  if (!year || !month || !day) return iso;
+  return `${day}/${month}/${year}`;
+}
+
 function DateInput({ id, value, onChange }: { id?: string; value: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
-    <input
-      id={id}
-      ref={ref}
-      type="date"
-      value={value}
-      onChange={(e) => {
-        onChange(e.target.value);
-        ref.current?.blur();
-      }}
-    />
+    <div className="form-input relative flex w-full min-w-0 items-center justify-center overflow-hidden rounded-xl">
+      <span className="pointer-events-none text-xs font-medium text-white">
+        {formatDateDisplay(value)}
+      </span>
+      <input
+        id={id}
+        ref={ref}
+        type="date"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          ref.current?.blur();
+        }}
+        className="reporte-date-input absolute inset-0 z-10 cursor-pointer opacity-0"
+      />
+    </div>
   );
 }
 
-function TimePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function TimePicker({
+  value,
+  onChange,
+  openAt,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  openAt?: string;
+}) {
+  const ref = useRef<HTMLSelectElement>(null);
+  const pendingOpenAt = useRef(false);
   const timeOptions: string[] = [];
   for (let h = 7; h <= 23; h++) {
     timeOptions.push(`${String(h).padStart(2, '0')}:00`);
     if (h < 23) timeOptions.push(`${String(h).padStart(2, '0')}:30`);
   }
 
+  const revealInitialHour = () => {
+    const select = ref.current;
+    if (!select || value || !openAt) return;
+    const idx = Array.from(select.options).findIndex((o) => o.value === openAt);
+    if (idx < 0) return;
+    select.selectedIndex = idx;
+    pendingOpenAt.current = true;
+  };
+
   return (
     <select
+      ref={ref}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onMouseDown={revealInitialHour}
+      onTouchStart={revealInitialHour}
+      onFocus={revealInitialHour}
+      onBlur={() => {
+        if (pendingOpenAt.current && ref.current) {
+          pendingOpenAt.current = false;
+          ref.current.selectedIndex = 0;
+        }
+      }}
+      onChange={(e) => {
+        pendingOpenAt.current = false;
+        onChange(e.target.value);
+      }}
       className="form-input flex-1 rounded-xl px-1 py-1.5 outline-none text-[11px] text-white min-w-0 appearance-none text-center"
       style={{ textAlignLast: 'center' }}
     >
@@ -420,17 +464,21 @@ export default function ReportePage() {
                   </svg>
                 </button>
               )}
-              <div className="grid grid-cols-[120px_1fr] gap-x-6 gap-y-1.5 items-start">
+              <div className="grid grid-cols-[120px_1fr_70px] gap-x-6 gap-y-1.5 items-start">
                 <div className="space-y-1">
-                  <Field instance={`reporte-data-${act.id}`} label="Data" htmlFor={`reporte-data-${act.id}`}>
+                  <label
+                    htmlFor={`reporte-data-${act.id}`}
+                    className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1"
+                  >
+                    Data
+                  </label>
                   <DateInput
                     id={`reporte-data-${act.id}`}
                     value={act.data}
                     onChange={(v) => handleChange(act.id, 'data', v)}
                   />
-                  </Field>
                 </div>
-                <div className="space-y-1">
+                <div className="col-span-2 space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Activitat</label>
                   <div className="relative">
                     {loadingDaily[act.data] || isLoadingGlobal ? (
@@ -479,8 +527,6 @@ export default function ReportePage() {
                     )}
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-[120px_1fr_70px] gap-x-6 gap-y-2.5 items-start mt-1.5">
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Horari</label>
                   <div className="flex items-center gap-1 h-[36px]">
@@ -494,6 +540,7 @@ export default function ReportePage() {
                     <TimePicker
                       value={act.hora_finalitzacio}
                       onChange={(v) => handleChange(act.id, 'hora_finalitzacio', v)}
+                      openAt="15:30"
                     />
                   </div>
                 </div>
@@ -509,11 +556,15 @@ export default function ReportePage() {
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Participants</label>
                   <input
-                    type="number"
-                    min="0"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
                     value={act.total_participants || ''}
-                    onChange={(e) => handleTotalParticipants(act.id, parseInt(e.target.value) || 0)}
-                    placeholder="0"
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '');
+                      handleTotalParticipants(act.id, digits ? parseInt(digits, 10) : 0);
+                    }}
                     className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs text-white text-center"
                   />
                 </div>
@@ -553,7 +604,7 @@ export default function ReportePage() {
             {renderDayGroup('Diumenge')}
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-center">
             <Button
               type="submit"
               variant="primary"
