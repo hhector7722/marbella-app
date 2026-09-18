@@ -197,6 +197,16 @@ async function supersedeK5ProposalWithMapping(params: {
     normalized,
     status,
     review_reasons: reviewReasons,
+    warnings: current.warnings ?? [],
+    line_quantity: lineQuantity,
+    line_unit: params.lineBillingUnit,
+    observed_unit_price: observedUnitPrice,
+    line_total: current.line_total,
+    physical_quantity: snapshot?.physicalQuantity ?? null,
+    base_unit: snapshot?.baseUnit ?? null,
+    purchase_quantity: snapshot?.purchaseQuantity ?? null,
+    purchase_unit: snapshot?.purchaseUnit ?? null,
+    normalized_unit_price: snapshot?.normalizedUnitPrice ?? null,
   })
 
   const { data: existing, error: existingError } = await params.supabase
