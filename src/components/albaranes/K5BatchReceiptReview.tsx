@@ -16,7 +16,7 @@ import {
   type K5BatchReviewSummary,
 } from '@/app/dashboard/albaranes/k5/batch-actions'
 
-type Props = { invoiceId: string }
+type Props = { invoiceId: string; onResolveLine?: (lineId: string) => void }
 
 type Context = {
   rows: K5BatchReviewRow[]
@@ -40,7 +40,7 @@ const exceptionLabel: Record<string, string> = {
   unavailable: 'Faltan datos para una confirmación segura.',
 }
 
-export function K5BatchReceiptReview({ invoiceId }: Props) {
+export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
   const [context, setContext] = useState<Context | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [preview, setPreview] = useState<K5BatchPreviewItem[]>([])
@@ -158,9 +158,9 @@ export function K5BatchReceiptReview({ invoiceId }: Props) {
     <Surface variant="block" instance="k5-batch-review" className="min-w-0 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-base font-black text-zinc-900">Revisión automática del albarán</div>
+          <div className="text-base font-black text-zinc-900">2 · Revisar y confirmar productos reconocidos</div>
           <p className="mt-1 max-w-2xl text-xs font-medium leading-relaxed text-zinc-600">
-            Los mappings ya confirmados se reutilizan. Solo se agrupan líneas sin ambigüedades ni pedidos pendientes; nada se aplica hasta que revises la vista previa y confirmes el lote.
+            Estas líneas ya tienen producto y presentación resueltos. Revísalas juntas, mira el efecto real y confirma solo si todo cuadra.
           </p>
         </div>
         <Button
@@ -171,7 +171,7 @@ export function K5BatchReceiptReview({ invoiceId }: Props) {
           disabled={previewing || confirming}
         >
           <RefreshCw className="h-4 w-4" />
-          Actualizar
+          Recargar
         </Button>
       </div>
 
@@ -206,7 +206,7 @@ export function K5BatchReceiptReview({ invoiceId }: Props) {
         <div className="mt-4">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
-              Líneas seguras para revisar juntas
+              Seleccionadas para confirmar
             </div>
             <button
               type="button"
@@ -312,19 +312,31 @@ export function K5BatchReceiptReview({ invoiceId }: Props) {
               <AlertTriangle className="h-4 w-4" />
               Excepciones · {exceptionRows.length}
             </div>
-            <Link href="/dashboard/albaranes" className="text-[10px] font-black text-zinc-700 underline underline-offset-2">
+            <Link href={`/dashboard/albaranes?id=${encodeURIComponent(invoiceId)}`} className="text-[10px] font-black text-zinc-700 underline underline-offset-2">
               Abrir albarán para resolverlas
             </Link>
           </div>
           <div className="mt-2 space-y-1.5">
             {exceptionRows.map((row) => (
-              <div key={row.proposalId} className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2">
-                <div className="truncate text-xs font-black text-zinc-900">{row.sourceItemName}</div>
-                <div className="mt-0.5 text-[10px] font-semibold leading-relaxed text-amber-900">
-                  {exceptionLabel[row.disposition] || 'Requiere revisión.'}
-                  {row.reviewReasons.length ? ` ${row.reviewReasons.join(' · ')}` : ''}
-                  {row.pendingOrderCount > 0 ? ` Pedidos pendientes: ${row.pendingOrderCount}.` : ''}
+              <div key={row.proposalId} className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-black text-zinc-900">{row.sourceItemName}</div>
+                  <div className="mt-0.5 text-[10px] font-semibold leading-relaxed text-amber-900">
+                    {exceptionLabel[row.disposition] || 'Requiere revisión.'}
+                    {row.reviewReasons.length ? ` ${row.reviewReasons.join(' · ')}` : ''}
+                    {row.pendingOrderCount > 0 ? ` Pedidos pendientes: ${row.pendingOrderCount}.` : ''}
+                  </div>
                 </div>
+                {onResolveLine && row.lineId ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    instance="k5-review-exception"
+                    onClick={() => onResolveLine(row.lineId!)}
+                  >
+                    {row.disposition === 'needs_mapping' ? 'Mapear producto' : 'Revisar línea'}
+                  </Button>
+                ) : null}
               </div>
             ))}
           </div>
