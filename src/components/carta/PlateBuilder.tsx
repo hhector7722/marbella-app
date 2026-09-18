@@ -18,67 +18,36 @@ export type PlateZoneItem = {
 }
 
 const SLOT_ORDER: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']
+/** Pintado de atrás hacia adelante: el principal queda debajo, la guarnición delante. */
+const PAINT_ORDER: PlatoMarbellaSlot[] = ['principal', 'entrante', 'guarnicion']
 
 /**
- * Geometría del plato (viewBox 240×232). Un plato real visto ligeramente
- * desde arriba: el reborde es un anillo coplanar y el fondo del hueco está
- * desplazado hacia el observador (perspectiva).
+ * Plato llano visto desde arriba (viewBox 280×268). Un solo hueco de porcelana,
+ * sin gajos: la comida se sirve encima, como un plato de restaurante.
  */
-const PLATE = { cx: 120, cy: 112, rx: 116, ry: 106 } as const
-/** Borde interior del reborde: coplanar con el plato. */
-const WELL = { cx: 120, cy: 112, rx: 100, ry: 90 } as const
-/** Fondo del hueco: más bajo y ligeramente más pequeño, desplazado hacia abajo. */
-const FLOOR = { cx: 120, cy: 116, rx: 90, ry: 80, divY: 92 } as const
-
-const floorBottom = FLOOR.cy + FLOOR.ry
-
-function floorXHalfAtY(y: number): number {
-  const t = (y - FLOOR.cy) / FLOOR.ry
-  return FLOOR.rx * Math.sqrt(Math.max(0, 1 - t * t))
-}
-
-const leftDiv = FLOOR.cx - floorXHalfAtY(FLOOR.divY)
-const rightDiv = FLOOR.cx + floorXHalfAtY(FLOOR.divY)
+const PLATE = { cx: 140, cy: 128, rx: 132, ry: 124 } as const
+const WELL = { cx: 140, cy: 130, rx: 108, ry: 98 } as const
 
 /**
- * Recortes de cada tramo: siguen la elipse real del fondo (arco + divisor),
- * nunca cajas rectangulares. La separación es la pared moldeada del plato.
+ * Sitio de cada ración sobre el plato. Las cajas se solapan a propósito:
+ * es un emplatado, no un collage.
  */
-const COMPARTMENT_PATH: Record<PlatoMarbellaSlot, string> = {
-  entrante: `M ${leftDiv} ${FLOOR.divY} A ${FLOOR.rx} ${FLOOR.ry} 0 0 1 ${rightDiv} ${FLOOR.divY} L ${leftDiv} ${FLOOR.divY} Z`,
-  principal: `M ${leftDiv} ${FLOOR.divY} A ${FLOOR.rx} ${FLOOR.ry} 0 0 0 ${FLOOR.cx} ${floorBottom} L ${FLOOR.cx} ${FLOOR.divY} L ${leftDiv} ${FLOOR.divY} Z`,
-  guarnicion: `M ${rightDiv} ${FLOOR.divY} A ${FLOOR.rx} ${FLOOR.ry} 0 0 1 ${FLOOR.cx} ${floorBottom} L ${FLOOR.cx} ${FLOOR.divY} L ${rightDiv} ${FLOOR.divY} Z`,
+const FOOD_PLACE: Record<PlatoMarbellaSlot, { x: number; y: number; w: number; h: number }> = {
+  entrante: { x: 28, y: 34, w: 132, h: 124 },
+  principal: { x: 112, y: 26, w: 152, h: 140 },
+  guarnicion: { x: 48, y: 116, w: 152, h: 122 },
 }
-
-/**
- * Caja de cada alimento: un poco mayor que el tramo. El clipPath recorta a la
- * porcelana; `slice` + escala meten la comida en el hueco y ocultan el plato
- * original de la foto de estudio.
- */
-const FOOD_SLOT: Record<PlatoMarbellaSlot, { x: number; y: number; w: number; h: number }> = {
-  entrante: { x: FLOOR.cx - 80, y: FLOOR.cy - FLOOR.ry - 4, w: 160, h: 64 },
-  principal: { x: FLOOR.cx - FLOOR.rx - 4, y: FLOOR.divY - 6, w: 96, h: 112 },
-  guarnicion: { x: FLOOR.cx - 4, y: FLOOR.divY - 6, w: 96, h: 112 },
-}
-
-/** Recorte extra hacia el interior de la foto (el reborde de la vajilla original se va). */
-const FOOD_COVER_SCALE = 1.22
 
 const ZONE_LABEL_POS: Record<PlatoMarbellaSlot, { x: number; y: number }> = {
-  entrante: { x: FLOOR.cx, y: 62 },
-  principal: { x: FLOOR.cx - FLOOR.rx / 2, y: 144 },
-  guarnicion: { x: FLOOR.cx + FLOOR.rx / 2, y: 144 },
+  entrante: { x: 86, y: 92 },
+  principal: { x: 196, y: 92 },
+  guarnicion: { x: 140, y: 178 },
 }
 
-const CAST_SHADOW = 'rgba(15, 23, 42, 0.18)'
-const RIDGE_HIGHLIGHT_H = 'rgba(255, 255, 255, 0.85)'
-const RIDGE_HIGHLIGHT_V = 'rgba(255, 255, 255, 0.7)'
-
 /**
- * Pieza de dominio de la carta: un plato de porcelana realista visto
- * ligeramente desde arriba, con tres compartimentos moldeados (entrant,
- * principal, guarnició) que representan el estado del configurador Plat
- * Marbella. La comida se integra como capas dinámicas sobre la porcelana.
+ * Pieza de dominio de la carta: un plato llano de porcelana. Cada elección
+ * (entrant, principal, guarnició) se recorta del fondo de estudio y se sirve
+ * sobre la vajilla, solapando las demás como un emplatado real.
  *
  * Uso:
  *   <PlateBuilder lang={lang} activeSlot={slot}>
@@ -94,7 +63,7 @@ export function PlateBuilder({
   className,
 }: {
   lang: CartaLang
-  /** Zona en curso: solo refuerza la etiqueta vacía. No pinta cajas. */
+  /** Zona en curso: solo refuerza la etiqueta vacía. */
   activeSlot?: PlatoMarbellaSlot | null
   children: ReactNode
   className?: string
@@ -102,12 +71,11 @@ export function PlateBuilder({
   const uid = useId().replace(/:/g, '')
   const foodAnim = `pm-food-in-${uid}`
   const porcelainId = `pm-porcelain-${uid}`
-  const wallId = `pm-wall-${uid}`
   const floorId = `pm-floor-${uid}`
   const blurSoftId = `pm-blur-soft-${uid}`
   const blurStrongId = `pm-blur-strong-${uid}`
-  const floorClipId = `pm-floor-clip-${uid}`
-  const compartmentClipId = (s: PlatoMarbellaSlot) => `pm-comp-${s}-${uid}`
+  const foodShadowId = `pm-food-shadow-${uid}`
+  const wellClipId = `pm-well-clip-${uid}`
 
   const zones = new Map<PlatoMarbellaSlot, PlateZoneItem | null>()
   for (const s of SLOT_ORDER) zones.set(s, null)
@@ -127,16 +95,17 @@ export function PlateBuilder({
     return it ? `${slotLabels[s]}: ${it.label}` : slotLabels[s]
   })
   const ariaLabel = ariaParts.join(', ')
+  const hasFood = SLOT_ORDER.some((s) => zones.get(s)?.photoUrl)
 
   return (
-    <div className={cn('w-full max-w-[18rem] sm:max-w-[19.5rem]', className)}>
+    <div className={cn('w-full max-w-[20rem] sm:max-w-[22rem]', className)}>
       <style>{`
         @keyframes ${foodAnim} {
-          from { opacity: 0; transform: translateY(10%) scale(0.9); }
+          from { opacity: 0; transform: translateY(8%) scale(0.92); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .${foodAnim} {
-          animation: ${foodAnim} 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: ${foodAnim} 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         @media (prefers-reduced-motion: reduce) {
           .${foodAnim} {
@@ -146,27 +115,22 @@ export function PlateBuilder({
       `}</style>
 
       <svg
-        viewBox="0 0 240 232"
+        viewBox="0 0 280 268"
         role="img"
         aria-label={ariaLabel}
         className="h-auto w-full"
       >
         <defs>
-          <radialGradient id={porcelainId} cx="42%" cy="32%" r="72%">
+          <radialGradient id={porcelainId} cx="40%" cy="30%" r="70%">
             <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="55%" stopColor="#fbfbfd" />
-            <stop offset="85%" stopColor="#f0f1f4" />
-            <stop offset="100%" stopColor="#e3e5ea" />
+            <stop offset="58%" stopColor="#fbfbfc" />
+            <stop offset="82%" stopColor="#f1f2f4" />
+            <stop offset="100%" stopColor="#e4e6ea" />
           </radialGradient>
-          <linearGradient id={wallId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#cfd2d8" />
-            <stop offset="100%" stopColor="#edf0f2" />
-          </linearGradient>
-          <radialGradient id={floorId} cx="50%" cy="38%" r="78%">
-            <stop offset="0%" stopColor="#fdfdff" />
-            <stop offset="62%" stopColor="#f5f6f8" />
-            <stop offset="88%" stopColor="#eceef1" />
-            <stop offset="100%" stopColor="#e1e4e8" />
+          <radialGradient id={floorId} cx="48%" cy="36%" r="74%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="55%" stopColor="#f7f7f8" />
+            <stop offset="100%" stopColor="#eceef1" />
           </radialGradient>
           <filter id={blurSoftId} x="-40%" y="-40%" width="180%" height="180%">
             <feGaussianBlur stdDeviation="2.2" />
@@ -174,144 +138,80 @@ export function PlateBuilder({
           <filter id={blurStrongId} x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="5" />
           </filter>
-          <clipPath id={floorClipId}>
-            <ellipse cx={FLOOR.cx} cy={FLOOR.cy} rx={FLOOR.rx} ry={FLOOR.ry} />
+          <filter id={foodShadowId} x="-35%" y="-25%" width="170%" height="180%">
+            <feDropShadow dx="0" dy="4" stdDeviation="3.5" floodColor="#1a1a1a" floodOpacity="0.28" />
+          </filter>
+          <clipPath id={wellClipId}>
+            <ellipse cx={WELL.cx} cy={WELL.cy} rx={WELL.rx} ry={WELL.ry} />
           </clipPath>
-          {SLOT_ORDER.map((s) => (
-            <clipPath key={s} id={compartmentClipId(s)}>
-              <path d={COMPARTMENT_PATH[s]} />
-            </clipPath>
-          ))}
         </defs>
 
-        {/* Sombra que apoya el plato sobre la mesa. */}
         <ellipse
           cx={PLATE.cx}
-          cy={PLATE.cy + 8}
-          rx={PLATE.rx + 5}
-          ry={PLATE.ry + 5}
+          cy={PLATE.cy + 10}
+          rx={PLATE.rx + 4}
+          ry={PLATE.ry + 4}
           fill="#0f172a"
-          opacity="0.12"
+          opacity="0.14"
           filter={`url(#${blurStrongId})`}
         />
 
-        {/* Cuerpo de porcelana. */}
         <ellipse
           cx={PLATE.cx}
           cy={PLATE.cy}
           rx={PLATE.rx}
           ry={PLATE.ry}
           fill={`url(#${porcelainId})`}
-          stroke="#d7dade"
+          stroke="#d5d7dc"
           strokeWidth="1"
         />
-        {/* Hilo de brillo del reborde. */}
         <ellipse
           cx={PLATE.cx}
           cy={PLATE.cy}
-          rx={PLATE.rx - 3}
-          ry={PLATE.ry - 3}
+          rx={PLATE.rx - 4}
+          ry={PLATE.ry - 4}
           fill="none"
-          stroke="rgba(255,255,255,0.55)"
-          strokeWidth="1"
-          opacity="0.5"
+          stroke="rgba(255,255,255,0.7)"
+          strokeWidth="1.25"
         />
 
-        {/* Pared interior del hueco (la corona que queda visible tras el fondo). */}
-        <ellipse cx={WELL.cx} cy={WELL.cy} rx={WELL.rx} ry={WELL.ry} fill={`url(#${wallId})`} />
-        {/* Fondo del hueco donde se sirve la comida. */}
-        <ellipse cx={FLOOR.cx} cy={FLOOR.cy} rx={FLOOR.rx} ry={FLOOR.ry} fill={`url(#${floorId})`} />
+        {/* Corona del reborde: el alimento vive en el hueco interior. */}
+        <ellipse
+          cx={WELL.cx}
+          cy={WELL.cy}
+          rx={WELL.rx + 6}
+          ry={WELL.ry + 6}
+          fill="none"
+          stroke="rgba(15, 23, 42, 0.06)"
+          strokeWidth="7"
+        />
+        <ellipse cx={WELL.cx} cy={WELL.cy} rx={WELL.rx} ry={WELL.ry} fill={`url(#${floorId})`} />
+        <ellipse
+          cx={WELL.cx}
+          cy={WELL.cy}
+          rx={WELL.rx}
+          ry={WELL.ry}
+          fill="none"
+          stroke="#dddfe3"
+          strokeWidth="1"
+        />
 
-        {/* Profundidad: sombra blanda junto al borde del fondo + filo nítido. */}
-        <g clipPath={`url(#${floorClipId})`}>
-          <ellipse
-            cx={FLOOR.cx}
-            cy={FLOOR.cy}
-            rx={FLOOR.rx}
-            ry={FLOOR.ry}
-            fill="none"
-            stroke="rgba(15, 23, 42, 0.10)"
-            strokeWidth="5"
-            filter={`url(#${blurSoftId})`}
-          />
-          <ellipse
-            cx={FLOOR.cx}
-            cy={FLOOR.cy}
-            rx={FLOOR.rx}
-            ry={FLOOR.ry}
-            fill="none"
-            stroke="#d3d6dc"
-            strokeWidth="1"
-          />
+        <g clipPath={`url(#${wellClipId})`}>
+          {PAINT_ORDER.map((s) => {
+            const item = zones.get(s)
+            if (!item?.photoUrl) return null
+            return (
+              <PlateFoodLayer
+                key={s}
+                slot={s}
+                item={item}
+                foodAnim={foodAnim}
+                foodShadowId={foodShadowId}
+              />
+            )
+          })}
         </g>
 
-        {/* Comida: capas dinámicas integradas en la porcelana. */}
-        {SLOT_ORDER.map((s) => {
-          const item = zones.get(s)
-          if (!item?.photoUrl) return null
-          return (
-            <PlateFoodLayer
-              key={s}
-              slot={s}
-              item={item}
-              clipId={compartmentClipId(s)}
-              foodAnim={foodAnim}
-              blurSoftId={blurSoftId}
-            />
-          )
-        })}
-
-        {/* Sombra interior sobre la comida, para que se hunda en el hueco. */}
-        <g clipPath={`url(#${floorClipId})`} pointerEvents="none">
-          <ellipse
-            cx={FLOOR.cx}
-            cy={FLOOR.cy}
-            rx={FLOOR.rx}
-            ry={FLOOR.ry}
-            fill="none"
-            stroke="rgba(15, 23, 42, 0.18)"
-            strokeWidth="8"
-            filter={`url(#${blurSoftId})`}
-          />
-        </g>
-
-        {/* Separadores moldeados entre tramos (relieve con luz y sombra proyectada). */}
-        <g clipPath={`url(#${floorClipId})`}>
-          {/* Horizontal: entrant / inferiores (sombra proyectada bajo el relieve). */}
-          <rect
-            x={FLOOR.cx - FLOOR.rx - 2}
-            y={FLOOR.divY + 1.2}
-            width={FLOOR.rx * 2 + 4}
-            height={5.5}
-            fill={CAST_SHADOW}
-            filter={`url(#${blurSoftId})`}
-          />
-          <rect
-            x={FLOOR.cx - FLOOR.rx - 2}
-            y={FLOOR.divY - 1.6}
-            width={FLOOR.rx * 2 + 4}
-            height={2.8}
-            fill={RIDGE_HIGHLIGHT_H}
-          />
-          {/* Vertical: principal / guarnició. */}
-          <rect
-            x={FLOOR.cx + 1.3}
-            y={FLOOR.divY}
-            width={5}
-            height={floorBottom - FLOOR.divY}
-            fill={CAST_SHADOW}
-            filter={`url(#${blurSoftId})`}
-          />
-          <rect
-            x={FLOOR.cx - 1.4}
-            y={FLOOR.divY}
-            width={2.8}
-            height={floorBottom - FLOOR.divY}
-            fill={RIDGE_HIGHLIGHT_V}
-          />
-        </g>
-
-        {/* Etiquetas de tramo vacío (muy discretas). */}
         {SLOT_ORDER.map((s) => {
           if (zones.get(s)) return null
           const pos = ZONE_LABEL_POS[s]
@@ -325,10 +225,10 @@ export function PlateBuilder({
               dominantBaseline="middle"
               pointerEvents="none"
               className={cn(
-                'select-none font-sans text-[10px] font-semibold tracking-[0.06em] antialiased',
+                'select-none font-sans text-[11px] font-semibold tracking-[0.06em] antialiased',
                 active ? 'fill-zinc-500' : 'fill-zinc-400'
               )}
-              style={{ opacity: active ? 0.9 : 0.75 }}
+              style={{ opacity: hasFood ? (active ? 0.8 : 0.5) : active ? 0.95 : 0.7 }}
             >
               {slotLabels[s]}
             </text>
@@ -342,50 +242,47 @@ export function PlateBuilder({
 function PlateFoodLayer({
   slot,
   item,
-  clipId,
   foodAnim,
-  blurSoftId,
+  foodShadowId,
 }: {
   slot: PlatoMarbellaSlot
   item: PlateZoneItem
-  clipId: string
   foodAnim: string
-  blurSoftId: string
+  foodShadowId: string
 }) {
   const cutout = useStudioCutout(item.photoUrl)
-  const box = FOOD_SLOT[slot]
+  const box = FOOD_PLACE[slot]
   if (!cutout) return null
   const cx = box.x + box.w / 2
-  const cy = box.y + box.h / 2
+  const isolated = cutout.isolated
   return (
-    <g clipPath={`url(#${clipId})`}>
+    <g
+      key={item.id ?? `${item.label}:${cutout.href}`}
+      className={foodAnim}
+      style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+    >
       <ellipse
         cx={cx}
-        cy={box.y + box.h * 0.78}
-        rx={box.w * 0.36}
-        ry={box.h * 0.12}
+        cy={box.y + box.h * 0.72}
+        rx={box.w * 0.34}
+        ry={box.h * 0.14}
         fill="#0f172a"
-        opacity="0.14"
-        filter={`url(#${blurSoftId})`}
+        opacity="0.16"
       />
-      <g
-        key={item.id ?? `${item.label}:${cutout.href}`}
-        className={foodAnim}
-        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-      >
-        <g
-          transform={`translate(${cx} ${cy}) scale(${FOOD_COVER_SCALE}) translate(${-cx} ${-cy})`}
-        >
-          <image
-            href={cutout.href}
-            x={box.x}
-            y={box.y}
-            width={box.w}
-            height={box.h}
-            preserveAspectRatio="xMidYMid slice"
-            style={cutout.isolated ? undefined : { mixBlendMode: 'multiply' }}
-          />
-        </g>
+      <g filter={isolated ? `url(#${foodShadowId})` : undefined}>
+        <image
+          href={cutout.href}
+          x={box.x}
+          y={box.y}
+          width={box.w}
+          height={box.h}
+          preserveAspectRatio="xMidYMid meet"
+          style={
+            isolated
+              ? undefined
+              : { mixBlendMode: 'multiply', clipPath: 'ellipse(48% 46% at 50% 50%)' }
+          }
+        />
       </g>
     </g>
   )

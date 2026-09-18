@@ -27,10 +27,10 @@ export type StudioCutoutOptions = {
 }
 
 export const STUDIO_CUTOUT_DEFAULTS: StudioCutoutOptions = {
-  minLuma: 226,
-  maxSat: 0.14,
-  whiteDist: 46,
-  feather: 2,
+  minLuma: 218,
+  maxSat: 0.16,
+  whiteDist: 58,
+  feather: 3,
   minAlpha: 14,
 }
 
