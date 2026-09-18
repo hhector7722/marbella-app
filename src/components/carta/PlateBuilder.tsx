@@ -7,9 +7,10 @@ import {
   platoMarbellaPlateSlotLabels,
   type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
+import { placePlateFoods } from '@/lib/carta-plate-composition'
 import { useStudioCutout } from '@/components/carta/useStudioCutout'
 
-/** Alimento colocado en una zona del plato (null = zona vacía). */
+/** Alimento colocado en el plato (null = tramo vacío). */
 export type PlateZoneItem = {
   photoUrl: string | null
   label: string
@@ -18,54 +19,11 @@ export type PlateZoneItem = {
 }
 
 const SLOT_ORDER: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']
-/** Pintado de atrás hacia adelante: el principal queda debajo, la guarnición delante. */
-const PAINT_ORDER: PlatoMarbellaSlot[] = ['principal', 'entrante', 'guarnicion']
-
-type FoodPlace = {
-  left: string
-  top: string
-  width: string
-  height: string
-  z: number
-  /** Empuja la ración hacia el centro del plato para que se junten. */
-  origin: string
-}
-
-/**
- * Cajas grandes y solapadas, recortadas al hueco. La comida llega al reborde
- * y se apoya como en un emplatado de restaurante, no como tres miniaturas.
- */
-const FOOD_PLACE: Record<PlatoMarbellaSlot, FoodPlace> = {
-  entrante: {
-    left: '-10%',
-    top: '-8%',
-    width: '68%',
-    height: '70%',
-    z: 2,
-    origin: '72% 62%',
-  },
-  principal: {
-    left: '30%',
-    top: '-10%',
-    width: '78%',
-    height: '74%',
-    z: 1,
-    origin: '28% 58%',
-  },
-  guarnicion: {
-    left: '4%',
-    top: '32%',
-    width: '92%',
-    height: '76%',
-    z: 3,
-    origin: '50% 28%',
-  },
-}
 
 const ZONE_LABEL_POS: Record<PlatoMarbellaSlot, { left: string; top: string }> = {
-  entrante: { left: '28%', top: '34%' },
-  principal: { left: '70%', top: '34%' },
-  guarnicion: { left: '50%', top: '72%' },
+  entrante: { left: '32%', top: '30%' },
+  principal: { left: '72%', top: '36%' },
+  guarnicion: { left: '48%', top: '72%' },
 }
 
 const PLATE_FACE: CSSProperties = {
@@ -80,9 +38,9 @@ const WELL_FACE: CSSProperties = {
 }
 
 /**
- * Pieza de dominio de la carta: un plato llano de porcelana. Cada elección
- * se recorta del fondo de estudio y se sirve grande, junta y llegando al
- * reborde, como un plato de restaurante.
+ * Pieza de dominio de la carta: un plato llano de porcelana.
+ * Tres capas enteras sobre una sola vajilla, colocadas por tipo visual
+ * (bol / principal / guarnición), no recortadas en gajos.
  *
  * Uso:
  *   <PlateBuilder lang={lang} activeSlot={slot}>
@@ -109,13 +67,12 @@ export function PlateBuilder({
   const zones = new Map<PlatoMarbellaSlot, PlateZoneItem | null>()
   for (const s of SLOT_ORDER) zones.set(s, null)
   Children.forEach(children, (child) => {
-    if (isValidElement(child) && child.type === PlateZone) {
-      const { type, item } = child.props as {
-        type: PlatoMarbellaSlot
-        item: PlateZoneItem | null
-      }
-      if (type && SLOT_ORDER.includes(type)) zones.set(type, item)
+    if (!isValidElement(child)) return
+    const { type, item } = child.props as {
+      type?: PlatoMarbellaSlot
+      item?: PlateZoneItem | null
     }
+    if (type && SLOT_ORDER.includes(type)) zones.set(type, item ?? null)
   })
 
   const slotLabels = platoMarbellaPlateSlotLabels(lang)
@@ -126,12 +83,20 @@ export function PlateBuilder({
   const ariaLabel = ariaParts.join(', ')
   const hasFood = SLOT_ORDER.some((s) => zones.get(s)?.photoUrl)
 
+  const layers = placePlateFoods(
+    SLOT_ORDER.flatMap((slot) => {
+      const item = zones.get(slot)
+      if (!item?.photoUrl) return []
+      return [{ slot, id: item.id, label: item.label }]
+    }),
+  )
+
   return (
     <div className={cn('relative mx-auto w-full max-w-[21rem] sm:max-w-[23rem]', className)}>
       <style>{`
         @keyframes ${foodAnim} {
-          from { opacity: 0; transform: translateY(6%) scale(0.94); }
-          to { opacity: 1; transform: translateY(0) scale(1.18); }
+          from { opacity: 0; transform: translateY(6%); }
+          to { opacity: 1; transform: translateY(0); }
         }
         .${foodAnim} {
           animation: ${foodAnim} 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -139,7 +104,6 @@ export function PlateBuilder({
         @media (prefers-reduced-motion: reduce) {
           .${foodAnim} {
             animation: none;
-            transform: scale(1.18);
           }
         }
       `}</style>
@@ -150,17 +114,25 @@ export function PlateBuilder({
           className="pointer-events-none absolute inset-x-[10%] bottom-[1%] top-[22%] rounded-[50%] bg-stone-900/20 blur-xl"
         />
 
-        <div className="absolute inset-[1.5%] overflow-hidden rounded-[50%]" style={PLATE_FACE}>
-          <div className="absolute inset-[7.5%] overflow-hidden rounded-[50%]" style={WELL_FACE}>
-            {PAINT_ORDER.map((s) => {
-              const item = zones.get(s)
+        <div className="absolute inset-[1.5%] rounded-[50%]" style={PLATE_FACE}>
+          <div className="absolute inset-[10%] rounded-[50%]" style={WELL_FACE}>
+            {layers.map((layer) => {
+              const item = zones.get(layer.slot)
               if (!item?.photoUrl) return null
               return (
                 <PlateFoodLayer
-                  key={s}
-                  slot={s}
+                  key={layer.slot}
                   item={item}
                   foodAnim={foodAnim}
+                  left={layer.left}
+                  top={layer.top}
+                  width={layer.width}
+                  height={layer.height}
+                  z={layer.z}
+                  scale={layer.scale}
+                  nudgeX={layer.x}
+                  nudgeY={layer.y}
+                  rotate={layer.rotate}
                 />
               )
             })}
@@ -194,27 +166,42 @@ export function PlateBuilder({
 }
 
 function PlateFoodLayer({
-  slot,
   item,
   foodAnim,
+  left,
+  top,
+  width,
+  height,
+  z,
+  scale,
+  nudgeX,
+  nudgeY,
+  rotate,
 }: {
-  slot: PlatoMarbellaSlot
   item: PlateZoneItem
   foodAnim: string
+  left: number
+  top: number
+  width: number
+  height: number
+  z: number
+  scale: number
+  nudgeX: number
+  nudgeY: number
+  rotate: number
 }) {
   const cutout = useStudioCutout(item.photoUrl)
-  const place = FOOD_PLACE[slot]
   if (!cutout) return null
   const isolated = cutout.isolated
   return (
     <span
-      className="absolute block"
+      className={cn('absolute block', foodAnim)}
       style={{
-        left: place.left,
-        top: place.top,
-        width: place.width,
-        height: place.height,
-        zIndex: place.z,
+        left: `${left}%`,
+        top: `${top}%`,
+        width: `${width}%`,
+        height: `${height}%`,
+        zIndex: z,
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- recorte de foto de carta */}
@@ -222,22 +209,20 @@ function PlateFoodLayer({
         src={cutout.href}
         alt=""
         key={item.id ?? `${item.label}:${cutout.href}`}
-        className={cn('pointer-events-none h-full w-full object-contain', foodAnim)}
+        className="pointer-events-none h-full w-full origin-center object-contain object-center"
         style={{
-          objectPosition: place.origin,
-          transformOrigin: place.origin,
+          transform: `translate(${nudgeX}%, ${nudgeY}%) rotate(${rotate}deg) scale(${scale})`,
           filter: isolated
             ? 'drop-shadow(0 10px 12px rgba(28, 25, 23, 0.28)) drop-shadow(0 2px 3px rgba(28, 25, 23, 0.18))'
             : undefined,
           mixBlendMode: isolated ? undefined : 'multiply',
-          clipPath: isolated ? undefined : 'ellipse(48% 46% at 50% 50%)',
         }}
       />
     </span>
   )
 }
 
-/** Declara una zona del plato. No renderiza: PlateBuilder la posiciona. */
+/** Declara un alimento del plato. No renderiza: PlateBuilder lo coloca. */
 export function PlateZone(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _props: { type: PlatoMarbellaSlot; item: PlateZoneItem | null }

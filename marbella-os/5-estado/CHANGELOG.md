@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Plat Marbella: ración sobre vajilla, no a rebosar.** Las tres elecciones caben enteras en el hueco del plato, con porcelana visible alrededor; el bol, los calamares y las verduras ya no se comen el borde.
+
+- **Plat Marbella: un plato, no tres recortes.** Las raciones se colocan enteras sobre la vajilla según su tipo (bol, principal, guarnición), no según el orden de elección. El bol se ve completo.
+
 - **Horario: el evento se lee en compacto.** En las cards de sáb/dom, el tramo del evento muestra minutos solo si son :30; si no, la hora lleva `h` (`8h - 21:30`). El turno no cambia. [CONTENIDO-Y-TONO](../2-diseno/CONTENIDO-Y-TONO.md).
 
 - **Horario: sáb/dom reparte horario, pax y categoría en tres columnas iguales.** En las cards del widget, esa fila ocupa todo el ancho y cada valor queda centrado en su columna. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
