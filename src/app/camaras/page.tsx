@@ -21,12 +21,7 @@ export default async function CamerasPage() {
   return (
     <div className="relative">
       <CameraViewerPresence />
-      {canSeeRecords ? (
-        <div className="absolute right-4 top-3 z-30">
-          <CameraRecordsButton />
-        </div>
-      ) : null}
-      <CameraLive />
+      <CameraLive recordsButton={canSeeRecords ? <CameraRecordsButton /> : null} />
     </div>
   );
 }

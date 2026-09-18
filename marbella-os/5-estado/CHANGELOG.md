@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-18
 
+- **Horario: una nota nueva avisa a Héctor.** Al guardar una nota por primera vez en el modal de un día, llega un push solo a él: quién la escribió, el día del horario (no cuándo la creó) y el texto. Editar una nota ya existente no vuelve a avisar.
+
+- **Cámaras: Registros se ve como Actualizar.** El botón deja la píldora de cristal sobre el vídeo; es el Button `secondary` de sistema, en la misma fila. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **Cámaras: registros usa el Modal de sistema.** El listado de conexiones deja el overlay verde ad hoc; abre el panel oscuro de la app y deja cabecera y TabBar en segundo plano. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **Plat Marbella: emplatado, no collage.** El configurador deja los tres gajos. Cada elección se recorta y se sirve sobre un plato llano, solapando las demás como un plato de restaurante.

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/modal';
 
@@ -52,7 +53,14 @@ export default function CameraRecordsButton() {
   }).format(new Date(value));
 
   return <>
-    <button type="button" onClick={show} className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow-sm backdrop-blur transition hover:bg-white/15 active:scale-[.98]">Registros</button>
+    <Button
+      variant="secondary"
+      instance="camaras-registros"
+      type="button"
+      onClick={show}
+    >
+      Registros
+    </Button>
     <Modal
       open={open}
       onClose={() => setOpen(false)}

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -65,7 +65,11 @@ function unlockOrientation() {
   }
 }
 
-export default function CameraLive() {
+export default function CameraLive({
+  recordsButton = null,
+}: {
+  recordsButton?: ReactNode;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -504,6 +508,7 @@ export default function CameraLive() {
           </div>
 
           <div className="mt-ds-3 flex flex-wrap items-center justify-center gap-ds-2">
+            {recordsButton}
             <Button
               variant="secondary"
               instance="camaras-actualizar"
