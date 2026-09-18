@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { K2_RECONCILIATION_TRUST_START } from '@/lib/albaranes/k5/batch-review'
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
+import {
+  isK5ReusableMappingVersion,
+  isTrustedLegacyImportedMappingVersion,
+} from '@/lib/albaranes/k5/trusted-mapping'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -127,12 +131,14 @@ async function autoApplyDeterministicReceipts(
   const { data: mappingRows, error: mappingError } = mappingIds.length
     ? await supabase
         .from('purchase_mapping_versions')
-        .select('id,status')
+        .select('id,status,legacy_mapping_id,idempotency_key')
         .in('id', mappingIds)
     : { data: [] as Array<Record<string, unknown>>, error: null }
   if (mappingError) throw new Error('No se pudieron validar las versiones de mapeo K5.')
-  const mappingStatus = new Map(
-    ((mappingRows ?? []) as Array<Record<string, unknown>>).map((row) => [text(row.id), text(row.status)] as const)
+  const mappingById = new Map<string, Record<string, unknown>>(
+    ((mappingRows ?? []) as Array<Record<string, unknown>>)
+      .map((row) => [text(row.id), row] as const)
+      .filter(([id]) => Boolean(id))
   )
 
   const { data: successorRows, error: successorError } = mappingIds.length
@@ -192,6 +198,8 @@ async function autoApplyDeterministicReceipts(
     const lineId = lineByProposal.get(proposalId) || null
     const mappingVersionId = text(proposal.mapping_version_id)
     const ingredientId = text(proposal.ingredient_id)
+    const mappingVersion = mappingById.get(mappingVersionId) ?? null
+    const trustedLegacyImport = mappingVersion ? isTrustedLegacyImportedMappingVersion(mappingVersion) : false
     const provenance = proposal.provenance && typeof proposal.provenance === 'object'
       ? proposal.provenance as Record<string, unknown>
       : {}
@@ -204,7 +212,7 @@ async function autoApplyDeterministicReceipts(
     else if (!lineId || !mappingVersionId || !ingredientId) blockReason = 'line_mapping_or_ingredient_missing'
     else if (!positive(proposal.line_quantity) || !positive(proposal.observed_unit_price) || !positive(proposal.physical_quantity) || !positive(proposal.purchase_quantity) || !positive(proposal.normalized_unit_price)) blockReason = 'economic_magnitudes_incomplete'
     else if (!text(proposal.line_unit) || !text(proposal.base_unit) || !text(proposal.purchase_unit)) blockReason = 'canonical_units_incomplete'
-    else if (mappingStatus.get(mappingVersionId) !== 'confirmed' || supersededMappings.has(mappingVersionId)) blockReason = 'mapping_not_confirmed_leaf'
+    else if (!mappingVersion || !isK5ReusableMappingVersion(mappingVersion) || supersededMappings.has(mappingVersionId)) blockReason = 'mapping_not_reusable_leaf'
     else if (confirmedLines.has(lineId)) blockReason = 'already_confirmed'
     else if (ingredientsWithPendingOrders.has(ingredientId)) blockReason = 'pending_order_requires_allocation'
 
@@ -237,7 +245,7 @@ async function autoApplyDeterministicReceipts(
       continue
     }
 
-    if (preview.mapping_will_be_confirmed === true) {
+    if (preview.mapping_will_be_confirmed === true && !trustedLegacyImport) {
       blocked.push({ proposalId, lineId, reason: 'mapping_requires_confirmation' })
       continue
     }
