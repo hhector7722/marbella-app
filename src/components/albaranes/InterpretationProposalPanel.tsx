@@ -224,9 +224,9 @@ export function InterpretationProposalPanel({ invoiceId, isManager, onChanged }:
       <div className="flex min-w-0 items-start gap-3">
         <FileSearch className="mt-0.5 h-5 w-5 shrink-0 text-ds-marca" />
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-black text-zinc-900">Interpretación K5</div>
+          <div className="text-sm font-black text-zinc-900">Diagnóstico técnico K5</div>
           <p className="mt-0.5 text-[11px] font-medium leading-relaxed text-zinc-600">
-            Docling aporta evidencia; el perfil interpreta; el mapping identifica la presentación. Nada de este panel modifica stock, precio ni escandallos.
+            Este bloque sirve para comprobar cómo ha razonado K5. No es la pantalla para aceptar, mapear ni confirmar productos.
           </p>
         </div>
       </div>
@@ -288,18 +288,18 @@ export function InterpretationProposalPanel({ invoiceId, isManager, onChanged }:
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
-              variant="primary"
+              variant="tertiary"
               instance="albaran-k5-generate"
               onClick={() => void generate()}
               disabled={!selectedExtractionId || generating}
               loading={generating}
               loadingLabel="Interpretando"
             >
-              {context.proposals.length > 0 ? 'Recalcular como nueva propuesta' : 'Generar propuesta'}
+              {context.proposals.length > 0 ? 'Regenerar diagnóstico K5' : 'Generar diagnóstico K5'}
             </Button>
             <div className="flex min-w-0 items-center gap-1.5 text-[10px] font-semibold text-zinc-500">
               <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
-              Confirmar sigue siendo una acción separada de K4.
+              Las acciones de revisión están arriba; este panel solo muestra trazabilidad.
             </div>
           </div>
 
