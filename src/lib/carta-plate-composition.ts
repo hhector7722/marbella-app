@@ -122,9 +122,9 @@ const LAYOUTS: Readonly<Record<string, readonly Seat[]>> = {
   ],
 
   'bowl+main+side': [
-    seat('bowl', 38, 40, 46, 46, 2, -2),
-    seat('main', 64, 41, 50, 48, 3, 2),
-    seat('side', 50, 64, 50, 42, 4),
+    seat('bowl', 37, 42, 46, 46, 2, -2),
+    seat('main', 64, 41, 46, 44, 3, 2),
+    seat('side', 50, 67, 50, 42, 4),
   ],
   'bowl+main+main': [
     seat('bowl', 50, 32, 32, 32, 2),

@@ -97,9 +97,9 @@ describe('carta-plate-composition', () => {
     const bowlCx = bowl.left + bowl.width / 2
     const mainCx = main.left + main.width / 2
     const sideCy = side.top + side.height / 2
-    assert.ok(bowlCx > 35 && bowlCx < 45, 'el bol baja hacia el centro')
-    assert.ok(mainCx > 58 && mainCx < 68, 'los calamares bajan hacia el centro')
-    assert.ok(sideCy > 58 && sideCy < 68, 'las verduras suben hacia el centro')
+    assert.ok(bowlCx > 34 && bowlCx < 42, 'el bol queda atrás a la izquierda')
+    assert.ok(mainCx > 58 && mainCx < 68, 'los calamares quedan atrás a la derecha')
+    assert.ok(sideCy > 62 && sideCy < 70, 'las verduras quedan delante con aire')
   })
 
   it('dos principales no comparten asiento', () => {
