@@ -5097,6 +5097,14 @@ button[data-element='catalog-filter'] {
 }
 
 /*
+ * En las homes, el swipe horizontal del trackpad cambia de panel.
+ * Sin esto, el mismo gesto lo toma el viewport como atrás/adelante.
+ */
+html:has(.dashboard-mosaic-switcher) {
+  overscroll-behavior-x: none;
+}
+
+/*
  * Shell desktop (lg+): TabBar → sidebar; topbar y contenido se desplazan.
  * Smartphone: sin cambios (variables a 0 / inset de cápsula).
  */
@@ -5244,6 +5252,7 @@ button[data-element='catalog-filter'] {
     );
     overflow-x: clip;
     overflow-y: hidden;
+    overscroll-behavior-x: none;
   }
   .dashboard-mosaic-switcher > div {
     height: 100%;

@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-17
+revisado: 2026-09-18
 caducidad: 6 meses
 supersede: —
 ---
@@ -465,7 +465,7 @@ Si no se declara: `bleed` cuando hay `img`; `fill` si no.
 
 **Propósito**: una sola disposición de pantalla de inicio para Staff, Admin y Master. Recrea el Springboard del iPhone.
 
-**Anatomía**: smartphone 4 columnas × 6 filas. Escritorio (lg+) 8 columnas × 5 filas, la misma plantilla para Staff, Admin y Master. La pista es el squircle del icono. El nombre (atajo o widget) vive en el hueco entre filas, no dentro de la pista. Un 2×2 iguala dos iconos + el gap del medio. En smartphone, la home Master puede ocupar una séptima fila cuando la asistencia se despliega: el mosaico es 4×7 en ese estado. En escritorio la asistencia Master no despliega el grid: ocupa las dos columnas de accesos de la fila 1.
+**Anatomía**: smartphone 4 columnas × 6 filas. Escritorio (lg+) 8 columnas × 5 filas, la misma plantilla para Staff, Admin y Master. La pista es el squircle del icono. El nombre (atajo o widget) vive en el hueco entre filas, no dentro de la pista. Un 2×2 iguala dos iconos + el gap del medio. En smartphone, la home Master puede ocupar una séptima fila cuando la asistencia se despliega: el mosaico es 4×7 en ese estado. En escritorio la asistencia Master no despliega el grid: ocupa las dos columnas de accesos de la fila 1. Las tres homes se recorren en una pista (Admin → Master → Staff): en smartphone deslizando; en escritorio, con desplazamiento horizontal o pulsando los indicadores. El gesto no sustituye a los indicadores.
 
 | Tamaño | Huecos | Equivalente iOS |
 |---|---|---|

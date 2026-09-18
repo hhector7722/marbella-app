@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-26
+revisado: 2026-09-18
 caducidad: 6 meses
 supersede: docs/PLAN_ASISTENCIA_UNIFICADA.md
 ---
@@ -18,6 +18,8 @@ Un patrón es una composición por encima del componente: resuelve un problema q
 Los componentes que los materializan están en [SISTEMA-DE-COMPONENTES](SISTEMA-DE-COMPONENTES.md). Los valores, en [TOKENS](TOKENS.md). Las leyes que todos deben cumplir, en [EXPERIENCIA](EXPERIENCIA.md).
 
 **Regla transversal de todos los patrones: una tarea, una estética.** Cambiar de filtro, de modo o de nivel de detalle dentro de la misma tarea no cambia el aspecto. La persona debe percibir que sigue en el mismo sitio. Esta regla se fijó al unificar la vista de asistencia y se generaliza aquí.
+
+**Equivalencia de gesto.** Donde el smartphone cambia de panel o de periodo deslizando, el escritorio hace lo mismo con el desplazamiento horizontal (trackpad o rueda). Ese desplazamiento se consume en la página: no debe convertirse en atrás o adelante del navegador. El control visible sigue existiendo; el gesto no es la única vía ([EXPERIENCIA §1](EXPERIENCIA.md#1-táctil)).
 
 ---
 
@@ -70,7 +72,7 @@ Patrón de navegación temporal para todo lo que se organiza por fechas: horario
 
 **Reglas**:
 - **Semana vacía: el tamaño de Cierres.** La celda mide 68 / 76 / 84 px. Si el contenido de esa semana no cabe, la fila crece. En móvil el mes se desplaza.
-- En móvil se navega también por gesto lateral, con la navegación visible además del gesto.
+- En móvil se navega también por gesto lateral, con la navegación visible además del gesto. En escritorio, el equivalente es el desplazamiento horizontal.
 - El día se construye en tiempo local del negocio. Un desplazamiento de zona horaria en este patrón produce un error de un día completo en toda la vista.
 - Pulsar un día abre P4.
 - **Un solo cromo.** Labor, Reservas, Horario, Actividades, Consumo, Cierres y Asistencia muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla. El cromo (franja, tarjeta, cabecera de días) es el de Cierres. Asistencia de una persona añade un pie semanal (P6). Horas extras no es P3: es mini-calendario de días + filas de semana. En el mosaico Admin cada fila es Semana n e importe; las fechas las dice el mini-calendario, no un rango escrito. El selector de un día (ventas, filtro de periodo, editor de horario) es MiniMonthCalendar, no P3.

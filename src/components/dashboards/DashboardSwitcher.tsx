@@ -23,6 +23,50 @@ const PANEL_INDEX: Record<DashboardView, number> = {
     staff: 2,
 };
 
+const DRAG_DEAD_ZONE = 10;
+const DRAG_MOUNT_DELAY_MS = 150;
+const EDGE_RESISTANCE = 0.2;
+const WHEEL_AXIS_LOCK_PX = 8;
+const WHEEL_IDLE_MS = 90;
+const WHEEL_COOLDOWN_MS = 480;
+
+function rubberBandOffset(view: DashboardView, diffX: number): number {
+    if (view === 'admin' && diffX > 0) return diffX * EDGE_RESISTANCE;
+    if (view === 'staff' && diffX < 0) return diffX * EDGE_RESISTANCE;
+    return diffX;
+}
+
+function viewAfterHorizontalOffset(
+    view: DashboardView,
+    offsetX: number,
+    isTriple: boolean,
+    threshold: number,
+): DashboardView | null {
+    if (Math.abs(offsetX) <= threshold) return null;
+    if (isTriple) {
+        if (offsetX < 0) {
+            if (view === 'admin') return 'master';
+            if (view === 'master') return 'staff';
+        } else if (offsetX > 0) {
+            if (view === 'staff') return 'master';
+            if (view === 'master') return 'admin';
+        }
+        return null;
+    }
+    if (offsetX < 0 && view === 'admin') return 'staff';
+    if (offsetX > 0 && view === 'staff') return 'admin';
+    return null;
+}
+
+function wheelDeltas(event: WheelEvent): { x: number; y: number } {
+    const shiftHorizontal = event.shiftKey && event.deltaX === 0;
+    const rawX = shiftHorizontal ? event.deltaY : event.deltaX;
+    const rawY = shiftHorizontal ? 0 : event.deltaY;
+    const scale =
+        event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerWidth : 1;
+    return { x: rawX * scale, y: rawY * scale };
+}
+
 interface DashboardSwitcherProps {
     userRole: string;
     userEmail?: string | null;
@@ -61,14 +105,21 @@ export default function DashboardSwitcher({
     const containerWidth = useRef(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const dragMountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const viewRef = useRef(view);
+    const offsetXRef = useRef(0);
+    const isTripleRef = useRef(isTriple);
+    const wheelAxisRef = useRef<'x' | 'y' | null>(null);
+    const wheelRawRef = useRef(0);
+    const wheelIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const wheelCooldownUntilRef = useRef(0);
     const [dotsPortalMounted, setDotsPortalMounted] = useState(false);
     // La pista solo puede animarse después de una interacción explícita. Así el
     // margen inicial de cada ruta se pinta de forma estática durante la hidratación.
     const [canAnimateTrack, setCanAnimateTrack] = useState(false);
 
-    const DRAG_DEAD_ZONE = 10;
-    const DRAG_MOUNT_DELAY_MS = 150;
     const isManager = resolvedRole === 'manager';
+    viewRef.current = view;
+    isTripleRef.current = isTriple;
 
     useEffect(() => {
         setView(initialView);
@@ -79,6 +130,9 @@ export default function DashboardSwitcher({
         return () => {
             if (dragMountTimerRef.current) {
                 clearTimeout(dragMountTimerRef.current);
+            }
+            if (wheelIdleTimerRef.current) {
+                clearTimeout(wheelIdleTimerRef.current);
             }
         };
     }, []);
@@ -103,8 +157,80 @@ export default function DashboardSwitcher({
         setDragMountPanels(false);
     };
 
+    const applyOffset = (value: number) => {
+        offsetXRef.current = value;
+        setOffsetX(value);
+    };
+
+    const cancelWheelIdle = () => {
+        if (wheelIdleTimerRef.current) {
+            clearTimeout(wheelIdleTimerRef.current);
+            wheelIdleTimerRef.current = null;
+        }
+    };
+
+    const navigateToView = (next: DashboardView) => {
+        setCanAnimateTrack(true);
+        setView(next);
+        if (next === 'admin') router.replace('/dashboard');
+        else if (next === 'master') router.replace('/master/dashboard');
+        else router.replace('/staff/dashboard');
+    };
+
+    const commitHorizontalGesture = (fromWheel = false) => {
+        cancelWheelIdle();
+        clearDragMountTimer();
+        setIsDragging(false);
+        dragActivated.current = false;
+
+        const width = containerWidth.current || 1;
+        const threshold = fromWheel ? Math.min(width / 4, 160) : width / 4;
+        const next = viewAfterHorizontalOffset(
+            viewRef.current,
+            offsetXRef.current,
+            isTripleRef.current,
+            threshold,
+        );
+        if (next) {
+            navigateToView(next);
+            if (fromWheel) {
+                wheelCooldownUntilRef.current = Date.now() + WHEEL_COOLDOWN_MS;
+            }
+        }
+
+        applyOffset(0);
+        isHorizontalDrag.current = null;
+        wheelRawRef.current = 0;
+        wheelAxisRef.current = null;
+    };
+
+    const commitHorizontalGestureRef = useRef(commitHorizontalGesture);
+    commitHorizontalGestureRef.current = commitHorizontalGesture;
+
+    const beginHorizontalGesture = () => {
+        if (containerRef.current) {
+            containerWidth.current = containerRef.current.offsetWidth;
+        }
+        isHorizontalDrag.current = true;
+        dragActivated.current = true;
+        setCanAnimateTrack(true);
+        setIsDragging(true);
+        startDragMountTimer();
+    };
+
+    const beginHorizontalGestureRef = useRef(beginHorizontalGesture);
+    beginHorizontalGestureRef.current = beginHorizontalGesture;
+    const applyOffsetRef = useRef(applyOffset);
+    applyOffsetRef.current = applyOffset;
+
     const handleTouchStart = (e: React.TouchEvent) => {
         if (!isManager) return;
+        if (wheelAxisRef.current === 'x' || offsetXRef.current !== 0) {
+            commitHorizontalGesture(true);
+        }
+        cancelWheelIdle();
+        wheelAxisRef.current = null;
+        wheelRawRef.current = 0;
         startX.current = e.touches[0].clientX;
         startY.current = e.touches[0].clientY;
         isHorizontalDrag.current = null;
@@ -127,11 +253,7 @@ export default function DashboardSwitcher({
                 return;
             }
             if (Math.abs(diffX) > Math.abs(diffY)) {
-                isHorizontalDrag.current = true;
-                dragActivated.current = true;
-                setCanAnimateTrack(true);
-                setIsDragging(true);
-                startDragMountTimer();
+                beginHorizontalGesture();
             } else {
                 isHorizontalDrag.current = false;
                 dragActivated.current = true;
@@ -141,54 +263,82 @@ export default function DashboardSwitcher({
 
         if (isHorizontalDrag.current) {
             if (e.cancelable) e.preventDefault();
-
-            let controlledDiff = diffX;
-            if (isTriple) {
-                if (view === 'admin' && diffX > 0) controlledDiff = diffX * 0.2;
-                if (view === 'staff' && diffX < 0) controlledDiff = diffX * 0.2;
-            } else {
-                if (view === 'admin' && diffX > 0) controlledDiff = diffX * 0.2;
-                if (view === 'staff' && diffX < 0) controlledDiff = diffX * 0.2;
-            }
-
-            setOffsetX(controlledDiff);
+            applyOffset(rubberBandOffset(viewRef.current, diffX));
         }
-    };
-
-    const navigateToView = (next: DashboardView) => {
-        setCanAnimateTrack(true);
-        setView(next);
-        if (next === 'admin') router.replace('/dashboard');
-        else if (next === 'master') router.replace('/master/dashboard');
-        else router.replace('/staff/dashboard');
     };
 
     const handleTouchEnd = () => {
         if (!dragActivated.current) return;
-        clearDragMountTimer();
-        setIsDragging(false);
-        dragActivated.current = false;
-
-        const threshold = containerWidth.current / 4;
-
-        if (Math.abs(offsetX) > threshold) {
-            if (isTriple) {
-                if (offsetX < 0) {
-                    if (view === 'admin') navigateToView('master');
-                    else if (view === 'master') navigateToView('staff');
-                } else if (offsetX > 0) {
-                    if (view === 'staff') navigateToView('master');
-                    else if (view === 'master') navigateToView('admin');
-                }
-            } else {
-                if (offsetX < 0 && view === 'admin') navigateToView('staff');
-                else if (offsetX > 0 && view === 'staff') navigateToView('admin');
-            }
+        if (isHorizontalDrag.current) {
+            commitHorizontalGesture();
+            return;
         }
-
-        setOffsetX(0);
+        dragActivated.current = false;
         isHorizontalDrag.current = null;
     };
+
+    useEffect(() => {
+        if (!isManager) return;
+        const el = containerRef.current;
+        if (!el) return;
+
+        const consumeHorizontalWheel = (event: WheelEvent) => {
+            if (event.ctrlKey || event.metaKey) return;
+            const { x, y } = wheelDeltas(event);
+            if (Math.abs(x) > Math.abs(y) && event.cancelable) {
+                event.preventDefault();
+            }
+        };
+
+        const onWheel = (event: WheelEvent) => {
+            if (event.ctrlKey || event.metaKey) return;
+
+            const { x, y } = wheelDeltas(event);
+            const mostlyHorizontal = Math.abs(x) > Math.abs(y);
+            if (mostlyHorizontal && event.cancelable) event.preventDefault();
+
+            if (dragActivated.current && wheelAxisRef.current === null) return;
+            if (Date.now() < wheelCooldownUntilRef.current) return;
+
+            if (wheelAxisRef.current === null) {
+                if (Math.abs(x) < WHEEL_AXIS_LOCK_PX && Math.abs(y) < WHEEL_AXIS_LOCK_PX) {
+                    return;
+                }
+                wheelAxisRef.current = mostlyHorizontal ? 'x' : 'y';
+                if (wheelAxisRef.current === 'x') {
+                    wheelRawRef.current = 0;
+                    beginHorizontalGestureRef.current();
+                }
+            }
+
+            if (wheelAxisRef.current !== 'x') {
+                if (wheelIdleTimerRef.current) clearTimeout(wheelIdleTimerRef.current);
+                wheelIdleTimerRef.current = setTimeout(() => {
+                    wheelAxisRef.current = null;
+                    wheelIdleTimerRef.current = null;
+                }, WHEEL_IDLE_MS);
+                return;
+            }
+
+            // deltaX positivo (desplazar a la derecha) equivale a deslizar a la izquierda.
+            wheelRawRef.current -= x;
+            applyOffsetRef.current(rubberBandOffset(viewRef.current, wheelRawRef.current));
+
+            if (wheelIdleTimerRef.current) clearTimeout(wheelIdleTimerRef.current);
+            wheelIdleTimerRef.current = setTimeout(() => {
+                commitHorizontalGestureRef.current(true);
+            }, WHEEL_IDLE_MS);
+        };
+
+        const wheelOpts: AddEventListenerOptions = { capture: true, passive: false };
+        window.addEventListener('wheel', consumeHorizontalWheel, wheelOpts);
+        el.addEventListener('wheel', onWheel, wheelOpts);
+        return () => {
+            window.removeEventListener('wheel', consumeHorizontalWheel, wheelOpts);
+            el.removeEventListener('wheel', onWheel, wheelOpts);
+            cancelWheelIdle();
+        };
+    }, [isManager]);
 
     const viewIndex = isTriple
         ? view === 'admin' ? 0 : view === 'master' ? 1 : 2
@@ -215,12 +365,13 @@ export default function DashboardSwitcher({
         <div
             ref={containerRef}
             className={cn(
-                'dashboard-mosaic-switcher relative w-full max-w-full min-h-full overflow-x-clip overflow-y-auto',
+                'dashboard-mosaic-switcher relative w-full max-w-full min-h-full overflow-x-clip overflow-y-auto overscroll-x-none',
                 isManager ? 'touch-pan-y' : ''
             )}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
         >
             <div
                 className={cn(
