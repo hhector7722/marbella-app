@@ -391,15 +391,40 @@ function isPdfJsTextItem(
   return typeof rec.str === 'string' && Array.isArray(rec.transform);
 }
 
+type Pdf2jsonParser = {
+  on(
+    event: 'pdfParser_dataError',
+    listener: (errData: { parserError?: string }) => void,
+  ): void;
+  on(
+    event: 'pdfParser_dataReady',
+    listener: (pdfData: unknown) => void,
+  ): void;
+  parseBuffer(buffer: Buffer): void;
+};
+
+type Pdf2jsonParserConstructor = new (
+  id: null,
+  verbosity: number,
+) => Pdf2jsonParser;
+
+function resolvePdf2jsonParser(): Pdf2jsonParserConstructor | null {
+  const exported = PDFParser as unknown as
+    | Pdf2jsonParserConstructor
+    | { default?: Pdf2jsonParserConstructor };
+  const ctor = typeof exported === 'function' ? exported : exported.default;
+  return typeof ctor === 'function' ? ctor : null;
+}
+
 function loadPdf2jsonData(
   pdfBuffer: Buffer,
 ): Promise<{ ok: true; data: unknown } | { ok: false; error: string }> {
   return new Promise((resolve) => {
-    // @ts-ignore
-    const ParserClass =
-      typeof PDFParser === 'function'
-        ? PDFParser
-        : (PDFParser as { default?: unknown }).default || PDFParser;
+    const ParserClass = resolvePdf2jsonParser();
+    if (!ParserClass) {
+      resolve({ ok: false, error: 'pdf2json no exporta un constructor' });
+      return;
+    }
     const pdfParser = new ParserClass(null, 0);
     let settled = false;
     const finish = (result: { ok: true; data: unknown } | { ok: false; error: string }) => {
@@ -424,8 +449,6 @@ async function loadPdfJsAsPdf2jsonData(pdfBuffer: Buffer): Promise<unknown> {
   const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const doc = await getDocument({
     data: Uint8Array.from(pdfBuffer),
-    disableWorker: true,
-    isEvalSupported: false,
     useSystemFonts: true,
   }).promise;
 
