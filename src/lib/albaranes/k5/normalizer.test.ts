@@ -164,7 +164,7 @@ test('mapping de presentación incompatible queda bloqueado', () => {
   assert.equal(proposal.mappingVersionId, null)
 })
 
-test('Videla conserva medidas coexistentes, respeta cabeceras solapadas y fuerza needs_review', () => {
+test('Videla conserva medidas coexistentes y solo mantiene revisión por campos realmente pendientes', () => {
   const videlaProfile: SupplierProfile = {
     ...directProfile,
     id: 'supplier:3:videla',
@@ -226,8 +226,12 @@ test('Videla conserva medidas coexistentes, respeta cabeceras solapadas y fuerza
   assert.equal(proposal.sourceItemName, null)
   assert.equal(proposal.observedUnitPrice, '9.75')
   assert.equal(proposal.lineTotal, '152.1')
-  assert.ok(proposal.reviewReasons.includes('mixed_measurement_requires_review'))
+  assert.ok(proposal.reviewReasons.includes('missing_product'))
+  assert.ok(!proposal.reviewReasons.includes('mixed_measurement_requires_review'))
   assert.ok(proposal.warnings.some((warning) => warning.includes('3,00BU') && warning.includes('15,60 KG')))
+  assert.ok(proposal.warnings.includes('variable_weight_kg:15.6'))
+  assert.equal(proposal.lineQuantity, '15.6')
+  assert.equal(proposal.lineUnit, 'kg')
   assert.equal(proposal.mappingVersionId, null)
   assert.equal(proposal.normalizedUnitPrice, null)
 })
