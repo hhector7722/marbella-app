@@ -9,6 +9,8 @@ on:
       - 'src/lib/albaranes/supplier-profiles/**'
       - 'src/app/dashboard/albaranes/interpretation-actions.ts'
       - 'src/app/dashboard/albaranes/receipt-actions.ts'
+      - 'src/app/dashboard/albaranes/actions.ts'
+      - 'src/components/albaranes/LineMappingModal.tsx'
       - 'src/app/dashboard/albaranes/k5/**'
       - 'src/app/api/internal/albaranes/k5/**'
       - 'src/components/albaranes/InterpretationProposalPanel.tsx'
@@ -24,6 +26,8 @@ on:
       - 'src/lib/albaranes/supplier-profiles/**'
       - 'src/app/dashboard/albaranes/interpretation-actions.ts'
       - 'src/app/dashboard/albaranes/receipt-actions.ts'
+      - 'src/app/dashboard/albaranes/actions.ts'
+      - 'src/components/albaranes/LineMappingModal.tsx'
       - 'src/app/dashboard/albaranes/k5/**'
       - 'src/app/api/internal/albaranes/k5/**'
       - 'src/components/albaranes/InterpretationProposalPanel.tsx'
@@ -49,6 +53,7 @@ jobs:
           src/lib/albaranes/k5/exact-decimal.test.ts
           src/lib/albaranes/k5/proposal-fingerprint.test.ts
           src/lib/albaranes/k5/trusted-mapping.test.ts
+          src/lib/albaranes/k5/variable-weight.test.ts
           src/lib/albaranes/k5/normalizer.test.ts
           src/lib/albaranes/k5/normalizer-ametller-decimals.test.ts
           src/lib/albaranes/k5/normalizer-ametller-bag.test.ts
