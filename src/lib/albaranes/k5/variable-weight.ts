@@ -6,7 +6,10 @@ export type VariableWeightEvidence = {
 }
 
 function decimal(value: unknown): number | null {
-  const raw = String(value ?? '').trim().replace(/\./g, '').replace(',', '.')
+  const source = String(value ?? '').trim()
+  const raw = source.includes(',')
+    ? source.replace(/\./g, '').replace(',', '.')
+    : source
   const match = raw.match(/[-+]?\d+(?:\.\d+)?/)
   if (!match) return null
   const n = Number(match[0])
