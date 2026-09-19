@@ -20,6 +20,8 @@ const autoApplyRoute = read('src/app/api/internal/albaranes/k5/auto-apply/route.
 const doclingWorker = read('supabase/functions/docling-evidence-worker/index.ts')
 const normalizer = read('src/lib/albaranes/k5/normalizer.ts')
 const mappedSnapshot = read('src/lib/albaranes/k5/mapped-snapshot.ts')
+const variableWeightHelper = read('src/lib/albaranes/k5/variable-weight.ts')
+const lineMappingModal = read('src/components/albaranes/LineMappingModal.tsx')
 const batchActions = read('src/app/dashboard/albaranes/k5/batch-actions.ts')
 const batchReview = read('src/components/albaranes/K5BatchReceiptReview.tsx')
 const evidenceModal = read('src/components/albaranes/DocumentEvidenceModal.tsx')
@@ -211,6 +213,17 @@ test('normalizador no contiene fallbacks económicos de factor 1 ni latest', () 
   assert.match(normalizer, /needs_review/)
 })
 
+
+test('peso variable usa kg económico sin guardar equivalencia pieza→kg', () => {
+  assert.match(variableWeightHelper, /weightKg/)
+  assert.match(variableWeightHelper, /Math\.abs\(measure\.kg \* unitPrice - lineTotal\)/)
+  assert.match(receiptActions, /effectiveLineBillingUnit = 'kg'/)
+  assert.match(receiptActions, /effectiveLineContentQty = 1/)
+  assert.match(receiptActions, /effectiveLineContentUnit = 'kg'/)
+  assert.match(receiptActions, /quantity: variableWeightKg, line_unit: 'kg'/)
+  assert.match(lineMappingModal, /Peso variable detectado/)
+  assert.match(lineMappingModal, /No se guarda ninguna equivalencia pieza→kg/)
+})
 
 test('las excepciones K5 sin línea tienen salida manual sin efectos económicos', () => {
   assert.match(batchActions, /prepareK5ManualReviewLineAction/)
