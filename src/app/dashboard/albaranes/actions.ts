@@ -13,6 +13,7 @@ import {
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoices-list'
+import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
 
 type GateResult =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; role: string | null }
@@ -448,6 +449,9 @@ export type PurchaseInvoiceLine = {
   line_billing_unit: string | null
   line_content_qty: number | null
   line_content_unit: string | null
+  interpretation_proposal_id: string | null
+  variable_weight_kg: number | null
+  variable_piece_count: number | null
 }
 
 export type PurchaseInvoiceExtraSheet = {
@@ -519,6 +523,7 @@ export async function getPurchaseInvoiceDetailAction(
         status,
         mapped_ingredient_id,
         line_unit,
+        interpretation_proposal_id,
         ingredients(name)
       )
     `
@@ -576,7 +581,34 @@ export async function getPurchaseInvoiceDetailAction(
     line_billing_unit: null as string | null,
     line_content_qty: null as number | null,
     line_content_unit: null as string | null,
+    interpretation_proposal_id: l.interpretation_proposal_id ?? null,
+    variable_weight_kg: null as number | null,
+    variable_piece_count: null as number | null,
   })) as PurchaseInvoiceLine[]
+
+  const proposalIds = lines.map((line) => line.interpretation_proposal_id).filter((id): id is string => Boolean(id))
+  if (proposalIds.length > 0) {
+    const { data: proposalRows, error: proposalError } = await gate.supabase
+      .from('purchase_interpretation_proposals')
+      .select('id,observed,observed_unit_price,line_total')
+      .in('id', proposalIds)
+    if (proposalError) return { success: false, message: proposalError.message }
+
+    const proposalById = new Map((proposalRows ?? []).map((row: any) => [String(row.id), row]))
+    for (const line of lines) {
+      if (!line.interpretation_proposal_id) continue
+      const proposal = proposalById.get(line.interpretation_proposal_id)
+      const rawCells = Array.isArray(proposal?.observed?.raw_cells) ? proposal.observed.raw_cells : []
+      const variable = deriveVariableWeightEvidence({
+        rawCells,
+        unitPrice: proposal?.observed_unit_price ?? line.unit_price,
+        lineTotal: proposal?.line_total ?? line.total_price,
+      })
+      if (!variable) continue
+      line.variable_weight_kg = variable.weightKg
+      line.variable_piece_count = variable.pieceCount
+    }
+  }
 
   const supplierIdForMaps = (data as any).supplier_id as number | null
   if (supplierIdForMaps != null && lines.length > 0) {
