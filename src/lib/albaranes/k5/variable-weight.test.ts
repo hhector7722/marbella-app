@@ -37,3 +37,13 @@ test('rechaza dos pesos compatibles para evitar ambigüedad', () => {
     null
   )
 })
+
+
+test('acepta precios persistidos con punto decimal', () => {
+  const result = deriveVariableWeightEvidence({
+    rawCells: ['1,00PZ', '2,18KG'],
+    unitPrice: '13.25',
+    lineTotal: '28.89',
+  })
+  assert.equal(result?.weightKg, 2.18)
+})
