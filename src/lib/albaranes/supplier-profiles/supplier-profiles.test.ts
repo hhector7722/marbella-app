@@ -72,7 +72,7 @@ describe('supplier profiles — inventario canónico', () => {
       const result = interpretSupplierEvidence(profile, fixture.evidence)
       assert.equal(result.supplier_identity, 'recognized', fixture.profile_id)
       assert.equal(result.supplier_profile_id, profile.id)
-      assert.equal(result.supplier_profile_version, '1.0.0')
+      assert.equal(result.supplier_profile_version, profile.version)
     }
   })
 })
