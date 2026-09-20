@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 const CAMERA_MP4_URL = 'https://video.barlamarbella.com/api/stream.mp4?src=reolink';
-const CAMERA_HLS_URL = 'https://video.barlamarbella.com/api/stream.m3u8?src=reolink&mp4';
+const CAMERA_HLS_URL = 'https://video.barlamarbella.com/api/stream.m3u8?src=reolink_mobile';
 
 function isIOSDevice() {
   if (typeof navigator === 'undefined') return false;
@@ -28,7 +28,7 @@ export default function CameraPlayer() {
     const start = async () => {
       setError(false);
 
-      // iPhone/iPad: use go2rtc HLS/fMP4, which Safari supports natively.
+      // iPhone/iPad: use the transcoded HLS/MPEG-TS stream verified in Safari.
       // Desktop/other browsers: keep the progressive MP4 path already verified.
       video.src = streamUrl;
       video.controls = false;
