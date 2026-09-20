@@ -108,8 +108,8 @@ export function LineMappingModal({
   onSuccess,
   onCreateIngredient,
 }: LineMappingModalProps) {
-  useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
-  const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Mapear línea albarán')
+  useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Revisar línea de albarán' })
+  const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Revisar línea de albarán')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -784,7 +784,7 @@ export function LineMappingModal({
                         onCreateIngredient()
                       }}
                     >
-                      Nuevo
+                      Crear
                     </Button>
                   )}
                 </div>
@@ -976,7 +976,7 @@ export function LineMappingModal({
 
                       {presentationEconomics ? (
                         <div className="mx-1 rounded-lg border border-[#36606F]/25 bg-[#eef5f7] px-2 py-2">
-                          <p className="text-[10px] font-medium text-zinc-600">Resultado automático</p>
+                          <p className="text-[10px] font-medium text-zinc-600">Precio resultante</p>
                           <p className="mt-0.5 text-sm font-black text-[#284c59]">
                             {presentationEconomics.normalizedUnitPrice.toLocaleString('es-ES', {
                               minimumFractionDigits: 2,
