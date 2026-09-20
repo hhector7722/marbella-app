@@ -9,6 +9,7 @@ import {
   isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
 import { createClient } from '@/utils/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoices-list'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
@@ -1451,15 +1452,12 @@ export async function deletePurchaseInvoiceAction(params: {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
-  // Acción destructiva: SOLO manager/admin pueden eliminar un albarán
-  // completo (revierte stock y borra líneas + cabecera + archivo).
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Solo manager puede eliminar un albarán' }
+  if (!isManager) return { success: false, message: 'Solo manager puede eliminar una captura fallida' }
 
   const invoiceId = String(params?.invoiceId ?? '').trim()
   if (!invoiceId) return { success: false, message: 'ID de albarán inválido' }
 
-  // 1) Leer cabecera (file_path) y todas las líneas asociadas (para sus IDs).
   const { data: inv, error: invErr } = await gate.supabase
     .from('purchase_invoices')
     .select('id, file_path')
@@ -1468,51 +1466,41 @@ export async function deletePurchaseInvoiceAction(params: {
   if (invErr) return { success: false, message: invErr.message }
   if (!inv) return { success: false, message: 'Albarán no encontrado o sin permiso' }
 
-  const filePath = (inv as any).file_path as string | null
-
-  const { data: linesData, error: linesErr } = await gate.supabase
-    .from('purchase_invoice_lines')
-    .select('id')
-    .eq('invoice_id', invoiceId)
-    .limit(20000)
-  if (linesErr) return { success: false, message: linesErr.message }
-  const lineIds = ((linesData ?? []) as any[]).map((r) => String(r.id))
-
-  // 2) Stock: DELETE vía RPC SECURITY DEFINER (evita PostgREST con caché de esquema
-  //    desfasada tras ADD COLUMN, y RLS DELETE restrictivo en stock_movements).
-  const { data: rpcDel, error: rpcErr } = await gate.supabase.rpc('delete_stock_movements_for_purchase_invoice', {
-    p_invoice_id: invoiceId,
-  })
-  if (rpcErr) {
-    const msg = String(rpcErr.message ?? '')
-    if (/could not find the function|PGRST202|function .* does not exist/i.test(msg)) {
-      return {
-        success: false,
-        message: `Error borrando stock: falta la función en BD. Ejecuta supabase/migrations/20260517140000_delete_albaran_stock_movements_rpc.sql o supabase db push. (${msg})`,
-      }
-    }
-    return { success: false, message: `Error borrando stock: ${msg}` }
+  // K1/K3/K4 prohíben DELETE directo de hechos documentales/económicos.
+  // Esta RPC SECURITY DEFINER solo permite purgar capturas fallidas que nunca
+  // llegaron a crear líneas, una extracción Docling válida ni efectos económicos.
+  const { data: purgeData, error: purgeErr } = await (gate.supabase as any).rpc(
+    'purge_failed_purchase_invoice',
+    { p_invoice_id: invoiceId }
+  )
+  if (purgeErr) {
+    return { success: false, message: `No se puede eliminar esta captura: ${String(purgeErr.message ?? 'error desconocido')}` }
   }
-  const deletedMovements = Number(rpcDel ?? 0) || 0
 
-  // 3) Borrar el fichero del Storage (si existe). Si falla, lo registramos y
-  //    seguimos: no queremos bloquear el delete por un archivo ya inexistente.
+  const filePath = String((inv as any).file_path ?? '').trim()
   if (filePath) {
-    const { error: storageErr } = await gate.supabase.storage.from('albaranes').remove([filePath])
-    if (storageErr) {
-      console.warn('deletePurchaseInvoiceAction: storage remove warning', storageErr.message)
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
+    if (supabaseUrl && serviceRoleKey) {
+      const serviceClient = createServiceClient(supabaseUrl, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+      const { error: storageErr } = await serviceClient.storage.from('albaranes').remove([filePath])
+      if (storageErr) {
+        console.warn('deletePurchaseInvoiceAction: failed-capture storage cleanup warning', storageErr.message)
+      }
+    } else {
+      console.warn('deletePurchaseInvoiceAction: service role unavailable for failed-capture storage cleanup')
     }
   }
-
-  // 4) Borrar cabecera. Las líneas caen por ON DELETE CASCADE.
-  const { error: delInvErr } = await gate.supabase.from('purchase_invoices').delete().eq('id', invoiceId)
-  if (delInvErr) return { success: false, message: `Error borrando albarán: ${delInvErr.message}` }
 
   try {
     revalidatePath('/dashboard/albaranes')
   } catch {}
 
-  return { success: true, deletedMovements, deletedLines: lineIds.length }
+  const deletedLines = Number((purgeData as any)?.deleted_lines ?? 0) || 0
+  return { success: true, deletedMovements: 0, deletedLines }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
