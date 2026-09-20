@@ -10,6 +10,12 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260920125954_canonical_manual_ingredient_price_writer.sql'),
   'utf8',
 )
+const manualAction = fs.readFileSync(path.join(root, 'src/app/ingredients/actions.ts'), 'utf8')
+const canonicalEditor = fs.readFileSync(
+  path.join(root, 'src/components/ingredients/IngredientCanonicalEditModal.tsx'),
+  'utf8',
+)
+const ingredientsPage = fs.readFileSync(path.join(root, 'src/app/ingredients/page.tsx'), 'utf8')
 
 test('retira el writer económico derivado del pack', () => {
   assert.match(migration, /DROP TRIGGER IF EXISTS trigger_ingredients_pack_pricing_sync/)
@@ -53,4 +59,20 @@ test('la RPC no queda expuesta a anon o PUBLIC', () => {
     migration,
     /GRANT EXECUTE ON FUNCTION public\.set_ingredient_current_price\(uuid, numeric\)[\s\S]+TO authenticated, service_role/,
   )
+})
+
+test('la edición manual usa una acción de servidor y la RPC canónica', () => {
+  assert.match(manualAction, /^'use server'/)
+  assert.match(manualAction, /auth\.getUser\(\)/)
+  assert.match(manualAction, /\['manager', 'admin'\]/)
+  assert.match(manualAction, /rpc\('set_ingredient_current_price'/)
+  assert.match(canonicalEditor, /Precio actual/)
+  assert.match(canonicalEditor, /Nuevo precio/)
+  assert.match(canonicalEditor, /€\/\{unit\}/)
+  assert.doesNotMatch(canonicalEditor, /pack_price|supplier_pricing_mode|conversion_factor/)
+})
+
+test('el alta guarda el precio inicial mediante el mismo writer manual', () => {
+  assert.match(ingredientsPage, /payload\.current_price = 0/)
+  assert.match(ingredientsPage, /setIngredientCurrentPriceAction\(String\(created\.id\), requestedPrice\)/)
 })

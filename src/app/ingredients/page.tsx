@@ -8,7 +8,8 @@ import { Package, Plus, Upload, Settings } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
-import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
+import { type Ingredient } from '@/components/ingredients/IngredientEditModal';
+import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal';
 import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
@@ -18,6 +19,7 @@ import { SearchField } from '@/components/ui/SearchField';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { CatalogGrid, CatalogTileUnificado } from '@/components/catalog/CatalogTile';
 import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
+import { setIngredientCurrentPriceAction } from '@/app/ingredients/actions';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -103,7 +105,7 @@ export default function IngredientsPage() {
     const [isCreating, setIsCreating] = useState(false);
     const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([]);
 
-    const [createMode, setCreateMode] = useState<'wizard' | 'expert'>('wizard');
+    const [createMode, setCreateMode] = useState<'wizard' | 'expert'>('expert');
     const [createSettingsOpen, setCreateSettingsOpen] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [isCustomSupplier, setIsCustomSupplier] = useState(false);
@@ -150,14 +152,8 @@ export default function IngredientsPage() {
     async function handleCreate() {
         if (!newIngredient.name) return toast.error('El nombre es obligatorio');
         setIsCreating(true);
-        const mode = (newIngredient.supplier_pricing_mode ?? 'per_purchase_unit') as 'per_purchase_unit' | 'per_pack';
-        const unit =
-            mode === 'per_pack'
-                ? resolveDeclaredPurchaseUnitWithPackContent(
-                      String(newIngredient.purchase_unit ?? 'ud'),
-                      newIngredient.pack_unit_size_unit ?? null
-                  )
-                : newIngredient.purchase_unit || 'kg';
+        const mode = 'per_purchase_unit' as const;
+        const unit = newIngredient.purchase_unit || 'kg';
         try {
             const payload: any = {
                 ...newIngredient,
@@ -174,22 +170,19 @@ export default function IngredientsPage() {
                 price_locked: !!newIngredient.price_locked,
             };
 
-            if (mode === 'per_pack') {
-                payload.pack_price = newIngredient.pack_price ?? null;
-                payload.pack_units = newIngredient.pack_units ?? null;
-                payload.pack_unit_size_qty = newIngredient.pack_unit_size_qty ?? null;
-                payload.pack_unit_size_unit = newIngredient.pack_unit_size_unit ?? null;
-                delete payload.current_price; // lo deriva el trigger
-            } else {
-                payload.current_price = newIngredient.current_price || 0;
-                payload.pack_price = null;
-                payload.pack_units = null;
-                payload.pack_unit_size_qty = null;
-                payload.pack_unit_size_unit = null;
-            }
+            const requestedPrice = Number(newIngredient.current_price || 0);
+            payload.current_price = 0;
+            payload.pack_price = null;
+            payload.pack_units = null;
+            payload.pack_unit_size_qty = null;
+            payload.pack_unit_size_unit = null;
 
-            const { error } = await supabase.from('ingredients').insert(payload);
+            const { data: created, error } = await supabase.from('ingredients').insert(payload).select('id').single();
             if (error) throw error;
+            if (requestedPrice > 0) {
+                const priceResult = await setIngredientCurrentPriceAction(String(created.id), requestedPrice);
+                if (!priceResult.ok) throw new Error(priceResult.message);
+            }
             toast.success('Creado');
             setShowCreateModal(false);
             setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit', price_locked: false });
@@ -281,12 +274,11 @@ export default function IngredientsPage() {
 
             {/* MODALES */}
             {editingIngredient && (
-                <IngredientEditModal
+                <IngredientCanonicalEditModal
                     key={editingIngredient.id}
                     ingredient={editingIngredient}
                     onClose={() => setEditingIngredient(null)}
                     onSaved={() => void fetchIngredients()}
-                    navigationIngredients={filteredIngredients}
                 />
             )}
 
@@ -304,19 +296,6 @@ export default function IngredientsPage() {
                 title="Nuevo"
                 headerTone="petroleum"
                 scrollContent
-                headerTrailing={
-                    <button
-                        type="button"
-                        aria-label="Ajustes"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setCreateSettingsOpen(true);
-                        }}
-                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                    >
-                        <Settings className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]" strokeWidth={1.75} />
-                    </button>
-                }
             >
                 <div className="space-y-4 bg-[#fafafa]">
                             {createMode === 'wizard' && (
@@ -357,20 +336,6 @@ export default function IngredientsPage() {
                                     className="w-full p-3 border rounded-2xl font-bold mt-1"
                                     placeholder="Nombre del ingrediente"
                                 />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio según proveedor (albarán)</label>
-                                <select
-                                    value={newIngredient.supplier_pricing_mode || 'per_purchase_unit'}
-                                    onChange={e => setNewIngredient({ ...newIngredient, supplier_pricing_mode: e.target.value as any })}
-                                    className="w-full p-3 border rounded-2xl bg-white font-bold"
-                                >
-                                    <option value="per_purchase_unit">Directo (€/kg, €/L, €/ud)</option>
-                                    <option value="per_pack">Botella / lata / caja (unidad proveedor)</option>
-                                </select>
-                                <p className="text-[11px] text-gray-500 mt-1 px-1.5">
-                                    Si el albarán viene por caja/pack/botella/lata, el coste en recetas se calcula usando el contenido.
-                                </p>
                             </div>
                             {(newIngredient.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
                                 <>
