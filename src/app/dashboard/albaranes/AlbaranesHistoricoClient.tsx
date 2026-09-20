@@ -94,6 +94,12 @@ function numOrNull(v: any): number | null {
   return typeof n === 'number' && Number.isFinite(n) ? n : null
 }
 
+function parseDecimalInput(value: string): number | null {
+  const raw = value.trim()
+  if (!raw) return null
+  return Number(raw.replace(',', '.'))
+}
+
 function isImagePath(filePath: string | null) {
   const p = (filePath ?? '').toLowerCase()
   return p.endsWith('.jpg') || p.endsWith('.jpeg') || p.endsWith('.png') || p.endsWith('.webp')
@@ -747,9 +753,9 @@ export default function AlbaranesHistoricoClient({
         return false
       }
 
-      const qty = d.quantity.trim() === '' ? null : Number(d.quantity)
-      const unit = d.unit_price.trim() === '' ? null : Number(d.unit_price)
-      const total = d.total_price.trim() === '' ? null : Number(d.total_price)
+      const qty = parseDecimalInput(d.quantity)
+      const unit = parseDecimalInput(d.unit_price)
+      const total = parseDecimalInput(d.total_price)
 
       if (qty != null && !Number.isFinite(qty)) {
         setSaveError('Cantidad inválida.')
