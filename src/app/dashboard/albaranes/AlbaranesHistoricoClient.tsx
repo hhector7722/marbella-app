@@ -1634,7 +1634,7 @@ export default function AlbaranesHistoricoClient({
                     reopenEvidenceFromContext()
                   }}
                   onSuccess={() => refreshDetailAndStock()}
-                  onOpenWizardNew={() => {
+                  onCreateIngredient={() => {
                     if (!lineForMappingModal) return
                     openCreateIngredientForLine(lineForMappingModal, lineForMappingModal.original_name || '')
                   }}
