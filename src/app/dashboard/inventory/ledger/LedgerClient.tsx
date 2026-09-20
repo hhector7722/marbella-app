@@ -8,17 +8,23 @@ import {
   Receipt,
   ShoppingCart,
   Loader2,
-  Filter,
   Package,
+  ChevronDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getIngredientMovements } from './actions'
+import {
+  getIngredientMovements,
+  getInventoryCountSessions,
+  type InventoryCountSession,
+} from './actions'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchField } from '@/components/ui/SearchField'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { PeriodFilterButton } from '@/components/time/PeriodNav'
 import { TABLE_COMPONENT_ID } from '@/lib/design-system'
+import { formatMadridHmFromIso } from '@/lib/madrid-date-bounds'
 import Link from 'next/link'
 
 type Ingredient = {
@@ -182,6 +188,27 @@ function ReadOnlyStockBox({
   )
 }
 
+function localDateParts(iso: string): { year: number; month: number; day: number } | null {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() }
+}
+
+function formatCountDate(iso: string): string {
+  const parts = localDateParts(iso)
+  if (!parts) return ''
+  const date = new Date(parts.year, parts.month, parts.day)
+  return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function formatCountTime(iso: string): string {
+  return formatMadridHmFromIso(iso) ?? ''
+}
+
+function formatCountQuantity(value: number): string {
+  return new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(value)
+}
+
 function displayReference(ref: string | null) {
   const t = ref?.trim()
   if (!t) return <span className="text-xs text-gray-400">&nbsp;</span>
@@ -208,8 +235,8 @@ function LedgerIngredientCard({
       onClick={onSelect}
       className={cn(
         'flex h-full min-h-0 flex-col rounded-xl border bg-white shadow-sm overflow-hidden text-left transition-shadow',
-        'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/30',
-        selected ? 'ring-2 ring-[#36606F]/50 border-[#36606F]/30' : 'border-zinc-100',
+        'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40',
+        selected ? 'ring-2 ring-zinc-400/60 border-zinc-300' : 'border-zinc-100',
       )}
     >
       <div className="shrink-0 h-14 w-full flex items-center justify-center bg-zinc-50/40">
@@ -245,6 +272,11 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
   const [selectedIng, setSelectedIng] = useState<Ingredient | null>(null)
   const [movements, setMovements] = useState<Movement[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [history, setHistory] = useState<InventoryCountSession[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!filterOpen) return
@@ -304,6 +336,26 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
     }
   }
 
+  const handleOpenHistory = async () => {
+    setHistoryOpen(true)
+    setIsLoadingHistory(true)
+    setHistoryError(null)
+    try {
+      const data = await getInventoryCountSessions()
+      setHistory(data)
+    } catch (error) {
+      console.error(error)
+      setHistoryError(error instanceof Error ? error.message : 'No se pudo cargar el historial')
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
+
+  const handleCloseHistory = () => {
+    setHistoryOpen(false)
+    setExpandedSessionId(null)
+  }
+
   return (
     <DashboardDetailLayout
       title="Stock"
@@ -329,13 +381,9 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             />
           </div>
           <div className="shrink-0 relative" data-ledger-filter-root="true">
-            <Button
-              type="button"
-              variant="tertiary"
+            <PeriodFilterButton
               instance="ledger-filter-category"
               onClick={() => setFilterOpen((v) => !v)}
-              aria-label="Filtrar por categoría"
-              icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
             />
             {filterOpen ? (
               <div
@@ -378,6 +426,10 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               </div>
             ) : null}
           </div>
+          <PeriodFilterButton
+            instance="ledger-history-open"
+            onClick={() => void handleOpenHistory()}
+          />
         </div>
       }
     >
@@ -452,7 +504,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             <div className="p-0 overflow-y-auto flex-1 min-h-[240px]">
               {isLoading ? (
                 <div className="flex justify-center p-10">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#36606F]" />
+                  <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
                 </div>
               ) : movements.length === 0 ? (
                 <div className="p-10 text-center text-gray-500">No hay movimientos registrados.</div>
@@ -520,6 +572,109 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
         )}
       </div>
     </div>
+
+    <Modal
+      open={historyOpen}
+      onClose={handleCloseHistory}
+      variant="standard"
+      layer="base"
+      scheme="work"
+      headerTone="white"
+      headerTitleAlign="left"
+      instance="inventory-count-history"
+      usageId="inventory-count-history"
+      usageLabel="Historial de recuentos"
+      title="Historial de recuentos"
+      subtitle="Lo contado en cada inventario"
+    >
+      {isLoadingHistory ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+        </div>
+      ) : historyError ? (
+        <EmptyState
+          instance="inventory-count-history-error"
+          variant="error"
+          title="No se pudo cargar el historial."
+          description={historyError}
+        />
+      ) : history.length === 0 ? (
+        <EmptyState
+          instance="inventory-count-history-none"
+          variant="none"
+          title="Todavía no hay recuentos guardados."
+          description="Cuando guardes un recuento desde Inventario aparecerá aquí."
+        />
+      ) : (
+        <div className="flex flex-col gap-2">
+          {history.map((session) => {
+            const expanded = expandedSessionId === session.id
+            const time = formatCountTime(session.counted_at)
+            return (
+              <div
+                key={session.id}
+                className="rounded-full bg-white border border-zinc-100 shadow-sm overflow-hidden"
+              >
+                <button
+                  type="button"
+                  onClick={() => setExpandedSessionId(expanded ? null : session.id)}
+                  aria-expanded={expanded}
+                  className={cn(
+                    'w-full min-h-[48px] px-5 py-3 flex items-center gap-3 text-left transition-colors',
+                    'hover:bg-zinc-50 active:bg-zinc-100',
+                    expanded && 'bg-zinc-50',
+                  )}
+                >
+                  <span className="flex-1 min-w-0 flex flex-col">
+                    <span className="text-sm font-bold text-zinc-900 first-letter:uppercase truncate">
+                      {formatCountDate(session.counted_at)}
+                    </span>
+                    {time ? (
+                      <span className="text-[11px] font-medium text-zinc-400">{time}</span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 text-[11px] font-black uppercase tracking-wider text-zinc-400">
+                    {session.lines.length} {session.lines.length === 1 ? 'artículo' : 'artículos'}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'w-4 h-4 shrink-0 text-zinc-400 transition-transform',
+                      expanded && 'rotate-180',
+                    )}
+                    strokeWidth={2.5}
+                  />
+                </button>
+
+                {expanded ? (
+                  <div className="border-t border-zinc-100 px-3 pb-3 pt-1">
+                    <ul className="flex flex-col divide-y divide-zinc-50">
+                      {session.lines.map((line) => (
+                        <li
+                          key={line.ingredient_id}
+                          className="flex items-center justify-between gap-3 min-h-[44px] py-1.5 px-2"
+                        >
+                          <span className="min-w-0 text-sm text-zinc-800 truncate" title={line.name}>
+                            {line.name}
+                          </span>
+                          <span className="shrink-0 flex items-baseline gap-1 tabular-nums">
+                            <span className="text-sm font-bold text-zinc-900">
+                              {formatCountQuantity(line.physical_stock)}
+                            </span>
+                            <span className="text-[10px] font-black uppercase tracking-wide text-zinc-400">
+                              {line.unit}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </Modal>
     </DashboardDetailLayout>
   )
 }

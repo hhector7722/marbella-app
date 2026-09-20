@@ -5,6 +5,7 @@ import {
   K5_NORMALIZER_VERSION,
   normalizeDoclingEvidence,
   proposalInputFingerprint,
+  type K5LegacyIdentitySnapshot,
   type K5MappingSnapshot,
   type K5NormalizedProposal,
 } from '@/lib/albaranes/k5/normalizer'
@@ -122,6 +123,24 @@ async function reusableMappingSnapshots(
       purchaseUnit,
       baseUnit,
     }]
+  })
+}
+
+async function legacyIdentitySnapshots(
+  supabase: AdminClient,
+  supplierId: number
+): Promise<K5LegacyIdentitySnapshot[]> {
+  const { data, error } = await supabase
+    .from('supplier_item_mappings')
+    .select('supplier_item_name,ingredient_id')
+    .eq('supplier_id', supplierId)
+    .not('ingredient_id', 'is', null)
+  if (error) throw new Error('No se pudieron leer las identidades legacy del proveedor.')
+
+  return ((data ?? []) as Array<Record<string, unknown>>).flatMap((row) => {
+    const supplierItemName = text(row.supplier_item_name)
+    const ingredientId = text(row.ingredient_id)
+    return supplierItemName && ingredientId ? [{ supplierItemName, ingredientId }] : []
   })
 }
 
@@ -394,11 +413,13 @@ async function generateAutomaticProposals(
     profileVersion = versioned.profile.version
     profileHash = hashSupplierProfile(versioned.profile)
     const mappings = await reusableMappingSnapshots(supabase, supplierId)
+    const legacyIdentities = await legacyIdentitySnapshots(supabase, supplierId)
     normalized = normalizeDoclingEvidence({
       profile: versioned.profile,
       rawArtifact: extraction.raw_json_artifact,
       supplierId,
       mappings,
+      legacyIdentities,
     }).proposals
   }
 

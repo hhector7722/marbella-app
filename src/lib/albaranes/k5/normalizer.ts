@@ -42,6 +42,11 @@ export type K5MappingSnapshot = {
   baseUnit: string
 }
 
+export type K5LegacyIdentitySnapshot = {
+  supplierItemName: string
+  ingredientId: string
+}
+
 export type K5ProposalStatus = 'needs_mapping' | 'needs_review' | 'excluded' | 'ready_for_review'
 
 export type K5NormalizedProposal = {
@@ -201,6 +206,19 @@ function compatibleMapping(
   return uniqueBySemantics.size === 1 ? [...uniqueBySemantics.values()][0]! : null
 }
 
+function legacyIngredientIdentity(
+  aliases: readonly K5LegacyIdentitySnapshot[],
+  product: string | null,
+  supplierId: number
+): string | null {
+  if (!product) return null
+  const item = canonicalSupplierItemKey(product, supplierId)
+  const matching = aliases.filter((alias) =>
+    canonicalSupplierItemKey(alias.supplierItemName, supplierId) === item
+  )
+  return matching.length === 1 ? matching[0]!.ingredientId : null
+}
+
 function value(row: EvidenceRow, field: FieldName): string | null {
   const raw = row[field]
   if (raw == null) return null
@@ -317,8 +335,9 @@ export function normalizeDoclingEvidence(params: {
   rawArtifact: unknown
   supplierId: number
   mappings: readonly K5MappingSnapshot[]
+  legacyIdentities?: readonly K5LegacyIdentitySnapshot[]
 }): K5NormalizationResult {
-  const { profile, rawArtifact, supplierId, mappings } = params
+  const { profile, rawArtifact, supplierId, mappings, legacyIdentities = [] } = params
   const tables = extractDoclingTables(rawArtifact)
   const match = matchProfileTable(profile, tables)
   const observedIssuer = detectObservedIssuer(profile, rawArtifact)
@@ -374,6 +393,9 @@ export function normalizeDoclingEvidence(params: {
       ? 'kg'
       : observedBillingUnit(observedQuantityText, profileBillingFallback(profile))
     const mapping = compatibleMapping(mappings, product, billingUnit, supplierId)
+    const legacyIngredientId = mapping
+      ? null
+      : legacyIngredientIdentity(legacyIdentities, product, supplierId)
     const fixture: SupplierEvidenceFixture = {
       supplier_id: supplierId,
       observed_issuer: observedIssuer ?? '',
@@ -452,7 +474,9 @@ export function normalizeDoclingEvidence(params: {
     const status: K5ProposalStatus = semanticReasons.length > 0
       ? 'needs_review'
       : !mapping
-        ? 'needs_mapping'
+        ? legacyIngredientId
+          ? 'needs_review'
+          : 'needs_mapping'
         : normalization
           ? 'ready_for_review'
           : 'needs_review'
@@ -466,7 +490,7 @@ export function normalizeDoclingEvidence(params: {
       sourceRowIndex: match.table.rows[index]!.index,
       sourceItemName: product,
       mappingVersionId: mapping?.id ?? null,
-      ingredientId: mapping?.ingredientId ?? null,
+      ingredientId: mapping?.ingredientId ?? legacyIngredientId,
       status,
       observed: { ...semanticRow, raw_cells: match.table.rows[index]!.cells },
       interpreted: {
@@ -492,7 +516,11 @@ export function normalizeDoclingEvidence(params: {
       },
       reviewReasons: status === 'needs_mapping'
         ? ['mapping_missing']
-        : unique([...semanticReasons, ...(status === 'needs_review' && mapping && !normalization ? ['price_not_normalizable'] : [])]),
+        : unique([
+            ...semanticReasons,
+            ...(legacyIngredientId ? ['legacy_identity_requires_presentation_validation'] : []),
+            ...(status === 'needs_review' && mapping && !normalization ? ['price_not_normalizable'] : []),
+          ]),
       warnings,
       lineQuantity: quantityString,
       lineUnit: mapping?.lineBillingUnit ?? billingUnit,

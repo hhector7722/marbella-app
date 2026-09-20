@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-20
 
+- **Inventario: el recuento entra en la plantilla de gestión.** El cromo (título, selector Barra/Cámara, buscador y filtro) flota sobre el envolvente y deja de ser una tira blanca; los artículos pasan a fichas de catálogo con su barra de cantidad. [PATRONES P13](../2-diseno/PATRONES.md#p13--pantalla-de-gestión), [PATRONES P10](../2-diseno/PATRONES.md#p10--barra-de-cantidad).
+
 - El precio de ingrediente queda definido como una única magnitud canónica en
   `current_price` por `purchase_unit`. La base de datos retira el writer de pack
   y limita los cambios a K4 o a la nueva operación manual auditada.

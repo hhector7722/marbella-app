@@ -127,6 +127,86 @@ test('sin mapping seguro no inventa factor 1', () => {
   assert.ok(proposal.reviewReasons.includes('mapping_missing'))
 })
 
+test('alias legacy único identifica ingrediente pero exige validar presentación sin normalizar', () => {
+  const raw = artifact([{
+    data: {
+      table_cells: [
+        cell(0, 0, 'Producto', true),
+        cell(0, 1, 'Cantidad', true),
+        cell(0, 2, 'Precio', true),
+        cell(0, 3, 'Importe', true),
+        cell(1, 0, 'CALAMAR'),
+        cell(1, 1, '15,60 KG'),
+        cell(1, 2, '9,75'),
+        cell(1, 3, '152,10'),
+      ],
+    },
+  }])
+
+  const proposal = normalizeDoclingEvidence({
+    profile: directProfile,
+    rawArtifact: raw,
+    supplierId: 999,
+    mappings: [],
+    legacyIdentities: [{ supplierItemName: 'Calamar', ingredientId: 'ingredient-legacy' }],
+  }).proposals[0]!
+
+  assert.equal(proposal.ingredientId, 'ingredient-legacy')
+  assert.equal(proposal.mappingVersionId, null)
+  assert.equal(proposal.status, 'needs_review')
+  assert.ok(proposal.reviewReasons.includes('legacy_identity_requires_presentation_validation'))
+  assert.deepEqual(proposal.normalized, {})
+  assert.equal(proposal.physicalQuantity, null)
+  assert.equal(proposal.purchaseQuantity, null)
+  assert.equal(proposal.normalizedUnitPrice, null)
+})
+
+test('alias legacy inexistente mantiene needs_mapping', () => {
+  const raw = artifact([{
+    data: { table_cells: [
+      cell(0, 0, 'Producto', true), cell(0, 1, 'Cantidad', true),
+      cell(0, 2, 'Precio', true), cell(0, 3, 'Importe', true),
+      cell(1, 0, 'CALAMAR'), cell(1, 1, '1 KG'),
+      cell(1, 2, '9,75'), cell(1, 3, '9,75'),
+    ] },
+  }])
+  const proposal = normalizeDoclingEvidence({
+    profile: directProfile,
+    rawArtifact: raw,
+    supplierId: 999,
+    mappings: [],
+    legacyIdentities: [{ supplierItemName: 'MERLUZA', ingredientId: 'ingredient-merluza' }],
+  }).proposals[0]!
+
+  assert.equal(proposal.status, 'needs_mapping')
+  assert.equal(proposal.ingredientId, null)
+})
+
+test('alias legacy ambiguo nunca selecciona ingrediente arbitrariamente', () => {
+  const raw = artifact([{
+    data: { table_cells: [
+      cell(0, 0, 'Producto', true), cell(0, 1, 'Cantidad', true),
+      cell(0, 2, 'Precio', true), cell(0, 3, 'Importe', true),
+      cell(1, 0, 'CALAMAR'), cell(1, 1, '1 KG'),
+      cell(1, 2, '9,75'), cell(1, 3, '9,75'),
+    ] },
+  }])
+  const proposal = normalizeDoclingEvidence({
+    profile: directProfile,
+    rawArtifact: raw,
+    supplierId: 999,
+    mappings: [],
+    legacyIdentities: [
+      { supplierItemName: 'CALAMAR', ingredientId: 'ingredient-a' },
+      { supplierItemName: 'calamar', ingredientId: 'ingredient-b' },
+    ],
+  }).proposals[0]!
+
+  assert.equal(proposal.status, 'needs_mapping')
+  assert.equal(proposal.ingredientId, null)
+  assert.equal(proposal.mappingVersionId, null)
+})
+
 test('mapping de presentación incompatible queda bloqueado', () => {
   const raw = artifact([{
     data: {

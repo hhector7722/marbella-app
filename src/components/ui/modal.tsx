@@ -7,6 +7,7 @@ import { ChevronLeft, X } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { trackUsageModalDwell, trackUsageModalOpen } from '@/lib/usage/client';
 import { lockScrollGlobal } from '@/hooks/useScrollLock';
+import { useAutoHideScrollbar } from '@/hooks/useAutoHideScrollbar';
 import { cn } from '@/lib/utils';
 import {
     MODAL_COMPONENT_ID,
@@ -203,6 +204,7 @@ function ModalPanelShell({
     const actionChrome = onBackPlain ? 'plain' : headerActionChrome;
     const hasBack = Boolean(onBack);
     const dark = scheme === 'dark';
+    useAutoHideScrollbar(bodyRef);
 
     return (
         <div
@@ -307,7 +309,7 @@ function ModalPanelShell({
                 ref={bodyRef}
                 data-element="body"
                 className={cn(
-                    'relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden',
+                    'custom-scrollbar relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden',
                     scrollContent ? 'overflow-y-auto overscroll-contain' : 'overflow-y-hidden'
                 )}
             >

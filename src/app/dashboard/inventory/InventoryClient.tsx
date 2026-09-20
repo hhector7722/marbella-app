@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { toast } from 'sonner'
-import { AlertCircle, Filter, Package } from 'lucide-react'
+import { Filter, Package } from 'lucide-react'
 import { QuickCashTools } from '@/components/ui/QuickCalculatorModal'
 import { Button } from '@/components/ui/button'
+import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchField } from '@/components/ui/SearchField'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { cn } from '@/lib/utils'
 
 type Ingredient = {
@@ -82,7 +84,7 @@ function parseQuantity(raw: string, unit: string): number {
   return roundQty(n, unit)
 }
 
-function InventoryIngredientCard({
+function InventoryProductCard({
   item,
   raw,
   onRawChange,
@@ -110,57 +112,64 @@ function InventoryIngredientCard({
 
   return (
     <div
-      className={cn('flex h-full min-h-0 flex-col rounded-xl bg-white overflow-hidden')}
+      data-element="inventory-product-card"
+      className="relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-md transition-shadow"
     >
-      <div className="relative shrink-0 h-14 w-full flex items-center justify-center bg-zinc-50/40">
-        {visibilityMode && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={visibilityOn}
-            onClick={(e) => {
-              e.stopPropagation()
-              onVisibilityToggle()
-            }}
-            className={cn(
-              'absolute top-0.5 right-0.5 z-10 flex min-h-[40px] min-w-[3.75rem] items-center rounded-full p-1 transition-colors shadow-sm',
-              visibilityOn ? 'bg-emerald-600 justify-end' : 'bg-zinc-300/90 justify-start',
-            )}
-            title={visibilityOn ? 'Visible en inventario' : 'Oculto en inventario'}
-          >
-            <span className="h-8 w-8 max-h-full aspect-square rounded-full bg-white shadow-md shrink-0 pointer-events-none" />
-          </button>
-        )}
-        {item.image_url ? (
-          <img src={item.image_url} alt="" className="h-12 w-12 object-contain" />
-        ) : (
-          <Package className="w-8 h-8 text-zinc-200" strokeWidth={1.5} />
-        )}
-      </div>
-      <div className="shrink-0 h-10 px-2 flex flex-col items-center justify-center min-w-0 gap-0.5">
-        <span
-          className="w-full min-w-0 text-center text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 whitespace-nowrap overflow-hidden text-ellipsis"
-          title={item.name}
+      {visibilityMode ? (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={visibilityOn}
+          onClick={(e) => {
+            e.stopPropagation()
+            onVisibilityToggle()
+          }}
+          className={cn(
+            'absolute right-1.5 top-1.5 z-10 flex min-h-[48px] min-w-[4.5rem] items-center rounded-full p-1 shadow-sm transition-colors',
+            visibilityOn ? 'justify-end bg-emerald-600' : 'justify-start bg-zinc-300/90',
+          )}
+          title={visibilityOn ? 'Visible en inventario' : 'Oculto en inventario'}
         >
-          {label}
-        </span>
+          <span className="h-9 w-9 max-h-full aspect-square shrink-0 rounded-full bg-white shadow-md pointer-events-none" />
+        </button>
+      ) : null}
+
+      <div className="flex shrink-0 flex-col items-center justify-start bg-white px-1.5 pb-1 pt-1.5">
+        <div className="mb-0.5 flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg bg-white">
+          {item.image_url ? (
+            <img src={item.image_url} className="h-full w-full object-contain" alt="" />
+          ) : (
+            <Package className="h-5 w-5 text-zinc-200" strokeWidth={1.5} />
+          )}
+        </div>
+        <div className="flex w-full min-w-0 flex-col items-center gap-0.5 text-center">
+          <span
+            className="w-full min-w-0 truncate text-center text-[10px] min-[380px]:text-[11px] font-black leading-tight text-zinc-800"
+            title={item.name}
+          >
+            {label}
+          </span>
+          <span className="w-full truncate text-center text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+            {u}
+          </span>
+        </div>
       </div>
-      {!visibilityMode && (
-        <div className="mt-auto shrink-0 px-2 pb-2 pt-0 flex flex-col items-stretch w-full">
-          <label className="sr-only">Cantidad contada {item.name}</label>
+
+      {!visibilityMode ? (
+        <div className="mt-auto shrink-0 px-2 pb-2 pt-1">
           <QuantityStepper
             value={numeric}
-            onChange={(n) => onNumericChange(roundQty(n, u))}
             raw={raw}
             onRawChange={onRawChange}
             onBlur={onBlur}
+            onChange={(n) => onNumericChange(roundQty(n, u))}
             step={getStep(u)}
             inputMode={isCountUnit(u) ? 'numeric' : 'decimal'}
             ariaLabel={`Cantidad contada ${item.name}`}
             bottomText={totalBothLocations !== undefined ? `Total ${totalBothLocations}` : undefined}
           />
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
@@ -301,7 +310,7 @@ export function InventoryClient({
           const valBarra = numericByIdBarra[item.id]
           const valCamara = numericByIdCamara[item.id]
           if (valBarra === undefined && valCamara === undefined) return null
-          
+
           const total = (valBarra ?? 0) + (valCamara ?? 0)
           const safePhysical = roundQty(Number.isFinite(total) ? total : 0, u)
           return {
@@ -345,12 +354,239 @@ export function InventoryClient({
 
   const submitDisabled = isSubmitting || !hasAnyCount
 
-  const countForFilterTotal = sourceList.length
+  const catalog = (
+    <div className="flex flex-col gap-5">
+      {Object.keys(grouped).length === 0 ? (
+        visibilityEditMode ? (
+          <EmptyState
+            instance="inventory-no-visible-edit"
+            variant="none"
+            title="No hay artículos en el inventario."
+            description={managerEmptyHint ? 'Activa artículos para que aparezcan en el recuento.' : undefined}
+          />
+        ) : (
+          <EmptyState
+            instance="inventory-mismatch"
+            variant="mismatch"
+            title="No hay ingredientes que coincidan."
+          />
+        )
+      ) : (
+        Object.entries(grouped).map(([category, items]) => (
+          <section key={category} className="flex flex-col gap-3">
+            {category ? (
+              <div className="px-0.5 text-sm font-black uppercase tracking-wide text-zinc-500">{category}</div>
+            ) : null}
+            <div className="grid grid-cols-3 gap-x-5 gap-y-6 pt-2 sm:grid-cols-4 sm:gap-x-6 sm:gap-y-8 md:grid-cols-5 md:gap-x-7 lg:grid-cols-5 lg:gap-x-5 lg:gap-y-6 xl:grid-cols-6 2xl:grid-cols-7">
+              {items.map((item) => {
+                const u = normalizeUnit(item.unit)
+                const isBarra = locationMode === 'BARRA'
+                const counted = isBarra ? numericByIdBarra[item.id] : numericByIdCamara[item.id]
+                const numeric = counted ?? 0
+
+                const valB = numericByIdBarra[item.id]
+                const valC = numericByIdCamara[item.id]
+                let totalBothLocations: number | undefined
+                if (valB !== undefined && valB >= 1 && valC !== undefined && valC >= 1) {
+                  totalBothLocations = valB + valC
+                }
+
+                const rawCounts = isBarra ? physicalCountsBarra : physicalCountsCamara
+                const raw =
+                  rawCounts[item.id] !== undefined
+                    ? rawCounts[item.id]!
+                    : counted === undefined
+                      ? ''
+                      : String(counted)
+                const visibilityOn =
+                  draftVisibility[item.id] ??
+                  (item as ManagerIngredientRow).inventory_visible !== false
+
+                return (
+                  <InventoryProductCard
+                    key={item.id}
+                    item={item}
+                    numeric={numeric}
+                    raw={raw}
+                    visibilityMode={Boolean(visibilityEditMode && managerFullList?.length)}
+                    visibilityOn={visibilityOn}
+                    totalBothLocations={totalBothLocations}
+                    onVisibilityToggle={() => toggleDraftVisibility(item.id)}
+                    onRawChange={(s) => {
+                      const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
+                      const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
+                      setPhysical((prev) => ({ ...prev, [item.id]: s }))
+                      if (s.trim() === '') {
+                        setNumeric((prev) => {
+                          const next = { ...prev }
+                          delete next[item.id]
+                          return next
+                        })
+                      } else {
+                        setQty(item.id, item, parseQuantity(s, u))
+                      }
+                    }}
+                    onBlur={() => {
+                      const rawCountsRef = isBarra ? physicalCountsBarra : physicalCountsCamara
+                      const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
+                      const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
+
+                      const rawStr = rawCountsRef[item.id] ?? ''
+                      if (rawStr.trim() === '') {
+                        setNumeric((prev) => {
+                          const next = { ...prev }
+                          delete next[item.id]
+                          return next
+                        })
+                        setPhysical((prev) => {
+                          const next = { ...prev }
+                          delete next[item.id]
+                          return next
+                        })
+                        return
+                      }
+                      const parsed = parseQuantity(rawStr, u)
+                      setQty(item.id, item, parsed)
+                      setPhysical((prev) => {
+                        const next = { ...prev }
+                        delete next[item.id]
+                        return next
+                      })
+                    }}
+                    onNumericChange={(n) => setQty(item.id, item, n)}
+                  />
+                )
+              })}
+            </div>
+          </section>
+        ))
+      )}
+      <div className="scroll-end-touch-cards" aria-hidden />
+    </div>
+  )
+
+  const toolbar = (
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex min-w-0 items-center gap-2">
+        {!visibilityEditMode ? (
+          <PetroleumSegmented
+            instance="inventory-location"
+            density="comfortable"
+            aria-label="Ubicación del recuento"
+            value={locationMode}
+            onChange={(next) => setLocationMode(next as 'BARRA' | 'CAMARA')}
+            options={[
+              { value: 'BARRA', label: 'Barra' },
+              { value: 'CAMARA', label: 'Cámara' },
+            ]}
+          />
+        ) : null}
+
+        {visibilityEditMode && managerFullList?.length ? (
+          <Button
+            type="button"
+            variant="primary"
+            instance="inventory-save-visibility"
+            onClick={handleSaveVisibility}
+            disabled={savingVisibility}
+            loading={savingVisibility}
+            className="shrink-0"
+          >
+            Guardar lista
+          </Button>
+        ) : null}
+
+        {!visibilityEditMode ? (
+          <Button
+            type="button"
+            variant="primary"
+            instance="inventory-save-count"
+            onClick={handleSubmit}
+            disabled={submitDisabled}
+            loading={isSubmitting}
+            className="ml-auto shrink-0"
+          >
+            Guardar recuento
+          </Button>
+        ) : null}
+      </div>
+
+      <div className="flex min-w-0 w-full shrink-0 items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <SearchField
+            instance="inventory-search"
+            placeholder="Buscar ingrediente…"
+            value={ingredientQuery}
+            onChange={setIngredientQuery}
+          />
+        </div>
+
+        <div className="relative shrink-0" data-inventory-filter-root="true">
+          <Button
+            type="button"
+            variant="tertiary"
+            instance="inventory-filter-category"
+            onClick={() => setIngredientFilterOpen((v) => !v)}
+            icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
+            aria-label="Filtrar por categoría"
+            className="shrink-0"
+          />
+
+          {ingredientFilterOpen ? (
+            <div
+              className="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-zinc-100 bg-white text-zinc-900 shadow-2xl"
+              data-inventory-filter-root="true"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setIngredientCategory(null)
+                  setIngredientFilterOpen(false)
+                }}
+                className={cn(
+                  'flex min-h-12 w-full items-center justify-between px-4 py-3 transition-colors hover:bg-zinc-50 active:bg-zinc-100',
+                  !ingredientCategory && 'bg-zinc-50',
+                )}
+              >
+                <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
+                <span className="text-[10px] font-black text-zinc-400">{sourceList.length}</span>
+              </button>
+              <div className="h-px bg-zinc-100" />
+              <div className="max-h-72 overflow-auto">
+                {ingredientCategories.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => {
+                      setIngredientCategory(c)
+                      setIngredientFilterOpen(false)
+                    }}
+                    className={cn(
+                      'min-h-12 w-full px-4 py-3 text-left transition-colors hover:bg-zinc-50 active:bg-zinc-100',
+                      ingredientCategory === c && 'bg-zinc-50',
+                    )}
+                  >
+                    <span className="text-[11px] font-black uppercase tracking-widest text-zinc-700">{c}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
 
   if (!visibilityEditMode && initialIngredients.length === 0) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col gap-4">
-        {rightSlot ? <div className="flex shrink-0 justify-end">{rightSlot}</div> : null}
+      <DashboardDetailLayout
+        title="Ingredientes"
+        subtitle="Recuento de existencias por ubicación"
+        maxWidthClass="max-w-7xl"
+        showBackButton={false}
+        rightSlot={rightSlot}
+        toolbarSlot={toolbar}
+      >
         <EmptyState
           instance="inventory-no-visible"
           variant="none"
@@ -361,249 +597,21 @@ export function InventoryClient({
               : undefined
           }
         />
-      </div>
+      </DashboardDetailLayout>
     )
   }
 
   return (
-    <div className="flex flex-col gap-4 min-h-0 flex-1">
-      <div className="flex-1 min-h-0 pr-0.5">
-        <div className="flex flex-col gap-6 relative">
-          <div className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-sm pb-4 pt-1 flex flex-col gap-3 -mx-2 px-2 border-b border-zinc-200/50">
-            <div className="mt-2 flex items-start justify-between gap-2">
-              <h1 className="text-2xl font-black text-zinc-900">Ingredientes</h1>
-              {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
-            </div>
-            {!visibilityEditMode && (
-              <div className="flex items-center gap-2 w-full shrink-0">
-                <div className="flex flex-1 bg-zinc-100 p-1 rounded-xl shrink-0 min-h-[48px] items-center min-w-0">
-                  <button
-                    type="button"
-                    onClick={() => setLocationMode('BARRA')}
-                    className={cn(
-                      'flex-1 px-1 sm:px-2 py-2 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all min-h-[40px] truncate',
-                      locationMode === 'BARRA'
-                        ? 'bg-white text-[#36606F] shadow-sm'
-                        : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
-                    )}
-                  >
-                    BARRA
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLocationMode('CAMARA')}
-                    className={cn(
-                      'flex-1 px-1 sm:px-2 py-2 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all min-h-[40px] truncate',
-                      locationMode === 'CAMARA'
-                        ? 'bg-white text-[#36606F] shadow-sm'
-                        : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
-                    )}
-                  >
-                    CÁMARA
-                  </button>
-                </div>
-                
-                <Button
-                  type="button"
-                  variant="primary"
-                  instance="inventory-save-count"
-                  onClick={handleSubmit}
-                  disabled={submitDisabled}
-                  loading={isSubmitting}
-                >
-                  Guardar recuento
-                </Button>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 w-full shrink-0 relative z-20">
-              <button
-                  type="button"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:shadow transition-all"
-                  aria-label="Añadir nuevo"
-              >
-                  <Package size={16} strokeWidth={3} className="hidden" />
-                  <span className="text-lg font-black leading-none">+</span>
-              </button>
-              <div className="flex-1 min-w-0">
-                <SearchField
-                  instance="inventory-search"
-                  placeholder="Buscar ingrediente…"
-                  value={ingredientQuery}
-                  onChange={setIngredientQuery}
-                />
-              </div>
-
-              {visibilityEditMode && managerFullList?.length ? (
-                <Button
-                  type="button"
-                  variant="primary"
-                  instance="inventory-save-visibility"
-                  onClick={handleSaveVisibility}
-                  disabled={savingVisibility}
-                  loading={savingVisibility}
-                >
-                  Guardar lista
-                </Button>
-              ) : null}
-
-              <div className="shrink-0 relative" data-inventory-filter-root="true">
-                <Button
-                  type="button"
-                  variant="tertiary"
-                  instance="inventory-filter-category"
-                  onClick={() => setIngredientFilterOpen((v) => !v)}
-                  icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
-                  aria-label="Filtrar por categoría"
-                  className="shrink-0"
-                />
-
-                {ingredientFilterOpen ? (
-                  <div
-                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20"
-                    data-inventory-filter-root="true"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIngredientCategory(null)
-                        setIngredientFilterOpen(false)
-                      }}
-                      className={cn(
-                        'w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
-                        !ingredientCategory && 'bg-zinc-50',
-                      )}
-                    >
-                      <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
-                      <span className="text-[10px] font-black text-zinc-400">{countForFilterTotal}</span>
-                    </button>
-                    <div className="h-px bg-zinc-100" />
-                    <div className="max-h-72 overflow-auto">
-                      {ingredientCategories.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => {
-                            setIngredientCategory(c)
-                            setIngredientFilterOpen(false)
-                          }}
-                          className={cn(
-                            'w-full min-h-12 px-4 py-3 text-left hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
-                            ingredientCategory === c && 'bg-zinc-50',
-                          )}
-                        >
-                          <span className="text-[11px] font-black uppercase tracking-widest text-zinc-700">{c}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-        {Object.keys(grouped).length === 0 ? (
-            <EmptyState
-              instance="inventory-mismatch"
-              variant="mismatch"
-              title="No hay ingredientes que coincidan."
-            />
-          ) : (
-            Object.entries(grouped).map(([category, items]) => (
-              <section key={category} className="flex flex-col gap-3 shrink-0">
-                <div className="text-sm font-black uppercase tracking-wide text-zinc-500 px-0.5">{category}</div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 lg:gap-3 xl:gap-4 items-stretch justify-items-stretch">
-                  {items.map((item) => {
-                    const u = normalizeUnit(item.unit)
-                    const isBarra = locationMode === 'BARRA'
-                    const counted = isBarra ? numericByIdBarra[item.id] : numericByIdCamara[item.id]
-                    const numeric = counted ?? 0
-                    
-                    const valB = numericByIdBarra[item.id]
-                    const valC = numericByIdCamara[item.id]
-                    let totalBothLocations: number | undefined
-                    if (valB !== undefined && valB >= 1 && valC !== undefined && valC >= 1) {
-                      totalBothLocations = valB + valC
-                    }
-
-                    const rawCounts = isBarra ? physicalCountsBarra : physicalCountsCamara
-                    const raw =
-                      rawCounts[item.id] !== undefined
-                        ? rawCounts[item.id]!
-                        : counted === undefined
-                          ? ''
-                          : String(counted)
-                    const visibilityOn =
-                      draftVisibility[item.id] ??
-                      (item as ManagerIngredientRow).inventory_visible !== false
-
-                    return (
-                      <InventoryIngredientCard
-                        key={item.id}
-                        item={item}
-                        numeric={numeric}
-                        raw={raw}
-                        visibilityMode={Boolean(visibilityEditMode && managerFullList?.length)}
-                        visibilityOn={visibilityOn}
-                        totalBothLocations={totalBothLocations}
-                        onVisibilityToggle={() => toggleDraftVisibility(item.id)}
-                        onRawChange={(s) => {
-                          const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
-                          const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
-                          setPhysical((prev) => ({ ...prev, [item.id]: s }))
-                          if (s.trim() === '') {
-                            setNumeric((prev) => {
-                              const next = { ...prev }
-                              delete next[item.id]
-                              return next
-                            })
-                          } else {
-                            setQty(item.id, item, parseQuantity(s, u))
-                          }
-                        }}
-                        onBlur={() => {
-                          const rawCountsRef = isBarra ? physicalCountsBarra : physicalCountsCamara
-                          const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
-                          const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
-                          
-                          const rawStr = rawCountsRef[item.id] ?? ''
-                          if (rawStr.trim() === '') {
-                            setNumeric((prev) => {
-                              const next = { ...prev }
-                              delete next[item.id]
-                              return next
-                            })
-                            setPhysical((prev) => {
-                              const next = { ...prev }
-                              delete next[item.id]
-                              return next
-                            })
-                            return
-                          }
-                          const parsed = parseQuantity(rawStr, u)
-                          setQty(item.id, item, parsed)
-                          setPhysical((prev) => {
-                            const next = { ...prev }
-                            delete next[item.id]
-                            return next
-                          })
-                        }}
-                        onNumericChange={(n) => setQty(item.id, item, n)}
-                      />
-                    )
-                  })}
-                </div>
-              </section>
-            ))
-          )}
-        </div>
-      </div>
-
-      {!visibilityEditMode && (
-        <>
-          <QuickCashTools calculator />
-        </>
-      )}
-    </div>
+    <DashboardDetailLayout
+      title="Ingredientes"
+      subtitle={visibilityEditMode ? 'Activa o desactiva artículos del recuento' : 'Recuento de existencias por ubicación'}
+      maxWidthClass="max-w-7xl"
+      showBackButton={false}
+      rightSlot={rightSlot}
+      toolbarSlot={toolbar}
+    >
+      {catalog}
+      {!visibilityEditMode ? <QuickCashTools calculator /> : null}
+    </DashboardDetailLayout>
   )
 }

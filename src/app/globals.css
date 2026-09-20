@@ -4669,6 +4669,35 @@ button[data-element='catalog-filter'] {
     background-image: var(--marbella-shell-image);
   }
 
+  /**
+   * Barra de scroll sutil: sin carril blanco y con pulgar azulado casi
+   * imperceptible. Solo se muestra mientras el contenedor se desplaza
+   * (`data-scrolling="true"`, ver `useAutoHideScrollbar`).
+   */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track,
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 9999px;
+  }
+  .custom-scrollbar[data-scrolling='true'] {
+    scrollbar-color: color-mix(in srgb, var(--color-envolvente-alto) 45%, transparent) transparent;
+  }
+  .custom-scrollbar[data-scrolling='true']::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-envolvente-alto) 45%, transparent);
+  }
+
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }

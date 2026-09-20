@@ -34,6 +34,7 @@ import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { useAutoHideScrollbar } from '@/hooks/useAutoHideScrollbar';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import * as XLSX from 'xlsx';
 import { downloadWorkbook, printHtml } from '@/lib/export/browser-output';
@@ -453,6 +454,10 @@ export default function HistoryPage() {
     const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>([]);
     const [topHours, setTopHours] = useState<any[]>([]);
     const [salesSummary, setSalesSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
+    const salesProductsScrollRef = useRef<HTMLDivElement>(null);
+    const salesHoursScrollRef = useRef<HTMLDivElement>(null);
+    useAutoHideScrollbar(salesProductsScrollRef);
+    useAutoHideScrollbar(salesHoursScrollRef);
 
     // --- Real-time swipe drag state ---
     const modalCardRef = useRef<HTMLDivElement>(null);
@@ -2372,7 +2377,7 @@ export default function HistoryPage() {
 
                             {/* Tablas */}
                             <div className="flex flex-col gap-4 mt-3">
-                                <div className="min-h-0 max-h-[min(32vh,14rem)] overflow-x-hidden overflow-y-auto overscroll-contain">
+                                <div ref={salesProductsScrollRef} className="custom-scrollbar min-h-0 max-h-[min(32vh,14rem)] overflow-x-hidden overflow-y-auto overscroll-contain">
                                     {salesProducts.length === 0 ? (
                                         <p className="text-[10px] text-white/40 font-medium italic">No hay productos registrados.</p>
                                     ) : (
@@ -2408,7 +2413,7 @@ export default function HistoryPage() {
                                     )}
                                 </div>
 
-                                <div className="min-h-0 max-h-[min(28vh,10rem)] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-white/10 pt-3">
+                                <div ref={salesHoursScrollRef} className="custom-scrollbar min-h-0 max-h-[min(28vh,10rem)] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-white/10 pt-3">
                                     {topHours.length === 0 ? (
                                         <p className="text-[10px] text-white/40 font-medium italic">No hay registros horarios.</p>
                                     ) : (
