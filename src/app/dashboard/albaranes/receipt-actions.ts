@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server'
 import { compareExact, parseExactDecimal } from '@/lib/albaranes/k5/exact-decimal'
 import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
 import { K5_NORMALIZER_VERSION, proposalInputFingerprint } from '@/lib/albaranes/k5/normalizer'
+import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
 
 export type ReceiptAllocationInput = {
   purchase_order_item_id: string
@@ -109,6 +110,8 @@ async function supersedeK5ProposalWithMapping(params: {
   lineBillingUnit: string
   lineContentQty: number
   lineContentUnit: string
+  variableWeightKg?: number | null
+  variablePieceCount?: number | null
 }): Promise<K5MappingRevision | null> {
   const currentProposalId = text(params.line.interpretation_proposal_id)
   if (!currentProposalId) return null
@@ -293,6 +296,12 @@ async function supersedeK5ProposalWithMapping(params: {
         ...(current.provenance && typeof current.provenance === 'object' ? current.provenance : {}),
         revision: 'human_mapping_selection',
         manual_line_override: humanLineOverride,
+        ...(params.variableWeightKg != null
+          ? {
+              variable_weight_kg: params.variableWeightKg,
+              variable_piece_count: params.variablePieceCount ?? null,
+            }
+          : {}),
         economic_effects: false,
       },
     })
@@ -357,6 +366,44 @@ export async function saveReceiptMappingProposalAction(params: {
     return { success: false, message: 'Completa primero cantidad y precio unitario antes de mapear.' }
   }
 
+  let effectiveConversionFactor = conversionFactor
+  let effectiveLineBillingUnit = lineBillingUnit
+  let effectiveLineContentQty = lineContentQty
+  let effectiveLineContentUnit = lineContentUnit
+  let variableWeightKg: number | null = null
+  let variablePieceCount: number | null = null
+
+  if (k5ProposalId) {
+    const [{ data: proposalForWeight }, { data: ingredientForWeight }] = await Promise.all([
+      gate.supabase
+        .from('purchase_interpretation_proposals')
+        .select('observed,observed_unit_price,line_total')
+        .eq('id', k5ProposalId)
+        .maybeSingle(),
+      gate.supabase
+        .from('ingredients')
+        .select('purchase_unit')
+        .eq('id', ingredientId)
+        .maybeSingle(),
+    ])
+    const rawCells = Array.isArray((proposalForWeight as any)?.observed?.raw_cells)
+      ? (proposalForWeight as any).observed.raw_cells
+      : []
+    const variable = deriveVariableWeightEvidence({
+      rawCells,
+      unitPrice: (proposalForWeight as any)?.observed_unit_price ?? line.unit_price,
+      lineTotal: (proposalForWeight as any)?.line_total ?? line.total_price,
+    })
+    if (variable && text((ingredientForWeight as any)?.purchase_unit).toLowerCase() === 'kg') {
+      variableWeightKg = variable.weightKg
+      variablePieceCount = variable.pieceCount
+      effectiveConversionFactor = 1
+      effectiveLineBillingUnit = 'kg'
+      effectiveLineContentQty = 1
+      effectiveLineContentUnit = 'kg'
+    }
+  }
+
   const { data: invoice, error: invoiceError } = await gate.supabase
     .from('purchase_invoices')
     .select('supplier_id')
@@ -374,10 +421,10 @@ export async function saveReceiptMappingProposalAction(params: {
         supplier_id: supplierId,
         supplier_item_name: line.original_name,
         ingredient_id: ingredientId,
-        conversion_factor: conversionFactor,
-        line_billing_unit: lineBillingUnit,
-        line_content_qty: lineContentQty,
-        line_content_unit: lineContentUnit,
+        conversion_factor: effectiveConversionFactor,
+        line_billing_unit: effectiveLineBillingUnit,
+        line_content_qty: effectiveLineContentQty,
+        line_content_unit: effectiveLineContentUnit,
         last_known_price: line.unit_price,
       },
       { onConflict: 'supplier_id,supplier_item_name' }
@@ -407,10 +454,10 @@ export async function saveReceiptMappingProposalAction(params: {
     current &&
     current.status !== 'rejected' &&
     current.ingredient_id === ingredientId &&
-    sameExactDecimal(current.conversion_factor, conversionFactor) &&
-    text(current.line_billing_unit).toLowerCase() === lineBillingUnit.toLowerCase() &&
-    sameExactDecimal(current.line_content_qty, lineContentQty) &&
-    text(current.line_content_unit).toLowerCase() === lineContentUnit.toLowerCase()
+    sameExactDecimal(current.conversion_factor, effectiveConversionFactor) &&
+    text(current.line_billing_unit).toLowerCase() === effectiveLineBillingUnit.toLowerCase() &&
+    sameExactDecimal(current.line_content_qty, effectiveLineContentQty) &&
+    text(current.line_content_unit).toLowerCase() === effectiveLineContentUnit.toLowerCase()
 
   let mappingVersionId = current?.id ?? null
   if (!unchanged) {
@@ -421,10 +468,10 @@ export async function saveReceiptMappingProposalAction(params: {
         supplier_id: supplierId,
         supplier_item_name: line.original_name,
         ingredient_id: ingredientId,
-        conversion_factor: conversionFactor,
-        line_billing_unit: lineBillingUnit,
-        line_content_qty: lineContentQty,
-        line_content_unit: lineContentUnit,
+        conversion_factor: effectiveConversionFactor,
+        line_billing_unit: effectiveLineBillingUnit,
+        line_content_qty: effectiveLineContentQty,
+        line_content_unit: effectiveLineContentUnit,
         status: 'proposed',
         supersedes_id: current?.id ?? null,
         idempotency_key: `mapping-proposal:${lineId}:${crypto.randomUUID()}`,
@@ -446,13 +493,18 @@ export async function saveReceiptMappingProposalAction(params: {
     revisedProposal = await supersedeK5ProposalWithMapping({
       supabase: gate.supabase,
       userId: gate.userId,
-      line: line as unknown as Record<string, unknown>,
+      line: {
+        ...(line as unknown as Record<string, unknown>),
+        ...(variableWeightKg != null ? { quantity: variableWeightKg, line_unit: 'kg' } : {}),
+      },
       mappingVersionId,
       ingredientId,
-      conversionFactor,
-      lineBillingUnit,
-      lineContentQty,
-      lineContentUnit,
+      conversionFactor: effectiveConversionFactor,
+      lineBillingUnit: effectiveLineBillingUnit,
+      lineContentQty: effectiveLineContentQty,
+      lineContentUnit: effectiveLineContentUnit,
+      variableWeightKg,
+      variablePieceCount,
     })
   } catch (error) {
     return { success: false, message: error instanceof Error ? error.message : 'No se pudo revisar la propuesta K5.' }
@@ -464,6 +516,7 @@ export async function saveReceiptMappingProposalAction(params: {
       mapped_ingredient_id: ingredientId,
       status: revisedProposal ? (revisedProposal.status === 'ready_for_review' ? 'mapped' : 'pending') : 'mapped',
       ...(revisedProposal ? { interpretation_proposal_id: revisedProposal.id } : {}),
+      ...(variableWeightKg != null ? { quantity: variableWeightKg, line_unit: 'kg' } : {}),
     })
     .eq('id', lineId)
   if (updateError) return { success: false, message: 'La propuesta se guardó, pero no se pudo vincular a la línea.' }

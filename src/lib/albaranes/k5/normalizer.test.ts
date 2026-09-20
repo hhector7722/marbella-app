@@ -164,7 +164,7 @@ test('mapping de presentación incompatible queda bloqueado', () => {
   assert.equal(proposal.mappingVersionId, null)
 })
 
-test('Videla conserva medidas coexistentes, respeta cabeceras solapadas y fuerza needs_review', () => {
+test('Videla conserva medidas coexistentes y solo mantiene revisión por campos realmente pendientes', () => {
   const videlaProfile: SupplierProfile = {
     ...directProfile,
     id: 'supplier:3:videla',
@@ -226,8 +226,12 @@ test('Videla conserva medidas coexistentes, respeta cabeceras solapadas y fuerza
   assert.equal(proposal.sourceItemName, null)
   assert.equal(proposal.observedUnitPrice, '9.75')
   assert.equal(proposal.lineTotal, '152.1')
-  assert.ok(proposal.reviewReasons.includes('mixed_measurement_requires_review'))
+  assert.ok(proposal.reviewReasons.includes('missing_product'))
+  assert.ok(!proposal.reviewReasons.includes('mixed_measurement_requires_review'))
   assert.ok(proposal.warnings.some((warning) => warning.includes('3,00BU') && warning.includes('15,60 KG')))
+  assert.ok(proposal.warnings.includes('variable_weight_kg:15.6'))
+  assert.equal(proposal.lineQuantity, '15.6')
+  assert.equal(proposal.lineUnit, 'kg')
   assert.equal(proposal.mappingVersionId, null)
   assert.equal(proposal.normalizedUnitPrice, null)
 })
@@ -322,4 +326,80 @@ test('Ametller elige la cabecera de líneas dentro de una tabla con secciones de
   assert.equal(proposal.observedUnitPrice, '0.59')
   assert.equal(proposal.lineTotal, '2.3')
   assert.equal(proposal.status, 'needs_mapping')
+})
+
+
+test('Videla: peso variable reconciliado usa kg económico y conserva piezas como evidencia', () => {
+  const videlaProfile: SupplierProfile = {
+    ...directProfile,
+    id: 'supplier:3:videla',
+    version: '1.1.0',
+    supplier: {
+      id: 3,
+      canonical_name: 'Videla',
+      aliases: ['Pescados Videla'],
+      observed_document_identities: ['Pescados Videla S.A.'],
+    },
+    fields: {
+      product: { aliases: ['Artículo'], meaning: 'producto' },
+      quantity: { aliases: ['Unidades'], meaning: 'PZ/BU/KG' },
+      unit_price: { aliases: ['Precio'], meaning: 'precio' },
+      line_amount: { aliases: ['Importe'], meaning: 'importe' },
+    },
+    interpretation: { kind: 'mixed_measure_review', rounding_tolerance: 0.01 },
+    needs_review: ['solo si no concilia'],
+  }
+
+  const raw = artifact([{
+    data: {
+      table_cells: [
+        cell(0, 0, 'Artículo', true),
+        cell(0, 1, 'Unidades', true, 2),
+        cell(0, 3, 'Precio', true),
+        cell(0, 4, 'Importe', true),
+        cell(1, 0, 'AÑOJO REDONDO'),
+        cell(1, 1, '1,00PZ'),
+        cell(1, 2, '2,18KG'),
+        cell(1, 3, '13,25'),
+        cell(1, 4, '28,89'),
+      ],
+    },
+  }], 'Pescados Videla S.A.')
+
+  const proposal = normalizeDoclingEvidence({
+    profile: videlaProfile,
+    rawArtifact: raw,
+    supplierId: 3,
+    mappings: [{
+      id: 'mapping-anojo',
+      supplierItemName: 'AÑOJO REDONDO',
+      ingredientId: 'ingredient-anojo',
+      conversionFactor: '1',
+      lineBillingUnit: 'kg',
+      lineContentQty: '1',
+      lineContentUnit: 'kg',
+      purchaseUnit: 'kg',
+      baseUnit: 'g',
+    }],
+  }).proposals[0]!
+
+  assert.equal(proposal.status, 'ready_for_review')
+  assert.equal(proposal.lineQuantity, '2.18')
+  assert.equal(proposal.lineUnit, 'kg')
+  assert.equal(proposal.observedUnitPrice, '13.25')
+  assert.equal(proposal.lineTotal, '28.89')
+  assert.equal(proposal.purchaseQuantity, '2.18')
+  assert.equal(proposal.physicalQuantity, '2180')
+  assert.equal(proposal.normalizedUnitPrice, '13.25')
+  assert.deepEqual(proposal.reviewReasons, [])
+  assert.ok(proposal.warnings.includes('variable_weight_kg:2.18'))
+  assert.deepEqual(
+    (proposal.interpreted.variable_weight as Record<string, unknown>),
+    {
+      weight_kg: 2.18,
+      piece_count: 1,
+      economic_unit: 'kg',
+      matched_measure: '2,18KG',
+    }
+  )
 })

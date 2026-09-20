@@ -26,8 +26,9 @@ import {
 } from './docling-evidence.ts'
 import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-snapshot.ts'
 import { canonicalSupplierItemKey } from './supplier-item-key.ts'
+import { deriveVariableWeightEvidence } from './variable-weight.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v5' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v6' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -357,8 +358,21 @@ export function normalizeDoclingEvidence(params: {
   const semanticRows = match.table.rows.map((row) => rowByProfileFields(match, row))
   const proposals = semanticRows.map((semanticRow, index): K5NormalizedProposal => {
     const product = semanticText(semanticRow, 'product')
-    const observedQuantityText = value(semanticRow, 'quantity')
-    const billingUnit = observedBillingUnit(observedQuantityText, profileBillingFallback(profile))
+    const rawCells = match.table.rows[index]!.cells
+    const variableWeight = profile.interpretation.kind === 'mixed_measure_review'
+      ? deriveVariableWeightEvidence({
+          rawCells,
+          unitPrice: value(semanticRow, 'unit_price'),
+          lineTotal: value(semanticRow, 'line_amount'),
+          toleranceEuros: profile.interpretation.rounding_tolerance ?? 0.011,
+        })
+      : null
+    const observedQuantityText = variableWeight
+      ? `${variableWeight.weightKg} KG`
+      : value(semanticRow, 'quantity')
+    const billingUnit = variableWeight
+      ? 'kg'
+      : observedBillingUnit(observedQuantityText, profileBillingFallback(profile))
     const mapping = compatibleMapping(mappings, product, billingUnit, supplierId)
     const fixture: SupplierEvidenceFixture = {
       supplier_id: supplierId,
@@ -377,17 +391,25 @@ export function normalizeDoclingEvidence(params: {
     // punto (p. ej. `4.000UNI` o `1.300KG`). Un mapping confirmado también
     // resuelve una unidad de envase desconocida si la unidad observada (p. ej.
     // BOL→bag) coincide exactamente con la presentación versionada.
-    const interpretedReasons = interpreted.needs_review.filter(
-      (reason) =>
+    const interpretedReasons = interpreted.needs_review.filter((reason) => {
+      if (variableWeight && [
+        'missing_quantity',
+        'unknown_quantity_unit',
+        'mixed_measurement_requires_review',
+        'line_amount_mismatch',
+      ].includes(reason)) return false
+      return (
         (reason !== 'line_amount_mismatch' || economics.reasons.includes('line_amount_mismatch'))
         && (reason !== 'unknown_quantity_unit' || !mapping)
-    )
+      )
+    })
     const reasons = unique([...interpretedReasons, ...economics.reasons])
     const warnings: string[] = []
 
     if (profile.interpretation.kind === 'mixed_measure_review') {
       const measures = allObservedMeasures(match.table, match.table.rows[index]!.index)
       if (measures.length > 0) warnings.push(`observed_measures:${measures.join('|')}`)
+      if (variableWeight) warnings.push(`variable_weight_kg:${variableWeight.weightKg}`)
     }
 
     if (interpreted.status === 'excluded') {
@@ -447,12 +469,26 @@ export function normalizeDoclingEvidence(params: {
       ingredientId: mapping?.ingredientId ?? null,
       status,
       observed: { ...semanticRow, raw_cells: match.table.rows[index]!.cells },
-      interpreted: { ...interpreted, observed_measures: allObservedMeasures(match.table, match.table.rows[index]!.index) },
+      interpreted: {
+        ...interpreted,
+        observed_measures: allObservedMeasures(match.table, match.table.rows[index]!.index),
+        ...(variableWeight
+          ? {
+              variable_weight: {
+                weight_kg: variableWeight.weightKg,
+                piece_count: variableWeight.pieceCount,
+                economic_unit: 'kg',
+                matched_measure: variableWeight.matchedMeasure,
+              },
+            }
+          : {}),
+      },
       normalized: normalization ?? {},
       pricing: {
         observed_unit_price: unitPriceString,
         line_total: lineTotalString,
         source: profile.interpretation.kind,
+        ...(variableWeight ? { variable_weight: true, economic_unit: 'kg' } : {}),
       },
       reviewReasons: status === 'needs_mapping'
         ? ['mapping_missing']

@@ -82,7 +82,7 @@ test('Ametller no hereda falsos line_amount_mismatch del intérprete Number cuan
     mappings: [],
   })
 
-  assert.equal(result.normalizerVersion, 'k5-normalizer-v5')
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v6')
   assert.equal(result.proposals.length, 3)
 
   const byName = new Map(result.proposals.map((proposal) => [proposal.sourceItemName, proposal]))

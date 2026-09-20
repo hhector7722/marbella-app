@@ -355,19 +355,39 @@ export function LineMappingModal({
     [selectedIngredientMeta, ingredientPurchaseUnit]
   )
 
-  const presentationEconomics = useMemo(
+  const isVariableWeightMode = useMemo(
     () =>
-      deriveReceiptPresentationEconomics({
+      Boolean(
+        ingredientId
+        && line?.variable_weight_kg != null
+        && Number(line.variable_weight_kg) > 0
+        && purchaseUnitForPresentation === 'kg'
+      ),
+    [ingredientId, line?.variable_weight_kg, purchaseUnitForPresentation]
+  )
+
+  const presentationEconomics = useMemo(
+    () => {
+      if (isVariableWeightMode && observedUnitPrice != null) {
+        return {
+          conversionFactor: 1,
+          normalizedUnitPrice: observedUnitPrice,
+          purchaseUnit: 'kg',
+        }
+      }
+      return deriveReceiptPresentationEconomics({
         contentQty: dimensionalParsed.lineContentQty,
         contentUnit: dimensionalParsed.lineContentUnit,
         purchaseUnit: purchaseUnitForPresentation,
         observedUnitPrice,
-      }),
+      })
+    },
     [
       dimensionalParsed.lineContentQty,
       dimensionalParsed.lineContentUnit,
       purchaseUnitForPresentation,
       observedUnitPrice,
+      isVariableWeightMode,
     ]
   )
 
@@ -421,6 +441,7 @@ export function LineMappingModal({
 
   const canSave = useMemo(() => {
     if (!ingredientId || !invoiceId || supplierId == null || observedUnitPrice == null) return false
+    if (isVariableWeightMode) return true
     const { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
     if (!lineBillingUnit) return false
     if (lineContentQty == null || !Number.isFinite(lineContentQty) || lineContentQty <= 0) return false
@@ -433,6 +454,7 @@ export function LineMappingModal({
     observedUnitPrice,
     dimensionalParsed,
     presentationEconomics,
+    isVariableWeightMode,
   ])
 
   const proposalFingerprint = useMemo(
@@ -441,11 +463,13 @@ export function LineMappingModal({
         ingredientId,
         factor: presentationEconomics?.conversionFactor ?? factor,
         observedUnitPrice,
-        lineBillingUnit: String(line?.line_unit ?? dimensional.lineBillingUnit).trim().toLowerCase(),
-        lineContentQty: dimensional.lineContentQty.trim().replace(',', '.'),
-        lineContentUnit: dimensional.lineContentUnit.trim().toLowerCase(),
+        lineBillingUnit: isVariableWeightMode
+          ? 'kg'
+          : String(line?.line_unit ?? dimensional.lineBillingUnit).trim().toLowerCase(),
+        lineContentQty: isVariableWeightMode ? '1' : dimensional.lineContentQty.trim().replace(',', '.'),
+        lineContentUnit: isVariableWeightMode ? 'kg' : dimensional.lineContentUnit.trim().toLowerCase(),
       }),
-    [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor]
+    [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor, isVariableWeightMode]
   )
 
   async function handleSave() {
@@ -462,7 +486,12 @@ export function LineMappingModal({
     let { lineContentQty, lineContentUnit } = dimensionalParsed
     let lineBillingUnit = String(line.line_unit ?? dimensionalParsed.lineBillingUnit ?? '').trim()
 
-    if (isAutoSameFamilyMode && selectedIngredientMeta && billingMassVolumeNorm) {
+    if (isVariableWeightMode) {
+      lineBillingUnit = 'kg'
+      lineContentQty = 1
+      lineContentUnit = 'kg'
+      factorNum = 1
+    } else if (isAutoSameFamilyMode && selectedIngredientMeta && billingMassVolumeNorm) {
       const auto = buildAutomaticSameFamilyDimensional(
         billingMassVolumeNorm,
         selectedIngredientMeta
@@ -830,7 +859,7 @@ export function LineMappingModal({
                       className="min-h-12 w-28 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
                     <span className="text-xs font-semibold text-zinc-700">
-                      € por {String(line.line_unit || 'unidad').trim()}
+                      € por {isVariableWeightMode ? 'kg' : String(line.line_unit || 'unidad').trim()}
                     </span>
                   </div>
                   <p className="px-1 text-[10px] leading-snug text-zinc-500">
@@ -841,73 +870,112 @@ export function LineMappingModal({
 
               {ingredientId ? (
                 <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-2">
-                  <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                    Contenido de cada unidad facturada
-                  </p>
-                  <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
-                    Indica qué contiene una unidad del albarán. La conversión y el precio por {purchaseUnitForPresentation || 'unidad de compra'} se calculan solos.
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-1.5 px-1">
-                    <span className="text-[11px] font-semibold text-zinc-700 shrink-0">
-                      1 {String(line.line_unit || 'unidad').trim()} contiene
-                    </span>
-                    <input
-                      inputMode="decimal"
-                      value={dimensional.lineContentQty}
-                      onChange={(e) => {
-                        setShowAdvancedCalibration(true)
-                        setDimensional((d) => ({
-                          ...d,
-                          lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
-                          lineContentQty: e.target.value,
-                        }))
-                        setReceiptPreview(null)
-                      }}
-                      placeholder="125"
-                      aria-label="Cantidad contenida en una unidad facturada"
-                      className="min-h-12 w-24 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 tabular-nums outline-none focus:border-[#36606F]/50"
-                    />
-                    <select
-                      value={dimensional.lineContentUnit}
-                      onChange={(e) => {
-                        setShowAdvancedCalibration(true)
-                        setDimensional((d) => ({
-                          ...d,
-                          lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
-                          lineContentUnit: e.target.value,
-                        }))
-                        setReceiptPreview(null)
-                      }}
-                      aria-label="Unidad del contenido"
-                      className="min-h-12 min-w-[5.5rem] shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
-                    >
-                      <option value="">—</option>
-                      {ALBARAN_LINE_CONTENT_UNITS.map((u) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {presentationEconomics ? (
-                    <div className="mx-1 rounded-lg border border-[#36606F]/25 bg-[#eef5f7] px-2 py-2">
-                      <p className="text-[10px] font-medium text-zinc-600">Resultado automático</p>
-                      <p className="mt-0.5 text-sm font-black text-[#284c59]">
-                        {presentationEconomics.conversionFactor.toLocaleString('es-ES', { maximumFractionDigits: 6 })}{' '}
-                        {presentationEconomics.purchaseUnit} por {String(line.line_unit || 'unidad').trim()}
-                        {' · '}
-                        {presentationEconomics.normalizedUnitPrice.toLocaleString('es-ES', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 4,
-                        })} €/{presentationEconomics.purchaseUnit}
+                  {isVariableWeightMode ? (
+                    <>
+                      <div className="mx-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                        <p className="text-[9px] font-black uppercase tracking-wider text-emerald-700">
+                          Peso variable detectado
+                        </p>
+                        <p className="mt-1 text-base font-black text-emerald-950">
+                          {Number(line.variable_weight_kg).toLocaleString('es-ES', { maximumFractionDigits: 3 })} kg recibidos
+                        </p>
+                        <p className="mt-0.5 text-[11px] font-medium text-emerald-900">
+                          {line.variable_piece_count != null
+                            ? `${Number(line.variable_piece_count).toLocaleString('es-ES', { maximumFractionDigits: 2 })} pieza${Number(line.variable_piece_count) === 1 ? '' : 's'} · `
+                            : ''}
+                          {observedUnitPrice != null
+                            ? `${observedUnitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €/kg`
+                            : 'precio pendiente'}
+                        </p>
+                      </div>
+                      <p className="px-1 text-[10px] leading-snug text-zinc-600">
+                        El número de piezas puede cambiar en cada entrega. No se guarda ninguna equivalencia pieza→kg; el stock usa el peso real de este albarán.
                       </p>
-                    </div>
+                      {presentationEconomics ? (
+                        <div className="mx-1 rounded-lg border border-[#36606F]/25 bg-[#eef5f7] px-2 py-2">
+                          <p className="text-[10px] font-medium text-zinc-600">Resultado automático</p>
+                          <p className="mt-0.5 text-sm font-black text-[#284c59]">
+                            Stock +{Number(line.variable_weight_kg).toLocaleString('es-ES', { maximumFractionDigits: 3 })} kg
+                            {' · '}
+                            {presentationEconomics.normalizedUnitPrice.toLocaleString('es-ES', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 4,
+                            })} €/kg
+                          </p>
+                        </div>
+                      ) : null}
+                    </>
                   ) : (
-                    <p className="mx-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-900">
-                      Completa el contenido físico para calcular automáticamente el precio de compra.
-                    </p>
+                    <>
+                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
+                        Contenido de cada unidad facturada
+                      </p>
+                      <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
+                        Indica qué contiene una unidad del albarán. La conversión y el precio por {purchaseUnitForPresentation || 'unidad de compra'} se calculan solos.
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-1.5 px-1">
+                        <span className="text-[11px] font-semibold text-zinc-700 shrink-0">
+                          1 {String(line.line_unit || 'unidad').trim()} contiene
+                        </span>
+                        <input
+                          inputMode="decimal"
+                          value={dimensional.lineContentQty}
+                          onChange={(e) => {
+                            setShowAdvancedCalibration(true)
+                            setDimensional((d) => ({
+                              ...d,
+                              lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
+                              lineContentQty: e.target.value,
+                            }))
+                            setReceiptPreview(null)
+                          }}
+                          placeholder="125"
+                          aria-label="Cantidad contenida en una unidad facturada"
+                          className="min-h-12 w-24 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 tabular-nums outline-none focus:border-[#36606F]/50"
+                        />
+                        <select
+                          value={dimensional.lineContentUnit}
+                          onChange={(e) => {
+                            setShowAdvancedCalibration(true)
+                            setDimensional((d) => ({
+                              ...d,
+                              lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
+                              lineContentUnit: e.target.value,
+                            }))
+                            setReceiptPreview(null)
+                          }}
+                          aria-label="Unidad del contenido"
+                          className="min-h-12 min-w-[5.5rem] shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
+                        >
+                          <option value="">—</option>
+                          {ALBARAN_LINE_CONTENT_UNITS.map((u) => (
+                            <option key={u} value={u}>
+                              {u}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {presentationEconomics ? (
+                        <div className="mx-1 rounded-lg border border-[#36606F]/25 bg-[#eef5f7] px-2 py-2">
+                          <p className="text-[10px] font-medium text-zinc-600">Resultado automático</p>
+                          <p className="mt-0.5 text-sm font-black text-[#284c59]">
+                            {presentationEconomics.conversionFactor.toLocaleString('es-ES', { maximumFractionDigits: 6 })}{' '}
+                            {presentationEconomics.purchaseUnit} por {String(line.line_unit || 'unidad').trim()}
+                            {' · '}
+                            {presentationEconomics.normalizedUnitPrice.toLocaleString('es-ES', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 4,
+                            })} €/{presentationEconomics.purchaseUnit}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="mx-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-900">
+                          Completa el contenido físico para calcular automáticamente el precio de compra.
+                        </p>
+                      )}
+                    </>
                   )}
                 </section>
               ) : null}
