@@ -1,0 +1,190 @@
+-- Canonical ingredient price SSOT.
+-- Price is always ingredients.current_price in €/ingredients.purchase_unit.
+-- Supplier presentations may describe physical packaging, but never derive or overwrite price.
+
+DROP TRIGGER IF EXISTS trigger_ingredients_pack_pricing_sync ON public.ingredients;
+DROP FUNCTION IF EXISTS public.trg_ingredients_pack_pricing_sync();
+
+-- Keep unit synchronization, without any price side effect.
+CREATE OR REPLACE FUNCTION public.trg_ingredients_unit_sync()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_purchase_unit text;
+BEGIN
+  v_purchase_unit := public.normalize_pricing_unit(NEW.purchase_unit);
+  NEW.purchase_unit := v_purchase_unit;
+  NEW.unit_type := v_purchase_unit;
+  NEW.base_unit := public.derive_base_unit(v_purchase_unit);
+  NEW.unit := NEW.base_unit;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trigger_ingredients_unit_sync ON public.ingredients;
+CREATE TRIGGER trigger_ingredients_unit_sync
+BEFORE INSERT OR UPDATE OF purchase_unit
+ON public.ingredients
+FOR EACH ROW
+EXECUTE FUNCTION public.trg_ingredients_unit_sync();
+
+-- The implicit invoice-line writer is retired. K4 apply_receipt_line is the
+-- only economic command for a receipt.
+DROP TRIGGER IF EXISTS trigger_handle_new_invoice_line ON public.purchase_invoice_lines;
+DROP FUNCTION IF EXISTS public.handle_new_invoice_line();
+
+-- Guard current_price so future UI/RPC drift cannot recreate a second writer.
+CREATE OR REPLACE FUNCTION private.guard_ingredient_current_price_command()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path TO ''
+AS $$
+BEGIN
+  IF OLD.current_price IS DISTINCT FROM NEW.current_price
+     AND COALESCE(current_setting('app.receipt_confirmation_price_write', true), '') <> 'on'
+     AND COALESCE(current_setting('app.manual_ingredient_price_write', true), '') <> 'on' THEN
+    RAISE EXCEPTION 'INGREDIENT_PRICE_COMMAND_REQUIRED: use set_ingredient_price_manual or apply_receipt_line';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS ingredient_current_price_command_only ON public.ingredients;
+CREATE TRIGGER ingredient_current_price_command_only
+BEFORE UPDATE OF current_price
+ON public.ingredients
+FOR EACH ROW
+EXECUTE FUNCTION private.guard_ingredient_current_price_command();
+
+-- One audited manual writer. Receipt-originated changes remain in K4.
+CREATE OR REPLACE FUNCTION public.set_ingredient_price_manual(
+  p_ingredient_id uuid,
+  p_current_price numeric,
+  p_price_locked boolean DEFAULT NULL,
+  p_reason text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO ''
+AS $$
+DECLARE
+  v_actor uuid := auth.uid();
+  v_role text;
+  v_old_price numeric;
+  v_old_locked boolean;
+  v_unit text;
+BEGIN
+  IF v_actor IS NULL THEN
+    RAISE EXCEPTION 'No autenticado';
+  END IF;
+
+  SELECT role::text
+  INTO v_role
+  FROM public.profiles
+  WHERE id = v_actor;
+
+  IF v_role NOT IN ('manager', 'admin') THEN
+    RAISE EXCEPTION 'Sin permiso para modificar precios';
+  END IF;
+
+  IF p_current_price IS NULL OR p_current_price < 0 THEN
+    RAISE EXCEPTION 'Precio inválido';
+  END IF;
+
+  SELECT current_price, price_locked, purchase_unit
+  INTO v_old_price, v_old_locked, v_unit
+  FROM public.ingredients
+  WHERE id = p_ingredient_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Ingrediente no encontrado';
+  END IF;
+
+  PERFORM set_config('app.manual_ingredient_price_write', 'on', true);
+
+  UPDATE public.ingredients
+  SET current_price = p_current_price,
+      price_locked = COALESCE(p_price_locked, price_locked),
+      updated_at = now()
+  WHERE id = p_ingredient_id;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'ingredient_id', p_ingredient_id,
+    'purchase_unit', v_unit,
+    'price_before', v_old_price,
+    'price_after', p_current_price,
+    'price_changed', v_old_price IS DISTINCT FROM p_current_price,
+    'price_locked_before', v_old_locked,
+    'price_locked_after', COALESCE(p_price_locked, v_old_locked),
+    'reason', NULLIF(trim(COALESCE(p_reason, '')), '')
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.set_ingredient_price_manual(uuid,numeric,boolean,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.set_ingredient_price_manual(uuid,numeric,boolean,text) FROM anon;
+GRANT EXECUTE ON FUNCTION public.set_ingredient_price_manual(uuid,numeric,boolean,text) TO authenticated, service_role;
+
+-- Copilot ingredient RPC is query-only. Ingredient creation/pricing no longer
+-- has a hidden machine writer.
+CREATE OR REPLACE FUNCTION public.gestionar_ingredientes(p_accion text, p_datos jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO ''
+AS $$
+DECLARE
+  v_nombre text := trim(COALESCE(p_datos->>'nombre', p_datos->>'name', ''));
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'No autenticado';
+  END IF;
+
+  IF p_accion NOT IN ('buscar', 'listar', 'consultar') THEN
+    RETURN jsonb_build_object(
+      'error', 'accion_no_soportada',
+      'acciones_validas', '["buscar","listar","consultar"]'
+    );
+  END IF;
+
+  IF v_nombre <> '' THEN
+    RETURN COALESCE((
+      SELECT jsonb_agg(row_to_json(t)::jsonb ORDER BY t.name)
+      FROM (
+        SELECT id, name, current_price, purchase_unit, unit_type, stock_current, allergens
+        FROM public.ingredients
+        WHERE name ILIKE '%' || v_nombre || '%'
+        ORDER BY name
+        LIMIT 10
+      ) t
+    ), '[]'::jsonb);
+  END IF;
+
+  RETURN COALESCE((
+    SELECT jsonb_agg(row_to_json(t)::jsonb ORDER BY t.name)
+    FROM (
+      SELECT id, name, current_price, purchase_unit, stock_current
+      FROM public.ingredients
+      ORDER BY name
+      LIMIT 50
+    ) t
+  ), '[]'::jsonb);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.gestionar_ingredientes(text,jsonb) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.gestionar_ingredientes(text,jsonb) FROM anon;
+GRANT EXECUTE ON FUNCTION public.gestionar_ingredientes(text,jsonb) TO authenticated, service_role;
+
+COMMENT ON COLUMN public.ingredients.current_price IS
+  'Precio canónico actual. Siempre EUR por purchase_unit. Única fuente viva de precio del ingrediente.';
+COMMENT ON COLUMN public.ingredients.pack_price IS
+  'LEGACY: precio histórico de presentación. No es fuente de current_price ni debe escribirse en nuevos flujos.';
+COMMENT ON COLUMN public.ingredients.pack_units IS
+  'LEGACY: cantidad histórica de una presentación. No participa en el precio canónico.';
+COMMENT ON COLUMN public.ingredients.supplier_pricing_mode IS
+  'LEGACY: marcador histórico. No selecciona el escritor ni la fuente del precio canónico.';
