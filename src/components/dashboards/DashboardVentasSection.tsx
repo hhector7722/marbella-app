@@ -79,7 +79,6 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const fetchSalesSummaryData = async () => {
         setSalesSummaryLoading(true);
         try {
-            // 1. Fetch top 5 products ranking
             const { data: productsData, error: productsError } = await supabase.rpc('get_product_sales_ranking', {
                 p_start_date: salesViewDate,
                 p_end_date: salesViewDate,
@@ -93,10 +92,10 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
             const ranking = (productsData || []).map((p: any, idx: number) => ({
                 ...p,
                 rank: idx + 1,
-            })).slice(0, 5);
+            }));
             setSalesProducts(ranking);
 
-            // 2. Fetch tickets for calculating top 3 hours
+            // Tickets del día para el ranking horario
             const { data: ticketsData, error: ticketsError } = await supabase
                 .from('tickets_marbella')
                 .select('hora_cierre, total_documento, fecha')
@@ -131,7 +130,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 });
             }
             rows.sort((a, b) => b.total - a.total);
-            setTopHours(rows.slice(0, 3));
+            setTopHours(rows);
 
         } catch (err) {
             console.error("Error fetching sales summary data:", err);
@@ -697,18 +696,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                 );
                             })()}
 
-                            {/* Tables Container */}
-                            <div className="flex flex-col gap-4 mt-3">
-                                {/* Top 5 Products */}
-                                <div>
-                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
-                                        Top 5 Productos
-                                    </h3>
+                            <div className="mt-3 flex min-h-0 flex-col gap-ds-4">
+                                <div className="min-h-0 max-h-[min(32vh,14rem)] overflow-x-hidden overflow-y-auto overscroll-contain">
                                     {salesProducts.length === 0 ? (
                                         <p className="text-[10px] text-white/40 font-medium italic">No hay productos registrados.</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
-                                            <thead>
+                                            <thead className="sticky top-0 z-[1] bg-[var(--color-envolvente-bajo)]">
                                                 <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
                                                     <th className="pb-1 w-[55%]">Producto</th>
                                                     <th className="pb-1 text-center w-[15%]">Cant</th>
@@ -739,16 +733,12 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                     )}
                                 </div>
 
-                                {/* Top 3 Hours */}
-                                <div className="border-t border-white/10 pt-3">
-                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
-                                        Horas con más Facturación
-                                    </h3>
+                                <div className="min-h-0 max-h-[min(28vh,10rem)] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-white/10 pt-3">
                                     {topHours.length === 0 ? (
                                         <p className="text-[10px] text-white/40 font-medium italic">No hay registros horarios.</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
-                                            <thead>
+                                            <thead className="sticky top-0 z-[1] bg-[var(--color-envolvente-bajo)]">
                                                 <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
                                                     <th className="pb-1 w-[45%]">Horas</th>
                                                     <th className="pb-1 text-center w-[15%]">Cant</th>

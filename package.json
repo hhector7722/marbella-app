@@ -30,6 +30,7 @@
     "test:p0:stock-ledger": "node --test scripts/k2/stock-ledger-gate.test.cjs",
     "test:k3:scanner-docling": "node --test scripts/k3/scanner-docling-contract.test.cjs",
     "test:k4:receipt-contract": "node --test scripts/k4/k4-receipt-contract.test.cjs",
+    "test:pricing": "node --test scripts/pricing/canonical-price-writers.test.cjs",
     "test:supplier-profiles": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/albaranes/supplier-profiles/supplier-profiles.test.ts",
     "test:suppliers-successor": "node --test scripts/suppliers/suppliers-successor-contract.test.mjs",
     "shadow": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/shadow-run.ts",

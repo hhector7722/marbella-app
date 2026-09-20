@@ -347,6 +347,33 @@ function hourToSlotLabel(h: number): string | null {
     return null;
 }
 
+function buildAllHourRows(ticketsList: { hora_cierre?: string | null; fecha?: string | null; total_documento?: unknown }[]): { label: string; cant: number; media: number; total: number }[] {
+    const map = new Map<string, { count: number; sum: number }>();
+    for (const t of ticketsList) {
+        const h = getBusinessHourFromTicket(t);
+        const label = hourToSlotLabel(h);
+        if (!label) continue;
+        const amt = Number(t.total_documento) || 0;
+        const prev = map.get(label) ?? { count: 0, sum: 0 };
+        prev.count += 1;
+        prev.sum += amt;
+        map.set(label, prev);
+    }
+    const rows: { label: string; cant: number; media: number; total: number }[] = [];
+    for (let h = BUSINESS_HOURS.start; h <= BUSINESS_HOURS.end; h++) {
+        const label = hourToSlotLabel(h);
+        if (!label) continue;
+        const entry = map.get(label) ?? { count: 0, sum: 0 };
+        rows.push({
+            label,
+            cant: entry.count,
+            media: entry.count > 0 ? entry.sum / entry.count : 0,
+            total: entry.sum,
+        });
+    }
+    return rows;
+}
+
 // --- HELPERS ---
 
 /** Shows an animated skeleton while the browser downloads the photo, then reveals it. */
@@ -573,7 +600,7 @@ export default function HistoryPage() {
                 p_end_time: null,
             });
             if (productsError) console.error('Error fetching products ranking:', productsError);
-            const ranking = (productsData || []).map((p: any, idx: number) => ({ ...p, rank: idx + 1 })).slice(0, 5);
+            const ranking = (productsData || []).map((p: any, idx: number) => ({ ...p, rank: idx + 1 }));
             setSalesProducts(ranking);
 
             const { data: ticketsData, error: ticketsError } = await supabase
@@ -590,24 +617,7 @@ export default function HistoryPage() {
             });
             setSalesChartData(hourly);
 
-            const map = new Map<string, { count: number; sum: number }>();
-            for (const t of ticketsList) {
-                const h = getBusinessHourFromTicket(t);
-                const label = hourToSlotLabel(h);
-                if (!label) continue;
-                const amt = Number(t.total_documento) || 0;
-                const prev = map.get(label) ?? { count: 0, sum: 0 };
-                prev.count += 1;
-                prev.sum += amt;
-                map.set(label, prev);
-            }
-            const rows: any[] = [];
-            for (const [label, { count, sum }] of map) {
-                if (count === 0) continue;
-                rows.push({ label, cant: count, media: sum / count, total: sum });
-            }
-            rows.sort((a, b) => b.total - a.total);
-            setTopHours(rows.slice(0, 3));
+            setTopHours(buildAllHourRows(ticketsList));
 
             const totalSales = ticketsList.reduce((acc: number, t: any) => acc + (Number(t.total_documento) || 0), 0);
             setSalesSummary({ totalSales, count: ticketsList.length, avgTicket: ticketsList.length > 0 ? totalSales / ticketsList.length : 0 });
@@ -630,7 +640,7 @@ export default function HistoryPage() {
                 p_end_time: null,
             });
             if (productsError) console.error('Error fetching products ranking:', productsError);
-            const ranking = (productsData || []).map((p: any, idx: number) => ({ ...p, rank: idx + 1 })).slice(0, 5);
+            const ranking = (productsData || []).map((p: any, idx: number) => ({ ...p, rank: idx + 1 }));
             setSalesProducts(ranking);
 
             const { data: ticketsData, error: ticketsError } = await supabase
@@ -648,24 +658,7 @@ export default function HistoryPage() {
             });
             setSalesChartData(hourly);
 
-            const map = new Map<string, { count: number; sum: number }>();
-            for (const t of ticketsList) {
-                const h = getBusinessHourFromTicket(t);
-                const label = hourToSlotLabel(h);
-                if (!label) continue;
-                const amt = Number(t.total_documento) || 0;
-                const prev = map.get(label) ?? { count: 0, sum: 0 };
-                prev.count += 1;
-                prev.sum += amt;
-                map.set(label, prev);
-            }
-            const rows: any[] = [];
-            for (const [label, { count, sum }] of map) {
-                if (count === 0) continue;
-                rows.push({ label, cant: count, media: sum / count, total: sum });
-            }
-            rows.sort((a, b) => b.total - a.total);
-            setTopHours(rows.slice(0, 3));
+            setTopHours(buildAllHourRows(ticketsList));
 
             const totalSales = ticketsList.reduce((acc: number, t: any) => acc + (Number(t.total_documento) || 0), 0);
             setSalesSummary({ totalSales, count: ticketsList.length, avgTicket: ticketsList.length > 0 ? totalSales / ticketsList.length : 0 });
@@ -2379,16 +2372,12 @@ export default function HistoryPage() {
 
                             {/* Tablas */}
                             <div className="flex flex-col gap-4 mt-3">
-                                {/* Top 5 Productos */}
-                                <div>
-                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
-                                        Top 5 Productos
-                                    </h3>
+                                <div className="min-h-0 max-h-[min(32vh,14rem)] overflow-x-hidden overflow-y-auto overscroll-contain">
                                     {salesProducts.length === 0 ? (
                                         <p className="text-[10px] text-white/40 font-medium italic">No hay productos registrados.</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
-                                            <thead>
+                                            <thead className="sticky top-0 z-[1] bg-[var(--color-envolvente-bajo)]">
                                                 <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
                                                     <th className="pb-1 w-[55%]">Producto</th>
                                                     <th className="pb-1 text-center w-[15%]">Cant</th>
@@ -2419,16 +2408,12 @@ export default function HistoryPage() {
                                     )}
                                 </div>
 
-                                {/* Top 3 Horas */}
-                                <div className="border-t border-white/10 pt-3">
-                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
-                                        Horas con más Facturación
-                                    </h3>
+                                <div className="min-h-0 max-h-[min(28vh,10rem)] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-white/10 pt-3">
                                     {topHours.length === 0 ? (
                                         <p className="text-[10px] text-white/40 font-medium italic">No hay registros horarios.</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
-                                            <thead>
+                                            <thead className="sticky top-0 z-[1] bg-[var(--color-envolvente-bajo)]">
                                                 <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
                                                     <th className="pb-1 w-[45%]">Horas</th>
                                                     <th className="pb-1 text-center w-[15%]">Cant</th>
