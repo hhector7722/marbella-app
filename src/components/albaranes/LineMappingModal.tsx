@@ -92,7 +92,7 @@ export type LineMappingModalProps = {
   busy?: boolean
   onClose: () => void
   onSuccess: () => void | Promise<void>
-  onOpenWizardNew?: () => void
+  onCreateIngredient?: () => void
 }
 
 /** Una sola superficie derivada a la vez (ADR-0007). */
@@ -106,7 +106,7 @@ export function LineMappingModal({
   busy = false,
   onClose,
   onSuccess,
-  onOpenWizardNew,
+  onCreateIngredient,
 }: LineMappingModalProps) {
   useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
   const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Mapear línea albarán')
@@ -116,6 +116,7 @@ export function LineMappingModal({
   const [ingredientId, setIngredientId] = useState<string | null>(null)
   const [ingredientLabel, setIngredientLabel] = useState<string | null>(null)
   const [ingredientPurchaseUnit, setIngredientPurchaseUnit] = useState<string>('kg')
+  const [ingredientCurrentPrice, setIngredientCurrentPrice] = useState<number | null>(null)
   const [selectedIngredientMeta, setSelectedIngredientMeta] =
     useState<IngredientDimensionalSource | null>(null)
   const [showAdvancedCalibration, setShowAdvancedCalibration] = useState(false)
@@ -235,6 +236,7 @@ export function LineMappingModal({
           (pickId ? 'Producto seleccionado' : null)
       )
       if (cand?.purchase_unit) setIngredientPurchaseUnit(cand.purchase_unit)
+      setIngredientCurrentPrice(cand ? Number(cand.current_price) : null)
       setSelectedIngredientMeta(cand ?? null)
       setShowAdvancedCalibration(false)
 
@@ -681,10 +683,10 @@ export function LineMappingModal({
       instance="albaran-line-mapping"
       parentInstance="albaran-detail"
       usageId="albaran-line-mapping"
-      usageLabel="Mapear línea albarán"
+      usageLabel="Revisar línea de albarán"
       headerTone="petroleum"
       headerTitleAlign="left"
-      title="Producto"
+      title="Revisar compra"
       subtitle={headerTitle}
       disableUsageTracking
       footer={
@@ -708,7 +710,7 @@ export function LineMappingModal({
               loading={previewing}
               loadingLabel="Validando…"
             >
-              {receiptPreview ? 'Actualizar vista previa' : 'Ver efecto'}
+              {receiptPreview ? 'Recalcular' : 'Revisar'}
             </Button>
           ) : null}
           {!stockApplied && receiptPreview ? (
@@ -749,7 +751,7 @@ export function LineMappingModal({
             <>
               <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-1.5">
                 <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                  Producto en almacén
+                  Ingrediente
                 </p>
 
                 <div className="flex gap-1.5 px-1">
@@ -761,14 +763,14 @@ export function LineMappingModal({
                       placeholder="Buscar en catálogo…"
                     />
                   </div>
-                  {onOpenWizardNew && !ingredientId && (
+                  {onCreateIngredient && !ingredientId && (
                     <Button
                       type="button"
                       variant="secondary"
                       instance="albaran-line-mapping-new-ingredient"
                       className="shrink-0"
                       onClick={() => {
-                        onOpenWizardNew()
+                        onCreateIngredient()
                       }}
                     >
                       Nuevo
@@ -783,8 +785,10 @@ export function LineMappingModal({
                       <span className="truncate text-xs font-medium text-emerald-950">
                         {ingredientLabel?.trim() || 'Seleccionado'}
                       </span>
-                      <span className="shrink-0 text-[10px] font-normal text-emerald-800">
-                        €/{ingredientPurchaseUnit}
+                      <span className="shrink-0 text-[10px] font-normal tabular-nums text-emerald-800">
+                        {ingredientCurrentPrice != null && Number.isFinite(ingredientCurrentPrice)
+                          ? `${ingredientCurrentPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €/${ingredientPurchaseUnit}`
+                          : `€/${ingredientPurchaseUnit}`}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -796,6 +800,7 @@ export function LineMappingModal({
                         onClick={() => {
                           setIngredientId(null)
                           setIngredientLabel(null)
+                          setIngredientCurrentPrice(null)
                           setSelectedIngredientMeta(null)
                           setShowAdvancedCalibration(false)
                         }}
@@ -823,6 +828,7 @@ export function LineMappingModal({
                         onClick={() => {
                           setIngredientId(it.id)
                           setIngredientLabel(it.name)
+                          setIngredientCurrentPrice(Number(it.current_price))
                           applySuggestion(it, { lineUnitFromInvoice: line.line_unit })
                         }}
                       >
@@ -893,7 +899,7 @@ export function LineMappingModal({
                       </p>
                       {presentationEconomics ? (
                         <div className="mx-1 rounded-lg border border-[#36606F]/25 bg-[#eef5f7] px-2 py-2">
-                          <p className="text-[10px] font-medium text-zinc-600">Resultado automático</p>
+                          <p className="text-[10px] font-medium text-zinc-600">Precio resultante</p>
                           <p className="mt-0.5 text-sm font-black text-[#284c59]">
                             Stock +{Number(line.variable_weight_kg).toLocaleString('es-ES', { maximumFractionDigits: 3 })} kg
                             {' · '}
@@ -911,7 +917,7 @@ export function LineMappingModal({
                         Contenido de cada unidad facturada
                       </p>
                       <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
-                        Indica qué contiene una unidad del albarán. La conversión y el precio por {purchaseUnitForPresentation || 'unidad de compra'} se calculan solos.
+                        Indica qué contiene una unidad del albarán. El precio final se calcula automáticamente.
                       </p>
 
                       <div className="flex flex-wrap items-center gap-1.5 px-1">
@@ -961,9 +967,6 @@ export function LineMappingModal({
                         <div className="mx-1 rounded-lg border border-[#36606F]/25 bg-[#eef5f7] px-2 py-2">
                           <p className="text-[10px] font-medium text-zinc-600">Resultado automático</p>
                           <p className="mt-0.5 text-sm font-black text-[#284c59]">
-                            {presentationEconomics.conversionFactor.toLocaleString('es-ES', { maximumFractionDigits: 6 })}{' '}
-                            {presentationEconomics.purchaseUnit} por {String(line.line_unit || 'unidad').trim()}
-                            {' · '}
                             {presentationEconomics.normalizedUnitPrice.toLocaleString('es-ES', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 4,
@@ -1057,12 +1060,28 @@ export function LineMappingModal({
                 <section className="rounded-lg border border-[#36606F]/30 bg-[#eef5f7] p-2">
                   <p className="px-1 text-[9px] font-black uppercase tracking-wider text-[#36606F]">Efecto a confirmar</p>
                   <dl className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 px-1 text-[10px] text-zinc-700">
-                    <div><dt className="text-zinc-500">Entrada</dt><dd className="font-semibold">{receiptPreview.physical_quantity} {receiptPreview.base_unit}</dd></div>
-                    <div><dt className="text-zinc-500">Compra</dt><dd className="font-semibold">{receiptPreview.purchase_quantity} {receiptPreview.purchase_unit}</dd></div>
-                    <div><dt className="text-zinc-500">Precio albarán</dt><dd className="font-semibold">{receiptPreview.observed_unit_price} €/{receiptPreview.line_billing_unit}</dd></div>
-                    <div><dt className="text-zinc-500">Precio normalizado</dt><dd className="font-semibold">{receiptPreview.normalized_unit_price} €/{receiptPreview.purchase_unit}</dd></div>
-                    <div><dt className="text-zinc-500">Precio actual → nuevo</dt><dd className="font-semibold">{receiptPreview.price_before} € → {receiptPreview.price_after} €</dd></div>
-                    <div><dt className="text-zinc-500">Pedidos vinculados</dt><dd className="font-semibold">{receiptPreview.allocation_count}</dd></div>
+                    <div>
+                      <dt className="text-zinc-500">Entrada de stock</dt>
+                      <dd className="font-semibold">{receiptPreview.physical_quantity} {receiptPreview.base_unit}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-zinc-500">Precio del albarán</dt>
+                      <dd className="font-semibold">{receiptPreview.observed_unit_price} €/{receiptPreview.line_billing_unit}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-zinc-500">Precio actual</dt>
+                      <dd className="font-semibold">{receiptPreview.price_before} €/{receiptPreview.purchase_unit}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-zinc-500">Precio nuevo</dt>
+                      <dd className="font-semibold">{receiptPreview.price_after} €/{receiptPreview.purchase_unit}</dd>
+                    </div>
+                    {receiptPreview.allocation_count > 0 ? (
+                      <div>
+                        <dt className="text-zinc-500">Pedidos vinculados</dt>
+                        <dd className="font-semibold">{receiptPreview.allocation_count}</dd>
+                      </div>
+                    ) : null}
                   </dl>
                   <p className="mt-1 rounded-md bg-white/80 px-2 py-1 text-[10px] font-medium text-zinc-700">
                     {receiptPreview.price_locked
