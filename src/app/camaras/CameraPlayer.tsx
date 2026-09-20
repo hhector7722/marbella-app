@@ -3,6 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 
 const CAMERA_MP4_URL = 'https://video.barlamarbella.com/api/stream.mp4?src=reolink';
+const CAMERA_HLS_URL = 'https://video.barlamarbella.com/api/stream.m3u8?src=reolink&mp4';
+
+function isIOSDevice() {
+  if (typeof navigator === 'undefined') return false;
+
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
 
 export default function CameraPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -13,14 +23,14 @@ export default function CameraPlayer() {
     if (!video) return;
 
     let stopped = false;
+    const streamUrl = isIOSDevice() ? CAMERA_HLS_URL : CAMERA_MP4_URL;
 
     const start = async () => {
       setError(false);
 
-      // The go2rtc fragmented-MP4 endpoint is the most reliable path for this
-      // camera. It also avoids leaving the UI stuck on a broken MSE/WebSocket
-      // session when the upstream RTSP producer reconnects.
-      video.src = CAMERA_MP4_URL;
+      // iPhone/iPad: use go2rtc HLS/fMP4, which Safari supports natively.
+      // Desktop/other browsers: keep the progressive MP4 path already verified.
+      video.src = streamUrl;
       video.controls = false;
       video.playsInline = true;
       video.autoplay = true;
