@@ -71,6 +71,7 @@ export function IngredientCreateForm({
           name: name.trim(),
           category,
           purchase_unit: purchaseUnit,
+          unit_type: purchaseUnit,
           current_price: 0,
         })
         .select('id')
