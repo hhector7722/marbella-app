@@ -1,511 +1,218 @@
-'use client';
-// SSOT precios ingredientes / albaranes: marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md
+'use client'
 
-import { useState, useEffect } from 'react';
-import { createClient } from "@/utils/supabase/client";
-import { cn } from '@/lib/utils';
-import { Package, Plus, Upload, Settings } from 'lucide-react';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { toast, Toaster } from 'sonner';
-import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
-import { type Ingredient } from '@/components/ingredients/IngredientCanonicalEditModal';
-import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal';
-import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
-import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
-import { Modal } from '@/components/ui/modal';
-import { Button } from '@/components/ui/button';
-import { SearchField } from '@/components/ui/SearchField';
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CatalogGrid, CatalogTileUnificado } from '@/components/catalog/CatalogTile';
-import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
-import { setIngredientCurrentPriceAction } from '@/app/ingredients/actions';
-
-// Unidades canónicas (sin duplicados tipo lt/l o u/ud)
-const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
-// Unidad de pedido (humana/operativa). Mantener sin duplicados.
-const ORDER_UNITS = ['pack', 'caja', 'ud', 'kg', 'pieza', 'l', 'g', 'ml', 'cl'];
-const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas', 'Limpieza', 'Otros'];
+import { useEffect, useState } from 'react'
+import { Package, Plus } from 'lucide-react'
+import { toast, Toaster } from 'sonner'
+import { createClient } from '@/utils/supabase/client'
+import { IngredientCreateForm } from '@/components/ingredients/IngredientCreateForm'
+import {
+  IngredientCanonicalEditModal,
+  type Ingredient,
+} from '@/components/ingredients/IngredientCanonicalEditModal'
+import { resolveSupplierPickerItems } from '@/lib/supplier-seed'
+import { Modal } from '@/components/ui/modal'
+import { SearchField } from '@/components/ui/SearchField'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { CatalogGrid, CatalogTileUnificado } from '@/components/catalog/CatalogTile'
+import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip'
 
 export default function IngredientsPage() {
-    const supabase = createClient();
-    const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
-    const [showSupplierPopup, setShowSupplierPopup] = useState(false);
-    const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos' });
-    const [isCreating, setIsCreating] = useState(false);
-    const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([]);
+  const supabase = createClient()
+  const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
+  const [showSupplierPopup, setShowSupplierPopup] = useState(false)
+  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([])
 
-    const [createMode, setCreateMode] = useState<'wizard' | 'expert'>('expert');
-    const [createSettingsOpen, setCreateSettingsOpen] = useState(false);
-    const [uploadingImage, setUploadingImage] = useState(false);
-    const [isCustomSupplier, setIsCustomSupplier] = useState(false);
-    const [customSupplierName, setCustomSupplierName] = useState('');
-    const [isCustomSupplier2, setIsCustomSupplier2] = useState(false);
-    const [customSupplier2Name, setCustomSupplier2Name] = useState('');
+  useEffect(() => {
+    void fetchIngredients()
+    void fetchSuppliers()
+  }, [])
 
-    useEffect(() => { fetchIngredients(); fetchSuppliers(); }, []);
+  async function fetchIngredients() {
+    setLoading(true)
+    const { data, error } = await supabase.from('ingredients').select('*').order('name')
+    if (error) toast.error('No se pudieron cargar los ingredientes')
+    setIngredients((data ?? []) as Ingredient[])
+    setLoading(false)
+  }
 
-    async function fetchIngredients() {
-        setLoading(true);
-        const { data } = await supabase.from('ingredients').select('*').order('name');
-        setIngredients(data || []);
-        setLoading(false);
+  async function fetchSuppliers() {
+    const { data, error } = await supabase.from('suppliers').select('id,name').order('name')
+    if (error) {
+      toast.error('No se pudieron cargar los proveedores')
+      return
     }
 
-    async function fetchSuppliers() {
-        const { data, error } = await supabase.from('suppliers').select('id,name').order('name');
-        if (error) {
-            toast.error('No se pudieron cargar los proveedores');
-            return;
-        }
-        const rows = (data ?? []).map((r) => ({
-            id: String(r.id),
-            name: String(r.name ?? '').trim(),
-        })).filter((r) => r.name);
-        setAllSuppliers(resolveSupplierPickerItems(rows));
+    const rows = (data ?? [])
+      .map((row) => ({
+        id: String(row.id),
+        name: String(row.name ?? '').trim(),
+      }))
+      .filter((row) => row.name)
+
+    setAllSuppliers(resolveSupplierPickerItems(rows))
+  }
+
+  useEffect(() => {
+    if (selectedSupplier && !allSuppliers.some((supplier) => supplier.name === selectedSupplier)) {
+      setSelectedSupplier(null)
     }
+  }, [allSuppliers, selectedSupplier])
 
-    async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setUploadingImage(true);
-        try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `ing-${Date.now()}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage.from('ingredients').upload(fileName, file, { upsert: true });
-            if (uploadError) throw uploadError;
-            const { data: { publicUrl } } = supabase.storage.from('ingredients').getPublicUrl(fileName);
-            setNewIngredient(prev => ({ ...prev, image_url: publicUrl }));
-        } catch (error: any) { toast.error('Error: ' + error.message); } finally { setUploadingImage(false); }
-    }
+  const filteredIngredients = ingredients.filter((ingredient) => {
+    const matchesSearch = ingredient.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSupplier =
+      !selectedSupplier ||
+      ingredient.supplier === selectedSupplier ||
+      ingredient.supplier_2 === selectedSupplier
+    return matchesSearch && matchesSupplier
+  })
 
-    async function handleCreate() {
-        if (!newIngredient.name) return toast.error('El nombre es obligatorio');
-        setIsCreating(true);
-        const mode = 'per_purchase_unit' as const;
-        const unit = newIngredient.purchase_unit || 'kg';
-        try {
-            const payload: any = {
-                ...newIngredient,
-                supplier: newIngredient.supplier || null,
-                supplier_2: newIngredient.supplier_2 || null,
-                purchase_unit: unit,
-                unit_type: unit, // DB también lo normaliza
-                category: newIngredient.category || 'Alimentos',
-                waste_percentage: newIngredient.waste_percentage || 0,
-                order_unit: newIngredient.order_unit || 'unidad',
-                recipe_unit: resolveIngredientRecipeUnit(newIngredient.recipe_unit, unit),
-                recommended_stock: newIngredient.recommended_stock || null,
-                supplier_pricing_mode: mode,
-                price_locked: !!newIngredient.price_locked,
-            };
+  return (
+    <>
+      <Toaster position="top-right" />
 
-            const requestedPrice = Number(newIngredient.current_price || 0);
-            payload.current_price = 0;
-            payload.pack_price = null;
-            payload.pack_units = null;
-            payload.pack_unit_size_qty = null;
-            payload.pack_unit_size_unit = null;
-
-            const { data: created, error } = await supabase.from('ingredients').insert(payload).select('id').single();
-            if (error) throw error;
-            if (requestedPrice > 0) {
-                const priceResult = await setIngredientCurrentPriceAction(String(created.id), requestedPrice);
-                if (!priceResult.ok) throw new Error(priceResult.message);
-            }
-            toast.success('Creado');
-            setShowCreateModal(false);
-            setNewIngredient({ category: 'Alimentos', price_locked: false });
-            setIsCustomSupplier(false);
-            setIsCustomSupplier2(false);
-            setCustomSupplierName('');
-            setCustomSupplier2Name('');
-            fetchIngredients();
-        } catch (e: any) { toast.error(e.message); } finally { setIsCreating(false); }
-    }
-
-    useEffect(() => {
-        if (selectedSupplier && !allSuppliers.some((s) => s.name === selectedSupplier)) {
-            setSelectedSupplier(null);
-        }
-    }, [allSuppliers, selectedSupplier]);
-
-    const filteredIngredients = ingredients.filter(ing => {
-        const matchesSearch = ing.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesSupplier = !selectedSupplier || ing.supplier === selectedSupplier || ing.supplier_2 === selectedSupplier;
-        return matchesSearch && matchesSupplier;
-    });
-
-    return (
-        <>
-            <Toaster position="top-right" />
-
-            <DashboardDetailLayout
-                title="Ingredientes"
-                titleFace="display"
-                titleBlockClassName="w-full text-center"
-                showBackButton={false}
-                template="list"
-                maxWidthClass="max-w-7xl"
-                toolbarSlot={
-                <div className="flex flex-row items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={() => setShowCreateModal(true)}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:shadow transition-all"
-                        aria-label="Crear nuevo ingrediente"
-                    >
-                        <Plus size={16} strokeWidth={3} />
-                    </button>
-                    <div className="min-w-0 flex-1">
-                        <SearchField
-                            instance="ingredients-search"
-                            placeholder="Buscar ingrediente..."
-                            value={searchQuery}
-                            onChange={setSearchQuery}
-                        />
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
-                        {!selectedSupplier ? (
-                            <CatalogFilterChip
-                                label="PROV"
-                                onOpen={() => setShowSupplierPopup(true)}
-                            />
-                        ) : (
-                            <CatalogFilterChip
-                                label="PROV"
-                                value={selectedSupplier}
-                                onClear={() => setSelectedSupplier(null)}
-                            />
-                        )}
-                    </div>
-                </div>
-                }
+      <DashboardDetailLayout
+        title="Ingredientes"
+        titleFace="display"
+        titleBlockClassName="w-full text-center"
+        showBackButton={false}
+        template="list"
+        maxWidthClass="max-w-7xl"
+        toolbarSlot={
+          <div className="flex flex-row items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow"
+              aria-label="Crear nuevo ingrediente"
             >
+              <Plus size={16} strokeWidth={3} />
+            </button>
 
-                {!loading && (
-                    <div className="pt-1">
-                        <CatalogGrid columns={4}>
-                            {filteredIngredients.map(ing => (
-                                <CatalogTileUnificado
-                                    key={ing.id}
-                                    title={ing.name}
-                                    imageSrc={ing.image_url}
-                                    fallback={<Package className="h-8 w-8 md:h-10 md:w-10" />}
-                                    price={ing.current_price ?? undefined}
-                                    priceLocked={ing.price_locked ?? false}
-                                    onClick={() => setEditingIngredient(ing)}
-                                />
-                            ))}
-                        </CatalogGrid>
-                    </div>
-                )}
-    </DashboardDetailLayout>
+            <div className="min-w-0 flex-1">
+              <SearchField
+                instance="ingredients-search"
+                placeholder="Buscar ingrediente..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+              />
+            </div>
 
-            {/* MODALES */}
-            {editingIngredient && (
-                <IngredientCanonicalEditModal
-                    key={editingIngredient.id}
-                    ingredient={editingIngredient}
-                    onClose={() => setEditingIngredient(null)}
-                    onSaved={() => void fetchIngredients()}
+            <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+              {!selectedSupplier ? (
+                <CatalogFilterChip label="PROV" onOpen={() => setShowSupplierPopup(true)} />
+              ) : (
+                <CatalogFilterChip
+                  label="PROV"
+                  value={selectedSupplier}
+                  onClear={() => setSelectedSupplier(null)}
                 />
-            )}
+              )}
+            </div>
+          </div>
+        }
+      >
+        {loading ? (
+          <div className="flex min-h-40 items-center justify-center">
+            <LoadingSpinner size="md" />
+          </div>
+        ) : (
+          <div className="pt-1">
+            <CatalogGrid columns={4}>
+              {filteredIngredients.map((ingredient) => (
+                <CatalogTileUnificado
+                  key={ingredient.id}
+                  title={ingredient.name}
+                  imageSrc={ingredient.image_url}
+                  fallback={<Package className="h-8 w-8 md:h-10 md:w-10" />}
+                  price={ingredient.current_price ?? undefined}
+                  priceLocked={ingredient.price_locked ?? false}
+                  onClick={() => setEditingIngredient(ingredient)}
+                />
+              ))}
+            </CatalogGrid>
+          </div>
+        )}
+      </DashboardDetailLayout>
 
-            <Modal
-                open={showCreateModal}
-                onClose={() => {
-                    setCreateSettingsOpen(false);
-                    setShowCreateModal(false);
+      {editingIngredient ? (
+        <IngredientCanonicalEditModal
+          key={editingIngredient.id}
+          ingredient={editingIngredient}
+          onClose={() => setEditingIngredient(null)}
+          onSaved={() => void fetchIngredients()}
+        />
+      ) : null}
+
+      <Modal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        variant="compact"
+        layer="base"
+        instance="ingredient-create"
+        usageId="ingredient-create"
+        usageLabel="Crear ingrediente"
+        title="Nuevo ingrediente"
+        headerTone="petroleum"
+      >
+        <IngredientCreateForm
+          onCreated={async () => {
+            setShowCreateModal(false)
+            await fetchIngredients()
+          }}
+          onClose={() => setShowCreateModal(false)}
+        />
+      </Modal>
+
+      <Modal
+        open={showSupplierPopup}
+        onClose={() => setShowSupplierPopup(false)}
+        title="Proveedor"
+        variant="compact"
+        layer="base"
+        instance="ingredients-supplier-filter"
+        usageId="ingredients-supplier-filter"
+        usageLabel="Filtro proveedor ingredientes"
+      >
+        <div className="max-h-[min(70vh,28rem)] overflow-y-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedSupplier(null)
+              setShowSupplierPopup(false)
+            }}
+            className="min-h-12 w-full py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-700 transition-colors hover:bg-zinc-50"
+          >
+            Todos
+          </button>
+
+          {allSuppliers.length === 0 ? (
+            <p className="py-2.5 text-xs font-medium text-zinc-400">
+              No hay proveedores en la base de datos
+            </p>
+          ) : (
+            allSuppliers.map((supplier) => (
+              <button
+                key={supplier.id}
+                type="button"
+                onClick={() => {
+                  setSelectedSupplier(supplier.name)
+                  setShowSupplierPopup(false)
                 }}
-                variant="amplify"
-                layer="base"
-                instance="ingredient-create"
-                usageId="ingredient-create"
-                usageLabel="Crear ingrediente"
-                title="Nuevo"
-                headerTone="petroleum"
-                scrollContent
-            >
-                <div className="space-y-4 bg-[#fafafa]">
-                            {createMode === 'wizard' && (
-                                <IngredientWizard
-                                    onClose={() => {
-                                        setShowCreateModal(false);
-                                        setNewIngredient({ category: 'Alimentos', price_locked: false });
-                                        fetchIngredients();
-                                    }}
-                                />
-                            )}
-
-                            {createMode === 'expert' && (
-                            <div className="space-y-4">
-                            <div className="flex justify-center">
-                                <div className="relative w-32 h-32 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 group shrink-0">
-                                    {newIngredient.image_url ? (
-                                        <img src={newIngredient.image_url} className="w-full h-full object-contain" alt="" />
-                                    ) : (
-                                        <Upload className="text-gray-400" />
-                                    )}
-                                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold cursor-pointer">
-                                        Foto
-                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e)} disabled={uploadingImage} />
-                                    </label>
-                                    {uploadingImage && (
-                                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                                            <LoadingSpinner size="md" className="text-[#5E35B1]" />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Nombre</label>
-                                <input
-                                    value={newIngredient.name || ''}
-                                    onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
-                                    className="w-full p-3 border rounded-2xl font-bold mt-1"
-                                    placeholder="Nombre del ingrediente"
-                                />
-                            </div>
-                            <div className="flex gap-2">
-                                    <div className="w-1/2">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio (€/unidad base)</label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={newIngredient.current_price || ''}
-                                            onChange={e => setNewIngredient({ ...newIngredient, current_price: parseFloat(e.target.value) })}
-                                            className="w-full p-3 border rounded-2xl font-bold"
-                                            placeholder="Precio"
-                                        />
-                                    </div>
-                                    <div className="w-1/2">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base</label>
-                                        <select
-                                            value={newIngredient.purchase_unit || 'kg'}
-                                            onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })}
-                                            className="w-full p-3 border rounded-2xl bg-white"
-                                        >
-                                            {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                                        </select>
-                                    </div>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
-                                <select value={newIngredient.category} onChange={e => setNewIngredient({ ...newIngredient, category: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>
-                            </div>
-                            <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 px-3 py-2">
-                                <input
-                                    type="checkbox"
-                                    checked={!!newIngredient.price_locked}
-                                    onChange={(e) => setNewIngredient({ ...newIngredient, price_locked: e.target.checked })}
-                                    className="h-5 w-5 shrink-0 rounded border-zinc-300"
-                                />
-                                <span className="text-xs font-bold leading-snug text-zinc-800">
-                                    Precio fijo: no actualizar desde albaranes
-                                </span>
-                            </label>
-                            <div className="flex gap-2 flex-wrap">
-                                <div className="w-[calc(50%-0.25rem)] min-w-[7rem]">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">% Merma</label>
-                                    <input type="number" step="0.01" value={newIngredient.waste_percentage || ''} onChange={e => setNewIngredient({ ...newIngredient, waste_percentage: parseFloat(e.target.value) })} className="w-full p-3 border rounded-2xl font-bold" placeholder="Merma" />
-                                </div>
-                                <div className="w-[calc(50%-0.25rem)] min-w-[7rem]">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">U. Pedido</label>
-                                    <select value={newIngredient.order_unit || 'unidad'} onChange={e => setNewIngredient({ ...newIngredient, order_unit: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{ORDER_UNITS.map(u => <option key={u} value={u}>{u}</option>)}</select>
-                                </div>
-                                <div className="w-[calc(50%-0.25rem)] min-w-[7rem]">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2" title="Unidad al añadir a recetas">U. receta</label>
-                                    <select
-                                        value={newIngredient.recipe_unit || resolveIngredientRecipeUnit(null, newIngredient.purchase_unit || 'kg')}
-                                        onChange={e => setNewIngredient({ ...newIngredient, recipe_unit: e.target.value })}
-                                        className="w-full p-3 border rounded-2xl bg-white font-bold"
-                                    >
-                                        {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                    </select>
-                                </div>
-                                <div className="w-[calc(50%-0.25rem)] min-w-[7rem]">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-2" title="Stock Recomendado">Stock</label>
-                                    <input type="number" step="1" value={newIngredient.recommended_stock || ''} onChange={e => setNewIngredient({ ...newIngredient, recommended_stock: parseFloat(e.target.value) || null })} className="w-full p-3 border rounded-2xl font-bold" placeholder="0" />
-                                </div>
-                            </div>
-                            {!isCustomSupplier ? (
-                                <select
-                                    value={newIngredient.supplier || ''}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'custom') {
-                                            setIsCustomSupplier(true);
-                                            setCustomSupplierName('');
-                                            setNewIngredient({ ...newIngredient, supplier: undefined });
-                                        } else setNewIngredient({ ...newIngredient, supplier: e.target.value || undefined });
-                                    }}
-                                    className="w-full p-3 border rounded-2xl bg-white"
-                                >
-                                    <option value="">Proveedor...</option>
-                                    {allSuppliers.map((s) => (
-                                        <option key={s.id} value={s.name}>{s.name}</option>
-                                    ))}
-                                    <option value="custom">+ Nuevo...</option>
-                                </select>
-                            ) : (
-                                <div className="flex gap-2">
-                                    <input
-                                        value={customSupplierName}
-                                        onChange={(e) => {
-                                            setCustomSupplierName(e.target.value);
-                                            setNewIngredient({ ...newIngredient, supplier: e.target.value });
-                                        }}
-                                        className="flex-1 p-3 border rounded-2xl"
-                                        placeholder="Proveedor"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsCustomSupplier(false);
-                                            setCustomSupplierName('');
-                                            setNewIngredient({ ...newIngredient, supplier: undefined });
-                                        }}
-                                        className="text-xs text-red-500 font-bold"
-                                    >
-                                        X
-                                    </button>
-                                </div>
-                            )}
-                            {!isCustomSupplier2 ? (
-                                <select
-                                    value={newIngredient.supplier_2 || ''}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'custom') {
-                                            setIsCustomSupplier2(true);
-                                            setCustomSupplier2Name('');
-                                            setNewIngredient({ ...newIngredient, supplier_2: undefined });
-                                        } else setNewIngredient({ ...newIngredient, supplier_2: e.target.value || undefined });
-                                    }}
-                                    className="w-full p-3 border rounded-2xl bg-white"
-                                >
-                                    <option value="">Proveedor 2 (opcional)...</option>
-                                    {allSuppliers.map((s) => (
-                                        <option key={s.id} value={s.name}>{s.name}</option>
-                                    ))}
-                                    <option value="custom">+ Nuevo...</option>
-                                </select>
-                            ) : (
-                                <div className="flex gap-2">
-                                    <input
-                                        value={customSupplier2Name}
-                                        onChange={(e) => {
-                                            setCustomSupplier2Name(e.target.value);
-                                            setNewIngredient({ ...newIngredient, supplier_2: e.target.value });
-                                        }}
-                                        className="flex-1 p-3 border rounded-2xl"
-                                        placeholder="Proveedor 2"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsCustomSupplier2(false);
-                                            setCustomSupplier2Name('');
-                                            setNewIngredient({ ...newIngredient, supplier_2: undefined });
-                                        }}
-                                        className="text-xs text-red-500 font-bold"
-                                    >
-                                        X
-                                    </button>
-                                </div>
-                            )}
-                            <Button type="button" variant="primary" instance="ingredient-create-submit" onClick={handleCreate} className="w-full">
-                                Crear
-                            </Button>
-                            </div>
-                            )}
-                </div>
-            </Modal>
-            <Modal
-                open={showSupplierPopup}
-                onClose={() => setShowSupplierPopup(false)}
-                title="Proveedor"
-                variant="compact"
-                layer="base"
-                instance="ingredients-supplier-filter"
-                usageId="ingredients-supplier-filter"
-                usageLabel="Filtro proveedor ingredientes"
-            >
-                <div className="max-h-[min(70vh,28rem)] overflow-y-auto">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setSelectedSupplier(null);
-                            setShowSupplierPopup(false);
-                        }}
-                        className="w-full min-h-12 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-700 transition-colors hover:bg-zinc-50"
-                    >
-                        Todos
-                    </button>
-                    {allSuppliers.length === 0 ? (
-                        <p className="py-2.5 text-xs font-medium text-zinc-400">
-                            No hay proveedores en la base de datos
-                        </p>
-                    ) : (
-                        allSuppliers.map((sup) => (
-                            <button
-                                key={sup.id}
-                                type="button"
-                                onClick={() => {
-                                    setSelectedSupplier(sup.name);
-                                    setShowSupplierPopup(false);
-                                }}
-                                className="w-full min-h-12 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-700 transition-colors hover:bg-zinc-50"
-                            >
-                                {sup.name}
-                            </button>
-                        ))
-                    )}
-                </div>
-            </Modal>
-            <Modal
-                open={createSettingsOpen}
-                onClose={() => setCreateSettingsOpen(false)}
-                title="Modo de creación"
-                variant="compact"
-                layer="derived"
-                instance="ingredient-create-settings"
-                parentInstance="ingredient-create"
-                usageId="ingredient-create-settings"
-                usageLabel="Modo de creación ingrediente"
-            >
-                <div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setCreateMode('wizard');
-                            setCreateSettingsOpen(false);
-                        }}
-                        className={cn(
-                            'w-full min-h-12 text-left text-sm font-black',
-                            createMode === 'wizard' ? 'text-ds-marca' : 'text-zinc-800 hover:bg-zinc-50'
-                        )}
-                    >
-                        Asistente
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setCreateMode('expert');
-                            setCreateSettingsOpen(false);
-                        }}
-                        className={cn(
-                            'w-full min-h-12 text-left text-sm font-black',
-                            createMode === 'expert' ? 'text-ds-marca' : 'text-zinc-800 hover:bg-zinc-50'
-                        )}
-                    >
-                        Modo experto
-                    </button>
-                </div>
-            </Modal>
-        </>
-    );
+                className="min-h-12 w-full py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-700 transition-colors hover:bg-zinc-50"
+              >
+                {supplier.name}
+              </button>
+            ))
+          )}
+        </div>
+      </Modal>
+    </>
+  )
 }

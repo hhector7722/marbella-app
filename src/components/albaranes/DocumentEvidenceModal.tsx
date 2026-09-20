@@ -267,7 +267,7 @@ export function DocumentEvidenceModal({
                     <div className="flex flex-col gap-1.5 pt-1 border-t border-zinc-100">
                       {needsManualValues ? (
                         <p className="text-[10px] font-semibold leading-relaxed text-amber-800">
-                          Primero completa nombre, cantidad, precio unitario e importe. Después podrás mapear el producto.
+                          Primero completa nombre, cantidad, precio unitario e importe. Después podrás revisar la compra.
                         </p>
                       ) : null}
                       <div className="flex flex-wrap gap-1.5">
@@ -291,7 +291,7 @@ export function DocumentEvidenceModal({
                             }}
                             disabled={needsManualValues}
                           >
-                            Mapear / cambiar producto
+                            Revisar compra
                           </Button>
                         )}
                       </div>

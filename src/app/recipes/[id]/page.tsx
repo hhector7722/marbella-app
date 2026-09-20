@@ -18,7 +18,7 @@ import {
 } from '@/lib/recipe-cost';
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
 import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
-import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
+import { IngredientCreateForm } from '@/components/ingredients/IngredientCreateForm';
 import { IngredientCanonicalEditModal, type Ingredient } from '@/components/ingredients/IngredientCanonicalEditModal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { Modal } from '@/components/ui/modal';
@@ -105,7 +105,7 @@ function RecipeDetailContent() {
 
     const trackRecipeCategory = useTrackModalApply('recipe-category', 'Categoría receta');
     const trackRecipeAddIngredient = useTrackModalApply('recipe-add-ingredient', 'Añadir ingrediente receta');
-    const trackRecipeIngredientWizard = useTrackModalApply('recipe-ingredient-wizard', 'Asistente ingrediente receta');
+    const trackRecipeIngredientCreate = useTrackModalApply('recipe-ingredient-create', 'Crear ingrediente receta');
 
     const searchParams = useSearchParams();
     const isStaffView = searchParams.get('view') === 'staff';
@@ -1369,21 +1369,20 @@ function RecipeDetailContent() {
                 onClose={() => setIsModalOpen(false)}
                 variant="amplify"
                 layer="base"
-                instance="recipe-ingredient-wizard"
-                usageId="recipe-ingredient-wizard"
-                usageLabel="Asistente ingrediente receta"
+                instance="recipe-ingredient-create"
+                usageId="recipe-ingredient-create"
+                usageLabel="Crear ingrediente receta"
                 title="Nuevo ingrediente"
-                hideHeader // Wizard dibuja su propia navegación interna (PricingStepHeader + cierre propio)
-                scrollContent
+                headerTone="petroleum"
             >
-                <IngredientWizard
+                <IngredientCreateForm
                     onClose={() => {
                         setIsModalOpen(false);
                         void fetchAvailableIngredients();
                         void fetchRecipe();
                     }}
-                    onSaved={(ingredientId, meta) => {
-                        trackRecipeIngredientWizard(namedEntitySummary(meta?.name ?? ingredientId));
+                    onCreated={(ingredientId, meta) => {
+                        trackRecipeIngredientCreate(namedEntitySummary(meta.name ?? ingredientId));
                     }}
                 />
             </Modal>

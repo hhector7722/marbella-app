@@ -42,7 +42,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Field } from '@/components/ui/Field'
 import { Notice } from '@/components/ui/Notice'
 import { SearchField } from '@/components/ui/SearchField'
-import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
+import { IngredientCreateForm, type IngredientCreateContext } from '@/components/ingredients/IngredientCreateForm'
 import type {
   PurchaseInvoiceDetail,
   PurchaseInvoiceLine,
@@ -152,11 +152,10 @@ export default function AlbaranesHistoricoClient({
   /** Línea de Evidence a reabrir al cerrar Edit/Mapping (Evidence-first). */
   const evidenceContextLineIdRef = useRef<string | null>(null)
   const [lineActionBusy, setLineActionBusy] = useState(false)
-  const [wizardOpen, setWizardOpen] = useState(false)
-  const [wizardIngredientId, setWizardIngredientId] = useState<string | null>(null)
-  const [wizardInitialName, setWizardInitialName] = useState<string | null>(null)
-  const [wizardTargetLineId, setWizardTargetLineId] = useState<string | null>(null)
-  const [wizardInvoiceContext, setWizardInvoiceContext] = useState<IngredientWizardInvoiceContext | null>(null)
+  const [ingredientCreateOpen, setIngredientCreateOpen] = useState(false)
+  const [ingredientCreateInitialName, setIngredientCreateInitialName] = useState<string | null>(null)
+  const [ingredientCreateTargetLineId, setIngredientCreateTargetLineId] = useState<string | null>(null)
+  const [ingredientCreateContext, setIngredientCreateContext] = useState<IngredientCreateContext | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
@@ -193,9 +192,9 @@ export default function AlbaranesHistoricoClient({
     usageLabel: 'Asignar proveedor',
   })
   useModalUsageTracking({
-    open: wizardOpen,
-    usageId: 'albaranes-ingredient-wizard',
-    usageLabel: 'Asistente ingrediente',
+    open: ingredientCreateOpen,
+    usageId: 'albaranes-ingredient-create',
+    usageLabel: 'Crear ingrediente',
   })
   useModalUsageTracking({
     open: invoiceImageViewerOpen,
@@ -700,11 +699,10 @@ export default function AlbaranesHistoricoClient({
     setLineForEvidenceModal(null)
     evidenceContextLineIdRef.current = null
     setLineActionBusy(false)
-    setWizardOpen(false)
-    setWizardIngredientId(null)
-    setWizardInitialName(null)
-    setWizardTargetLineId(null)
-    setWizardInvoiceContext(null)
+    setIngredientCreateOpen(false)
+    setIngredientCreateInitialName(null)
+    setIngredientCreateTargetLineId(null)
+    setIngredientCreateContext(null)
     setAppendSheetBusy(false)
     if (appendSheetInputRef.current) appendSheetInputRef.current.value = ''
     setInvoiceImageViewerOpen(false)
@@ -731,7 +729,7 @@ export default function AlbaranesHistoricoClient({
     setLineForMappingModal(null)
     setSupplierPickerOpen(false)
     setInvoiceImageViewerOpen(false)
-    setWizardOpen(false)
+    setIngredientCreateOpen(false)
     if (!lineId) return
     setEvidenceVersion((v) => v + 1)
     setLineForEvidenceModal(lineId)
@@ -877,44 +875,34 @@ export default function AlbaranesHistoricoClient({
     setLineForEvidenceModal(null)
     setSupplierPickerOpen(false)
     setInvoiceImageViewerOpen(false)
-    setWizardOpen(false)
+    setIngredientCreateOpen(false)
     setLineForMappingModal(line)
   }
 
-  function openWizardForLine(
+  function openCreateIngredientForLine(
     line: PurchaseInvoiceLine,
-    opts: { ingredientId: string | null; initialName: string | null }
+    initialName: string | null
   ) {
-    const d = draftLines[line.id]
-    const unitRaw = d?.unit_price?.trim()
-      ? d.unit_price
-      : line.unit_price == null
-        ? ''
-        : String(line.unit_price)
-    const unitN = unitRaw === '' ? NaN : Number(String(unitRaw).replace(',', '.'))
-    setWizardInvoiceContext({
-      lineLabel: String(d?.original_name ?? line.original_name ?? '').trim() || null,
-      quantity: d?.quantity?.trim() || (line.quantity == null ? null : String(line.quantity)),
-      unitPrice: Number.isFinite(unitN) ? unitN : null,
+    const draft = draftLines[line.id]
+    setIngredientCreateContext({
+      lineLabel: String(draft?.original_name ?? line.original_name ?? '').trim() || null,
     })
-    setWizardIngredientId(opts.ingredientId)
-    setWizardInitialName(opts.initialName)
-    setWizardTargetLineId(line.id)
-    // Conserva evidenceContextLineIdRef: al cerrar Mapping se vuelve a Evidence.
+    setIngredientCreateInitialName(initialName)
+    setIngredientCreateTargetLineId(line.id)
+    // Conserva evidenceContextLineIdRef: al cerrar la alta se vuelve al mapeo.
     setLineForEvidenceModal(null)
     setLineForEditModal(null)
     setLineForMappingModal(null)
     setSupplierPickerOpen(false)
     setInvoiceImageViewerOpen(false)
-    setWizardOpen(true)
+    setIngredientCreateOpen(true)
   }
 
-  async function returnToMappingAfterWizard(lineId: string | null) {
-    setWizardOpen(false)
-    setWizardIngredientId(null)
-    setWizardInitialName(null)
-    setWizardTargetLineId(null)
-    setWizardInvoiceContext(null)
+  async function returnToMappingAfterCreate(lineId: string | null) {
+    setIngredientCreateOpen(false)
+    setIngredientCreateInitialName(null)
+    setIngredientCreateTargetLineId(null)
+    setIngredientCreateContext(null)
     if (!lineId || !detail) return
     await refreshDetailAndStock()
     const dRes = await getPurchaseInvoiceDetailAction(detail.id)
@@ -1303,7 +1291,7 @@ export default function AlbaranesHistoricoClient({
                   setLineForMappingModal(null)
                   setLineForEvidenceModal(null)
                   setInvoiceImageViewerOpen(false)
-                  setWizardOpen(false)
+                  setIngredientCreateOpen(false)
                   setSupplierPickerOpen(true)
                   setSupplierQuery('')
                   setSupplierResults([])
@@ -1477,7 +1465,7 @@ export default function AlbaranesHistoricoClient({
                               setLineForMappingModal(null)
                               setLineForEvidenceModal(null)
                               setSupplierPickerOpen(false)
-                              setWizardOpen(false)
+                              setIngredientCreateOpen(false)
                               setInvoiceCarouselIndex(0)
                               invoiceCarouselIndexRef.current = 0
                               setInvoiceImageViewerOpen(true)
@@ -1551,7 +1539,7 @@ export default function AlbaranesHistoricoClient({
                                   setLineForMappingModal(null)
                                   setSupplierPickerOpen(false)
                                   setInvoiceImageViewerOpen(false)
-                                  setWizardOpen(false)
+                                  setIngredientCreateOpen(false)
                                   evidenceContextLineIdRef.current = l.id
                                   setLineForEvidenceModal(l.id)
                                 }}
@@ -1646,9 +1634,9 @@ export default function AlbaranesHistoricoClient({
                     reopenEvidenceFromContext()
                   }}
                   onSuccess={() => refreshDetailAndStock()}
-                  onOpenWizardNew={() => {
+                  onCreateIngredient={() => {
                     if (!lineForMappingModal) return
-                    openWizardForLine(lineForMappingModal, { ingredientId: null, initialName: lineForMappingModal.original_name || '' })
+                    openCreateIngredientForLine(lineForMappingModal, lineForMappingModal.original_name || '')
                   }}
                 />
 
@@ -1679,7 +1667,7 @@ export default function AlbaranesHistoricoClient({
                     setLineForMappingModal(null)
                     setSupplierPickerOpen(false)
                     setInvoiceImageViewerOpen(false)
-                    setWizardOpen(false)
+                    setIngredientCreateOpen(false)
                     setLineForEditModal(l)
                   }}
                   onExcludeFromMapping={() => {
@@ -1777,39 +1765,35 @@ export default function AlbaranesHistoricoClient({
                 </Modal>
 
                 <Modal
-                  open={wizardOpen}
+                  open={ingredientCreateOpen}
                   onClose={() => {
-                    const lineId = wizardTargetLineId
-                    void returnToMappingAfterWizard(lineId)
+                    const lineId = ingredientCreateTargetLineId
+                    void returnToMappingAfterCreate(lineId)
                   }}
-                  variant="standard"
+                  variant="compact"
                   layer="derived"
-                  instance="albaran-ingredient-wizard"
+                  instance="albaran-ingredient-create"
                   parentInstance="albaran-detail"
-                  usageId="albaran-ingredient-wizard"
-                  usageLabel="Wizard de ingrediente"
-                  title="Ingrediente"
+                  usageId="albaran-ingredient-create"
+                  usageLabel="Crear ingrediente"
+                  title="Nuevo ingrediente"
                   headerTone="petroleum"
                   headerTitleAlign="left"
-                  ariaLabel="Wizard de ingrediente"
+                  ariaLabel="Crear ingrediente"
                   disableUsageTracking
                 >
-                      <IngredientWizard
-                        key={wizardIngredientId ?? 'create'}
-                        ingredientId={wizardIngredientId}
-                        initialName={wizardInitialName ?? undefined}
-                        mode={wizardIngredientId ? 'editPricing' : 'create'}
-                        flow="express"
-                        invoiceContext={wizardInvoiceContext ?? undefined}
-                        onSaved={async () => {
-                          const lineId = wizardTargetLineId
-                          await returnToMappingAfterWizard(lineId)
-                        }}
-                        onClose={() => {
-                          const lineId = wizardTargetLineId
-                          void returnToMappingAfterWizard(lineId)
-                        }}
-                      />
+                  <IngredientCreateForm
+                    initialName={ingredientCreateInitialName ?? undefined}
+                    context={ingredientCreateContext ?? undefined}
+                    onCreated={async () => {
+                      const lineId = ingredientCreateTargetLineId
+                      await returnToMappingAfterCreate(lineId)
+                    }}
+                    onClose={() => {
+                      const lineId = ingredientCreateTargetLineId
+                      void returnToMappingAfterCreate(lineId)
+                    }}
+                  />
                 </Modal>
         </>
       ) : null}

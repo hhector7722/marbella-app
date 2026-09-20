@@ -71,7 +71,7 @@ test('el mapeo de albarán pide precio observado y contenido, no factor manual',
   assert.match(mappingModal, /Precio del albarán/)
   assert.match(mappingModal, /Contenido de cada unidad facturada/)
   assert.match(mappingModal, /deriveReceiptPresentationEconomics/)
-  assert.match(mappingModal, /Resultado automático/)
+  assert.match(mappingModal, /Precio resultante/)
   assert.match(mappingModal, /updatePurchaseInvoiceLineAction/)
   assert.doesNotMatch(mappingModal, /Factor de conversión \(avanzado\)/)
   assert.doesNotMatch(mappingModal, /Factor de conversión inválido/)

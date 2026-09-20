@@ -1892,9 +1892,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(patrones, /quedan los iconos/);
     });
 
-    it('wizard, carta, proveedores e ingredientes recogen datos con Field', () => {
+    it('altas simples, carta, proveedores e ingredientes recogen datos con Field', () => {
         const hosts = [
-            'components/ingredients/IngredientWizard.tsx',
+            'components/ingredients/IngredientCreateForm.tsx',
             'components/ingredients/IngredientCanonicalEditModal.tsx',
             'components/carta/MenuItemEditModal.tsx',
             'components/carta/MenuCategoryEditModal.tsx',

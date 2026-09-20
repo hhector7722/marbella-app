@@ -11,6 +11,10 @@ on:
       - 'src/app/dashboard/albaranes/receipt-actions.ts'
       - 'src/app/dashboard/albaranes/actions.ts'
       - 'src/components/albaranes/LineMappingModal.tsx'
+      - 'src/app/ingredients/**'
+      - 'src/components/ingredients/**'
+      - 'src/app/recipes/**'
+      - 'scripts/pricing/**'
       - 'src/app/dashboard/albaranes/k5/**'
       - 'src/app/api/internal/albaranes/k5/**'
       - 'src/components/albaranes/InterpretationProposalPanel.tsx'
@@ -28,6 +32,10 @@ on:
       - 'src/app/dashboard/albaranes/receipt-actions.ts'
       - 'src/app/dashboard/albaranes/actions.ts'
       - 'src/components/albaranes/LineMappingModal.tsx'
+      - 'src/app/ingredients/**'
+      - 'src/components/ingredients/**'
+      - 'src/app/recipes/**'
+      - 'scripts/pricing/**'
       - 'src/app/dashboard/albaranes/k5/**'
       - 'src/app/api/internal/albaranes/k5/**'
       - 'src/components/albaranes/InterpretationProposalPanel.tsx'
@@ -70,6 +78,8 @@ jobs:
         run: node --test scripts/k5/k5-interpretation-contract.test.cjs
       - name: K4 receipt contract
         run: npm run test:k4:receipt-contract
+      - name: Canonical pricing and single UX contract
+        run: npm run test:pricing
       - name: TypeScript check
         run: |
           corepack enable

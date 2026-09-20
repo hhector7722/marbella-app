@@ -235,7 +235,7 @@ test('las excepciones K5 sin línea tienen salida manual sin efectos económicos
   assert.match(batchReview, /Completar manualmente/)
   assert.match(batchReview, /dashboard\/albaranes\?id=.*&line=/)
   assert.match(evidenceModal, /Completar datos/)
-  assert.match(evidenceModal, /Mapear \/ cambiar producto/)
+  assert.match(evidenceModal, /Revisar compra/)
 })
 
 test('la corrección humana versiona los datos completados antes de K4', () => {
