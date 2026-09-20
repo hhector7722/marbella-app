@@ -1020,66 +1020,6 @@ export async function resolveLineMappingAction(params: {
   }
 }
 
-/**
- * Compatibilidad: la UI antigua usa esta acción. Sigue funcionando, pero la
- * pantalla de albaranes ya llama directamente a `resolveLineMappingAction`.
- */
-export async function suggestIngredientsForLineAction(params: {
-  extractedName: string
-}): Promise<
-  | { success: true; suggestedIngredientId: string | null; candidates: IngredientCandidate[] }
-  | { success: false; message: string }
-> {
-  const gate = await gateAuthenticated()
-  if (!gate.ok) return { success: false, message: gate.message }
-
-  const isManager = gate.role === 'manager' || gate.role === 'admin'
-  const extractedName = String(params?.extractedName ?? '').trim()
-  if (!extractedName) return { success: true, suggestedIngredientId: null, candidates: [] }
-
-  const { matchIngredientCandidates, pickSuggestedCandidate } = await import('@/lib/albaran-price-match')
-
-  const { data: ingRows, error } = await gate.supabase
-    .from('ingredients')
-    .select(
-      'id, name, current_price, purchase_unit, supplier_pricing_mode, pack_units, pack_unit_size_qty, pack_unit_size_unit'
-    )
-    .order('name')
-    .limit(4000)
-  if (error) return { success: false, message: error.message }
-
-  const ingredients = (ingRows ?? []).map((r: any) => ({
-    id: String(r.id),
-    name: String(r.name ?? ''),
-    current_price: Number(r.current_price) || 0,
-    purchase_unit: String(r.purchase_unit ?? 'kg'),
-    supplier_pricing_mode: r.supplier_pricing_mode != null ? String(r.supplier_pricing_mode) : null,
-    pack_units: r.pack_units != null ? Number(r.pack_units) : null,
-    pack_unit_size_qty: r.pack_unit_size_qty != null ? Number(r.pack_unit_size_qty) : null,
-    pack_unit_size_unit: r.pack_unit_size_unit != null ? String(r.pack_unit_size_unit) : null,
-  }))
-
-  const cands = matchIngredientCandidates(extractedName, ingredients, 8)
-  const suggested = pickSuggestedCandidate(cands)
-
-  const enriched: IngredientCandidate[] = cands.map((c) => {
-    const row = ingredients.find((i) => i.id === c.id)
-    return {
-      id: c.id,
-      name: row?.name ?? c.name,
-      score: c.score,
-      current_price: row?.current_price ?? 0,
-      purchase_unit: row?.purchase_unit ?? 'kg',
-      supplier_pricing_mode: row?.supplier_pricing_mode ?? null,
-      pack_units: row?.pack_units ?? null,
-      pack_unit_size_qty: row?.pack_unit_size_qty ?? null,
-      pack_unit_size_unit: row?.pack_unit_size_unit ?? null,
-    }
-  })
-
-  return { success: true, suggestedIngredientId: suggested, candidates: enriched }
-}
-
 export async function searchIngredientsForMappingAction(params: {
   query: string
   limit?: number
