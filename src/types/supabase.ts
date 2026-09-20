@@ -1749,6 +1749,8 @@ export type Database = {
           inventory_visible: boolean
           name: string
           order_unit: string | null
+          physical_unit_qty: number | null
+          physical_unit_unit: string | null
           pack_price: number | null
           pack_unit_size_qty: number | null
           pack_unit_size_unit: string | null
@@ -1778,6 +1780,8 @@ export type Database = {
           inventory_visible?: boolean
           name: string
           order_unit?: string | null
+          physical_unit_qty?: number | null
+          physical_unit_unit?: string | null
           pack_price?: number | null
           pack_unit_size_qty?: number | null
           pack_unit_size_unit?: string | null
@@ -1807,6 +1811,8 @@ export type Database = {
           inventory_visible?: boolean
           name?: string
           order_unit?: string | null
+          physical_unit_qty?: number | null
+          physical_unit_unit?: string | null
           pack_price?: number | null
           pack_unit_size_qty?: number | null
           pack_unit_size_unit?: string | null
