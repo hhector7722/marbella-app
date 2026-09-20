@@ -23,14 +23,12 @@ export type RecipeFoodCostInput = {
           | {
               current_price: number;
               purchase_unit?: string;
-              supplier_pricing_mode?: string;
               pack_unit_size_qty?: number | null;
               pack_unit_size_unit?: string | null;
             }
           | {
               current_price: number;
               purchase_unit?: string;
-              supplier_pricing_mode?: string;
               pack_unit_size_qty?: number | null;
               pack_unit_size_unit?: string | null;
             }[]
@@ -53,7 +51,6 @@ export function getRecipeFoodCostStatus(recipe: RecipeFoodCostInput): FoodCostSt
     const recipeUnit = item.unit ?? 'kg';
     const pack: IngredientPackBridgeContext | undefined = ingredient
       ? {
-          supplier_pricing_mode: ingredient.supplier_pricing_mode,
           pack_unit_size_qty: ingredient.pack_unit_size_qty,
           pack_unit_size_unit: ingredient.pack_unit_size_unit,
         }
@@ -69,4 +66,4 @@ export function getRecipeFoodCostStatus(recipe: RecipeFoodCostInput): FoodCostSt
 
 /** Select mínimo para calcular food cost en listados / navegación entre fichas. */
 export const RECIPE_FOOD_COST_SELECT =
-  'id, name, category, menu_category_id, sale_price, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, supplier_pricing_mode, pack_unit_size_qty, pack_unit_size_unit))' as const;
+  'id, name, category, menu_category_id, sale_price, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit))' as const;

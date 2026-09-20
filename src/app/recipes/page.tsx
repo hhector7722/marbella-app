@@ -42,7 +42,7 @@ interface Recipe {
     recipe_ingredients?: {
         quantity_gross: number;
         unit: string | null;
-        ingredients: { current_price: number; purchase_unit?: string; supplier_pricing_mode?: string; pack_unit_size_qty?: number | null; pack_unit_size_unit?: string | null } | { current_price: number; purchase_unit?: string; supplier_pricing_mode?: string; pack_unit_size_qty?: number | null; pack_unit_size_unit?: string | null }[] | null;
+        ingredients: { current_price: number; purchase_unit?: string; pack_unit_size_qty?: number | null; pack_unit_size_unit?: string | null } | { current_price: number; purchase_unit?: string; pack_unit_size_qty?: number | null; pack_unit_size_unit?: string | null }[] | null;
     }[];
 }
 
@@ -182,7 +182,7 @@ function RecipesContent() {
             const { data, error } = await supabase
                 .from('recipes')
                 .select(
-                    `id, name, category, menu_category_id, sale_price, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, supplier_pricing_mode, pack_unit_size_qty, pack_unit_size_unit))`,
+                    `id, name, category, menu_category_id, sale_price, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit))`,
                 )
                 .order('name');
             if (error) throw error;

@@ -299,12 +299,8 @@ function RecipeDetailContent() {
         const i = ing?.ingredients;
         if (!i) return undefined;
         return {
-            supplier_pricing_mode: i.supplier_pricing_mode,
             pack_unit_size_qty: i.pack_unit_size_qty,
             pack_unit_size_unit: i.pack_unit_size_unit,
-            pack_price: i.pack_price,
-            pack_units: i.pack_units,
-            purchase_unit: i.purchase_unit,
         };
     };
 
@@ -1352,11 +1348,6 @@ function RecipeDetailContent() {
                         {filteredIngredients.map(ing => {
                             const purchaseUnit = ing.purchase_unit || 'ud';
                             const effective = `${Number(ing.current_price || 0).toFixed(4)}€/${purchaseUnit}`;
-                            const packInfo =
-                                ing.supplier_pricing_mode === 'per_pack'
-                                    ? `${Number(ing.pack_price || 0).toFixed(2)}€/pack`
-                                    : null;
-
                             const configuredUnit = resolveIngredientRecipeUnit(ing.recipe_unit, purchaseUnit);
                             const unitToAdd = forceAddIngredientUnit ? addIngredientUnit : configuredUnit;
 
@@ -1371,7 +1362,6 @@ function RecipeDetailContent() {
                                     <span className="shrink-0 font-mono text-[10px] text-gray-400">{configuredUnit}</span>
                                     <span className="text-right">
                                         <span className="font-bold text-gray-700">{effective}</span>
-                                        {packInfo && <span className="block text-[10px] text-gray-400">{packInfo}</span>}
                                     </span>
                                 </button>
                             );

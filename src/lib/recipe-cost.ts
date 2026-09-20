@@ -1,5 +1,3 @@
-import { computeEffectivePriceFromPack } from '@/lib/ingredient-pack-pricing'
-
 /**
  * Conversión de unidades y coste de línea de receta.
  * El precio del ingrediente (current_price) es el del albarán del proveedor,
@@ -85,47 +83,26 @@ export function convertToPurchaseUnitQuantity(
   return quantity;
 }
 
-/** Contexto de pack del ingrediente (misma idea que `staff_consumption_qty_to_purchase_unit` en BD). */
+/** Equivalencia física por unidad del ingrediente (misma idea que la función homóloga en BD). */
 export type IngredientPackBridgeContext = {
-  supplier_pricing_mode?: string | null
   pack_unit_size_qty?: number | null
   pack_unit_size_unit?: string | null
-  pack_price?: number | null
-  pack_units?: number | null
-  purchase_unit?: string | null
-}
-
-function isPerPackMode(mode: string | null | undefined): boolean {
-  return String(mode ?? '')
-    .trim()
-    .toLowerCase() === 'per_pack'
 }
 
 /**
- * Precio unitario de compra para escandallo.
- * Si `current_price` en BD es 0 por redondeo (numeric(10,2) con céntimos < 0,01),
- * recalcula desde pack cuando el ingrediente es `per_pack`.
+ * Precio unitario de compra para escandallo. `current_price` es la única
+ * autoridad económica; las equivalencias físicas nunca producen un precio.
  */
 export function resolveIngredientUnitPriceForRecipeCost(
   currentPrice: number | null | undefined,
-  pack?: IngredientPackBridgeContext | null,
 ): number | null {
   const stored = Number(currentPrice)
   if (Number.isFinite(stored) && stored > 0) return stored
-
-  if (!pack || !isPerPackMode(pack.supplier_pricing_mode)) return null
-
-  return computeEffectivePriceFromPack({
-    packPrice: pack.pack_price,
-    packUnits: pack.pack_units,
-    unitSizeQty: pack.pack_unit_size_qty,
-    unitSizeUnit: pack.pack_unit_size_unit,
-    purchaseUnit: pack.purchase_unit,
-  })
+  return null
 }
 
 /**
- * Igual que `convertToPurchaseUnitQuantity`, más puente **per_pack**:
+ * Igual que `convertToPurchaseUnitQuantity`, más una equivalencia física por unidad:
  * - receta en **ud** y compra en masa/volumen: `cantidad_ud × tamaño_por_ud` en unidad de compra.
  * - receta en masa/volumen y compra en **ud**: `cantidad / tamaño_por_ud` (ud de compra).
  */
@@ -137,8 +114,6 @@ export function convertToPurchaseUnitQuantityWithPackBridge(
 ): number | null {
   const direct = convertToPurchaseUnitQuantity(quantity, recipeUnit, purchaseUnit)
   if (direct != null) return direct
-
-  if (!isPerPackMode(pack?.supplier_pricing_mode)) return null
 
   const pq = Number(pack?.pack_unit_size_qty)
   const pUnitRaw = pack?.pack_unit_size_unit
@@ -203,7 +178,7 @@ export function getRecipeIngredientLineCostAnalysis(
     return { eur: 0, status: 'incompatible_units' };
   }
 
-  const price = resolveIngredientUnitPriceForRecipeCost(currentPrice, pack);
+  const price = resolveIngredientUnitPriceForRecipeCost(currentPrice);
   if (price == null || price <= 0) {
     return { eur: 0, status: 'missing_price' };
   }
@@ -217,7 +192,7 @@ export function recipeLineCostStatusHint(status: RecipeLineCostStatus): string {
     return 'Sin precio de compra en el ingrediente. Edita el artículo en Ingredientes o asigna precio desde albarán.'
   }
   if (status === 'incompatible_units') {
-    return 'No se puede convertir la unidad de la receta a la unidad de compra. Prueba: misma familia (g/kg, ml/cl/L, ud), o en ingrediente «por pack» indica tamaño por ud (p. ej. 330 ml). Si el albarán es €/kg, pon cantidad de línea en kg.'
+    return 'No se puede convertir la unidad de la receta a la unidad de compra. Usa la misma familia (g/kg, ml/cl/L, ud) o indica la equivalencia física por unidad del ingrediente (p. ej. 330 ml por botella).'
   }
   return ''
 }
