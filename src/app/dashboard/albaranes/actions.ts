@@ -9,7 +9,6 @@ import {
   isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
 import { createClient } from '@/utils/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoices-list'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
@@ -184,6 +183,7 @@ async function queryPurchaseInvoicesList(
   let q = gate.supabase
     .from('purchase_invoices')
     .select(PURCHASE_INVOICE_LIST_SELECT)
+    .neq('status', 'discarded')
     .order('invoice_date', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
 
@@ -1430,17 +1430,11 @@ export async function unmapInvoiceLineAction(params: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Eliminar albarán completo (con reversión de stock)
+// Eliminar captura fallida de la operativa
 //
-// Política: cuando se borra un albarán, deben desaparecer también sus efectos
-// en stock. Para mantener la auditoría limpia, optamos por DELETE puro de los
-// movimientos asociados (PURCHASE base + cualquier ADJUSTMENT con prefijo
-// `ALB-LINE-<lineId>%`, incluyendo REV) en lugar de generar ajustes inversos
-// que dejarían "rastros" sin albarán al que asociar.
-//
-// La eliminación de la cabecera + líneas + storage también se hace en cascada.
-// La constraint FK en `purchase_invoice_lines.invoice_id` tiene ON DELETE
-// CASCADE, así que basta con borrar la cabecera tras retirar los movimientos.
+// K2/K3 mantienen el historial técnico append-only. Por eso una captura fallida
+// no se borra físicamente: se marca como discarded mediante una RPC atómica,
+// únicamente si nunca produjo líneas, Docling válido ni efectos económicos.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function deletePurchaseInvoiceAction(params: {
@@ -1458,49 +1452,23 @@ export async function deletePurchaseInvoiceAction(params: {
   const invoiceId = String(params?.invoiceId ?? '').trim()
   if (!invoiceId) return { success: false, message: 'ID de albarán inválido' }
 
-  const { data: inv, error: invErr } = await gate.supabase
-    .from('purchase_invoices')
-    .select('id, file_path')
-    .eq('id', invoiceId)
-    .maybeSingle()
-  if (invErr) return { success: false, message: invErr.message }
-  if (!inv) return { success: false, message: 'Albarán no encontrado o sin permiso' }
+  const { error } = await (gate.supabase as any).rpc('discard_failed_purchase_invoice', {
+    p_invoice_id: invoiceId,
+  })
 
-  // K1/K3/K4 prohíben DELETE directo de hechos documentales/económicos.
-  // Esta RPC SECURITY DEFINER solo permite purgar capturas fallidas que nunca
-  // llegaron a crear líneas, una extracción Docling válida ni efectos económicos.
-  const { data: purgeData, error: purgeErr } = await (gate.supabase as any).rpc(
-    'purge_failed_purchase_invoice',
-    { p_invoice_id: invoiceId }
-  )
-  if (purgeErr) {
-    return { success: false, message: `No se puede eliminar esta captura: ${String(purgeErr.message ?? 'error desconocido')}` }
-  }
-
-  const filePath = String((inv as any).file_path ?? '').trim()
-  if (filePath) {
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
-    if (supabaseUrl && serviceRoleKey) {
-      const serviceClient = createServiceClient(supabaseUrl, serviceRoleKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
-      const { error: storageErr } = await serviceClient.storage.from('albaranes').remove([filePath])
-      if (storageErr) {
-        console.warn('deletePurchaseInvoiceAction: failed-capture storage cleanup warning', storageErr.message)
-      }
-    } else {
-      console.warn('deletePurchaseInvoiceAction: service role unavailable for failed-capture storage cleanup')
+  if (error) {
+    return {
+      success: false,
+      message: `No se puede eliminar esta captura: ${String(error.message ?? 'error desconocido')}`,
     }
   }
 
   try {
     revalidatePath('/dashboard/albaranes')
+    revalidatePath('/dashboard/albaranes/k5')
   } catch {}
 
-  const deletedLines = Number((purgeData as any)?.deleted_lines ?? 0) || 0
-  return { success: true, deletedMovements: 0, deletedLines }
+  return { success: true, deletedMovements: 0, deletedLines: 0 }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
