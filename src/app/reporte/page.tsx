@@ -9,12 +9,6 @@ import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLay
 import { randomId } from '@/lib/random-id';
 import './premium.css';
 
-interface CategoryEntry {
-  id: string;
-  name: string;
-  selected: boolean;
-}
-
 interface Activity {
   id: string;
   data: string;
@@ -22,7 +16,7 @@ interface Activity {
   hora_convocatoria: string;
   hora_finalitzacio: string;
   dayName: 'Dissabte' | 'Diumenge';
-  categories: CategoryEntry[];
+  selectedCategoryIds: string[];
   total_participants: number;
   freeTextMode: boolean;
 }
@@ -141,8 +135,9 @@ interface CategoryDropdownProps {
 function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: CategoryDropdownProps) {
   const [open, setOpen] = useState(false);
 
-  const allSelected = act.categories.every(c => c.selected);
-  const selectedNames = act.categories.filter(c => c.selected).map(c => c.name);
+  const selectedIds = act.selectedCategoryIds;
+  const allSelected = categoryOptions.length > 0 && categoryOptions.every(c => selectedIds.includes(c.id));
+  const selectedNames = categoryOptions.filter(c => selectedIds.includes(c.id)).map(c => c.name);
   const displayNames = selectedNames.length > 0 ? selectedNames.join(', ') : '';
 
   const ageMap: Record<string, string> = {
@@ -165,7 +160,7 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
         {categoryOptions.length === 0 ? (
            <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
         ) : (
-           <span className="truncate w-full text-white font-medium">{displayNames || 'Selecciona'}</span>
+           <span className="truncate w-full text-white font-medium">{displayNames}</span>
         )}
       </div>
       {open ? (
@@ -175,6 +170,8 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
           title="Categories"
           variant="standard"
           layer="base"
+          headerTone="petroleum"
+          scheme="dark"
           instance={`reporte-categories-${act.id}`}
           usageId="reporte-categories"
           usageLabel="Categories reporte"
@@ -200,25 +197,27 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
             </Button>
           </div>
           <div className="grid max-h-[60vh] grid-cols-2 gap-2 overflow-y-auto pr-1">
-            {act.categories.map((cat) => (
+            {categoryOptions.map((cat) => {
+              const selected = selectedIds.includes(cat.id);
+              return (
               <label
                 key={cat.id}
-                className="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition-all hover:bg-zinc-50"
+                className="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition-all hover:bg-white/10"
               >
                 <input
                   type="checkbox"
-                  checked={cat.selected}
+                  checked={selected}
                   onChange={() => onToggle(act.id, cat.id)}
                   className="sr-only"
                 />
                 <span
                   className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all ${
-                    cat.selected
+                    selected
                       ? 'border-ds-marca bg-ds-marca'
-                      : 'border-zinc-300 bg-white'
+                      : 'border-white/40 bg-transparent'
                   }`}
                 >
-                  {cat.selected ? (
+                  {selected ? (
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
@@ -231,7 +230,8 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
                   ) : null}
                 </span>
               </label>
-            ))}
+              );
+            })}
           </div>
         </Modal>
       ) : null}
@@ -250,9 +250,11 @@ export default function ReportePage() {
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(true);
   const [loadingDaily, setLoadingDaily] = useState<Record<string, boolean>>({});
 
-  // We initialize activities synchronously so cards appear immediately
+  // Las fechas del fin de semana se calculan en el cliente (no en el servidor)
+  // para evitar desajustes de zona horaria al hidratar la pantalla.
   useEffect(() => {
     const { saturday, sunday } = getNextWeekend();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActivities([
       {
         id: randomId(),
@@ -261,7 +263,7 @@ export default function ReportePage() {
         hora_convocatoria: '',
         hora_finalitzacio: '',
         dayName: 'Dissabte',
-        categories: [],
+        selectedCategoryIds: [],
         total_participants: 0,
         freeTextMode: false,
       },
@@ -272,23 +274,11 @@ export default function ReportePage() {
         hora_convocatoria: '',
         hora_finalitzacio: '',
         dayName: 'Diumenge',
-        categories: [],
+        selectedCategoryIds: [],
         total_participants: 0,
         freeTextMode: false,
       },
     ]);
-  }, []);
-
-  useEffect(() => {
-    const body = document.body;
-    const origBg = body.style.background;
-    const origBgImg = body.style.backgroundImage;
-    body.style.background = '#0f172a';
-    body.style.backgroundImage = 'none';
-    return () => {
-      body.style.background = origBg;
-      body.style.backgroundImage = origBgImg;
-    };
   }, []);
 
   useEffect(() => {
@@ -300,20 +290,6 @@ export default function ReportePage() {
       setCategoryOptions(cats);
     });
   }, []);
-
-  const buildDefaultCategories = (): CategoryEntry[] =>
-    categoryOptions.map(c => ({ id: c.id, name: c.name, selected: false }));
-
-  // When categoryOptions load, apply them to existing activities that have empty categories
-  useEffect(() => {
-    if (categoryOptions.length === 0) return;
-    setActivities(prev => prev.map(a => {
-      if (a.categories.length === 0) {
-        return { ...a, categories: buildDefaultCategories() };
-      }
-      return a;
-    }));
-  }, [categoryOptions]);
 
   const fetchDailyActivities = async (date: string) => {
     if (dailyActivitiesMap[date]) return;
@@ -337,7 +313,7 @@ export default function ReportePage() {
     });
   }, [activities.map(a => a.data).join(','), allGlobalActivities]);
 
-  const handleChange = (id: string, field: keyof Activity, value: any) => {
+  const handleChange = <K extends keyof Activity>(id: string, field: K, value: Activity[K]) => {
     setActivities((prev) =>
       prev.map((a) => {
         if (a.id !== id) return a;
@@ -356,9 +332,9 @@ export default function ReportePage() {
         if (a.id !== actId) return a;
         return {
           ...a,
-          categories: a.categories.map(c =>
-            c.id === catId ? { ...c, selected: !c.selected } : c
-          ),
+          selectedCategoryIds: a.selectedCategoryIds.includes(catId)
+            ? a.selectedCategoryIds.filter(id => id !== catId)
+            : [...a.selectedCategoryIds, catId],
         };
       })
     );
@@ -368,10 +344,12 @@ export default function ReportePage() {
     setActivities(prev =>
       prev.map(a => {
         if (a.id !== actId) return a;
-        const allSelected = a.categories.every(c => c.selected);
+        const allSelected =
+          categoryOptions.length > 0 &&
+          categoryOptions.every(c => a.selectedCategoryIds.includes(c.id));
         return {
           ...a,
-          categories: a.categories.map(c => ({ ...c, selected: !allSelected })),
+          selectedCategoryIds: allSelected ? [] : categoryOptions.map(c => c.id),
         };
       })
     );
@@ -399,7 +377,7 @@ export default function ReportePage() {
           hora_convocatoria: '',
           hora_finalitzacio: '',
           dayName,
-          categories: buildDefaultCategories(),
+          selectedCategoryIds: [],
           total_participants: 0,
           freeTextMode: false,
         },
@@ -423,7 +401,7 @@ export default function ReportePage() {
         activitat: a.activitat,
         hora_convocatoria: a.hora_convocatoria,
         hora_finalitzacio: a.hora_finalitzacio,
-        selected_category_ids: a.categories.filter(c => c.selected).map(c => c.id),
+        selected_category_ids: a.selectedCategoryIds,
         total_participants: a.total_participants,
       }));
 
@@ -468,7 +446,7 @@ export default function ReportePage() {
                 <div className="space-y-1">
                   <label
                     htmlFor={`reporte-data-${act.id}`}
-                    className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1"
+                    className="text-[9px] font-semibold text-slate-500 capitalize tracking-wider ml-1"
                   >
                     Data
                   </label>
@@ -479,7 +457,7 @@ export default function ReportePage() {
                   />
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Activitat</label>
+                  <label className="text-[9px] font-semibold text-slate-500 capitalize tracking-wider ml-1">Activitat</label>
                   <div className="relative">
                     {loadingDaily[act.data] || isLoadingGlobal ? (
                       <div className="form-input w-full h-[32px] rounded-xl flex items-center justify-center bg-slate-800 border border-slate-700/50">
@@ -515,7 +493,7 @@ export default function ReportePage() {
                           className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs bg-slate-800 text-white border border-slate-700/50 appearance-none text-center"
                           style={{ textAlignLast: 'center' }}
                         >
-                          <option value="" disabled>Selecciona una activitat</option>
+                          <option value="" disabled></option>
                           <option value="Texto libre" className="text-indigo-400 font-semibold">Texto libre...</option>
                           <option disabled>──────────</option>
                           {(dailyActivitiesMap[act.data] || [])
@@ -528,7 +506,7 @@ export default function ReportePage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Horari</label>
+                  <label className="text-[9px] font-semibold text-slate-500 capitalize tracking-wider ml-1">Horari</label>
                   <div className="flex items-center gap-1 h-[36px]">
                     <TimePicker
                       value={act.hora_convocatoria}
@@ -545,7 +523,7 @@ export default function ReportePage() {
                   </div>
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Categoria</label>
+                  <label className="text-[9px] font-semibold text-slate-500 capitalize tracking-wider ml-1">Categoria</label>
                   <CategoryDropdown
                     act={act}
                     categoryOptions={categoryOptions}
@@ -554,7 +532,7 @@ export default function ReportePage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Participants</label>
+                  <label className="text-[9px] font-semibold text-slate-500 capitalize tracking-wider ml-1">Participants</label>
                   <input
                     type="tel"
                     inputMode="numeric"
