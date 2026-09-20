@@ -86,13 +86,9 @@ export function convertToPurchaseUnitQuantity(
 }
 
 /** Contexto de pack del ingrediente (misma idea que `staff_consumption_qty_to_purchase_unit` en BD). */
-export type IngredientPackBridgeContext = {
-  supplier_pricing_mode?: string | null
-  pack_unit_size_qty?: number | null
-  pack_unit_size_unit?: string | null
-  pack_price?: number | null
-  pack_units?: number | null
-  purchase_unit?: string | null
+export type IngredientPhysicalEquivalence = {
+  physical_unit_qty?: number | null
+  physical_unit_unit?: string | null
 }
 
 /**
@@ -102,7 +98,7 @@ export type IngredientPackBridgeContext = {
  */
 export function resolveIngredientUnitPriceForRecipeCost(
   currentPrice: number | null | undefined,
-  _presentation?: IngredientPackBridgeContext | null,
+  _equivalence?: IngredientPhysicalEquivalence | null,
 ): number | null {
   const stored = Number(currentPrice)
   return Number.isFinite(stored) && stored > 0 ? stored : null
@@ -113,17 +109,17 @@ export function resolveIngredientUnitPriceForRecipeCost(
  * - receta en **ud** y compra en masa/volumen: `cantidad_ud × tamaño_por_ud` en unidad de compra.
  * - receta en masa/volumen y compra en **ud**: `cantidad / tamaño_por_ud` (ud de compra).
  */
-export function convertToPurchaseUnitQuantityWithPackBridge(
+export function convertToPurchaseUnitQuantityWithPhysicalEquivalence(
   quantity: number,
   recipeUnit: string,
   purchaseUnit: string,
-  pack: IngredientPackBridgeContext | null | undefined
+  equivalence: IngredientPhysicalEquivalence | null | undefined
 ): number | null {
   const direct = convertToPurchaseUnitQuantity(quantity, recipeUnit, purchaseUnit)
   if (direct != null) return direct
 
-  const pq = Number(pack?.pack_unit_size_qty)
-  const pUnitRaw = pack?.pack_unit_size_unit
+  const pq = Number(equivalence?.physical_unit_qty)
+  const pUnitRaw = equivalence?.physical_unit_unit
   if (!Number.isFinite(pq) || pq <= 0 || pUnitRaw == null || !String(pUnitRaw).trim()) return null
   const pUnit = String(pUnitRaw)
 
@@ -157,9 +153,9 @@ export function recipeLineCost(
   recipeUnit: string,
   purchaseUnit: string,
   currentPrice: number,
-  pack?: IngredientPackBridgeContext | null
+  equivalence?: IngredientPhysicalEquivalence | null
 ): number {
-  return getRecipeIngredientLineCostAnalysis(quantity, recipeUnit, purchaseUnit, currentPrice, pack).eur;
+  return getRecipeIngredientLineCostAnalysis(quantity, recipeUnit, purchaseUnit, currentPrice, equivalence).eur;
 }
 
 /** Por qué una línea de receta no muestra coste en euros (evita confundir con «gratis»). */
@@ -173,19 +169,19 @@ export function getRecipeIngredientLineCostAnalysis(
   recipeUnit: string,
   purchaseUnit: string,
   currentPrice: number | null | undefined,
-  pack?: IngredientPackBridgeContext | null
+  equivalence?: IngredientPhysicalEquivalence | null
 ): { eur: number; status: RecipeLineCostStatus } {
   const qty = Number(quantity);
   if (!Number.isFinite(qty) || qty === 0) {
     return { eur: 0, status: 'ok' };
   }
 
-  const converted = convertToPurchaseUnitQuantityWithPackBridge(qty, recipeUnit, purchaseUnit, pack);
+  const converted = convertToPurchaseUnitQuantityWithPhysicalEquivalence(qty, recipeUnit, purchaseUnit, equivalence);
   if (converted == null) {
     return { eur: 0, status: 'incompatible_units' };
   }
 
-  const price = resolveIngredientUnitPriceForRecipeCost(currentPrice, pack);
+  const price = resolveIngredientUnitPriceForRecipeCost(currentPrice, equivalence);
   if (price == null || price <= 0) {
     return { eur: 0, status: 'missing_price' };
   }
