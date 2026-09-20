@@ -18,7 +18,7 @@ import {
   SIMPLE_ALBARAN_UNIT_DIMENSIONAL,
   suggestedDimensionalMappingFromIngredient,
   type IngredientDimensionalSource,
-} from '@/lib/ingredient-pack-pricing'
+} from '@/lib/receipt-presentation'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import {
   resolveLineMappingAction,
