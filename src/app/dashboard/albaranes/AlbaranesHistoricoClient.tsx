@@ -64,9 +64,6 @@ import {
   getPurchaseInvoiceDetailAction,
   listPurchaseInvoicesAction,
   listSuppliersForFilterAction,
-  rectifyInvoiceLineStockAction,
-  repairOrphanLineStockAction,
-  repairOrphanLinesInInvoiceAction,
   searchSuppliersForInvoiceAction,
   setPurchaseInvoiceSupplierAction,
   unmapInvoiceLineAction,
@@ -160,8 +157,6 @@ export default function AlbaranesHistoricoClient({
   const [wizardInitialName, setWizardInitialName] = useState<string | null>(null)
   const [wizardTargetLineId, setWizardTargetLineId] = useState<string | null>(null)
   const [wizardInvoiceContext, setWizardInvoiceContext] = useState<IngredientWizardInvoiceContext | null>(null)
-  const [repairingStockLineId, setRepairingStockLineId] = useState<string | null>(null)
-  const [repairingInvoiceStockBatch, setRepairingInvoiceStockBatch] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
@@ -929,44 +924,6 @@ export default function AlbaranesHistoricoClient({
     if (line) openLineMappingModal(line)
   }
 
-  async function rectifyLine(lineId: string) {
-    if (!detail) return
-    const line = detail.lines.find((l) => l.id === lineId)
-    const ingredientId = line?.ingredient_id ?? null
-    if (!ingredientId) {
-      toast.error('Esta línea no tiene ingrediente asignado.')
-      return
-    }
-    const status = stockStatusByLineId[lineId]
-    if (!status?.stockApplied || status.stockAppliedQty == null) {
-      toast.error('No hay stock aplicado previo para rectificar.')
-      return
-    }
-
-    const next = window.prompt(
-      `Cantidad correcta a aplicar en stock (unidad base). Antes: ${status.stockAppliedQty}`,
-      String(status.stockAppliedQty)
-    )
-    if (next == null) return
-    const newQty = Number(String(next).replace(',', '.'))
-    if (!Number.isFinite(newQty) || newQty <= 0) {
-      toast.error('Cantidad inválida.')
-      return
-    }
-
-    setLineActionBusy(true)
-    try {
-      const res = await rectifyInvoiceLineStockAction({ lineId, ingredientId, newQtyApplied: newQty })
-      if (!res.success) {
-        toast.error(res.message)
-        return
-      }
-      await refreshDetailAndStock()
-    } finally {
-      setLineActionBusy(false)
-    }
-  }
-
   // Refresca detalle + estado de stock de un albarán. Sincroniza la línea del modal si está abierta.
   async function refreshDetailAndStock() {
     if (!detail) return
@@ -991,52 +948,6 @@ export default function AlbaranesHistoricoClient({
       for (const s of st.statuses)
         map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
       setStockStatusByLineId(map)
-    }
-  }
-
-  async function repairStockForLine(lineId: string) {
-    setRepairingStockLineId(lineId)
-    try {
-      const res = await repairOrphanLineStockAction({ lineId })
-      if (!res.success) {
-        toast.error(res.message)
-        return
-      }
-      if (res.alreadyApplied) {
-        toast.success('Ya estaba registrado en stock.')
-      } else {
-        let msg = `Stock aplicado: ${res.appliedQty}`
-        if (res.createdDictionaryEntry) {
-          msg += '. Se guardó factor 1 en el diccionario; revísalo si hace falta.'
-        }
-        toast.success(msg)
-      }
-      if (res.priceWarning) toast.info(res.priceWarning)
-      await refreshDetailAndStock()
-    } finally {
-      setRepairingStockLineId(null)
-    }
-  }
-
-  async function repairAllMappedLinesWithoutStock() {
-    if (!detail) return
-    setRepairingInvoiceStockBatch(true)
-    try {
-      const res = await repairOrphanLinesInInvoiceAction({ invoiceId: detail.id })
-      if (!res.success) {
-        toast.error(res.message)
-        return
-      }
-      const { repaired, alreadyOk, failed, firstErrors } = res.report
-      if (failed === 0) {
-        toast.success(`Stock: ${repaired} aplicada(s), ${alreadyOk} ya estaban OK.`)
-      } else {
-        if (repaired > 0) toast.success(`${repaired} línea(s) reparada(s).`)
-        toast.error(`Fallaron ${failed}. ${firstErrors.join(' · ')}`)
-      }
-      if (repaired > 0 || alreadyOk > 0) await refreshDetailAndStock()
-    } finally {
-      setRepairingInvoiceStockBatch(false)
     }
   }
 
@@ -1727,7 +1638,7 @@ export default function AlbaranesHistoricoClient({
                       ? Boolean(stockStatusByLineId[lineForMappingModal.id]?.stockApplied)
                       : false
                   }
-                  busy={lineActionBusy || repairingStockLineId !== null}
+                  busy={lineActionBusy}
                   onClose={() => {
                     reopenEvidenceFromContext()
                   }}
