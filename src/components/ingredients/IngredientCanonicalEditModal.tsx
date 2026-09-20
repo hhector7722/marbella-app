@@ -6,7 +6,23 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/modal'
 import { setIngredientCurrentPriceAction } from '@/app/ingredients/actions'
-import type { Ingredient } from '@/components/ingredients/IngredientEditModal'
+export interface Ingredient {
+  id: string
+  name: string
+  current_price: number
+  purchase_unit: string
+  price_locked?: boolean
+  supplier?: string | null
+  supplier_2?: string | null
+  unit_type?: string
+  category?: string
+  waste_percentage?: number
+  image_url?: string | null
+  allergens?: string[]
+  order_unit?: string | null
+  recipe_unit?: string | null
+  recommended_stock?: number | null
+}
 
 type Props = {
   ingredient: Ingredient

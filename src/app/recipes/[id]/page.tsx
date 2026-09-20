@@ -19,7 +19,7 @@ import {
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
 import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
-import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
+import { IngredientCanonicalEditModal, type Ingredient } from '@/components/ingredients/IngredientCanonicalEditModal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -591,11 +591,6 @@ function RecipeDetailContent() {
         : { toggle: 'bg-orange-600 text-white', toggleInactive: 'bg-gray-100 text-gray-600', border: 'border-orange-500' };
 
     const filteredIngredients = availableIngredients.filter(ing => ing.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const recipeIngredientNavigationList = useMemo(
-        () => ingredients.map((ri: any) => ri.ingredients).filter(Boolean) as Ingredient[],
-        [ingredients]
-    );
 
     const QuantityInput = ({ initialValue, onSave }: { initialValue: number; onSave: (val: number) => void }) => {
         const [localValue, setLocalValue] = useState<string>(initialValue ? initialValue.toString() : '');
@@ -1393,7 +1388,7 @@ function RecipeDetailContent() {
                 />
             </Modal>
             {recipeIngredientEditTarget && (
-                <IngredientEditModal
+                <IngredientCanonicalEditModal
                     key={recipeIngredientEditTarget.id}
                     ingredient={recipeIngredientEditTarget}
                     onClose={() => setRecipeIngredientEditTarget(null)}
@@ -1402,7 +1397,6 @@ function RecipeDetailContent() {
                         void fetchAvailableIngredients();
                         fetchBackendCost();
                     }}
-                    navigationIngredients={recipeIngredientNavigationList}
                 />
             )}
 

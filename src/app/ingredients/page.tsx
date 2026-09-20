@@ -8,9 +8,8 @@ import { Package, Plus, Upload, Settings } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
-import { type Ingredient } from '@/components/ingredients/IngredientEditModal';
+import { type Ingredient } from '@/components/ingredients/IngredientCanonicalEditModal';
 import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal';
-import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { Modal } from '@/components/ui/modal';
@@ -27,71 +26,6 @@ const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
 const ORDER_UNITS = ['pack', 'caja', 'ud', 'kg', 'pieza', 'l', 'g', 'ml', 'cl'];
 const CATEGORIES = ['Alimentos', 'Packaging', 'Bebidas', 'Limpieza', 'Otros'];
 
-function normalizeUnit(u: string | null | undefined): 'g' | 'kg' | 'ml' | 'l' | 'ud' | 'cl' {
-    const s = String(u ?? '').trim().toLowerCase();
-    if (s === 'u' || s === 'ud' || s === 'un' || s === 'unidad') return 'ud';
-    if (s === 'lt' || s === 'l' || s === 'litro') return 'l';
-    if (s === 'ml') return 'ml';
-    if (s === 'cl') return 'cl';
-    if (s === 'kg' || s === 'kilo') return 'kg';
-    if (s === 'g' || s === 'gr') return 'g';
-    return s as any;
-}
-
-function convertQty(qty: number, fromUnit: string, toUnit: string): number | null {
-    const from = normalizeUnit(fromUnit);
-    const to = normalizeUnit(toUnit);
-    if (!Number.isFinite(qty)) return null;
-    if (from === to) return qty;
-
-    // cl es volumen (centilitros)
-    const fromVol = from === 'ml' || from === 'l' || from === 'cl';
-    const toVol = to === 'ml' || to === 'l' || to === 'cl';
-    if (fromVol && toVol) {
-        const asMl =
-            from === 'l' ? qty * 1000 :
-            from === 'cl' ? qty * 10 :
-            qty;
-        if (to === 'ml') return asMl;
-        if (to === 'cl') return asMl / 10;
-        return asMl / 1000;
-    }
-
-    const fromMass = from === 'g' || from === 'kg';
-    const toMass = to === 'g' || to === 'kg';
-    if (fromMass && toMass) {
-        if (from === 'g' && to === 'kg') return qty / 1000;
-        if (from === 'kg' && to === 'g') return qty * 1000;
-        return qty;
-    }
-
-    if (from === 'ud' && to === 'ud') return qty;
-    return null;
-}
-
-function computeEffectivePriceFromPack(args: {
-    packPrice: number | null | undefined;
-    packUnits: number | null | undefined;
-    unitSizeQty: number | null | undefined;
-    unitSizeUnit: string | null | undefined;
-    purchaseUnit: string | null | undefined;
-}): number | null {
-    const packPrice = Number(args.packPrice);
-    const packUnits = Number(args.packUnits);
-    if (!Number.isFinite(packPrice) || packPrice < 0) return null;
-    if (!Number.isFinite(packUnits) || packUnits <= 0) return null;
-    const sizeQty = args.unitSizeQty == null ? 1 : Number(args.unitSizeQty);
-    if (!Number.isFinite(sizeQty) || sizeQty <= 0) return null;
-    const sizeUnit = args.unitSizeUnit ?? 'ud';
-    const declaredPurchase = args.purchaseUnit ?? 'ud';
-    const storePurchaseUnit = resolveDeclaredPurchaseUnitWithPackContent(declaredPurchase, sizeUnit);
-    const converted = convertQty(sizeQty, sizeUnit, storePurchaseUnit);
-    if (converted == null || converted <= 0) return null;
-    const denom = packUnits * converted;
-    if (!Number.isFinite(denom) || denom <= 0) return null;
-    return packPrice / denom;
-}
-
 export default function IngredientsPage() {
     const supabase = createClient();
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -101,7 +35,7 @@ export default function IngredientsPage() {
     const [showSupplierPopup, setShowSupplierPopup] = useState(false);
     const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit' });
+    const [newIngredient, setNewIngredient] = useState<Partial<Ingredient>>({ category: 'Alimentos' });
     const [isCreating, setIsCreating] = useState(false);
     const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([]);
 
@@ -185,7 +119,7 @@ export default function IngredientsPage() {
             }
             toast.success('Creado');
             setShowCreateModal(false);
-            setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit', price_locked: false });
+            setNewIngredient({ category: 'Alimentos', price_locked: false });
             setIsCustomSupplier(false);
             setIsCustomSupplier2(false);
             setCustomSupplierName('');
@@ -302,7 +236,7 @@ export default function IngredientsPage() {
                                 <IngredientWizard
                                     onClose={() => {
                                         setShowCreateModal(false);
-                                        setNewIngredient({ category: 'Alimentos', supplier_pricing_mode: 'per_purchase_unit', price_locked: false });
+                                        setNewIngredient({ category: 'Alimentos', price_locked: false });
                                         fetchIngredients();
                                     }}
                                 />
@@ -337,97 +271,7 @@ export default function IngredientsPage() {
                                     placeholder="Nombre del ingrediente"
                                 />
                             </div>
-                            {(newIngredient.supplier_pricing_mode || 'per_purchase_unit') === 'per_pack' ? (
-                                <>
-                                    <div className="flex gap-2">
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio del proveedor (€)</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                value={newIngredient.pack_price ?? ''}
-                                                onChange={e => setNewIngredient({ ...newIngredient, pack_price: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                                                className="w-full p-3 border rounded-2xl font-bold"
-                                                placeholder="Ej: 3,25"
-                                            />
-                                        </div>
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidades dentro</label>
-                                            <input
-                                                type="number"
-                                                step="1"
-                                                value={newIngredient.pack_units ?? ''}
-                                                onChange={e => setNewIngredient({ ...newIngredient, pack_units: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                                                className="w-full p-3 border rounded-2xl font-bold"
-                                                placeholder="Ej: 100"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Contenido por unidad</label>
-                                            <input
-                                                type="number"
-                                                step="0.001"
-                                                value={newIngredient.pack_unit_size_qty ?? ''}
-                                                onChange={e => setNewIngredient({ ...newIngredient, pack_unit_size_qty: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                                                className="w-full p-3 border rounded-2xl font-bold"
-                                                placeholder="Ej: 330"
-                                            />
-                                        </div>
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad contenido</label>
-                                            <select
-                                                value={newIngredient.pack_unit_size_unit || 'ud'}
-                                                onChange={e => setNewIngredient({ ...newIngredient, pack_unit_size_unit: e.target.value })}
-                                                className="w-full p-3 border rounded-2xl bg-white"
-                                            >
-                                                <option value="ud">ud</option>
-                                                <option value="ml">ml</option>
-                                                <option value="cl">cl</option>
-                                                <option value="l">L</option>
-                                                <option value="g">g</option>
-                                                <option value="kg">kg</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2 items-end">
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Unidad base (recetas)</label>
-                                            <select
-                                                value={newIngredient.purchase_unit || 'ud'}
-                                                onChange={e => setNewIngredient({ ...newIngredient, purchase_unit: e.target.value })}
-                                                className="w-full p-3 border rounded-2xl bg-white"
-                                            >
-                                                {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="w-1/2">
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Coste unitario (auto)</label>
-                                            <div className="w-full p-3 border rounded-2xl bg-white font-black text-[#5E35B1]">
-                                                {(() => {
-                                                    const effective = computeEffectivePriceFromPack({
-                                                        packPrice: newIngredient.pack_price ?? null,
-                                                        packUnits: newIngredient.pack_units ?? null,
-                                                        unitSizeQty: newIngredient.pack_unit_size_qty ?? null,
-                                                        unitSizeUnit: newIngredient.pack_unit_size_unit ?? null,
-                                                        purchaseUnit: newIngredient.purchase_unit ?? null,
-                                                    });
-                                                    if (effective == null) return '—';
-                                                    const u = normalizeUnit(
-                                                        resolveDeclaredPurchaseUnitWithPackContent(
-                                                            newIngredient.purchase_unit ?? 'ud',
-                                                            newIngredient.pack_unit_size_unit ?? null
-                                                        )
-                                                    );
-                                                    return `${effective.toFixed(4)}€/${u}`;
-                                                })()}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="flex gap-2">
+                            <div className="flex gap-2">
                                     <div className="w-1/2">
                                         <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Precio (€/unidad base)</label>
                                         <input
@@ -449,8 +293,7 @@ export default function IngredientsPage() {
                                             {STANDARD_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                         </select>
                                     </div>
-                                </div>
-                            )}
+                            </div>
                             <div>
                                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-2">Categoría</label>
                                 <select value={newIngredient.category} onChange={e => setNewIngredient({ ...newIngredient, category: e.target.value })} className="w-full p-3 border rounded-2xl bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select>

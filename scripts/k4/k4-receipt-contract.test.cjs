@@ -16,8 +16,6 @@ const canonicalPriceMigration = read('supabase/migrations/20260918164000_k4_cano
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const mappingModal = read('src/components/albaranes/LineMappingModal.tsx')
 const k5MappingAssistant = read('src/components/albaranes/K5MappingAssistant.tsx')
-const legacyPricesClient = read('src/app/dashboard/albaranes-precios/AlbaranesPreciosClient.tsx')
-const legacyPricesActions = read('src/app/dashboard/albaranes-precios/actions.ts')
 
 test('K4 expone una única confirmación económica y conserva stock_movements como ledger', () => {
   assert.match(receiptMigration, /CREATE OR REPLACE FUNCTION private\.apply_receipt_line\(/)
@@ -90,6 +88,5 @@ test('la pantalla usa propuesta, vista previa y confirmación canónica, sin rep
   assert.match(mappingModal, /Conciliación con pedidos \(opcional\)/)
   assert.doesNotMatch(mappingModal, /Aplicar stock pendiente/)
   assert.doesNotMatch(mappingModal, /Rectificar stock/)
-  assert.doesNotMatch(legacyPricesClient, /applyAlbaranPriceUpdatesAction/)
-  assert.match(legacyPricesActions, /directReceiptPriceWritesAreDisabled/)
+  assert.equal(fs.existsSync(path.join(root, 'src/app/dashboard/albaranes-precios/page.tsx')), false)
 })

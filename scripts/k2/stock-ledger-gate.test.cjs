@@ -15,7 +15,6 @@ const copilotRuntime = read('src/lib/copilot/tool-runtime.ts')
 const inventoryActions = read('src/app/dashboard/inventory/actions.ts')
 const wasteActions = read('src/app/dashboard/inventory/waste/actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
-const legacyAlbaranActions = read('src/app/dashboard/albaranes/actions.ts')
 
 test('P0 bloquea toda actualización directa del caché legado y elimina actualizar_stock', () => {
   assert.match(migration, /CREATE TRIGGER ingredients_stock_current_ledger_only/)
@@ -57,7 +56,8 @@ test('merma y recuento ya no escriben la tabla desde el cliente genérico', () =
   assert.doesNotMatch(wasteActions, /from\('stock_movements'\)\.insert/)
 })
 
-test('K4 conserva el único comando económico y las rutas legacy permanecen cortadas', () => {
+test('K4 conserva el único comando económico y no quedan sincronizadores de precio legacy', () => {
   assert.match(receiptActions, /rpc\('apply_receipt_line'/)
-  assert.match(legacyAlbaranActions, /function legacyReceiptActionsAreDisabled\(\): boolean\s*\{\s*return true/s)
+  const actions = read('src/app/dashboard/albaranes/actions.ts')
+  assert.doesNotMatch(actions, /buildIngredientPriceOnlyPatch|resyncIngredientPriceForMappedLine/)
 })

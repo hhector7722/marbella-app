@@ -42,7 +42,6 @@ function todayYmdLocal(): string {
 }
 
 function revalidateScannerPaths() {
-  revalidatePath('/dashboard/albaranes-precios')
   revalidatePath('/dashboard/scanner')
   revalidatePath('/dashboard/albaranes')
 }

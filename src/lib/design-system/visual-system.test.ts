@@ -633,7 +633,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/staff/history/page.tsx',
             'app/profile/page.tsx',
             'app/dashboard/insights/InsightsClient.tsx',
-            'app/dashboard/albaranes-precios/AlbaranesPreciosClient.tsx',
             'app/staff/actividades/gestion/page.tsx',
             'app/dashboard/import/page.tsx',
             'app/suppliers/page.tsx',
@@ -1896,7 +1895,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
     it('wizard, carta, proveedores e ingredientes recogen datos con Field', () => {
         const hosts = [
             'components/ingredients/IngredientWizard.tsx',
-            'components/ingredients/IngredientEditModal.tsx',
+            'components/ingredients/IngredientCanonicalEditModal.tsx',
             'components/carta/MenuItemEditModal.tsx',
             'components/carta/MenuCategoryEditModal.tsx',
             'components/recipes/RecipeNamePhotoEditModal.tsx',
@@ -1906,14 +1905,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
             assert.match(source, /<Field/, `${rel} debe usar Field`);
         }
-        const edit = readFileSync(join(SRC_ROOT, 'components/ingredients/IngredientEditModal.tsx'), 'utf8');
-        assert.match(edit, /ConfirmModal/, 'eliminar ingrediente usa ConfirmModal');
-        assert.doesNotMatch(edit, /confirm\(/, 'eliminar ingrediente no usa el diálogo nativo');
-        assert.doesNotMatch(
-            edit,
-            /rounded-2xl border p-3 font-bold/,
-            'el nombre no pinta una caja propia'
-        );
     });
 
     it('pedido avisa el ya tramitado hoy con Notice', () => {
