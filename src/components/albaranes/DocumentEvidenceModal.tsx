@@ -174,7 +174,6 @@ export function DocumentEvidenceModal({
       parentInstance="albaran-detail"
       usageId="albaran-document-evidence"
       usageLabel="Auditoría de evidencia"
-      headerTone="petroleum"
       headerTitleAlign="left"
       title="Auditoría de evidencia"
       subtitle={formatEvidenceSubtitle(supplierName, invoiceNumber)}

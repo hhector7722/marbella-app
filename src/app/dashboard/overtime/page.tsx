@@ -305,7 +305,6 @@ export default function OvertimePage() {
                         instance="overtime-week-detail"
                         usageId="overtime-week-detail"
                         usageLabel={weekDetailTrackingLabel}
-                        headerTone="petroleum"
                         title={`Semana ${weekNum}`}
                         subtitle={periodStr}
                     >

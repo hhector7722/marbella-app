@@ -50,7 +50,6 @@ export function TipPoolCashModal({
       variant="amplify"
       layer="base"
       instance={isWeekday ? 'tips-cash-weekday' : 'tips-cash-weekend'}
-      headerTone="petroleum"
       usageId={`tips-cash-${poolType}`}
       usageLabel={usageLabel}
       footer={

@@ -227,7 +227,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             open={isOpen}
             onClose={onClose}
             title={title}
-            headerVariant="petroleum"
             scheme="dark"
             usageId={usageId}
             usageLabel={usageLabel}

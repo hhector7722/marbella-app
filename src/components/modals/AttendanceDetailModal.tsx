@@ -244,7 +244,6 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
             variant="compact"
             layer="derived"
             parentInstance="attendance-detail"
-            headerTone="petroleum"
             footer={
                 !loading ? (
                     <div className="flex w-full items-center justify-end gap-2">

@@ -203,7 +203,6 @@ export function EncargoOrderViewModal({
         instance="encargo-order-view"
         title={`${encargoTime} · ${encargoName}`}
         subtitle="Pedido"
-        headerTone="petroleum"
         closeOnBackdrop={!reopenConfirmOpen}
         headerTrailing={
           <>

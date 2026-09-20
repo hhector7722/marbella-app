@@ -251,7 +251,6 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
             layer="derived"
             instance="profile-comunicados"
             parentInstance="documentos-menu"
-            headerTone="petroleum"
             usageId="profile-comunicados"
             usageLabel="Comunicados"
             headerTrailing={uploadTrailing}

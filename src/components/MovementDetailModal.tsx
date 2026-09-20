@@ -101,7 +101,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                     instance="treasury-movement-edit"
                     usageId="treasury-movement-edit"
                     usageLabel="Edición no disponible"
-                    headerTone="petroleum"
                     headerTitleAlign="left"
                     title="Edición no disponible"
                     subtitle="Los intercambios (SWAP) requieren editor in/out específico."
@@ -130,7 +129,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                 instance="treasury-movement-edit"
                 usageId="treasury-movement-edit"
                 usageLabel="Editar movimiento"
-                headerTone="petroleum"
                 title="Editar movimiento"
                 ariaLabel="Editar movimiento"
                 headerTrailing={<CashCountDateButton value={editDate} onChange={setEditDate} />}
@@ -215,7 +213,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             instance="treasury-movement-detail"
             usageId="treasury-movement-detail"
             usageLabel={detailTitle}
-            headerTone="petroleum"
             headerTitleAlign="left"
             title={detailTitle}
             subtitle="Detalle de movimiento"

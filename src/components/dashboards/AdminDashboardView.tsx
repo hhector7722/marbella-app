@@ -654,7 +654,6 @@ const AdminDashboardView = ({
                                 : cashModalMode === 'audit' ? 'Arqueo de caja'
                                 : 'Inventario de caja'
                             }
-                            headerTone="petroleum"
                             title={
                                 cashModalMode === 'in' ? 'Entrada de caja'
                                 : cashModalMode === 'out' ? 'Salida de caja'
@@ -735,7 +734,6 @@ const AdminDashboardView = ({
                     usageLabel="Compra multiorigen"
                     title="Compra"
                     ariaLabel="Compra"
-                    headerTone="petroleum"
                     headerTrailing={<CashCountDateButton value={purchaseDate} onChange={setPurchaseDate} />}
                 >
                     <PurchaseMultiSourceForm
@@ -817,7 +815,6 @@ const AdminDashboardView = ({
                 instance="admin-caja-inicial-acciones"
                 usageId="admin-caja-inicial-acciones"
                 usageLabel="Caja inicial: acciones"
-                headerTone="petroleum"
                 scheme="dark"
                 title="Caja Inicial"
                 ariaLabel="Caja inicial: acciones"
@@ -906,7 +903,6 @@ const AdminDashboardView = ({
                     instance="admin-overtime-week-detail"
                     usageId="admin-overtime-week-detail"
                     usageLabel="Detalle semana horas extras"
-                    headerTone="petroleum"
                     title={`Semana ${weekNum}`}
                     subtitle={periodStr}
                 >

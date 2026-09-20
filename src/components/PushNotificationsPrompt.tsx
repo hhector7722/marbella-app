@@ -146,7 +146,6 @@ export function PushNotificationsPrompt() {
       variant="compact"
       layer="system"
       instance="push-notifications-prompt"
-      headerTone="petroleum"
       headerTrailing={
         <Bell size={22} strokeWidth={2.5} className="shrink-0 text-zinc-700" aria-hidden />
       }

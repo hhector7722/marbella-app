@@ -57,7 +57,6 @@ export function DenominationZoomModal({
             variant="compact"
             layer="derived"
             instance="denomination-zoom"
-            headerVariant="petroleum"
             className={className}
             usageId="denomination-zoom"
             usageLabel="Zoom denominación"

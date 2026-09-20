@@ -63,7 +63,6 @@ export function DayAgendaModal({
       instance="reservas-day-agenda"
       title={format(parseLocalSafe(dayYmd), 'EEEE d MMM', { locale: es })}
       subtitle="Agenda del día"
-      headerTone="petroleum"
       wrapperClassName="max-w-[min(32rem,calc(100vw-2rem))]"
       footer={
         <Button
@@ -234,7 +233,6 @@ export function CreateEncargoQuickModal({
       parentInstance="reservas-day-agenda"
       title={format(parseLocalSafe(dayYmd), "EEEE d 'de' MMMM", { locale: es })}
       subtitle="Nuevo pedido"
-      headerTone="petroleum"
       closeOnBackdrop={!busy}
       footer={
         <div className="flex w-full items-center justify-end gap-2">

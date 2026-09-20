@@ -1373,7 +1373,6 @@ function RecipeDetailContent() {
                 usageId="recipe-ingredient-create"
                 usageLabel="Crear ingrediente receta"
                 title="Nuevo ingrediente"
-                headerTone="petroleum"
             >
                 <IngredientCreateForm
                     onClose={() => {

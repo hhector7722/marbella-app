@@ -175,7 +175,6 @@ export default function EventosAdminClient({
         instance="eventos-create"
         variant="standard"
         layer="base"
-        headerTone="petroleum"
         headerTrailing={
           <ModalDateButton
             value={eventDate}

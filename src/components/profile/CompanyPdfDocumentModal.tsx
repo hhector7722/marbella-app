@@ -40,7 +40,6 @@ export default function CompanyPdfDocumentModal({ isOpen, onClose, documentKind 
             variant="compact"
             layer="base"
             instance={instance}
-            headerTone="petroleum"
             usageId={instance}
             usageLabel={doc.usageLabel}
         >

@@ -509,7 +509,6 @@ export default function ManagerLedgerView() {
                 instance="ledger-entry-form"
                 usageId={editModalOpen ? 'ledger-edit' : 'ledger-create'}
                 usageLabel={editModalOpen ? 'Editar apunte libro' : 'Nuevo apunte libro'}
-                headerTone="petroleum"
                 title={editModalOpen ? 'Editar Apunte' : 'Nuevo Apunte'}
                 subtitle="Transcripción"
                 headerTrailing={
@@ -562,7 +561,6 @@ export default function ManagerLedgerView() {
                 instance="ledger-entry-delete"
                 usageId="ledger-delete"
                 usageLabel="Eliminar apunte libro"
-                headerTone="petroleum"
                 title="Eliminar Movimiento"
                 footer={
                     <div className="flex w-full justify-end gap-3">

@@ -269,7 +269,6 @@ export default function DatosPersonalesModal({
             variant="standard"
             layer="base"
             instance="profile-personal"
-            headerTone="petroleum"
             scheme="dark"
             usageId="profile-personal"
             usageLabel="Datos personales"

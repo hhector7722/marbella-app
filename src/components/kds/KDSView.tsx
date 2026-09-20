@@ -622,7 +622,6 @@ export default function KDSView() {
                 variant="work"
                 layer="base"
                 instance="kds-summary"
-                headerTone="petroleum"
                 wrapperClassName="max-w-4xl"
             >
                 <div className="p-3">

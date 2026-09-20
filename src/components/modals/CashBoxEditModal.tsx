@@ -90,7 +90,6 @@ export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalPr
             instance="cash-box-edit"
             title="Editar Caja"
             subtitle={box.name}
-            headerTone="petroleum"
             usageId="cash-box-edit"
             usageLabel="Editar caja"
             footer={

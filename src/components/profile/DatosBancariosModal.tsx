@@ -35,7 +35,6 @@ export default function DatosBancariosModal({ isOpen, onClose, iban }: DatosBanc
             variant="compact"
             layer="base"
             instance="profile-bank"
-            headerTone="petroleum"
             usageId="profile-bank"
             usageLabel="Datos bancarios"
         >

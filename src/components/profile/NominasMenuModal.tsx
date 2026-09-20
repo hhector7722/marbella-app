@@ -31,7 +31,6 @@ export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasM
             variant="standard"
             layer="base"
             instance="documentos-menu"
-            headerTone="petroleum"
             scheme="dark"
             usageId="documentos-menu"
             usageLabel="Menú documentos"

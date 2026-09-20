@@ -126,7 +126,6 @@ export function MenuCategoryEditModal({
       variant="standard"
       layer="base"
       instance="carta-category-edit"
-      headerTone="petroleum"
       loading={isPending}
       closeOnBackdrop={!isPending}
     >

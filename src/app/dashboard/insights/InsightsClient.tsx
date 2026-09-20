@@ -196,7 +196,6 @@ function FinancialDetailModal({
       variant="compact"
       layer="base"
       instance={`insights-financial-${title.toLowerCase().replace(/\s+/g, '-')}`}
-      headerTone="petroleum"
       footer={
         footnote ? (
           <p className="text-[10px] leading-snug text-zinc-500 font-medium">

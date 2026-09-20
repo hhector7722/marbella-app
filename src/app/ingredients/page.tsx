@@ -159,7 +159,6 @@ export default function IngredientsPage() {
         usageId="ingredient-create"
         usageLabel="Crear ingrediente"
         title="Nuevo ingrediente"
-        headerTone="petroleum"
       >
         <IngredientCreateForm
           onCreated={async () => {

@@ -638,7 +638,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 instance="cash-audit"
                 usageId="master-cash-audit"
                 usageLabel="Arqueo de caja"
-                headerTone="petroleum"
                 title="Arqueo de caja"
                 subtitle={auditBox?.name || 'Caja cambio'}
                 ariaLabel="Arqueo de caja"
@@ -690,7 +689,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 instance="master-caja-inicial-acciones"
                 usageId="master-caja-inicial-acciones"
                 usageLabel="Caja inicial: acciones"
-                headerTone="petroleum"
                 scheme="dark"
                 title="Caja Inicial"
                 ariaLabel="Caja inicial: acciones"
@@ -759,7 +757,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 instance="master-cash-in-out"
                 usageId={`master-cash-${cashModalMode}`}
                 usageLabel={cashModalMode === 'in' ? 'Entrada de caja' : 'Salida de caja'}
-                headerTone="petroleum"
                 title={cashModalMode === 'in' ? 'Entrada de caja' : 'Salida de caja'}
                 subtitle={selectedCashBox?.name || 'Caja Inicial'}
                 ariaLabel={cashModalMode === 'in' ? 'Entrada de caja' : 'Salida de caja'}
@@ -803,7 +800,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     usageLabel="Compra multiorigen"
                     title="Compra"
                     ariaLabel="Compra"
-                    headerTone="petroleum"
                     headerTrailing={<CashCountDateButton value={purchaseDate} onChange={setPurchaseDate} />}
                 >
                     <PurchaseMultiSourceForm
@@ -826,7 +822,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 instance="master-overtime-month"
                 usageId="master-overtime-month"
                 usageLabel="Horas extras del mes"
-                headerTone="petroleum"
                 title="Horas extras"
                 ariaLabel="Horas extras"
             >
@@ -866,7 +861,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                         instance="master-overtime-week-detail"
                         usageId="master-overtime-week-detail"
                         usageLabel="Detalle semana horas extras"
-                        headerTone="petroleum"
                         title={`Semana ${weekNum}`}
                         subtitle={periodStr}
                         headerTrailing={

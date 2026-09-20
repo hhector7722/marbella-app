@@ -43,7 +43,6 @@ export default function CreateModal({
             usageId="create-recipe"
             usageLabel="Nueva receta"
             title="Nueva Receta"
-            headerTone="petroleum"
             scrollContent
             footer={
                 <>

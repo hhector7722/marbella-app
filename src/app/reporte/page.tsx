@@ -170,7 +170,6 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
           title="Categories"
           variant="standard"
           layer="base"
-          headerTone="petroleum"
           scheme="dark"
           instance={`reporte-categories-${act.id}`}
           usageId="reporte-categories"

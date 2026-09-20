@@ -27,7 +27,6 @@ export default function ContactoModal({ isOpen, onClose, phone }: ContactoModalP
             variant="compact"
             layer="base"
             instance="profile-contact"
-            headerTone="petroleum"
             usageId="profile-contact"
             usageLabel="Contacto perfil"
         >

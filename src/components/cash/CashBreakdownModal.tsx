@@ -89,7 +89,6 @@ export function CashBreakdownModal({
             parentInstance={parentInstance}
             title={titleDate}
             subtitle="Arqueo de Efectivo"
-            headerTone="petroleum"
             scrollContent={!isEditing}
             footer={
                 isEditing ? (

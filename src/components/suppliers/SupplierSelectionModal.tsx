@@ -131,7 +131,6 @@ export function SupplierSelectionModal({
             variant="standard"
             layer="base"
             instance={instance}
-            headerTone="petroleum"
             scheme="dark"
             usageId={applyId}
             usageLabel={usageLabel}

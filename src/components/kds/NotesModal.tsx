@@ -103,7 +103,6 @@ export function NotesModal(props: {
       variant="work"
       layer="base"
       instance="kds-notes"
-      headerTone="petroleum"
       hideHeaderDivider
       headerTrailing={
         <button

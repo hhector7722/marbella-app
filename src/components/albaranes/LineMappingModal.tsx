@@ -694,7 +694,6 @@ export function LineMappingModal({
       parentInstance="albaran-detail"
       usageId="albaran-line-mapping"
       usageLabel="Revisar línea de albarán"
-      headerTone="petroleum"
       headerTitleAlign="left"
       title="Revisar compra"
       subtitle={headerTitle}

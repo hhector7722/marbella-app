@@ -21,7 +21,6 @@ export function StaffProductModal({ isOpen, onClose }: StaffProductModalProps) {
             title="Stock"
             subtitle="Gestión de Logística"
             variant="standard"
-            headerVariant="petroleum"
             scheme="dark"
             usageId="staff-product"
             usageLabel="Menú stock (staff)"

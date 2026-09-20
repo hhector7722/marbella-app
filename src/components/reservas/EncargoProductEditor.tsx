@@ -365,7 +365,6 @@ function EncargoCartModal({
       parentInstance="encargo-product-editor"
       title={lineCount > 0 ? `${lineCount} líneas · ${unitCount} uds` : 'Vacío'}
       subtitle="Pedido actual"
-      headerTone="petroleum"
       footer={
         <Button type="button" variant="tertiary" instance="encargo-product-editor-continue" onClick={onClose}>
           Continuar
@@ -990,7 +989,6 @@ export function EncargoProductEditor({
       instance="encargo-product-editor"
       title={eventName}
       subtitle="Editor de pedido"
-      headerTone="petroleum"
       headerTrailing={editorHeaderTrailing}
       ariaLabel={`Editor de pedido: ${eventName}`}
       closeOnBackdrop={!isPending}

@@ -1280,7 +1280,6 @@ export default function AlbaranesHistoricoClient({
         instance="albaran-detail"
         usageId="albaran-detail"
         usageLabel="Detalle albarán"
-        headerTone="petroleum"
         headerTitleAlign="left"
         title={
           detail ? (
@@ -1695,7 +1694,6 @@ export default function AlbaranesHistoricoClient({
                   parentInstance="albaran-detail"
                   usageId="albaranes-supplier-picker"
                   usageLabel="Proveedor albarán"
-                  headerTone="petroleum"
                   headerTitleAlign="left"
                   title="Asignar proveedor"
                   subtitle="Busca y selecciona el proveedor correcto"
@@ -1777,7 +1775,6 @@ export default function AlbaranesHistoricoClient({
                   usageId="albaran-ingredient-create"
                   usageLabel="Crear ingrediente"
                   title="Nuevo ingrediente"
-                  headerTone="petroleum"
                   headerTitleAlign="left"
                   ariaLabel="Crear ingrediente"
                   disableUsageTracking
@@ -1807,7 +1804,6 @@ export default function AlbaranesHistoricoClient({
         parentInstance="albaran-detail"
         usageId="albaran-invoice-image"
         usageLabel="Visor de hojas del albarán"
-        headerTone="petroleum"
         title={invoiceImageSheetOptions[invoiceCarouselIndex]?.label ?? 'Hoja'}
         footer={
           <Button

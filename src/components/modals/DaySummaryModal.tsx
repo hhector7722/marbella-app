@@ -206,7 +206,6 @@ export function DaySummaryModal({
                 usageLabel="Resumen de fichajes"
                 title="Resumen de Fichajes"
                 subtitle={dateLabel}
-                headerTone="petroleum"
                 scheme="dark"
                 headerTrailing={canManage ? addButton : undefined}
                 footer={
@@ -302,7 +301,6 @@ export function DaySummaryModal({
                 usageLabel="Nuevo fichaje día"
                 title="Nuevo fichaje"
                 subtitle={dateLabel}
-                headerTone="petroleum"
                 footer={
                     <>
                         <Button

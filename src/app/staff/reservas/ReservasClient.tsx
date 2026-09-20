@@ -324,7 +324,6 @@ function ReservationDetailModal({
       instance="reservas-reservation-detail"
       title={formatReservationDateLabel(reservation.reservation_date)}
       subtitle="Reserva"
-      headerTone="petroleum"
       headerTrailing={
         <button
           type="button"

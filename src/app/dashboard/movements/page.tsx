@@ -971,7 +971,6 @@ export default function MovementsPage() {
                     : cashModalMode === 'inventory' ? 'Inventario de caja'
                     : 'Tesorería'
                 }
-                headerTone="petroleum"
                 title={
                     cashModalMode === 'in' ? 'Entrada de caja'
                     : cashModalMode === 'out' ? 'Salida de caja'

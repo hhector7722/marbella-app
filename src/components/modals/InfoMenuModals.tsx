@@ -144,7 +144,6 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                 layer="base"
                 instance={`${usagePrefix}-info`}
                 title={infoSubMenu === 'contactos' ? 'Contactos' : 'Información'}
-                headerTone="petroleum"
                 scheme="dark"
                 onBack={infoSubMenu ? () => setInfoSubMenu(null) : undefined}
             >
@@ -196,7 +195,6 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                 layer="base"
                 instance={`${usagePrefix}-manuales`}
                 title="Manuales"
-                headerTone="petroleum"
                 scheme="dark"
                 onBack={backToInfoFromManuals}
             >
@@ -220,7 +218,6 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                 instance={`${usagePrefix}-manual-tpv`}
                 parentInstance={`${usagePrefix}-manuales`}
                 title="TPV"
-                headerTone="petroleum"
                 scheme="dark"
             >
                 <AccessMenuGrid>
@@ -253,7 +250,6 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                 instance={`${usagePrefix}-manual-horno`}
                 parentInstance={`${usagePrefix}-manuales`}
                 title="Horno"
-                headerTone="petroleum"
                 scheme="dark"
             >
                 <AccessMenuGrid>
@@ -288,7 +284,6 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                 instance={`${usagePrefix}-manual-media`}
                 parentInstance={`${usagePrefix}-manuales`}
                 title={manualMediaViewer?.title ?? ''}
-                headerTone="petroleum"
                 wrapperClassName="max-w-3xl"
             >
                 <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50">

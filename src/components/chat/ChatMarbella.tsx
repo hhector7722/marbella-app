@@ -41,7 +41,6 @@ export default function ChatMarbella() {
       variant="standard"
       layer="base"
       instance="chat-marbella"
-      headerTone="petroleum"
       hideTitle
       scrollContent={false}
       headerTrailing={

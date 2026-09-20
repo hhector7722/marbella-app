@@ -50,7 +50,6 @@ export function LineEditModal({
       parentInstance="albaran-detail"
       usageId="albaran-line-edit"
       usageLabel="Corregir lectura del albarán"
-      headerTone="petroleum"
       headerTitleAlign="left"
       title="Corregir lectura"
       subtitle={subtitle}

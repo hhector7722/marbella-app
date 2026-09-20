@@ -218,7 +218,6 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             variant="standard"
             layer="base"
             instance="nominas"
-            headerTone="petroleum"
             usageId="nominas"
             usageLabel="Nóminas"
             headerTrailing={uploadTrailing}

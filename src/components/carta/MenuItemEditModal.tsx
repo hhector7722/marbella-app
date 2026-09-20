@@ -252,7 +252,6 @@ export function MenuItemEditModal({
       variant="standard"
       layer="base"
       instance="carta-item-edit"
-      headerTone="petroleum"
       loading={isPending}
       closeOnBackdrop={!isPending}
     >

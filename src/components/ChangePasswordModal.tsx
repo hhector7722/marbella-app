@@ -144,7 +144,6 @@ export default function ChangePasswordModal({
             variant="standard"
             layer="base"
             instance="change-password"
-            headerTone="petroleum"
             usageId="change-password"
             usageLabel="Cambiar contraseña"
             footer={

@@ -311,7 +311,6 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         variant="work"
         layer="base"
         instance="staff-carta-editor"
-        headerTone="petroleum"
         scrollContent={false}
         wrapperClassName="max-w-4xl"
         footer={

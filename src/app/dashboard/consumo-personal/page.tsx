@@ -592,7 +592,6 @@ export default function ConsumoPersonalDashboardPage() {
         variant="standard"
         layer="base"
         instance="consumo-day-detail"
-        headerTone="petroleum"
         usageId="consumo-day-detail"
         usageLabel="Detalle consumo del día"
         headerTrailing={

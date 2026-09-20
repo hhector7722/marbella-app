@@ -672,7 +672,6 @@ function IngredientEscandalloModal({
       usageLabel="Ingredientes y albarán"
       title="Ingredientes y albarán"
       subtitle={subtitle}
-      headerTone="petroleum"
       scrollContent
     >
         <div className="px-2 py-2">

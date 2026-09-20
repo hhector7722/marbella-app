@@ -202,7 +202,6 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
             layer="derived"
             instance="profile-contract"
             parentInstance="documentos-menu"
-            headerTone="petroleum"
             usageId="profile-contract"
             usageLabel="Contrato perfil"
             headerTrailing={uploadTrailing}

@@ -36,7 +36,6 @@ export function AdminProductModal({ isOpen, onClose }: AdminProductModalProps) {
             onClose={handleClose}
             title="Stock"
             variant="standard"
-            headerVariant="petroleum"
             scheme="dark"
             usageId="admin-product"
             usageLabel="Menú stock (admin)"

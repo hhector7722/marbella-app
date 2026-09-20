@@ -1274,6 +1274,23 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(multiExport, /monthCellDarkClassName/);
     });
 
+    it('ningún consumidor pinta la cabecera del Modal en petróleo', () => {
+        const offenders: string[] = [];
+        for (const file of listSourceFiles(SRC_ROOT)) {
+            if (!file.endsWith('.tsx')) continue;
+            if (file.endsWith('components/ui/modal.tsx')) continue;
+            const source = readFileSync(file, 'utf8');
+            if (/headerTone=["']petroleum["']|headerVariant=["']petroleum["']/.test(source)) {
+                offenders.push(file.replace(SRC_ROOT + '/', ''));
+            }
+        }
+        assert.deepEqual(
+            offenders,
+            [],
+            `la cabecera de trabajo es superficie, no franja de marca (ADR-0010): ${offenders.join(', ')}`
+        );
+    });
+
     it('eventos, inventario y recetas usan primitivas canónicas', () => {
         const eventos = readFileSync(
             join(SRC_ROOT, 'app/dashboard/eventos/EventosAdminClient.tsx'),

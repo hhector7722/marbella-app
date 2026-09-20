@@ -39,7 +39,6 @@ export function StaffTipModalShell({
       layer={layer}
       instance={instance}
       parentInstance={parentInstance}
-      headerTone="petroleum"
       headerCompact
       usageId={usageId}
       usageLabel={usageLabel}

@@ -74,7 +74,6 @@ export function MasterMoreFunctionsModal({
             onClose={handleClose}
             title="Otros"
             variant="standard"
-            headerVariant="petroleum"
             scheme="dark"
             usageId="master-otros"
             usageLabel="Otros (master)"

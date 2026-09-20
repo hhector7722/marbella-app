@@ -78,8 +78,15 @@ export type ModalProps = {
     wrapperClassName?: string;
     panelHostClassName?: string;
     subtitle?: ReactNode;
-    /** @deprecated Preferir `headerTone`. */
+    /**
+     * @deprecated Inerte. La cabecera de trabajo es siempre superficie
+     * (`color.superficie`), nunca franja de marca (ADR-0010). No lo uses.
+     */
     headerVariant?: ModalHeaderTone;
+    /**
+     * @deprecated Inerte. La cabecera de trabajo es siempre superficie
+     * (`color.superficie`), nunca franja de marca (ADR-0010). No lo uses.
+     */
     headerTone?: ModalHeaderTone;
     /**
      * `work` = superficie clara (formularios, recuentos).

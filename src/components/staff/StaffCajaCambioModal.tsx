@@ -176,7 +176,6 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
             instance="staff-cash-change"
             usageId="staff-caja-cambio"
             usageLabel="Caja cambio staff"
-            headerTone="petroleum"
             headerTitleAlign="left"
             title="Cambio"
             footer={

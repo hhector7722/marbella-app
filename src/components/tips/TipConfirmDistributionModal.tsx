@@ -61,7 +61,6 @@ export function TipConfirmDistributionModal({
       variant="standard"
       layer="base"
       instance="tip-confirm-distribution"
-      headerTone="petroleum"
       usageId="tip-confirm-distribution"
       usageLabel="Confirmar reparto propinas"
       loading={confirming}

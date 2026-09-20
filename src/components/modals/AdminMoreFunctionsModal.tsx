@@ -86,7 +86,6 @@ export function AdminMoreFunctionsModal({
             onClose={handleClose}
             title="Otros"
             variant="standard"
-            headerVariant="petroleum"
             scheme="dark"
             usageId="admin-otros"
             usageLabel="Otros (admin)"

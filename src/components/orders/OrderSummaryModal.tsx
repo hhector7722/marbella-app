@@ -30,7 +30,6 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                 variant="amplify"
                 layer="base"
                 instance="order-summary"
-                headerTone="petroleum"
                 usageId="order-summary"
                 usageLabel="Resumen de pedido"
                 scrollContent

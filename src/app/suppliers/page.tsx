@@ -880,7 +880,6 @@ export default function SuppliersPage() {
                 scheme="dark"
                 layer="base"
                 instance="supplier-detail"
-                headerTone="petroleum"
                 usageId="supplier-detail"
                 usageLabel="Detalle proveedor"
                 footer={

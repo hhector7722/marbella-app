@@ -1146,7 +1146,6 @@ export default function StaffDashboardView({
                 layer="base"
                 instance="staff-info"
                 title={infoSubMenu === 'contactos' ? 'Contactos' : 'Información'}
-                headerTone="petroleum"
                 scheme="dark"
                 onBack={infoSubMenu ? () => setInfoSubMenu(null) : undefined}
             >
@@ -1200,7 +1199,6 @@ export default function StaffDashboardView({
                 layer="base"
                 instance="staff-manuales"
                 title="Manuales"
-                headerTone="petroleum"
                 scheme="dark"
                 onBack={backToInfoFromManuals}
             >
@@ -1224,7 +1222,6 @@ export default function StaffDashboardView({
                 instance="staff-manual-tpv"
                 parentInstance="staff-manuales"
                 title="TPV"
-                headerTone="petroleum"
                 scheme="dark"
             >
                 <AccessMenuGrid>
@@ -1257,7 +1254,6 @@ export default function StaffDashboardView({
                 instance="staff-manual-horno"
                 parentInstance="staff-manuales"
                 title="Horno"
-                headerTone="petroleum"
                 scheme="dark"
             >
                 <AccessMenuGrid>
@@ -1292,7 +1288,6 @@ export default function StaffDashboardView({
                 instance="staff-manual-media"
                 parentInstance="staff-manuales"
                 title={manualMediaViewer?.title ?? ''}
-                headerTone="petroleum"
                 wrapperClassName="max-w-3xl"
             >
                 <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50">
@@ -1329,7 +1324,6 @@ export default function StaffDashboardView({
                 usageLabel="Compra multiorigen"
                 title="Compra"
                 ariaLabel="Compra"
-                headerTone="petroleum"
                 headerTrailing={<CashCountDateButton value={purchaseDate} onChange={setPurchaseDate} />}
             >
                 <PurchaseMultiSourceForm
@@ -1353,7 +1347,6 @@ export default function StaffDashboardView({
                 usageLabel="Salida de caja"
                 title="Compra"
                 subtitle={selectedBox?.name || 'Caja'}
-                headerTone="petroleum"
                 headerTrailing={<CashCountDateButton value={cashOpDate} onChange={setCashOpDate} />}
                 footer={
                     <CashCountFooter

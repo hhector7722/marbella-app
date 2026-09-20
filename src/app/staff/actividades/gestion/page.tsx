@@ -285,7 +285,6 @@ export default function GestionActividadesPage() {
         variant="compact"
         layer="base"
         instance="pavilion-activity-merge"
-        headerTone="petroleum"
         usageId="pavilion-activity-merge"
         usageLabel="Unificar actividades"
         footer={
@@ -353,7 +352,6 @@ export default function GestionActividadesPage() {
         variant="standard"
         layer="base"
         instance="pavilion-activity-edit"
-        headerTone="petroleum"
         usageId="pavilion-activity-edit"
         usageLabel="Editar actividad"
         footer={

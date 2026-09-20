@@ -141,7 +141,6 @@ export function TipOverrideModal({
         variant="standard"
         layer="base"
         instance="tip-override"
-        headerTone="petroleum"
         usageId="tip-override"
         usageLabel="Ajuste propina"
         footer={

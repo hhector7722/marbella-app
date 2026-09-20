@@ -32,7 +32,6 @@ export function PedidoEditorChoiceModal({
       instance="pedido-editor-choice"
       title="¿Quién lo introduce?"
       subtitle="Pedido"
-      headerTone="petroleum"
       closeOnBackdrop={!busy}
     >
       <div className="space-y-3">
@@ -144,7 +143,6 @@ export function ClientPedidoShareModal({
       parentInstance="pedido-editor-choice"
       title={customerName}
       subtitle="Enlace cliente"
-      headerTone="petroleum"
       footer={
         <>
           <Button

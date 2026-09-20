@@ -511,7 +511,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             instance="cash-closing"
             usageId="cash-closing"
             usageLabel="Cierre de caja"
-            headerTone="petroleum"
             headerTitleAlign="left"
             closeOnBackdrop={false}
             title={
@@ -726,7 +725,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             parentInstance="cash-closing"
             usageId="cash-closing-photo-instruction"
             usageLabel={instructionTitle}
-            headerTone="petroleum"
             headerTitleAlign="left"
             closeOnBackdrop={false}
             title={instructionTitle}

@@ -2595,7 +2595,6 @@ export default function HistoryPage() {
                         const endMonth = format(end, 'MMMM', { locale: es });
                         return `1 ${startMonth} a ${endDay} ${endMonth}`;
                     })()}
-                    headerTone="petroleum"
                     scrollContent={false}
                 >
                     <div className="relative bg-white w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>

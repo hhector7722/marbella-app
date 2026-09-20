@@ -101,7 +101,6 @@ export function SimulationPlantillaExportModal({
             usageLabel="Exportar simulación"
             title="Simulación de jornada"
             subtitle={`Ene – hoy ${year} · elige quién entra en la plantilla simulada`}
-            headerTone="petroleum"
             scheme="dark"
             footer={
                 <Button

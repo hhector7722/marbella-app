@@ -138,7 +138,6 @@ export function RecipeNamePhotoEditModal({
             usageId="recipe-name-photo"
             usageLabel="Editar receta"
             title="Nombre e imagen"
-            headerTone="petroleum"
             scrollContent
             footer={
                 <>

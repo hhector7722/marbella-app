@@ -176,7 +176,6 @@ export function OrderSuccessModal({
                 variant="compact"
                 layer="base"
                 instance="order-success"
-                headerTone="petroleum"
                 usageId="order-success"
                 usageLabel="Pedido guardado"
                 footer={
