@@ -316,7 +316,7 @@ async function generateAutomaticProposals(
 
   const { data: invoiceData, error: invoiceError } = await supabase
     .from('purchase_invoices')
-    .select('id,supplier_id,content_sha256,created_by')
+    .select('id,supplier_id,content_sha256,created_by,status')
     .eq('id', invoiceId)
     .maybeSingle()
   const invoice = invoiceData as {
@@ -324,8 +324,12 @@ async function generateAutomaticProposals(
     supplier_id?: number | null
     content_sha256?: string | null
     created_by?: string | null
+    status?: string | null
   } | null
   if (invoiceError || !invoice) throw new Error('No se pudo abrir el albarán para K5.')
+  if (text(invoice.status) === 'discarded') {
+    return { ok: true, skipped: 'invoice_discarded', created: 0, materialized: 0 }
+  }
   if (invoice.supplier_id == null) {
     return { ok: true, skipped: 'supplier_missing', created: 0, materialized: 0 }
   }
