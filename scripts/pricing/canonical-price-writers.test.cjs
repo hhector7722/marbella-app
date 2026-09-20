@@ -110,3 +110,18 @@ test('la revisión de albarán no expone controles económicos internos', () => 
   assert.match(receiptReview, /Confirmar recepción/)
   assert.doesNotMatch(receiptReview, /setIngredientCurrentPriceAction/)
 })
+
+test('no quedan superficies legacy de precio o creación', () => {
+  assert.equal(
+    fs.existsSync(path.join(root, 'src/components/ingredients/IngredientWizard.tsx')),
+    false,
+  )
+  assert.equal(
+    fs.existsSync(path.join(root, 'src/components/ingredients/PricingAssistantControls.tsx')),
+    false,
+  )
+  assert.equal(
+    fs.existsSync(path.join(root, 'src/app/dashboard/albaranes-precios')),
+    false,
+  )
+})
