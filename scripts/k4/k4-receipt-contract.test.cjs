@@ -15,6 +15,7 @@ const legacyCacheMigration = read('supabase/migrations/20260914153637_k4_bypass_
 const canonicalPriceMigration = read('supabase/migrations/20260918164000_k4_canonical_price_without_pack_writer.sql')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const mappingModal = read('src/components/albaranes/LineMappingModal.tsx')
+const k5MappingAssistant = read('src/components/albaranes/K5MappingAssistant.tsx')
 const legacyPricesClient = read('src/app/dashboard/albaranes-precios/AlbaranesPreciosClient.tsx')
 const legacyPricesActions = read('src/app/dashboard/albaranes-precios/actions.ts')
 
@@ -75,6 +76,8 @@ test('el mapeo de albarán pide precio observado y contenido, no factor manual',
   assert.match(mappingModal, /Resultado automático/)
   assert.match(mappingModal, /updatePurchaseInvoiceLineAction/)
   assert.doesNotMatch(mappingModal, /Factor de conversión \(avanzado\)/)
+  assert.doesNotMatch(mappingModal, /Factor de conversión inválido/)
+  assert.doesNotMatch(k5MappingAssistant, /· factor /)
   assert.doesNotMatch(mappingModal, /onOpenWizardPrice/)
 })
 

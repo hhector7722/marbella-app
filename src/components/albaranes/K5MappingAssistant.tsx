@@ -177,7 +177,7 @@ export function K5MappingAssistant({ invoiceId, onResolveLine }: Props) {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-xs font-black text-zinc-900">{item.sourceItemName}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-zinc-600">
-                    → {item.ingredientName} · {item.lineBillingUnit} · contenido {formatQty(item.lineContentQty, item.lineContentUnit)} · factor {new Intl.NumberFormat('es-ES', { maximumFractionDigits: 4 }).format(item.conversionFactor)}
+                    → {item.ingredientName} · {item.lineBillingUnit} · contenido {formatQty(item.lineContentQty, item.lineContentUnit)}
                   </div>
                   <div className="mt-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
                     {item.source === 'legacy_validated' ? 'Diccionario histórico validado' : 'Coincidencia clara con catálogo'} · score {Math.round(item.score)}

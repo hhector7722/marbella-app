@@ -481,7 +481,7 @@ export function LineMappingModal({
     }
 
     if (!Number.isFinite(factorNum) || factorNum <= 0) {
-      toast.error('Factor de conversión inválido.')
+      toast.error('El contenido indicado no se puede convertir a la unidad de compra.')
       return
     }
 
