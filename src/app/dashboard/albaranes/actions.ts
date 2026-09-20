@@ -753,10 +753,6 @@ export type IngredientCandidate = {
   score: number
   current_price: number
   purchase_unit: string
-  supplier_pricing_mode: string | null
-  pack_units: number | null
-  pack_unit_size_qty: number | null
-  pack_unit_size_unit: string | null
 }
 
 // Fuente del match propuesto en la línea, de mayor a menor confianza.
@@ -844,9 +840,7 @@ export async function resolveLineMappingAction(params: {
   // los candidatos con precio/unidad y para el fuzzy final).
   const { data: ingRows, error: ingErr } = await gate.supabase
     .from('ingredients')
-    .select(
-      'id, name, current_price, purchase_unit, supplier_pricing_mode, pack_units, pack_unit_size_qty, pack_unit_size_unit'
-    )
+    .select('id, name, current_price, purchase_unit')
     .order('name')
     .limit(4000)
   if (ingErr) return { success: false, message: ingErr.message }
@@ -855,10 +849,6 @@ export async function resolveLineMappingAction(params: {
     name: String(r.name ?? ''),
     current_price: Number(r.current_price) || 0,
     purchase_unit: r.purchase_unit ?? 'kg',
-    supplier_pricing_mode: r.supplier_pricing_mode ?? null,
-    pack_units: r.pack_units ?? null,
-    pack_unit_size_qty: r.pack_unit_size_qty ?? null,
-    pack_unit_size_unit: r.pack_unit_size_unit ?? null,
   }))
   const ingredientById = new Map(ingredients.map((i) => [i.id, i]))
 
@@ -884,10 +874,6 @@ export async function resolveLineMappingAction(params: {
         score: c.score,
         current_price: row?.current_price ?? 0,
         purchase_unit: row?.purchase_unit ?? 'kg',
-        supplier_pricing_mode: row?.supplier_pricing_mode ?? null,
-        pack_units: row?.pack_units ?? null,
-        pack_unit_size_qty: row?.pack_unit_size_qty ?? null,
-        pack_unit_size_unit: row?.pack_unit_size_unit ?? null,
       }
     })
 
@@ -930,10 +916,6 @@ export async function resolveLineMappingAction(params: {
               score: 100,
               current_price: row.current_price,
               purchase_unit: row.purchase_unit,
-              supplier_pricing_mode: row.supplier_pricing_mode,
-              pack_units: row.pack_units,
-              pack_unit_size_qty: row.pack_unit_size_qty,
-              pack_unit_size_unit: row.pack_unit_size_unit,
             },
           ]
         : []
@@ -996,10 +978,6 @@ export async function resolveLineMappingAction(params: {
                 score: aliasMatches[0]?.score ?? 80,
                 current_price: row.current_price,
                 purchase_unit: row.purchase_unit,
-                supplier_pricing_mode: row.supplier_pricing_mode,
-                pack_units: row.pack_units,
-                pack_unit_size_qty: row.pack_unit_size_qty,
-                pack_unit_size_unit: row.pack_unit_size_unit,
               },
             ]
           : []
@@ -1113,10 +1091,6 @@ export async function searchIngredientsForMappingAction(params: {
         name: string
         purchase_unit: string
         current_price: number
-        supplier_pricing_mode: string | null
-        pack_units: number | null
-        pack_unit_size_qty: number | null
-        pack_unit_size_unit: string | null
       }[]
     }
   | { success: false; message: string }
@@ -1131,9 +1105,7 @@ export async function searchIngredientsForMappingAction(params: {
 
   const { data, error } = await gate.supabase
     .from('ingredients')
-    .select(
-      'id,name,purchase_unit,current_price,supplier_pricing_mode,pack_units,pack_unit_size_qty,pack_unit_size_unit'
-    )
+    .select('id,name,purchase_unit,current_price')
     .ilike('name', `%${q}%`)
     .order('name')
     .limit(limit)
@@ -1144,10 +1116,6 @@ export async function searchIngredientsForMappingAction(params: {
     name: String(r.name ?? ''),
     purchase_unit: r.purchase_unit ?? 'kg',
     current_price: Number(r.current_price) || 0,
-    supplier_pricing_mode: r.supplier_pricing_mode ?? null,
-    pack_units: r.pack_units == null ? null : Number(r.pack_units),
-    pack_unit_size_qty: r.pack_unit_size_qty == null ? null : Number(r.pack_unit_size_qty),
-    pack_unit_size_unit: r.pack_unit_size_unit ?? null,
   }))
 
   return { success: true, items }
