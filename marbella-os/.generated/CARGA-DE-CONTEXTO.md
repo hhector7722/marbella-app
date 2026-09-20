@@ -1,5 +1,5 @@
-<!-- Generado desde 64 documentos de marbella-os/.
-     Huella del origen: dd0d74c4cdc9f9f5
+<!-- Generado desde 65 documentos de marbella-os/.
+     Huella del origen: 67d7085e45ba44c9
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -55,6 +55,7 @@ es `CANON §5`.
 | 80 | `marbella-os/4-decisiones/ADR-0013-confirmacion-atomica-de-recepcion.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0014-perfiles-versionados-interpretacion-albaranes.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0015-alta-laboral-por-token.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0016-precio-canonico-ingrediente.md` |
 | 60 | `marbella-os/1-producto/PRINCIPIOS.md` |
 | 60 | `marbella-os/1-producto/VISION.md` |
 | 60 | `marbella-os/2-diseno/EXPERIENCIA.md` |

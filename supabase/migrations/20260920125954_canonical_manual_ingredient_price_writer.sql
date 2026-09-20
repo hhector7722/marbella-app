@@ -110,6 +110,8 @@ BEGIN
       updated_at = v_now
   WHERE id = v_ingredient.id;
 
+  PERFORM set_config('app.manual_ingredient_price_write', 'off', true);
+
   INSERT INTO public.ingredient_price_history (
     ingredient_id,
     old_price,

@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-17
+revisado: 2026-09-20
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -29,16 +29,27 @@ No hay dos precios en paralelo. No hay precio de catálogo y precio de albarán.
 
 ---
 
-## 2. Los dos modos de llegar al precio
+## 2. Precio y presentación son conceptos distintos
 
-| Modo | Qué se declara | Cómo se obtiene el precio actual |
+`ingredients.current_price` y `ingredients.purchase_unit` forman la única
+autoridad económica viva. El precio puede llegar por dos operaciones y ambas
+persisten exactamente la misma magnitud:
+
+| Operación | Entrada | Resultado |
 |---|---|---|
-| Por unidad de compra | El precio y la unidad | Se introduce directamente |
-| Por pack | El precio del pack, cuántas unidades trae y el contenido de cada unidad | **Lo deriva la base de datos**: precio del pack entre unidades por contenido de cada unidad, expresado en la unidad de compra |
+| Confirmación K4 | Precio observado y presentación versionada del proveedor | Normaliza, confirma y escribe el precio canónico con origen `receipt_confirmation` |
+| Cambio manual | Nuevo importe positivo | Conserva `purchase_unit` y escribe el precio canónico con origen `manual` |
 
-En el modo por pack **el precio actual es un valor derivado y no se escribe a mano**. La interfaz puede previsualizarlo, pero la fuente del cálculo es la base de datos. Es una aplicación del principio 3: un solo productor por magnitud.
+Una caja, botella o pieza facturada es una **presentación del proveedor**, no
+un segundo precio del ingrediente. Sus datos viven en la versión de mapeo de
+compra. Los campos legacy `supplier_pricing_mode` y `pack_*` pueden conservarse
+temporalmente como puente físico para conversiones antiguas, pero no producen
+ni sobrescriben `current_price`.
 
-El modo por pack no se activa hasta que están declarados todos los campos que necesita el cálculo. Activarlo antes provocaría un fallo del cálculo.
+La base de datos rechaza cualquier tercer writer. El cambio manual exige
+`manager` o `admin`, registra actor e histórico, no modifica stock y tampoco
+cambia unidades. `price_locked` solo impide el cambio automático desde un
+albarán; nunca bloquea un cambio manual explícito.
 
 ### Unidad homogénea
 
@@ -110,7 +121,7 @@ Los patrones observados en albaranes reales de los proveedores habituales. Los e
 
 Una línea de receta se expresa en gramos, kilos, mililitros, centilitros, litros o unidades. El coste convierte esa cantidad a la unidad de compra del ingrediente.
 
-Cuando el ingrediente es por pack con contenido declarado por unidad, el sistema **puede enlazar una receta expresada en unidades con una compra expresada en kilos o litros**, y a la inversa. Es la misma lógica que usa el consumo personal.
+Cuando existe una equivalencia física declarada, el sistema **puede enlazar una receta expresada en unidades con una compra expresada en kilos o litros**, y a la inversa. Esa equivalencia convierte cantidades; nunca produce el precio actual. Es la misma lógica que usa el consumo personal.
 
 La conversión existe en dos sitios, cliente y base de datos, y **deben dar el mismo resultado**. Una divergencia entre ambos es un defecto grave, no una diferencia de precisión.
 
@@ -129,7 +140,7 @@ El hecho se guarda en `purchase_orders.dispatched_at`. Lo produce `mark_purchase
 ## 7. Invariantes
 
 1. El precio de un ingrediente siempre está expresado en euros por su unidad de compra.
-2. En modo por pack, el precio actual es derivado y nunca se escribe directamente.
+2. Una presentación o equivalencia física nunca escribe el precio actual.
 3. Un albarán sin mapeo y sin factor válido no cambia ningún precio.
 4. Un ingrediente con precio fijo no cambia nunca desde un albarán.
 5. Una actualización desde albarán no altera unidades ni modo de precio.
@@ -137,3 +148,4 @@ El hecho se guarda en `purchase_orders.dispatched_at`. Lo produce `mark_purchase
 7. Ninguna extracción automática ni captura de albarán cambia un precio o un saldo de stock.
 8. Un cambio confirmado conserva el documento, la evidencia y la versión de mapeo que lo justifican.
 9. Un pedido a proveedor no está tramitado hasta Descargar, Enviar o Proveedor.
+10. Solo K4 y la operación manual canónica pueden escribir el precio actual; ambas registran origen y actor.

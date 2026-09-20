@@ -6,7 +6,7 @@ capa: decisiones
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-18
+revisado: 2026-09-20
 caducidad: 12 meses
 ---
 
@@ -53,6 +53,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0013](./ADR-0013-confirmacion-atomica-de-recepcion.md) | Confirmación atómica de recepción por línea | Vigente |
 | [0014](./ADR-0014-perfiles-versionados-interpretacion-albaranes.md) | Perfiles versionados para interpretación de albaranes | Vigente |
 | [0015](./ADR-0015-alta-laboral-por-token.md) | Alta laboral por token de un solo uso | Vigente |
+| [0016](./ADR-0016-precio-canonico-ingrediente.md) | Precio canónico único del ingrediente | Vigente |
 
 ## Decisiones tomadas sin registrar
 

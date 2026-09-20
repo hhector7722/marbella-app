@@ -13,6 +13,12 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-09-20
+
+- El precio de ingrediente queda definido como una única magnitud canónica en
+  `current_price` por `purchase_unit`. La base de datos retira el writer de pack
+  y limita los cambios a K4 o a la nueva operación manual auditada.
+
 Historial cronológico de Marbella. **Append-only**: se añade arriba y nunca se edita ni se reordena lo anterior.
 
 Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el producto hoy?» está [ESTADO](ESTADO.md). Separar esas dos preguntas es la corrección estructural de mayor impacto de toda la arquitectura documental: antes compartían un fichero de 1.288 líneas donde la segunda era irrespondible.

@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "c081c15e10b5fe51",
+  "_huella": "68e8d4f3d7e5adba",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -223,6 +223,20 @@
       "precedencia": 80,
       "vence": null,
       "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/4-decisiones/ADR-0016-precio-canonico-ingrediente.md",
+      "documento": "ADR-0016",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0013"
+      ]
     },
     {
       "ruta": "marbella-os/1-producto/PRINCIPIOS.md",
@@ -505,7 +519,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-17",
+      "vence": "2027-03-20",
       "depende_de": []
     },
     {
@@ -667,7 +681,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-09-18",
+      "vence": "2027-09-20",
       "depende_de": []
     },
     {

@@ -22,6 +22,7 @@ test('bloquea cualquier tercer writer de current_price', () => {
   assert.match(migration, /guard_canonical_ingredient_price_write/)
   assert.match(migration, /app\.receipt_confirmation_price_write/)
   assert.match(migration, /app\.manual_ingredient_price_write/)
+  assert.match(migration, /set_config\('app\.manual_ingredient_price_write', 'off', true\)/)
   assert.match(migration, /CANONICAL_PRICE_WRITER_ONLY/)
 })
 
