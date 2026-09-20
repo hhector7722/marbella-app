@@ -1,10 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
-body:has(.reporte-container) {
-    background: #0f172a !important;
-    background-image: none !important;
-}
-
 [data-component='PageScreen'].reporte-screen [data-element='chrome'] {
     display: none;
 }
@@ -28,7 +23,7 @@ body:has(.reporte-container) {
     --text-muted: #94a3b8;
     --accent: #22d3ee;
 
-    background: var(--bg);
+    background: transparent;
     color: var(--text-main);
     font-family: 'Outfit', 'Inter', sans-serif;
 }
@@ -64,6 +59,14 @@ body:has(.reporte-container) {
 
 .reporte-container [data-component='Button'][data-instance='reporte-enviar']::before {
     border-color: var(--color-texto-invertido);
+}
+
+[data-component='Button'][data-instance^='reporte-categories-acceptar-']::before {
+    border-color: var(--color-texto-invertido);
+}
+
+[data-component='Button'][data-instance^='reporte-categories-toggle-all-'] {
+    color: var(--color-texto-invertido);
 }
 
 .reporte-container .btn-premium {
