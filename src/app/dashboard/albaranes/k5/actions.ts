@@ -53,6 +53,7 @@ export async function listK5InvoiceCandidatesAction(): Promise<
     .from('purchase_invoices')
     .select('id,supplier_id,invoice_number,invoice_date,status,created_at')
     .not('supplier_id', 'is', null)
+    .neq('status', 'discarded')
     .order('created_at', { ascending: false })
     .limit(120)
 

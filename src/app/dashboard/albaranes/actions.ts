@@ -183,6 +183,7 @@ async function queryPurchaseInvoicesList(
   let q = gate.supabase
     .from('purchase_invoices')
     .select(PURCHASE_INVOICE_LIST_SELECT)
+    .neq('status', 'discarded')
     .order('invoice_date', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
 
@@ -1429,17 +1430,11 @@ export async function unmapInvoiceLineAction(params: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Eliminar albarán completo (con reversión de stock)
+// Eliminar captura fallida de la operativa
 //
-// Política: cuando se borra un albarán, deben desaparecer también sus efectos
-// en stock. Para mantener la auditoría limpia, optamos por DELETE puro de los
-// movimientos asociados (PURCHASE base + cualquier ADJUSTMENT con prefijo
-// `ALB-LINE-<lineId>%`, incluyendo REV) en lugar de generar ajustes inversos
-// que dejarían "rastros" sin albarán al que asociar.
-//
-// La eliminación de la cabecera + líneas + storage también se hace en cascada.
-// La constraint FK en `purchase_invoice_lines.invoice_id` tiene ON DELETE
-// CASCADE, así que basta con borrar la cabecera tras retirar los movimientos.
+// K2/K3 mantienen el historial técnico append-only. Por eso una captura fallida
+// no se borra físicamente: se marca como discarded mediante una RPC atómica,
+// únicamente si nunca produjo líneas, Docling válido ni efectos económicos.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function deletePurchaseInvoiceAction(params: {
@@ -1451,68 +1446,29 @@ export async function deletePurchaseInvoiceAction(params: {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
-  // Acción destructiva: SOLO manager/admin pueden eliminar un albarán
-  // completo (revierte stock y borra líneas + cabecera + archivo).
   const isManager = gate.role === 'manager' || gate.role === 'admin'
-  if (!isManager) return { success: false, message: 'Solo manager puede eliminar un albarán' }
+  if (!isManager) return { success: false, message: 'Solo manager puede eliminar una captura fallida' }
 
   const invoiceId = String(params?.invoiceId ?? '').trim()
   if (!invoiceId) return { success: false, message: 'ID de albarán inválido' }
 
-  // 1) Leer cabecera (file_path) y todas las líneas asociadas (para sus IDs).
-  const { data: inv, error: invErr } = await gate.supabase
-    .from('purchase_invoices')
-    .select('id, file_path')
-    .eq('id', invoiceId)
-    .maybeSingle()
-  if (invErr) return { success: false, message: invErr.message }
-  if (!inv) return { success: false, message: 'Albarán no encontrado o sin permiso' }
-
-  const filePath = (inv as any).file_path as string | null
-
-  const { data: linesData, error: linesErr } = await gate.supabase
-    .from('purchase_invoice_lines')
-    .select('id')
-    .eq('invoice_id', invoiceId)
-    .limit(20000)
-  if (linesErr) return { success: false, message: linesErr.message }
-  const lineIds = ((linesData ?? []) as any[]).map((r) => String(r.id))
-
-  // 2) Stock: DELETE vía RPC SECURITY DEFINER (evita PostgREST con caché de esquema
-  //    desfasada tras ADD COLUMN, y RLS DELETE restrictivo en stock_movements).
-  const { data: rpcDel, error: rpcErr } = await gate.supabase.rpc('delete_stock_movements_for_purchase_invoice', {
+  const { error } = await (gate.supabase as any).rpc('discard_failed_purchase_invoice', {
     p_invoice_id: invoiceId,
   })
-  if (rpcErr) {
-    const msg = String(rpcErr.message ?? '')
-    if (/could not find the function|PGRST202|function .* does not exist/i.test(msg)) {
-      return {
-        success: false,
-        message: `Error borrando stock: falta la función en BD. Ejecuta supabase/migrations/20260517140000_delete_albaran_stock_movements_rpc.sql o supabase db push. (${msg})`,
-      }
-    }
-    return { success: false, message: `Error borrando stock: ${msg}` }
-  }
-  const deletedMovements = Number(rpcDel ?? 0) || 0
 
-  // 3) Borrar el fichero del Storage (si existe). Si falla, lo registramos y
-  //    seguimos: no queremos bloquear el delete por un archivo ya inexistente.
-  if (filePath) {
-    const { error: storageErr } = await gate.supabase.storage.from('albaranes').remove([filePath])
-    if (storageErr) {
-      console.warn('deletePurchaseInvoiceAction: storage remove warning', storageErr.message)
+  if (error) {
+    return {
+      success: false,
+      message: `No se puede eliminar esta captura: ${String(error.message ?? 'error desconocido')}`,
     }
   }
-
-  // 4) Borrar cabecera. Las líneas caen por ON DELETE CASCADE.
-  const { error: delInvErr } = await gate.supabase.from('purchase_invoices').delete().eq('id', invoiceId)
-  if (delInvErr) return { success: false, message: `Error borrando albarán: ${delInvErr.message}` }
 
   try {
     revalidatePath('/dashboard/albaranes')
+    revalidatePath('/dashboard/albaranes/k5')
   } catch {}
 
-  return { success: true, deletedMovements, deletedLines: lineIds.length }
+  return { success: true, deletedMovements: 0, deletedLines: 0 }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
