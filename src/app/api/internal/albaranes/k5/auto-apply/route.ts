@@ -87,12 +87,15 @@ async function autoApplyDeterministicReceipts(
 ): Promise<Record<string, unknown>> {
   const { data: invoiceData, error: invoiceError } = await supabase
     .from('purchase_invoices')
-    .select('id,supplier_id')
+    .select('id,supplier_id,status')
     .eq('id', payload.invoiceId)
     .maybeSingle()
-  const invoice = invoiceData as { id?: string; supplier_id?: number | null } | null
+  const invoice = invoiceData as { id?: string; supplier_id?: number | null; status?: string | null } | null
   if (invoiceError || !invoice || invoice.supplier_id == null) {
     return { ok: true, applied: 0, blocked: [{ proposalId: '', lineId: null, reason: 'invoice_or_supplier_unavailable' }] }
+  }
+  if (text(invoice.status) === 'discarded') {
+    return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_discarded' }
   }
 
   const { data: proposalRows, error: proposalError } = await supabase
