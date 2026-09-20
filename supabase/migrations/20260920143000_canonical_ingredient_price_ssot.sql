@@ -188,3 +188,137 @@ COMMENT ON COLUMN public.ingredients.pack_units IS
   'LEGACY: cantidad histórica de una presentación. No participa en el precio canónico.';
 COMMENT ON COLUMN public.ingredients.supplier_pricing_mode IS
   'LEGACY: marcador histórico. No selecciona el escritor ni la fuente del precio canónico.';
+
+
+-- Presentation is a physical equivalence, never a pricing mode.
+-- Keep signatures for callers while removing the legacy per_pack gate.
+CREATE OR REPLACE FUNCTION public.recipe_qty_to_purchase_unit_for_cost(
+  p_qty numeric,
+  p_recipe_unit text,
+  p_purchase_unit text,
+  p_mode text DEFAULT NULL,
+  p_pack_qty numeric DEFAULT NULL,
+  p_pack_unit text DEFAULT NULL
+)
+RETURNS numeric
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v numeric;
+  v_piece numeric;
+  v_from text;
+  v_purchase text;
+BEGIN
+  IF p_qty IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  v := public.convert_pricing_qty(p_qty, p_recipe_unit, p_purchase_unit);
+  IF v IS NOT NULL THEN
+    RETURN v;
+  END IF;
+
+  v_from := public.normalize_pricing_unit(p_recipe_unit);
+  v_purchase := public.normalize_pricing_unit(COALESCE(p_purchase_unit, 'ud'));
+
+  IF p_pack_qty IS NULL OR p_pack_qty <= 0
+     OR p_pack_unit IS NULL OR trim(p_pack_unit) = '' THEN
+    RETURN NULL;
+  END IF;
+
+  IF v_from = 'ud' AND v_purchase IN ('g', 'kg', 'ml', 'l', 'cl') THEN
+    v_piece := public.convert_pricing_qty(p_pack_qty, p_pack_unit, v_purchase);
+    IF v_piece IS NOT NULL AND v_piece > 0 THEN
+      RETURN p_qty * v_piece;
+    END IF;
+  END IF;
+
+  IF v_purchase = 'ud' AND v_from IN ('g', 'kg', 'ml', 'l', 'cl') THEN
+    v_piece := public.convert_pricing_qty(p_pack_qty, p_pack_unit, v_from);
+    IF v_piece IS NOT NULL AND v_piece > 0 THEN
+      RETURN p_qty / v_piece;
+    END IF;
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.staff_consumption_qty_to_purchase_unit(
+  p_qty numeric,
+  p_recipe_unit text,
+  p_purchase_unit text,
+  p_supplier_pricing_mode text DEFAULT NULL,
+  p_pack_unit_size_qty numeric DEFAULT NULL,
+  p_pack_unit_size_unit text DEFAULT NULL,
+  p_recipe_name text DEFAULT NULL,
+  p_ingredient_name text DEFAULT NULL
+)
+RETURNS numeric
+LANGUAGE plpgsql
+STABLE
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v numeric;
+  v_piece numeric;
+  v_from text;
+  v_purchase text;
+BEGIN
+  IF p_qty IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  v := public.convert_pricing_qty(p_qty, p_recipe_unit, COALESCE(p_purchase_unit, 'ud'));
+  IF v IS NOT NULL THEN
+    RETURN v;
+  END IF;
+
+  v_from := public.normalize_pricing_unit(p_recipe_unit);
+  v_purchase := public.normalize_pricing_unit(COALESCE(p_purchase_unit, 'ud'));
+
+  IF p_pack_unit_size_qty IS NOT NULL
+     AND p_pack_unit_size_qty > 0
+     AND p_pack_unit_size_unit IS NOT NULL
+     AND trim(p_pack_unit_size_unit) <> '' THEN
+
+    IF v_from = 'ud' AND v_purchase IN ('g', 'kg', 'ml', 'l', 'cl') THEN
+      v_piece := public.convert_pricing_qty(
+        p_pack_unit_size_qty,
+        p_pack_unit_size_unit,
+        v_purchase
+      );
+      IF v_piece IS NOT NULL AND v_piece > 0 THEN
+        RETURN p_qty * v_piece;
+      END IF;
+    END IF;
+
+    IF v_purchase = 'ud' AND v_from IN ('g', 'kg', 'ml', 'l', 'cl') THEN
+      v_piece := public.convert_pricing_qty(
+        p_pack_unit_size_qty,
+        p_pack_unit_size_unit,
+        v_from
+      );
+      IF v_piece IS NOT NULL AND v_piece > 0 THEN
+        RETURN p_qty / v_piece;
+      END IF;
+    END IF;
+  END IF;
+
+  RAISE EXCEPTION
+    'Consumo personal: en "%" el ingrediente "%" no se puede convertir de unidad de receta % a unidad de compra %. Configure una equivalencia física por unidad si procede.',
+    COALESCE(NULLIF(trim(p_recipe_name), ''), '(producto)'),
+    COALESCE(NULLIF(trim(p_ingredient_name), ''), '(ingrediente)'),
+    COALESCE(NULLIF(trim(p_recipe_unit), ''), '?'),
+    COALESCE(NULLIF(trim(COALESCE(p_purchase_unit, 'ud')), ''), '?')
+    USING HINT = 'Revise recipe_ingredients.unit, ingredients.purchase_unit y la equivalencia física por unidad.';
+END;
+$$;
+
+-- These functions encoded the retired idea that pack price was an alternate
+-- authority for ingredient price. No runtime caller remains.
+DROP FUNCTION IF EXISTS public.compute_ingredient_current_price_from_pack(numeric,numeric,numeric,text,text);
+DROP FUNCTION IF EXISTS public.pack_price_for_target_current(numeric,numeric,numeric,text,text);
+DROP FUNCTION IF EXISTS public.invoice_line_price_to_purchase_unit(numeric,numeric,text,text,numeric);
