@@ -49,10 +49,10 @@ export function LineEditModal({
       instance="albaran-line-edit"
       parentInstance="albaran-detail"
       usageId="albaran-line-edit"
-      usageLabel="Editar línea albarán"
+      usageLabel="Corregir lectura del albarán"
       headerTone="petroleum"
       headerTitleAlign="left"
-      title="Editar línea"
+      title="Corregir lectura"
       subtitle={subtitle}
       footer={
         <Button
