@@ -474,7 +474,7 @@ export function LineMappingModal({
     [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor, isVariableWeightMode]
   )
 
-  async function handleSave() {
+  async function handleSaveMapping() {
     if (!line || !invoiceId || !ingredientId) {
       toast.error('Selecciona un ingrediente del catálogo.')
       return
@@ -570,8 +570,6 @@ export function LineMappingModal({
       if (orderRes.success) setOrderOptions(orderRes.items)
       else toast.error(orderRes.message)
 
-      toast.success('Propuesta guardada. Revisa el efecto antes de confirmar.')
-
       const lineLabel = line.original_name?.trim() || line.id
       const ingredientName = ingredientLabel?.trim() || ingredientId || '?'
       trackLineMapping(`${namedEntitySummary(lineLabel)} → ${namedEntitySummary(ingredientName)}`, {
@@ -580,6 +578,7 @@ export function LineMappingModal({
       })
 
       await onSuccess()
+      return res.mappingVersionId
     } finally {
       setSaving(false)
     }
@@ -607,20 +606,21 @@ export function LineMappingModal({
     return allocations
   }
 
-  async function handlePreview() {
-    if (!line || !mappingVersionId) {
-      toast.error('Guarda primero la propuesta de mapeo.')
+  async function handlePreview(mappingIdOverride?: string, skipFingerprintCheck = false) {
+    const effectiveMappingVersionId = mappingIdOverride ?? mappingVersionId
+    if (!line || !effectiveMappingVersionId) {
+      toast.error('No se pudo preparar la revisión.')
       return
     }
-    if (savedProposalFingerprint !== proposalFingerprint) {
-      toast.error('La presentación cambió. Guarda de nuevo la propuesta antes de revisar el efecto.')
+    if (!skipFingerprintCheck && savedProposalFingerprint !== proposalFingerprint) {
+      toast.error('Has cambiado algún dato. Revisa de nuevo antes de confirmar.')
       return
     }
     const allocations = buildAllocations()
     if (!allocations) return
     setPreviewing(true)
     try {
-      const res = await previewReceiptLineAction({ lineId: line.id, mappingVersionId, allocations })
+      const res = await previewReceiptLineAction({ lineId: line.id, mappingVersionId: effectiveMappingVersionId, allocations })
       if (!res.success) {
         toast.error(res.message)
         return
@@ -631,6 +631,16 @@ export function LineMappingModal({
     } finally {
       setPreviewing(false)
     }
+  }
+
+  async function handleReview() {
+    if (mappingVersionId && savedProposalFingerprint === proposalFingerprint) {
+      await handlePreview()
+      return
+    }
+    const savedMappingId = await handleSaveMapping()
+    if (!savedMappingId) return
+    await handlePreview(savedMappingId, true)
   }
 
   async function handleConfirm() {
@@ -700,42 +710,43 @@ export function LineMappingModal({
           >
             Cancelar
           </Button>
-          {!stockApplied && mappingVersionId ? (
-            <Button
-              type="button"
-              variant={receiptPreview ? 'secondary' : 'primary'}
-              instance="albaran-line-mapping-preview-receipt"
-              onClick={() => void handlePreview()}
-              disabled={saving || previewing || confirming || busy}
-              loading={previewing}
-              loadingLabel="Validando…"
-            >
-              {receiptPreview ? 'Recalcular' : 'Revisar'}
-            </Button>
-          ) : null}
+
           {!stockApplied && receiptPreview ? (
-            <Button
-              type="button"
-              variant="primary"
-              instance="albaran-line-mapping-confirm-receipt"
-              onClick={() => void handleConfirm()}
-              disabled={saving || previewing || confirming || busy}
-              loading={confirming}
-              loadingLabel="Confirmando…"
-            >
-              Confirmar recepción
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="secondary"
+                instance="albaran-line-mapping-preview-receipt"
+                onClick={() => void handlePreview()}
+                disabled={saving || previewing || confirming || busy}
+                loading={previewing}
+                loadingLabel="Recalculando…"
+              >
+                Recalcular
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                instance="albaran-line-mapping-confirm-receipt"
+                onClick={() => void handleConfirm()}
+                disabled={saving || previewing || confirming || busy}
+                loading={confirming}
+                loadingLabel="Confirmando…"
+              >
+                Confirmar recepción
+              </Button>
+            </>
           ) : !stockApplied ? (
             <Button
               type="button"
               variant="primary"
-              instance="albaran-line-mapping-save"
-              onClick={() => void handleSave()}
+              instance="albaran-line-mapping-review"
+              onClick={() => void handleReview()}
               disabled={!canSave || loading || saving || previewing || confirming || busy}
-              loading={saving}
-              loadingLabel="Guardando…"
+              loading={saving || previewing}
+              loadingLabel="Revisando…"
             >
-              Continuar
+              Revisar
             </Button>
           ) : null}
         </>
