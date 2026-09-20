@@ -735,7 +735,7 @@ export function LineMappingModal({
               loading={saving}
               loadingLabel="Guardando…"
             >
-              Guardar y revisar
+              Continuar
             </Button>
           ) : null}
         </>
