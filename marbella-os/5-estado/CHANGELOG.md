@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-21
 
+- **Alta laboral pública: las fotos del documento se reducen antes de enviarse.** Una foto de móvil superaba el límite de envío y el alta fallaba al pulsar «Enviar». El formulario redimensiona y recomprime a JPEG las imágenes antes de mandarlas, conservando la legibilidad del documento.
+
 - **Los vídeos operativos dejan de replicarse en cada despliegue.** Manuales y clips de fichaje sin datos personales se sirven desde el contenedor público `manuales` de Supabase Storage, limitado a MP4 y sin escritura desde el cliente. El manual de cobros, que muestra un nombre completo, vive en `manuales-privados` y se abre con una URL firmada tras autenticar.
 
 - **El catálogo de ingredientes puede retirar un duplicado sin borrarlo.** `ingredients.archived_at` marca un ingrediente como archivado: deja de ofrecerse en catálogos, recetas, pedidos, inventario, mermas y mapeos, y se puede reactivar. [ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md).

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -9,6 +9,7 @@ import { AltaPublicScreen } from '@/components/alta/AltaPublicScreen';
 import { AltaCandidateFields, EMPTY_CANDIDATE } from '@/components/alta/AltaCandidateFields';
 import { Field } from '@/components/ui/Field';
 import { candidateFieldsSchema } from '@/lib/alta-laboral/schema.ts';
+import { prepareIntakeImage } from '@/lib/alta-laboral/image-compression.ts';
 import type { CandidateFields } from '@/lib/alta-laboral/types.ts';
 import type { PublicIntakeState } from '@/lib/alta-laboral/types.ts';
 
@@ -31,16 +32,11 @@ function fieldErrorsFromIssues(
 }
 
 function useFilePreview(file: File | null) {
-  const [url, setUrl] = useState<string | null>(null);
+  const url = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => {
-    if (!file) {
-      setUrl(null);
-      return;
-    }
-    const next = URL.createObjectURL(file);
-    setUrl(next);
-    return () => URL.revokeObjectURL(next);
-  }, [file]);
+    if (!url) return;
+    return () => URL.revokeObjectURL(url);
+  }, [url]);
   return url;
 }
 
@@ -160,22 +156,37 @@ export function AltaPublicForm({ token, state }: Props) {
       return;
     }
     setSending(true);
+
+    let images: [File, File];
+    try {
+      images = await Promise.all([prepareIntakeImage(front), prepareIntakeImage(back)]);
+    } catch {
+      setError(
+        'No se han podido preparar las imágenes del documento. Prueba con otras fotos o pide ayuda a quien te envió el enlace.',
+      );
+      setSending(false);
+      return;
+    }
+
     try {
       const body = new FormData();
       for (const [key, value] of Object.entries(parsed.data)) {
         body.set(key, String(value));
       }
-      body.set('dniFront', front);
-      body.set('dniBack', back);
+      body.set('dniFront', images[0]);
+      body.set('dniBack', images[1]);
       const res = await fetch(`/api/alta/${encodeURIComponent(token)}`, { method: 'POST', body });
-      const json = (await res.json()) as { success?: boolean; error?: string };
-      if (!res.ok || !json.success) {
-        setError(json.error ?? 'No se han podido enviar los datos');
+      const json = (await res.json().catch(() => null)) as {
+        success?: boolean;
+        error?: string;
+      } | null;
+      if (!res.ok || !json?.success) {
+        setError(json?.error ?? 'No se han podido enviar los datos');
         return;
       }
       setSent(true);
     } catch {
-      setError('No se han podido enviar los datos');
+      setError('No se han podido enviar los datos. Revisa la conexión y vuelve a intentarlo.');
     } finally {
       setSending(false);
     }
