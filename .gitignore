@@ -89,3 +89,6 @@ next-env.d.ts
 __pycache__/
 *.pyc
 supabase/.temp/
+
+*.heapsnapshot
+*.zst
