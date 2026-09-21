@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { Modal } from '@/components/ui/modal';
@@ -52,14 +52,18 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
 
     const trackInfoMenu = useTrackModalApply(`${usagePrefix}-info-menu`, 'Menú información');
 
-    useEffect(() => {
-        if (open) return;
-        setInfoSubMenu(null);
-        setIsManualsModalOpen(false);
-        setIsTpvManualModalOpen(false);
-        setIsHornoManualModalOpen(false);
-        setManualMediaViewer(null);
-    }, [open]);
+    const [wasOpen, setWasOpen] = useState(open);
+
+    if (open !== wasOpen) {
+        setWasOpen(open);
+        if (!open) {
+            setInfoSubMenu(null);
+            setIsManualsModalOpen(false);
+            setIsTpvManualModalOpen(false);
+            setIsHornoManualModalOpen(false);
+            setManualMediaViewer(null);
+        }
+    }
 
     useModalUsageTracking({
         open,

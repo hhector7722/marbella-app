@@ -69,6 +69,14 @@ export function DaySummaryModal({
     const [creating, setCreating] = useState(false);
     const [roster, setRoster] = useState<EmployeeOption[]>(employees);
     const [loadingRoster, setLoadingRoster] = useState(false);
+    const [syncedEmployees, setSyncedEmployees] = useState<EmployeeOption[]>(employees);
+    const [syncedIsOpen, setSyncedIsOpen] = useState(isOpen);
+    const [syncedAutoCreateUserId, setSyncedAutoCreateUserId] = useState<string | null>(null);
+
+    if (employees.length > 0 && employees !== syncedEmployees) {
+        setSyncedEmployees(employees);
+        setRoster(employees);
+    }
 
     const canManage =
         allowCreateFichaje === true ||
@@ -107,30 +115,28 @@ export function DaySummaryModal({
     }, []);
 
     useEffect(() => {
-        if (employees.length > 0) {
-            setRoster(employees);
-        }
-    }, [employees]);
-
-    useEffect(() => {
         if (!isOpen || !canManage) return;
         if (roster.length > 0) return;
-        void loadRoster();
+        void (async () => {
+            await loadRoster();
+        })();
     }, [isOpen, canManage, roster.length, loadRoster]);
 
-    useEffect(() => {
+    if (isOpen !== syncedIsOpen) {
+        setSyncedIsOpen(isOpen);
         if (!isOpen) {
             setShowCreateFichaje(false);
             setCreateUserId('');
             setCreateTime('08:00');
         }
-    }, [isOpen]);
+    }
 
-    useEffect(() => {
-        if (!showCreateFichaje || createUserId) return;
-        const first = availableEmployees[0]?.id;
-        if (first) setCreateUserId(first);
-    }, [showCreateFichaje, availableEmployees, createUserId]);
+    const autoCreateUserId =
+        showCreateFichaje && !createUserId ? (availableEmployees[0]?.id ?? null) : null;
+    if (autoCreateUserId !== syncedAutoCreateUserId) {
+        setSyncedAutoCreateUserId(autoCreateUserId);
+        if (autoCreateUserId) setCreateUserId(autoCreateUserId);
+    }
 
     const resetCreateForm = () => {
         setShowCreateFichaje(false);

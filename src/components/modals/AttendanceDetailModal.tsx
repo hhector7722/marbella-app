@@ -171,9 +171,15 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
         ? format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
         : '';
 
+    const loadKey = isOpen && userId && weekStart ? `${userId}|${weekStart}` : null;
+    const [prevLoadKey, setPrevLoadKey] = useState<string | null>(null);
+    if (loadKey !== prevLoadKey) {
+        setPrevLoadKey(loadKey);
+        if (loadKey) setLoading(true);
+    }
+
     useEffect(() => {
         if (!isOpen || !userId || !weekStart) return;
-        setLoading(true);
         (async () => {
             try {
                 const { createClient } = await import('@/utils/supabase/client');
@@ -403,13 +409,19 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
         setCreateTime('08:00');
     };
 
+    const busySyncKey =
+        isOpen && date && userId ? `${isManager ? 'm' : 's'}|${userId}|${date.getTime()}` : null;
+    const [prevBusySyncKey, setPrevBusySyncKey] = useState<string | null>(null);
+    if (busySyncKey !== prevBusySyncKey) {
+        setPrevBusySyncKey(busySyncKey);
+        if (busySyncKey && !isManager) setBusyEmployeeIds(new Set());
+    }
+
     useEffect(() => {
         if (isOpen && date && userId) {
             void fetchDayLogs();
             if (isManager) {
                 void fetchBusyEmployeeIds();
-            } else {
-                setBusyEmployeeIds(new Set());
             }
         }
     }, [isOpen, date, userId, isManager]);

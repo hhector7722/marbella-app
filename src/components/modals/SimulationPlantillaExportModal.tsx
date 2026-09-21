@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { cn, firstGivenName } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
@@ -46,11 +46,16 @@ export function SimulationPlantillaExportModal({
     const [search, setSearch] = useState('');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(employees.map((e) => e.id)));
 
-    useEffect(() => {
-        if (!isOpen) return;
-        setSelectedIds(new Set(employees.map((e) => e.id)));
-        setSearch('');
-    }, [isOpen, employees]);
+    const employeesSyncKey = isOpen ? employees : null;
+    const [syncedEmployeesKey, setSyncedEmployeesKey] = useState<SimulationPlantillaEmployee[] | null>(null);
+
+    if (employeesSyncKey !== syncedEmployeesKey) {
+        setSyncedEmployeesKey(employeesSyncKey);
+        if (employeesSyncKey) {
+            setSelectedIds(new Set(employeesSyncKey.map((e) => e.id)));
+            setSearch('');
+        }
+    }
 
     const filtered = useMemo(() => {
         if (!search.trim()) return employees;

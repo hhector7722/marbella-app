@@ -37,8 +37,15 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
     const [uploadKind, setUploadKind] = useState<'comunicado' | 'sancion' | null>(null);
     const [cameraFovOpen, setCameraFovOpen] = useState(false);
 
+    const syncKey = isOpen ? userId : null;
+    const [syncedKey, setSyncedKey] = useState<string | null>(null);
+    if (syncKey !== syncedKey) {
+        setSyncedKey(syncKey);
+        if (syncKey === null) setCameraFovOpen(false);
+        else setLoading(true);
+    }
+
     const fetchDocs = async () => {
-        setLoading(true);
         try {
             const { data, error } = await supabase
                 .from('employee_documents')
@@ -66,11 +73,11 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
     };
 
     useEffect(() => {
-        if (!isOpen) {
-            setCameraFovOpen(false);
-            return;
+        if (!isOpen) return;
+        async function load() {
+            await fetchDocs();
         }
-        fetchDocs();
+        void load();
     }, [isOpen, userId]);
 
     const openDoc = (doc: DocRow) => {
@@ -124,9 +131,9 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
                     url: window.location.origin + docUrl
                 });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.dismiss('share-doc');
-            if (err.name !== 'AbortError') {
+            if (!(err instanceof Error && err.name === 'AbortError')) {
                 console.error('Error sharing:', err);
             }
         }
@@ -160,6 +167,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
 
             if (result.success) {
                 toast.success(kind === 'sancion' ? 'Sanción registrada' : 'Comunicado subido correctamente');
+                setLoading(true);
                 fetchDocs();
             } else {
                 throw new Error(result.error);
@@ -180,6 +188,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
         const result = await deleteEmployeeDocumentByTipo(doc.id, doc.storage_path, doc.bucket);
         if (result.success) {
             toast.success('Documento eliminado');
+            setLoading(true);
             fetchDocs();
         } else {
             toast.error(result.error || 'Error al eliminar');

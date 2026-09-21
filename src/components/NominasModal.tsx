@@ -36,10 +36,14 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     const [uploading, setUploading] = useState(false);
     const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
-
+    const syncKey = isOpen ? (targetUserId ?? 'self') : null;
+    const [syncedKey, setSyncedKey] = useState<string | null>(null);
+    if (syncKey !== syncedKey) {
+        setSyncedKey(syncKey);
+        if (syncKey !== null) setLoading(true);
+    }
 
     const fetchNominas = async () => {
-        setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
@@ -69,7 +73,11 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     };
 
     useEffect(() => {
-        if (isOpen) fetchNominas();
+        if (!isOpen) return;
+        async function load() {
+            await fetchNominas();
+        }
+        void load();
     }, [isOpen, targetUserId]);
 
     /** Misma UX que antes (nueva pestaña + visor PDF nativo), pero la URL es la de la app, no Supabase. */
@@ -118,9 +126,9 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                     url: window.location.origin + docUrl
                 });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.dismiss('share-nomina');
-            if (err.name !== 'AbortError') {
+            if (!(err instanceof Error && err.name === 'AbortError')) {
                 console.error('Error sharing:', err);
             }
         }
@@ -151,12 +159,13 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
             if (result.success) {
                 toast.success('Nómina subida correctamente');
+                setLoading(true);
                 fetchNominas();
             } else {
                 throw new Error(result.error);
             }
-        } catch (err: any) {
-            toast.error(err.message || 'Error al subir la nómina');
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Error al subir la nómina');
         } finally {
             setUploading(false);
             e.target.value = '';
@@ -176,6 +185,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
             if (result.success) {
                 toast.success('Nómina eliminada');
+                setLoading(true);
                 fetchNominas();
             } else {
                 toast.error(result.error || 'Error al eliminar');

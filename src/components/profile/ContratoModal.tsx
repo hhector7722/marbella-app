@@ -32,8 +32,14 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
     const [docs, setDocs] = useState<DocRow[]>([]);
     const [uploading, setUploading] = useState(false);
 
+    const syncKey = isOpen ? userId : null;
+    const [syncedKey, setSyncedKey] = useState<string | null>(null);
+    if (syncKey !== syncedKey) {
+        setSyncedKey(syncKey);
+        if (syncKey !== null) setLoading(true);
+    }
+
     const fetchDocs = async () => {
-        setLoading(true);
         try {
             const { data, error } = await supabase
                 .from('employee_documents')
@@ -61,7 +67,10 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
 
     useEffect(() => {
         if (!isOpen) return;
-        fetchDocs();
+        async function load() {
+            await fetchDocs();
+        }
+        void load();
     }, [isOpen, userId]);
 
     const openDoc = (doc: DocRow) => {
@@ -111,9 +120,9 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
                     url: window.location.origin + docUrl
                 });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast.dismiss('share-doc');
-            if (err.name !== 'AbortError') {
+            if (!(err instanceof Error && err.name === 'AbortError')) {
                 console.error('Error sharing:', err);
             }
         }
@@ -145,6 +154,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
 
             if (result.success) {
                 toast.success('Contrato subido correctamente');
+                setLoading(true);
                 fetchDocs();
             } else {
                 throw new Error(result.error);
@@ -164,6 +174,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
         const result = await deleteEmployeeDocumentByTipo(doc.id, doc.storage_path, doc.bucket);
         if (result.success) {
             toast.success('Contrato eliminado');
+            setLoading(true);
             fetchDocs();
         } else {
             toast.error(result.error || 'Error al eliminar');
