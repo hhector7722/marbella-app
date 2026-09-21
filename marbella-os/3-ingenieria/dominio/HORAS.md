@@ -33,26 +33,62 @@ balance semanal = horas fichadas − jornada contratada efectiva de la semana
 
 ## 2. Exención de deuda en agosto
 
-Agosto es el mes de vacaciones del establecimiento. Un segmento staff cuya **Semana Marbella empieza en agosto** (el lunes cae en agosto) no genera deuda de asistencia:
+Agosto es el mes de vacaciones del establecimiento. En staff, los **días civiles de agosto no generan obligación de horas a efectos de deuda de asistencia**. La regla se aplica por los días reales del tramo, no por el mes del lunes de la Semana Marbella.
+
+El Contract Resolver produce dos magnitudes distintas para cada tramo staff:
+
+- **Jornada contratada efectiva**: días contractuales del tramo / 7 × jornada semanal. Se usa para clasificar horas ordinarias y extras.
+- **Jornada que puede generar deuda**: días contractuales del tramo que **no** caen en agosto / 7 × jornada semanal. Se usa solo para el lado negativo del balance.
+
+Ambas pasan por el redondeo Marbella.
+
+Por segmento staff:
 
 ```
-si el lunes de la semana ∈ agosto:
-  balance semanal = max(0, horas fichadas − jornada contratada efectiva)
+balance_base = horas fichadas − jornada contratada efectiva
+
+si balance_base >= 0:
+  balance semanal = balance_base
+
+si balance_base < 0:
+  balance semanal = min(
+    0,
+    horas fichadas − jornada que puede generar deuda
+  )
 ```
 
-Es el mismo anclaje histórico que `extract(month from week_start) = 8`: incluye la última semana de agosto aunque desborde a septiembre.
+Esto crea, cuando corresponde, una franja neutra: las horas exentas por agosto pueden evitar deuda, pero **no se convierten por ello en horas extra**. Las extras siguen naciendo únicamente al superar la jornada contratada efectiva completa del tramo.
+
+### Semanas mixtas
+
+La frontera de mes se comporta igual que cualquier otra frontera temporal que obliga a prorratear contrato:
+
+- **Julio → agosto:** solo los días de julio pueden generar deuda.
+- **Agosto → septiembre:** solo los días de septiembre pueden generar deuda.
+- **Semana íntegramente en agosto:** la jornada que puede generar deuda es 0.
+
+Ejemplo real de jornada de **8 h/semana**, semana **31 ago–6 sep** y 0 h fichadas:
+
+```
+días que pueden generar deuda = 6
+jornada deuda = roundMarbella(6 / 7 × 8) = 7 h
+balance semanal = −7 h
+```
+
+La jornada contratada efectiva de esa semana sigue siendo 8 h para ordinarias/extras.
 
 ### Qué sí hace
 
-- Semana con lunes en agosto sin fichajes (o por debajo del contrato): balance 0; no arrastra deuda nueva.
-- Semana con lunes en agosto por encima del contrato: sigue generando extras con normalidad.
-- Una deuda arrastrada **desde julio** permanece; agosto no la amplía por infraasistencia.
+- Semana íntegramente de agosto sin fichajes: balance 0; no genera deuda nueva.
+- Semana mixta sin fichajes: genera deuda solo por la parte proporcional de días fuera de agosto.
+- Una deuda arrastrada desde antes de agosto permanece y se combina con la nueva deuda proporcional cuando vuelve a haber días fuera de agosto.
+- El exceso por encima de la jornada contratada efectiva sigue generando extras con normalidad.
 
 ### Qué no hace
 
-- **No** restaura el régimen histórico que trataba todas las horas de agosto como extras.
-- **No** exime la semana mixta julio/agosto cuyo lunes cae en julio.
-- **No** aplica a regímenes sin tope staff (`manager`, `fixed`, `pre_alta`, `gap`): ya no generan deuda por jornada.
+- **No** convierte todas las horas trabajadas en agosto en extras.
+- **No** usa ya el mes de `week_start` como interruptor para toda la semana.
+- **No** aplica deuda contractual a regímenes sin tope staff (`manager`, `fixed`, `pre_alta`, `gap`).
 
 ---
 
@@ -87,9 +123,10 @@ Si faltan hechos de contrato o de frontera laboral, aplica el contrato efectivo 
 
 | ID | Afirmación |
 |---|---|
-| INV-H01 | En segmento staff con lunes de semana en agosto: `weeklyBalancePart ≥ 0` |
-| INV-H02 | En segmento staff con lunes en agosto y horas > contrato: `overtimeHours = horas − contrato` y `weeklyBalancePart = overtimeHours` (tras redondeo Marbella del balance) |
-| INV-H03 | Ordinarias/extras de un segmento staff no dependen del suelo de agosto: se calculan como `min/max` respecto al contrato efectivo del segmento |
-| INV-H04 | Un segmento staff cuyo lunes de semana no está en agosto no aplica el suelo: `weeklyBalancePart = horas − contrato` |
-| INV-H05 | En la semana que contiene la fecha de fin del contrato (y posteriores), `carryOut = 0`, sea el saldo crédito o deuda |
-| INV-H06 | Si existe un tramo abierto, no aplica saldo de fin: `carryOut` sigue la cadena normal de [ADR-0001](../../4-decisiones/ADR-0001-hours-engine-productor-unico.md) |
+| INV-H01 | En staff, `debtContractedHours` se prorratea solo con los días contractuales fuera de agosto |
+| INV-H02 | Si todos los días contractuales del segmento staff caen en agosto, el segmento no puede producir balance negativo |
+| INV-H03 | Ordinarias/extras se calculan contra `contractedHours`, no contra `debtContractedHours`; la exención no crea extras |
+| INV-H04 | En semana mixta, el lado negativo del balance no puede superar la deuda correspondiente a los días fuera de agosto |
+| INV-H05 | Fuera de agosto, `debtContractedHours = contractedHours` y la regla staff vuelve a `horas − contrato` |
+| INV-H06 | En la semana que contiene la fecha de fin del contrato (y posteriores), `carryOut = 0`, sea el saldo crédito o deuda |
+| INV-H07 | Si existe un tramo abierto, no aplica saldo de fin: `carryOut` sigue la cadena normal de [ADR-0001](../../4-decisiones/ADR-0001-hours-engine-productor-unico.md) |
