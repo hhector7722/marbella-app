@@ -32,6 +32,10 @@ type CategoryRow = {
   slug?: string | null
 }
 
+type RecipePhotoRel = { photo_url: string | null }
+type RecipePhotoEmbed = { recipes?: RecipePhotoRel | RecipePhotoRel[] }
+type OverridePhotoRow = { override_photo_url?: string | null }
+
 export function MenuItemEditModal({
   open,
   onClose,
@@ -118,9 +122,15 @@ export function MenuItemEditModal({
     return out
   }, [categories])
 
+  const syncKey = open && articuloId != null ? String(articuloId) : null
+  const [syncedKey, setSyncedKey] = useState<string | null>(null)
+  if (syncKey !== syncedKey) {
+    setSyncedKey(syncKey)
+    if (syncKey !== null) setLoading(true)
+  }
+
   useEffect(() => {
     if (!open || articuloId == null) return
-    setLoading(true)
     ;(async () => {
       try {
         const [mapRes, recipeRes, overrideResWithScale, overrideResBase] = await Promise.all([
@@ -164,10 +174,10 @@ export function MenuItemEditModal({
         setNameEs((overrideRes.data?.override_nombre_es ?? '').trim())
         setNameCa((overrideRes.data?.override_nombre_ca ?? '').trim())
         setNameEn((overrideRes.data?.override_nombre_en ?? '').trim())
-        const rec0 = (recipeRes.data as any)?.recipes
+        const rec0 = (recipeRes.data as RecipePhotoEmbed | null)?.recipes
         const rec = Array.isArray(rec0) ? rec0[0] : rec0
-        setRecipePhotoUrl((rec?.photo_url ?? null) as string | null)
-        const ov = (overrideRes.data as any)?.override_photo_url ?? null
+        setRecipePhotoUrl(rec?.photo_url ?? null)
+        const ov = (overrideRes.data as OverridePhotoRow | null)?.override_photo_url ?? null
         setOverridePhotoUrl(typeof ov === 'string' && ov.trim() ? ov.trim() : null)
         setSelectedFile(null)
         setRemoveOverridePhoto(false)
@@ -205,8 +215,8 @@ export function MenuItemEditModal({
           URL.revokeObjectURL(previewBlobUrl)
           setPreviewBlobUrl(null)
         }
-      } catch (e: any) {
-        toast.error(e?.message ?? 'No se pudo cargar el producto')
+      } catch (e: unknown) {
+        toast.error(e instanceof Error ? e.message : 'No se pudo cargar el producto')
       } finally {
         setLoading(false)
       }
@@ -567,8 +577,8 @@ export function MenuItemEditModal({
                         } else if (removeOverridePhoto) {
                           nextOverridePhotoUrl = null
                         }
-                      } catch (e: any) {
-                        const msg = String(e?.message ?? '')
+                      } catch (e: unknown) {
+                        const msg = String(e instanceof Error ? e.message : '')
                         if (
                           msg.toLowerCase().includes('bucket') &&
                           (msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('does not exist'))
@@ -577,7 +587,7 @@ export function MenuItemEditModal({
                             "No existe el bucket 'carta_items' en Storage. Ejecuta las migraciones de Supabase o crea el bucket manualmente."
                           )
                         } else {
-                          toast.error(e?.message ?? 'No se pudo subir la imagen')
+                          toast.error(e instanceof Error ? e.message : 'No se pudo subir la imagen')
                         }
                         return
                       }

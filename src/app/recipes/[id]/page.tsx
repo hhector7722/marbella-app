@@ -50,6 +50,53 @@ interface ViewState {
     size: 'full' | 'half';
 }
 
+interface IngredientRow extends Ingredient {
+    pack_unit_size_qty?: number | null;
+    pack_unit_size_unit?: string | null;
+}
+
+interface RecipeIngredientRow {
+    id: string;
+    recipe_id: string;
+    ingredient_id: string;
+    quantity_gross: number;
+    quantity_half?: number | null;
+    unit: string | null;
+    ingredients: IngredientRow | null;
+}
+
+interface RecipeRow {
+    id: string;
+    name: string;
+    category: string | null;
+    menu_category_id: string | null;
+    sale_price: number | null;
+    sales_price_pavello: number | null;
+    sale_price_half: number | null;
+    sale_price_half_pavello: number | null;
+    target_food_cost_pct: number | null;
+    elaboration: string | null;
+    presentation: string | null;
+    photo_url: string | null;
+    elaboration_video_url: string | null;
+    servings: number | null;
+    recipe_ingredients?: RecipeIngredientRow[] | null;
+}
+
+interface RecipeListItem {
+    id: string;
+    name: string;
+    category: string | null;
+    menu_category_id: string | null;
+}
+
+type EditablePriceProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur' | 'className'> & {
+    value: number;
+    onChange: (val: number) => void;
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+    className?: string;
+};
+
 function buildElaborationVideoFileName(cleanBase: string, ext: string): string {
     return `${Date.now()}-${cleanBase || 'elaboracion'}.${ext}`;
 }
@@ -63,14 +110,14 @@ function RecipeDetailContent() {
     const elaborationVideoInputRef = useRef<HTMLInputElement | null>(null);
 
     // --- 1. ESTADOS ---
-    const [recipe, setRecipe] = useState<any>(null);
+    const [recipe, setRecipe] = useState<RecipeRow | null>(null);
     const [loading, setLoading] = useState(true);
 
     const [view, setView] = useState<ViewState>({ location: 'pvp', size: 'full' });
 
-    const [ingredients, setIngredients] = useState<any[]>([]);
-    const [availableIngredients, setAvailableIngredients] = useState<any[]>([]);
-    const [allRecipes, setAllRecipes] = useState<any[]>([]);
+    const [ingredients, setIngredients] = useState<RecipeIngredientRow[]>([]);
+    const [availableIngredients, setAvailableIngredients] = useState<IngredientRow[]>([]);
+    const [allRecipes, setAllRecipes] = useState<RecipeListItem[]>([]);
     const [currentRecipeIndex, setCurrentRecipeIndex] = useState<number>(-1);
 
     const [backendCost, setBackendCost] = useState<{ total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] } | null>(null);
@@ -194,7 +241,7 @@ function RecipeDetailContent() {
             if (error) throw error;
             setRecipe(data);
 
-            const sortedIngs = (data.recipe_ingredients || []).sort((a: any, b: any) =>
+            const sortedIngs = (data.recipe_ingredients || []).sort((a: RecipeIngredientRow, b: RecipeIngredientRow) =>
                 (a.ingredients?.name || '').localeCompare(b.ingredients?.name || '')
             );
             setIngredients(sortedIngs);
@@ -246,6 +293,15 @@ function RecipeDetailContent() {
         }
     };
 
+    const getCurrentPrice = () => {
+        if (!recipe) return 0;
+        if (view.size === 'full') {
+            return view.location === 'pvp' ? recipe.sale_price : recipe.sales_price_pavello;
+        } else {
+            return view.location === 'pvp' ? recipe.sale_price_half : recipe.sale_price_half_pavello;
+        }
+    };
+
     // --- 3. EFFECTS ---
     useEffect(() => {
         fetchRecipe();
@@ -261,19 +317,23 @@ function RecipeDetailContent() {
         checkRole();
     }, [recipeId, catFilter, foodCostFilter, menuCategoryRows]);
 
-    useEffect(() => {
+    const [simulatorRecipeId, setSimulatorRecipeId] = useState(recipeId);
+    if (recipeId !== simulatorRecipeId) {
+        setSimulatorRecipeId(recipeId);
         setSimulatorExpanded(false);
-    }, [recipeId]);
+    }
 
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
     const canOpenFullEdit = isStaffView && (userRole === 'manager' || userRole === 'supervisor');
     const canManageRecipeVideo = !isStaffView && userRole === 'manager';
 
-    useEffect(() => {
-        if (!recipe) return;
-        const price = getCurrentPrice();
-        setSimulatedPrice(price || 0);
-    }, [view, recipe]);
+    const [simulationRecipe, setSimulationRecipe] = useState<RecipeRow | null>(null);
+    const [simulationView, setSimulationView] = useState<ViewState | null>(null);
+    if (recipe !== simulationRecipe || view !== simulationView) {
+        setSimulationRecipe(recipe);
+        setSimulationView(view);
+        if (recipe) setSimulatedPrice(getCurrentPrice() || 0);
+    }
 
     useEffect(() => {
         if (!recipeId) return;
@@ -286,20 +346,12 @@ function RecipeDetailContent() {
     }, [recipeId, view.size]);
 
     // --- 4. LÓGICA DE NEGOCIO ---
-    const getCurrentPrice = () => {
-        if (!recipe) return 0;
-        if (view.size === 'full') {
-            return view.location === 'pvp' ? recipe.sale_price : recipe.sales_price_pavello;
-        } else {
-            return view.location === 'pvp' ? recipe.sale_price_half : recipe.sale_price_half_pavello;
-        }
-    };
 
-    const getIngredientQuantity = (ing: any) => {
+    const getIngredientQuantity = (ing: RecipeIngredientRow) => {
         return view.size === 'full' ? (ing.quantity_gross || 0) : (ing.quantity_half || 0);
     };
 
-    const ingredientPackBridge = (ing: any): IngredientPackBridgeContext | undefined => {
+    const ingredientPackBridge = (ing: RecipeIngredientRow): IngredientPackBridgeContext | undefined => {
         const i = ing?.ingredients;
         if (!i) return undefined;
         return {
@@ -308,7 +360,7 @@ function RecipeDetailContent() {
         };
     };
 
-    const calculateIngredientCost = (ing: any) => {
+    const calculateIngredientCost = (ing: RecipeIngredientRow) => {
         const qty = getIngredientQuantity(ing);
         const price = ing.ingredients?.current_price ?? 0;
         const purchaseUnit = ing.ingredients?.purchase_unit ?? 'kg';
@@ -350,13 +402,13 @@ function RecipeDetailContent() {
     const simulatedMargin = simulatedPrice > 0 ? (simulatedPrice / VAT_RATE) - totalCost : 0;
 
     // --- 5. UPDATES ---
-    const updateRecipeField = async (field: string, value: any) => {
+    const updateRecipeField = async (field: string, value: string | number) => {
         const { error } = await supabase.from('recipes').update({ [field]: value }).eq('id', recipeId);
         if (error) {
             toast.error(`No se pudo guardar (${field}): ${error.message}`);
             throw error;
         }
-        setRecipe({ ...recipe, [field]: value });
+        setRecipe(recipe ? { ...recipe, [field]: value } : recipe);
         toast.success('Guardado');
     };
 
@@ -396,9 +448,9 @@ function RecipeDetailContent() {
             await updateRecipeField('elaboration_video_url', url);
             await fetchRecipe();
             toast.success('Vídeo de elaboración guardado');
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            toast.error(err?.message || 'Error subiendo vídeo');
+            toast.error(err instanceof Error ? err.message : 'Error subiendo vídeo');
         } finally {
             setUploadingElaborationVideo(false);
         }
@@ -455,7 +507,7 @@ function RecipeDetailContent() {
             toast.error(`No se pudo guardar categoría: ${error.message}`);
             throw error;
         }
-        setRecipe({ ...recipe, menu_category_id: menuCat.id, category: categoryDb });
+        setRecipe(recipe ? { ...recipe, menu_category_id: menuCat.id, category: categoryDb } : recipe);
         trackRecipeCategory(namedEntitySummary(labelMenuCategoryForRecipesEs(menuCat, sortedMenuCategoryRows, mcoEsByCategoryId)));
         toast.success('Guardado');
         void fetchAllRecipes();
@@ -607,7 +659,7 @@ function RecipeDetailContent() {
         return <input type="text" inputMode="decimal" value={localValue} onChange={(e) => setLocalValue(e.target.value)} onBlur={handleCommit} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} className="w-10 max-w-full px-0.5 py-0.5 border rounded text-center text-[10px] font-bold tabular-nums" />;
     };
 
-    const EditablePrice = ({ value, onChange, onBlur, className, ...props }: any) => {
+    const EditablePrice = ({ value, onChange, onBlur, className, ...props }: EditablePriceProps) => {
         const [localValue, setLocalValue] = useState(value ? value.toFixed(2) : "");
         useEffect(() => {
             if (value !== undefined && Math.abs(value - parseFloat(localValue)) > 0.001) {
@@ -1419,7 +1471,7 @@ function RecipeDetailContent() {
                 }}
                 onDelete={() => setDeleteRecipeOpen(true)}
                 onSaved={(payload) => {
-                    setRecipe((r: any) => (r ? { ...r, ...payload } : r));
+                    setRecipe((r) => (r ? { ...r, ...payload } : r));
                     void fetchAllRecipes();
                     setRecipeMetaModalOpen(false);
                 }}

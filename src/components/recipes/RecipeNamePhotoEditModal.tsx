@@ -54,19 +54,22 @@ export function RecipeNamePhotoEditModal({
         }
     };
 
-    useEffect(() => {
-        if (!open) {
-            revokeStagedBlob();
-            setPreviewBlobUrl(null);
-            setSelectedFile(null);
-            return;
+    const photoSyncKey = open ? `${initialName}\u0000${initialPhotoUrl ?? ''}` : null;
+    const [syncedPhotoKey, setSyncedPhotoKey] = useState<string | null>(null);
+
+    if (photoSyncKey !== syncedPhotoKey) {
+        setSyncedPhotoKey(photoSyncKey);
+        if (open) {
+            setNameDraft(initialName);
+            setBaselinePhotoUrl(initialPhotoUrl);
         }
-        setNameDraft(initialName);
-        setBaselinePhotoUrl(initialPhotoUrl);
         setSelectedFile(null);
-        revokeStagedBlob();
         setPreviewBlobUrl(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+
+    useEffect(() => {
+        revokeStagedBlob();
+        if (open && fileInputRef.current) fileInputRef.current.value = '';
     }, [open, initialName, initialPhotoUrl]);
 
     useEffect(() => {
