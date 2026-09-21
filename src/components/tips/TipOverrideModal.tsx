@@ -50,16 +50,27 @@ export function TipOverrideModal({
 
   const trackTipOverrideSave = useTrackModalApply('tip-override', 'Ajuste propina');
 
+  const loadKey = useMemo(
+    () => (isOpen ? { staffId, poolId, initial } : null),
+    [isOpen, staffId, poolId, initial]
+  );
+  const [prevLoadKey, setPrevLoadKey] = useState<typeof loadKey>(null);
+  if (loadKey !== prevLoadKey) {
+    setPrevLoadKey(loadKey);
+    if (loadKey) {
+      setIsSanctioned(initial?.isSanctioned ?? false);
+      setNotes(initial?.notes ?? '');
+      setOverrideAmountText(
+        initial?.overrideAmount != null && Number.isFinite(initial.overrideAmount)
+          ? String(initial.overrideAmount)
+          : ''
+      );
+      setProfile(null);
+    }
+  }
+
   useEffect(() => {
     if (!isOpen) return;
-    setIsSanctioned(initial?.isSanctioned ?? false);
-    setNotes(initial?.notes ?? '');
-    setOverrideAmountText(
-      initial?.overrideAmount != null && Number.isFinite(initial.overrideAmount)
-        ? String(initial.overrideAmount)
-        : ''
-    );
-    setProfile(null);
 
     const supabase = createClient();
     if (staffId) {
@@ -89,9 +100,10 @@ export function TipOverrideModal({
     }
   }, [isOpen, staffId, poolId, initial]);
 
+  const profileFirstName = profile?.first_name;
   const displayName = useMemo(
-    () => (profile?.first_name ? profile.first_name.trim() : firstNameOnly(employeeName)),
-    [profile?.first_name, employeeName]
+    () => (profileFirstName ? profileFirstName.trim() : firstNameOnly(employeeName)),
+    [profileFirstName, employeeName]
   );
 
   const amountLabel = poolType === 'weekday' ? 'Importe Lun – Vie' : 'Importe Sáb – Dom';

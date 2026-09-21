@@ -1074,13 +1074,22 @@ export default function InsightsClient({
     }
   }, [financial.data, financialModal, marginPctRaw])
 
-  useEffect(() => {
+  const productSyncKey = products.data
+  const [prevProductSyncKey, setPrevProductSyncKey] = useState(products.data)
+  if (productSyncKey !== prevProductSyncKey) {
+    setPrevProductSyncKey(productSyncKey)
     setSelectedProductIdx(null)
-  }, [products.data])
+  }
 
-  useEffect(() => {
+  const weekdaySyncKey = useMemo(
+    () => ({ data: weekday.data, from: dateFrom, to: dateTo }),
+    [weekday.data, dateFrom, dateTo]
+  )
+  const [prevWeekdaySyncKey, setPrevWeekdaySyncKey] = useState(weekdaySyncKey)
+  if (weekdaySyncKey !== prevWeekdaySyncKey) {
+    setPrevWeekdaySyncKey(weekdaySyncKey)
     setSelectedWeekdayIdx(null)
-  }, [weekday.data, dateFrom, dateTo])
+  }
 
   return (
     <>

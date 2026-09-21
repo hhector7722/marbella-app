@@ -28,6 +28,7 @@ export default function IngredientsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([])
   const [includeArchived, setIncludeArchived] = useState(false)
+  const [syncedSupplierResetKey, setSyncedSupplierResetKey] = useState<string | null>(null)
 
   useEffect(() => {
     void fetchIngredients()
@@ -59,11 +60,15 @@ export default function IngredientsPage() {
     setAllSuppliers(resolveSupplierPickerItems(rows))
   }
 
-  useEffect(() => {
-    if (selectedSupplier && !allSuppliers.some((supplier) => supplier.name === selectedSupplier)) {
-      setSelectedSupplier(null)
-    }
-  }, [allSuppliers, selectedSupplier])
+  const supplierResetKey =
+    selectedSupplier && !allSuppliers.some((supplier) => supplier.name === selectedSupplier)
+      ? selectedSupplier
+      : null
+
+  if (supplierResetKey !== syncedSupplierResetKey) {
+    setSyncedSupplierResetKey(supplierResetKey)
+    if (supplierResetKey) setSelectedSupplier(null)
+  }
 
   const filteredIngredients = ingredients.filter((ingredient) => {
     const matchesSearch = ingredient.name.toLowerCase().includes(searchQuery.toLowerCase())

@@ -552,21 +552,35 @@ function IngredientEscandalloModal({
   const [linkUnit, setLinkUnit] = useState('kg')
   const [pendingRemoveIngredientId, setPendingRemoveIngredientId] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!open) return
-    const init: Record<string, { supplierId: string; text: string; factor: string }> = {}
-    const firstSid = suppliersMini[0]?.id != null ? String(suppliersMini[0].id) : ''
-    for (const r of matchRows) {
-      init[r.ingredient_id] = { supplierId: firstSid, text: '', factor: '1' }
+  const escandalloInitKey = useMemo(
+    () => (open ? { matchRows, suppliersMini } : null),
+    [open, matchRows, suppliersMini]
+  )
+  const [prevEscandalloInitKey, setPrevEscandalloInitKey] = useState<typeof escandalloInitKey>(null)
+  if (escandalloInitKey !== prevEscandalloInitKey) {
+    setPrevEscandalloInitKey(escandalloInitKey)
+    if (escandalloInitKey) {
+      const init: Record<string, { supplierId: string; text: string; factor: string }> = {}
+      const firstSid = suppliersMini[0]?.id != null ? String(suppliersMini[0].id) : ''
+      for (const r of matchRows) {
+        init[r.ingredient_id] = { supplierId: firstSid, text: '', factor: '1' }
+      }
+      setAddByIng(init)
     }
-    setAddByIng(init)
-  }, [open, matchRows, suppliersMini])
+  }
 
-  useEffect(() => {
-    if (!open) return
-    setLinkIngredientId('')
-    setLinkUnit('kg')
-  }, [open, recipeId, matchRows])
+  const linkResetKey = useMemo(
+    () => (open ? { recipeId, matchRows } : null),
+    [open, recipeId, matchRows]
+  )
+  const [prevLinkResetKey, setPrevLinkResetKey] = useState<typeof linkResetKey>(null)
+  if (linkResetKey !== prevLinkResetKey) {
+    setPrevLinkResetKey(linkResetKey)
+    if (linkResetKey) {
+      setLinkIngredientId('')
+      setLinkUnit('kg')
+    }
+  }
 
   const excludeIngredientIds = useMemo(() => new Set(matchRows.map((r) => r.ingredient_id)), [matchRows])
   const linkableIngredients = useMemo(

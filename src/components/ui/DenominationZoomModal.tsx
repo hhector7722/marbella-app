@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { Minus, Plus } from 'lucide-react';
 import { CURRENCY_IMAGES } from '@/lib/constants';
@@ -30,9 +30,13 @@ export function DenominationZoomModal({
 }: DenominationZoomModalProps) {
     const [inputVal, setInputVal] = useState(String(value));
 
-    useEffect(() => {
+    const inputSyncKey = isOpen ? value : null;
+    const [syncedInputKey, setSyncedInputKey] = useState<number | null>(null);
+
+    if (inputSyncKey !== syncedInputKey) {
+        setSyncedInputKey(inputSyncKey);
         if (isOpen) setInputVal(value === 0 ? '' : String(value));
-    }, [isOpen, value]);
+    }
 
     const handleInputChange = (raw: string) => {
         setInputVal(raw);
