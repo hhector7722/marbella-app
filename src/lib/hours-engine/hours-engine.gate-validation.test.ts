@@ -655,16 +655,19 @@ describe('Gate V5 — Contract Resolver unicidad (motor nuevo)', () => {
     }
   });
 
-  it('Regime Policy consume contractedHours; no recibe ni usa weeklyHoursOfTerm', () => {
+  it('Regime Policy consume contrato efectivo y contrato de deuda; no vuelve a prorratear', () => {
     const body = readFileSync(join(ENGINE_DIR, 'regime-policy.ts'), 'utf8');
     assert.match(body, /contractedHours: number/);
+    assert.match(body, /debtContractedHours: number/);
     assert.doesNotMatch(body, /weeklyHoursOfTerm/);
+    assert.doesNotMatch(body, /days\.length\s*\/\s*7|debtDays\.length\s*\/\s*7/);
   });
 
-  it('Liquidation Engine llama resolveEffectiveContract y pasa contractedHours al régimen', () => {
+  it('Liquidation Engine llama resolveEffectiveContract y pasa ambos contratos al régimen', () => {
     const body = readFileSync(join(ENGINE_DIR, 'liquidation-engine.ts'), 'utf8');
     assert.match(body, /resolveEffectiveContract\(/);
     assert.match(body, /contractedHours: seg\.contractedHours/);
+    assert.match(body, /debtContractedHours: seg\.debtContractedHours/);
     assert.doesNotMatch(body, /contracted_hours_snapshot/);
     assert.doesNotMatch(body, /contracted_hours_weekly/);
   });
