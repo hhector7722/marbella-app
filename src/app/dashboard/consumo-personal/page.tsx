@@ -121,6 +121,14 @@ function firstNameOnly(full: string | null): string {
   return full.trim().split(/\s+/)[0] ?? '—';
 }
 
+/** Mensaje de un error atrapado sin asumir su forma. */
+function errorMessageOf(e: unknown): string {
+  if (e !== null && typeof e === 'object' && 'message' in e) {
+    return e.message == null ? '' : String(e.message);
+  }
+  return '';
+}
+
 /**
  * Nombre de producto en desglose: sin prefijo "Consumo personal" / "consumo-personal"
  * (el RPC ya quita parte del literal; esto cubre variantes y datos antiguos).
@@ -155,6 +163,15 @@ export default function ConsumoPersonalDashboardPage() {
   const [workerFilterId, setWorkerFilterId] = useState<string | null>(null);
   const [isWorkerModalOpen, setIsWorkerModalOpen] = useState(false);
   const [employees, setEmployees] = useState<ProfileOption[]>([]);
+
+  // Permite abrir la pantalla ya filtrada: /dashboard/consumo-personal?workerId=<uuid>
+  const queryWorkerId = searchParams?.get('workerId');
+  const workerIdFromUrl = queryWorkerId ? String(queryWorkerId).trim() : '';
+  const [syncedWorkerIdFromUrl, setSyncedWorkerIdFromUrl] = useState<string | null>(null);
+  if (workerIdFromUrl !== syncedWorkerIdFromUrl) {
+    setSyncedWorkerIdFromUrl(workerIdFromUrl);
+    if (workerIdFromUrl) setWorkerFilterId(workerIdFromUrl);
+  }
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -252,66 +269,63 @@ export default function ConsumoPersonalDashboardPage() {
     };
   }, [supabase, router]);
 
-  // Permite abrir la pantalla ya filtrada: /dashboard/consumo-personal?workerId=<uuid>
+  const summarySyncKey = `${periodStart}|${periodEnd}|${workerFilterId ?? ''}|${authState.status}|${authState.status === 'ok' ? authState.userId : ''}`;
+  const summaryRangeValid = parseLocalSafe(periodEnd) >= parseLocalSafe(periodStart);
+  const summaryCanFetch = authState.status === 'ok' && summaryRangeValid;
+  const [syncedSummaryKey, setSyncedSummaryKey] = useState<string | null>(null);
+  if (summarySyncKey !== syncedSummaryKey) {
+    setSyncedSummaryKey(summarySyncKey);
+    setLoading(summaryCanFetch);
+    const statusDiscardsSummary =
+      authState.status === 'unauthenticated' ||
+      authState.status === 'forbidden' ||
+      (authState.status === 'ok' && !summaryRangeValid);
+    if (statusDiscardsSummary) {
+      setSummary(null);
+    }
+  }
+
   useEffect(() => {
-    const raw = searchParams?.get('workerId');
-    const id = raw ? String(raw).trim() : '';
-    if (!id) return;
-    setWorkerFilterId(id);
-  }, [searchParams]);
+    if (authState.status !== 'ok' || !summaryRangeValid) return;
 
-  const fetchSummary = useCallback(async () => {
-    setLoading(true);
-    try {
-      if (authState.status === 'checking') return;
-      if (authState.status !== 'ok') {
-        setSummary(null);
-        return;
-      }
-      const start = parseLocalSafe(periodStart);
-      const end = parseLocalSafe(periodEnd);
-      if (end < start) {
-        setSummary(null);
-        return;
-      }
-
-      const { data, error } = await supabase.rpc('get_staff_consumption_summary', {
+    void Promise.resolve(
+      supabase.rpc('get_staff_consumption_summary', {
         p_start_date: periodStart.split('T')[0],
         p_end_date: periodEnd.split('T')[0],
         p_user_id: workerFilterId ?? null,
+      }),
+    )
+      .then(({ data, error }) => {
+        if (error) throw error;
+        const raw = (data || {}) as Record<string, unknown>;
+
+        const byDateRaw = (raw.byDate || {}) as Record<string, { total?: number }>;
+        const byDate: Record<string, DayCell> = {};
+        for (const [k, v] of Object.entries(byDateRaw)) {
+          const iso = k.split('T')[0];
+          byDate[iso] = { total: Number(v?.total) || 0 };
+        }
+
+        setSummary({
+          totalAmount: Number(raw.totalAmount) || 0,
+          daysInPeriod: Number(raw.daysInPeriod) || 0,
+          byDate,
+        });
+      })
+      .catch((e) => {
+        console.error(e);
+        const msg = errorMessageOf(e);
+        if (msg.toLowerCase().includes('no autorizado') || msg.toLowerCase().includes('forbidden')) {
+          toast.error('No autorizado: esta pantalla es solo para gestor/admin.');
+        } else {
+          toast.error('No se pudo cargar el consumo personal.');
+        }
+        setSummary(null);
+      })
+      .finally(() => {
+        setLoading(false);
       });
-      if (error) throw error;
-      const raw = (data || {}) as Record<string, unknown>;
-
-      const byDateRaw = (raw.byDate || {}) as Record<string, { total?: number }>;
-      const byDate: Record<string, DayCell> = {};
-      for (const [k, v] of Object.entries(byDateRaw)) {
-        const iso = k.split('T')[0];
-        byDate[iso] = { total: Number(v?.total) || 0 };
-      }
-
-      setSummary({
-        totalAmount: Number(raw.totalAmount) || 0,
-        daysInPeriod: Number(raw.daysInPeriod) || 0,
-        byDate,
-      });
-    } catch (e) {
-      console.error(e);
-      const msg = String((e as any)?.message ?? '');
-      if (msg.toLowerCase().includes('no autorizado') || msg.toLowerCase().includes('forbidden')) {
-        toast.error('No autorizado: esta pantalla es solo para gestor/admin.');
-      } else {
-        toast.error('No se pudo cargar el consumo personal.');
-      }
-      setSummary(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, periodStart, periodEnd, workerFilterId, authState]);
-
-  useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
+  }, [supabase, periodStart, periodEnd, workerFilterId, authState, summaryRangeValid]);
 
   const handlePrevMonth = () => {
     const newMonth = subMonths(viewMonth, 1);
@@ -374,18 +388,18 @@ export default function ConsumoPersonalDashboardPage() {
         }
         const mappedWorkers: DayDetailWorker[] = Array.isArray(raw.workers)
           ? raw.workers.map((w) => ({
-              id: String((w as any).id ?? ''),
-              name: (w as any).name != null ? String((w as any).name) : null,
-              total: Number((w as any).total) || 0,
-              items: Array.isArray((w as any).items)
-                ? (w as any).items.map((it: any) => ({
+              id: String(w.id ?? ''),
+              name: w.name != null ? String(w.name) : null,
+              total: Number(w.total) || 0,
+              items: Array.isArray(w.items)
+                ? w.items.map((it) => ({
                     name: consumptionProductDisplayName(String(it?.name ?? '')),
                     amount: Number(it?.amount) || 0,
                     quantity: Math.max(0, Math.round(Number(it?.quantity) || 0)),
                   }))
                 : [],
-              errors: Array.isArray((w as any).errors)
-                ? (w as any).errors.map((err: any) => ({
+              errors: Array.isArray(w.errors)
+                ? w.errors.map((err) => ({
                     name: consumptionProductDisplayName(String(err?.name ?? '')),
                     quantity: Math.max(0, Math.round(Number(err?.quantity) || 0)),
                     is_half: Boolean(err?.is_half),
@@ -402,12 +416,12 @@ export default function ConsumoPersonalDashboardPage() {
         setDayDetail({
           date: String(raw.date),
           totalAmount: Number(raw.totalAmount) || 0,
-          errorCount: Number((raw as any).errorCount) || 0,
+          errorCount: Number(raw.errorCount) || 0,
           workers: mappedWorkers,
         });
       } catch (e) {
         console.error(e);
-        const msg = String((e as any)?.message ?? '');
+        const msg = errorMessageOf(e);
         setDetailError(msg || 'Error al cargar el desglose del día');
         toast.error(`Error al cargar el desglose (${key})`);
         setDayDetail(null);

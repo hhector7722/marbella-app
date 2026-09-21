@@ -35,6 +35,7 @@ import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import * as XLSX from 'xlsx';
 import { downloadWorkbook, printHtml } from '@/lib/export/browser-output';
+import type { Json, Tables } from '@/types/supabase';
 
 interface Movement {
     id: string;
@@ -43,9 +44,26 @@ interface Movement {
     type: 'income' | 'expense' | 'adjustment';
     notes: string;
     running_balance: number;
-    breakdown?: any;
+    breakdown?: Json;
     original_type?: string;
 }
+
+type TreasuryMovementRow = Tables<'v_treasury_movements_balance'>;
+
+type BoxData = {
+    id: string;
+    name: string;
+    current_balance: number;
+};
+
+type TreasuryLogInsertPayload = {
+    box_id: string;
+    type: string;
+    amount: number;
+    breakdown: Record<number, number>;
+    notes: string;
+    created_at?: string;
+};
 
 export default function MovementsPage() {
     const supabase = createClient();
@@ -54,7 +72,7 @@ export default function MovementsPage() {
 
     // NUMERIC Postgres (normalmente string) -> céntimos enteros.
     // Redondea al céntimo (para corregir imprecisión binaria tipo 392.7599999).
-    const parseNumericToCents = (value: any): number => {
+    const parseNumericToCents = (value: unknown): number => {
         if (value === null || value === undefined) return 0;
         const s = String(value).trim();
         if (!s) return 0;
@@ -142,12 +160,12 @@ export default function MovementsPage() {
 
     // Datos
     const [movements, setMovements] = useState<Movement[]>([]);
-    const [boxData, setBoxData] = useState<any>(null);
+    const [boxData, setBoxData] = useState<BoxData | null>(null);
     const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out' | 'audit' | 'inventory'>('none');
     const [cashCountTotal, setCashCountTotal] = useState(0);
     const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
-    const [boxInventory, setBoxInventory] = useState<any[]>([]);
+    const [boxInventory, setBoxInventory] = useState<Tables<'cash_box_inventory'>[]>([]);
     const [periodSummary, setPeriodSummary] = useState({
         income: 0,
         expense: 0,
@@ -362,11 +380,16 @@ export default function MovementsPage() {
             }
 
             if (pageMoves) {
-                const formatted: Movement[] = pageMoves.map((m: any) => ({
-                    ...m,
+                const rows = pageMoves as TreasuryMovementRow[];
+                const formatted: Movement[] = rows.map((m) => ({
+                    id: m.id ?? '',
+                    created_at: m.created_at ?? '',
+                    amount: Number(m.amount ?? 0),
                     type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
                         (m.type === 'OUT' ? 'expense' : 'adjustment'),
-                    original_type: m.type,
+                    notes: m.notes ?? '',
+                    breakdown: m.breakdown ?? undefined,
+                    original_type: m.type ?? undefined,
                     running_balance: parseNumericToCents(m.running_balance || 0) / 100
                 }));
 
@@ -376,7 +399,7 @@ export default function MovementsPage() {
                     setMovements(prev => [...prev, ...formatted]);
                 }
 
-                setHasMore(pageMoves.length === PAGE_SIZE);
+                setHasMore(rows.length === PAGE_SIZE);
             } else {
                 setHasMore(false);
             }
@@ -415,14 +438,14 @@ export default function MovementsPage() {
         });
     };
 
-    const handleCashTransaction = async (total: number, breakdown: any, notes: string, customDate?: string) => {
+    const handleCashTransaction = async (total: number, breakdown: Record<number, number>, notes: string, customDate?: string) => {
         try {
             if (!boxData) {
                 toast.error("Error: Datos de caja no cargados");
                 return;
             }
 
-            const payload: any = {
+            const payload: TreasuryLogInsertPayload = {
                 box_id: boxData.id,
                 type: cashModalMode === 'audit' ? 'ADJUSTMENT' : (cashModalMode === 'in' ? 'IN' : 'OUT'),
                 amount: total,
@@ -453,18 +476,20 @@ export default function MovementsPage() {
     const openAudit = async () => {
         if (!boxData) { toast.error("Error: Caja no inicializada"); return; }
         const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxData.id).gt('quantity', 0);
+        const inventoryRows = (data ?? []) as Tables<'cash_box_inventory'>[];
         const initial: Record<number, number> = {};
-        data?.forEach((d: any) => initial[Number(d.denomination)] = d.quantity);
+        inventoryRows.forEach((d) => { initial[Number(d.denomination)] = d.quantity ?? 0; });
         setBoxInventoryMap(initial);
-        setBoxInventory(data || []);
+        setBoxInventory(inventoryRows);
         setCashModalMode('audit');
     };
 
     const openOut = async () => {
         if (!boxData) { toast.error("Error: Caja no inicializada"); return; }
         const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxData.id).gt('quantity', 0);
+        const inventoryRows = (data ?? []) as Tables<'cash_box_inventory'>[];
         const initial: Record<number, number> = {};
-        data?.forEach((d: any) => initial[Number(d.denomination)] = d.quantity);
+        inventoryRows.forEach((d) => { initial[Number(d.denomination)] = d.quantity ?? 0; });
         setBoxInventoryMap(initial);
         setCashModalMode('out');
     };
@@ -541,12 +566,16 @@ export default function MovementsPage() {
             const { data, error } = await q;
 
             if (error) throw error;
-            const rows = data ?? [];
-            const formatted: Movement[] = rows.map((m: any) => ({
-                ...m,
+            const rows = (data ?? []) as TreasuryMovementRow[];
+            const formatted: Movement[] = rows.map((m) => ({
+                id: m.id ?? '',
+                created_at: m.created_at ?? '',
+                amount: Number(m.amount ?? 0),
                 type: (m.type === 'IN' || m.type === 'CLOSE_ENTRY') ? 'income' :
                     (m.type === 'OUT' ? 'expense' : 'adjustment'),
-                original_type: m.type,
+                notes: m.notes ?? '',
+                breakdown: m.breakdown ?? undefined,
+                original_type: m.type ?? undefined,
                 running_balance: parseNumericToCents(m.running_balance || 0) / 100
             }));
             out.push(...formatted);

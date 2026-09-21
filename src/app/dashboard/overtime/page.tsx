@@ -3,13 +3,14 @@
 import {
     Check, Circle
 } from 'lucide-react';
-import React, { memo, useEffect, useMemo, useState } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths, subMonths, getISOWeek, addDays, eachDayOfInterval, isSameDay, isBefore, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
 import { invalidateHomeOvertimeCache, useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
 import { invalidateHomeHistoryWeekCache } from '@/hooks/useEmployeeHistoryWeek';
+import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 import { cn } from '@/lib/utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
@@ -24,6 +25,9 @@ import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { overtimeWeekDetailUsageLabel } from '@/lib/usage/modal-apply';
+
+type OvertimeStaffRow = WeeklyStats['staff'][number] & { amount?: number };
+type OvertimeWeekRow = Omit<WeeklyStats, 'staff'> & { staff: OvertimeStaffRow[] };
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
 const formatDisplay = (val: number, suffix: string = '') => {
@@ -95,7 +99,7 @@ export default function OvertimePage() {
         overtimeRangeStart,
         overtimeRangeEnd,
     );
-    const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
+    const [weekDetailModal, setWeekDetailModal] = useState<{ week: OvertimeWeekRow } | null>(null);
 
     const weekDetailTrackingLabel = useMemo(() => {
         if (!weekDetailModal) return 'Detalle semana horas extras';
@@ -104,18 +108,19 @@ export default function OvertimePage() {
     }, [weekDetailModal]);
 
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
-    const [selectedHistory, setSelectedHistory] = useState<{ workerId: string; weekId: string } | null>(null);
-    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
-
-    useEffect(() => {
+    const [paidStatusWeeks, setPaidStatusWeeks] = useState<WeeklyStats[] | null>(null);
+    if (weeksData !== paidStatusWeeks) {
         const nextPaid: Record<string, boolean> = {};
         weeksData.forEach((week) => {
             week.staff?.forEach((s) => {
                 nextPaid[`${week.weekId}-${s.id}`] = !!s.isPaid;
             });
         });
+        setPaidStatusWeeks(weeksData);
         setPaidStatus(nextPaid);
-    }, [weeksData]);
+    }
+    const [selectedHistory, setSelectedHistory] = useState<{ workerId: string; weekId: string } | null>(null);
+    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
 
     const handleTogglePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
@@ -123,7 +128,7 @@ export default function OvertimePage() {
         setPaidStatus(prev => ({ ...prev, [key]: newStatus }));
         try {
             const weekData = weeksData.find(w => w.weekId === weekId);
-            const staffData = weekData?.staff?.find((s: any) => s.id === staffId);
+            const staffData = weekData?.staff?.find(s => s.id === staffId);
             const result = await togglePaidStatus(staffId, weekId, newStatus, {
                 totalHours: staffData?.totalHours ?? 0,
                 overtimeHours: staffData?.overtimeHours ?? 0
@@ -148,8 +153,9 @@ export default function OvertimePage() {
             invalidateHomeOvertimeCache();
             invalidateHomeHistoryWeekCache();
             await refresh();
-        } catch (error: any) {
-            toast.error("Error al actualizar modo: " + error.message, { id: 'prefer-stock-toggle' });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            toast.error("Error al actualizar modo: " + message, { id: 'prefer-stock-toggle' });
         }
     };
 
@@ -285,11 +291,11 @@ export default function OvertimePage() {
 
             {/* Modal detalle semana */}
             {weekDetailModal && (() => {
-                const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {
+                const weekStaff = (weekDetailModal.week.staff ?? []).filter((s) => {
                     const cost = (s.totalCost ?? s.amount ?? 0);
                     return cost > 0.05;
                 });
-                const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                const weekTotal = weekStaff.reduce((sum, s) => sum + (s.totalCost ?? s.amount ?? 0), 0);
                 const modalWeekStart = parseLocalYmd(weekDetailModal.week.weekId);
                 const weekNum = getISOWeek(modalWeekStart);
                 const periodStr = `${format(modalWeekStart, 'd MMM', { locale: es })} - ${format(addDays(modalWeekStart, 6), 'd MMM yyyy', { locale: es })}`;
@@ -315,7 +321,7 @@ export default function OvertimePage() {
                             />
                             <QuickCashTools calculator />
                             <div>
-                                {weekStaff.map((s: any) => (
+                                {weekStaff.map((s) => (
                                     <StaffOvertimeRow
                                         key={s.id}
                                         staff={{ id: s.id, name: s.name?.split?.(' ')[0] ?? s.name, amount: s.totalCost ?? s.amount ?? 0 }}

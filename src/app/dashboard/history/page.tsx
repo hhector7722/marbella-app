@@ -50,8 +50,28 @@ import { CashBreakdownModal } from '@/components/cash/CashBreakdownModal';
 // Delegado a CashBreakdownModal: DenominationCountGrid, CashCountFooter
 import type { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import type { CashCountFooter } from '@/components/cash/CashCountFooter';
+import type { Database, Tables } from '@/types/supabase';
 
 // --- TYPES & CONSTANTS ---
+
+type CashClosing = Omit<
+    Tables<'cash_closings'>,
+    'breakdown' | 'net_sales' | 'tickets_count' | 'cash_counted' | 'sales_card' | 'sales_pending' | 'debt_recovered'
+> & {
+    breakdown: Record<string, number> | null;
+    net_sales: number;
+    tickets_count: number;
+    cash_counted: number;
+    sales_card: number;
+    sales_pending: number;
+    debt_recovered: number;
+};
+
+type ProductSalesRanking = Database['public']['Functions']['get_product_sales_ranking']['Returns'][number];
+type SalesProduct = ProductSalesRanking & { rank: number };
+type HourlySalesRow = Database['public']['Functions']['get_hourly_sales']['Returns'][number];
+type TicketHourRow = Pick<Tables<'tickets_marbella'>, 'hora_cierre' | 'fecha' | 'total_documento'>;
+type HourAggregate = { label: string; cant: number; media: number; total: number };
 
 interface RendimientoScale {
     level: 1 | 2 | 3 | 4 | 5;
@@ -116,7 +136,7 @@ const EXPORT_TABLE_HEADERS = [
     'Fecha', 'Ventas €', 'Neta €', 'Ticks', 'TM €', 'Cash €', 'Card €', 'Pend. €', 'Recup. €', 'Dif. €',
 ] as const;
 
-function buildClosingExportRows(closings: any[]): ClosingExportRow[] {
+function buildClosingExportRows(closings: CashClosing[]): ClosingExportRow[] {
     return [...closings]
         // Ordenar por closing_date (siempre presente) en lugar de closed_at (puede ser null)
         .sort((a, b) => (b.closing_date ?? '').localeCompare(a.closing_date ?? ''))
@@ -153,7 +173,7 @@ function buildExportTableHtml(rows: ClosingExportRow[], title: string): string {
     return `<h1 style="font-size:18px;margin-bottom:12px;font-weight:800;">${title}</h1><table><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
 }
 
-async function exportClosingsToExcel(closings: any[], monthKeys: string[]) {
+async function exportClosingsToExcel(closings: CashClosing[], monthKeys: string[]) {
     const rows = buildClosingExportRows(closings);
     const aoa = [
         [...EXPORT_TABLE_HEADERS],
@@ -171,7 +191,7 @@ async function exportClosingsToExcel(closings: any[], monthKeys: string[]) {
     downloadWorkbook(wb, fileName);
 }
 
-function printClosingsTable(closings: any[], title: string) {
+function printClosingsTable(closings: CashClosing[], title: string) {
     const rows = buildClosingExportRows(closings);
     printHtml(buildExportTableHtml(rows, title), {
         pageSize: 'landscape',
@@ -213,7 +233,7 @@ function ClosingCalendarCellContent({
     closing,
     expectedSales,
 }: {
-    closing: any;
+    closing: CashClosing;
     expectedSales: number;
 }) {
     const netSales = Number(closing.net_sales ?? 0);
@@ -348,7 +368,7 @@ function hourToSlotLabel(h: number): string | null {
     return null;
 }
 
-function buildAllHourRows(ticketsList: { hora_cierre?: string | null; fecha?: string | null; total_documento?: unknown }[]): { label: string; cant: number; media: number; total: number }[] {
+function buildAllHourRows(ticketsList: { hora_cierre?: string | null; fecha?: string | null; total_documento?: unknown }[]): HourAggregate[] {
     const map = new Map<string, { count: number; sum: number }>();
     for (const t of ticketsList) {
         const h = getBusinessHourFromTicket(t);
@@ -360,7 +380,7 @@ function buildAllHourRows(ticketsList: { hora_cierre?: string | null; fecha?: st
         prev.sum += amt;
         map.set(label, prev);
     }
-    const rows: { label: string; cant: number; media: number; total: number }[] = [];
+    const rows: HourAggregate[] = [];
     for (let h = BUSINESS_HOURS.start; h <= BUSINESS_HOURS.end; h++) {
         const label = hourToSlotLabel(h);
         if (!label) continue;
@@ -441,7 +461,7 @@ export default function HistoryPage() {
     const [exportSelectedMonths, setExportSelectedMonths] = useState<Set<MonthKey>>(new Set());
     const [exportPickerYear, setExportPickerYear] = useState(() => new Date().getFullYear());
 
-    const [selectedClosing, setSelectedClosing] = useState<any>(null);
+    const [selectedClosing, setSelectedClosing] = useState<CashClosing | null>(null);
     const [showPeriodPerformanceModal, setShowPeriodPerformanceModal] = useState(false);
 
     // --- Modales de cards de resumen (Último cierre + Mensual) ---
@@ -450,9 +470,9 @@ export default function HistoryPage() {
     const [salesModalMode, setSalesModalMode] = useState<'last-closing' | 'monthly'>('last-closing');
     const [salesModalLoading, setSalesModalLoading] = useState(false);
     const [salesModalDate, setSalesModalDate] = useState('');
-    const [salesProducts, setSalesProducts] = useState<any[]>([]);
+    const [salesProducts, setSalesProducts] = useState<SalesProduct[]>([]);
     const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>([]);
-    const [topHours, setTopHours] = useState<any[]>([]);
+    const [topHours, setTopHours] = useState<HourAggregate[]>([]);
     const [salesSummary, setSalesSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
     const salesProductsScrollRef = useRef<HTMLDivElement>(null);
     const salesHoursScrollRef = useRef<HTMLDivElement>(null);
@@ -461,13 +481,13 @@ export default function HistoryPage() {
 
     // --- Real-time swipe drag state ---
     const modalCardRef = useRef<HTMLDivElement>(null);
-    const [swipeNextClosing, setSwipeNextClosing] = useState<any>(null);
+    const [swipeNextClosing, setSwipeNextClosing] = useState<CashClosing | null>(null);
     const [swipeDirection, setSwipeDirection] = useState<'left' | 'right'>('left');
 
     // Refs (always current, never stale inside handlers)
     const swipeDragXRef = useRef(0);
     const swipePhaseRef = useRef<'idle' | 'dragging' | 'animating'>('idle');
-    const swipeNextClosingRef = useRef<any>(null);
+    const swipeNextClosingRef = useRef<CashClosing | null>(null);
     const swipeDirectionRef = useRef<'left' | 'right'>('left');
 
     // React state used only for rendering (driven from refs on key moments)
@@ -477,7 +497,7 @@ export default function HistoryPage() {
     // Helper: update both ref and state atomically
     const setDragX = (v: number) => { swipeDragXRef.current = v; setSwipeDragX(v); };
     const setPhase = (v: 'idle' | 'dragging' | 'animating') => { swipePhaseRef.current = v; setSwipePhase(v); };
-    const setNextClosing = (v: any) => { swipeNextClosingRef.current = v; setSwipeNextClosing(v); };
+    const setNextClosing = (v: CashClosing | null) => { swipeNextClosingRef.current = v; setSwipeNextClosing(v); };
     const setDir = (v: 'left' | 'right') => { swipeDirectionRef.current = v; setSwipeDirection(v); };
 
     const swipeTouchStartX = useRef<number | null>(null);
@@ -485,7 +505,7 @@ export default function HistoryPage() {
     const swipeAxisLocked = useRef<boolean | null>(null);
 
     // Animate current card out, swap selectedClosing, animate new card in
-    const commitNav = (next: any, dir: 'left' | 'right') => {
+    const commitNav = (next: CashClosing | null, dir: 'left' | 'right') => {
         const cardW = modalCardRef.current?.offsetWidth ?? 400;
         setDir(dir);
         setNextClosing(next);
@@ -513,7 +533,7 @@ export default function HistoryPage() {
         }, 250);
     };
 
-    const triggerNavigate = (nextClosing: any, dir: 'left' | 'right') => {
+    const triggerNavigate = (nextClosing: CashClosing | null, dir: 'left' | 'right') => {
         if (!nextClosing) return;
         commitNav(nextClosing, dir);
     };
@@ -586,7 +606,7 @@ export default function HistoryPage() {
         }
     };
 
-    const openClosingDetail = (closing: { id: string; closed_at?: string; closing_date?: string }) => {
+    const openClosingDetail = (closing: CashClosing) => {
         setSelectedClosing(closing);
     };
     const [showCashDetails, setShowCashDetails] = useState(false);
@@ -605,7 +625,7 @@ export default function HistoryPage() {
                 p_end_time: null,
             });
             if (productsError) console.error('Error fetching products ranking:', productsError);
-            const ranking = (productsData || []).map((p: any, idx: number) => ({ ...p, rank: idx + 1 }));
+            const ranking = (productsData || []).map((p: ProductSalesRanking, idx: number) => ({ ...p, rank: idx + 1 }));
             setSalesProducts(ranking);
 
             const { data: ticketsData, error: ticketsError } = await supabase
@@ -616,7 +636,7 @@ export default function HistoryPage() {
 
             const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
             const ticketsList = ticketsData || [];
-            ticketsList.forEach((t: any) => {
+            ticketsList.forEach((t: TicketHourRow) => {
                 const hour = getBusinessHourFromTicket(t);
                 hourly[hour].total += Number(t.total_documento) || 0;
             });
@@ -624,7 +644,7 @@ export default function HistoryPage() {
 
             setTopHours(buildAllHourRows(ticketsList));
 
-            const totalSales = ticketsList.reduce((acc: number, t: any) => acc + (Number(t.total_documento) || 0), 0);
+            const totalSales = ticketsList.reduce((acc: number, t: TicketHourRow) => acc + (Number(t.total_documento) || 0), 0);
             setSalesSummary({ totalSales, count: ticketsList.length, avgTicket: ticketsList.length > 0 ? totalSales / ticketsList.length : 0 });
         } catch (err) {
             console.error('Error fetching sales data:', err);
@@ -645,7 +665,7 @@ export default function HistoryPage() {
                 p_end_time: null,
             });
             if (productsError) console.error('Error fetching products ranking:', productsError);
-            const ranking = (productsData || []).map((p: any, idx: number) => ({ ...p, rank: idx + 1 }));
+            const ranking = (productsData || []).map((p: ProductSalesRanking, idx: number) => ({ ...p, rank: idx + 1 }));
             setSalesProducts(ranking);
 
             const { data: ticketsData, error: ticketsError } = await supabase
@@ -657,7 +677,7 @@ export default function HistoryPage() {
 
             const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
             const ticketsList = ticketsData || [];
-            ticketsList.forEach((t: any) => {
+            ticketsList.forEach((t: TicketHourRow) => {
                 const hour = getBusinessHourFromTicket(t);
                 hourly[hour].total += Number(t.total_documento) || 0;
             });
@@ -665,7 +685,7 @@ export default function HistoryPage() {
 
             setTopHours(buildAllHourRows(ticketsList));
 
-            const totalSales = ticketsList.reduce((acc: number, t: any) => acc + (Number(t.total_documento) || 0), 0);
+            const totalSales = ticketsList.reduce((acc: number, t: TicketHourRow) => acc + (Number(t.total_documento) || 0), 0);
             setSalesSummary({ totalSales, count: ticketsList.length, avgTicket: ticketsList.length > 0 ? totalSales / ticketsList.length : 0 });
         } catch (err) {
             console.error('Error fetching monthly sales data:', err);
@@ -703,21 +723,20 @@ export default function HistoryPage() {
               : 'Periodo personalizado';
 
     const [isEditing, setIsEditing] = useState(false);
-    const [editData, setEditData] = useState<any>(null);
+    const [editData, setEditData] = useState<CashClosing | null>(null);
     const [isManager, setIsManager] = useState(false);
 
     const searchParams = useSearchParams();
-    const deepLinkClosingRef = useRef<string | null>(null);
 
-    const [closings, setClosings] = useState<any[]>([]);
-    const [historicalClosings, setHistoricalClosings] = useState<any[]>([]);
-    const [lastClosing, setLastClosing] = useState<any | null>(null);
+    const [closings, setClosings] = useState<CashClosing[]>([]);
+    const [historicalClosings, setHistoricalClosings] = useState<CashClosing[]>([]);
+    const [lastClosing, setLastClosing] = useState<CashClosing | null>(null);
     const [hourlySales, setHourlySales] = useState<Record<string, number[]>>({});
     const [summary, setSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
     const [prevSummary, setPrevSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
 
     const historicalClosingsMap = useMemo(() => {
-        const map = new Map<string, any>();
+        const map = new Map<string, CashClosing>();
         historicalClosings.forEach((c) => {
             const key = format(new Date(c.closing_date), 'yyyy-MM-dd');
             map.set(key, c);
@@ -857,16 +876,21 @@ export default function HistoryPage() {
         fetchHistory();
     }, [rangeStart, rangeEnd, selectedDate, filterMode]);
 
+    const deepLinkClosingId = searchParams.get('closingId')?.trim() ?? null;
+    const [syncedDeepLinkClosingId, setSyncedDeepLinkClosingId] = useState<string | null>(null);
+
+    if (!loading && deepLinkClosingId && deepLinkClosingId !== syncedDeepLinkClosingId) {
+        const found = closings.find((c) => c.id === deepLinkClosingId);
+        if (found) {
+            setSyncedDeepLinkClosingId(deepLinkClosingId);
+            openClosingDetail(found);
+        }
+    }
+
     useEffect(() => {
         const closingId = searchParams.get('closingId')?.trim();
-        if (!closingId || deepLinkClosingRef.current === closingId || loading) return;
-
-        const found = closings.find((c) => c.id === closingId);
-        if (found) {
-            deepLinkClosingRef.current = closingId;
-            openClosingDetail(found);
-            return;
-        }
+        if (!closingId || closingId === syncedDeepLinkClosingId || loading) return;
+        if (closings.some((c) => c.id === closingId)) return;
 
         void (async () => {
             const { data, error } = await supabase
@@ -880,37 +904,42 @@ export default function HistoryPage() {
                 return;
             }
 
-            deepLinkClosingRef.current = closingId;
+            setSyncedDeepLinkClosingId(closingId);
             openClosingDetail(data);
             const closedAt = new Date(data.closed_at);
             if (!Number.isNaN(closedAt.getTime())) {
                 setSelectedDate(format(closedAt, 'yyyy-MM-dd'));
             }
         })();
-    }, [searchParams, closings, loading]);
+    }, [searchParams, closings, loading, syncedDeepLinkClosingId]);
 
 
+
+    const selectedClosingPhotoKey = selectedClosing
+        ? `${selectedClosing.id}|${selectedClosing.dataphone_totals_photo_path ?? ''}|${selectedClosing.bdp_closing_ticket_photo_path ?? ''}`
+        : null;
+    const [syncedClosingPhotoKey, setSyncedClosingPhotoKey] = useState<string | null>(null);
+
+    if (selectedClosingPhotoKey !== syncedClosingPhotoKey) {
+        setSyncedClosingPhotoKey(selectedClosingPhotoKey);
+        if (!selectedClosing || (!selectedClosing.dataphone_totals_photo_path && !selectedClosing.bdp_closing_ticket_photo_path)) {
+            setClosingPhotoUrls({ dataphoneUrl: null, bdpUrl: null });
+            setClosingPhotosError(null);
+        } else {
+            setClosingPhotosLoading(true);
+            setClosingPhotosError(null);
+        }
+    }
 
     useEffect(() => {
-        if (!selectedClosing) {
-            setClosingPhotoUrls({ dataphoneUrl: null, bdpUrl: null });
-            setClosingPhotosError(null);
-            return;
-        }
+        if (!selectedClosing) return;
 
-        const dataphonePath = selectedClosing.dataphone_totals_photo_path as string | null | undefined;
-        const bdpPath = selectedClosing.bdp_closing_ticket_photo_path as string | null | undefined;
+        const dataphonePath = selectedClosing.dataphone_totals_photo_path;
+        const bdpPath = selectedClosing.bdp_closing_ticket_photo_path;
 
-        if (!dataphonePath && !bdpPath) {
-            setClosingPhotoUrls({ dataphoneUrl: null, bdpUrl: null });
-            setClosingPhotosError(null);
-            return;
-        }
+        if (!dataphonePath && !bdpPath) return;
 
         let cancelled = false;
-        setClosingPhotosLoading(true);
-        setClosingPhotosError(null);
-
         getCashClosingPhotoUrlsAction({ dataphonePath, bdpPath })
             .then((result) => {
                 if (cancelled) return;
@@ -1034,7 +1063,7 @@ export default function HistoryPage() {
 
                 if (!hourlyError && hourlyData) {
                     const hourlyMap: Record<string, number[]> = {};
-                    hourlyData.forEach((row: any) => {
+                    hourlyData.forEach((row: HourlySalesRow) => {
                         const date = row.fecha;
                         if (!hourlyMap[date]) {
                             hourlyMap[date] = new Array(24).fill(0);
@@ -1095,7 +1124,7 @@ export default function HistoryPage() {
         });
     };
 
-    async function fetchClosingsForMonths(monthKeys: Set<MonthKey>): Promise<any[]> {
+    async function fetchClosingsForMonths(monthKeys: Set<MonthKey>): Promise<CashClosing[]> {
         if (monthKeys.size === 0) return [];
         const ranges = Array.from(monthKeys).map(monthKeyToRange);
         const startISO = ranges.reduce((min, r) => (r.start < min ? r.start : min), ranges[0].start);
@@ -1110,7 +1139,7 @@ export default function HistoryPage() {
 
         if (error) throw error;
 
-        return (data || []).filter((c) => monthKeys.has(toMonthKey(parseLocalSafe(c.closing_date))));
+        return (data || []).filter((c: CashClosing) => monthKeys.has(toMonthKey(parseLocalSafe(c.closing_date))));
     }
 
     const confirmExport = async () => {
@@ -1252,8 +1281,9 @@ export default function HistoryPage() {
             setEditData({ ...editData });
             if (opts?.exitEdit !== false) setIsEditing(false);
             fetchHistory();
-        } catch (err: any) {
-            toast.error("Error al actualizar: " + err.message);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : (err as { message?: string } | null)?.message;
+            toast.error("Error al actualizar: " + message);
         } finally {
             setLoading(false);
         }
@@ -1282,8 +1312,9 @@ export default function HistoryPage() {
             setSelectedClosing(null);
             setLightboxIndex(null);
             fetchHistory();
-        } catch (err: any) {
-            toast.error("Error al eliminar: " + err.message);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : (err as { message?: string } | null)?.message;
+            toast.error("Error al eliminar: " + message);
         } finally {
             setLoading(false);
         }
@@ -1856,8 +1887,8 @@ export default function HistoryPage() {
                         <div className="px-4 sm:px-6 pt-2 pb-2.5 space-y-2 overflow-y-auto flex-1 custom-scrollbar">
                             {(() => {
                                 const current = isEditing ? editData : selectedClosing;
-                                const getValue = (key: keyof typeof current) => Number(current?.[key] ?? 0);
-                                const collectionsValue = Number((current as any)?.collections ?? (current as any)?.debt_recovered ?? 0);
+                                const getValue = (key: keyof CashClosing) => Number(current?.[key] ?? 0);
+                                const collectionsValue = Number(current?.collections ?? current?.debt_recovered ?? 0);
  
                                 const RowItem = ({
                                     label,
@@ -1953,7 +1984,7 @@ export default function HistoryPage() {
                                 };
  
                                 const avgTicketVal = (current?.tickets_count || 0) > 0 
-                                    ? (current?.tpv_sales || 0) / current?.tickets_count 
+                                    ? (current?.tpv_sales || 0) / (current?.tickets_count || 0) 
                                     : 0;
 
                                 return (
@@ -2286,7 +2317,7 @@ export default function HistoryPage() {
                 <CashBreakdownModal
                     isOpen={isLastClosingCashModalOpen}
                     onClose={() => setIsLastClosingCashModalOpen(false)}
-                    breakdown={(lastClosing.breakdown ?? {}) as Record<string, any>}
+                    breakdown={lastClosing.breakdown ?? {}}
                     date={lastClosing.closing_date as string}
                     total={Number(lastClosing.cash_counted ?? 0)}
                     layer="base"
