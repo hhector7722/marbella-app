@@ -107,6 +107,7 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
       days: seg.days,
       hoursByDay: attendance.hoursByDay,
       contractedHours: seg.contractedHours,
+      debtContractedHours: seg.debtContractedHours,
       bagMode: seg.bagMode,
       termRegime: seg.termRegime,
       kind: seg.kind,
