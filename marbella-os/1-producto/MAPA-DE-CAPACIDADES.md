@@ -115,7 +115,7 @@ Saber lo que cuesta lo que se sirve.
 
 - **Actores**: responsable de operación, responsable del negocio, supervisor.
 - **Superficies**: recetas, detalle de receta, ingredientes, importación de recetas, mapeo con el terminal de venta.
-- **Reglas propias**: el coste sale del precio actual del ingrediente; precio de venta y coste nunca se confunden; la ración es la unidad de comparación. Quién ve precios está en [ACTORES-Y-ROLES](./ACTORES-Y-ROLES.md).
+- **Reglas propias**: el coste sale del precio actual del ingrediente; precio de venta y coste nunca se confunden; la ración es la unidad de comparación; un ingrediente obsoleto se archiva, no se borra ([ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md)). Quién ve precios está en [ACTORES-Y-ROLES](./ACTORES-Y-ROLES.md).
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 

@@ -27,6 +27,7 @@ export default function IngredientsPage() {
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([])
+  const [includeArchived, setIncludeArchived] = useState(false)
 
   useEffect(() => {
     void fetchIngredients()
@@ -70,7 +71,8 @@ export default function IngredientsPage() {
       !selectedSupplier ||
       ingredient.supplier === selectedSupplier ||
       ingredient.supplier_2 === selectedSupplier
-    return matchesSearch && matchesSupplier
+    const matchesArchive = includeArchived || !ingredient.archived_at
+    return matchesSearch && matchesSupplier && matchesArchive
   })
 
   return (
@@ -112,6 +114,16 @@ export default function IngredientsPage() {
                   label="PROV"
                   value={selectedSupplier}
                   onClear={() => setSelectedSupplier(null)}
+                />
+              )}
+
+              {!includeArchived ? (
+                <CatalogFilterChip label="ARCH" onOpen={() => setIncludeArchived(true)} />
+              ) : (
+                <CatalogFilterChip
+                  label="ARCH"
+                  value="Archivados"
+                  onClear={() => setIncludeArchived(false)}
                 />
               )}
             </div>

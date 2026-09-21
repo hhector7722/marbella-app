@@ -13,6 +13,12 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-09-21
+
+- **El catálogo de ingredientes puede retirar un duplicado sin borrarlo.** `ingredients.archived_at` marca un ingrediente como archivado: deja de ofrecerse en catálogos, recetas, pedidos, inventario, mermas y mapeos, y se puede reactivar. [ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md).
+
+- **Se corrige el duplicado `AQUARIUS NARANJA LATA`.** Su mapeo de proveedor y su línea de albarán apuntan al ingrediente canónico `Aquarius naranja`; el duplicado queda archivado sin borrar la evidencia ni el histórico.
+
 ## 2026-09-20
 
 - **Inventario: el recuento entra en la plantilla de gestión.** El cromo (título, selector Barra/Cámara, buscador y filtro) flota sobre el envolvente y deja de ser una tira blanca; los artículos pasan a fichas de catálogo con su barra de cantidad. [PATRONES P13](../2-diseno/PATRONES.md#p13--pantalla-de-gestión), [PATRONES P10](../2-diseno/PATRONES.md#p10--barra-de-cantidad).

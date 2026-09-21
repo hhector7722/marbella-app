@@ -50,6 +50,10 @@ interface ViewState {
     size: 'full' | 'half';
 }
 
+function buildElaborationVideoFileName(cleanBase: string, ext: string): string {
+    return `${Date.now()}-${cleanBase || 'elaboracion'}.${ext}`;
+}
+
 function RecipeDetailContent() {
     const params = useParams();
     const router = useRouter();
@@ -168,7 +172,7 @@ function RecipeDetailContent() {
 
     // --- 2. FUNCIONES DE CARGA ---
     const fetchAvailableIngredients = async () => {
-        const { data } = await supabase.from('ingredients').select('*').order('name');
+        const { data } = await supabase.from('ingredients').select('*').is('archived_at', null).order('name');
         if (data) setAvailableIngredients(data);
     };
 
@@ -376,7 +380,7 @@ function RecipeDetailContent() {
                 .replace(/^-+|-+$/g, '')
                 .slice(0, 60);
 
-            const fileName = `${Date.now()}-${cleanBase || 'elaboracion'}.${ext}`;
+            const fileName = buildElaborationVideoFileName(cleanBase, ext);
             const path = `${recipeId}/${fileName}`;
 
             const up = await supabase.storage.from('recipe_videos').upload(path, file, {

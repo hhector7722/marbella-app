@@ -63,20 +63,25 @@ export function MenuCategoryEditModal({
 
   const isParent = category?.parent_id == null
 
+  const categorySyncKey = open && category ? category.id : null
+  const [syncedCategoryKey, setSyncedCategoryKey] = useState<string | null>(null)
+  if (categorySyncKey !== syncedCategoryKey) {
+    setSyncedCategoryKey(categorySyncKey)
+    if (open && category) {
+      setCoverQuery('')
+      const custom = Boolean(category.cover_photo_url?.trim())
+      setPortadaOrigen(custom ? 'custom' : category.cover_articulo_id != null ? 'product' : 'none')
+      setCoverArticuloId(category.cover_articulo_id ?? null)
+      setCoverPhotoUrl(category.cover_photo_url?.trim() || null)
+      setCoverPhotoScale(normalizeCartaPhotoScale(category.cover_photo_scale))
+      setUploadFile(null)
+      setUploadPreviewUrl(null)
+      setLoading(true)
+    }
+  }
+
   useEffect(() => {
     if (!open || !category) return
-    setCoverQuery('')
-    const custom = Boolean(category.cover_photo_url?.trim())
-    setPortadaOrigen(custom ? 'custom' : category.cover_articulo_id != null ? 'product' : 'none')
-    setCoverArticuloId(category.cover_articulo_id ?? null)
-    setCoverPhotoUrl(category.cover_photo_url?.trim() || null)
-    setCoverPhotoScale(normalizeCartaPhotoScale(category.cover_photo_scale))
-    setUploadFile(null)
-    if (uploadPreviewUrl) {
-      URL.revokeObjectURL(uploadPreviewUrl)
-      setUploadPreviewUrl(null)
-    }
-    setLoading(true)
     ;(async () => {
       try {
         const { data, error } = await supabase
@@ -88,13 +93,12 @@ export function MenuCategoryEditModal({
         setNameEs((data?.override_name_es ?? '').trim())
         setNameCa((data?.override_name_ca ?? '').trim())
         setNameEn((data?.override_name_en ?? '').trim())
-      } catch (e: any) {
-        toast.error(e?.message ?? 'No se pudo cargar la categoría')
+      } catch (e: unknown) {
+        toast.error(e instanceof Error ? e.message : 'No se pudo cargar la categoría')
       } finally {
         setLoading(false)
       }
     })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, category, supabase])
 
   useEffect(() => {

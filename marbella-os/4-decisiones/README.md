@@ -54,6 +54,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0014](./ADR-0014-perfiles-versionados-interpretacion-albaranes.md) | Perfiles versionados para interpretación de albaranes | Vigente |
 | [0015](./ADR-0015-alta-laboral-por-token.md) | Alta laboral por token de un solo uso | Vigente |
 | [0016](./ADR-0016-precio-canonico-ingrediente.md) | Precio canónico único del ingrediente | Vigente |
+| [0017](./ADR-0017-archivado-de-ingredientes.md) | Archivado de ingredientes en lugar de borrado | Vigente |
 
 ## Decisiones tomadas sin registrar
 

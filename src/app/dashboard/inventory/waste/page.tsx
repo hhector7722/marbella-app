@@ -10,6 +10,7 @@ export default async function WastePage() {
     supabase
       .from('ingredients')
       .select('id, name, unit, category, image_url, order_unit')
+      .is('archived_at', null)
       .order('category', { ascending: true })
       .order('name', { ascending: true }),
     supabase.from('recipes').select('id, name, photo_url, category').order('name', { ascending: true }),

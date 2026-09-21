@@ -9,6 +9,7 @@ export default async function LedgerPage() {
   const { data: ingredients, error } = await supabase
     .from('ingredients')
     .select('id, name, unit, stock_current, category, image_url, order_unit')
+    .is('archived_at', null)
     .order('category', { ascending: true })
     .order('name', { ascending: true })
 

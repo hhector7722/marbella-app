@@ -5,19 +5,41 @@ import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-c
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 
+export interface RecipeDraftIngredient {
+    ingredient_id: string;
+    quantity: number;
+    unit: string;
+}
+
+export interface RecipeDraft {
+    name: string;
+    menu_category_id: string;
+    category?: string;
+    sale_price?: number;
+    servings?: number;
+    ingredients: RecipeDraftIngredient[];
+}
+
+export interface RecipeCatalogIngredient {
+    id: string;
+    name: string;
+    recipe_unit: string | null;
+    purchase_unit?: string | null;
+}
+
 interface CreateModalProps {
     showCreateModal: boolean;
     setShowCreateModal: (show: boolean) => void;
-    newRecipe: any;
-    setNewRecipe: (val: any) => void;
+    newRecipe: RecipeDraft;
+    setNewRecipe: (val: RecipeDraft) => void;
     isCreating: boolean;
     /** Opciones desde `categories` (menú): value = id UUID */
     menuCategoryOptions: { id: string; label: string }[];
-    allIngredients: any[];
+    allIngredients: RecipeCatalogIngredient[];
     handleCreateRecipe: () => void;
     addIngredientToRecipe: () => void;
     removeIngredientFromRecipe: (index: number) => void;
-    updateRecipeIngredient: (index: number, field: string, value: any) => void;
+    updateRecipeIngredient: (index: number, field: keyof RecipeDraftIngredient, value: string | number) => void;
 }
 
 export default function CreateModal({
@@ -135,14 +157,14 @@ export default function CreateModal({
                             <p className="text-xs text-gray-400 italic text-center py-4 bg-gray-50 rounded-2xl">No hay ingredientes añadidos</p>
                         )}
 
-                        {newRecipe.ingredients?.map((row: any, idx: number) => (
+                        {newRecipe.ingredients?.map((row: RecipeDraftIngredient, idx: number) => (
                             <div key={idx} className="flex gap-2 items-end bg-gray-50 p-2 rounded-2xl">
                                 <div className="flex-1">
                                     <select
                                         value={row.ingredient_id}
                                         onChange={e => {
                                             const id = e.target.value;
-                                            const catalog = allIngredients.find((ing: { id: string }) => ing.id === id);
+                                            const catalog = allIngredients.find((ing: RecipeCatalogIngredient) => ing.id === id);
                                             const unit = catalog
                                                 ? resolveIngredientRecipeUnit(catalog.recipe_unit, catalog.purchase_unit || 'kg')
                                                 : row.unit || 'kg';

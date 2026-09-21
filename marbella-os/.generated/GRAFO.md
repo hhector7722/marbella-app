@@ -1,5 +1,5 @@
-<!-- Generado desde 238 documentos de marbella-os/.
-     Huella del origen: 864f096f36cad005
+<!-- Generado desde 239 documentos de marbella-os/.
+     Huella del origen: b17b9fdbbdef5ce7
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -20,7 +20,7 @@ para responder a la pregunta que surge al cambiar algo.
 | `ADR-0007` | `marbella-os/4-decisiones/ADR-0007-modal-superficie-derivada.md` | `ADR-0008`, `ADR-0009` |
 | `ADR-0008` | `marbella-os/4-decisiones/ADR-0008-modal-backdrop-capas.md` | `ADR-0009` |
 | `ADR-0011` | `marbella-os/4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md` | `CONTRATO-PROYECCION-v2` |
-| `ADR-0012` | `marbella-os/4-decisiones/ADR-0012-recepcion-trazable-y-evidencia-documental.md` | `ADR-0013`, `ADR-0014`, `PERFILES-ALBARANES-PROVEEDORES` |
+| `ADR-0012` | `marbella-os/4-decisiones/ADR-0012-recepcion-trazable-y-evidencia-documental.md` | `ADR-0013`, `ADR-0014`, `ADR-0017`, `PERFILES-ALBARANES-PROVEEDORES` |
 | `ADR-0013` | `marbella-os/4-decisiones/ADR-0013-confirmacion-atomica-de-recepcion.md` | `ADR-0014`, `ADR-0016`, `PERFILES-ALBARANES-PROVEEDORES` |
 | `ADR-0014` | `marbella-os/4-decisiones/ADR-0014-perfiles-versionados-interpretacion-albaranes.md` | `PERFILES-ALBARANES-PROVEEDORES` |
 | `ARQUITECTURA` | `marbella-os/3-ingenieria/ARQUITECTURA.md` | `SPIKE-ALLOWLIST-K2B`, `SPIKE-CIERRE-DECISIONES-MIGRACION`, `SPIKE-CIERRE-ESPECIFICACION-K2-RUNNER`, `SPIKE-CIERRE-K2B-ALLOWLIST`, `SPIKE-CORRECCION-GATES-R1-K2`, `SPIKE-DECISION-GLOBAL-WRITE-GATE-K2`, `SPIKE-DEFINICION-SCOPE-K2B`, `SPIKE-DESBLOQUEO-K2-BASELINE`, `SPIKE-DESENCLAVAMIENTO-CONCURRENCIA-K2`, `SPIKE-DIAGNOSTICO-FALLO-R1`, `SPIKE-DICCIONARIO-NORMALIZACION-K2B`, `SPIKE-DICCIONARIO-NORMALIZACION-K2B-CIERRE`, `SPIKE-DRY-RUN-K2-UNIDADES`, `SPIKE-EJECUCION-FASE-1-DESBLOQUEO-K2`, `SPIKE-EJECUCION-K1`, `SPIKE-EJECUCION-K2-BLOQUEADA`, `SPIKE-ESPECIFICACION-K2-RUNNER-K2B`, `SPIKE-IMPLEMENTACION-GATES-R1-K2`, `SPIKE-IMPLEMENTACION-WRITE-FREEZE-K2`, `SPIKE-PLAN-DESBLOQUEO-K2`, `SPIKE-PLAN-MIGRACION-DOMINIO-PRODUCTO-UNIDADES`, `SPIKE-PREPARACION-K2`, `SPIKE-RECONCILIACION-BASELINE-K2`, `SPIKE-RESOLUCION-BLOQUEOS-DRY-RUN-K2`, `SPIKE-RESOLUCION-BLOQUEOS-MIGRACION`, `SPIKE-REVISION-CRITICA-UNIDADES-POR-CONTEXTO`, `SPIKE-REVISION-FINAL-CONSISTENCIA-PLAN-MIGRACION`, `SPIKE-VALIDACION-WRITE-FREEZE-K2` |

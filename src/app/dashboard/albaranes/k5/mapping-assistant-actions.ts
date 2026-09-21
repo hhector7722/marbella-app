@@ -77,7 +77,8 @@ async function prepareAssistant(invoiceId: string): Promise<K5MappingAssistantSt
   const [{ data: ingredientRows, error: ingredientError }, { data: legacyRows, error: legacyError }] = await Promise.all([
     supabase
       .from('ingredients')
-      .select('id,name,current_price,purchase_unit,base_unit'),
+      .select('id,name,current_price,purchase_unit,base_unit')
+      .is('archived_at', null),
     supabase
       .from('supplier_item_mappings')
       .select('supplier_item_name,ingredient_id,conversion_factor,line_billing_unit,line_content_qty,line_content_unit')

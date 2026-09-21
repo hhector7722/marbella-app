@@ -6,6 +6,10 @@ export type ManualPriceResult =
   | { ok: true; changed: boolean; currentPrice: number; purchaseUnit: string }
   | { ok: false; message: string }
 
+export type ArchiveIngredientResult =
+  | { ok: true; archivedAt: string | null }
+  | { ok: false; message: string }
+
 export async function setIngredientCurrentPriceAction(
   ingredientId: string,
   newPrice: number,
@@ -56,4 +60,43 @@ export async function setIngredientCurrentPriceAction(
     currentPrice: Number(result.current_price),
     purchaseUnit: String(result.purchase_unit ?? ''),
   }
+}
+
+export async function setIngredientArchivedAction(
+  ingredientId: string,
+  archived: boolean,
+): Promise<ArchiveIngredientResult> {
+  const id = String(ingredientId ?? '').trim()
+  if (!id) {
+    return { ok: false, message: 'Ingrediente no válido.' }
+  }
+
+  const supabase = await createClient()
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  if (authError || !authData.user) {
+    return { ok: false, message: 'La sesión ha caducado. Vuelve a entrar.' }
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', authData.user.id)
+    .maybeSingle()
+
+  if (profileError || !profile || !['manager', 'admin'].includes(String(profile.role))) {
+    return { ok: false, message: 'No tienes permiso para archivar ingredientes.' }
+  }
+
+  const { data, error } = await supabase
+    .from('ingredients')
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq('id', id)
+    .select('archived_at')
+    .maybeSingle()
+
+  if (error || !data) {
+    return { ok: false, message: 'No se ha podido archivar el ingrediente. Vuelve a intentarlo.' }
+  }
+
+  return { ok: true, archivedAt: (data.archived_at as string | null) ?? null }
 }

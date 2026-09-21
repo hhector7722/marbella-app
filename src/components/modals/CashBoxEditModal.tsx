@@ -51,9 +51,9 @@ export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalPr
             setImageUrl(publicUrl);
             toast.success('Imagen actualizada');
             onSuccess();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error uploading image:', error);
-            toast.error(error.message || 'Error al subir la imagen');
+            toast.error(error instanceof Error && error.message ? error.message : 'Error al subir la imagen');
         } finally {
             setUploading(false);
         }
@@ -74,8 +74,8 @@ export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalPr
             setImageUrl('');
             toast.success('Imagen quitada');
             onSuccess();
-        } catch (error: any) {
-            toast.error(error.message || 'Error al quitar la imagen');
+        } catch (error: unknown) {
+            toast.error(error instanceof Error && error.message ? error.message : 'Error al quitar la imagen');
         } finally {
             setUploading(false);
         }

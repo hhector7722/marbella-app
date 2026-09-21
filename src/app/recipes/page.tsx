@@ -191,7 +191,7 @@ function RecipesContent() {
     }
 
     async function fetchIngredients() {
-        const { data } = await supabase.from('ingredients').select('*').order('name');
+        const { data } = await supabase.from('ingredients').select('*').is('archived_at', null).order('name');
         if (data) setAllIngredients(data);
     }
 

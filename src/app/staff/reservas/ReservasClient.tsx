@@ -719,7 +719,7 @@ export default function ReservasClient() {
       const encargos = (evResult.data ?? []) as EncargoRow[]
       const eventIds = encargos.map((e) => e.id)
 
-      let ordersByEvent: Record<string, EncargoOrderRow[]> = {}
+      const ordersByEvent: Record<string, EncargoOrderRow[]> = {}
       if (eventIds.length > 0) {
         const { data: orders, error: ordersErr } = await supabase
           .from('event_orders')

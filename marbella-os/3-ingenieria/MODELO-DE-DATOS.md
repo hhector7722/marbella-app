@@ -129,6 +129,7 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 `recipes`, `recipe_ingredients`, `ingredients`, `ingredient_price_history`, `categories`, `stock_movements`, `map_tpv_receta`, `digital_menu_overrides`, `menu_category_overrides`, `carta_editors`, `carta_ui_labels`.
 
 - `ingredients.current_price` es el precio vigente; `ingredient_price_history`, su histórico. Ambos solo cambian desde una confirmación económica autorizada; la captura y evidencia no son ese hecho.
+- `ingredients.archived_at` retira un ingrediente obsoleto del catálogo operativo sin borrarlo ([ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md)). `NULL` = activo. Un ingrediente archivado no se ofrece en selecciones nuevas, pero sus referencias históricas siguen siendo legibles. No es `inventory_visible`, que solo afecta al recuento de inventario.
 - `stock_movements` es el **único ledger canónico de stock**. Es append-only: las correcciones son nuevos movimientos reversores. Cada hecho nuevo lleva referencia tipada, idempotencia, origen, actor y procedencia. `stock_current` es su proyección regenerable.
 - `map_tpv_receta` une el artículo del punto de venta con la receta. **Sin este puente no hay descuento de existencias ni margen por producto.**
 - Las tablas de anulación permiten que la carta pública muestre algo distinto del dato interno sin duplicar la receta.

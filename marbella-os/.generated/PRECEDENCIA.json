@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "fa7a8574ed494968",
+  "_huella": "707e42424fcd7526",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -236,6 +236,20 @@
       "vence": null,
       "depende_de": [
         "ADR-0013"
+      ]
+    },
+    {
+      "ruta": "marbella-os/4-decisiones/ADR-0017-archivado-de-ingredientes.md",
+      "documento": "ADR-0017",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0012"
       ]
     },
     {

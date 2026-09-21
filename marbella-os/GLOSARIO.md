@@ -163,6 +163,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Versión de mapeo** | Propuesta o confirmación inmutable del mapeo, con presentación y factor de conversión. | `purchase_mapping_versions` |
 | **Confirmación de recepción** | Hecho económico atómico que convierte una línea revisada en un `PURCHASE`, conciliación y, si corresponde, cambio de precio trazado. | `purchase_receipt_confirmations`, `apply_receipt_line(...)` |
 | **Ingrediente** | Materia prima con precio y unidades. | `ingredients` |
+| **Ingrediente archivado** | Ingrediente retirado del catálogo operativo sin borrar su histórico. No se ofrece en selecciones nuevas. | `ingredients.archived_at` |
 | **Precio actual** | Precio de compra vigente de un ingrediente. Fuente de verdad del coste de materia prima. | `ingredients.current_price` |
 | **Precio por unidad de compra** | Modo de precio en el que el importe se refiere a la unidad en que se compra. | `per_purchase_unit` |
 | **Precio por paquete** | Modo de precio en el que el importe se refiere al paquete completo. | `per_pack` |

@@ -3,9 +3,13 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Field } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/modal'
-import { setIngredientCurrentPriceAction } from '@/app/ingredients/actions'
+import {
+  setIngredientArchivedAction,
+  setIngredientCurrentPriceAction,
+} from '@/app/ingredients/actions'
 export interface Ingredient {
   id: string
   name: string
@@ -22,6 +26,7 @@ export interface Ingredient {
   order_unit?: string | null
   recipe_unit?: string | null
   recommended_stock?: number | null
+  archived_at?: string | null
 }
 
 type Props = {
@@ -44,10 +49,13 @@ function formatPrice(price: number): string {
 export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: Props) {
   const [newPrice, setNewPrice] = useState(() => priceInputValue(ingredient.current_price))
   const [saving, setSaving] = useState(false)
+  const [archiving, setArchiving] = useState(false)
+  const [confirmArchive, setConfirmArchive] = useState(false)
 
   const parsedPrice = Number(newPrice.trim().replace(',', '.'))
   const validPrice = Number.isFinite(parsedPrice) && parsedPrice > 0
   const unit = ingredient.purchase_unit || 'ud'
+  const isArchived = Boolean(ingredient.archived_at)
 
   async function savePrice() {
     if (!validPrice) {
@@ -77,41 +85,59 @@ export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: P
     }
   }
 
-  return (
-    <Modal
-      open
-      onClose={onClose}
-      title={ingredient.name}
-      variant="compact"
-      layer="base"
-      instance="ingredient-canonical-price"
-      usageId="ingredient-canonical-price"
-      usageLabel="Editar precio de ingrediente"
-      footer={
-        <div className="flex w-full min-w-0 justify-end gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            instance="ingredient-canonical-price-cancel"
-            disabled={saving}
-            onClick={onClose}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            instance="ingredient-canonical-price-save"
-            disabled={!validPrice}
-            loading={saving}
-            loadingLabel="Guardando"
-            onClick={() => void savePrice()}
-          >
-            Guardar
-          </Button>
-        </div>
+  async function setArchived(archived: boolean) {
+    setArchiving(true)
+    try {
+      const result = await setIngredientArchivedAction(ingredient.id, archived)
+      if (!result.ok) {
+        toast.error(result.message)
+        return
       }
-    >
+      toast.success(archived ? 'Ingrediente archivado.' : 'Ingrediente reactivado.')
+      setConfirmArchive(false)
+      onSaved()
+      onClose()
+    } finally {
+      setArchiving(false)
+    }
+  }
+
+  return (
+    <>
+      <Modal
+        open
+        onClose={onClose}
+        title={ingredient.name}
+        variant="compact"
+        layer="base"
+        instance="ingredient-canonical-price"
+        usageId="ingredient-canonical-price"
+        usageLabel="Editar precio de ingrediente"
+        footer={
+          <div className="flex w-full min-w-0 justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              instance="ingredient-canonical-price-cancel"
+              disabled={saving}
+              onClick={onClose}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="ingredient-canonical-price-save"
+              disabled={!validPrice}
+              loading={saving}
+              loadingLabel="Guardando"
+              onClick={() => void savePrice()}
+            >
+              Guardar
+            </Button>
+          </div>
+        }
+      >
       <div className="space-y-5">
         <section aria-labelledby="ingredient-current-price" className="space-y-1">
           <h2 id="ingredient-current-price" className="text-xs font-bold text-zinc-500">
@@ -149,7 +175,45 @@ export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: P
             Los albaranes {ingredient.price_locked ? 'no pueden' : 'pueden'} actualizar este precio
           </p>
         </div>
+
+        <section aria-labelledby="ingredient-archive" className="space-y-2 border-t border-zinc-100 pt-4">
+          <h2 id="ingredient-archive" className="text-xs font-bold text-zinc-500">
+            Catálogo
+          </h2>
+          <p className="text-xs font-medium leading-snug text-zinc-500">
+            {isArchived
+              ? 'Este ingrediente está archivado: no se ofrece en catálogos, recetas, pedidos ni mapeos, pero su histórico se conserva.'
+              : 'Archivar lo retira de catálogos, recetas, pedidos y mapeos sin borrar su histórico.'}
+          </p>
+          <Button
+            type="button"
+            variant={isArchived ? 'secondary' : 'destructive'}
+            instance="ingredient-canonical-archive"
+            disabled={archiving}
+            onClick={() => setConfirmArchive(true)}
+          >
+            {isArchived ? 'Reactivar' : 'Archivar'}
+          </Button>
+        </section>
       </div>
-    </Modal>
+      </Modal>
+
+      <ConfirmModal
+        open={confirmArchive}
+        onClose={() => setConfirmArchive(false)}
+        title={isArchived ? 'Reactivar ingrediente' : 'Archivar ingrediente'}
+        confirmLabel={isArchived ? 'Reactivar' : 'Archivar'}
+        confirmVariant={isArchived ? 'primary' : 'destructive'}
+        onConfirm={() => void setArchived(!isArchived)}
+        instance="ingredient-canonical-archive-confirm"
+        usageLabel={isArchived ? 'Reactivar ingrediente' : 'Archivar ingrediente'}
+        parentInstance="ingredient-canonical-price"
+        confirming={archiving}
+      >
+        {isArchived
+          ? `"${ingredient.name}" volverá a ofrecerse en catálogos, recetas, pedidos y mapeos.`
+          : `"${ingredient.name}" dejará de ofrecerse en catálogos, recetas, pedidos y mapeos. No se borra ningún dato ni histórico.`}
+      </ConfirmModal>
+    </>
   )
 }

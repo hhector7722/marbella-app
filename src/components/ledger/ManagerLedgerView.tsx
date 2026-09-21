@@ -46,6 +46,10 @@ function madridYmd(iso: string): string {
     }).format(d);
 }
 
+function errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
 export default function ManagerLedgerView() {
     const supabase = createClient();
 
@@ -71,7 +75,7 @@ export default function ManagerLedgerView() {
     const [modalOpen, setModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [selectedLog, setSelectedLog] = useState<any>(null);
+    const [selectedLog, setSelectedLog] = useState<LedgerRow | null>(null);
     const [type, setType] = useState<'entrada' | 'salida'>('entrada');
     const [amount, setAmount] = useState<string>('');
     const [concept, setConcept] = useState('');
@@ -123,7 +127,7 @@ export default function ManagerLedgerView() {
                     }))
                 );
             }
-        } catch (e: any) {
+        } catch {
             toast.error("Error al cargar la cuenta corriente");
             setAllLogs([]);
         } finally {
@@ -232,8 +236,8 @@ export default function ManagerLedgerView() {
             toast.success("Movimiento registrado con éxito");
             setModalOpen(false);
             fetchData();
-        } catch (error: any) {
-            toast.error("Error al guardar: " + error.message);
+        } catch (error: unknown) {
+            toast.error("Error al guardar: " + errorMessage(error));
         } finally {
             setIsSaving(false);
         }
@@ -269,8 +273,8 @@ export default function ManagerLedgerView() {
             toast.success("Movimiento actualizado con éxito");
             setEditModalOpen(false);
             fetchData();
-        } catch (error: any) {
-            toast.error("Error al actualizar: " + error.message);
+        } catch (error: unknown) {
+            toast.error("Error al actualizar: " + errorMessage(error));
         } finally {
             setIsSaving(false);
             setSelectedLog(null);
@@ -286,8 +290,8 @@ export default function ManagerLedgerView() {
             toast.success("Movimiento eliminado");
             setDeleteModalOpen(false);
             fetchData();
-        } catch (error: any) {
-            toast.error("Error al eliminar: " + error.message);
+        } catch (error: unknown) {
+            toast.error("Error al eliminar: " + errorMessage(error));
         } finally {
             setIsDeleting(false);
             setSelectedLog(null);

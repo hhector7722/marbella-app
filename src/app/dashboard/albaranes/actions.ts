@@ -871,6 +871,7 @@ export async function resolveLineMappingAction(params: {
     .select(
       'id, name, current_price, purchase_unit, supplier_pricing_mode, pack_units, pack_unit_size_qty, pack_unit_size_unit'
     )
+    .is('archived_at', null)
     .order('name')
     .limit(4000)
   if (ingErr) return { success: false, message: ingErr.message }
@@ -1095,6 +1096,7 @@ export async function suggestIngredientsForLineAction(params: {
     .select(
       'id, name, current_price, purchase_unit, supplier_pricing_mode, pack_units, pack_unit_size_qty, pack_unit_size_unit'
     )
+    .is('archived_at', null)
     .order('name')
     .limit(4000)
   if (error) return { success: false, message: error.message }
@@ -1164,6 +1166,7 @@ export async function searchIngredientsForMappingAction(params: {
       'id,name,purchase_unit,current_price,supplier_pricing_mode,pack_units,pack_unit_size_qty,pack_unit_size_unit'
     )
     .ilike('name', `%${q}%`)
+    .is('archived_at', null)
     .order('name')
     .limit(limit)
   if (error) return { success: false, message: error.message }

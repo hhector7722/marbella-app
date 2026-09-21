@@ -177,7 +177,7 @@ export default function NewOrderPage() {
     async function fetchData() {
         setLoading(true);
         try {
-            const { data: ingData } = await supabase.from('ingredients').select('*').order('name');
+            const { data: ingData } = await supabase.from('ingredients').select('*').is('archived_at', null).order('name');
             setIngredients(ingData || []);
 
             const { data: supData } = await supabase.from('suppliers').select('id, name, phone, image_url');

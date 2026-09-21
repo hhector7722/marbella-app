@@ -42,6 +42,7 @@ export default async function InventoryPage() {
     const { data: allRows, error } = await supabase
       .from('ingredients')
       .select(SELECT_FIELDS)
+      .is('archived_at', null)
       .order('category', { ascending: true })
       .order('name', { ascending: true })
 
@@ -63,9 +64,10 @@ export default async function InventoryPage() {
 
   const { data: ingredients, error } = await supabase
     .from('ingredients')
-    .select(SELECT_FIELDS)
-    .eq('inventory_visible', true)
-    .order('category', { ascending: true })
+      .select(SELECT_FIELDS)
+      .eq('inventory_visible', true)
+      .is('archived_at', null)
+      .order('category', { ascending: true })
     .order('name', { ascending: true })
 
   if (error) {

@@ -71,7 +71,7 @@ export default async function RecetasTpvPage() {
     supabase.from('recipes').select('id, name').order('name', { ascending: true }).limit(5000),
     supabase.from('bdp_departamentos').select('id, nombre').order('nombre', { ascending: true }).limit(5000),
     supabase.from('suppliers').select('id, name').order('name').limit(2000),
-    supabase.from('ingredients').select('id, name').order('name').limit(5000),
+    supabase.from('ingredients').select('id, name').is('archived_at', null).order('name').limit(5000),
   ])
 
   if (mappingsRes.error) console.error('Error fetching map_tpv_receta:', mappingsRes.error)
