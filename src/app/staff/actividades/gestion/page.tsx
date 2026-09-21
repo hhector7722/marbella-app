@@ -55,10 +55,6 @@ export default function GestionActividadesPage() {
   const [editError, setEditError] = useState('');
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadActivities();
-  }, []);
-
   async function loadActivities() {
     setLoading(true);
     const res = await getGestionActivitiesAction();
@@ -69,6 +65,12 @@ export default function GestionActividadesPage() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    void (async () => {
+      await loadActivities();
+    })();
+  }, []);
 
   async function handleToggleActive(act: GestionActivity) {
     setSavingId(act.id);

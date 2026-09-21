@@ -98,9 +98,12 @@ export function SupplierSelectionModal({
         };
     }, [fetchSuppliers, instance, isOpen, supabase]);
 
-    useEffect(() => {
+    const [wasOpen, setWasOpen] = useState(isOpen);
+
+    if (isOpen !== wasOpen) {
+        setWasOpen(isOpen);
         if (!isOpen) setSearchQuery('');
-    }, [isOpen]);
+    }
 
     const filteredSuppliers = suppliers.filter((s) =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase())

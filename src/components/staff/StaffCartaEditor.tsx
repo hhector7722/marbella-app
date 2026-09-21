@@ -18,7 +18,7 @@ type MenuItemRow = {
   articulo_id: number
   articulo_nombre: string
   articulo_nombre_raw: string
-  precio: number | string | null
+  precio: number | null
   sort_order: number | null
 }
 
@@ -39,6 +39,13 @@ type Category = {
   parent_id: string | null
   sort_order: number | null
   cover_articulo_id: number | null
+}
+
+type EmbeddedArticle = { nombre: string; precio_base: number | null }
+
+type MappingRow = {
+  articulo_id: number
+  bdp_articulos: EmbeddedArticle | null
 }
 
 export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
@@ -180,10 +187,10 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
       if (overridesRes.error) throw overridesRes.error
       if (categoriesRes.error) throw categoriesRes.error
 
-      const rows = (mappingsRes.data ?? []) as any[]
+      const rows = (mappingsRes.data ?? []) as unknown as MappingRow[]
       setItems(
         rows
-          .map((r) => {
+          .map((r): MenuItemRow | null => {
             const a = r.bdp_articulos
             if (!a) return null
             return {
@@ -192,19 +199,19 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
               articulo_nombre_raw: a.nombre,
               precio: a.precio_base ?? null,
               sort_order: null,
-            } satisfies MenuItemRow
+            }
           })
-          .filter(Boolean) as any
+          .filter((x): x is MenuItemRow => x !== null)
       )
-      setOverrides((overridesRes.data ?? []) as any)
+      setOverrides((overridesRes.data ?? []) as OverrideRow[])
       setCategories(
-        (categoriesRes.data ?? []).map((c: any) => ({
+        ((categoriesRes.data ?? []) as Category[]).map((c) => ({
           ...c,
           cover_articulo_id: c.cover_articulo_id ?? null,
-        })) as Category[]
+        }))
       )
-    } catch (e: any) {
-      toast.error(e?.message ?? 'No se pudo cargar el editor de carta')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo cargar el editor de carta')
     } finally {
       setLoading(false)
     }
@@ -525,11 +532,14 @@ function ArticleNombreI18nFields({
   const [ca, setCa] = useState(o?.override_nombre_ca ?? '')
   const [en, setEn] = useState(o?.override_nombre_en ?? '')
 
-  useEffect(() => {
+  const syncKey = `${articuloId}\u0000${o?.override_nombre_es ?? ''}\u0000${o?.override_nombre_ca ?? ''}\u0000${o?.override_nombre_en ?? ''}`
+  const [syncedKey, setSyncedKey] = useState<string | null>(null)
+  if (syncKey !== syncedKey) {
+    setSyncedKey(syncKey)
     setEs(o?.override_nombre_es ?? '')
     setCa(o?.override_nombre_ca ?? '')
     setEn(o?.override_nombre_en ?? '')
-  }, [articuloId, o?.override_nombre_es, o?.override_nombre_ca, o?.override_nombre_en])
+  }
 
   const inp =
     'h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]'

@@ -53,12 +53,15 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
         setDidTrySave(false);
     }, []);
 
+    const [wasOpen, setWasOpen] = useState(isOpen);
+
+    if (isOpen !== wasOpen) {
+        setWasOpen(isOpen);
+        if (!isOpen) reset();
+    }
+
     useEffect(() => {
-        if (!isOpen) {
-            reset();
-            return;
-        }
-        if (!changeBox?.id) return;
+        if (!isOpen || !changeBox?.id) return;
         (async () => {
             const { data, error } = await supabase.from('cash_box_inventory').select('denomination, quantity').eq('box_id', changeBox.id);
             if (error) {
@@ -71,7 +74,7 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
             });
             setStock(m);
         })();
-    }, [isOpen, changeBox?.id, supabase, reset]);
+    }, [isOpen, changeBox?.id, supabase]);
 
     const totalStep1 = totalFromCounts(step1Counts, BILLS);
     const totalStep2 = totalFull(step2Counts);
