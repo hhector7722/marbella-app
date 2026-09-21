@@ -78,6 +78,12 @@ export type ContractSegment = {
   weeklyHoursOfTerm: number;
   /** Única resolución: days.length / 7 × jornada del tramo (Contract Resolver). */
   contractedHours: number;
+  /**
+   * Jornada del tramo que puede generar deuda de asistencia.
+   * En staff excluye los días civiles de agosto; ordinarias/extras siguen usando
+   * contractedHours, por lo que la exención no convierte horas en extras.
+   */
+  debtContractedHours: number;
   bagMode: boolean;
   /** Régimen del tramo. */
   termRegime: ContractRegime;
