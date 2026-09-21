@@ -5,7 +5,6 @@ import type {
   SegmentRegime,
 } from './types.ts';
 import { roundMarbellaSigned } from './marbella-round.ts';
-import { isAugustCivilDate, mondayOnOrBefore } from './week-dates.ts';
 
 export type RegimeSegmentInput = {
   days: readonly CivilDate[];
@@ -15,6 +14,12 @@ export type RegimeSegmentInput = {
    * Regime Policy no recalcula prorrateos ni jornadas.
    */
   contractedHours: number;
+  /**
+   * Horas del segmento que pueden generar deuda de asistencia.
+   * Para staff, Contract Resolver excluye aquí los días civiles de agosto.
+   * Ordinarias/extras siguen usando contractedHours.
+   */
+  debtContractedHours: number;
   bagMode: boolean;
   termRegime: ContractRegime;
   kind: 'term' | 'pre_alta' | 'gap';
@@ -29,15 +34,27 @@ function hoursOnDays(
 
 /**
  * Balance de un segmento homogéneo (mismo régimen contractual o pre_alta).
- * Staff: horas − contrato (ya resuelto). Sin tope: balance = horas.
+ * Staff:
+ * - deuda: se compara contra debtContractedHours;
+ * - crédito/extras: solo nace al superar contractedHours.
+ *
+ * Así la exención de agosto reduce la obligación que puede generar deuda,
+ * pero no transforma automáticamente esas horas exentas en extras.
+ *
+ * Sin tope: balance = horas.
  */
 function balanceForRegime(
   regime: SegmentRegime,
   hours: number,
   contractedHours: number,
+  debtContractedHours: number,
 ): { weeklyBalancePart: number; ordinaryHours: number; overtimeHours: number; contractedHours: number } {
   if (regime === 'staff') {
-    const weeklyBalancePart = hours - contractedHours;
+    const baseBalance = hours - contractedHours;
+    const weeklyBalancePart =
+      baseBalance >= 0
+        ? baseBalance
+        : Math.min(0, hours - debtContractedHours);
     const ordinaryHours = Math.min(hours, contractedHours);
     const overtimeHours = Math.max(0, hours - contractedHours);
     return { weeklyBalancePart, ordinaryHours, overtimeHours, contractedHours };
@@ -52,29 +69,22 @@ function balanceForRegime(
 }
 
 /**
- * Agosto (vacaciones): no genera deuda de asistencia.
- * Criterio: el lunes de la Semana Marbella cae en agosto (igual que el
- * histórico SQL `extract(month from week_start) = 8`). Así la última
- * semana de agosto (p. ej. 31 ago–6 sep) también queda exenta.
- * No restaura el régimen que convertía todo agosto en extras.
- */
-function applyAugustDebtFloor(
-  days: readonly CivilDate[],
-  weeklyBalancePart: number,
-): number {
-  if (days.length === 0) return weeklyBalancePart;
-  const weekMonday = mondayOnOrBefore(days[0]!);
-  if (!isAugustCivilDate(weekMonday)) return weeklyBalancePart;
-  return Math.max(0, weeklyBalancePart);
-}
-
-/**
  * Única política de régimen. Aplica el régimen contractual del segmento
- * (manager/fixed/staff o pre_alta). Staff en agosto: sin deuda de asistencia.
- * El contrato efectivo llega resuelto por Contract Resolver.
+ * (manager/fixed/staff o pre_alta).
+ *
+ * La exención de deuda de agosto llega ya resuelta en debtContractedHours:
+ * la política solo decide el balance, nunca vuelve a prorratear contrato.
  */
 export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidation {
-  const { days, hoursByDay, contractedHours, bagMode, termRegime, kind } = input;
+  const {
+    days,
+    hoursByDay,
+    contractedHours,
+    debtContractedHours,
+    bagMode,
+    termRegime,
+    kind,
+  } = input;
 
   let regimeApplied: SegmentRegime = termRegime;
   if (kind === 'pre_alta') regimeApplied = 'pre_alta';
@@ -95,11 +105,12 @@ export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidat
   }
 
   const hoursWorked = hoursOnDays(days, hoursByDay);
-  const part = balanceForRegime(regimeApplied, hoursWorked, contractedHours);
-  const weeklyBalancePart =
-    regimeApplied === 'staff'
-      ? applyAugustDebtFloor(days, part.weeklyBalancePart)
-      : part.weeklyBalancePart;
+  const part = balanceForRegime(
+    regimeApplied,
+    hoursWorked,
+    contractedHours,
+    debtContractedHours,
+  );
 
   return {
     days,
@@ -107,7 +118,7 @@ export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidat
     contractedHours,
     bagMode,
     regimeApplied,
-    weeklyBalancePart: roundMarbellaSigned(weeklyBalancePart),
+    weeklyBalancePart: roundMarbellaSigned(part.weeklyBalancePart),
     ordinaryHours: part.ordinaryHours,
     overtimeHours: part.overtimeHours,
     kind,

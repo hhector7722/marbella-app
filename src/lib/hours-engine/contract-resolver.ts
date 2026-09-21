@@ -8,6 +8,7 @@ import type {
 import { roundMarbellaHours } from './marbella-round.ts';
 import {
   compareCivilDate,
+  isAugustCivilDate,
   isCivilDateInRange,
   weekBounds,
 } from './week-dates.ts';
@@ -68,6 +69,11 @@ function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta' | '
 /**
  * Único punto autorizado a resolver el contrato efectivo semanal.
  * Compone por tramo: días/7 × jornada, redondeado Marbella (enteros o medias).
+ *
+ * Para staff también resuelve la jornada que puede generar deuda de asistencia:
+ * los días civiles de agosto quedan exentos, pero siguen formando parte de la
+ * jornada efectiva usada para clasificar ordinarias/extras.
+ *
  * Pre-alta = antes del primer tramo.
  * Gap = huecos entre tramos o después del último tramo.
  */
@@ -123,6 +129,7 @@ export function resolveEffectiveContract(
         days: g.days,
         weeklyHoursOfTerm: 0,
         contractedHours: 0,
+        debtContractedHours: 0,
         bagMode: false,
         termRegime: 'staff',
         overtimeRatePerHour: null,
@@ -136,10 +143,18 @@ export function resolveEffectiveContract(
     const contractedHours = roundMarbellaHours(
       (g.days.length / 7) * term.weeklyHours,
     );
+    const debtDays =
+      term.regime === 'staff'
+        ? g.days.filter((day) => !isAugustCivilDate(day))
+        : g.days;
+    const debtContractedHours = roundMarbellaHours(
+      (debtDays.length / 7) * term.weeklyHours,
+    );
     return {
       days: g.days,
       weeklyHoursOfTerm: term.weeklyHours,
       contractedHours,
+      debtContractedHours,
       bagMode: term.bagMode,
       termRegime: term.regime,
       overtimeRatePerHour: term.overtimeRatePerHour ?? null,

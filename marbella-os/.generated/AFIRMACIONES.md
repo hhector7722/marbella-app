@@ -1,12 +1,12 @@
-<!-- Generado desde 52 documentos de marbella-os/.
-     Huella del origen: d9a6bc5db387e778
+<!-- Generado desde 53 documentos de marbella-os/.
+     Huella del origen: c4201673275dad87
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
 
 # Afirmaciones citables
 
-Los 52 hechos del corpus que tienen identificador estable, con dónde
+Los 53 hechos del corpus que tienen identificador estable, con dónde
 viven y desde cuántos sitios se citan. Derivado. **No es norma**: la norma está
 en el documento de origen, y este índice solo dice dónde.
 
@@ -34,12 +34,13 @@ texto crea un segundo dueño, y eso es exactamente lo que prohíbe `CANON §5`.
 | `INV-C09` | Deuda nunca se “paga”: `carryOut ≤ 0` cuando `balanceFinal ≤ 0` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-C10` | ≤ 1 tramo abierto por empleado; sin solapes en `hours_contract_terms` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 1 |
 | `INV-D01` | **Mismos hechos** + **mismos overrides** + **misma versión Hours Engine** + **misma versión Cost Engine** ⇒ **misma proyección de resultado… | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 9 |
-| `INV-H01` | En segmento staff con lunes de semana en agosto: `weeklyBalancePart ≥ 0` | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
-| `INV-H02` | En segmento staff con lunes en agosto y horas > contrato: `overtimeHours = horas − contrato` y `weeklyBalancePart = overtimeHours` (tras re… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
-| `INV-H03` | Ordinarias/extras de un segmento staff no dependen del suelo de agosto: se calculan como `min/max` respecto al contrato efectivo del segmen… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
-| `INV-H04` | Un segmento staff cuyo lunes de semana no está en agosto no aplica el suelo: `weeklyBalancePart = horas − contrato` | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
-| `INV-H05` | En la semana que contiene la fecha de fin del contrato (y posteriores), `carryOut = 0`, sea el saldo crédito o deuda | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
-| `INV-H06` | Si existe un tramo abierto, no aplica saldo de fin: `carryOut` sigue la cadena normal de [ADR-0001](../../4-decisiones/ADR-0001-hours-engin… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H01` | En staff, `debtContractedHours` se prorratea solo con los días contractuales fuera de agosto | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H02` | Si todos los días contractuales del segmento staff caen en agosto, el segmento no puede producir balance negativo | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H03` | Ordinarias/extras se calculan contra `contractedHours`, no contra `debtContractedHours`; la exención no crea extras | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H04` | En semana mixta, el lado negativo del balance no puede superar la deuda correspondiente a los días fuera de agosto | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H05` | Fuera de agosto, `debtContractedHours = contractedHours` y la regla staff vuelve a `horas − contrato` | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H06` | En la semana que contiene la fecha de fin del contrato (y posteriores), `carryOut = 0`, sea el saldo crédito o deuda | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H07` | Si existe un tramo abierto, no aplica saldo de fin: `carryOut` sigue la cadena normal de [ADR-0001](../../4-decisiones/ADR-0001-hours-engin… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
 | `INV-J01` | Tras writer: `pending_balance = carryIn` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 2 |
 | `INV-J02` | Tras writer: `final_balance = balanceFinal` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-J03` | Tras writer: `balance_hours = weeklyBalance` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |

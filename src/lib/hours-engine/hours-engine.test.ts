@@ -318,36 +318,107 @@ describe('Liquidation Engine', () => {
     assert.equal(r.carryOut, -12);
   });
 
-  it('semana mixta julio/agosto: el suelo sigue el lunes (week_start) en agosto', () => {
-    // Lun 27 jul – Dom 2 ago: lunes en julio → deuda normal.
-    const mixed = liquidateWeek(
+  it('semanas mixtas: solo los días fuera de agosto generan deuda proporcional', () => {
+    // Lun 27 jul – Dom 2 ago: solo 27–31 jul consumen contrato para deuda.
+    const julyAugust = liquidateWeek(
       input({
         weekStart: '2026-07-27',
         logs: [],
       }),
     );
-    assert.equal(mixed.contractedHoursEffective, 40);
-    assert.equal(mixed.weeklyBalance, -40);
+    const julyDebtContract = expectedContract([[5, 40]]);
+    assert.equal(julyAugust.contractedHoursEffective, 40);
+    assert.equal(julyAugust.weeklyBalance, -julyDebtContract);
+    assert.equal(julyAugust.carryOut, -julyDebtContract);
 
-    // Semana íntegramente de agosto → suelo.
+    // Semana íntegramente de agosto: no genera deuda.
     const august = liquidateWeek(
       input({
         weekStart: '2026-08-03',
         logs: [],
       }),
     );
+    assert.equal(august.contractedHoursEffective, 40);
     assert.equal(august.weeklyBalance, 0);
     assert.equal(august.carryOut, 0);
 
-    // Lun 31 ago – Dom 6 sep: lunes en agosto → suelo (vacaciones).
-    const spill = liquidateWeek(
+    // Lun 31 ago – Dom 6 sep: solo 1–6 sep consumen contrato para deuda.
+    const augustSeptember = liquidateWeek(
       input({
         weekStart: '2026-08-31',
         logs: [],
       }),
     );
-    assert.equal(spill.weeklyBalance, 0);
-    assert.equal(spill.carryOut, 0);
+    const septemberDebtContract = expectedContract([[6, 40]]);
+    assert.equal(augustSeptember.contractedHoursEffective, 40);
+    assert.equal(augustSeptember.weeklyBalance, -septemberDebtContract);
+    assert.equal(augustSeptember.carryOut, -septemberDebtContract);
+  });
+
+  it('semana mixta: la exención reduce deuda pero no convierte el tramo perdonado en extras', () => {
+    // 31 ago–6 sep: obligación para deuda = 6/7 de 40h = 34h.
+    // Entre 34h y 40h no hay deuda, pero tampoco extras.
+    const neutral = liquidateWeek(
+      input({
+        weekStart: '2026-08-31',
+        logs: [{ clockInIso: '2026-09-01T08:00:00.000Z', totalHours: 35 }],
+      }),
+    );
+    assert.equal(neutral.contractedHoursEffective, 40);
+    assert.equal(neutral.weeklyBalance, 0);
+    assert.equal(neutral.ordinaryHours, 35);
+    assert.equal(neutral.overtimeHours, 0);
+
+    const over = liquidateWeek(
+      input({
+        weekStart: '2026-08-31',
+        logs: [{ clockInIso: '2026-09-01T08:00:00.000Z', totalHours: 41 }],
+      }),
+    );
+    assert.equal(over.weeklyBalance, 1);
+    assert.equal(over.ordinaryHours, 40);
+    assert.equal(over.overtimeHours, 1);
+  });
+
+  it('caso Willy 8h: 31 ago–6 sep genera 7h de deuda y la semana siguiente no la borra del todo', () => {
+    const willy = employeeBase({
+      employeeId: 'willy',
+      terms: [
+        {
+          effectiveFrom: '2025-12-29',
+          effectiveTo: null,
+          weeklyHours: 8,
+          bagMode: false,
+          regime: 'staff',
+        },
+      ],
+    });
+
+    const boundary = liquidateWeek(
+      input({
+        employee: willy,
+        weekStart: '2026-08-31',
+        carryIn: -32,
+        logs: [],
+      }),
+    );
+    assert.equal(boundary.contractedHoursEffective, 8);
+    assert.equal(boundary.weeklyBalance, -7);
+    assert.equal(boundary.balanceFinal, -39);
+    assert.equal(boundary.carryOut, -39);
+
+    const following = liquidateWeek(
+      input({
+        employee: willy,
+        weekStart: '2026-09-07',
+        carryIn: boundary.carryOut,
+        logs: [{ clockInIso: '2026-09-07T08:00:00.000Z', totalHours: 40 }],
+      }),
+    );
+    assert.equal(following.contractedHoursEffective, 8);
+    assert.equal(following.weeklyBalance, 32);
+    assert.equal(following.balanceFinal, -7);
+    assert.equal(following.carryOut, -7);
   });
 
   it('manager: sin tope staff', () => {
