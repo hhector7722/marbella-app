@@ -28,6 +28,39 @@ function messageCombinedText(parts: unknown): string {
   return out.trim();
 }
 
+/**
+ * Sesión del copiloto vigente. Vive fuera de React para que el `fetch` del
+ * transporte (creado en render) pueda leerla sin tocar refs durante render.
+ * Cada montaje abre una "vida" con su propio id de generación: así una respuesta
+ * en vuelo que llega tras el desmontaje no contamina al montaje siguiente.
+ */
+type SessionLifetime = { id: string | null; generation: number };
+
+let currentSession: SessionLifetime = { id: null, generation: 0 };
+
+function beginSessionLifetime(): () => void {
+  const lifetime: SessionLifetime = { id: null, generation: currentSession.generation + 1 };
+  currentSession = lifetime;
+  return () => {
+    if (currentSession === lifetime) {
+      currentSession = { id: null, generation: lifetime.generation + 1 };
+    }
+  };
+}
+
+function getActiveSessionId(): string | null {
+  return currentSession.id;
+}
+
+function getActiveSessionGeneration(): number {
+  return currentSession.generation;
+}
+
+function setActiveSessionIdForGeneration(generation: number, id: string): void {
+  if (currentSession.generation !== generation) return;
+  currentSession.id = id;
+}
+
 export default function ChatMarbella() {
   const isOpen = useAIStore((s) => s.isOpen);
   const closeChat = useAIStore((s) => s.closeChat);
@@ -64,9 +97,6 @@ export default function ChatMarbella() {
 
 function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const sessionRef = useRef<string | null>(null);
-  sessionRef.current = sessionId;
 
   const [input, setInput] = useState('');
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -74,47 +104,46 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isRecordingRef = useRef(false);
 
   const { status: voiceStatus, startRecording, stopRecording } = useVoiceRecorder();
   const isRecording = voiceStatus === 'recording';
-  isRecordingRef.current = isRecording;
 
-  const onSessionHeader = useCallback((res: Response) => {
-    const sid = res.headers.get('X-Session-Id');
-    if (sid) {
-      sessionRef.current = sid;
-      setSessionId((prev) => prev ?? sid);
-    }
-    return res;
-  }, []);
+  useEffect(() => beginSessionLifetime(), []);
+
+  const fetchWithSession = useCallback(
+    async (url: RequestInfo | URL, opts?: RequestInit) => {
+      const generation = getActiveSessionGeneration();
+      let mergedBody: BodyInit | null | undefined = opts?.body;
+      if (typeof opts?.body === 'string') {
+        try {
+          const j = JSON.parse(opts.body) as Record<string, unknown>;
+          mergedBody = JSON.stringify({
+            ...j,
+            sessionId: getActiveSessionId(),
+          });
+        } catch {
+          mergedBody = opts.body;
+        }
+      }
+      const res = await fetch(url as RequestInfo, {
+        ...opts,
+        body: mergedBody,
+        credentials: 'same-origin',
+      });
+      const sid = res.headers.get('X-Session-Id');
+      if (sid) setActiveSessionIdForGeneration(generation, sid);
+      return res;
+    },
+    []
+  );
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: '/api/copiloto',
-        fetch: async (url, opts) => {
-          let mergedBody: BodyInit | null | undefined = opts?.body;
-          if (typeof opts?.body === 'string') {
-            try {
-              const j = JSON.parse(opts.body) as Record<string, unknown>;
-              mergedBody = JSON.stringify({
-                ...j,
-                sessionId: sessionRef.current ?? null,
-              });
-            } catch {
-              mergedBody = opts.body;
-            }
-          }
-          const res = await fetch(url as RequestInfo, {
-            ...opts,
-            body: mergedBody,
-            credentials: 'same-origin',
-          });
-          return onSessionHeader(res);
-        },
+        fetch: fetchWithSession,
       }),
-    [onSessionHeader]
+    [fetchWithSession]
   );
 
   const { messages, sendMessage, status, error } = useChat({
@@ -155,7 +184,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const handleSend = useCallback(() => {
     const val = input.trim();
     if (!val || busy) return;
-    sendMessage({ text: val }, { body: { sessionId: sessionRef.current ?? null } });
+    sendMessage({ text: val }, { body: { sessionId: getActiveSessionId() } });
     setInput('');
   }, [input, busy, sendMessage]);
 

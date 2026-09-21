@@ -47,6 +47,41 @@ function containModalEvent(event: { stopPropagation: () => void }): void {
     event.stopPropagation();
 }
 
+/**
+ * Rechazo de registro por pila: el resultado de `registerModalSurface` es un
+ * sistema externo, así que se publica como store externo y el componente se
+ * suscribe con `useSyncExternalStore` en lugar de hacer `setState` en efecto.
+ */
+const blockedSurfaceIds = new Set<string>();
+const blockedSurfaceListeners = new Set<() => void>();
+
+function subscribeBlockedSurface(onStoreChange: () => void): () => void {
+    blockedSurfaceListeners.add(onStoreChange);
+    return () => {
+        blockedSurfaceListeners.delete(onStoreChange);
+    };
+}
+
+function isSurfaceBlocked(surfaceId: string): boolean {
+    return blockedSurfaceIds.has(surfaceId);
+}
+
+function setSurfaceBlocked(surfaceId: string, blocked: boolean): void {
+    if (blocked) {
+        if (blockedSurfaceIds.has(surfaceId)) return;
+        blockedSurfaceIds.add(surfaceId);
+    } else {
+        if (!blockedSurfaceIds.delete(surfaceId)) return;
+    }
+    for (const listener of blockedSurfaceListeners) {
+        listener();
+    }
+}
+
+function clearSurfaceBlocked(surfaceId: string): void {
+    blockedSurfaceIds.delete(surfaceId);
+}
+
 export type ModalProps = {
     open: boolean;
     onClose: () => void;
@@ -390,8 +425,12 @@ export function Modal({
     const bodyRef = useRef<HTMLDivElement>(null);
     const openedAtRef = useRef<number | null>(null);
     const trackedLabelRef = useRef<string | null>(null);
-    const [derivedBlocked, setDerivedBlocked] = useState(false);
     const [restoredOpen, setRestoredOpen] = useState(false);
+    const derivedBlocked = useSyncExternalStore(
+        subscribeBlockedSurface,
+        () => isSurfaceBlocked(surfaceId),
+        () => false
+    );
     const historyVersion = useSyncExternalStore(
         subscribeModalHistory,
         getModalHistoryVersion,
@@ -413,14 +452,9 @@ export function Modal({
     const visible = consumerVisible && !derivedBlocked;
 
     const onCloseRef = useRef(onClose);
-    onCloseRef.current = onClose;
     const restoreRef = useRef(() => {
         setRestoredOpen(true);
     });
-    restoreRef.current = () => {
-        setRestoredOpen(true);
-    };
-
     const requestClose = () => {
         setRestoredOpen(false);
         if (!participatesInHistory || !requestModalClose(surfaceId)) {
@@ -428,7 +462,19 @@ export function Modal({
         }
     };
     const requestCloseRef = useRef(requestClose);
-    requestCloseRef.current = requestClose;
+    useLayoutEffect(() => {
+        onCloseRef.current = onClose;
+        restoreRef.current = () => {
+            setRestoredOpen(true);
+        };
+        requestCloseRef.current = requestClose;
+    });
+
+    const [prevOpen, setPrevOpen] = useState(false);
+    if (open !== prevOpen) {
+        setPrevOpen(open);
+        if (open) setRestoredOpen(false);
+    }
 
     const resolvedInstance = instance ?? usageId;
     const resolvedUsageLabel =
@@ -484,10 +530,6 @@ export function Modal({
         trackedLabelRef.current = resolvedUsageLabel;
     }, [disableUsageTracking, open, pathname, resolvedUsageId, resolvedUsageLabel]);
 
-    useEffect(() => {
-        if (open) setRestoredOpen(false);
-    }, [open]);
-
     useLayoutEffect(() => {
         if (!participatesInHistory) return;
         return () => {
@@ -497,7 +539,7 @@ export function Modal({
 
     useEffect(() => {
         if (!consumerVisible) {
-            setDerivedBlocked(false);
+            setSurfaceBlocked(surfaceId, false);
             if (participatesInHistory) notifyModalHistoryClose(surfaceId);
             return;
         }
@@ -509,7 +551,7 @@ export function Modal({
         });
 
         if (!registration.ok) {
-            setDerivedBlocked(true);
+            setSurfaceBlocked(surfaceId, true);
             if (process.env.NODE_ENV !== 'production') {
                 const hint =
                     registration.reason === 'derived-without-base'
@@ -517,10 +559,12 @@ export function Modal({
                         : 'Solo se permite una superficie derivada (ADR-0007). No se abre una tercera capa.';
                 console.error(`[Modal] ${hint}`);
             }
-            return;
+            return () => {
+                clearSurfaceBlocked(surfaceId);
+            };
         }
 
-        setDerivedBlocked(false);
+        setSurfaceBlocked(surfaceId, false);
         if (participatesInHistory) {
             registerModalHistory({
                 surfaceId,
@@ -538,6 +582,7 @@ export function Modal({
         return () => {
             registration.unregister();
             unlockScroll();
+            clearSurfaceBlocked(surfaceId);
         };
     }, [
         consumerVisible,
