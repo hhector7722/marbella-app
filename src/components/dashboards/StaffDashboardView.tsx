@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 import type { Tables, TablesInsert } from '@/types/supabase';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, formatGeofenceRejectionMessage, isOutsideGeofence, logGeofenceRejection } from '@/lib/location';
-import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
+import { DEFAULT_FICHAJE_OVERLAY_VIDEO, FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 import {
     PLANTILLA_EMPLOYEE_SELECT,
@@ -323,7 +323,7 @@ export default function StaffDashboardView({
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [cameraFovNoticeAckedAt, setCameraFovNoticeAckedAt] = useState<string | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
-    const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
+    const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>(DEFAULT_FICHAJE_OVERLAY_VIDEO);
     const [giffOverlayFading, setGiffOverlayFading] = useState(false);
     const [giffActive, setGiffActive] = useState(false);
     const giffFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

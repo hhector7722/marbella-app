@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-21
 
+- **Los vídeos operativos dejan de replicarse en cada despliegue.** Manuales y clips de fichaje sin datos personales se sirven desde el contenedor público `manuales` de Supabase Storage, limitado a MP4 y sin escritura desde el cliente. El manual de cobros, que muestra un nombre completo, vive en `manuales-privados` y se abre con una URL firmada tras autenticar.
+
 - **El catálogo de ingredientes puede retirar un duplicado sin borrarlo.** `ingredients.archived_at` marca un ingrediente como archivado: deja de ofrecerse en catálogos, recetas, pedidos, inventario, mermas y mapeos, y se puede reactivar. [ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md).
 
 - **Se corrige el duplicado `AQUARIUS NARANJA LATA`.** Su mapeo de proveedor y su línea de albarán apuntan al ingrediente canónico `Aquarius naranja`; el duplicado queda archivado sin borrar la evidencia ni el histórico.

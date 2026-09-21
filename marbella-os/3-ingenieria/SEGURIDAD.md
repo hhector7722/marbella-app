@@ -155,14 +155,15 @@ Las cinco políticas de `manager_ledger` leen el rol **del testigo**, no de `pro
 
 ## 7. Archivos
 
-Once contenedores de almacenamiento. Cinco son públicos:
+Trece contenedores de almacenamiento. Siete son públicos:
 
 | Contenedor | Público | Valoración |
 |---|---|---|
 | `avatars`, `carta_items`, `recipe_videos`, `suppliers` | Sí | Correcto: son imágenes que se muestran |
+| `manuales` | Sí | Correcto: vídeos operativos y clips deportivos sin datos personales; escritura no expuesta al cliente |
 | `ai_assets` | **Sí** | Audio de conversaciones. Se borra a los siete días |
 | `box_images` | **Sí** | **Fotos de recuentos de caja** |
-| `nominas`, `employee-documents`, `albaranes`, `cash_closings`, `pavilion_activities` | No | Correcto |
+| `nominas`, `employee-documents`, `albaranes`, `cash_closings`, `pavilion_activities`, `manuales-privados` | No | Correcto. `manuales-privados` contiene el vídeo de cobros con un nombre completo y se sirve con URL firmada tras autenticar |
 
 `box_images` público es un error: son fotografías de dinero contado, con fecha. Registrado como [D26](../5-estado/DEUDA.md).
 

@@ -1,23 +1,25 @@
 /**
  * Manuales del personal (Info → Manuales en `/staff/dashboard`).
- * Coloca los ficheros bajo `public/` con la misma ruta URL (sin prefijo `public`).
- * Ej.: `checkListPdf` → archivo en disco `public/docs/manuals/check-list.pdf`.
+ * Los documentos e imágenes permanecen bajo `public/`; los vídeos se sirven
+ * desde el bucket público `manuales` de Supabase Storage.
  */
+import { manualesVideoUrl, privateManualesVideoUrl } from '@/lib/public-storage';
+
 export const STAFF_MANUAL_ASSETS = {
     checkListPdf: '/docs/manuals/check-list.pdf?v=20260904',
     /** PDF: Limpieza Horno (submenú desde entrada «Horno»). */
     hornoLimpiezaPdf: '/docs/manuals/horno-limpieza.pdf',
     /** Vídeo: Funcionamiento Horno (visor embebido en modal). */
-    hornoFuncionamientoVideo: '/docs/manuals/horno-funcionamiento.mp4',
-    altavocesVideo: '/docs/manuals/altavoces.mp4',
+    hornoFuncionamientoVideo: manualesVideoUrl('operacion/horno-funcionamiento.mp4'),
+    altavocesVideo: manualesVideoUrl('operacion/altavoces.mp4'),
     bebidasImage: '/docs/manuals/bebidas.png',
     cambiosLluviaImage: '/docs/manuals/cambios-lluvia.png',
     cuadroElectricoImage: '/docs/manuals/cuadro-electrico.png',
     /** Vídeos submenú TPV (visor embebido en modal). */
-    tpvAnulacionesVideo: '/docs/manuals/abono.mp4',
-    tpvDescuentosVideo: '/docs/manuals/descuento.mp4',
-    tpvCobrosPendientesVideo: '/docs/manuals/cobros.mp4',
-    tpvImpresorasVideo: '/docs/manuals/tickets.mp4',
+    tpvAnulacionesVideo: manualesVideoUrl('operacion/abono.mp4'),
+    tpvDescuentosVideo: manualesVideoUrl('operacion/descuento.mp4'),
+    tpvCobrosPendientesVideo: privateManualesVideoUrl('operacion/cobros.mp4'),
+    tpvImpresorasVideo: manualesVideoUrl('operacion/tickets.mp4'),
 } as const;
 
 export type StaffManualMenuId =
