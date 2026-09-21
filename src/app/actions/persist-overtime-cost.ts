@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import {
   mondayOnOrBefore,
@@ -44,9 +45,26 @@ export async function syncOvertimeCostAfterTimeLogChange(
     return { success: false, error: 'Fecha afectada inválida' };
   }
 
+  const supabaseUrl =
+    process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!supabaseUrl || !serviceRoleKey) {
+    return {
+      success: false,
+      error: 'Configuración incompleta del Writer de horas',
+    };
+  }
+
+  // La sesión del usuario autoriza la operación; la proyección calculada se
+  // persiste en servidor con service_role. Staff no obtiene escritura directa
+  // sobre weekly_snapshots ni puede alterar overrides administrativos.
+  const writerClient = createServiceClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
   const fromWeekStart = mondayOnOrBefore(day);
   const result = await writeProjectionFromWeek(
-    supabase,
+    writerClient,
     uid,
     fromWeekStart,
     'fichaje',
