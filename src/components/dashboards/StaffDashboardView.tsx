@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { differenceInMinutes } from 'date-fns';
 import { formatYmdInMadrid, madridDayUtcRangeIso, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { cn } from '@/lib/utils';
+import type { Tables, TablesInsert } from '@/types/supabase';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, formatGeofenceRejectionMessage, isOutsideGeofence, logGeofenceRejection } from '@/lib/location';
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
@@ -84,6 +85,23 @@ const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
 type WorkStatus = 'idle' | 'working' | 'finished';
 
 type ManualMediaViewerState = { type: 'video' | 'image'; src: string; title: string } | null;
+
+type CashBoxRow = Tables<'cash_boxes'>;
+type CashBoxInventoryRow = Tables<'cash_box_inventory'>;
+type TimeLogRow = Tables<'time_logs'>;
+type TreasuryLogInsert = TablesInsert<'treasury_log'>;
+
+const readErrorMessage = (error: unknown, fallback: string): string => {
+    if (error instanceof Error && error.message) return error.message;
+    if (typeof error === 'object' && error !== null) {
+        const record = error as Record<string, unknown>;
+        for (const key of ['message', 'error_description', 'details'] as const) {
+            const value = record[key];
+            if (typeof value === 'string' && value) return value;
+        }
+    }
+    return fallback;
+};
 
 const applyRoundingRule = (totalMinutes: number): number => {
     if (totalMinutes <= 0) return 0;
@@ -205,7 +223,7 @@ function StaffFichajeIcon({
     status: WorkStatus;
     clockLoading: boolean;
     actionLoading: boolean;
-    todayLog: { clock_in?: string; clock_out?: string } | null;
+    todayLog: TimeLogRow | null;
     onClockIn: () => void;
     onClockOut: () => void;
 }) {
@@ -297,7 +315,7 @@ export default function StaffDashboardView({
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
     const [userEmail, setUserEmail] = useState<string>(() => initialEmail ?? '');
     const [status, setStatus] = useState<WorkStatus>('idle');
-    const [todayLog, setTodayLog] = useState<any>(null);
+    const [todayLog, setTodayLog] = useState<TimeLogRow | null>(null);
     const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
 
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
@@ -366,7 +384,7 @@ export default function StaffDashboardView({
     const [isTpvManualModalOpen, setIsTpvManualModalOpen] = useState(false);
     const [isHornoManualModalOpen, setIsHornoManualModalOpen] = useState(false);
     const [manualMediaViewer, setManualMediaViewer] = useState<ManualMediaViewerState>(null);
-    const [changeBox, setChangeBox] = useState<any>(null);
+    const [changeBox, setChangeBox] = useState<CashBoxRow | null>(null);
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
     const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
@@ -376,15 +394,15 @@ export default function StaffDashboardView({
     const searchParams = useSearchParams();
 
     // NUEVOS ESTADOS PARA CAJA INICIAL ("COMPRA")
-    const [operationalBox, setOperationalBox] = useState<any>(null);
-    const [allBoxes, setAllBoxes] = useState<any[]>([]);
+    const [operationalBox, setOperationalBox] = useState<CashBoxRow | null>(null);
+    const [allBoxes, setAllBoxes] = useState<CashBoxRow[]>([]);
     const [isCashChangeModalOpen, setIsCashChangeModalOpen] = useState(false);
-    const [selectedBox, setSelectedBox] = useState<any>(null);
+    const [selectedBox, setSelectedBox] = useState<CashBoxRow | null>(null);
     const [cashModalMode, setCashModalMode] = useState<'none' | 'out'>('none');
     const [cashCountTotal, setCashCountTotal] = useState(0);
     const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);
     const [purchaseDate, setPurchaseDate] = useState(formatCashCountDateInput);
-    const [boxInventory, setBoxInventory] = useState<any[]>([]);
+    const [boxInventory, setBoxInventory] = useState<CashBoxInventoryRow[]>([]);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
@@ -461,14 +479,14 @@ export default function StaffDashboardView({
                 .single();
 
             if (profile) {
-                setUserRole(profile.role as any);
+                setUserRole(profile.role as 'staff' | 'manager' | 'supervisor');
                 const ackedAt = (profile as { camera_fov_notice_acked_at?: string | null })
                     .camera_fov_notice_acked_at;
                 setCameraFovNoticeAckedAt(typeof ackedAt === 'string' ? ackedAt : null);
             } else {
                 setCameraFovNoticeAckedAt(null);
                 if (identity?.isViewingAs) {
-                    setUserRole(identity.effectiveRole as any);
+                    setUserRole(identity.effectiveRole as 'staff' | 'manager' | 'supervisor');
                 } else if (initialRole) {
                     setUserRole(initialRole);
                 }
@@ -498,9 +516,10 @@ export default function StaffDashboardView({
                 .lte('clock_in', endOfDay)
                 .maybeSingle();
 
-            if (log) {
-                setTodayLog(log);
-                setStatus(log.clock_out ? 'finished' : 'working');
+            const todayLogRow = (log ?? null) as TimeLogRow | null;
+            if (todayLogRow) {
+                setTodayLog(todayLogRow);
+                setStatus(todayLogRow.clock_out ? 'finished' : 'working');
             } else {
                 setTodayLog(null);
                 setStatus('idle');
@@ -510,10 +529,11 @@ export default function StaffDashboardView({
             const boxesTask = (async () => {
                 const { data: allBoxesData, error: boxError } = await supabase.from('cash_boxes').select('*').order('name');
                 if (boxError) console.error("Initialize Boxes Error:", boxError);
-                if (allBoxesData && allBoxesData.length > 0) {
-                    setAllBoxes(allBoxesData);
-                    const cBox = allBoxesData.find((b: any) => b.type === 'change') || allBoxesData[0];
-                    const oBox = allBoxesData.find((b: any) => b.type === 'operational') || allBoxesData[0];
+                const boxes = (allBoxesData ?? []) as CashBoxRow[];
+                if (boxes.length > 0) {
+                    setAllBoxes(boxes);
+                    const cBox = boxes.find((b) => b.type === 'change') || boxes[0];
+                    const oBox = boxes.find((b) => b.type === 'operational') || boxes[0];
                     setChangeBox(cBox);
                     setOperationalBox(oBox);
                 }
@@ -540,27 +560,30 @@ export default function StaffDashboardView({
         }
     }
 
-    const openTreasuryModal = async (box: any, mode: 'out') => {
+    const openTreasuryModal = async (box: CashBoxRow, mode: 'out') => {
         setSelectedBox(box);
         if (mode === 'out') {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+            const rows = (data ?? []) as CashBoxInventoryRow[];
             const initial: Record<number, number> = {};
-            data?.forEach((d: any) => initial[Number(d.denomination)] = d.quantity);
+            rows.forEach((d) => { initial[Number(d.denomination)] = d.quantity ?? 0; });
             setBoxInventoryMap(initial);
-            setBoxInventory(data || []);
+            setBoxInventory(rows);
         }
         setCashModalMode(mode);
     };
 
-    const handleCashTransaction = async (total: number, breakdown: any, notesOrOutBreakdown: any, customDate?: string) => {
+    const handleCashTransaction = async (total: number, breakdown: Record<number, number>, notesOrOutBreakdown: string, customDate?: string) => {
         try {
             if (!selectedBox) return;
-            const payload: any = {
+            const breakdownForDb: Record<string, number> = {};
+            Object.entries(breakdown).forEach(([k, v]) => { breakdownForDb[k] = v; });
+            const payload: TreasuryLogInsert = {
                 box_id: selectedBox.id,
                 type: 'OUT',
                 amount: total,
-                breakdown: breakdown,
-                notes: notesOrOutBreakdown as string
+                breakdown: breakdownForDb,
+                notes: notesOrOutBreakdown
             };
 
             if (customDate) {
@@ -578,17 +601,17 @@ export default function StaffDashboardView({
     };
 
     const buildPaymentSources = (): PaymentSourceOption[] => {
-        const list: any[] = [];
+        const list: PaymentSourceOption[] = [];
         const op = allBoxes.find(b => b.type === 'operational');
-        const changeBoxes = allBoxes.filter(b => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        const tpvBoxes = allBoxes.filter(b => b.type === 'tpv').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const changeBoxes = allBoxes.filter(b => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        const tpvBoxes = allBoxes.filter(b => b.type === 'tpv').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-        if (op) list.push({ id: op.id, name: 'Inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url });
-        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
+        if (op) list.push({ id: op.id, name: 'Inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url ?? undefined });
+        changeBoxes.forEach((b, i) => list.push({ id: b.id, name: `Cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url ?? undefined }));
 
         // Add TPVs from DB if they exist, otherwise fallback for migration period
         if (tpvBoxes.length > 0) {
-            tpvBoxes.forEach(b => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url }));
+            tpvBoxes.forEach(b => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url ?? undefined }));
         } else {
             list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
             list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
@@ -597,14 +620,15 @@ export default function StaffDashboardView({
     };
 
     const openPurchaseMultiSourceModal = async () => {
-        const op = allBoxes.find((b: any) => b.type === 'operational');
-        const changeBoxes = allBoxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        const boxesToLoad = [op, ...changeBoxes].filter(Boolean);
+        const op = allBoxes.find((b) => b.type === 'operational');
+        const changeBoxes = allBoxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        const boxesToLoad = [op, ...changeBoxes].filter((b): b is CashBoxRow => Boolean(b));
         const inv: Record<string, Record<number, number>> = {};
         for (const box of boxesToLoad) {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+            const rows = (data ?? []) as CashBoxInventoryRow[];
             const map: Record<number, number> = {};
-            data?.forEach((d: any) => { map[Number(d.denomination)] = d.quantity; });
+            rows.forEach((d) => { map[Number(d.denomination)] = d.quantity ?? 0; });
             inv[box.id] = map;
         }
         setPurchaseInventoriesByBoxId(inv);
@@ -614,7 +638,7 @@ export default function StaffDashboardView({
     const handleOpenCompra = () => {
         trackStaffShortcut('Compra');
         const cashBoxes = allBoxes.filter(
-            (b: any) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv',
+            (b) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv',
         );
         if (cashBoxes.length === 0) {
             toast.error('No hay cajas configuradas');
@@ -642,7 +666,7 @@ export default function StaffDashboardView({
                 if (entry.amount < 0.005) continue;
                 const breakdownForDb: Record<string, number> = {};
                 Object.entries(entry.breakdown).forEach(([k, v]) => { if (v !== 0) breakdownForDb[String(k)] = v; });
-                const row: any = {
+                const row: TreasuryLogInsert = {
                     box_id: entry.sourceId,
                     type: 'OUT',
                     amount: entry.amount,
@@ -656,7 +680,7 @@ export default function StaffDashboardView({
             if (payload.changeAmount >= 0.01 && payload.changeDestinationBoxId) {
                 const changeBreakdownForDb: Record<string, number> = {};
                 Object.entries(payload.changeBreakdown).forEach(([k, v]) => { if (v !== 0) changeBreakdownForDb[String(k)] = v; });
-                const inRow: any = {
+                const inRow: TreasuryLogInsert = {
                     box_id: payload.changeDestinationBoxId,
                     type: 'IN',
                     amount: payload.changeAmount,
@@ -694,13 +718,13 @@ export default function StaffDashboardView({
                 lat = pos.coords.latitude;
                 lng = pos.coords.longitude;
                 distance = getDistanceFromLatLonInMeters(lat, lng, MARBELLA_COORDS.lat, MARBELLA_COORDS.lng);
-            } catch (geoError: any) {
+            } catch (geoError: unknown) {
                 console.error("Geo error:", geoError);
                 const exemptLocation = userRole === 'manager' ||
                     (userEmail?.toLowerCase() === 'marbellaremote@gmail.com') ||
                     (userEmail?.toLowerCase() === 'hernang6799@gmail.com');
                 if (!exemptLocation) {
-                    toast.error(geoError.message || "Ubicación necesaria para fichar");
+                    toast.error(readErrorMessage(geoError, "Ubicación necesaria para fichar"));
                     setActionLoading(false);
                     return;
                 }
@@ -752,7 +776,7 @@ export default function StaffDashboardView({
                     .select()
                     .single();
                 if (inErr) throw inErr;
-                setTodayLog(data); setStatus('working'); toast.success("¡Jornada iniciada!");
+                setTodayLog((data ?? null) as TimeLogRow | null); setStatus('working'); toast.success("¡Jornada iniciada!");
                 if (isCameraFovNoticePending(cameraFovNoticeAckedAt)) {
                     const ackedAt = now.toISOString();
                     const { error: ackErr } = await supabase
@@ -794,7 +818,7 @@ export default function StaffDashboardView({
                     .single();
                 if (outErr) throw outErr;
 
-                setTodayLog(data); setStatus('finished'); toast.success("Jornada finalizada.");
+                setTodayLog((data ?? null) as TimeLogRow | null); setStatus('finished'); toast.success("Jornada finalizada.");
                 const dayYmd = formatYmdInMadrid(now);
                 const sync = await syncOvertimeCostAfterTimeLogChange(userId, dayYmd);
                 if (!sync.success) {
@@ -811,12 +835,7 @@ export default function StaffDashboardView({
             }
             setTimeout(() => initialize(), 0);
         } catch (error) {
-            const msg =
-                (error as any)?.message ||
-                (error as any)?.error_description ||
-                (error as any)?.details ||
-                "Error al fichar";
-            toast.error(msg);
+            toast.error(readErrorMessage(error, "Error al fichar"));
         } finally { setActionLoading(false); }
     };
 

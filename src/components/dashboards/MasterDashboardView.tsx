@@ -26,9 +26,11 @@ import { Modal } from '@/components/ui/modal';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { randomId } from '@/lib/random-id';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
-import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { StaffSelectionModal, type PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
 import { useHomeTreasury } from '@/hooks/useHomeTreasury';
+import type { HomeTreasuryBox } from '@/lib/treasury/home-treasury-cache';
+import type { Tables, TablesInsert } from '@/types/supabase';
 import {
     PLANTILLA_EMPLOYEE_SELECT,
     filterVisiblePlantillaEmployees,
@@ -48,8 +50,8 @@ type MasterDashboardViewProps = {
         liveTickets?: { total: number; count: number };
         salesChartData?: { hora: number; total: number }[];
         actualBalance?: number;
-        boxes?: any[];
-        allEmployees?: any[];
+        boxes?: HomeTreasuryBox[];
+        allEmployees?: PlantillaEmployee[];
     };
     initialUserId?: string | null;
 };
@@ -107,7 +109,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
-    const [auditBox, setAuditBox] = useState<any>(null);
+    const [auditBox, setAuditBox] = useState<HomeTreasuryBox | null>(null);
     const [cashCountTotal, setCashCountTotal] = useState(0);
     const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
@@ -115,7 +117,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     // Caja inicial: menú de acciones + procesos (Entrada / Salida / Compra / Arqueo).
     const [isCajaInicialActionsOpen, setIsCajaInicialActionsOpen] = useState(false);
     const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out'>('none');
-    const [selectedCashBox, setSelectedCashBox] = useState<any>(null);
+    const [selectedCashBox, setSelectedCashBox] = useState<HomeTreasuryBox | null>(null);
     const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
     const [purchaseDate, setPurchaseDate] = useState(formatCashCountDateInput);
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
@@ -123,8 +125,8 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [closingSalesSummary, setClosingSalesSummary] = useState(
         initialData?.liveTickets || { total: 0, count: 0 }
     );
-    const [allEmployees, setAllEmployees] = useState<any[]>(initialData?.allEmployees || []);
-    const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
+    const [allEmployees, setAllEmployees] = useState<PlantillaEmployee[]>(initialData?.allEmployees || []);
+    const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<PlantillaEmployee[] | null>(null);
     const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
 
     const [overtimeViewMonth, setOvertimeViewMonth] = useState(() => startOfMonth(new Date()));
@@ -133,6 +135,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [isOvertimeModalOpen, setIsOvertimeModalOpen] = useState(false);
     const [overtimeWeekDetail, setOvertimeWeekDetail] = useState<WeeklyStats | null>(null);
     const [overtimePaidStatus, setOvertimePaidStatus] = useState<Record<string, boolean>>({});
+    const [overtimePaidStatusSource, setOvertimePaidStatusSource] = useState<WeeklyStats[] | null>(null);
     const [overtimeWorkerHistory, setOvertimeWorkerHistory] = useState<{ workerId: string; weekId: string } | null>(null);
     const [overtimeRefreshKey, setOvertimeRefreshKey] = useState(0);
     const { weeks: overtimeWeeksData, loading: overtimeLoading } = useOvertimeWeeks(
@@ -140,6 +143,18 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
         overtimeRangeEnd,
         { refreshKey: overtimeRefreshKey },
     );
+
+    // Estado local de pago: se resincroniza al cambiar el snapshot de semanas.
+    if (overtimeWeeksData !== overtimePaidStatusSource) {
+        setOvertimePaidStatusSource(overtimeWeeksData);
+        const nextPaid: Record<string, boolean> = {};
+        overtimeWeeksData.forEach((week) => {
+            week.staff?.forEach((s) => {
+                nextPaid[`${week.weekId}-${s.id}`] = !!s.isPaid;
+            });
+        });
+        setOvertimePaidStatus(nextPaid);
+    }
     const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
 
     const [userId, setUserId] = useState<string | null>(() => initialUserId ?? null);
@@ -215,16 +230,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
         };
     }, [supabase]);
 
-    useEffect(() => {
-        const nextPaid: Record<string, boolean> = {};
-        overtimeWeeksData.forEach((week) => {
-            week.staff?.forEach((s) => {
-                nextPaid[`${week.weekId}-${s.id}`] = !!s.isPaid;
-            });
-        });
-        setOvertimePaidStatus(nextPaid);
-    }, [overtimeWeeksData]);
-
     const toggleOvertimePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
         const key = `${weekId}-${staffId}`;
@@ -299,7 +304,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             return null;
         }
 
-        const cleaned = filterVisiblePlantillaEmployees(data || []);
+        const cleaned = filterVisiblePlantillaEmployees((data || []) as PlantillaEmployee[]);
         setAllEmployees(cleaned);
         return cleaned;
     };
@@ -312,7 +317,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             toast.error('Error al cargar plantilla completa');
             return null;
         }
-        const cleaned = (data || []).filter((p: any) => {
+        const cleaned = ((data || []) as PlantillaEmployee[]).filter((p) => {
             const name = (p.first_name || '').trim().toLowerCase();
             return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
         });
@@ -321,7 +326,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     };
 
     const patchPlantillaVisibility = (employeeId: string, visible: boolean) => {
-        const patch = (list: any[]) =>
+        const patch = (list: PlantillaEmployee[]) =>
             list.map((emp) =>
                 emp.id === employeeId ? { ...emp, visible_in_plantilla: visible } : emp
             );
@@ -353,13 +358,13 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
 
     const buildPaymentSources = (): (BoxOption & PaymentSourceOption)[] => {
         const list: (BoxOption & PaymentSourceOption)[] = [];
-        const op = boxes.find((b: any) => b.type === 'operational');
-        const changes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        const tpvBoxes = boxes.filter((b: any) => b.type === 'tpv').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const op = boxes.find((b) => b.type === 'operational');
+        const changes = boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        const tpvBoxes = boxes.filter((b) => b.type === 'tpv').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url ?? undefined });
-        changes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
+        changes.forEach((b, i) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url ?? undefined }));
         if (tpvBoxes.length > 0) {
-            tpvBoxes.forEach((b: any) => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url }));
+            tpvBoxes.forEach((b) => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url ?? undefined }));
         } else {
             list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
             list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
@@ -367,31 +372,31 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
         return list;
     };
 
-    const operationalBox = boxes.find((b: any) => b.type === 'operational');
+    const operationalBox = boxes.find((b) => b.type === 'operational');
 
     const openCajaInicialActions = () => setIsCajaInicialActionsOpen(true);
 
-    const openCajaTreasuryModal = async (box: any, mode: 'in' | 'out') => {
+    const openCajaTreasuryModal = async (box: HomeTreasuryBox, mode: 'in' | 'out') => {
         setSelectedCashBox(box);
         const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
         const initial: Record<number, number> = {};
-        data?.forEach((d) => {
-            initial[Number(d.denomination)] = d.quantity;
+        ((data || []) as Tables<'cash_box_inventory'>[]).forEach((d) => {
+            initial[Number(d.denomination)] = d.quantity ?? 0;
         });
         setBoxInventoryMap(initial);
         setIsCajaInicialActionsOpen(false);
         setCashModalMode(mode);
     };
 
-    const handleCashTransaction = async (total: number, breakdown: any, notesOrOutBreakdown: any, customDate?: string) => {
+    const handleCashTransaction = async (total: number, breakdown: Record<number, number>, notesOrOutBreakdown: string, customDate?: string) => {
         if (!selectedCashBox) return;
         try {
-            const payload: any = {
+            const payload: TablesInsert<'treasury_log'> = {
                 box_id: selectedCashBox.id,
                 type: cashModalMode === 'in' ? 'IN' : 'OUT',
                 amount: total,
                 breakdown,
-                notes: notesOrOutBreakdown as string,
+                notes: notesOrOutBreakdown,
             };
             if (customDate) payload.created_at = customDate;
             await supabase.from('treasury_log').insert(payload);
@@ -406,14 +411,14 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     };
 
     const openPurchaseMultiSourceModal = async () => {
-        const op = boxes.find((b: any) => b.type === 'operational');
-        const changeBoxes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const op = boxes.find((b) => b.type === 'operational');
+        const changeBoxes = boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         const boxesToLoad = [...(op ? [op] : []), ...changeBoxes];
         const inv: Record<string, Record<number, number>> = {};
         for (const box of boxesToLoad) {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
             const map: Record<number, number> = {};
-            data?.forEach((d: any) => { map[Number(d.denomination)] = d.quantity; });
+            ((data || []) as Tables<'cash_box_inventory'>[]).forEach((d) => { map[Number(d.denomination)] = d.quantity ?? 0; });
             inv[box.id] = map;
         }
         setPurchaseInventoriesByBoxId(inv);
@@ -436,7 +441,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 if (entry.amount < 0.005) continue;
                 const breakdownForDb: Record<string, number> = {};
                 Object.entries(entry.breakdown).forEach(([k, v]) => { if (v !== 0) breakdownForDb[String(k)] = v; });
-                const row: any = {
+                const row: TablesInsert<'treasury_log'> = {
                     box_id: entry.sourceId,
                     type: 'OUT',
                     amount: entry.amount,
@@ -450,7 +455,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             if (payload.changeAmount >= 0.01 && payload.changeDestinationBoxId) {
                 const changeBreakdownForDb: Record<string, number> = {};
                 Object.entries(payload.changeBreakdown).forEach(([k, v]) => { if (v !== 0) changeBreakdownForDb[String(k)] = v; });
-                const inRow: any = {
+                const inRow: TablesInsert<'treasury_log'> = {
                     box_id: payload.changeDestinationBoxId,
                     type: 'IN',
                     amount: payload.changeAmount,
@@ -490,11 +495,11 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
         void openCajaTreasuryModal(box, accion);
     };
 
-    const openChangeBoxAudit = async (box: any) => {
+    const openChangeBoxAudit = async (box: HomeTreasuryBox) => {
         const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
         const initial: Record<number, number> = {};
-        data?.forEach((d) => {
-            initial[Number(d.denomination)] = d.quantity;
+        ((data || []) as Tables<'cash_box_inventory'>[]).forEach((d) => {
+            initial[Number(d.denomination)] = d.quantity ?? 0;
         });
         setBoxInventoryMap(initial);
         setAuditBox(box);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState, memo, useSyncExternalStore } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
@@ -20,7 +20,7 @@ import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import { AdminMoreFunctionsModal } from '@/components/modals/AdminMoreFunctionsModal';
 import { InfoMenuModals } from '@/components/modals/InfoMenuModals';
 import Link from 'next/link';
-import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { StaffSelectionModal, type PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
 import { Modal } from '@/components/ui/modal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
@@ -53,6 +53,71 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
+import type { HomeTreasuryBox } from '@/lib/treasury/home-treasury-cache';
+import type { Tables, TablesInsert } from '@/types/supabase';
+
+// ====== Tipos locales (campos realmente usados) ======
+
+type ProfileRow = Tables<'profiles'>;
+type CashBoxInventoryRow = Tables<'cash_box_inventory'>;
+type TreasuryLogInsert = TablesInsert<'treasury_log'>;
+
+interface OvertimeStaffMember {
+    id: string;
+    name?: string | null;
+    amount?: number;
+    totalCost?: number;
+    totalHours?: number;
+    overtimeHours?: number;
+    isPaid?: boolean;
+    preferStock?: boolean;
+}
+
+interface OvertimeWeek {
+    weekId: string;
+    label?: string;
+    startDate?: Date;
+    totalAmount?: number;
+    total?: number;
+    totalHours?: number;
+    expanded?: boolean;
+    staff: OvertimeStaffMember[];
+}
+
+type AdminDashboardInitialData = {
+    actualBalance?: number;
+    boxes?: HomeTreasuryBox[];
+    paidStatus?: Record<string, boolean>;
+    allEmployees?: PlantillaEmployee[];
+};
+
+function toPlantillaEmployee(row: ProfileRow): PlantillaEmployee {
+    return {
+        id: row.id,
+        first_name: row.first_name ?? '',
+        last_name: row.last_name ?? '',
+        role: row.role ?? undefined,
+        email: row.email,
+        avatar_url: row.avatar_url,
+        end_date: row.end_date,
+        visible_in_plantilla: row.visible_in_plantilla,
+    };
+}
+
+const DESKTOP_MIN_WIDTH_PX = 768;
+
+function subscribeDesktop(callback: () => void): () => void {
+    window.addEventListener('resize', callback);
+    return () => window.removeEventListener('resize', callback);
+}
+
+function getIsDesktopSnapshot(): boolean {
+    return window.innerWidth >= DESKTOP_MIN_WIDTH_PX;
+}
+
+function getIsDesktopServerSnapshot(): boolean {
+    return false;
+}
 
 // Sub-components
 const StaffOvertimeRow = memo(({
@@ -62,7 +127,7 @@ const StaffOvertimeRow = memo(({
     onTogglePaid,
     onClick
 }: {
-    staff: any,
+    staff: OvertimeStaffMember,
     weekId: string,
     isPaid: boolean,
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void,
@@ -70,7 +135,7 @@ const StaffOvertimeRow = memo(({
 }) => (
     <WorkerPersonRow
         name={firstGivenName(staff.name, 'Trabajador')}
-        value={staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : ' '}
+        value={(staff.amount ?? 0) > 0.05 ? `${(staff.amount ?? 0).toFixed(0)}€` : ' '}
         onClick={onClick}
         trailing={
             <button
@@ -103,14 +168,14 @@ const WeekOvertimeCard = memo(({
     onTogglePreferStock,
     onSelectHistory
 }: {
-    week: any,
+    week: OvertimeWeek,
     paidStatus: Record<string, boolean>,
     onToggleWeek: (weekId: string) => void,
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void,
     onTogglePreferStock: (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => void,
     onSelectHistory: (workerId: string, weekId: string) => void
 }) => {
-    const isFullyPaid = week.staff?.every((s: any) => s.amount === 0 || paidStatus[`${week.weekId}-${s.id}`]);
+    const isFullyPaid = week.staff?.every((s) => s.amount === 0 || paidStatus[`${week.weekId}-${s.id}`]);
 
     return (
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden transition-all">
@@ -137,13 +202,13 @@ const WeekOvertimeCard = memo(({
                 </div>
                 <div className="text-right flex items-center gap-3">
                     <span className="text-lg font-black text-gray-900">
-                        {week.total > 0.05 ? `${week.total.toFixed(0)}€` : " "}
+                        {(week.total ?? 0) > 0.05 ? `${(week.total ?? 0).toFixed(0)}€` : " "}
                     </span>
                 </div>
             </button>
             {week.expanded && (
                 <div className="px-4 pb-4 pt-1 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                    {week.staff.filter((s: any) => s.amount > 0).map((s: any) => (
+                    {week.staff.filter((s) => (s.amount ?? 0) > 0).map((s) => (
                         <StaffOvertimeRow
                             key={s.id}
                             staff={s}
@@ -166,7 +231,7 @@ const AdminDashboardView = ({
     initialData,
     initialUserId,
 }: {
-    initialData?: any;
+    initialData?: AdminDashboardInitialData;
     initialUserId?: string | null;
 }) => {
     const supabase = createClient();
@@ -184,15 +249,15 @@ const AdminDashboardView = ({
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isAlbaranesModalOpen, setIsAlbaranesModalOpen] = useState(false);
-    const [allEmployees, setAllEmployees] = useState<any[]>(initialData?.allEmployees || []);
-    const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
+    const [allEmployees, setAllEmployees] = useState<PlantillaEmployee[]>(initialData?.allEmployees || []);
+    const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<PlantillaEmployee[] | null>(null);
     const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
     const [cashModalMode, setCashModalMode] = useState<CashModalMode>('none');
     const [cashCountTotal, setCashCountTotal] = useState(0);
     const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);
     const [purchaseDate, setPurchaseDate] = useState(formatCashCountDateInput);
-    const [selectedBox, setSelectedBox] = useState<any>(null);
-    const [boxInventory, setBoxInventory] = useState<any[]>([]);
+    const [selectedBox, setSelectedBox] = useState<HomeTreasuryBox | null>(null);
+    const [boxInventory, setBoxInventory] = useState<CashBoxInventoryRow[]>([]);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
@@ -200,7 +265,7 @@ const AdminDashboardView = ({
     const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(() => initialUserId ?? null);
     const [isCajaInicialActionsOpen, setIsCajaInicialActionsOpen] = useState(false);
-    const [isDesktop, setIsDesktop] = useState(false);
+    const isDesktop = useSyncExternalStore(subscribeDesktop, getIsDesktopSnapshot, getIsDesktopServerSnapshot);
     // Horas extras: carga independiente (no bloquea shell del dashboard)
     const [overtimeViewMonth, setOvertimeViewMonth] = useState(() => startOfMonth(new Date()));
     const overtimeRangeStart = format(startOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
@@ -211,7 +276,7 @@ const AdminDashboardView = ({
         overtimeRangeEnd,
         { refreshKey: overtimeRefreshKey },
     );
-    const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
+    const [weekDetailModal, setWeekDetailModal] = useState<{ week: OvertimeWeek } | null>(null);
 
     useModalUsageTracking({
         open: cashModalMode !== 'none' && cashModalMode !== 'swap',
@@ -229,13 +294,6 @@ const AdminDashboardView = ({
     const trackAdminPurchaseMulti = useTrackModalApply('admin-purchase-multi-source', 'Compra multiorigen');
     const trackAdminOvertimeWeek = useTrackModalApply('admin-overtime-week-detail', 'Detalle semana horas extras');
     const trackAdminOvertimeWorker = useTrackModalApply('admin-overtime-worker-history', 'Historial trabajador horas extras');
-
-    useEffect(() => {
-        setIsDesktop(window.innerWidth >= 768);
-        const handleResize = () => setIsDesktop(window.innerWidth >= 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
 
     useEffect(() => {
         const getUser = async () => {
@@ -256,16 +314,18 @@ const AdminDashboardView = ({
             toast.error('Error al cargar plantilla completa');
             return null;
         }
-        const cleaned = (data || []).filter((p: any) => {
-            const name = (p.first_name || '').trim().toLowerCase();
-            return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
-        });
+        const cleaned = (data || [])
+            .filter((p) => {
+                const name = (p.first_name || '').trim().toLowerCase();
+                return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+            })
+            .map(toPlantillaEmployee);
         setAllEmployeesIncludingInactive(cleaned);
         return cleaned;
     };
 
     const patchPlantillaVisibility = (employeeId: string, visible: boolean) => {
-        const patch = (list: any[]) =>
+        const patch = (list: PlantillaEmployee[]) =>
             list.map((emp) =>
                 emp.id === employeeId ? { ...emp, visible_in_plantilla: visible } : emp
             );
@@ -295,7 +355,9 @@ const AdminDashboardView = ({
         toast.success(visible ? 'Trabajador visible en plantilla' : 'Trabajador oculto en plantilla');
     };
 
-    useEffect(() => {
+    const [paidStatusSource, setPaidStatusSource] = useState<OvertimeWeek[] | null>(null);
+    if (overtimeWeeksData !== paidStatusSource) {
+        setPaidStatusSource(overtimeWeeksData);
         const nextPaid: Record<string, boolean> = {};
         overtimeWeeksData.forEach((week) => {
             week.staff?.forEach((s) => {
@@ -303,7 +365,7 @@ const AdminDashboardView = ({
             });
         });
         setPaidStatus(nextPaid);
-    }, [overtimeWeeksData]);
+    }
 
     const togglePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
@@ -337,9 +399,9 @@ const AdminDashboardView = ({
             invalidateHomeOvertimeCache();
             invalidateHomeHistoryWeekCache();
             setOvertimeRefreshKey((k) => k + 1);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            toast.error("Error al actualizar modo: " + error.message, { id: 'prefer-stock-toggle' });
+            toast.error("Error al actualizar modo: " + (error instanceof Error ? error.message : String(error)), { id: 'prefer-stock-toggle' });
         }
     };
 
@@ -354,20 +416,20 @@ const AdminDashboardView = ({
             toast.error('Error al cargar plantilla');
             return null;
         }
-        const cleaned = filterVisiblePlantillaEmployees(data || []);
+        const cleaned = filterVisiblePlantillaEmployees(data || []).map(toPlantillaEmployee);
         setAllEmployees(cleaned);
         return cleaned;
     };
 
-    const handleCashTransaction = async (total: number, breakdown: any, notesOrOutBreakdown: any, customDate?: string) => {
+    const handleCashTransaction = async (total: number, breakdown: Record<number, number>, notesOrOutBreakdown: string, customDate?: string) => {
         try {
             if (!selectedBox) return;
-            const payload: any = {
+            const payload: TreasuryLogInsert = {
                 box_id: selectedBox.id,
                 type: cashModalMode === 'audit' ? 'ADJUSTMENT' : (cashModalMode === 'in' ? 'IN' : 'OUT'),
                 amount: total,
                 breakdown: breakdown,
-                notes: cashModalMode === 'audit' ? 'Arqueo de caja' : notesOrOutBreakdown as string
+                notes: cashModalMode === 'audit' ? 'Arqueo de caja' : notesOrOutBreakdown
             };
             if (customDate) payload.created_at = customDate;
             await supabase.from('treasury_log').insert(payload);
@@ -378,7 +440,7 @@ const AdminDashboardView = ({
     };
 
     const handleCajaInicialAccion = (accion: 'in' | 'out' | 'compra' | 'arqueo') => {
-        const box = boxes.find((b: any) => b.type === 'operational');
+        const box = boxes.find((b) => b.type === 'operational');
         if (!box) {
             toast.error('No hay caja operacional configurada');
             return;
@@ -398,14 +460,14 @@ const AdminDashboardView = ({
     };
 
     const buildPaymentSources = (): (BoxOption & PaymentSourceOption)[] => {
-        const list: any[] = [];
-        const op = boxes.find((b: any) => b.type === 'operational');
-        const changeBoxes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        const tpvBoxes = boxes.filter((b: any) => b.type === 'tpv').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url });
-        changeBoxes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
+        const list: (BoxOption & PaymentSourceOption)[] = [];
+        const op = boxes.find((b) => b.type === 'operational');
+        const changeBoxes = boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        const tpvBoxes = boxes.filter((b) => b.type === 'tpv').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url ?? undefined });
+        changeBoxes.forEach((b, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url ?? undefined }));
         if (tpvBoxes.length > 0) {
-            tpvBoxes.forEach((b: any) => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url }));
+            tpvBoxes.forEach((b) => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url ?? undefined }));
         } else {
             list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
             list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
@@ -414,14 +476,14 @@ const AdminDashboardView = ({
     };
 
     const openPurchaseMultiSourceModal = async () => {
-        const op = boxes.find((b: any) => b.type === 'operational');
-        const changeBoxes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const op = boxes.find((b) => b.type === 'operational');
+        const changeBoxes = boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         const boxesToLoad = [...(op ? [op] : []), ...changeBoxes];
         const inv: Record<string, Record<number, number>> = {};
         for (const box of boxesToLoad) {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
             const map: Record<number, number> = {};
-            data?.forEach((d: any) => { map[Number(d.denomination)] = d.quantity; });
+            data?.forEach((d) => { map[Number(d.denomination)] = d.quantity ?? 0; });
             inv[box.id] = map;
         }
         setPurchaseInventoriesByBoxId(inv);
@@ -443,7 +505,7 @@ const AdminDashboardView = ({
                 if (entry.amount < 0.005) continue;
                 const breakdownForDb: Record<string, number> = {};
                 Object.entries(entry.breakdown).forEach(([k, v]) => { if (v !== 0) breakdownForDb[String(k)] = v; });
-                const row: any = {
+                const row: TreasuryLogInsert = {
                     box_id: entry.sourceId,
                     type: 'OUT',
                     amount: entry.amount,
@@ -457,7 +519,7 @@ const AdminDashboardView = ({
             if (payload.changeAmount >= 0.01 && payload.changeDestinationBoxId) {
                 const changeBreakdownForDb: Record<string, number> = {};
                 Object.entries(payload.changeBreakdown).forEach(([k, v]) => { if (v !== 0) changeBreakdownForDb[String(k)] = v; });
-                const inRow: any = {
+                const inRow: TreasuryLogInsert = {
                     box_id: payload.changeDestinationBoxId,
                     type: 'IN',
                     amount: payload.changeAmount,
@@ -479,11 +541,11 @@ const AdminDashboardView = ({
         }
     };
 
-    const openTreasuryModal = async (box: any, mode: CashModalMode) => {
+    const openTreasuryModal = async (box: HomeTreasuryBox, mode: CashModalMode) => {
         setSelectedBox(box);
         const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
         const initial: Record<number, number> = {};
-        data?.forEach(d => initial[Number(d.denomination)] = d.quantity);
+        data?.forEach(d => initial[Number(d.denomination)] = d.quantity ?? 0);
         setBoxInventoryMap(initial);
         setBoxInventory(data || []);
         const modeLabels: Record<CashModalMode, string> = {
@@ -579,7 +641,7 @@ const AdminDashboardView = ({
 
     const handleOpenCompra = () => {
         const cashBoxes = boxes.filter(
-            (b: any) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv',
+            (b) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv',
         );
         if (cashBoxes.length === 0) {
             toast.error('No hay cajas configuradas');
@@ -876,19 +938,19 @@ const AdminDashboardView = ({
             </Modal>
 
             {weekDetailModal && (() => {
-                const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {
+                const weekStaff = (weekDetailModal.week.staff ?? []).filter((s) => {
                     const cost = (s.totalCost ?? s.amount ?? 0);
                     return cost > 0.05 && s.preferStock !== true;
                 });
-                const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                const weekTotal = weekStaff.reduce((sum: number, s) => sum + (s.totalCost ?? s.amount ?? 0), 0);
                 const paidTotal = weekStaff
-                    .filter((s: any) => paidStatus[`${weekDetailModal.week.weekId}-${s.id}`] ?? !!s.isPaid)
-                    .reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                    .filter((s) => paidStatus[`${weekDetailModal.week.weekId}-${s.id}`] ?? !!s.isPaid)
+                    .reduce((sum: number, s) => sum + (s.totalCost ?? s.amount ?? 0), 0);
                 const weekNum = getISOWeek(new Date(weekDetailModal.week.weekId));
                 const periodStr = `${format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
-                const allWeeks = Array.from(new Map((overtimeWeeksData || []).map((w: any) => [w.weekId, w])).values());
-                const sortedWeeks = [...allWeeks].sort((a: any, b: any) => a.weekId.localeCompare(b.weekId));
-                const currentIdx = sortedWeeks.findIndex((w: any) => w.weekId === weekDetailModal.week.weekId);
+                const allWeeks = Array.from(new Map((overtimeWeeksData || []).map((w) => [w.weekId, w])).values());
+                const sortedWeeks = [...allWeeks].sort((a, b) => a.weekId.localeCompare(b.weekId));
+                const currentIdx = sortedWeeks.findIndex((w) => w.weekId === weekDetailModal.week.weekId);
                 const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;
                 const nextWeek = currentIdx >= 0 && currentIdx < sortedWeeks.length - 1 ? sortedWeeks[currentIdx + 1] : null;
                 return (
@@ -938,7 +1000,7 @@ const AdminDashboardView = ({
                             </div>
                         </div>
                         <div>
-                            {weekStaff.map((s: any) => (
+                            {weekStaff.map((s) => (
                                 <StaffOvertimeRow
                                     key={s.id}
                                     staff={{ ...s, name: s.name?.split?.(' ')[0] ?? s.name, amount: s.totalCost ?? s.amount ?? 0 }}
