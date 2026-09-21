@@ -461,7 +461,13 @@ export function EncargoProductEditor({
   const [cartModalOpen, setCartModalOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
-  useEffect(() => {
+  const seedKey = useMemo(
+    () => ({ initialItems, eventId }),
+    [initialItems, eventId]
+  )
+  const [prevSeedKey, setPrevSeedKey] = useState<typeof seedKey | null>(null)
+  if (seedKey !== prevSeedKey) {
+    setPrevSeedKey(seedKey)
     const seed: EditorLine[] = initialItems.map((it) => ({
       ...it,
       lineKey: newLineKey(),
@@ -473,11 +479,17 @@ export function EncargoProductEditor({
     setSearch('')
     setShowInactiveInView(false)
     setCartModalOpen(false)
-  }, [initialItems, eventId])
+  }
 
-  useEffect(() => {
+  const browseSyncKey = useMemo(
+    () => ({ browseParent, browseChild }),
+    [browseParent, browseChild]
+  )
+  const [prevBrowseSyncKey, setPrevBrowseSyncKey] = useState<typeof browseSyncKey | null>(null)
+  if (browseSyncKey !== prevBrowseSyncKey) {
+    setPrevBrowseSyncKey(browseSyncKey)
     setShowInactiveInView(false)
-  }, [browseParent, browseChild])
+  }
 
   useEffect(() => {
     let cancelled = false

@@ -206,10 +206,6 @@ export function LineMappingModal({
 
   const loadResolve = useCallback(async () => {
     if (!open || !line || !invoiceId) return
-    setLoading(true)
-    setSearchQuery('')
-    setSearchResults([])
-    setObservedUnitPriceDraft(line.unit_price == null ? '' : String(line.unit_price))
     try {
       const res = await resolveLineMappingAction({ invoiceId, lineId: line.id })
       if (!res.success) {
@@ -305,6 +301,23 @@ export function LineMappingModal({
     }
   }, [open, line, invoiceId, applySuggestion])
 
+  const resolveSyncKey = useMemo(
+    () => (open && line && invoiceId ? { line, invoiceId } : null),
+    [open, line, invoiceId]
+  )
+  const [prevResolveSyncKey, setPrevResolveSyncKey] = useState<typeof resolveSyncKey>(null)
+  if (resolveSyncKey !== prevResolveSyncKey) {
+    setPrevResolveSyncKey(resolveSyncKey)
+    if (resolveSyncKey) {
+      setLoading(true)
+      setSearchQuery('')
+      setSearchResults([])
+      setObservedUnitPriceDraft(
+        resolveSyncKey.line.unit_price == null ? '' : String(resolveSyncKey.line.unit_price)
+      )
+    }
+  }
+
   useEffect(() => {
     if (open && line && invoiceId) void loadResolve()
     // Recargar también cuando cambia el vínculo (p.ej. tras «Editar match»), no solo el id.
@@ -357,15 +370,16 @@ export function LineMappingModal({
     [selectedIngredientMeta, ingredientPurchaseUnit]
   )
 
+  const variableWeightKg = line?.variable_weight_kg
   const isVariableWeightMode = useMemo(
     () =>
       Boolean(
         ingredientId
-        && line?.variable_weight_kg != null
-        && Number(line.variable_weight_kg) > 0
+        && variableWeightKg != null
+        && Number(variableWeightKg) > 0
         && purchaseUnitForPresentation === 'kg'
       ),
-    [ingredientId, line?.variable_weight_kg, purchaseUnitForPresentation]
+    [ingredientId, variableWeightKg, purchaseUnitForPresentation]
   )
 
   const presentationEconomics = useMemo(

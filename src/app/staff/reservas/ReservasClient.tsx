@@ -310,10 +310,12 @@ function ReservationDetailModal({
 }) {
   const isBusy = Boolean(actionBusy)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [syncedReservationId, setSyncedReservationId] = useState(reservation.id)
 
-  useEffect(() => {
+  if (reservation.id !== syncedReservationId) {
+    setSyncedReservationId(reservation.id)
     setDeleteConfirmOpen(false)
-  }, [reservation.id])
+  }
 
   return (
     <Modal
@@ -844,8 +846,10 @@ export default function ReservasClient() {
   }
 
   useEffect(() => {
-    setLoading(true)
-    void fetchMonthData()
+    void (async () => {
+      setLoading(true)
+      await fetchMonthData()
+    })()
   }, [fetchMonthData])
 
   useEffect(() => {
@@ -856,11 +860,13 @@ export default function ReservasClient() {
     const found = all.find((r) => r.id === targetId)
     if (found) {
       deepLinkHandledRef.current = targetId
-      const [y, m] = found.reservation_date.slice(0, 10).split('-').map(Number)
-      if (!Number.isNaN(y) && !Number.isNaN(m)) {
-        setViewMonth(new Date(y, m - 1, 1))
-      }
-      setSelectedReservation(found)
+      void (async () => {
+        const [y, m] = found.reservation_date.slice(0, 10).split('-').map(Number)
+        if (!Number.isNaN(y) && !Number.isNaN(m)) {
+          setViewMonth(new Date(y, m - 1, 1))
+        }
+        setSelectedReservation(found)
+      })()
       return
     }
 
@@ -898,11 +904,13 @@ export default function ReservasClient() {
     const found = allEncargos.find((e) => e.id === eventId)
     if (found) {
       deepLinkHandledRef.current = `event:${eventId}`
-      const [y, m] = found.event_date.slice(0, 10).split('-').map(Number)
-      if (!Number.isNaN(y) && !Number.isNaN(m)) {
-        setViewMonth(new Date(y, m - 1, 1))
-      }
-      openViewEncargo(eventId)
+      void (async () => {
+        const [y, m] = found.event_date.slice(0, 10).split('-').map(Number)
+        if (!Number.isNaN(y) && !Number.isNaN(m)) {
+          setViewMonth(new Date(y, m - 1, 1))
+        }
+        openViewEncargo(eventId)
+      })()
       return
     }
 

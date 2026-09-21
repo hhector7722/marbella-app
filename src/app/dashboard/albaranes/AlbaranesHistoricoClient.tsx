@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import {
@@ -89,9 +89,24 @@ function formatMaybeText(v: string | null | undefined) {
   return t ? t : '—'
 }
 
-function numOrNull(v: any): number | null {
+function numOrNull(v: unknown): number | null {
   const n = v == null ? null : Number(v)
   return typeof n === 'number' && Number.isFinite(n) ? n : null
+}
+
+function subscribeAppendSheetCapture() {
+  return () => {}
+}
+
+function getAppendSheetCaptureSnapshot(): 'environment' | undefined {
+  const isIOS =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  return isIOS ? undefined : 'environment'
+}
+
+function getServerAppendSheetCaptureSnapshot(): 'environment' | undefined {
+  return 'environment'
 }
 
 function parseDecimalInput(value: string): number | null {
@@ -179,7 +194,11 @@ export default function AlbaranesHistoricoClient({
   const replaceImageInputRef = useRef<HTMLInputElement>(null)
   const [appendSheetBusy, setAppendSheetBusy] = useState(false)
   const [ocrActionBusy, setOcrActionBusy] = useState(false)
-  const [appendSheetCapture, setAppendSheetCapture] = useState<'environment' | undefined>('environment')
+  const appendSheetCapture = useSyncExternalStore(
+    subscribeAppendSheetCapture,
+    getAppendSheetCaptureSnapshot,
+    getServerAppendSheetCaptureSnapshot
+  )
   /** Visor carrusel (varias hojas), mismo patrón que el borrador del escáner. */
   const [invoiceImageViewerOpen, setInvoiceImageViewerOpen] = useState(false)
   const [invoiceCarouselIndex, setInvoiceCarouselIndex] = useState(0)
@@ -222,17 +241,13 @@ export default function AlbaranesHistoricoClient({
   }, [invoiceImageViewerOpen])
 
 
-  useEffect(() => {
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    if (isIOS) setAppendSheetCapture(undefined)
-  }, [])
-
-  useEffect(() => {
+  const detailId = detail?.id ?? null
+  const [syncedDetailId, setSyncedDetailId] = useState<string | null>(detailId)
+  if (detailId !== syncedDetailId) {
+    setSyncedDetailId(detailId)
     setInvoiceImageViewerOpen(false)
     setInvoiceCarouselIndex(0)
-  }, [detail?.id])
+  }
 
   const invoiceImageSheetOptions = useMemo(() => {
     if (!detail) return [] as { key: string; label: string; url: string }[]
@@ -379,30 +394,41 @@ export default function AlbaranesHistoricoClient({
   // estado real del detalle: necesita todas las líneas mapeadas Y con stock
   // aplicado. Si solo refrescábamos `detail`/`stockStatusByLineId`, la lista
   // se quedaba con `is_fully_processed=false` hasta el siguiente refresh global.
-  useEffect(() => {
-    if (!detail) return
+  const detailFullyProcessed = useMemo(() => {
+    if (!detail) return null
     const lines = detail.lines
-    if (lines.length === 0) return
+    if (lines.length === 0) return null
     const allResolved = lines.every((l) => isInvoiceLineResolved(l))
     const allStockOk = lines.every(
       (l) => !invoiceLineRequiresStock(l) || stockStatusByLineId[l.id]?.stockApplied === true
     )
-    const fully = allResolved && allStockOk
-    setItems((prev) => {
-      const idx = prev.findIndex((it) => it.id === detail.id)
-      if (idx < 0) return prev
-      const prevRow = prev[idx]!
-      const nextStatus = fully
-        ? 'mapped'
-        : prevRow.status === 'mapped'
-          ? 'pending_mapping'
-          : prevRow.status
-      if (prevRow.is_fully_processed === fully && prevRow.status === nextStatus) return prev
-      const next = prev.slice()
-      next[idx] = { ...prevRow, is_fully_processed: fully, status: nextStatus }
-      return next
-    })
+    return allResolved && allStockOk
   }, [detail, stockStatusByLineId])
+
+  const detailResolutionKey =
+    detail && detailFullyProcessed !== null ? `${detail.id}:${detailFullyProcessed}` : null
+  const [syncedDetailResolutionKey, setSyncedDetailResolutionKey] = useState<string | null>(null)
+  if (detailResolutionKey !== syncedDetailResolutionKey) {
+    setSyncedDetailResolutionKey(detailResolutionKey)
+    if (detail && detailFullyProcessed !== null) {
+      const fully = detailFullyProcessed
+      const detailIdForRow = detail.id
+      setItems((prev) => {
+        const idx = prev.findIndex((it) => it.id === detailIdForRow)
+        if (idx < 0) return prev
+        const prevRow = prev[idx]!
+        const nextStatus = fully
+          ? 'mapped'
+          : prevRow.status === 'mapped'
+            ? 'pending_mapping'
+            : prevRow.status
+        if (prevRow.is_fully_processed === fully && prevRow.status === nextStatus) return prev
+        const next = prev.slice()
+        next[idx] = { ...prevRow, is_fully_processed: fully, status: nextStatus }
+        return next
+      })
+    }
+  }
 
   function lineNeedsStockRepair(l: PurchaseInvoiceDetail['lines'][number]) {
     if (isInvoiceLineExcluded(l)) return false

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -210,11 +210,16 @@ export function CreateEncargoQuickModal({
     [availableReservations, linkedReservationId]
   )
 
-  useEffect(() => {
-    if (!linkedReservation) return
-    setEventTime(timeShortHm(linkedReservation.reservation_time))
-    setGuestCount(Math.max(1, linkedReservation.pax || 1))
-  }, [linkedReservation])
+  const [syncedLinkedReservation, setSyncedLinkedReservation] =
+    useState<EncargoReservationOption | null>(null)
+
+  if (linkedReservation !== syncedLinkedReservation) {
+    setSyncedLinkedReservation(linkedReservation)
+    if (linkedReservation) {
+      setEventTime(timeShortHm(linkedReservation.reservation_time))
+      setGuestCount(Math.max(1, linkedReservation.pax || 1))
+    }
+  }
 
   const resolvedName = linkedReservation?.customer_name.trim() ?? contactName.trim()
   const canSubmit =
