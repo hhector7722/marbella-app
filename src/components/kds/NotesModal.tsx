@@ -46,22 +46,29 @@ export function NotesModal(props: {
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const initial = splitNotes(initialNotes);
-    const quickNorm = new Map(quickNotes.map((q) => [norm(q), q]));
-    const nextSelected = new Set<string>();
-    const rest: string[] = [];
-    initial.forEach((it) => {
-      const key = norm(it);
-      const q = quickNorm.get(key);
-      if (q) nextSelected.add(q);
-      else rest.push(it);
-    });
-    setSelectedQuick(nextSelected);
-    setFreeText(joinNotes(rest));
-    setIsWriting(false);
-  }, [isOpen, initialNotes, quickNotes]);
+  const notesSyncKey = isOpen
+    ? `${initialNotes ?? ""}\u0000${quickNotes.join("\u0000")}`
+    : null;
+  const [syncedNotesKey, setSyncedNotesKey] = useState<string | null>(null);
+
+  if (notesSyncKey !== syncedNotesKey) {
+    setSyncedNotesKey(notesSyncKey);
+    if (isOpen) {
+      const initial = splitNotes(initialNotes);
+      const quickNorm = new Map(quickNotes.map((q) => [norm(q), q]));
+      const nextSelected = new Set<string>();
+      const rest: string[] = [];
+      initial.forEach((it) => {
+        const key = norm(it);
+        const q = quickNorm.get(key);
+        if (q) nextSelected.add(q);
+        else rest.push(it);
+      });
+      setSelectedQuick(nextSelected);
+      setFreeText(joinNotes(rest));
+      setIsWriting(false);
+    }
+  }
 
   useEffect(() => {
     if (!isOpen) return;

@@ -243,7 +243,11 @@ function KDSOrderRowsLayout({
         return () => ro.disconnect();
     }, []);
 
-    useEffect(() => {
+    const orderIdsKey = sortedOrders.map((o) => o.id).join('\u0000');
+    const [syncedOrderIdsKey, setSyncedOrderIdsKey] = useState<string | null>(null);
+
+    if (orderIdsKey !== syncedOrderIdsKey) {
+        setSyncedOrderIdsKey(orderIdsKey);
         const ids = new Set(sortedOrders.map((o) => o.id));
         setCardWidths((prev) => {
             let dirty = false;
@@ -256,7 +260,7 @@ function KDSOrderRowsLayout({
             }
             return dirty ? next : prev;
         });
-    }, [sortedOrders]);
+    }
 
     const handleCardWidth = useCallback((id: string, w: number) => {
         setCardWidths((prev) => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { Bell } from 'lucide-react'
 import { toast } from 'sonner'
 import { getPushSubscriptionStatus, saveSubscription } from '@/app/actions/notifications'
@@ -25,19 +25,31 @@ function isForcedPreviewUser(userEmail: string | null): boolean {
   return normalizeNotificationEmail(userEmail) === PUSH_PROMPT_PREVIEW_EMAIL
 }
 
+function subscribeMounted() {
+  return () => {}
+}
+
+function getMountedSnapshot() {
+  return true
+}
+
+function getServerMountedSnapshot() {
+  return false
+}
+
 /** Prompt push: sesión en cliente para no bloquear el layout SSR. */
 export function PushNotificationsPrompt() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [permissionDenied, setPermissionDenied] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(
+    subscribeMounted,
+    getMountedSnapshot,
+    getServerMountedSnapshot,
+  )
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const forcedPreview = isForcedPreviewUser(userEmail)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -68,10 +80,12 @@ export function PushNotificationsPrompt() {
     if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return
 
     if (forcedPreview) {
-      setPermissionDenied(
-        typeof Notification !== 'undefined' && Notification.permission === 'denied',
-      )
-      setOpen(true)
+      void (async () => {
+        setPermissionDenied(
+          typeof Notification !== 'undefined' && Notification.permission === 'denied',
+        )
+        setOpen(true)
+      })()
       return
     }
 

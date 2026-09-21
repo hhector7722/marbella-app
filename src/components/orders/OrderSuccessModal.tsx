@@ -32,25 +32,34 @@ export function OrderSuccessModal({
     const [isCapturing, setIsCapturing] = useState(false);
     const [cachedPngBlob, setCachedPngBlob] = useState<Blob | null>(null);
     const [showConfirmEnviar, setShowConfirmEnviar] = useState(false);
+    const [syncedPngCacheKey, setSyncedPngCacheKey] = useState<Blob | null>(null);
+    const [syncedIsOpen, setSyncedIsOpen] = useState(isOpen);
 
     const trackConfirmSend = useTrackModalApply('order-success-confirm-send', 'Confirmar envío pedido');
 
     useEffect(() => {
-        if (generatedBlob) {
-            const url = URL.createObjectURL(generatedBlob);
-            setPreviewUrl(url);
-            return () => URL.revokeObjectURL(url);
-        } else {
-            setPreviewUrl(null);
+        if (!generatedBlob) {
+            void (async () => {
+                setPreviewUrl(null);
+            })();
+            return;
         }
+        const url = URL.createObjectURL(generatedBlob);
+        void (async () => {
+            setPreviewUrl(url);
+        })();
+        return () => URL.revokeObjectURL(url);
     }, [generatedBlob]);
+
+    const pngCacheKey = isOpen && generatedBlob ? generatedBlob : null;
+    if (pngCacheKey !== syncedPngCacheKey) {
+        setSyncedPngCacheKey(pngCacheKey);
+        if (pngCacheKey === null) setCachedPngBlob(null);
+    }
 
     // Pre-convertir PDF a imagen al abrir
     useEffect(() => {
-        if (!isOpen || !generatedBlob) {
-            setCachedPngBlob(null);
-            return;
-        }
+        if (!isOpen || !generatedBlob) return;
         let cancelled = false;
         pdfFirstPageToPngBlob(generatedBlob).then((blob) => {
             if (!cancelled) setCachedPngBlob(blob);
@@ -60,9 +69,10 @@ export function OrderSuccessModal({
         return () => { cancelled = true; };
     }, [isOpen, generatedBlob]);
 
-    useEffect(() => {
+    if (isOpen !== syncedIsOpen) {
+        setSyncedIsOpen(isOpen);
         if (!isOpen) setShowConfirmEnviar(false);
-    }, [isOpen]);
+    }
 
     const mensaje = 'Adjunto pedido.\n\nRecordad enviar el albarán a marbellaremote@gmail.com.\n\nGracias.';
 
