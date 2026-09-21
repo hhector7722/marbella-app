@@ -109,6 +109,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         ticketsCount: initialTicketsCount || 0,
     });
     const [weatherId, setWeatherId] = useState<ClosingWeatherId | null>(null);
+    const [weatherSyncedOpen, setWeatherSyncedOpen] = useState(isOpen);
 
     // 2. STATE: COUNT
     const [counts, setCounts] = useState<Record<string, number>>({});
@@ -119,8 +120,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     // 4. STATE: DATE/TIME (HIDDEN EDIT)
     const [selectedDateTime, setSelectedDateTime] = useState(() => formatDateTimeLocalInput(new Date()));
     const datePickerRef = useRef<HTMLInputElement>(null);
-    const isInitialized = useRef(false);
-    const lastDate = useRef<string | null>(null);
 
     // 5. STATE: CLOSING PHOTOS (no se persisten en localStorage draft)
     const [dataphonePhotoFile, setDataphonePhotoFile] = useState<File | null>(null);
@@ -143,136 +142,148 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     const photosReady = Boolean(dataphonePhotoFile && bdpTicketPhotoFile);
 
-    // Una URL blob por archivo; al revocar solo la que creó este efecto (evita romper la otra miniatura)
+    // Una URL blob por archivo; el efecto la crea y la revoca (setState en callback async)
     useEffect(() => {
-        if (!dataphonePhotoFile) {
-            setDataphonePreviewUrl(null);
-            return;
-        }
-        const url = URL.createObjectURL(dataphonePhotoFile);
-        setDataphonePreviewUrl(url);
-        return () => URL.revokeObjectURL(url);
+        let url: string | null = null;
+        let cancelled = false;
+        void (async () => {
+            if (!dataphonePhotoFile) {
+                if (!cancelled) setDataphonePreviewUrl(null);
+                return;
+            }
+            url = URL.createObjectURL(dataphonePhotoFile);
+            if (cancelled) {
+                URL.revokeObjectURL(url);
+                return;
+            }
+            setDataphonePreviewUrl(url);
+        })();
+        return () => {
+            cancelled = true;
+            if (url) URL.revokeObjectURL(url);
+        };
     }, [dataphonePhotoFile]);
 
     useEffect(() => {
-        if (!bdpTicketPhotoFile) {
-            setBdpTicketPreviewUrl(null);
-            return;
-        }
-        const url = URL.createObjectURL(bdpTicketPhotoFile);
-        setBdpTicketPreviewUrl(url);
-        return () => URL.revokeObjectURL(url);
+        let url: string | null = null;
+        let cancelled = false;
+        void (async () => {
+            if (!bdpTicketPhotoFile) {
+                if (!cancelled) setBdpTicketPreviewUrl(null);
+                return;
+            }
+            url = URL.createObjectURL(bdpTicketPhotoFile);
+            if (cancelled) {
+                URL.revokeObjectURL(url);
+                return;
+            }
+            setBdpTicketPreviewUrl(url);
+        })();
+        return () => {
+            cancelled = true;
+            if (url) URL.revokeObjectURL(url);
+        };
     }, [bdpTicketPhotoFile]);
 
-    useEffect(() => {
-        if (!isOpen) {
-            // No borramos fotos al salir: deben persistir si reabres el proceso.
-            return;
-        }
-        // Clima: siempre sin selección por defecto al abrir
-        setWeatherId(null);
-    }, [isOpen]);
+    // Clima: siempre sin selección por defecto al abrir.
+    // No borramos fotos al salir: deben persistir si reabres el proceso.
+    if (isOpen !== weatherSyncedOpen) {
+        setWeatherSyncedOpen(isOpen);
+        if (isOpen) setWeatherId(null);
+    }
 
-    useEffect(() => {
-        if (!isOpen) {
-            isInitialized.current = false;
-            lastDate.current = null;
-            return;
-        }
-
-        if (userId) {
-            const dateObj = parseDateTimeLocal(selectedDateTime);
-            const dateStr = format(dateObj, 'yyyy-MM-dd');
-
-            if (!isInitialized.current) {
-                // 1. INITIAL LOAD (Only once per open)
-                isInitialized.current = true;
-                lastDate.current = dateStr;
-
-                // Borrador: restaura campos manuales; ventas y tickets se sincronizan siempre después
-                try {
-                    const draft = localStorage.getItem(`cash_closing_draft_${userId}`);
-                    if (draft) {
-                        const parsed = JSON.parse(draft);
-                        if (parsed.tpvData) {
-                            const { weather: _legacyWeather, ...rest } = parsed.tpvData as {
-                                weather?: string;
-                                cardSales?: number;
-                                pendingSales?: number;
-                                debtRecovered?: number;
-                            };
-                            setTpvData((prev) => ({
-                                ...prev,
-                                cardSales: rest.cardSales ?? 0,
-                                pendingSales: rest.pendingSales ?? 0,
-                                debtRecovered: rest.debtRecovered ?? 0,
-                            }));
-                            // Clima: siempre sin selección por defecto (no restaurar desde draft)
-                        }
-                        if (parsed.counts) setCounts(parsed.counts);
+    // Borrador: se carga una sola vez por apertura, en cuanto se conoce el usuario
+    const draftSyncKey = isOpen && userId ? 'open' : null;
+    const [syncedDraftKey, setSyncedDraftKey] = useState<string | null>(null);
+    if (draftSyncKey !== syncedDraftKey) {
+        setSyncedDraftKey(draftSyncKey);
+        if (draftSyncKey && userId) {
+            // Borrador: restaura campos manuales; ventas y tickets se sincronizan siempre después
+            try {
+                const draft = localStorage.getItem(`cash_closing_draft_${userId}`);
+                if (draft) {
+                    const parsed = JSON.parse(draft);
+                    if (parsed.tpvData) {
+                        const { weather: _legacyWeather, ...rest } = parsed.tpvData as {
+                            weather?: string;
+                            cardSales?: number;
+                            pendingSales?: number;
+                            debtRecovered?: number;
+                        };
+                        setTpvData((prev) => ({
+                            ...prev,
+                            cardSales: rest.cardSales ?? 0,
+                            pendingSales: rest.pendingSales ?? 0,
+                            debtRecovered: rest.debtRecovered ?? 0,
+                        }));
+                        // Clima: siempre sin selección por defecto (no restaurar desde draft)
                     }
-                } catch (e) {
-                    console.error("Error reading draft from localStorage", e);
+                    if (parsed.counts) setCounts(parsed.counts);
                 }
-
-                void applyVentasAndTicketsAutoFill();
-            } else if (dateStr !== lastDate.current) {
-                // 2. DATE CHANGED MANUALLY (Subsequent triggers)
-                lastDate.current = dateStr;
-                void applyVentasAndTicketsAutoFill();
+            } catch (e) {
+                console.error("Error reading draft from localStorage", e);
             }
         }
-    }, [isOpen, userId, selectedDateTime]);
+    }
 
     // AUTO-SAVE DRAFT
     useEffect(() => {
-        if (isInitialized.current && userId && (Object.keys(counts).length > 0 || tpvData.cardSales > 0 || tpvData.pendingSales > 0 || tpvData.debtRecovered > 0)) {
+        if (syncedDraftKey && userId && (Object.keys(counts).length > 0 || tpvData.cardSales > 0 || tpvData.pendingSales > 0 || tpvData.debtRecovered > 0)) {
             const draftKey = `cash_closing_draft_${userId}`;
             localStorage.setItem(draftKey, JSON.stringify({ tpvData, counts, weatherId }));
         }
-    }, [tpvData, counts, weatherId, userId]);
+    }, [tpvData, counts, weatherId, userId, syncedDraftKey]);
 
-    /** Autorellena desde RPC get_closing_sales_breakdown (tickets + cobros de otra fecha). */
-    async function applyVentasAndTicketsAutoFill() {
-        const dateObj = parseDateTimeLocal(selectedDateTime);
-        const dateStr = format(dateObj, 'yyyy-MM-dd');
+    // Autorelleno al abrir o al cambiar la fecha (no en cambios de hora del mismo día)
+    const autofillKey = isOpen && userId
+        ? `${userId}|${format(parseDateTimeLocal(selectedDateTime), 'yyyy-MM-dd')}`
+        : null;
 
-        setLoading(true);
-        try {
-            const { data, error } = await supabase.rpc('get_closing_sales_breakdown', {
-                p_date: dateStr,
-            });
+    useEffect(() => {
+        if (!autofillKey) return;
 
-            if (error) throw error;
+        /** Autorellena desde RPC get_closing_sales_breakdown (tickets + cobros de otra fecha). */
+        (async () => {
+            const dateObj = parseDateTimeLocal(selectedDateTime);
+            const dateStr = format(dateObj, 'yyyy-MM-dd');
 
-            const magnitudes = closingMagnitudesFromBreakdown((data ?? {}) as {
-                total_bruto?: number
-                total_tarjeta?: number
-                total_pendiente?: number
-                total_cobros?: number
-                total_cobros_deuda?: number
-                recuento_tickets?: number
-            });
+            setLoading(true);
+            try {
+                const { data, error } = await supabase.rpc('get_closing_sales_breakdown', {
+                    p_date: dateStr,
+                });
 
-            setTpvData((prev) => ({
-                ...prev,
-                totalSales: magnitudes.ventas,
-                ticketsCount: magnitudes.tickets,
-                cardSales: magnitudes.tarjeta,
-                pendingSales: magnitudes.pendiente,
-                debtRecovered: magnitudes.cobros,
-            }));
+                if (error) throw error;
 
-            if (magnitudes.ventas === 0 && magnitudes.tarjeta === 0 && magnitudes.tickets === 0) {
-                toast.message('Sin tickets BDP para esta fecha en Supabase');
+                const magnitudes = closingMagnitudesFromBreakdown((data ?? {}) as {
+                    total_bruto?: number
+                    total_tarjeta?: number
+                    total_pendiente?: number
+                    total_cobros?: number
+                    total_cobros_deuda?: number
+                    recuento_tickets?: number
+                });
+
+                setTpvData((prev) => ({
+                    ...prev,
+                    totalSales: magnitudes.ventas,
+                    ticketsCount: magnitudes.tickets,
+                    cardSales: magnitudes.tarjeta,
+                    pendingSales: magnitudes.pendiente,
+                    debtRecovered: magnitudes.cobros,
+                }));
+
+                if (magnitudes.ventas === 0 && magnitudes.tarjeta === 0 && magnitudes.tickets === 0) {
+                    toast.message('Sin tickets BDP para esta fecha en Supabase');
+                }
+            } catch (error) {
+                console.error('Error fetching closing breakdown:', error);
+                toast.error('Error al sincronizar datos de cierre desde BDP');
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Error fetching closing breakdown:', error);
-            toast.error('Error al sincronizar datos de cierre desde BDP');
-        } finally {
-            setLoading(false);
-        }
-    }
+        })();
+    }, [autofillKey]);
 
     // --- CALCULATIONS ---
     const totalSalesGross = tpvData.totalSales;
@@ -488,9 +499,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             setStep('tpv_data');
 
             onClose();
-        } catch (error: any) {
+        } catch (error) {
             console.error("FinalizeClose error:", error);
-            toast.error(error.message || "Error desconocido al cerrar caja");
+            toast.error(error instanceof Error ? error.message : "Error desconocido al cerrar caja");
         } finally {
             setLoading(false);
         }

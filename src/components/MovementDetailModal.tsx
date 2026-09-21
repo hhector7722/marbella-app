@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Calculator, Calendar, Clock, FileText, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
@@ -16,11 +16,54 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
+import type { Json } from '@/types/supabase';
+
+type CountMap = Record<string, number>;
+
+interface MovementDetail {
+    id: string;
+    created_at?: string | null;
+    amount?: number | null;
+    type?: string | null;
+    original_type?: string | null;
+    notes?: string | null;
+    breakdown?: Json | null;
+}
 
 interface MovementDetailModalProps {
-    movement: any;
+    movement: MovementDetail | null;
     onClose: () => void;
     onAfterMutation?: () => Promise<void> | void;
+}
+
+function isJsonRecord(value: Json | null | undefined): value is { [key: string]: Json | undefined } {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function toCounts(value: Json | null | undefined): CountMap {
+    if (!isJsonRecord(value)) return {};
+    const counts: CountMap = {};
+    for (const [key, raw] of Object.entries(value)) {
+        if (typeof raw === 'number') counts[key] = raw;
+    }
+    return counts;
+}
+
+function toNumericCounts(counts: CountMap): Record<number, number> {
+    const numeric: Record<number, number> = {};
+    for (const [key, value] of Object.entries(counts)) {
+        const denomination = Number(key);
+        if (!Number.isNaN(denomination)) numeric[denomination] = value;
+    }
+    return numeric;
+}
+
+function errorMessage(error: unknown): string {
+    if (error !== null && typeof error === 'object' && 'message' in error) {
+        const message = (error as { message?: unknown }).message;
+        if (typeof message === 'string' && message) return message;
+    }
+    return 'Error desconocido';
 }
 
 export function MovementDetailModal({ movement, onClose, onAfterMutation }: MovementDetailModalProps) {
@@ -29,19 +72,26 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const [isDeleting, setIsDeleting] = useState(false);
     const [editTotal, setEditTotal] = useState(0);
     const [editDate, setEditDate] = useState(formatCashCountDateInput);
+    const [syncedMovementKey, setSyncedMovementKey] = useState<string | null>(null);
 
-    useEffect(() => {
-        setIsEditing(false);
-        setIsDeleting(false);
-        const d = movement?.created_at ? new Date(movement.created_at) : new Date();
-        setEditDate(Number.isNaN(d.getTime()) ? formatCashCountDateInput() : formatCashCountDateInput(d));
-        setEditTotal(Number(movement?.amount ?? 0));
-    }, [movement?.id, movement?.created_at, movement?.amount]);
+    const movementSyncKey = movement
+        ? `${movement.id}|${movement.created_at ?? ''}|${movement.amount ?? ''}`
+        : null;
+    if (movementSyncKey !== syncedMovementKey) {
+        setSyncedMovementKey(movementSyncKey);
+        if (movement) {
+            setIsEditing(false);
+            setIsDeleting(false);
+            const d = movement.created_at ? new Date(movement.created_at) : new Date();
+            setEditDate(Number.isNaN(d.getTime()) ? formatCashCountDateInput() : formatCashCountDateInput(d));
+            setEditTotal(Number(movement.amount ?? 0));
+        }
+    }
 
     if (!movement) return null;
 
     const originalType = movement.original_type ?? movement.type;
-    const movementDate = new Date(movement.created_at);
+    const movementDate = new Date(movement.created_at ?? 0);
     const hasValidMovementDate = !Number.isNaN(movementDate.getTime());
     const amountNum = Number(movement.amount ?? 0);
 
@@ -50,8 +100,11 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const isSwap = originalType === 'SWAP' || movement.type === 'SWAP';
     const canEdit = !isSwap;
 
-    const breakdown = movement.breakdown || {};
-    const hasBreakdown = Object.keys(breakdown).length > 0;
+    const breakdownValue = movement.breakdown ?? null;
+    const breakdown = toCounts(breakdownValue);
+    const breakdownIn = isJsonRecord(breakdownValue) ? toCounts(breakdownValue.in) : {};
+    const breakdownOut = isJsonRecord(breakdownValue) ? toCounts(breakdownValue.out) : {};
+    const hasBreakdown = isJsonRecord(breakdownValue) && Object.keys(breakdownValue).length > 0;
 
     const handleDelete = async () => {
         try {
@@ -60,19 +113,23 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             toast.success('Movimiento eliminado correctamente');
             onClose();
             await onAfterMutation?.();
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
-            const msg = (error as any)?.message || 'Error desconocido';
-            toast.error(`Error al eliminar movimiento: ${msg}`);
+            toast.error(`Error al eliminar movimiento: ${errorMessage(error)}`);
         }
     };
 
-    const handleUpdate = async (total: number, newBreakdown: any, newNotes: string, newDate?: string) => {
+    const handleUpdate = async (total: number, newBreakdown: Record<number, number>, newNotes: string, newDate?: string) => {
         try {
-            const updatePayload: any = {
+            const updatePayload: {
+                amount: number;
+                breakdown: Json;
+                notes: string;
+                created_at?: string;
+            } = {
                 amount: total,
-                breakdown: newBreakdown,
-                notes: newNotes
+                breakdown: newBreakdown as unknown as Json,
+                notes: newNotes,
             };
             if (newDate) updatePayload.created_at = newDate;
 
@@ -81,10 +138,9 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             toast.success('Movimiento actualizado');
             onClose();
             await onAfterMutation?.();
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
-            const msg = (error as any)?.message || 'Error desconocido';
-            toast.error(`Error al actualizar movimiento: ${msg}`);
+            toast.error(`Error al actualizar movimiento: ${errorMessage(error)}`);
         }
     };
 
@@ -146,9 +202,9 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         variant="embedded"
                         type={isAdjustment ? 'audit' : (isIncome ? 'in' : 'out')}
                         boxName="Editando Movimiento"
-                        initialCounts={breakdown}
-                        initialNotes={movement.notes}
-                        initialDate={movement.created_at}
+                        initialCounts={toNumericCounts(breakdown)}
+                        initialNotes={movement.notes ?? undefined}
+                        initialDate={movement.created_at ?? undefined}
                         submitLabel="Guardar Cambios"
                         onSubmit={handleUpdate}
                         onCancel={() => setIsEditing(false)}
@@ -322,9 +378,9 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
 
                             {isSwap ? (
                                 <div className="space-y-6">
-                                    {renderDenomGrid(breakdown.in || {}, "Entra", "text-emerald-500")}
+                                    {renderDenomGrid(breakdownIn, "Entra", "text-emerald-500")}
                                     <div className="border-t border-zinc-100 my-4" />
-                                    {renderDenomGrid(breakdown.out || {}, "Sale", "text-rose-500")}
+                                    {renderDenomGrid(breakdownOut, "Sale", "text-rose-500")}
                                 </div>
                             ) : (
                                 renderDenomGrid(breakdown)

@@ -59,6 +59,11 @@ type TreasuryExchangeRow = {
     notes: string | null;
 };
 
+type CashBoxInventoryRow = {
+    denomination: number;
+    quantity: number;
+};
+
 function resolveLegDirection(
     row: TreasuryExchangeRow,
     boxMap: Record<string, string>,
@@ -140,18 +145,20 @@ export const CashChangeModal = ({
         return () => { cancelled = true; };
     }, [supabase]);
 
+    if ((useTwoBoxFlow || !boxId) && loadingStock) {
+        setLoadingStock(false);
+    }
+
     useEffect(() => {
         if (!useTwoBoxFlow && boxId) {
             const fetchStock = async () => {
                 const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxId).gt('quantity', 0);
                 const stock: Record<number, number> = {};
-                data?.forEach((d: any) => stock[Number(d.denomination)] = d.quantity);
+                data?.forEach((d: CashBoxInventoryRow) => stock[Number(d.denomination)] = d.quantity);
                 setAvailableStock(stock);
                 setLoadingStock(false);
             };
             fetchStock();
-        } else {
-            setLoadingStock(false);
         }
     }, [useTwoBoxFlow, boxId, supabase]);
 
@@ -161,7 +168,7 @@ export const CashChangeModal = ({
         const fetchStock = async () => {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxA.id).gt('quantity', 0);
             const s: Record<number, number> = {};
-            data?.forEach((d: any) => s[Number(d.denomination)] = d.quantity);
+            data?.forEach((d: CashBoxInventoryRow) => s[Number(d.denomination)] = d.quantity);
             setStockA(s);
         };
         fetchStock();
@@ -173,7 +180,7 @@ export const CashChangeModal = ({
         const fetchStock = async () => {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', boxB.id).gt('quantity', 0);
             const s: Record<number, number> = {};
-            data?.forEach((d: any) => s[Number(d.denomination)] = d.quantity);
+            data?.forEach((d: CashBoxInventoryRow) => s[Number(d.denomination)] = d.quantity);
             setStockB(s);
         };
         fetchStock();
@@ -184,8 +191,8 @@ export const CashChangeModal = ({
         const { year, month } = exchangeHistoryYearMonth;
         const start = new Date(year, month - 1, 1);
         const end = new Date(year, month, 0, 23, 59, 59, 999);
-        setExchangeHistoryLoading(true);
         (async () => {
+            setExchangeHistoryLoading(true);
             const { data: rows, error } = await supabase
                 .from('treasury_log')
                 .select('id, exchange_group_id, created_at, amount, box_id, to_box_id, breakdown, user_id, type, notes')
@@ -416,8 +423,8 @@ export const CashChangeModal = ({
             toast.success('Cambio entre cajas guardado');
             if (onSuccess) onSuccess();
             onClose();
-        } catch (e: any) {
-            toast.error(e.message || 'Error al guardar');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Error al guardar');
         }
     };
 
