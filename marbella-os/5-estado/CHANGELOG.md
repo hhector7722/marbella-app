@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-09-22
+
+- **Plato Marbella: los tramos se eligen en un modal, no en una lista bajo el plato.** El plato vacío ya no muestra opciones debajo. Se pulsa la zona del entrante, el principal o la guarnición —o la foto ya colocada— y se abre el selector de ese tramo; elegir cierra el modal y deja el producto en el plato. El orden es libre y se puede cambiar un tramo sin rehacer los demás. El aviso «Sin tramo asignado» desaparece del modo lectura y permanece en la edición de carta.
+
 ## 2026-09-21
 
 - **Alta laboral pública: las fotos del documento se reducen antes de enviarse.** Una foto de móvil superaba el límite de envío y el alta fallaba al pulsar «Enviar». El formulario redimensiona y recomprime a JPEG las imágenes antes de mandarlas, conservando la legibilidad del documento.

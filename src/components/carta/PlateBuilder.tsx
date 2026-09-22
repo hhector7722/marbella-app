@@ -42,11 +42,14 @@ const WELL_FACE: CSSProperties = {
  * Tres capas enteras sobre una sola vajilla, colocadas por tipo visual
  * (bol / principal / guarnición), no recortadas en gajos.
  *
+ * Si `PlateZone` recibe `onSelect`, la zona (la etiqueta vacía o la foto
+ * colocada) se vuelve pulsable; sin él, el plato es solo lectura.
+ *
  * Uso:
  *   <PlateBuilder lang={lang} activeSlot={slot}>
- *     <PlateZone type="entrante" item={item} />
- *     <PlateZone type="principal" item={item} />
- *     <PlateZone type="guarnicion" item={item} />
+ *     <PlateZone type="entrante" item={item} onSelect={() => open('entrante')} />
+ *     <PlateZone type="principal" item={item} onSelect={() => open('principal')} />
+ *     <PlateZone type="guarnicion" item={item} onSelect={() => open('guarnicion')} />
  *   </PlateBuilder>
  */
 export function PlateBuilder({
@@ -64,28 +67,25 @@ export function PlateBuilder({
   const uid = useId().replace(/:/g, '')
   const foodAnim = `pm-food-in-${uid}`
 
-  const zones = new Map<PlatoMarbellaSlot, PlateZoneItem | null>()
-  for (const s of SLOT_ORDER) zones.set(s, null)
+  type ZoneEntry = { item: PlateZoneItem | null; onSelect?: () => void }
+  const zones = new Map<PlatoMarbellaSlot, ZoneEntry>()
+  for (const s of SLOT_ORDER) zones.set(s, { item: null })
   Children.forEach(children, (child) => {
     if (!isValidElement(child)) return
-    const { type, item } = child.props as {
+    const { type, item, onSelect } = child.props as {
       type?: PlatoMarbellaSlot
       item?: PlateZoneItem | null
+      onSelect?: () => void
     }
-    if (type && SLOT_ORDER.includes(type)) zones.set(type, item ?? null)
+    if (type && SLOT_ORDER.includes(type)) zones.set(type, { item: item ?? null, onSelect })
   })
 
   const slotLabels = platoMarbellaPlateSlotLabels(lang)
-  const ariaParts = SLOT_ORDER.map((s) => {
-    const it = zones.get(s)
-    return it ? `${slotLabels[s]}: ${it.label}` : slotLabels[s]
-  })
-  const ariaLabel = ariaParts.join(', ')
-  const hasFood = SLOT_ORDER.some((s) => zones.get(s)?.photoUrl)
+  const hasFood = SLOT_ORDER.some((s) => zones.get(s)?.item?.photoUrl)
 
   const layers = placePlateFoods(
     SLOT_ORDER.flatMap((slot) => {
-      const item = zones.get(slot)
+      const item = zones.get(slot)?.item
       if (!item?.photoUrl) return []
       return [{ slot, id: item.id, label: item.label }]
     }),
@@ -108,7 +108,7 @@ export function PlateBuilder({
         }
       `}</style>
 
-      <div className="relative aspect-[1/0.94] w-full" role="img" aria-label={ariaLabel}>
+      <div className="relative aspect-[1/0.94] w-full">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-[10%] bottom-[1%] top-[22%] rounded-[50%] bg-stone-900/20 blur-xl"
@@ -117,13 +117,16 @@ export function PlateBuilder({
         <div className="absolute inset-[1.5%] rounded-[50%]" style={PLATE_FACE}>
           <div className="absolute inset-[10%] rounded-[50%]" style={WELL_FACE}>
             {layers.map((layer) => {
-              const item = zones.get(layer.slot)
+              const zone = zones.get(layer.slot)
+              const item = zone?.item
               if (!item?.photoUrl) return null
               return (
                 <PlateFoodLayer
                   key={layer.slot}
                   item={item}
                   foodAnim={foodAnim}
+                  onSelect={zone?.onSelect}
+                  ariaLabel={`${slotLabels[layer.slot]}: ${item.label}`}
                   left={layer.left}
                   top={layer.top}
                   width={layer.width}
@@ -138,24 +141,43 @@ export function PlateBuilder({
             })}
 
             {SLOT_ORDER.map((s) => {
-              if (zones.get(s)) return null
+              const zone = zones.get(s)
+              if (zone?.item) return null
               const pos = ZONE_LABEL_POS[s]
               const active = activeSlot === s
+              const label = slotLabels[s]
+              const opacity = hasFood ? (active ? 0.8 : 0.45) : active ? 0.95 : 0.7
+              const labelClass = cn(
+                'select-none font-sans text-[11px] font-semibold tracking-[0.06em] antialiased',
+                active ? 'text-zinc-500' : 'text-zinc-400'
+              )
+              if (!zone?.onSelect) {
+                return (
+                  <span
+                    key={`label-${s}`}
+                    className={cn(
+                      'pointer-events-none absolute -translate-x-1/2 -translate-y-1/2',
+                      labelClass
+                    )}
+                    style={{ left: pos.left, top: pos.top, opacity }}
+                  >
+                    {label}
+                  </span>
+                )
+              }
               return (
-                <span
+                <button
                   key={`label-${s}`}
-                  className={cn(
-                    'pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 select-none font-sans text-[11px] font-semibold tracking-[0.06em] antialiased',
-                    active ? 'text-zinc-500' : 'text-zinc-400'
-                  )}
-                  style={{
-                    left: pos.left,
-                    top: pos.top,
-                    opacity: hasFood ? (active ? 0.8 : 0.45) : active ? 0.95 : 0.7,
-                  }}
+                  type="button"
+                  onClick={zone.onSelect}
+                  aria-label={label}
+                  className="absolute flex min-h-12 min-w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-0 bg-transparent p-1 touch-manipulation outline-none transition-colors active:bg-black/5 focus-visible:ring-2 focus-visible:ring-[#36606F]/30"
+                  style={{ left: pos.left, top: pos.top }}
                 >
-                  {slotLabels[s]}
-                </span>
+                  <span className={labelClass} style={{ opacity }}>
+                    {label}
+                  </span>
+                </button>
               )
             })}
           </div>
@@ -168,6 +190,8 @@ export function PlateBuilder({
 function PlateFoodLayer({
   item,
   foodAnim,
+  onSelect,
+  ariaLabel,
   left,
   top,
   width,
@@ -180,6 +204,8 @@ function PlateFoodLayer({
 }: {
   item: PlateZoneItem
   foodAnim: string
+  onSelect?: () => void
+  ariaLabel: string
   left: number
   top: number
   width: number
@@ -193,39 +219,56 @@ function PlateFoodLayer({
   const cutout = useStudioCutout(item.photoUrl)
   if (!cutout) return null
   const isolated = cutout.isolated
-  return (
-    <span
-      className={cn('absolute block', foodAnim)}
+  const style = {
+    left: `${left}%`,
+    top: `${top}%`,
+    width: `${width}%`,
+    height: `${height}%`,
+    zIndex: z,
+  }
+  const photo = (
+    // eslint-disable-next-line @next/next/no-img-element -- recorte de foto de carta
+    <img
+      src={cutout.href}
+      alt=""
+      key={item.id ?? `${item.label}:${cutout.href}`}
+      className="pointer-events-none h-full w-full origin-center object-contain object-center"
       style={{
-        left: `${left}%`,
-        top: `${top}%`,
-        width: `${width}%`,
-        height: `${height}%`,
-        zIndex: z,
+        transform: `translate(${nudgeX}%, ${nudgeY}%) rotate(${rotate}deg) scale(${scale})`,
+        filter: isolated
+          ? 'drop-shadow(0 10px 12px rgba(28, 25, 23, 0.28)) drop-shadow(0 2px 3px rgba(28, 25, 23, 0.18))'
+          : undefined,
+        mixBlendMode: isolated ? undefined : 'multiply',
       }}
+    />
+  )
+  if (!onSelect) {
+    return (
+      <span className={cn('absolute block', foodAnim)} style={style}>
+        {photo}
+      </span>
+    )
+  }
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-label={ariaLabel}
+      className={cn(
+        'absolute block cursor-pointer border-0 bg-transparent p-0 touch-manipulation outline-none transition-opacity active:opacity-80 focus-visible:ring-2 focus-visible:ring-[#36606F]/30',
+        foodAnim
+      )}
+      style={style}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- recorte de foto de carta */}
-      <img
-        src={cutout.href}
-        alt=""
-        key={item.id ?? `${item.label}:${cutout.href}`}
-        className="pointer-events-none h-full w-full origin-center object-contain object-center"
-        style={{
-          transform: `translate(${nudgeX}%, ${nudgeY}%) rotate(${rotate}deg) scale(${scale})`,
-          filter: isolated
-            ? 'drop-shadow(0 10px 12px rgba(28, 25, 23, 0.28)) drop-shadow(0 2px 3px rgba(28, 25, 23, 0.18))'
-            : undefined,
-          mixBlendMode: isolated ? undefined : 'multiply',
-        }}
-      />
-    </span>
+      {photo}
+    </button>
   )
 }
 
 /** Declara un alimento del plato. No renderiza: PlateBuilder lo coloca. */
 export function PlateZone(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _props: { type: PlatoMarbellaSlot; item: PlateZoneItem | null }
+  _props: { type: PlatoMarbellaSlot; item: PlateZoneItem | null; onSelect?: () => void }
 ): null {
   return null
 }

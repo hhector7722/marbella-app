@@ -1,7 +1,6 @@
 'use client'
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
-import { CartaImageLightbox } from '@/components/carta/CartaImageLightbox'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
 import {
@@ -507,7 +506,6 @@ export function MenuAccordion({
     const [productIdsDraft, setProductIdsDraft] = useState<number[] | null>(null)
     const [reorderPick, setReorderPick] = useState<string | null>(null)
     const [committingReorder, setCommittingReorder] = useState(false)
-    const [platoLightbox, setPlatoLightbox] = useState<{ src: string; alt: string } | null>(null)
     const [platoMarbellaReorderSection, setPlatoMarbellaReorderSection] =
         useState<PlatoMarbellaReorderSection>('entrante')
     const [platoMarbellaDetailOpen, setPlatoMarbellaDetailOpen] = useState(false)
@@ -1636,12 +1634,8 @@ export function MenuAccordion({
                                         <PlatoMarbellaMenuView
                                             rows={platoBundleRows}
                                             lang={lang}
-                                            showUnassigned
                                             launcherArticuloId={platoLauncherArticuloId ?? null}
                                             className="min-h-0 flex-1"
-                                            onPhotoClick={(src, alt) =>
-                                                setPlatoLightbox({ src, alt })
-                                            }
                                             eventOrder={eventOrder}
                                         />
                                     )}
@@ -1827,15 +1821,6 @@ export function MenuAccordion({
                     </div>
                     )}
             </Modal>
-
-            <CartaImageLightbox
-                src={platoLightbox?.src ?? null}
-                alt={platoLightbox?.alt ?? ''}
-                title={platoLightbox?.alt ?? ''}
-                open={platoLightbox != null}
-                onClose={() => setPlatoLightbox(null)}
-                parentInstance="menu-accordion-section"
-            />
         </div>
     )
 }
