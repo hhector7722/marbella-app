@@ -12,6 +12,12 @@ import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchField } from '@/components/ui/SearchField'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import {
+  clearInventoryDraft,
+  hasInventoryDraftContent,
+  readInventoryDraft,
+  writeInventoryDraft,
+} from '@/lib/inventory-draft'
 import { cn } from '@/lib/utils'
 
 type Ingredient = {
@@ -30,6 +36,8 @@ export type ManagerIngredientRow = Ingredient & {
 
 interface InventoryClientProps {
   initialIngredients: Ingredient[]
+  /** Usuario con sesión: da identidad al borrador local del recuento. */
+  userId?: string | null
   /** Solo gerencia: si no hay artículos visibles, muestra ayuda para el icono de edición. */
   managerEmptyHint?: boolean
   managerFullList?: ManagerIngredientRow[]
@@ -176,6 +184,7 @@ function InventoryProductCard({
 
 export function InventoryClient({
   initialIngredients,
+  userId = null,
   managerEmptyHint = false,
   managerFullList,
   visibilityEditMode = false,
@@ -195,6 +204,41 @@ export function InventoryClient({
   const [ingredientQuery, setIngredientQuery] = useState('')
   const [ingredientCategory, setIngredientCategory] = useState<string | null>(null)
   const [ingredientFilterOpen, setIngredientFilterOpen] = useState(false)
+
+  // Borrador por usuario en el dispositivo: restaura al montar y se guarda en
+  // cada cambio. Solo se borra al certificar el recuento (handleSubmit).
+  const [draftSyncedFor, setDraftSyncedFor] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!userId) return
+    const draft = readInventoryDraft(userId)
+    /* eslint-disable react-hooks/set-state-in-effect -- restauración inicial desde localStorage (sistema externo) */
+    setPhysicalCountsBarra(draft?.physicalCountsBarra ?? {})
+    setNumericByIdBarra(draft?.numericByIdBarra ?? {})
+    setPhysicalCountsCamara(draft?.physicalCountsCamara ?? {})
+    setNumericByIdCamara(draft?.numericByIdCamara ?? {})
+    setDraftSyncedFor(userId)
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId || draftSyncedFor !== userId) return
+    const draft = {
+      physicalCountsBarra,
+      numericByIdBarra,
+      physicalCountsCamara,
+      numericByIdCamara,
+    }
+    if (hasInventoryDraftContent(draft)) writeInventoryDraft(userId, draft)
+    else clearInventoryDraft(userId)
+  }, [
+    userId,
+    draftSyncedFor,
+    physicalCountsBarra,
+    numericByIdBarra,
+    physicalCountsCamara,
+    numericByIdCamara,
+  ])
 
   const sourceList: Ingredient[] = useMemo(() => {
     if (visibilityEditMode && managerFullList && managerFullList.length > 0) {
@@ -335,6 +379,7 @@ export function InventoryClient({
       const res = await processInventoryCounts(payload)
       if (res.success) {
         toast.success(res.message)
+        clearInventoryDraft(userId)
         setPhysicalCountsBarra({})
         setNumericByIdBarra({})
         setPhysicalCountsCamara({})

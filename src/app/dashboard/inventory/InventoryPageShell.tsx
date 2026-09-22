@@ -6,17 +6,19 @@ import { Button } from '@/components/ui/button'
 import { InventoryClient, type ManagerIngredientRow } from './InventoryClient'
 
 type Props = {
+  userId: string
   visibleIngredients: ManagerIngredientRow[]
   managerFullList: ManagerIngredientRow[]
   managerEmptyHint: boolean
 }
 
-export function InventoryPageShell({ visibleIngredients, managerFullList, managerEmptyHint }: Props) {
+export function InventoryPageShell({ userId, visibleIngredients, managerFullList, managerEmptyHint }: Props) {
   const [visibilityEditMode, setVisibilityEditMode] = useState(false)
 
   return (
     <InventoryClient
       initialIngredients={visibleIngredients}
+      userId={userId}
       managerFullList={managerFullList}
       visibilityEditMode={visibilityEditMode}
       onCloseVisibilityEditMode={() => setVisibilityEditMode(false)}

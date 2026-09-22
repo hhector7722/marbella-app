@@ -424,6 +424,16 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ---
 
+## D30 · El borrador del recuento de inventario vive en el dispositivo
+
+**Prioridad: baja.** Las cantidades contadas en `/dashboard/inventory` se guardan en el dispositivo (`localStorage`, clave `inventory_count_draft_<userId>`) para no perderse al salir de la pantalla o cerrar la aplicación. Se restablecen solo al certificar el recuento.
+
+**Coste**: el borrador no viaja al servidor. No se comparte entre dispositivos ni sobrevive a limpiar los datos del navegador; si el recuento se empieza en un dispositivo y se termina en otro, no se continúa.
+
+**Disparador de pago**: cuando el recuento deba continuar entre dispositivos o quedar auditado antes de certificarse, moverlo a un borrador de servidor (tabla o columna con RLS por usuario).
+
+---
+
 ## Cómo se usa esta lista
 
 - **Antes de empezar algo grande**, se comprueba si su disparador ya se cumplió.

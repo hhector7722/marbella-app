@@ -55,6 +55,7 @@ export default async function InventoryPage() {
 
     return (
       <InventoryPageShell
+        userId={user.id}
         visibleIngredients={visibleForGrid}
         managerFullList={managerFullList}
         managerEmptyHint={visibleForGrid.length === 0}
@@ -74,5 +75,5 @@ export default async function InventoryPage() {
     throw new Error('Fallo al cargar la base de inventario')
   }
 
-  return <InventoryClient initialIngredients={ingredients ?? []} />
+  return <InventoryClient initialIngredients={ingredients ?? []} userId={user.id} />
 }
