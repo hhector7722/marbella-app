@@ -2383,6 +2383,40 @@ html[data-quick-tool='open'] main {
 }
 
 /*
+ * QuantityStepper variante `bar`: la misma barra de recuento de la tarjeta de
+ * pedido (cromo de tabla, tinta invertida, sin caja). Inventario la monta.
+ */
+[data-component='QuantityStepper'][data-variant='bar'] {
+  color: var(--color-texto-invertido);
+  background-color: var(--table-chrome-fill);
+  border-top: 1px solid var(--home-widget-separator);
+}
+[data-component='QuantityStepper'][data-variant='bar'] [data-element='qty-input'] {
+  box-sizing: border-box;
+  width: 1.25rem;
+  min-width: 1.25rem;
+  max-width: 2.75rem;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  text-align: center;
+  outline: none;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+[data-component='QuantityStepper'][data-variant='bar'] [data-element='qty-input']:focus {
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+/*
  * Pedidos desktop (lg+): catálogo + resumen lateral.
  * Estructura vía Tailwind (`lg:grid`, `hidden lg:flex`). Aquí solo el cromo del panel.
  */

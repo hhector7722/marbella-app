@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { toast } from 'sonner'
-import { Filter, Package } from 'lucide-react'
+import { Filter, Package, Trash2 } from 'lucide-react'
 import { QuickCashTools } from '@/components/ui/QuickCalculatorModal'
 import { Button } from '@/components/ui/button'
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented'
@@ -45,13 +45,6 @@ interface InventoryClientProps {
   onCloseVisibilityEditMode?: () => void
   /** Acción de cabecera (p. ej. editar lista visible). */
   rightSlot?: ReactNode
-}
-
-function abbreviateLabel(name: string, maxChars = 22): string {
-  const t = name.replace(/\s+/g, ' ').trim()
-  if (t.length <= maxChars) return t
-  const cut = Math.max(8, maxChars - 1)
-  return `${t.slice(0, cut)}…`
 }
 
 function normalizeUnit(unit: string | null | undefined): string {
@@ -98,30 +91,29 @@ function InventoryProductCard({
   onRawChange,
   onBlur,
   onNumericChange,
+  onClear,
   numeric,
   visibilityMode,
   visibilityOn,
   onVisibilityToggle,
-  totalBothLocations,
 }: {
   item: Ingredient
   raw: string
   onRawChange: (s: string) => void
   onBlur: () => void
   onNumericChange: (n: number) => void
+  onClear: () => void
   numeric: number
   visibilityMode: boolean
   visibilityOn: boolean
   onVisibilityToggle: () => void
-  totalBothLocations?: number
 }) {
   const u = normalizeUnit(item.unit)
-  const label = abbreviateLabel(item.name)
 
   return (
     <div
       data-element="inventory-product-card"
-      className="relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-md transition-shadow"
+      className="relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
     >
       {visibilityMode ? (
         <button
@@ -152,31 +144,41 @@ function InventoryProductCard({
         </div>
         <div className="flex w-full min-w-0 flex-col items-center gap-0.5 text-center">
           <span
-            className="w-full min-w-0 truncate text-center text-[10px] min-[380px]:text-[11px] font-black leading-tight text-zinc-800"
+            className="w-full min-w-0 truncate text-center text-[9px] min-[380px]:text-[10px] font-black leading-tight text-zinc-800"
             title={item.name}
           >
-            {label}
+            {item.name}
           </span>
-          <span className="w-full truncate text-center text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+          <span className="w-full truncate text-center text-[7.5px] font-bold uppercase tracking-widest text-zinc-400">
             {u}
           </span>
         </div>
       </div>
 
       {!visibilityMode ? (
-        <div className="mt-auto shrink-0 px-2 pb-2 pt-1">
-          <QuantityStepper
-            value={numeric}
-            raw={raw}
-            onRawChange={onRawChange}
-            onBlur={onBlur}
-            onChange={(n) => onNumericChange(roundQty(n, u))}
-            step={getStep(u)}
-            inputMode={isCountUnit(u) ? 'numeric' : 'decimal'}
-            ariaLabel={`Cantidad contada ${item.name}`}
-            bottomText={totalBothLocations !== undefined ? `Total ${totalBothLocations}` : undefined}
-          />
-        </div>
+        <QuantityStepper
+          variant="bar"
+          className="mt-auto"
+          value={numeric}
+          raw={raw}
+          onRawChange={onRawChange}
+          onBlur={onBlur}
+          onChange={(n) => onNumericChange(roundQty(n, u))}
+          step={getStep(u)}
+          inputMode={isCountUnit(u) ? 'numeric' : 'decimal'}
+          ariaLabel={`Cantidad contada ${item.name}`}
+        />
+      ) : null}
+
+      {!visibilityMode && numeric > 0 ? (
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label={`Quitar ${item.name} del recuento`}
+          className="absolute right-1.5 top-1.5 z-30 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-sm backdrop-blur transition-all hover:bg-rose-50 sm:h-7 sm:w-7"
+        >
+          <Trash2 size={14} />
+        </button>
       ) : null}
     </div>
   )
@@ -429,13 +431,6 @@ export function InventoryClient({
                 const counted = isBarra ? numericByIdBarra[item.id] : numericByIdCamara[item.id]
                 const numeric = counted ?? 0
 
-                const valB = numericByIdBarra[item.id]
-                const valC = numericByIdCamara[item.id]
-                let totalBothLocations: number | undefined
-                if (valB !== undefined && valB >= 1 && valC !== undefined && valC >= 1) {
-                  totalBothLocations = valB + valC
-                }
-
                 const rawCounts = isBarra ? physicalCountsBarra : physicalCountsCamara
                 const raw =
                   rawCounts[item.id] !== undefined
@@ -455,8 +450,21 @@ export function InventoryClient({
                     raw={raw}
                     visibilityMode={Boolean(visibilityEditMode && managerFullList?.length)}
                     visibilityOn={visibilityOn}
-                    totalBothLocations={totalBothLocations}
                     onVisibilityToggle={() => toggleDraftVisibility(item.id)}
+                    onClear={() => {
+                      const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
+                      const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
+                      setNumeric((prev) => {
+                        const next = { ...prev }
+                        delete next[item.id]
+                        return next
+                      })
+                      setPhysical((prev) => {
+                        const next = { ...prev }
+                        delete next[item.id]
+                        return next
+                      })
+                    }}
                     onRawChange={(s) => {
                       const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
                       const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
@@ -516,7 +524,7 @@ export function InventoryClient({
         {!visibilityEditMode ? (
           <PetroleumSegmented
             instance="inventory-location"
-            density="comfortable"
+            density="compact"
             aria-label="Ubicación del recuento"
             value={locationMode}
             onChange={(next) => setLocationMode(next as 'BARRA' | 'CAMARA')}

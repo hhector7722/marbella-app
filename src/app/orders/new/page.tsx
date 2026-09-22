@@ -60,9 +60,9 @@ export default function NewOrderPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const searchParams = useSearchParams();
-    const initialSupplier = searchParams.get('supplier');
-
-    const [selectedSupplier, setSelectedSupplier] = useState<string | null>(initialSupplier);
+    // El proveedor del pedido vive en la URL. Elegir otro proveedor desde la
+    // selección abre siempre su pedido, aunque ya estuvieras dentro de otro.
+    const selectedSupplier = searchParams.get('supplier');
     const [dbSuppliers, setDbSuppliers] = useState<{ id: string, name: string, phone: string | null, image_url: string | null }[]>([]);
 
     // UI Modals
@@ -436,7 +436,7 @@ export default function NewOrderPage() {
             >
                 {filteredIngredients.map(ing => (
                     <OrderProductCard
-                        key={ing.id}
+                        key={`${selectedSupplier ?? 'all'}-${ing.id}`}
                         ingredient={ing}
                         supplierId={supplierId}
                         initialQuantity={drafts[ing.id]?.quantity || 0}

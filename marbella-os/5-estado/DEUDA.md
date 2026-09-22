@@ -339,6 +339,8 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Pago parcial (2026-08-27) — QuantityStepper:** se creó `src/components/ui/QuantityStepper.tsx` y se cableó en inventario, merma, carta, tickets de cierre, encargo, pedido, consumo y carrito de evento. El recuento de efectivo sigue en `DenominationStepper` (anatomía distinta, a propósito).
 
+**Variantes (2026-09-22):** la pieza admite `boxed` (caja con borde, default) y `bar` (barra de cromo de tabla pegada al canto inferior, la misma que la tarjeta de pedido). Inventario monta `bar`; el resto sigue en `boxed`. La tarjeta de `OrderProductCard` en cuadrícula conserva su barra propia (misma anatomía, sin la pieza todavía): converger es el disparador de pago.
+
 **Pago parcial (2026-08-27) — SearchField:** se creó `src/components/ui/SearchField.tsx` (lupa + input compacto, 32 px / 12 px, no es Field) y se cableó en catálogos, inventario, merma, mapeo, carta, pedido, encargo, scanner y exportes.
 
 **Auditoría Block 2A (2026-08-20) — SelectionOption / ListRow:** se inventariaron las variantes reales antes de crear componente. **Decisión: C (no crear ListRow/SelectionOption genéricos).**
@@ -431,6 +433,16 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 **Coste**: el borrador no viaja al servidor. No se comparte entre dispositivos ni sobrevive a limpiar los datos del navegador; si el recuento se empieza en un dispositivo y se termina en otro, no se continúa.
 
 **Disparador de pago**: cuando el recuento deba continuar entre dispositivos o quedar auditado antes de certificarse, moverlo a un borrador de servidor (tabla o columna con RLS por usuario).
+
+---
+
+## D31 · El selector de ubicación de inventario queda por debajo del táctil mínimo
+
+**Prioridad: baja.** Por petición de producto, el segmented Barra/Cámara de `/dashboard/inventory` usa la densidad `compact` de `PetroleumSegmented`, que se ajusta al contenido (~20 px) y queda por debajo de `tactil.minimo` (48 px) de [EXPERIENCIA §1](../2-diseno/EXPERIENCIA.md#1-táctil).
+
+**Coste**: durante el servicio el control es más difícil de acertar con el dedo; dos opciones contiguas pueden confundirse.
+
+**Disparador de pago**: si aparecen toques erróneos, devolver `comfortable` o dar al control un host táctil transparente de 48 px que no cambie el aspecto (patrón del Button).
 
 ---
 

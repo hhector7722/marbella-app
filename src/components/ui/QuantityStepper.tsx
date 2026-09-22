@@ -18,6 +18,7 @@ export function QuantityStepper({
     ariaLabel,
     disabled = false,
     className,
+    variant = 'boxed',
 }: {
     value: number;
     onChange: (n: number) => void;
@@ -33,6 +34,12 @@ export function QuantityStepper({
     ariaLabel: string;
     disabled?: boolean;
     className?: string;
+    /**
+     * `boxed` = caja con borde (default).
+     * `bar` = barra de recuento pegada al canto inferior, cromo de tabla
+     * (misma que la tarjeta de pedido). Ignora `suffix` y `bottomText`.
+     */
+    variant?: 'boxed' | 'bar';
 }) {
     const display = raw !== undefined ? raw : value ? String(value) : '';
     const mode = inputMode ?? (step < 1 ? 'decimal' : 'numeric');
@@ -61,6 +68,51 @@ export function QuantityStepper({
         onChange(next);
         onRawChange?.(next === 0 && min === 0 ? '' : String(next));
     };
+
+    if (variant === 'bar') {
+        return (
+            <div
+                data-component="QuantityStepper"
+                data-variant="bar"
+                className={cn(
+                    'grid w-full shrink-0 grid-cols-3 items-center justify-items-center',
+                    className,
+                )}
+            >
+                <button
+                    type="button"
+                    onClick={() => adjust(-step)}
+                    disabled={disabled || value <= min}
+                    aria-label={`Menos ${ariaLabel}`}
+                    className="flex shrink-0 items-center justify-center px-1 py-1 transition-colors hover:bg-white/10 active:bg-white/15 disabled:opacity-40"
+                >
+                    <Minus size={13} strokeWidth={3} aria-hidden />
+                </button>
+                <span className="relative z-[1] flex min-w-[1.25rem] shrink-0 items-center justify-center px-0.5 py-1 text-center text-[10px] font-black tabular-nums leading-none">
+                    <input
+                        type="text"
+                        inputMode={mode}
+                        value={display}
+                        disabled={disabled}
+                        onChange={(e) => commitRaw(e.target.value)}
+                        onBlur={onBlur}
+                        aria-label={ariaLabel}
+                        data-element="qty-input"
+                        className="w-full min-w-0 bg-transparent p-0 text-center text-[10px] font-black tabular-nums leading-none outline-none"
+                    />
+                </span>
+                <button
+                    type="button"
+                    onClick={() => adjust(step)}
+                    disabled={disabled || (max != null && value >= max)}
+                    aria-label={`Más ${ariaLabel}`}
+                    className="flex shrink-0 items-center justify-center px-1 py-1 transition-colors hover:bg-white/10 active:bg-white/15"
+                >
+                    <Plus size={13} strokeWidth={3} aria-hidden />
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div

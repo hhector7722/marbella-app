@@ -15,6 +15,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-22
 
+- **Inventario: las tarjetas de recuento se alinean con las de Pedidos.** Misma tarjeta de producto (imagen, nombre y unidad) y misma barra de sumar y restar cantidades, con papelera para quitar un artículo del recuento. El selector Barra/Cámara pasa a densidad compacta y se ajusta al contenido. [D27](DEUDA.md#d27--controles-interactivos-que-no-son-button).
+
+- **Pedidos: elegir otro proveedor abre su pedido, no el anterior.** El proveedor del pedido vive en la URL, así que la selección desde la pestaña «Pedidos» cambia siempre al proveedor elegido aunque ya estuvieras dentro de otro.
+
 - **Inventario: el recuento en curso no se pierde al salir de la pantalla ni cerrar la aplicación.** Las cantidades contadas se guardan como borrador en el dispositivo, por usuario, y se restablecen solo al certificar el recuento. [DEUDA D30](DEUDA.md#d30--el-borrador-del-recuento-de-inventario-vive-en-el-dispositivo).
 
 - **Plato Marbella: los tramos se eligen en un modal, no en una lista bajo el plato.** El plato vacío ya no muestra opciones debajo. Se pulsa la zona del entrante, el principal o la guarnición —o la foto ya colocada— y se abre el selector de ese tramo; elegir cierra el modal y deja el producto en el plato. El orden es libre y se puede cambiar un tramo sin rehacer los demás. El aviso «Sin tramo asignado» desaparece del modo lectura y permanece en la edición de carta.
