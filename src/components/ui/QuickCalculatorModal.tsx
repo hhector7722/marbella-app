@@ -1,6 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+    type PointerEvent as ReactPointerEvent,
+    type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { Clock, Copy, Delete, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
@@ -519,6 +527,52 @@ function ToolFab({
     );
 }
 
+const QUICK_FAB_TOP_GAP = 8;
+const QUICK_FAB_DRAG_THRESHOLD = 6;
+const DOCK_BOTTOM_KEY = 'marbella:quick-cash-tools-dock-bottom';
+
+/** Distancia desde el canto inferior que reserva la TabBar (o el área segura). */
+function measureQuickFabBaseBottom(): number {
+    if (typeof window === 'undefined') return 0;
+    const probe = document.createElement('div');
+    probe.style.cssText =
+        'position:fixed;left:0;bottom:0;width:0;height:var(--quick-fab-lift, env(safe-area-inset-bottom, 0px));pointer-events:none;visibility:hidden;';
+    document.body.appendChild(probe);
+    const height = Math.round(probe.getBoundingClientRect().height);
+    probe.remove();
+    return Number.isFinite(height) ? height : 0;
+}
+
+function readStoredDockBottom(): number | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = window.localStorage.getItem(DOCK_BOTTOM_KEY);
+        if (!raw) return null;
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : null;
+    } catch {
+        return null;
+    }
+}
+
+function writeStoredDockBottom(px: number): void {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(DOCK_BOTTOM_KEY, String(Math.round(px)));
+    } catch {
+        // Sin persistencia: la posición sigue funcionando durante la sesión.
+    }
+}
+
+function clampDockBottom(value: number, base: number, max: number): number {
+    return Math.min(Math.max(value, base), Math.max(base, max));
+}
+
+/**
+ * Acceso flotante a calculadora y desglose: dock vertical pegado al canto
+ * derecho, arrastrable por toda la altura. Por defecto sobre la TabBar, con
+ * la calculadora encima del desglose. Al abrir el panel, el dock se retira.
+ */
 export function QuickCashToolsFabs({
     calculator,
     breakdown,
@@ -536,6 +590,19 @@ export function QuickCashToolsFabs({
 }) {
     const dockRef = useRef<HTMLDivElement>(null);
     const [mounted, setMounted] = useState(false);
+    const [bottom, setBottom] = useState<number | null>(null);
+    const [dragging, setDragging] = useState(false);
+    const dragRef = useRef<{
+        id: number;
+        startY: number;
+        startBottom: number;
+        base: number;
+        dockHeight: number;
+        moved: boolean;
+    } | null>(null);
+    const lastBottomRef = useRef<number | null>(null);
+    const suppressClickRef = useRef(false);
+
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -548,7 +615,7 @@ export function QuickCashToolsFabs({
         }
         const el = dockRef.current;
         if (!el) return;
-        const sync = () => applyFabDock(el.getBoundingClientRect().height);
+        const sync = () => applyFabDock(el.getBoundingClientRect().width);
         sync();
         const observer = new ResizeObserver(sync);
         observer.observe(el);
@@ -558,27 +625,113 @@ export function QuickCashToolsFabs({
         };
     }, [mounted, calculator, breakdown, isOpen]);
 
+    // Posición vertical: por defecto sobre la TabBar; si el usuario la movió, se restaura.
+    useLayoutEffect(() => {
+        if (!mounted || isOpen) return;
+        const apply = () => {
+            const base = measureQuickFabBaseBottom();
+            const max =
+                window.innerHeight - (dockRef.current?.offsetHeight ?? 0) - QUICK_FAB_TOP_GAP;
+            const stored = readStoredDockBottom();
+            const next = clampDockBottom(stored ?? base, base, max);
+            lastBottomRef.current = next;
+            setBottom(next);
+        };
+        apply();
+        window.addEventListener('resize', apply);
+        return () => window.removeEventListener('resize', apply);
+    }, [mounted, isOpen, calculator, breakdown]);
+
     if (!calculator && !breakdown) return null;
     if (!mounted || isOpen) return null;
+
+    const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        const base = measureQuickFabBaseBottom();
+        suppressClickRef.current = false;
+        dragRef.current = {
+            id: event.pointerId,
+            startY: event.clientY,
+            startBottom: bottom ?? base,
+            base,
+            dockHeight: dockRef.current?.offsetHeight ?? 0,
+            moved: false,
+        };
+    };
+
+    const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+        const drag = dragRef.current;
+        if (!drag || drag.id !== event.pointerId) return;
+        const delta = drag.startY - event.clientY;
+        if (!drag.moved && Math.abs(delta) < QUICK_FAB_DRAG_THRESHOLD) return;
+        if (!drag.moved) {
+            // Solo se captura al confirmarse el arrastre: un toque simple deja
+            // que el botón reciba su click con normalidad.
+            drag.moved = true;
+            suppressClickRef.current = true;
+            try {
+                dockRef.current?.setPointerCapture(event.pointerId);
+            } catch {
+                // Sin captura el arrastre sigue mientras el puntero esté encima.
+            }
+        }
+        setDragging(true);
+        const max = window.innerHeight - drag.dockHeight - QUICK_FAB_TOP_GAP;
+        const next = clampDockBottom(drag.startBottom + delta, drag.base, max);
+        lastBottomRef.current = next;
+        setBottom(next);
+        event.preventDefault();
+    };
+
+    const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+        const drag = dragRef.current;
+        if (!drag || drag.id !== event.pointerId) return;
+        dragRef.current = null;
+        setDragging(false);
+        try {
+            dockRef.current?.releasePointerCapture(event.pointerId);
+        } catch {
+            // no-op
+        }
+        if (drag.moved && lastBottomRef.current != null) {
+            writeStoredDockBottom(lastBottomRef.current);
+        }
+    };
+
+    const handleOpen = (tab: QuickCashTool) => {
+        if (suppressClickRef.current) return;
+        onOpen(tab);
+    };
+
     return createPortal(
         <div
             ref={dockRef}
             data-component="QuickCashToolsFabs"
-            className={cn(
-                className,
-                'pointer-events-none fixed inset-x-0 bottom-0 z-[208] flex justify-center',
-            )}
+            data-dragging={dragging ? 'true' : undefined}
+            className={cn(className, 'pointer-events-none fixed right-0 z-[208]')}
+            style={{
+                bottom:
+                    bottom == null
+                        ? 'var(--quick-fab-lift, env(safe-area-inset-bottom, 0px))'
+                        : `${bottom}px`,
+            }}
         >
             <div
-                data-element="row"
-                className="pointer-events-auto flex shrink-0 flex-nowrap items-center justify-center gap-2"
+                data-element="dock"
+                role="group"
+                aria-label="Herramientas de recuento"
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endDrag}
+                onPointerCancel={endDrag}
+                className="pointer-events-auto flex cursor-grab touch-none select-none flex-col items-center gap-1 rounded-l-ds-superficie bg-ds-superficie p-1 shadow-ds-pagina active:cursor-grabbing"
             >
                 {calculator ? (
                     <ToolFab
                         src={CALCULATOR_ICON}
                         ariaLabel={openTab === 'calculator' ? 'Cerrar calculadora' : 'Abrir calculadora'}
                         pressed={openTab === 'calculator'}
-                        onClick={() => onOpen('calculator')}
+                        onClick={() => handleOpen('calculator')}
                     />
                 ) : null}
                 {breakdown ? (
@@ -586,7 +739,7 @@ export function QuickCashToolsFabs({
                         src={BREAKDOWN_ICON}
                         ariaLabel={openTab === 'breakdown' ? 'Cerrar desglose' : 'Abrir desglose'}
                         pressed={openTab === 'breakdown'}
-                        onClick={() => onOpen('breakdown')}
+                        onClick={() => handleOpen('breakdown')}
                     />
                 ) : null}
             </div>

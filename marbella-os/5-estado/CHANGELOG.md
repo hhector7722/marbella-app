@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-22
 
+- **La calculadora rápida y el desglose pasan a un dock lateral arrastrable.** Los dos iconos viven en un dock vertical pegado al canto derecho, como el asa lateral de una web. Se arrastran por toda la altura y la posición se recuerda por dispositivo; por defecto se sientan sobre la pestaña inferior sin taparla, y la calculadora queda encima del desglose. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **Asistencia de plantilla: cada fichaje es una fila plana, no una card gris.** El fondo `color.superficie.inactiva` desaparece; los registros de cada día se separan con un filete horizontal de 1 px en `color.borde` y ganan una respiración vertical mínima, sin cambiar la alineación de nombre y horas. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
 
 - **Inventario: las tarjetas de recuento se alinean con las de Pedidos.** Misma tarjeta de producto (imagen, nombre y unidad) y misma barra de sumar y restar cantidades, con papelera para quitar un artículo del recuento. El selector Barra/Cámara pasa a densidad compacta y se ajusta al contenido. [D27](DEUDA.md#d27--controles-interactivos-que-no-son-button).

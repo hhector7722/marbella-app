@@ -87,12 +87,10 @@
   );
   /* Hueco que reserva el panel inferior de calculadora/desglose. 0px si está cerrado. */
   --quick-tool-inset: 0px;
-  /* Franja de iconos auxiliares (calculadora/desglose), fuera del modal. */
+  /* Ancho que reserva el dock de iconos auxiliares (calculadora/desglose). 0px si no está. */
   --quick-fab-dock: 0px;
   /* Offset desde el canto: área segura; si hay TabBar visible, se suma la cápsula. */
   --quick-fab-lift: env(safe-area-inset-bottom, 0px);
-  /* Hueco extra del overlay solo mientras los flotantes están visibles. */
-  --quick-fab-clearance: 0px;
   /* ADR-0008 — backdrop base vs elevado */
   --modal-overlay-base: rgba(0, 0, 0, 0.32);
   --modal-overlay-base-filter: blur(8px) saturate(65%);
@@ -234,35 +232,33 @@
 /*
  * Calculadora/desglose: panel inferior simultáneo. El modal padre no se
  * subordina (no es una capa Modal). El overlay cede el hueco y alinea el
- * panel al canto de la herramienta. Los iconos viven en una franja inferior
- * de viewport, centrados, fuera del modal. No tapan la TabBar: si la
- * cápsula está visible, suben; si está oculta o no hay TabBar, bajan.
+ * panel al canto de la herramienta. Los iconos viven en un dock vertical
+ * pegado al canto derecho, fuera del modal y arrastrable por el usuario.
+ * Por defecto sobre la TabBar; el overlay reserva el ancho del dock.
  */
 @media (max-width: 1023px) {
   html:has([data-component='TabBar']:not([data-hidden='true'])) {
     --quick-fab-lift: calc(var(--shell-bottom-inset) + var(--espacio-2));
   }
 }
-html[data-quick-fab='open'] {
-  --quick-fab-clearance: var(--quick-fab-lift);
-}
 [data-component='QuickCashToolsFabs'] {
   bottom: var(--quick-fab-lift, env(safe-area-inset-bottom, 0px));
   transition: bottom 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
-html[data-quick-fab='open'] [data-component='Modal'],
+[data-component='QuickCashToolsFabs'][data-dragging='true'] {
+  transition: none;
+}
 html[data-quick-tool='open'] [data-component='Modal'] {
   align-items: flex-end;
 }
-html[data-quick-fab='open'] [data-component='Modal'] [data-element='frame'],
 html[data-quick-tool='open'] [data-component='Modal'] [data-element='frame'] {
   justify-content: flex-end;
 }
-html[data-quick-fab='open'] main,
 html[data-quick-tool='open'] main {
-  padding-bottom: calc(
-    var(--quick-fab-dock, 0px) + var(--quick-tool-inset, 0px) + var(--quick-fab-lift, env(safe-area-inset-bottom, 0px))
-  );
+  padding-bottom: calc(var(--quick-tool-inset, 0px) + env(safe-area-inset-bottom, 0px));
+}
+html[data-quick-fab='open'] main {
+  padding-right: calc(var(--quick-fab-dock, 0px) + env(safe-area-inset-right, 0px));
 }
 
 /*

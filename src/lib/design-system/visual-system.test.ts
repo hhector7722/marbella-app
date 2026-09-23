@@ -1600,7 +1600,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
 
         const tools = readFileSync(join(SRC_ROOT, 'components/ui/QuickCalculatorModal.tsx'), 'utf8');
-        assert.match(tools, /fixed inset-x-0 bottom-0/);
+        assert.match(tools, /fixed right-0/);
         assert.doesNotMatch(tools, /bottom-20|right-4/);
         assert.match(tools, /\/icons\/calculadora\.png/);
         assert.match(tools, /\/icons\/desglose\.png/);
@@ -1611,13 +1611,14 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(tools, /fixed inset-0/);
         assert.doesNotMatch(tools, /html-to-image|toPng|WhatsApp/);
         assert.doesNotMatch(tools, /registerModalSurface/);
-        assert.match(tools, /flex-nowrap/);
-        assert.match(tools, /justify-center/);
         assert.match(tools, /--quick-fab-dock/);
         assert.match(tools, /data-component="QuickCashToolsFabs"/);
-        assert.match(tools, /data-element="row"/);
+        assert.match(tools, /data-element="dock"/);
+        assert.match(tools, /flex-col/);
         assert.doesNotMatch(tools, /flex-col-reverse/);
         assert.doesNotMatch(tools, /left-4/);
+        assert.match(tools, /setPointerCapture/);
+        assert.match(tools, /DOCK_BOTTOM_KEY/);
         assert.match(tools, /object-contain/);
         assert.doesNotMatch(tools, /object-cover/);
         assert.match(tools, /aria-label="Minimizar"/);
@@ -1642,8 +1643,13 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /\[data-component='QuickCashToolsFabs'\] \{[\s\S]*?bottom:\s*var\(--quick-fab-lift/,
             'la posición inferior la fija el lift, no cada instancia',
         );
+        assert.match(css, /data-dragging='true'/, 'el arrastre no anima la posición');
         const modal = readFileSync(join(SRC_ROOT, 'components/ui/modal.tsx'), 'utf8');
-        assert.match(modal, /--quick-fab-clearance/, 'el overlay cede el lift solo mientras los iconos están visibles');
+        assert.match(
+            modal,
+            /paddingRight: 'calc\(max\(1rem[\s\S]*?--quick-fab-dock/,
+            'el overlay reserva el ancho del dock lateral',
+        );
     });
 
     it('las barras de cantidad usan QuantityStepper (P10)', () => {
