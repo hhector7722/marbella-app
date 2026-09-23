@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-22
 
+- **Asistencia de plantilla: cada fichaje es una fila plana, no una card gris.** El fondo `color.superficie.inactiva` desaparece; los registros de cada día se separan con un filete horizontal de 1 px en `color.borde` y ganan una respiración vertical mínima, sin cambiar la alineación de nombre y horas. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
+
 - **Inventario: las tarjetas de recuento se alinean con las de Pedidos.** Misma tarjeta de producto (imagen, nombre y unidad) y misma barra de sumar y restar cantidades, con papelera para quitar un artículo del recuento. El selector Barra/Cámara pasa a densidad compacta y se ajusta al contenido. [D27](DEUDA.md#d27--controles-interactivos-que-no-son-button).
 
 - **Pedidos: elegir otro proveedor abre su pedido, no el anterior.** El proveedor del pedido vive en la URL, así que la selección desde la pestaña «Pedidos» cambia siempre al proveedor elegido aunque ya estuvieras dentro de otro.

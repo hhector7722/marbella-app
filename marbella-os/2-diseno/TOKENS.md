@@ -61,7 +61,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 |---|---|---|---|
 | `color.superficie` | `#FFFFFF` | Superficie de trabajo. Tarjetas, modales, paneles | adoptado (piloto `DashboardShortcut` vía `--color-superficie`) |
 | `color.superficie.hundida` | `#FAFAFA` | Fondo de zonas agrupadas dentro de una superficie | adoptado (variable `--color-superficie-hundida`) |
-| `color.superficie.inactiva` | `#F4F4F5` | Elementos deshabilitados, cabeceras de tabla, filas de plantilla en Asistencia | adoptado (piloto Button vía `--color-superficie-inactiva`; fila `plantilla-log-row`) |
+| `color.superficie.inactiva` | `#F4F4F5` | Elementos deshabilitados, cabeceras de tabla | adoptado (piloto Button vía `--color-superficie-inactiva`) |
 
 `color.superficie` no pinta el cuerpo del widget de HomeScreen. Ese hueco es material de sistema (`--home-widget-fill` + blur del `--color-envolvente`). Claro u oscuro según la luminancia del wallpaper. PageScreen, Modal y Surface fuera del mosaico siguen blancos, salvo la excepción documentada en [SISTEMA-DE-COMPONENTES](SISTEMA-DE-COMPONENTES.md) Tarjeta: en `/staff/propinas` las cards del historial (`staff-propinas-history-entry`) usan el relleno secundario del mosaico (`--home-widget-fill-secondary`, el mismo que sáb/dom del widget de horario); «Último reparto» permanece en papel.
 

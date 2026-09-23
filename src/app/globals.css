@@ -139,10 +139,17 @@
   }
 }
 
-/* Plantilla: zona hundida a ancho de columna; la marca no pega al canto. */
+/*
+ * Plantilla: fila plana sobre el blanco de la celda. El nombre y las horas
+ * conservan su inset (`espacio.1`); entre fichajes, un separador de 1 px.
+ */
 .month-cal-cell [data-element='plantilla-log-row'] {
-  background-color: var(--color-superficie-inactiva);
   padding-inline: var(--espacio-1);
+  padding-block: 1px;
+  border-bottom: 1px solid var(--color-borde);
+}
+.month-cal-cell [data-element='plantilla-log-row']:last-child {
+  border-bottom: 0;
 }
 .month-cal-cell [data-element='plantilla-log-row'] [data-week-log-hours] {
   justify-content: flex-end;

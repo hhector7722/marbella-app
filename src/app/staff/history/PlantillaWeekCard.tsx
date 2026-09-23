@@ -5,7 +5,8 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const MAX_ROWS_DEFAULT = 12;
-const LOG_ROW_HEIGHT = 7;
+/** Fila plana: texto 6 px + `padding-block` 1 px + separador 1 px. */
+const LOG_ROW_HEIGHT = 9;
 const LOG_ROW_GAP = 3;
 const DAY_VERTICAL_PAD = 4;
 const DAY_HEADER_HEIGHT = 9;
