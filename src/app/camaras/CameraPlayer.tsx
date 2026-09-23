@@ -2,17 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-const CAMERA_MP4_URL = 'https://video.barlamarbella.com/api/stream.mp4?src=reolink';
-const CAMERA_HLS_URL = 'https://video.barlamarbella.com/api/stream.m3u8?src=reolink_mobile';
-
-function isIOSDevice() {
-  if (typeof navigator === 'undefined') return false;
-
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-  );
-}
+const CAMERA_STREAM_URL = 'https://video.barlamarbella.com/api/stream.m3u8?src=reolink_mobile';
 
 export default function CameraPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -23,13 +13,12 @@ export default function CameraPlayer() {
     if (!video) return;
 
     let stopped = false;
-    const streamUrl = isIOSDevice() ? CAMERA_HLS_URL : CAMERA_MP4_URL;
+    const streamUrl = CAMERA_STREAM_URL;
 
     const start = async () => {
       setError(false);
 
-      // iPhone/iPad: use the transcoded HLS/MPEG-TS stream verified in Safari.
-      // Desktop/other browsers: keep the progressive MP4 path already verified.
+      // Use the transcoded HLS stream verified on both desktop and iPhone.
       video.src = streamUrl;
       video.controls = false;
       video.playsInline = true;
