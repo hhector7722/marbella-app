@@ -94,7 +94,7 @@ export function PlateBuilder({
 
       <div className="relative aspect-[1609/1464] w-full select-none">
         <Image
-          src={`${PLATE_V12_BASE_PATH}/base/plate.png`}
+          src={`${PLATE_V12_BASE_PATH}/base/plate.webp`}
           alt=""
           fill
           priority
@@ -213,14 +213,14 @@ function CanonicalSlotLayers({
     <span className={cn('pointer-events-none absolute inset-0 z-10', animationClass)}>
       {isBowl ? (
         <CanonicalImage
-          src={`${PLATE_V12_BASE_PATH}/base/bowl_back.png`}
+          src={`${PLATE_V12_BASE_PATH}/base/bowl_back.webp`}
           transform={PLATE_V12_TRANSFORMS.bowl_group}
         />
       ) : null}
       <CanonicalImage src={plateV12AssetPath(assetKey)} transform={transform} />
       {isBowl ? (
         <CanonicalImage
-          src={`${PLATE_V12_BASE_PATH}/base/bowl_front.png`}
+          src={`${PLATE_V12_BASE_PATH}/base/bowl_front.webp`}
           transform={PLATE_V12_TRANSFORMS.bowl_group}
         />
       ) : null}
