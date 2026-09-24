@@ -139,12 +139,12 @@ export function resolvePlateV12Asset(input: {
 
 export function plateV12AssetPath(key: PlateV12AssetKey): string {
   if (PLATE_V12_BOWL_STARTERS.has(key) || key === 'berenjena') {
-    return `${PLATE_V12_BASE_PATH}/entrantes/${key}.png`
+    return `${PLATE_V12_BASE_PATH}/entrantes/${key}.webp`
   }
   if (key === 'patatas' || key === 'verduras') {
-    return `${PLATE_V12_BASE_PATH}/guarniciones/${key}.png`
+    return `${PLATE_V12_BASE_PATH}/guarniciones/${key}.webp`
   }
-  return `${PLATE_V12_BASE_PATH}/principales/${key}.png`
+  return `${PLATE_V12_BASE_PATH}/principales/${key}.webp`
 }
 
 export function plateV12HitBox(key: PlateV12AssetKey | null, slot: PlatoMarbellaSlot): PlateV12HitBox {
