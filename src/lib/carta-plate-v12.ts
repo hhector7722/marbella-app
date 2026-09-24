@@ -74,6 +74,7 @@ export const PLATE_V12_HITBOXES: Readonly<Record<PlateV12AssetKey, PlateV12HitBo
 
 const ARTICLE_ASSET: Readonly<Record<number, PlateV12AssetKey>> = {
   138: 'berenjena',
+  139: 'gazpacho',
   141: 'pesto',
   142: 'carbonara',
   144: 'caballa',
