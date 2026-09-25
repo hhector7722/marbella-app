@@ -82,11 +82,8 @@ export function PlateBuilder({
 
   return (
     <div
-      className={cn(
-        'relative mx-auto w-full',
-        embedded ? 'max-w-[17rem] sm:max-w-[18.75rem]' : 'max-w-[21rem] sm:max-w-[23rem]',
-        className
-      )}
+      data-embedded={embedded ? 'true' : undefined}
+      className={cn('relative mx-auto w-full max-w-[21rem] sm:max-w-[23rem]', className)}
     >
       <style>{`
         @keyframes ${foodAnim} {
