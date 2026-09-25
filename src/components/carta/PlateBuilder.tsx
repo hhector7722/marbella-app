@@ -9,17 +9,17 @@ import {
   type PlatoMarbellaSlot,
 } from '@/lib/carta-plato-marbella'
 import {
-  PLATE_V12_BASE_PATH,
-  PLATE_V12_BOWL_STARTERS,
-  PLATE_V12_CANVAS,
-  PLATE_V12_TRANSFORMS,
-  plateV12AssetPath,
-  plateV12HitBox,
-  plateV12LabelPosition,
-  resolvePlateV12Asset,
-  type PlateV12AssetKey,
-  type PlateV12Transform,
-} from '@/lib/carta-plate-v12'
+  PLATE_V15_BASE_PATH,
+  PLATE_V15_BOWL_STARTERS,
+  PLATE_V15_CANVAS,
+  PLATE_V15_TRANSFORMS,
+  plateV15AssetPath,
+  plateV15HitBox,
+  plateV15LabelPosition,
+  resolvePlateV15Asset,
+  type PlateV15AssetKey,
+  type PlateV15Transform,
+} from '@/lib/carta-plate-v15'
 import { useStudioCutout } from '@/components/carta/useStudioCutout'
 
 /** Alimento colocado en el plato (null = tramo vacío). */
@@ -31,6 +31,7 @@ export type PlateZoneItem = {
 }
 
 const SLOT_ORDER: PlatoMarbellaSlot[] = ['entrante', 'principal', 'guarnicion']
+const BASE_PLATE_SCALE = 0.93
 
 const FALLBACK_BY_SLOT: Readonly<
   Record<PlatoMarbellaSlot, { left: number; top: number; width: number; height: number }>
@@ -94,7 +95,7 @@ export function PlateBuilder({
 
       <div className="relative aspect-[1609/1464] w-full select-none">
         <Image
-          src={`${PLATE_V12_BASE_PATH}/base/plate.png`}
+          src={`${PLATE_V15_BASE_PATH}/base/plate.png`}
           alt=""
           fill
           priority
@@ -102,13 +103,14 @@ export function PlateBuilder({
           draggable={false}
           sizes="(max-width: 640px) 21rem, 23rem"
           className="pointer-events-none object-fill"
+          style={{ transform: `scale(${BASE_PLATE_SCALE})`, transformOrigin: 'center center' }}
         />
 
         {SLOT_ORDER.map((slot) => {
           const zone = zones.get(slot)
           const item = zone?.item
           if (!item) return null
-          const assetKey = resolvePlateV12Asset({ id: item.id, label: item.label, slot })
+          const assetKey = resolvePlateV15Asset({ id: item.id, label: item.label, slot })
           return (
             <CanonicalSlotLayers
               key={`${slot}:${item.id ?? item.label}`}
@@ -124,14 +126,14 @@ export function PlateBuilder({
           const zone = zones.get(slot)
           const item = zone?.item
           const assetKey = item
-            ? resolvePlateV12Asset({ id: item.id, label: item.label, slot })
+            ? resolvePlateV15Asset({ id: item.id, label: item.label, slot })
             : null
           const active = activeSlot === slot
           const label = slotLabels[slot]
 
           if (item) {
             if (!zone?.onSelect) return null
-            const box = plateV12HitBox(assetKey, slot)
+            const box = plateV15HitBox(assetKey, slot)
             return (
               <button
                 key={`hit-${slot}`}
@@ -149,7 +151,7 @@ export function PlateBuilder({
             )
           }
 
-          const pos = plateV12LabelPosition(slot)
+          const pos = plateV15LabelPosition(slot)
           const opacity = hasFood ? (active ? 0.82 : 0.46) : active ? 0.95 : 0.72
           const labelClass = cn(
             'select-none font-sans text-[11px] font-semibold tracking-[0.06em] antialiased',
@@ -199,38 +201,38 @@ function CanonicalSlotLayers({
 }: {
   slot: PlatoMarbellaSlot
   item: PlateZoneItem
-  assetKey: PlateV12AssetKey | null
+  assetKey: PlateV15AssetKey | null
   animationClass: string
 }) {
   if (!assetKey) {
     return <FallbackFoodLayer slot={slot} item={item} animationClass={animationClass} />
   }
 
-  const transform = PLATE_V12_TRANSFORMS[assetKey]
-  const isBowl = PLATE_V12_BOWL_STARTERS.has(assetKey)
+  const transform = PLATE_V15_TRANSFORMS[assetKey]
+  const isBowl = PLATE_V15_BOWL_STARTERS.has(assetKey)
 
   return (
     <span className={cn('pointer-events-none absolute inset-0 z-10', animationClass)}>
       {isBowl ? (
         <CanonicalImage
-          src={`${PLATE_V12_BASE_PATH}/base/bowl_back.png`}
-          transform={PLATE_V12_TRANSFORMS.bowl_group}
+          src={`${PLATE_V15_BASE_PATH}/base/bowl_back.png`}
+          transform={PLATE_V15_TRANSFORMS.bowl_group}
         />
       ) : null}
-      <CanonicalImage src={plateV12AssetPath(assetKey)} transform={transform} />
+      <CanonicalImage src={plateV15AssetPath(assetKey)} transform={transform} />
       {isBowl ? (
         <CanonicalImage
-          src={`${PLATE_V12_BASE_PATH}/base/bowl_front.png`}
-          transform={PLATE_V12_TRANSFORMS.bowl_group}
+          src={`${PLATE_V15_BASE_PATH}/base/bowl_front.png`}
+          transform={PLATE_V15_TRANSFORMS.bowl_group}
         />
       ) : null}
     </span>
   )
 }
 
-function CanonicalImage({ src, transform }: { src: string; transform: PlateV12Transform }) {
-  const left = (transform.x / PLATE_V12_CANVAS.width) * 100
-  const top = (transform.y / PLATE_V12_CANVAS.height) * 100
+function CanonicalImage({ src, transform }: { src: string; transform: PlateV15Transform }) {
+  const left = (transform.x / PLATE_V15_CANVAS.width) * 100
+  const top = (transform.y / PLATE_V15_CANVAS.height) * 100
   const style: CSSProperties = {
     left: `${left}%`,
     top: `${top}%`,
