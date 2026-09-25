@@ -8,9 +8,18 @@ import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/Field';
+import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
+import { RECIPE_UNIT_OPTIONS } from '@/lib/recipe-cost';
+import { RECIPE_KIND_OPTIONS, type RecipeKind, yieldFieldsForSave } from '@/lib/recipe-elaboration';
 import { uploadNormalizedRecipePhoto } from '@/app/dashboard/carta/photo-actions';
 
-export type RecipeNamePhotoSaved = { name: string; photo_url: string | null };
+export type RecipeNamePhotoSaved = {
+    name: string;
+    photo_url: string | null;
+    is_sellable: boolean;
+    yield_quantity: number | null;
+    yield_unit: string | null;
+};
 
 type Props = {
     open: boolean;
@@ -18,6 +27,9 @@ type Props = {
     recipeId: string;
     initialName: string;
     initialPhotoUrl: string | null;
+    initialIsSellable?: boolean;
+    initialYieldQuantity?: number | null;
+    initialYieldUnit?: string | null;
     onSaved: (payload: RecipeNamePhotoSaved) => void;
     onDelete?: () => void;
     categoryId?: string;
@@ -31,6 +43,9 @@ export function RecipeNamePhotoEditModal({
     recipeId,
     initialName,
     initialPhotoUrl,
+    initialIsSellable = true,
+    initialYieldQuantity = null,
+    initialYieldUnit = null,
     onSaved,
     onDelete,
     categoryId = '',
@@ -42,6 +57,9 @@ export function RecipeNamePhotoEditModal({
     const stagedBlobRef = useRef<string | null>(null);
 
     const [nameDraft, setNameDraft] = useState('');
+    const [kindDraft, setKindDraft] = useState<RecipeKind>('sellable');
+    const [yieldQuantityDraft, setYieldQuantityDraft] = useState('');
+    const [yieldUnitDraft, setYieldUnitDraft] = useState('');
     const [baselinePhotoUrl, setBaselinePhotoUrl] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
@@ -54,7 +72,9 @@ export function RecipeNamePhotoEditModal({
         }
     };
 
-    const photoSyncKey = open ? `${initialName}\u0000${initialPhotoUrl ?? ''}` : null;
+    const photoSyncKey = open
+        ? `${initialName}\u0000${initialPhotoUrl ?? ''}\u0000${initialIsSellable}\u0000${initialYieldQuantity ?? ''}\u0000${initialYieldUnit ?? ''}`
+        : null;
     const [syncedPhotoKey, setSyncedPhotoKey] = useState<string | null>(null);
 
     if (photoSyncKey !== syncedPhotoKey) {
@@ -62,6 +82,9 @@ export function RecipeNamePhotoEditModal({
         if (open) {
             setNameDraft(initialName);
             setBaselinePhotoUrl(initialPhotoUrl);
+            setKindDraft(initialIsSellable === false ? 'internal' : 'sellable');
+            setYieldQuantityDraft(initialYieldQuantity != null ? String(initialYieldQuantity) : '');
+            setYieldUnitDraft(initialYieldUnit ?? '');
         }
         setSelectedFile(null);
         setPreviewBlobUrl(null);
@@ -101,6 +124,12 @@ export function RecipeNamePhotoEditModal({
             toast.error('El nombre es obligatorio');
             return;
         }
+        const internal = kindDraft === 'internal';
+        const yieldSave = yieldFieldsForSave(yieldQuantityDraft, yieldUnitDraft, internal);
+        if (!yieldSave.ok) {
+            toast.error(yieldSave.message);
+            return;
+        }
 
         setSaving(true);
         try {
@@ -114,7 +143,16 @@ export function RecipeNamePhotoEditModal({
                 photo_url = up.publicUrl;
             }
 
-            const { error } = await supabase.from('recipes').update({ name: trimmed, photo_url }).eq('id', recipeId);
+            const { error } = await supabase
+                .from('recipes')
+                .update({
+                    name: trimmed,
+                    photo_url,
+                    is_sellable: !internal,
+                    yield_quantity: yieldSave.yield_quantity,
+                    yield_unit: yieldSave.yield_unit,
+                })
+                .eq('id', recipeId);
 
             if (error) {
                 toast.error(`No se pudo guardar: ${error.message}`);
@@ -122,7 +160,13 @@ export function RecipeNamePhotoEditModal({
             }
 
             toast.success('Receta actualizada');
-            onSaved({ name: trimmed, photo_url });
+            onSaved({
+                name: trimmed,
+                photo_url,
+                is_sellable: !internal,
+                yield_quantity: yieldSave.yield_quantity,
+                yield_unit: yieldSave.yield_unit,
+            });
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Error al guardar';
             toast.error(msg);
@@ -190,7 +234,48 @@ export function RecipeNamePhotoEditModal({
                     />
                 </Field>
 
-                {onCategoryChange && categories.length > 0 ? (
+                <PetroleumSegmented
+                    instance="recipe-edit-kind"
+                    density="comfortable"
+                    aria-label="Tipo de receta"
+                    value={kindDraft}
+                    onChange={(kind) => setKindDraft(kind as RecipeKind)}
+                    options={RECIPE_KIND_OPTIONS}
+                />
+
+                <Field
+                    instance="recipe-edit-yield"
+                    label={kindDraft === 'internal' ? 'Rendimiento del lote' : 'Rendimiento del lote (opcional)'}
+                    htmlFor="recipe-edit-yield"
+                >
+                    <div className="flex gap-2">
+                        <input
+                            id="recipe-edit-yield"
+                            type="text"
+                            inputMode="decimal"
+                            value={yieldQuantityDraft}
+                            onChange={(e) => setYieldQuantityDraft(e.target.value)}
+                            autoComplete="off"
+                            placeholder="1000"
+                            className="min-h-12"
+                        />
+                        <select
+                            aria-label="Unidad del rendimiento"
+                            value={yieldUnitDraft}
+                            onChange={(e) => setYieldUnitDraft(e.target.value)}
+                            className="min-h-12 w-24 shrink-0"
+                        >
+                            <option value="">Unidad</option>
+                            {RECIPE_UNIT_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </Field>
+
+                {kindDraft === 'sellable' && onCategoryChange && categories.length > 0 ? (
                     <Field instance="recipe-edit-category" label="Categoría" htmlFor="recipe-edit-category">
                         <select
                             id="recipe-edit-category"

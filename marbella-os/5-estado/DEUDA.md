@@ -448,9 +448,9 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ## D32 · Elaboraciones intermedias decididas y no implementadas
 
-**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina. Hecho: la estructura, `get_recipe_cost_v2`, el rechazo de ciclos al escribir y el motor `get_recipe_stock_requirements_v2`. Pendiente: la interfaz, migrar los consumidores productivos (venta, consumo personal, merma y el resto de lectores) y retirar el `get_recipe_cost` legacy. Las ventas todavía no descuentan subrecetas. `recipe_combos` no paga esta deuda.
+**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina. Hecho: la estructura, `get_recipe_cost_v2`, el rechazo de ciclos al escribir, el motor `get_recipe_stock_requirements_v2`, y la ficha, que distingue receta vendible de elaboración interna, deja gestionar el rendimiento y muestra el coste v2 en la elaboración interna. Pendiente: incorporar una receta dentro de otra en la interfaz, migrar los consumidores productivos (venta, consumo personal, merma y el resto de lectores) y retirar el `get_recipe_cost` legacy. La ficha vendible sigue en ese coste legacy. Las ventas todavía no descuentan subrecetas. `recipe_combos` no paga esta deuda.
 
-**Coste**: una salsa ya puede costearse en el motor v2, pero la ficha, el inventario y las ventas no la expanden. Quien implemente los bloques siguientes tiene que seguir el ADR y no reinterpretarlo.
+**Coste**: una elaboración interna ya se crea y se costea en su ficha, pero todavía no se puede usar como componente de otra receta, y el inventario y las ventas no la expanden. Quien implemente los bloques siguientes tiene que seguir el ADR y no reinterpretarlo.
 
 **Disparador de pago**: los bloques de implementación posteriores al cierre documental del 2026-09-25. No incluye limpiar `recipe_combos`.
 

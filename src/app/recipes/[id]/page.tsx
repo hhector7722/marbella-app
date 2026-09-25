@@ -44,6 +44,13 @@ import {
     parseFoodCostFilterParam,
     RECIPE_FOOD_COST_SELECT,
 } from '@/lib/recipe-food-cost';
+import {
+    elaborationUnitCost,
+    formatElaborationCostEur,
+    formatYieldQuantity,
+    isInternalRecipe,
+    recipeCostV2StatusLabel,
+} from '@/lib/recipe-elaboration';
 
 interface ViewState {
     location: 'pvp' | 'pavello';
@@ -74,6 +81,9 @@ interface RecipeRow {
     sales_price_pavello: number | null;
     sale_price_half: number | null;
     sale_price_half_pavello: number | null;
+    is_sellable: boolean;
+    yield_quantity: number | null;
+    yield_unit: string | null;
     target_food_cost_pct: number | null;
     elaboration: string | null;
     presentation: string | null;
@@ -82,6 +92,12 @@ interface RecipeRow {
     servings: number | null;
     recipe_ingredients?: RecipeIngredientRow[] | null;
 }
+
+type RecipeCostV2View = {
+    ok?: boolean;
+    total_cost_eur?: number | null;
+    errors?: { status?: string }[] | null;
+};
 
 interface RecipeListItem {
     id: string;
@@ -121,6 +137,7 @@ function RecipeDetailContent() {
     const [currentRecipeIndex, setCurrentRecipeIndex] = useState<number>(-1);
 
     const [backendCost, setBackendCost] = useState<{ total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] } | null>(null);
+    const [elaborationCost, setElaborationCost] = useState<RecipeCostV2View | null>(null);
     const [simulatedPrice, setSimulatedPrice] = useState(0);
     const [savingPrice, setSavingPrice] = useState(false);
     const [applyingSimulation, setApplyingSimulation] = useState(false);
@@ -223,7 +240,16 @@ function RecipeDetailContent() {
         if (data) setAvailableIngredients(data);
     };
 
-    const fetchBackendCost = async () => {
+    const fetchBackendCost = async (internal = recipe?.is_sellable === false) => {
+        if (internal) {
+            const { data, error } = await supabase.rpc('get_recipe_cost_v2', { p_recipe_id: recipeId });
+            if (error || !data || typeof data !== 'object' || Array.isArray(data)) {
+                setElaborationCost({ ok: false, total_cost_eur: null, errors: [{ status: 'RECIPE_NOT_FOUND' }] });
+                return;
+            }
+            setElaborationCost(data as RecipeCostV2View);
+            return;
+        }
         const useHalf = view.size === 'half';
         const { data, error } = await supabase.rpc('get_recipe_cost', { p_recipe_id: recipeId, p_use_half_ration: useHalf });
         if (!error && data) setBackendCost(data as { total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] });
@@ -271,7 +297,9 @@ function RecipeDetailContent() {
             }
             const { data } = await q;
             if (data) {
-                const list = data.filter((r) => getRecipeFoodCostStatus(r) === foodCostFilter);
+                const list = data.filter(
+                    (r) => !isInternalRecipe(r.is_sellable) && getRecipeFoodCostStatus(r) === foodCostFilter,
+                );
                 setAllRecipes(list);
                 setCurrentRecipeIndex(list.findIndex((r) => r.id === recipeId));
             }
@@ -284,7 +312,7 @@ function RecipeDetailContent() {
             if (row) q = q.eq('menu_category_id', row.id);
             else q = q.eq('category', catFilter);
         } else if (catFilter === '__none__') {
-            q = q.is('menu_category_id', null);
+            q = q.eq('is_sellable', true).is('menu_category_id', null);
         }
         const { data } = await q;
         if (data) {
@@ -336,14 +364,9 @@ function RecipeDetailContent() {
     }
 
     useEffect(() => {
-        if (!recipeId) return;
-        const useHalf = view.size === 'half';
-        supabase.rpc('get_recipe_cost', { p_recipe_id: recipeId, p_use_half_ration: useHalf })
-            .then(({ data, error }) => {
-                if (!error && data) setBackendCost(data as { total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] });
-                else setBackendCost(null);
-            });
-    }, [recipeId, view.size]);
+        if (!recipeId || !recipe) return;
+        void fetchBackendCost(recipe.is_sellable === false);
+    }, [recipeId, view.size, recipe?.is_sellable]);
 
     // --- 4. LÓGICA DE NEGOCIO ---
 
@@ -682,6 +705,23 @@ function RecipeDetailContent() {
     if (loading) return <div className="min-h-screen flex items-center justify-center text-white"><LoadingSpinner size="xl" className="text-white" /></div>;
     if (!recipe) return <div className="min-h-screen flex items-center justify-center text-white">No encontrada</div>;
 
+    const internalRecipe = isInternalRecipe(recipe.is_sellable);
+    const yieldLabel =
+        recipe.yield_quantity != null && recipe.yield_unit
+            ? `${formatYieldQuantity(Number(recipe.yield_quantity))} ${recipe.yield_unit}`
+            : '—';
+    const elaborationOk = elaborationCost?.ok === true;
+    const lotCostAmount =
+        elaborationOk && typeof elaborationCost?.total_cost_eur === 'number'
+            ? elaborationCost.total_cost_eur
+            : null;
+    const unitCostAmount = elaborationOk
+        ? elaborationUnitCost(lotCostAmount, recipe.yield_quantity == null ? null : Number(recipe.yield_quantity))
+        : null;
+    const elaborationErrors = (elaborationCost?.errors ?? [])
+        .map((error) => error.status)
+        .filter((status): status is string => Boolean(status));
+
     return (
         <>
             <Toaster position="top-right" />
@@ -751,16 +791,16 @@ function RecipeDetailContent() {
                                     <CatalogSquare
                                         imageSrc={recipe.photo_url}
                                         imageAlt={recipe.name}
-                                        price={recipe.sale_price}
-                                        priceClassName={!isRestricted ? healthIndicator.color : undefined}
+                                        price={internalRecipe ? null : recipe.sale_price}
+                                        priceClassName={!isRestricted && !internalRecipe ? healthIndicator.color : undefined}
                                     />
                                 </button>
                             ) : (
                                 <CatalogSquare
                                     imageAlt={recipe.name}
                                     fallback={<Camera className="h-8 w-8 text-gray-300 md:h-10 md:w-10" />}
-                                    price={recipe.sale_price}
-                                    priceClassName={!isRestricted ? healthIndicator.color : undefined}
+                                    price={internalRecipe ? null : recipe.sale_price}
+                                    priceClassName={!isRestricted && !internalRecipe ? healthIndicator.color : undefined}
                                 />
                             )}
                         </div>
@@ -779,7 +819,49 @@ function RecipeDetailContent() {
             >
 
                 <div className="grid grid-cols-1 content-start gap-4 p-4 md:grid-cols-2 md:p-5">
-                    {!isRestricted && (
+                    {/* Misma puerta que el panel Precio: la vista restringida no ve importes. No se abre el coste a staff. */}
+                    {!isRestricted && internalRecipe && (
+                        <div data-element="recipe-panel" className="h-full flex flex-col">
+                            <div data-element="block-header">
+                                <h2 data-element="title">Coste de elaboración</h2>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 p-3 text-center">
+                                <div>
+                                    <div className="text-lg font-black tabular-nums text-gray-800">
+                                        {formatElaborationCostEur(lotCostAmount)}
+                                    </div>
+                                    <div data-element="field-label">Coste del lote</div>
+                                </div>
+                                <div>
+                                    <div className="text-lg font-black tabular-nums text-gray-800">{yieldLabel}</div>
+                                    <div data-element="field-label">Rendimiento</div>
+                                </div>
+                                <div>
+                                    <div className="text-lg font-black tabular-nums text-gray-800">
+                                        {formatElaborationCostEur(unitCostAmount)}
+                                    </div>
+                                    <div data-element="field-label">
+                                        Coste / {recipe.yield_unit || 'unidad'}
+                                    </div>
+                                </div>
+                            </div>
+                            {elaborationCost && !elaborationOk ? (
+                                <div
+                                    className="mx-3 mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900"
+                                    role="status"
+                                >
+                                    {elaborationErrors.length > 0
+                                        ? elaborationErrors.map((status, index) => (
+                                              <div key={`${status}-${index}`} data-cost-status={status}>
+                                                  {recipeCostV2StatusLabel(status)}
+                                              </div>
+                                          ))
+                                        : 'No se puede calcular el coste'}
+                                </div>
+                            ) : null}
+                        </div>
+                    )}
+                    {!isRestricted && !internalRecipe && (
                         <div data-element="recipe-panel" className="h-full flex flex-col">
                             <div data-element="block-header">
                                 <h2 data-element="title">Precio</h2>
@@ -1460,6 +1542,9 @@ function RecipeDetailContent() {
                 recipeId={recipeId}
                 initialName={recipe.name}
                 initialPhotoUrl={recipe.photo_url ?? null}
+                initialIsSellable={recipe.is_sellable !== false}
+                initialYieldQuantity={recipe.yield_quantity == null ? null : Number(recipe.yield_quantity)}
+                initialYieldUnit={recipe.yield_unit}
                 categoryId={recipe.menu_category_id ?? ''}
                 categories={sortedMenuCategoryRows.map((row) => ({
                     id: row.id,

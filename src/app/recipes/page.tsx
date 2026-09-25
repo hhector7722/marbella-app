@@ -24,6 +24,7 @@ import {
     sortMenuCategoriesForRecipes,
 } from '@/lib/recipe-menu-categories';
 import { resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
+import { isInternalRecipe, yieldFieldsForSave } from '@/lib/recipe-elaboration';
 import {
     FOOD_COST_FILTER_OPTIONS,
     type FoodCostStatus,
@@ -36,7 +37,10 @@ interface Recipe {
     name: string;
     category: string;
     menu_category_id?: string | null;
-    sale_price: number;
+    sale_price: number | null;
+    is_sellable?: boolean | null;
+    yield_quantity?: number | null;
+    yield_unit?: string | null;
     photo_url: string | null;
     servings?: number;
     recipe_ingredients?: {
@@ -54,7 +58,16 @@ function RecipesContent() {
     const [showCategoryPopup, setShowCategoryPopup] = useState(false);
     const [showFoodCostSubfilter, setShowFoodCostSubfilter] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [newRecipe, setNewRecipe] = useState<any>({ name: '', menu_category_id: '', category: '', sale_price: 0, ingredients: [] });
+    const [newRecipe, setNewRecipe] = useState<any>({
+        name: '',
+        kind: 'sellable',
+        menu_category_id: '',
+        category: '',
+        sale_price: 0,
+        yield_quantity: '',
+        yield_unit: '',
+        ingredients: [],
+    });
     const [isCreating, setIsCreating] = useState(false);
     const [allIngredients, setAllIngredients] = useState<any[]>([]);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -133,7 +146,7 @@ function RecipesContent() {
     );
 
     const showUncategorizedMenuFilter = useMemo(
-        () => recipes.some((r) => !r.menu_category_id),
+        () => recipes.some((r) => !isInternalRecipe(r.is_sellable) && !r.menu_category_id),
         [recipes],
     );
 
@@ -153,9 +166,15 @@ function RecipesContent() {
     const filteredRecipes = recipes.filter((recipe) => {
         const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
         if (!matchesSearch) return false;
-        if (foodCostFilter && getRecipeFoodCostStatus(recipe) !== foodCostFilter) return false;
+        if (isInternalRecipe(recipe.is_sellable)) {
+            if (foodCostFilter) return false;
+        } else if (foodCostFilter && getRecipeFoodCostStatus(recipe) !== foodCostFilter) {
+            return false;
+        }
         if (!categoryFromUrl) return true;
-        if (categoryFromUrl === '__none__') return !recipe.menu_category_id;
+        if (categoryFromUrl === '__none__') {
+            return !isInternalRecipe(recipe.is_sellable) && !recipe.menu_category_id;
+        }
         const row = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
         if (row) return recipe.menu_category_id === row.id;
         return (recipe.category || '') === categoryFromUrl;
@@ -182,7 +201,7 @@ function RecipesContent() {
             const { data, error } = await supabase
                 .from('recipes')
                 .select(
-                    `id, name, category, menu_category_id, sale_price, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit))`,
+                    `id, name, category, menu_category_id, sale_price, is_sellable, yield_quantity, yield_unit, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit))`,
                 )
                 .order('name');
             if (error) throw error;
@@ -196,18 +215,39 @@ function RecipesContent() {
     }
 
     async function handleCreateRecipe() {
-        if (!newRecipe.name?.trim() || !newRecipe.menu_category_id) {
-            toast.error('Nombre y categoría de menú son obligatorios')
-            return
-        }
-        const opt = menuCategoryOptions.find((o) => o.id === newRecipe.menu_category_id);
-        const row = menuCategoryRows.find((r) => r.id === newRecipe.menu_category_id);
-        const categoryLabel = (opt?.label ?? newRecipe.category ?? '').trim();
-        if (!categoryLabel) {
-            toast.error('Categoría no válida');
+        const internal = newRecipe.kind === 'internal';
+        if (!newRecipe.name?.trim()) {
+            toast.error('El nombre es obligatorio');
             return;
         }
-        const categoryDb = row ? denormalizedRecipeCategoryName(row) : categoryLabel.slice(0, 100);
+        const yieldSave = yieldFieldsForSave(
+            String(newRecipe.yield_quantity ?? ''),
+            String(newRecipe.yield_unit ?? ''),
+            internal,
+        );
+        if (!yieldSave.ok) {
+            toast.error(yieldSave.message);
+            return;
+        }
+        let categoryDb: string | null = null;
+        let menuCategoryId: string | null = null;
+        let salePrice: number | null = null;
+        if (!internal) {
+            if (!newRecipe.menu_category_id) {
+                toast.error('Nombre y categoría de menú son obligatorios');
+                return;
+            }
+            const opt = menuCategoryOptions.find((o) => o.id === newRecipe.menu_category_id);
+            const row = menuCategoryRows.find((r) => r.id === newRecipe.menu_category_id);
+            const categoryLabel = (opt?.label ?? newRecipe.category ?? '').trim();
+            if (!categoryLabel) {
+                toast.error('Categoría no válida');
+                return;
+            }
+            categoryDb = row ? denormalizedRecipeCategoryName(row) : categoryLabel.slice(0, 100);
+            menuCategoryId = newRecipe.menu_category_id;
+            salePrice = newRecipe.sale_price || null;
+        }
         try {
             setIsCreating(true);
             const { data: recipe, error: recipeError } = await supabase
@@ -215,8 +255,11 @@ function RecipesContent() {
                 .insert({
                     name: newRecipe.name.trim(),
                     category: categoryDb,
-                    menu_category_id: newRecipe.menu_category_id,
-                    sale_price: newRecipe.sale_price || null,
+                    menu_category_id: menuCategoryId,
+                    sale_price: salePrice,
+                    is_sellable: !internal,
+                    yield_quantity: yieldSave.yield_quantity,
+                    yield_unit: yieldSave.yield_unit,
                     servings: newRecipe.servings || 1,
                 })
                 .select()
@@ -245,15 +288,19 @@ function RecipesContent() {
             const tap = menuCategoryRows.find((r) => r.slug === 'tapas');
             setNewRecipe({
                 name: '',
+                kind: 'sellable',
                 menu_category_id: tap?.id ?? '',
                 category: tap ? denormalizedRecipeCategoryName(tap) : '',
                 sale_price: 0,
+                yield_quantity: '',
+                yield_unit: '',
                 ingredients: [],
             });
         } catch (error: any) { toast.error('Error: ' + error.message); } finally { setIsCreating(false); }
     }
 
     const getRecipeHealthColor = (recipe: Recipe) => {
+        if (isInternalRecipe(recipe.is_sellable)) return undefined;
         const status = getRecipeFoodCostStatus(recipe);
         if (status === 'optimal') return 'text-green-600';
         if (status === 'alert') return 'text-amber-500';
@@ -337,9 +384,16 @@ function RecipesContent() {
                                 <CatalogTileUnificado
                                     key={recipe.id}
                                     title={recipe.name}
+                                    subtitle={
+                                        isInternalRecipe(recipe.is_sellable) ? (
+                                            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                                                Elaboración
+                                            </span>
+                                        ) : undefined
+                                    }
                                     imageSrc={recipe.photo_url}
                                     fallback={<ChefHat className="h-8 w-8 md:h-10 md:w-10" />}
-                                    price={recipe.sale_price}
+                                    price={isInternalRecipe(recipe.is_sellable) ? null : recipe.sale_price}
                                     priceClassName={!isRestricted ? getRecipeHealthColor(recipe) : undefined}
                                     onClick={() => router.push(buildRecipesHref(recipe.id))}
                                 />

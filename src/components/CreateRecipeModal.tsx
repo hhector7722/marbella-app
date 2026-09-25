@@ -2,8 +2,10 @@
 
 import { Trash2 } from 'lucide-react';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
+import { RECIPE_KIND_OPTIONS, type RecipeKind } from '@/lib/recipe-elaboration';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 
 export interface RecipeDraftIngredient {
     ingredient_id: string;
@@ -13,10 +15,13 @@ export interface RecipeDraftIngredient {
 
 export interface RecipeDraft {
     name: string;
+    kind: RecipeKind;
     menu_category_id: string;
     category?: string;
     sale_price?: number;
     servings?: number;
+    yield_quantity: string;
+    yield_unit: string;
     ingredients: RecipeDraftIngredient[];
 }
 
@@ -92,6 +97,14 @@ export default function CreateModal({
             }
         >
             <div className="space-y-6">
+                <PetroleumSegmented
+                    instance="create-recipe-kind"
+                    density="comfortable"
+                    aria-label="Tipo de receta"
+                    value={newRecipe.kind || 'sellable'}
+                    onChange={(kind) => setNewRecipe({ ...newRecipe, kind: kind as RecipeKind })}
+                    options={RECIPE_KIND_OPTIONS}
+                />
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                         <label className="text-xs font-bold text-gray-500 uppercase">Nombre Receta</label>
@@ -104,6 +117,8 @@ export default function CreateModal({
                             autoFocus
                         />
                     </div>
+                    {(newRecipe.kind || 'sellable') === 'sellable' ? (
+                    <>
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase">Categoría</label>
                         <select
@@ -136,6 +151,33 @@ export default function CreateModal({
                             onChange={e => setNewRecipe({ ...newRecipe, sale_price: parseFloat(e.target.value) })}
                             className="w-full border-b-2 border-gray-200 focus:border-[#36606F] outline-none py-2 font-medium bg-transparent"
                         />
+                    </div>
+                    </>
+                    ) : null}
+                    <div className={(newRecipe.kind || 'sellable') === 'sellable' ? '' : 'col-span-2'}>
+                        <label className="text-xs font-bold text-gray-500 uppercase">
+                            {(newRecipe.kind || 'sellable') === 'internal' ? 'Rendimiento del lote' : 'Rendimiento del lote (opcional)'}
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                inputMode="decimal"
+                                value={newRecipe.yield_quantity || ''}
+                                onChange={(e) => setNewRecipe({ ...newRecipe, yield_quantity: e.target.value })}
+                                className="min-h-12 w-full border-b-2 border-gray-200 bg-transparent py-2 font-medium outline-none focus:border-[#36606F]"
+                                placeholder="1000"
+                            />
+                            <select
+                                value={newRecipe.yield_unit || ''}
+                                onChange={(e) => setNewRecipe({ ...newRecipe, yield_unit: e.target.value })}
+                                className="min-h-12 w-24 shrink-0 border-b-2 border-gray-200 bg-transparent py-2 font-medium outline-none focus:border-[#36606F]"
+                            >
+                                <option value="">Unidad</option>
+                                {RECIPE_UNIT_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
 

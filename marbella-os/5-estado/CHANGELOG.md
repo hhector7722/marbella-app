@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-25
 
+- **La ficha distingue receta vendible y elaboración interna.** El catálogo y la creación usan `is_sellable`, nunca el precio. Una elaboración interna exige rendimiento, no muestra precio ni food cost, y su ficha lee `get_recipe_cost_v2`. La ficha vendible sigue en `get_recipe_cost`. El panel de coste de elaboración sigue oculto en la vista restringida, con la misma puerta que el panel de precio: no se enseña información económica nueva al personal. «Sin categoría menú» lista solo recetas vendibles sin categoría. Todavía no se puede meter una receta dentro de otra, y las ventas no expanden elaboraciones. [D32](DEUDA.md).
+
 - **Queda cerrado el modelo de elaboraciones intermedias.** Una receta puede contener ingredientes y otras recetas, declara vendibilidad y rendimiento, y su coste y su stock se expanden hasta la materia prima. No está implementado. [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md), [D32](DEUDA.md).
 
 - **La base ya puede guardar una subreceta.** `recipes` tiene `is_sellable` y rendimiento, y `recipe_subrecipes` une receta con receta. Las recetas actuales quedan vendibles y sin rendimiento. El coste, el stock y la pantalla no cambian. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).
