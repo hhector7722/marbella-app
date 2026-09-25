@@ -104,6 +104,7 @@ Un motor produce una magnitud de negocio. **Es el único autorizado a producirla
 | Escritor de proyección | Persiste el resultado semanal y el diario hijo | [contratos/PROYECCION-v2](./contratos/PROYECCION-v2.md) |
 | Orquestador de invalidación | Decide qué hay que recalcular ante un cambio | — |
 | Coste de receta | Coste de un escandallo. El completo es `get_recipe_cost_v2`; la ficha sigue en `get_recipe_cost` | [dominio/PRECIOS-Y-COMPRAS](./dominio/PRECIOS-Y-COMPRAS.md), [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) |
+| Expansión de stock | Materias primas de una elaboración. La autoridad es `get_recipe_stock_requirements_v2`; la venta todavía no la usa | [MODELO-DE-DATOS](./MODELO-DE-DATOS.md), [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) |
 | Sistema de sombra | Compara el motor nuevo con el cálculo heredado | [spikes](../6-investigacion/spikes/README.md) |
 
 El dominio de horas concentra **52 ficheros y 16 de prueba**. Es la parte más protegida del sistema y la única con cobertura real, porque es la única cuyo error se traduce directamente en dinero mal pagado.

@@ -201,7 +201,7 @@ Se agrupan en cuatro familias con propósitos muy distintos:
 
 **La tercera familia es la problemática.** Hay reglas de negocio implementadas en Postgres que también existen en TypeScript. El coste de receta se calcula en los dos sitios. Las tarifas laborales tienen función en base de datos y equivalente en el motor.
 
-**Criterio de autoridad cuando hay duplicación:** manda el motor en TypeScript, porque es el que tiene pruebas. Las funciones equivalentes en base de datos son atajos de consulta y deben dar el mismo resultado. Si discrepan, la función está mal. Excepción ya cerrada para el coste completo de una elaboración: la autoridad es `get_recipe_cost_v2`. La hoja de ingrediente de ese motor tiene que coincidir con `getRecipeIngredientLineCostV2`. `get_recipe_cost` queda como lector legacy y no es esa autoridad.
+**Criterio de autoridad cuando hay duplicación:** manda el motor en TypeScript, porque es el que tiene pruebas. Las funciones equivalentes en base de datos son atajos de consulta y deben dar el mismo resultado. Si discrepan, la función está mal. Excepción ya cerrada para el coste completo de una elaboración: la autoridad es `get_recipe_cost_v2`. La expansión física hasta materia prima es `get_recipe_stock_requirements_v2`; no hay un segundo motor en TypeScript. La hoja de ingrediente de ese motor tiene que coincidir con `getRecipeIngredientLineCostV2`. `get_recipe_cost` queda como lector legacy y no es esa autoridad.
 
 Este criterio no está garantizado por nada automático. Es deuda: [D21](../5-estado/DEUDA.md).
 
