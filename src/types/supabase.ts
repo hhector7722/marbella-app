@@ -3571,6 +3571,48 @@ export type Database = {
           },
         ]
       }
+      recipe_subrecipes: {
+        Row: {
+          child_recipe_id: string
+          created_at: string
+          id: string
+          parent_recipe_id: string
+          quantity: number
+          unit: string
+        }
+        Insert: {
+          child_recipe_id: string
+          created_at?: string
+          id?: string
+          parent_recipe_id: string
+          quantity: number
+          unit: string
+        }
+        Update: {
+          child_recipe_id?: string
+          created_at?: string
+          id?: string
+          parent_recipe_id?: string
+          quantity?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_subrecipes_child_recipe_id_fkey"
+            columns: ["child_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_subrecipes_parent_recipe_id_fkey"
+            columns: ["parent_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipes: {
         Row: {
           articulo_id: number | null
@@ -3581,6 +3623,7 @@ export type Database = {
           embedding: string | null
           has_half_ration: boolean | null
           id: string
+          is_sellable: boolean
           menu_category_id: string | null
           name: string
           photo_url: string | null
@@ -3595,6 +3638,8 @@ export type Database = {
           target_food_cost_pct: number | null
           updated_at: string | null
           video_tutorial_url: string | null
+          yield_quantity: number | null
+          yield_unit: string | null
         }
         Insert: {
           articulo_id?: number | null
@@ -3605,6 +3650,7 @@ export type Database = {
           embedding?: string | null
           has_half_ration?: boolean | null
           id?: string
+          is_sellable?: boolean
           menu_category_id?: string | null
           name: string
           photo_url?: string | null
@@ -3619,6 +3665,8 @@ export type Database = {
           target_food_cost_pct?: number | null
           updated_at?: string | null
           video_tutorial_url?: string | null
+          yield_quantity?: number | null
+          yield_unit?: string | null
         }
         Update: {
           articulo_id?: number | null
@@ -3629,6 +3677,7 @@ export type Database = {
           embedding?: string | null
           has_half_ration?: boolean | null
           id?: string
+          is_sellable?: boolean
           menu_category_id?: string | null
           name?: string
           photo_url?: string | null
@@ -3643,6 +3692,8 @@ export type Database = {
           target_food_cost_pct?: number | null
           updated_at?: string | null
           video_tutorial_url?: string | null
+          yield_quantity?: number | null
+          yield_unit?: string | null
         }
         Relationships: [
           {

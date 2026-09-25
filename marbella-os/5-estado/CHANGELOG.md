@@ -17,6 +17,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **Queda cerrado el modelo de elaboraciones intermedias.** Una receta puede contener ingredientes y otras recetas, declara vendibilidad y rendimiento, y su coste y su stock se expanden hasta la materia prima. No está implementado. [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md), [D32](DEUDA.md).
 
+- **La base ya puede guardar una subreceta.** `recipes` tiene `is_sellable` y rendimiento, y `recipe_subrecipes` une receta con receta. Las recetas actuales quedan vendibles y sin rendimiento. El coste, el stock y la pantalla no cambian. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).
+
 ## 2026-09-22
 
 - **La calculadora rápida y el desglose pasan a un dock lateral arrastrable.** Los dos iconos viven en un dock vertical pegado al canto derecho, como el asa lateral de una web. Se arrastran por toda la altura y la posición se recuerda por dispositivo; por defecto se sientan sobre la pestaña inferior sin taparla, y la calculadora queda encima del desglose. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).

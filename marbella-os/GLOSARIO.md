@@ -182,7 +182,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | Término | Significado | Identificador técnico |
 |---|---|---|
 | **Receta** | Cualquier elaboración, vendible o no. Puede contener ingredientes y otras recetas. La vendibilidad es `is_sellable`, no el PVP. Contrato: [ADR-0018](4-decisiones/ADR-0018-elaboraciones-intermedias.md). | `recipes` |
-| **Elaboración intermedia** | Receta que se prepara para entrar en otra y que, en esta fase, no tiene stock propio. También: subreceta de cocina. No es un menú ni `recipe_combos`. | — |
+| **Elaboración intermedia** | Receta que se prepara para entrar en otra y que, en esta fase, no tiene stock propio. También: subreceta de cocina. No es un menú ni `recipe_combos`. | `recipe_subrecipes` |
 | **Rendimiento** | Cantidad y unidad que declara producir una elaboración (`yield_quantity`, `yield_unit`). No es la ración. | — |
 | **Escandallo** | Coste de una receta, expandido hasta ingredientes reales y repartido según el rendimiento de cada elaboración intermedia. | — |
 | **Ración** | Unidad de servicio de una receta. | `recipes.servings` |

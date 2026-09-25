@@ -448,7 +448,7 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ## D32 · Elaboraciones intermedias decididas y no implementadas
 
-**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina: una receta puede contener recetas, la vendibilidad es `is_sellable`, el rendimiento es explícito, el coste y el stock se expanden hasta el ingrediente, y un dato ausente no es 0 €. El código sigue con `recipe_ingredients` solo hacia ingrediente, sin `is_sellable` ni rendimiento. `recipe_combos` no paga esta deuda.
+**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina: una receta puede contener recetas, la vendibilidad es `is_sellable`, el rendimiento es explícito, el coste y el stock se expanden hasta el ingrediente, y un dato ausente no es 0 €. Desde el 2026-09-25 la estructura existe (`recipes.is_sellable`, `yield_quantity`, `yield_unit`, `recipe_subrecipes`). El coste, el stock y la interfaz siguen sin usarla. `recipe_combos` no paga esta deuda.
 
 **Coste**: una salsa o un sofrito no pueden entrar en otra receta con coste y consumo correctos. Quien implemente los bloques siguientes tiene que seguir el ADR y no reinterpretarlo.
 
