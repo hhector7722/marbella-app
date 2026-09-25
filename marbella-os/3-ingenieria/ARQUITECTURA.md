@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-15
+revisado: 2026-09-25
 caducidad: 6 meses
 supersede: —
 ---
@@ -103,7 +103,7 @@ Un motor produce una magnitud de negocio. **Es el único autorizado a producirla
 | Motor de coste de extras | Importe de las horas extra | [dominio/COSTE-LABORAL](./dominio/COSTE-LABORAL.md) |
 | Escritor de proyección | Persiste el resultado semanal y el diario hijo | [contratos/PROYECCION-v2](./contratos/PROYECCION-v2.md) |
 | Orquestador de invalidación | Decide qué hay que recalcular ante un cambio | — |
-| Coste de receta | Coste de un escandallo | [dominio/PRECIOS-Y-COMPRAS](./dominio/PRECIOS-Y-COMPRAS.md) |
+| Coste de receta | Coste de un escandallo | [dominio/PRECIOS-Y-COMPRAS](./dominio/PRECIOS-Y-COMPRAS.md), [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) |
 | Sistema de sombra | Compara el motor nuevo con el cálculo heredado | [spikes](../6-investigacion/spikes/README.md) |
 
 El dominio de horas concentra **52 ficheros y 16 de prueba**. Es la parte más protegida del sistema y la única con cobertura real, porque es la única cuyo error se traduce directamente en dinero mal pagado.

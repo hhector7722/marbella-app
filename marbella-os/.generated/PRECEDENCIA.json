@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "5508d567038c06fd",
+  "_huella": "2f57f4b284b2e4c9",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -253,6 +253,22 @@
       ]
     },
     {
+      "ruta": "marbella-os/4-decisiones/ADR-0018-elaboraciones-intermedias.md",
+      "documento": "ADR-0018",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ADR-0016",
+        "PRINCIPIOS"
+      ]
+    },
+    {
       "ruta": "marbella-os/1-producto/PRINCIPIOS.md",
       "documento": "PRINCIPIOS",
       "clase": "constitucional",
@@ -360,7 +376,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-12-18",
+      "vence": "2026-12-25",
       "depende_de": []
     },
     {
@@ -461,7 +477,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-15",
+      "vence": "2027-03-25",
       "depende_de": []
     },
     {
@@ -533,7 +549,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-20",
+      "vence": "2027-03-25",
       "depende_de": []
     },
     {
@@ -621,7 +637,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-18",
+      "vence": "2027-03-25",
       "depende_de": []
     },
     {
@@ -695,7 +711,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-09-20",
+      "vence": "2027-09-25",
       "depende_de": []
     },
     {
@@ -731,7 +747,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-12-13",
+      "vence": "2026-12-25",
       "depende_de": []
     },
     {
@@ -815,7 +831,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-18",
+      "vence": "2027-03-25",
       "depende_de": []
     },
     {

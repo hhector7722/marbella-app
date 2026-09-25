@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-18
+revisado: 2026-09-25
 caducidad: 6 meses
 supersede: —
 ---
@@ -162,7 +162,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Mapeo** | Correspondencia aprendida entre el artículo de un proveedor y un ingrediente de Marbella. | `supplier_item_mappings` |
 | **Versión de mapeo** | Propuesta o confirmación inmutable del mapeo, con presentación y factor de conversión. | `purchase_mapping_versions` |
 | **Confirmación de recepción** | Hecho económico atómico que convierte una línea revisada en un `PURCHASE`, conciliación y, si corresponde, cambio de precio trazado. | `purchase_receipt_confirmations`, `apply_receipt_line(...)` |
-| **Ingrediente** | Materia prima con precio y unidades. | `ingredients` |
+| **Ingrediente** | Materia prima o producto comprado a proveedor, con precio y unidades. | `ingredients` |
 | **Ingrediente archivado** | Ingrediente retirado del catálogo operativo sin borrar su histórico. No se ofrece en selecciones nuevas. | `ingredients.archived_at` |
 | **Precio actual** | Precio de compra vigente de un ingrediente. Fuente de verdad del coste de materia prima. | `ingredients.current_price` |
 | **Precio por unidad de compra** | Modo de precio en el que el importe se refiere a la unidad en que se compra. | `per_purchase_unit` |
@@ -181,9 +181,11 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 
 | Término | Significado | Identificador técnico |
 |---|---|---|
-| **Receta** | Elaboración con sus ingredientes y cantidades. | `recipes`, `recipe_ingredients` |
-| **Escandallo** | Cálculo del coste de una receta a partir del precio de sus ingredientes. | — |
-| **Ración** | Unidad de servicio de una receta. | — |
+| **Receta** | Cualquier elaboración, vendible o no. Puede contener ingredientes y otras recetas. La vendibilidad es `is_sellable`, no el PVP. Contrato: [ADR-0018](4-decisiones/ADR-0018-elaboraciones-intermedias.md). | `recipes` |
+| **Elaboración intermedia** | Receta que se prepara para entrar en otra y que, en esta fase, no tiene stock propio. También: subreceta de cocina. No es un menú ni `recipe_combos`. | — |
+| **Rendimiento** | Cantidad y unidad que declara producir una elaboración (`yield_quantity`, `yield_unit`). No es la ración. | — |
+| **Escandallo** | Coste de una receta, expandido hasta ingredientes reales y repartido según el rendimiento de cada elaboración intermedia. | — |
+| **Ración** | Unidad de servicio de una receta. | `recipes.servings` |
 | **PVP** | Precio de venta al público. Nunca se confunde con el coste. | — |
 | **PAV** | Precio con el que se compara el PVP en el análisis de rentabilidad. | — |
 | **Carta** | La oferta publicada al cliente. Superficie pública, sin sesión. | — |

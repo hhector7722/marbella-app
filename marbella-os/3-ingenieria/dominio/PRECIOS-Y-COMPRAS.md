@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-20
+revisado: 2026-09-25
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -124,6 +124,8 @@ Una línea de receta se expresa en gramos, kilos, mililitros, centilitros, litro
 Cuando existe una equivalencia física declarada, el sistema **puede enlazar una receta expresada en unidades con una compra expresada en kilos o litros**, y a la inversa. Esa equivalencia convierte cantidades; nunca produce el precio actual. Es la misma lógica que usa el consumo personal.
 
 La conversión existe en dos sitios, cliente y base de datos, y **deben dar el mismo resultado**. Una divergencia entre ambos es un defecto grave, no una diferencia de precisión.
+
+Cuando la línea apunta a otra receta, el coste y el stock no se detienen ahí: se expanden hasta el ingrediente y el resultado se reparte según el rendimiento. Ese contrato, los estados de error y la separación respecto de los menús están en [ADR-0018](../../4-decisiones/ADR-0018-elaboraciones-intermedias.md). Este apartado sigue gobernando solo la conversión de la línea de ingrediente. El código aún no implementa la expansión; la brecha es [D32](../../5-estado/DEUDA.md).
 
 ---
 

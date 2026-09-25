@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-18
+revisado: 2026-09-25
 caducidad: 6 meses
 supersede: —
 ---
@@ -132,6 +132,7 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 - `ingredients.archived_at` retira un ingrediente obsoleto del catálogo operativo sin borrarlo ([ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md)). `NULL` = activo. Un ingrediente archivado no se ofrece en selecciones nuevas, pero sus referencias históricas siguen siendo legibles. No es `inventory_visible`, que solo afecta al recuento de inventario.
 - `stock_movements` es el **único ledger canónico de stock**. Es append-only: las correcciones son nuevos movimientos reversores. Cada hecho nuevo lleva referencia tipada, idempotencia, origen, actor y procedencia. `stock_current` es su proyección regenerable.
 - `map_tpv_receta` une el artículo del punto de venta con la receta. **Sin este puente no hay descuento de existencias ni margen por producto.**
+- El modelo objetivo de elaboraciones intermedias (receta dentro de receta, `is_sellable`, rendimiento) está cerrado en [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md). Esas columnas y esa relación **no existen todavía**. `recipe_ingredients` solo apunta a ingrediente. `recipe_combos` es el puente de menús que usa la aplicación; no es ese modelo y no forma parte de esta lista.
 - Las tablas de anulación permiten que la carta pública muestre algo distinto del dato interno sin duplicar la receta.
 - `carta_editors` es residual: ya no concede edición. Editan la carta `manager`, `admin` y `supervisor`.
 

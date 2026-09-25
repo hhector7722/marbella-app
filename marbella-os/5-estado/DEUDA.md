@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-13
+revisado: 2026-09-25
 caducidad: 3 meses
 supersede: —
 ---
@@ -443,6 +443,16 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 **Coste**: durante el servicio el control es más difícil de acertar con el dedo; dos opciones contiguas pueden confundirse.
 
 **Disparador de pago**: si aparecen toques erróneos, devolver `comfortable` o dar al control un host táctil transparente de 48 px que no cambie el aspecto (patrón del Button).
+
+---
+
+## D32 · Elaboraciones intermedias decididas y no implementadas
+
+**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina: una receta puede contener recetas, la vendibilidad es `is_sellable`, el rendimiento es explícito, el coste y el stock se expanden hasta el ingrediente, y un dato ausente no es 0 €. El código sigue con `recipe_ingredients` solo hacia ingrediente, sin `is_sellable` ni rendimiento. `recipe_combos` no paga esta deuda.
+
+**Coste**: una salsa o un sofrito no pueden entrar en otra receta con coste y consumo correctos. Quien implemente los bloques siguientes tiene que seguir el ADR y no reinterpretarlo.
+
+**Disparador de pago**: los bloques de implementación posteriores al cierre documental del 2026-09-25. No incluye limpiar `recipe_combos`.
 
 ---
 

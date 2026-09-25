@@ -6,7 +6,7 @@ capa: decisiones
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-20
+revisado: 2026-09-25
 caducidad: 12 meses
 ---
 
@@ -55,6 +55,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0015](./ADR-0015-alta-laboral-por-token.md) | Alta laboral por token de un solo uso | Vigente |
 | [0016](./ADR-0016-precio-canonico-ingrediente.md) | Precio canónico único del ingrediente | Vigente |
 | [0017](./ADR-0017-archivado-de-ingredientes.md) | Archivado de ingredientes en lugar de borrado | Vigente |
+| [0018](./ADR-0018-elaboraciones-intermedias.md) | Elaboraciones intermedias y subrecetas | Vigente |
 
 ## Decisiones tomadas sin registrar
 

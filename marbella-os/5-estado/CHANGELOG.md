@@ -6,12 +6,16 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-27
+revisado: 2026-09-25
 caducidad: no aplica
 supersede: PROJECT_STATUS.md (función de historial)
 ---
 
 # CHANGELOG
+
+## 2026-09-25
+
+- **Queda cerrado el modelo de elaboraciones intermedias.** Una receta puede contener ingredientes y otras recetas, declara vendibilidad y rendimiento, y su coste y su stock se expanden hasta la materia prima. No está implementado. [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md), [D32](DEUDA.md).
 
 ## 2026-09-22
 
