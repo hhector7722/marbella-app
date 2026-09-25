@@ -448,7 +448,7 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ## D32 · Elaboraciones intermedias decididas y no implementadas
 
-**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina. La estructura existe y `get_recipe_cost_v2` ya calcula el coste recursivo con estados explícitos. Siguen pendientes el stock, la interfaz y el resto de consumidores, que leen `get_recipe_cost`. `recipe_combos` no paga esta deuda.
+**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina. La estructura existe, `get_recipe_cost_v2` calcula el coste recursivo y la base rechaza un ciclo al escribir en `recipe_subrecipes`. Siguen pendientes el stock recursivo, la interfaz y el resto de consumidores, que leen `get_recipe_cost`. `recipe_combos` no paga esta deuda.
 
 **Coste**: una salsa ya puede costearse en el motor v2, pero la ficha, el inventario y las ventas no la expanden. Quien implemente los bloques siguientes tiene que seguir el ADR y no reinterpretarlo.
 

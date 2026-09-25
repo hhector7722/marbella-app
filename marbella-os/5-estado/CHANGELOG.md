@@ -19,6 +19,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **La base ya puede guardar una subreceta.** `recipes` tiene `is_sellable` y rendimiento, y `recipe_subrecipes` une receta con receta. Las recetas actuales quedan vendibles y sin rendimiento. El coste, el stock y la pantalla no cambian. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).
 
+- **Una subreceta no puede cerrar un ciclo.** `recipe_subrecipes` rechaza el enlace, directo o indirecto, también si dos escrituras concurrentes se cruzan. La ficha y el stock no cambian. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md), [D32](DEUDA.md).
+
 - **Existe el coste recursivo v2.** `get_recipe_cost_v2` reparte el lote según el rendimiento y deja el total en blanco si una rama falla. `components[].cost_eur` es la aportación ya escalada a la receta pedida. La ficha sigue llamando a `get_recipe_cost`. [PRECIOS-Y-COMPRAS](../3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md), [D32](DEUDA.md).
 
 ## 2026-09-22
