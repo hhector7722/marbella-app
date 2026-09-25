@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-25
 
+- **La carta física tiene fuente propia.** `/master/carta` edita una sola colección de productos para las dos vitrinas de seis A4. No usa el terminal de venta ni la carta pública. Las hojas no siguen el sistema de documentos formales: son carteles de vitrina, sin cabecera ni pie de informe. [D33](DEUDA.md).
+
 - **Queda cerrado el modelo de elaboraciones intermedias.** Una receta puede contener ingredientes y otras recetas, declara vendibilidad y rendimiento, y su coste y su stock se expanden hasta la materia prima. No está implementado. [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md), [D32](DEUDA.md).
 
 - **La base ya puede guardar una subreceta.** `recipes` tiene `is_sellable` y rendimiento, y `recipe_subrecipes` une receta con receta. Las recetas actuales quedan vendibles y sin rendimiento. El coste, el stock y la pantalla no cambian. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).

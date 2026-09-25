@@ -128,8 +128,8 @@ Saber lo que cuesta lo que se sirve.
 Publicar la oferta al cliente y consultarla en sala.
 
 - **Actores**: cliente, persona en turno, responsable de operación.
-- **Superficies**: carta pública sin sesión, carta interna, editor de carta.
-- **Reglas propias**: es superficie pública y no expone dato interno alguno; la ficha de plato tiene presentación propia; las fotografías se normalizan al subirse. Quién edita la carta está en [ACTORES-Y-ROLES](./ACTORES-Y-ROLES.md).
+- **Superficies**: carta pública sin sesión, carta interna, editor de carta, carta física en `/master/carta`.
+- **Reglas propias**: es superficie pública y no expone dato interno alguno; la ficha de plato tiene presentación propia; las fotografías se normalizan al subirse. La carta física no lee el terminal de venta: seis posiciones fijas, un precio y las dos vitrinas salen de `menu_board_items`. Quién edita la carta pública está en [ACTORES-Y-ROLES](./ACTORES-Y-ROLES.md). La carta física la edita el usuario master.
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 

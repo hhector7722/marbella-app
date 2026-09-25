@@ -2161,6 +2161,116 @@ export type Database = {
           },
         ]
       }
+      menu_board_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name_ca: string
+          name_en: string
+          name_es: string
+          position: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name_ca: string
+          name_en: string
+          name_es: string
+          position: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name_ca?: string
+          name_en?: string
+          name_es?: string
+          position?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      menu_board_items: {
+        Row: {
+          active: boolean
+          category_id: string
+          created_at: string
+          description_ca: string | null
+          description_en: string | null
+          description_es: string | null
+          id: string
+          item_kind: string
+          name_ca: string
+          name_en: string
+          name_es: string
+          plate_section: string | null
+          price: number
+          secondary_price: number | null
+          secondary_price_label_ca: string | null
+          secondary_price_label_en: string | null
+          secondary_price_label_es: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category_id: string
+          created_at?: string
+          description_ca?: string | null
+          description_en?: string | null
+          description_es?: string | null
+          id?: string
+          item_kind?: string
+          name_ca: string
+          name_en?: string
+          name_es?: string
+          plate_section?: string | null
+          price: number
+          secondary_price?: number | null
+          secondary_price_label_ca?: string | null
+          secondary_price_label_en?: string | null
+          secondary_price_label_es?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category_id?: string
+          created_at?: string
+          description_ca?: string | null
+          description_en?: string | null
+          description_es?: string | null
+          id?: string
+          item_kind?: string
+          name_ca?: string
+          name_en?: string
+          name_es?: string
+          plate_section?: string | null
+          price?: number
+          secondary_price?: number | null
+          secondary_price_label_ca?: string | null
+          secondary_price_label_en?: string | null
+          secondary_price_label_es?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_board_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_board_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_category_overrides: {
         Row: {
           category_id: string

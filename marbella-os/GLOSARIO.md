@@ -189,7 +189,9 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **PVP** | Precio de venta al público. Nunca se confunde con el coste. | — |
 | **PAV** | Precio con el que se compara el PVP en el análisis de rentabilidad. | — |
 | **Carta** | La oferta publicada al cliente. Superficie pública, sin sesión. | — |
+| **Carta física** | Las dos vitrinas de seis hojas A4. Una sola colección de productos y un solo precio. No es la carta pública. | `menu_board_items` |
 | **Plato Marbella** | La ficha de plato en la carta pública, con su presentación propia. | — |
+| **Plat Marbella** | El plato compuesto de la hoja PLATS de la carta física: cabecera con precio y tres secciones de opciones. | `item_kind` |
 
 ---
 

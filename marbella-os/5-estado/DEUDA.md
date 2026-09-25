@@ -456,6 +456,16 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ---
 
+## D33 · La carta física no usa el sistema de documentos formales
+
+**Prioridad: baja.** Las hojas A4 de la vitrina son carteles, no informes. [DOCUMENTOS-IMPRESOS](../2-diseno/DOCUMENTOS-IMPRESOS.md) exige cabecera, pie y retícula de informe. Aplicarlo repetiría marca en las seis hojas y rompería la vitrina 3×2. La carta física usa fondo blanco, negro y el azul de pantalla como acento.
+
+**Coste**: conviven dos formas de imprimir. Un cambio del manual de documentos no llega solo a estas hojas.
+
+**Disparador de pago**: si la vitrina deja de ser un cartel y pasa a ser un documento firmado o entregado al cliente.
+
+---
+
 ## Cómo se usa esta lista
 
 - **Antes de empezar algo grande**, se comprueba si su disparador ya se cumplió.

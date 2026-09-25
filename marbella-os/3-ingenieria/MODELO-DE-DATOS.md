@@ -21,7 +21,7 @@ Verificado el 2026-07-29 contra `src/types/supabase.ts` y las migraciones.
 
 ## 1. Cifras y una advertencia
 
-- **72 tablas tipadas**, 7 vistas, **107 funciones** de base de datos.
+- **74 tablas tipadas**, 7 vistas, **107 funciones** de base de datos.
 - **Al menos 16 tablas más existen en migraciones y no están en los tipos**: las siete del módulo de pabellón, las cinco de paridad de sombra, `payroll_import_runs`, `web_analytics_events`, `app_settings` y `schedule_day_notes`.
 
 **Advertencia sobre los tipos.** Hay dos definiciones del esquema en el repositorio: la generada (`src/types/supabase.ts`, 72 tablas) y una escrita a mano (`src/types/index.ts`, 3 tablas). **Ninguna de las dos se importa en ningún fichero.** Todo el acceso a la base de datos es, por tanto, sin tipos: cada consulta devuelve un valor sin comprobación en compilación.
@@ -34,7 +34,7 @@ Consecuencia práctica para este documento: **es la única defensa que existe co
 
 ## 2. Dominios
 
-Las 72 tablas tipadas se agrupan en nueve dominios.
+Las 74 tablas tipadas se agrupan en nueve dominios.
 
 ### Personas y jornada — 11 tablas
 
@@ -124,16 +124,17 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 
 `estado_sala` guarda un documento completo en `radiografia_completa`. No es normalizado a propósito: es la copia literal de lo que envía el extractor, y sirve como registro de lo recibido.
 
-### Cocina de datos: carta, recetas, existencias — 12 tablas
+### Cocina de datos: carta, recetas, existencias — 14 tablas
 
-`recipes`, `recipe_ingredients`, `recipe_subrecipes`, `ingredients`, `ingredient_price_history`, `categories`, `stock_movements`, `map_tpv_receta`, `digital_menu_overrides`, `menu_category_overrides`, `carta_editors`, `carta_ui_labels`.
+`recipes`, `recipe_ingredients`, `recipe_subrecipes`, `ingredients`, `ingredient_price_history`, `categories`, `stock_movements`, `map_tpv_receta`, `digital_menu_overrides`, `menu_category_overrides`, `carta_editors`, `carta_ui_labels`, `menu_board_categories`, `menu_board_items`.
 
 - `ingredients.current_price` es el precio vigente; `ingredient_price_history`, su histórico. Ambos solo cambian desde una confirmación económica autorizada; la captura y evidencia no son ese hecho.
 - `ingredients.archived_at` retira un ingrediente obsoleto del catálogo operativo sin borrarlo ([ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md)). `NULL` = activo. Un ingrediente archivado no se ofrece en selecciones nuevas, pero sus referencias históricas siguen siendo legibles. No es `inventory_visible`, que solo afecta al recuento de inventario.
 - `stock_movements` es el **único ledger canónico de stock**. Es append-only: las correcciones son nuevos movimientos reversores. Cada hecho nuevo lleva referencia tipada, idempotencia, origen, actor y procedencia. `stock_current` es su proyección regenerable.
 - `map_tpv_receta` une el artículo del punto de venta con la receta. **Sin este puente no hay descuento de existencias ni margen por producto.**
-- `recipes.is_sellable`, `recipes.yield_quantity` y `recipes.yield_unit` existen. El rendimiento va en pareja o no va; no se guarda como cero. `recipe_subrecipes` une receta padre con receta hija y rechaza un ciclo al escribir, también entre dos transacciones concurrentes. El contrato sigue en [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md). `get_recipe_cost_v2` calcula el coste recursivo de esa composición; `get_recipe_cost` no ha cambiado y es el que lee la ficha. El stock sigue sin expandir subrecetas ([D32](../5-estado/DEUDA.md)). `recipe_ingredients` sigue apuntando solo a ingrediente. `recipe_combos` es el puente de menús; no es este modelo y no forma parte de esta lista.
+- `recipes.is_sellable`, `recipes.yield_quantity` y `recipes.yield_unit` existen. El rendimiento va en pareja o no va; no se guarda como cero. `recipe_subrecipes` une receta padre con receta hija y rechaza un ciclo al escribir, también entre dos transacciones concurrentes. El contrato sigue en [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md). `get_recipe_cost_v2` calcula el coste recursivo de esa composición; `get_recipe_cost` no ha cambiado y es el que lee la ficha. `get_recipe_stock_requirements_v2` expande esa composición a materias primas en `ingredients.base_unit`. La venta, el consumo personal y la merma todavía no lo llaman ([D32](../5-estado/DEUDA.md)). `recipe_ingredients` sigue apuntando solo a ingrediente. `recipe_combos` es el puente de menús; no es este modelo y no forma parte de esta lista.
 - Las tablas de anulación permiten que la carta pública muestre algo distinto del dato interno sin duplicar la receta.
+- `menu_board_categories` y `menu_board_items` son la carta física de las dos vitrinas. Seis posiciones fijas, un precio numérico y traducciones en la misma fila. No salen del terminal de venta ni de la carta pública. Solo las lee y escribe el usuario master.
 - `carta_editors` es residual: ya no concede edición. Editan la carta `manager`, `admin` y `supervisor`.
 
 ### Compras y evidencia documental
