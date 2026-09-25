@@ -1,0 +1,90 @@
+{
+  "version": 15,
+  "canvas": [
+    1609,
+    1464
+  ],
+  "transform_semantics": "uniformly scale full layer about origin, then translate x/y; bowl_group applies to ceramic while each bowl food entry applies to its food overlay",
+  "assets": {
+    "bowl_group": {
+      "scale": 0.8632,
+      "x": 78.2876,
+      "y": 152.8644
+    },
+    "carbonara": {
+      "scale": 0.8632,
+      "x": 78.2876,
+      "y": 152.8644
+    },
+    "crema": {
+      "scale": 0.8632,
+      "x": 78.2876,
+      "y": 152.8644
+    },
+    "ensalada": {
+      "scale": 0.8632,
+      "x": 78.2876,
+      "y": 152.8644
+    },
+    "gazpacho": {
+      "scale": 0.8632,
+      "x": 78.2876,
+      "y": 152.8644
+    },
+    "pesto": {
+      "scale": 0.8632,
+      "x": 78.2876,
+      "y": 152.8644
+    },
+    "revuelto": {
+      "scale": 0.8632,
+      "x": 78.2876,
+      "y": 152.8644
+    },
+    "berenjena": {
+      "scale": 1.12,
+      "x": 48.2944,
+      "y": 184.0304
+    },
+    "caballa": {
+      "scale": 2.6,
+      "x": -1386.164,
+      "y": -519.256
+    },
+    "calamares": {
+      "scale": 0.84,
+      "x": 140.968,
+      "y": 72.0704
+    },
+    "contramuslo": {
+      "scale": 0.92,
+      "x": 61.584,
+      "y": 35.2508
+    },
+    "entrana": {
+      "scale": 0.98,
+      "x": 8.5908,
+      "y": 123.7392
+    },
+    "pollo": {
+      "scale": 0.94,
+      "x": 19.2322,
+      "y": 31.9376
+    },
+    "roastbeef": {
+      "scale": 0.76,
+      "x": 221.2056,
+      "y": 199.122
+    },
+    "patatas": {
+      "scale": 1.13,
+      "x": -126.5801,
+      "y": -196.4979
+    },
+    "verduras": {
+      "scale": 1.2,
+      "x": -190.668,
+      "y": -249.488
+    }
+  }
+}
