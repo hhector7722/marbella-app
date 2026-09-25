@@ -79,7 +79,7 @@ export function PlateBuilder({
   const hasFood = SLOT_ORDER.some((slot) => Boolean(zones.get(slot)?.item))
 
   return (
-    <div className={cn('relative mx-auto w-full max-w-[21rem] sm:max-w-[23rem]', className)}>
+    <div className={cn('relative mx-auto w-full max-w-[min(21rem,40svh)] sm:max-w-[min(23rem,40svh)]', className)}>
       <style>{`
         @keyframes ${foodAnim} {
           from { opacity: 0; transform: translateY(2.5%); }
