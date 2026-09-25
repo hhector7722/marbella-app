@@ -42,7 +42,7 @@ const FALLBACK_BY_SLOT: Readonly<
 }
 
 /**
- * Plate Builder V12.
+ * Plate Builder V15.
  *
  * La vajilla y los alimentos reconocidos se renderizan desde los assets
  * canónicos de producción. Cada alimento conserva la misma transformación
@@ -247,6 +247,8 @@ function CanonicalImage({ src, transform }: { src: string; transform: PlateV15Tr
         alt=""
         fill
         unoptimized
+        loading="eager"
+        fetchPriority="high"
         draggable={false}
         sizes="(max-width: 640px) 21rem, 23rem"
         className="object-fill"
@@ -281,6 +283,8 @@ function FallbackFoodLayer({
       <img
         src={cutout.href}
         alt=""
+        loading="eager"
+        decoding="async"
         className="h-full w-full object-contain object-center"
         style={{
           filter: cutout.isolated
