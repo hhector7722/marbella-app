@@ -195,6 +195,7 @@ export function PlatoMarbellaMenuView({
   lang,
   launcherArticuloId = null,
   eventOrder,
+  embedded = false,
   className,
 }: {
   rows: OptionRow[]
@@ -203,6 +204,8 @@ export function PlatoMarbellaMenuView({
   launcherArticuloId?: number | null
   /** Pedido por evento: permite «Afegeix al demanat» al completar el plato. */
   eventOrder?: EventOrderCartaControl
+  /** Ajuste exclusivo de la carta embebida en marbella-web. */
+  embedded?: boolean
   className?: string
 }) {
   const ui = tPlatoMarbellaUi(lang)
@@ -278,6 +281,7 @@ export function PlatoMarbellaMenuView({
         <PlateBuilder
           lang={lang}
           activeSlot={pickerSlot}
+          embedded={embedded}
           className="mx-auto mt-1.5 sm:mt-2"
         >
           <PlateZone

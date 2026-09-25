@@ -51,11 +51,13 @@ const FALLBACK_BY_SLOT: Readonly<
 export function PlateBuilder({
   lang,
   activeSlot = null,
+  embedded = false,
   children,
   className,
 }: {
   lang: CartaLang
   activeSlot?: PlatoMarbellaSlot | null
+  embedded?: boolean
   children: ReactNode
   className?: string
 }) {
@@ -79,7 +81,13 @@ export function PlateBuilder({
   const hasFood = SLOT_ORDER.some((slot) => Boolean(zones.get(slot)?.item))
 
   return (
-    <div className={cn('relative mx-auto w-full max-w-[min(21rem,40svh)] sm:max-w-[min(23rem,40svh)]', className)}>
+    <div
+      className={cn(
+        'relative mx-auto w-full',
+        embedded ? 'max-w-[17rem] sm:max-w-[18.75rem]' : 'max-w-[21rem] sm:max-w-[23rem]',
+        className
+      )}
+    >
       <style>{`
         @keyframes ${foodAnim} {
           from { opacity: 0; transform: translateY(2.5%); }
