@@ -125,7 +125,7 @@ Cuando existe una equivalencia física declarada, el sistema **puede enlazar una
 
 La conversión existe en dos sitios, cliente y base de datos, y **deben dar el mismo resultado**. Una divergencia entre ambos es un defecto grave, no una diferencia de precisión.
 
-Cuando la línea apunta a otra receta, el coste y el stock no se detienen ahí: se expanden hasta el ingrediente y el resultado se reparte según el rendimiento. Ese contrato, los estados de error y la separación respecto de los menús están en [ADR-0018](../../4-decisiones/ADR-0018-elaboraciones-intermedias.md). Este apartado sigue gobernando solo la conversión de la línea de ingrediente. El código aún no implementa la expansión; la brecha es [D32](../../5-estado/DEUDA.md).
+Cuando la línea apunta a otra receta, el coste y el stock no se detienen ahí: se expanden hasta el ingrediente y el resultado se reparte según el rendimiento. Ese contrato está en [ADR-0018](../../4-decisiones/ADR-0018-elaboraciones-intermedias.md). El coste completo lo produce `get_recipe_cost_v2`. En su resultado, `components[].cost_eur` es la aportación a la receta pedida, ya escalada por cada rendimiento; `local_cost_eur` es el coste del tramo antes de ese reparto. La ficha y el resto de lectores siguen en `get_recipe_cost`, que no recorre subrecetas. El stock tampoco usa todavía esta expansión ([D32](../../5-estado/DEUDA.md)). Este apartado sigue gobernando la conversión de la línea de ingrediente.
 
 ---
 

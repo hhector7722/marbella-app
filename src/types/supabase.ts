@@ -5754,6 +5754,17 @@ export type Database = {
         Args: { p_start_date: string; p_user_id: string }
         Returns: undefined
       }
+      fn_recipe_line_cost_v2: {
+        Args: {
+          p_current_price: number
+          p_pack_qty?: number
+          p_pack_unit?: string
+          p_purchase_unit: string
+          p_quantity: number
+          p_recipe_unit: string
+        }
+        Returns: Json
+      }
       fn_recipe_line_cost: {
         Args: {
           p_current_price: number
@@ -5990,6 +6001,10 @@ export type Database = {
         Args: { p_recipe_id: string; p_use_half_ration?: boolean }
         Returns: Json
       }
+      get_recipe_cost_v2: {
+        Args: { p_recipe_id: string }
+        Returns: Json
+      }
       get_staff_consumption_day_detail: {
         Args: { p_date: string; p_user_id?: string }
         Returns: Json
@@ -6222,6 +6237,10 @@ export type Database = {
       }
       record_waste_movements: {
         Args: { p_correlation_id: string; p_items: Json; p_source?: string }
+        Returns: Json
+      }
+      recipe_cost_v2_walk: {
+        Args: { p_path: string[]; p_recipe_id: string }
         Returns: Json
       }
       recipe_qty_to_base_unit: {

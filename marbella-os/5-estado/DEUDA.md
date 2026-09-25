@@ -261,7 +261,7 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 ## D21 · Reglas de negocio implementadas dos veces, en Postgres y en TypeScript
 
-**Prioridad: media.** El coste de receta y las tarifas laborales existen como función de base de datos y como código del motor. Deben dar el mismo resultado y **nada lo comprueba**.
+**Prioridad: media.** El coste de receta legacy y las tarifas laborales existen como función de base de datos y como código del motor. Deben dar el mismo resultado y **nada lo comprueba**. `get_recipe_cost` sigue convirtiendo un fallo en 0. `get_recipe_cost_v2` no paga esta deuda: el lector legacy y las tarifas siguen duplicados.
 
 **Coste**: una corrección aplicada en un solo lado produce dos verdades. El síntoma es un importe distinto según la pantalla que lo muestre.
 
@@ -448,9 +448,9 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ## D32 · Elaboraciones intermedias decididas y no implementadas
 
-**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina: una receta puede contener recetas, la vendibilidad es `is_sellable`, el rendimiento es explícito, el coste y el stock se expanden hasta el ingrediente, y un dato ausente no es 0 €. Desde el 2026-09-25 la estructura existe (`recipes.is_sellable`, `yield_quantity`, `yield_unit`, `recipe_subrecipes`). El coste, el stock y la interfaz siguen sin usarla. `recipe_combos` no paga esta deuda.
+**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina. La estructura existe y `get_recipe_cost_v2` ya calcula el coste recursivo con estados explícitos. Siguen pendientes el stock, la interfaz y el resto de consumidores, que leen `get_recipe_cost`. `recipe_combos` no paga esta deuda.
 
-**Coste**: una salsa o un sofrito no pueden entrar en otra receta con coste y consumo correctos. Quien implemente los bloques siguientes tiene que seguir el ADR y no reinterpretarlo.
+**Coste**: una salsa ya puede costearse en el motor v2, pero la ficha, el inventario y las ventas no la expanden. Quien implemente los bloques siguientes tiene que seguir el ADR y no reinterpretarlo.
 
 **Disparador de pago**: los bloques de implementación posteriores al cierre documental del 2026-09-25. No incluye limpiar `recipe_combos`.
 

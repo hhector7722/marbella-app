@@ -132,7 +132,7 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 - `ingredients.archived_at` retira un ingrediente obsoleto del catálogo operativo sin borrarlo ([ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md)). `NULL` = activo. Un ingrediente archivado no se ofrece en selecciones nuevas, pero sus referencias históricas siguen siendo legibles. No es `inventory_visible`, que solo afecta al recuento de inventario.
 - `stock_movements` es el **único ledger canónico de stock**. Es append-only: las correcciones son nuevos movimientos reversores. Cada hecho nuevo lleva referencia tipada, idempotencia, origen, actor y procedencia. `stock_current` es su proyección regenerable.
 - `map_tpv_receta` une el artículo del punto de venta con la receta. **Sin este puente no hay descuento de existencias ni margen por producto.**
-- `recipes.is_sellable`, `recipes.yield_quantity` y `recipes.yield_unit` existen. El rendimiento va en pareja o no va; no se guarda como cero. `recipe_subrecipes` une receta padre con receta hija. El contrato sigue en [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md). El coste recursivo, el stock y la interfaz no leen esta tabla todavía ([D32](../5-estado/DEUDA.md)). `recipe_ingredients` sigue apuntando solo a ingrediente. `recipe_combos` es el puente de menús; no es este modelo y no forma parte de esta lista.
+- `recipes.is_sellable`, `recipes.yield_quantity` y `recipes.yield_unit` existen. El rendimiento va en pareja o no va; no se guarda como cero. `recipe_subrecipes` une receta padre con receta hija. El contrato sigue en [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md). `get_recipe_cost_v2` calcula el coste recursivo de esa composición; `get_recipe_cost` no ha cambiado y es el que lee la ficha. El stock sigue sin expandir subrecetas ([D32](../5-estado/DEUDA.md)). `recipe_ingredients` sigue apuntando solo a ingrediente. `recipe_combos` es el puente de menús; no es este modelo y no forma parte de esta lista.
 - Las tablas de anulación permiten que la carta pública muestre algo distinto del dato interno sin duplicar la receta.
 - `carta_editors` es residual: ya no concede edición. Editan la carta `manager`, `admin` y `supervisor`.
 
@@ -201,7 +201,7 @@ Se agrupan en cuatro familias con propósitos muy distintos:
 
 **La tercera familia es la problemática.** Hay reglas de negocio implementadas en Postgres que también existen en TypeScript. El coste de receta se calcula en los dos sitios. Las tarifas laborales tienen función en base de datos y equivalente en el motor.
 
-**Criterio de autoridad cuando hay duplicación:** manda el motor en TypeScript, porque es el que tiene pruebas. Las funciones equivalentes en base de datos son atajos de consulta y deben dar el mismo resultado. Si discrepan, la función está mal.
+**Criterio de autoridad cuando hay duplicación:** manda el motor en TypeScript, porque es el que tiene pruebas. Las funciones equivalentes en base de datos son atajos de consulta y deben dar el mismo resultado. Si discrepan, la función está mal. Excepción ya cerrada para el coste completo de una elaboración: la autoridad es `get_recipe_cost_v2`. La hoja de ingrediente de ese motor tiene que coincidir con `getRecipeIngredientLineCostV2`. `get_recipe_cost` queda como lector legacy y no es esa autoridad.
 
 Este criterio no está garantizado por nada automático. Es deuda: [D21](../5-estado/DEUDA.md).
 

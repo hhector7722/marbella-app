@@ -186,6 +186,40 @@ export function getRecipeIngredientLineCostAnalysis(
   return { eur: converted * price, status: 'ok' };
 }
 
+/** Estados del motor v2. Un fallo nunca usa 0 €: el coste es null. */
+export type RecipeLineCostStatusV2 = 'OK' | 'MISSING_PRICE' | 'INCOMPATIBLE_UNITS'
+
+/**
+ * Hoja de ingrediente del motor v2. Misma conversión que
+ * `convertToPurchaseUnitQuantityWithPackBridge`. El coste de receta completo
+ * lo produce `get_recipe_cost_v2` en Postgres; esto no recorre subrecetas.
+ */
+export function getRecipeIngredientLineCostV2(
+  quantity: number | null | undefined,
+  recipeUnit: string,
+  purchaseUnit: string,
+  currentPrice: number | null | undefined,
+  pack?: IngredientPackBridgeContext | null
+): { costEur: number | null; status: RecipeLineCostStatusV2; issues: RecipeLineCostStatusV2[] } {
+  const qty = Number(quantity)
+  if (quantity == null || !Number.isFinite(qty) || qty < 0) {
+    return { costEur: null, status: 'INCOMPATIBLE_UNITS', issues: ['INCOMPATIBLE_UNITS'] }
+  }
+  if (qty === 0) {
+    return { costEur: 0, status: 'OK', issues: ['OK'] }
+  }
+
+  const converted = convertToPurchaseUnitQuantityWithPackBridge(qty, recipeUnit, purchaseUnit, pack)
+  const price = resolveIngredientUnitPriceForRecipeCost(currentPrice)
+  const issues: RecipeLineCostStatusV2[] = []
+  if (converted == null) issues.push('INCOMPATIBLE_UNITS')
+  if (price == null) issues.push('MISSING_PRICE')
+  if (issues.length > 0) {
+    return { costEur: null, status: issues[0], issues }
+  }
+  return { costEur: converted! * price!, status: 'OK', issues: ['OK'] }
+}
+
 /** Texto para `title` / accesibilidad cuando el coste no se muestra en euros. */
 export function recipeLineCostStatusHint(status: RecipeLineCostStatus): string {
   if (status === 'missing_price') {

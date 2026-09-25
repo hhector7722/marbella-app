@@ -19,6 +19,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **La base ya puede guardar una subreceta.** `recipes` tiene `is_sellable` y rendimiento, y `recipe_subrecipes` une receta con receta. Las recetas actuales quedan vendibles y sin rendimiento. El coste, el stock y la pantalla no cambian. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).
 
+- **Existe el coste recursivo v2.** `get_recipe_cost_v2` reparte el lote según el rendimiento y deja el total en blanco si una rama falla. `components[].cost_eur` es la aportación ya escalada a la receta pedida. La ficha sigue llamando a `get_recipe_cost`. [PRECIOS-Y-COMPRAS](../3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md), [D32](DEUDA.md).
+
 ## 2026-09-22
 
 - **La calculadora rápida y el desglose pasan a un dock lateral arrastrable.** Los dos iconos viven en un dock vertical pegado al canto derecho, como el asa lateral de una web. Se arrastran por toda la altura y la posición se recuerda por dispositivo; por defecto se sientan sobre la pestaña inferior sin taparla, y la calculadora queda encima del desglose. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
