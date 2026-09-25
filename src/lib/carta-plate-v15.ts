@@ -97,7 +97,7 @@ const DEFAULT_HITBOX_BY_SLOT: Readonly<Record<PlatoMarbellaSlot, PlateV15HitBox>
 }
 
 const DEFAULT_LABEL_POS_BY_SLOT: Readonly<Record<PlatoMarbellaSlot, { left: number; top: number }>> = {
-  entrante: { left: 30, top: 34 },
+  entrante: { left: 30, top: 43 },
   principal: { left: 66, top: 43 },
   guarnicion: { left: 47, top: 68 },
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Children, isValidElement, useId, type CSSProperties, type ReactNode } from 'react'
+import { Children, isValidElement, useId, useState, type CSSProperties, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import type { CartaLang } from '@/lib/carta-menu-i18n'
 import {
@@ -157,11 +157,9 @@ export function PlateBuilder({
           }
 
           const pos = plateV15LabelPosition(slot)
-          const opacity = hasFood ? (active ? 0.82 : 0.46) : active ? 0.95 : 0.72
-          const labelClass = cn(
-            'select-none font-sans text-[11px] font-semibold tracking-[0.06em] antialiased',
-            active ? 'text-zinc-500' : 'text-zinc-400'
-          )
+          const opacity = hasFood ? (active ? 0.95 : 0.58) : active ? 1 : 0.82
+          const labelClass =
+            'select-none font-sans text-[11px] font-semibold tracking-[0.06em] text-[#36606F] antialiased'
 
           if (!zone?.onSelect) {
             return (
@@ -216,26 +214,72 @@ function CanonicalSlotLayers({
   const transform = PLATE_V15_TRANSFORMS[assetKey]
   const isBowl = PLATE_V15_BOWL_STARTERS.has(assetKey)
 
+  if (isBowl) {
+    return (
+      <SynchronizedBowlLayers
+        assetKey={assetKey}
+        transform={transform}
+        animationClass={animationClass}
+      />
+    )
+  }
+
   return (
     <span className={cn('pointer-events-none absolute inset-0 z-10', animationClass)}>
-      {isBowl ? (
-        <CanonicalImage
-          src={`${PLATE_V15_BASE_PATH}/base/bowl_back.png`}
-          transform={PLATE_V15_TRANSFORMS.bowl_group}
-        />
-      ) : null}
       <CanonicalImage src={plateV15AssetPath(assetKey)} transform={transform} />
-      {isBowl ? (
-        <CanonicalImage
-          src={`${PLATE_V15_BASE_PATH}/base/bowl_front.png`}
-          transform={PLATE_V15_TRANSFORMS.bowl_group}
-        />
-      ) : null}
     </span>
   )
 }
 
-function CanonicalImage({ src, transform }: { src: string; transform: PlateV15Transform }) {
+function SynchronizedBowlLayers({
+  assetKey,
+  transform,
+  animationClass,
+}: {
+  assetKey: PlateV15AssetKey
+  transform: PlateV15Transform
+  animationClass: string
+}) {
+  const [backReady, setBackReady] = useState(false)
+  const [foodReady, setFoodReady] = useState(false)
+  const [frontReady, setFrontReady] = useState(false)
+  const ready = backReady && foodReady && frontReady
+
+  return (
+    <span
+      className={cn(
+        'pointer-events-none absolute inset-0 z-10',
+        ready ? animationClass : 'opacity-0'
+      )}
+    >
+      <CanonicalImage
+        src={`${PLATE_V15_BASE_PATH}/base/bowl_back.png`}
+        transform={PLATE_V15_TRANSFORMS.bowl_group}
+        onReady={() => setBackReady(true)}
+      />
+      <CanonicalImage
+        src={plateV15AssetPath(assetKey)}
+        transform={transform}
+        onReady={() => setFoodReady(true)}
+      />
+      <CanonicalImage
+        src={`${PLATE_V15_BASE_PATH}/base/bowl_front.png`}
+        transform={PLATE_V15_TRANSFORMS.bowl_group}
+        onReady={() => setFrontReady(true)}
+      />
+    </span>
+  )
+}
+
+function CanonicalImage({
+  src,
+  transform,
+  onReady,
+}: {
+  src: string
+  transform: PlateV15Transform
+  onReady?: () => void
+}) {
   const left = (transform.x / PLATE_V15_CANVAS.width) * 100
   const top = (transform.y / PLATE_V15_CANVAS.height) * 100
   const style: CSSProperties = {
@@ -254,6 +298,8 @@ function CanonicalImage({ src, transform }: { src: string; transform: PlateV15Tr
         unoptimized
         loading="eager"
         fetchPriority="high"
+        onLoad={onReady}
+        onError={onReady}
         draggable={false}
         sizes="(max-width: 640px) 21rem, 23rem"
         className="object-fill"
