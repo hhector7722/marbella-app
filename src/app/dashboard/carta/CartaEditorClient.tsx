@@ -94,7 +94,7 @@ export default function CartaEditorClient({
     for (const m of mappings) {
       const a = m.bdp_articulos
       const r = m.recipes
-      if (!a || !r) continue
+      if (!a || !r || r.is_sellable !== true) continue
       const departamento =
         a.bdp_departamentos?.nombre ??
         (a.departamento_id != null ? `Dept ${a.departamento_id}` : 'Sin departamento')

@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-25
+revisado: 2026-09-26
 caducidad: 6 meses
 supersede: —
 ---
@@ -90,6 +90,8 @@ Decide con dos datos, en este orden: **si hay sesión** y **cuál es el rol**. S
 | Máquina | `api` | Secreto compartido, sesión o nada |
 
 **La superficie de máquina no pasa por el guardián de rutas.** Cada punto de acceso se autentica solo. Es correcto por diseño —un webhook no tiene sesión— pero significa que **olvidarse de autenticar deja el punto abierto**, sin red de seguridad.
+
+**La carta comercial solo proyecta recetas con `is_sellable`.** El selector y los editores ignoran un mapeo TPV hacia una elaboración interna: no lo borran, no usan su precio ni su foto, y el artículo queda libre para enlazarse a una vendible. Las fichas de cocina siguen incluyendo ambas. Recetas TPV y los consumidores de stock todavía no. [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md).
 
 ---
 

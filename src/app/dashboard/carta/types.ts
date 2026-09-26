@@ -7,7 +7,7 @@ export type CartaEditorMappingRow = {
     departamento_id: number | null
     bdp_departamentos?: { nombre: string } | null
   } | null
-  recipes?: { id: string; name: string; photo_url: string | null } | null
+  recipes?: { id: string; name: string; photo_url: string | null; is_sellable: boolean } | null
 }
 
 export type CartaOverrideRow = {

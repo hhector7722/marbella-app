@@ -19,8 +19,13 @@ export function RecipeCard({
     selectionMode,
     onSelect,
 }: RecipeCardProps) {
-    // Use food_cost_pct if available, otherwise fallback to target_food_cost_pct
-    const costPct = recipe.food_cost_pct ?? recipe.target_food_cost_pct;
+    const sellable = recipe.is_sellable === true;
+    const salePrice =
+        typeof recipe.sale_price === "number" && Number.isFinite(recipe.sale_price)
+            ? recipe.sale_price
+            : null;
+    const costPctRaw = recipe.food_cost_pct ?? recipe.target_food_cost_pct;
+    const costPct = typeof costPctRaw === "number" && Number.isFinite(costPctRaw) ? costPctRaw : null;
 
     const getPriceColor = (cost: number) => {
         if (cost <= 30) return "text-green-600";
@@ -71,17 +76,23 @@ export function RecipeCard({
                 <h3 className="text-[10px] font-bold text-gray-800 truncate leading-tight">
                     {recipe.name}
                 </h3>
-                <div className="flex items-baseline justify-between gap-1">
-                    <span className={cn(
-                        "text-[10px] font-black leading-none",
-                        getPriceColor(costPct)
-                    )}>
-                        {recipe.sale_price.toFixed(2)}€
-                    </span>
-                    <span className="text-[8px] text-gray-400 font-medium">
-                        FC: {costPct.toFixed(1)}%
-                    </span>
-                </div>
+                {sellable ? (
+                    <div className="flex items-baseline justify-between gap-1">
+                        <span className={cn(
+                            "text-[10px] font-black leading-none",
+                            costPct != null ? getPriceColor(costPct) : "text-gray-800"
+                        )}>
+                            {salePrice != null ? `${salePrice.toFixed(2)}€` : "—"}
+                        </span>
+                        {costPct != null ? (
+                            <span className="text-[8px] text-gray-400 font-medium">
+                                FC: {costPct.toFixed(1)}%
+                            </span>
+                        ) : null}
+                    </div>
+                ) : (
+                    <span className="text-[8px] text-gray-400 font-medium">Elaboración</span>
+                )}
             </div>
         </div>
     );

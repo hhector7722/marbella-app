@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-25
+revisado: 2026-09-26
 caducidad: 3 meses
 supersede: —
 ---
@@ -448,7 +448,7 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ## D32 · Elaboraciones intermedias decididas y no implementadas
 
-**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina. Hecho: la estructura, `get_recipe_cost_v2`, el rechazo de ciclos al escribir, el motor `get_recipe_stock_requirements_v2`, la ficha que distingue vendible de elaboración interna, y la composición: ingredientes y elaboraciones se editan en la misma ficha sobre `recipe_subrecipes`. El coste recursivo de la receta completa usa v2 cuando hay subrecetas. La media ración con subrecetas queda indeterminada. Pendiente: migrar los consumidores productivos (venta, consumo personal, merma y el resto de lectores) y retirar `get_recipe_cost` en las vendibles que no tienen subrecetas. Las ventas todavía no descuentan subrecetas. `recipe_combos` no paga esta deuda.
+**Prioridad: media.** [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md) cierra el modelo de subrecetas de cocina. Hecho: la estructura, `get_recipe_cost_v2`, el rechazo de ciclos al escribir, el motor `get_recipe_stock_requirements_v2`, la ficha que distingue vendible de elaboración interna, la composición de ingredientes y elaboraciones en `recipe_subrecipes`, y la proyección comercial de carta, que solo muestra recetas con `is_sellable`. Un mapeo TPV hacia una interna no se borra: la carta no lo cuenta. El coste recursivo de la receta completa usa v2 cuando hay subrecetas. La media ración con subrecetas queda indeterminada. Pendiente: migrar Recetas TPV y los consumidores productivos (venta, consumo personal, merma y el resto de lectores) y retirar `get_recipe_cost` en las vendibles que no tienen subrecetas. Las ventas todavía no descuentan subrecetas. `recipe_combos` no paga esta deuda.
 
 **Coste**: una elaboración ya puede entrar en otra receta y costearse en la ficha, pero el inventario y las ventas no la expanden. Quien implemente los bloques siguientes tiene que seguir el ADR y no reinterpretarlo.
 

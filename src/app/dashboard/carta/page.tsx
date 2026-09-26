@@ -24,12 +24,17 @@ export default async function CartaDashboardPage() {
     supabase
       .from('map_tpv_receta')
       .select(
-        'articulo_id, recipe_id, bdp_articulos(id, nombre, departamento_id), recipes(id, name, photo_url)'
+        'articulo_id, recipe_id, bdp_articulos(id, nombre, departamento_id), recipes(id, name, photo_url, is_sellable)'
       )
       .limit(5000),
     supabase.from('digital_menu_overrides').select('*').limit(5000),
     supabase.from('bdp_articulos').select('id, nombre, departamento_id').limit(5000),
-    supabase.from('recipes').select('id, name').order('name', { ascending: true }).limit(5000),
+    supabase
+      .from('recipes')
+      .select('id, name')
+      .eq('is_sellable', true)
+      .order('name', { ascending: true })
+      .limit(5000),
     supabase.from('bdp_departamentos').select('id, nombre').order('nombre', { ascending: true }).limit(5000),
     supabase.from('categories').select('id, name, parent_id, sort_order, scope, slug').eq('scope', 'menu').limit(5000),
   ])
@@ -57,9 +62,14 @@ export default async function CartaDashboardPage() {
     ...m,
     bdp_articulos: m.bdp_articulos ? withDeptNombre(m.bdp_articulos) : null,
   }))
+  const commercialMappings = enrichedMappings.flatMap((m) => {
+    const recipe = Array.isArray(m.recipes) ? m.recipes[0] : m.recipes
+    if (recipe?.is_sellable !== true) return []
+    return [{ ...m, recipes: recipe }]
+  })
   const enrichedArticles = ((articles ?? []) as any[]).map((a) => withDeptNombre(a)) as unknown as CartaTpvArticle[]
 
-  const mappedIds = new Set(((mappings ?? []) as any[]).map((m) => m.articulo_id))
+  const mappedIds = new Set(commercialMappings.map((m) => m.articulo_id))
   const unmappedArticles = enrichedArticles.filter((a) => !mappedIds.has(a.id))
   return (
     <DashboardDetailLayout
@@ -95,7 +105,7 @@ export default async function CartaDashboardPage() {
         </Surface>
 
         <CartaEditorClient
-          mappings={enrichedMappings as unknown as CartaEditorMappingRow[]}
+          mappings={commercialMappings as unknown as CartaEditorMappingRow[]}
           overrides={(overrides ?? []) as unknown as CartaOverrideRow[]}
           categories={(categories ?? []) as any[]}
         />

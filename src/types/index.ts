@@ -29,7 +29,8 @@ export interface Recipe {
     category: string;
     /** Categoría menú (carta); `category` se mantiene como etiqueta legible. */
     menu_category_id?: string | null;
-    sale_price: number; // Precio Barra (Entera)
+    is_sellable: boolean;
+    sale_price: number | null; // Precio Barra (Entera). No define vendibilidad.
     sales_price_pavello: number; // Precio Pavelló (Entera)
     has_half_ration: boolean; // ¿Tiene media ración?
     sale_price_half: number; // Precio 1/2 Barra

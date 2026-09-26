@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-25
+revisado: 2026-09-26
 caducidad: no aplica
 supersede: PROJECT_STATUS.md (función de historial)
 ---
@@ -14,6 +14,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 # CHANGELOG
 
 ## 2026-09-26
+
+- **La carta solo proyecta recetas vendibles.** El selector y los editores usan `is_sellable`. Un mapeo TPV hacia una elaboración interna no se borra: la carta lo ignora, no usa su precio ni su foto, y el artículo vuelve a poder enlazarse a una vendible. Las fichas de cocina siguen listando ambas y marcan la interna. Recetas TPV, ventas, stock, merma e importaciones siguen pendientes. [D32](DEUDA.md).
 
 - **La ficha puede componer elaboraciones.** Ingredientes y elaboraciones conviven como componentes. La relación se guarda en `recipe_subrecipes`; el ciclo lo rechaza la base. El coste de la receta completa usa `get_recipe_cost_v2` cuando hay subrecetas. La media ración con subrecetas no calcula coste ni margen. Ventas, TPV y stock siguen sin expandirlas. `recipe_combos` sigue siendo el menú. [D32](DEUDA.md).
 

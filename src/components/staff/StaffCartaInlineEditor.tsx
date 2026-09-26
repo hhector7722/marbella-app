@@ -60,6 +60,7 @@ type MapRow = {
     sale_price: number | string | null
     presentation: string | null
     elaboration: string | null
+    is_sellable: boolean
   } | null
   bdp_articulos: {
     id: number
@@ -145,7 +146,7 @@ export function StaffCartaInlineEditor({
         supabase
           .from('map_tpv_receta')
           .select(
-            'articulo_id, factor_porcion, recipe_id, recipes(id,name,photo_url,sale_price,presentation,elaboration), bdp_articulos(id,nombre,precio_base,departamento_id)'
+            'articulo_id, factor_porcion, recipe_id, recipes(id,name,photo_url,sale_price,presentation,elaboration,is_sellable), bdp_articulos(id,nombre,precio_base,departamento_id)'
           )
           .limit(5000),
         supabase.from('digital_menu_overrides').select('*').limit(5000),
@@ -224,7 +225,7 @@ export function StaffCartaInlineEditor({
       if (coverIds.length) {
         const { data: covMaps, error: covErr } = await supabase
           .from('map_tpv_receta')
-          .select('articulo_id, recipes(photo_url)')
+          .select('articulo_id, recipes(photo_url, is_sellable)')
           .in('articulo_id', coverIds)
         if (covErr) throw covErr
         let covOvsRes = await supabase
@@ -247,7 +248,7 @@ export function StaffCartaInlineEditor({
         for (const r of (covMaps ?? []) as any[]) {
           const rec0 = r.recipes
           const rec = Array.isArray(rec0) ? rec0[0] : rec0
-          const ph = ntrim(rec?.photo_url ?? null)
+          const ph = rec?.is_sellable === true ? ntrim(rec?.photo_url ?? null) : null
           const ovr = ovPhoto.get(r.articulo_id) ?? null
           coverPhotoByArticulo.set(r.articulo_id, ovr ?? ph)
           coverScaleByArticulo.set(r.articulo_id, ovScale.get(r.articulo_id) ?? 'm')
@@ -283,10 +284,13 @@ export function StaffCartaInlineEditor({
       const rows: DigitalMenuRow[] = []
 
       const coverOptions = mapRows
-        .map((r) => {
-          const a = r.bdp_articulos
-          if (!a) return null
-          return { articulo_id: r.articulo_id, articulo_nombre: a.nombre }
+        .map((row) => {
+          const a0 = row.bdp_articulos
+          const r0 = row.recipes
+          const a = Array.isArray(a0) ? a0[0] : a0
+          const r = Array.isArray(r0) ? r0[0] : r0
+          if (!a || !r || r.is_sellable !== true) return null
+          return { articulo_id: row.articulo_id, articulo_nombre: a.nombre }
         })
         .filter(Boolean) as Array<{ articulo_id: number; articulo_nombre: string }>
       setItemsForCover(coverOptions)
@@ -296,7 +300,7 @@ export function StaffCartaInlineEditor({
         const r0 = m.recipes
         const a = Array.isArray(a0) ? a0[0] : a0
         const r = Array.isArray(r0) ? r0[0] : r0
-        if (!a || !r) continue
+        if (!a || !r || r.is_sellable !== true) continue
         const o = ovByArt.get(m.articulo_id) ?? null
         const catId = o?.category_id ?? null
         const c = catId ? catMap.get(catId) ?? null : null

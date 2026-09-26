@@ -13,6 +13,7 @@ type Recipe = {
   servings: number | null;
   photo_url: string | null;
   elaboration: string | null;
+  is_sellable: boolean;
 };
 
 type Step = { text: string; image: string | null };
@@ -97,7 +98,7 @@ export default function FichasCocinaPage() {
     void (async () => {
       const { data } = await supabase
         .from('recipes')
-        .select('id,name,category,preparation_time,servings,photo_url,elaboration')
+        .select('id,name,category,preparation_time,servings,photo_url,elaboration,is_sellable')
         .order('name');
       if (data) setRecipes(data as Recipe[]);
       setLoading(false);
@@ -450,7 +451,7 @@ export default function FichasCocinaPage() {
                 <option value="">Selecciona una receta…</option>
                 {recipes.map(r => (
                   <option key={r.id} value={r.id}>
-                    {r.name}
+                    {r.is_sellable === false ? `${r.name} · Elaboración` : r.name}
                   </option>
                 ))}
               </select>
