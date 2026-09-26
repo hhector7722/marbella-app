@@ -1598,6 +1598,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /<QuickCashTools[^>]*className/,
             'el recuento no desplaza los flotantes',
         );
+        assert.doesNotMatch(
+            denomination,
+            /overlayModal/,
+            'el recuento no tiene un modo de ancho propio',
+        );
 
         const tools = readFileSync(join(SRC_ROOT, 'components/ui/QuickCalculatorModal.tsx'), 'utf8');
         assert.match(tools, /fixed right-0/);
@@ -1645,11 +1650,12 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(css, /data-dragging='true'/, 'el arrastre no anima la posición');
         const modal = readFileSync(join(SRC_ROOT, 'components/ui/modal.tsx'), 'utf8');
-        assert.match(
+        assert.doesNotMatch(
             modal,
-            /paddingRight: 'calc\(max\(1rem[\s\S]*?--quick-fab-dock/,
-            'el overlay reserva el ancho del dock lateral',
+            /paddingRight:[\s\S]*?--quick-fab-dock/,
+            'el overlay no reserva el ancho del dock',
         );
+        assert.doesNotMatch(tools, /applyFabDock/, 'el dock no publica su ancho');
     });
 
     it('las barras de cantidad usan QuantityStepper (P10)', () => {

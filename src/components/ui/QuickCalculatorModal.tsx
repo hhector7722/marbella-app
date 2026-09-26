@@ -51,13 +51,6 @@ function clearToolInset() {
     root.removeAttribute('data-quick-tool');
 }
 
-function applyFabDock(px: number) {
-    const root = document.documentElement;
-    root.style.setProperty(FAB_DOCK_VAR, `${Math.max(0, Math.round(px))}px`);
-    if (px > 0) root.setAttribute('data-quick-fab', 'open');
-    else root.removeAttribute('data-quick-fab');
-}
-
 function clearFabDock() {
     const root = document.documentElement;
     root.style.setProperty(FAB_DOCK_VAR, '0px');
@@ -500,11 +493,14 @@ function ToolFab({
     ariaLabel,
     onClick,
     pressed,
+    framed = false,
 }: {
     src: string;
     ariaLabel: string;
     onClick: () => void;
     pressed?: boolean;
+    /** Contorno blanco encima del icono. No cambia la caja de 48 px. */
+    framed?: boolean;
 }) {
     return (
         <button
@@ -512,7 +508,7 @@ function ToolFab({
             onClick={onClick}
             aria-label={ariaLabel}
             aria-pressed={pressed}
-            className="flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radio-superficie)] border-0 bg-transparent p-0 transition-all hover:brightness-110 active:scale-95"
+            className="relative flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radio-superficie)] border-0 bg-transparent p-0 transition-all hover:brightness-110 active:scale-95"
         >
             <img
                 src={src}
@@ -523,6 +519,12 @@ function ToolFab({
                     src === BREAKDOWN_ICON && 'p-[13%]',
                 )}
             />
+            {framed ? (
+                <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 z-[1] rounded-[var(--radio-superficie)] border-2 border-[var(--color-superficie)]"
+                />
+            ) : null}
         </button>
     );
 }
@@ -589,8 +591,11 @@ export function QuickCashToolsFabs({
     className?: string;
 }) {
     const dockRef = useRef<HTMLDivElement>(null);
+    const anchorRef = useRef<HTMLSpanElement>(null);
     const [mounted, setMounted] = useState(false);
     const [bottom, setBottom] = useState<number | null>(null);
+    const [edgeRight, setEdgeRight] = useState<number | null>(null);
+    const [placed, setPlaced] = useState(false);
     const [dragging, setDragging] = useState(false);
     const dragRef = useRef<{
         id: number;
@@ -609,18 +614,30 @@ export function QuickCashToolsFabs({
 
     useLayoutEffect(() => {
         if (!mounted) return;
-        if (isOpen) {
-            clearFabDock();
-            return;
-        }
-        const el = dockRef.current;
-        if (!el) return;
-        const sync = () => applyFabDock(el.getBoundingClientRect().width);
+        // El dock no escribe ancho: ningún modal reserva gutter por estos iconos.
+        clearFabDock();
+        if (isOpen) return;
+        const sync = () => {
+            const modal = anchorRef.current?.closest('[data-component="Modal"]');
+            const container = modal?.querySelector('[data-element="container"]');
+            if (!(container instanceof HTMLElement)) {
+                setEdgeRight(null);
+                setPlaced(true);
+                return;
+            }
+            const next = Math.max(0, Math.round(window.innerWidth - container.getBoundingClientRect().right));
+            setEdgeRight((prev) => (prev === next ? prev : next));
+            setPlaced(true);
+        };
         sync();
+        const modal = anchorRef.current?.closest('[data-component="Modal"]');
+        const container = modal?.querySelector('[data-element="container"]');
         const observer = new ResizeObserver(sync);
-        observer.observe(el);
+        if (container instanceof HTMLElement) observer.observe(container);
+        window.addEventListener('resize', sync);
         return () => {
             observer.disconnect();
+            window.removeEventListener('resize', sync);
             clearFabDock();
         };
     }, [mounted, calculator, breakdown, isOpen]);
@@ -644,6 +661,8 @@ export function QuickCashToolsFabs({
 
     if (!calculator && !breakdown) return null;
     if (!mounted || isOpen) return null;
+
+    const onModal = edgeRight != null;
 
     const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
         if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -703,48 +722,63 @@ export function QuickCashToolsFabs({
         onOpen(tab);
     };
 
-    return createPortal(
-        <div
-            ref={dockRef}
-            data-component="QuickCashToolsFabs"
-            data-dragging={dragging ? 'true' : undefined}
-            className={cn(className, 'pointer-events-none fixed right-0 z-[208]')}
-            style={{
-                bottom:
-                    bottom == null
-                        ? 'var(--quick-fab-lift, env(safe-area-inset-bottom, 0px))'
-                        : `${bottom}px`,
-            }}
-        >
-            <div
-                data-element="dock"
-                role="group"
-                aria-label="Herramientas de recuento"
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={endDrag}
-                onPointerCancel={endDrag}
-                className="pointer-events-auto flex cursor-grab touch-none select-none flex-col items-center gap-1 rounded-l-ds-superficie bg-ds-superficie p-1 shadow-ds-pagina active:cursor-grabbing"
-            >
-                {calculator ? (
-                    <ToolFab
-                        src={CALCULATOR_ICON}
-                        ariaLabel={openTab === 'calculator' ? 'Cerrar calculadora' : 'Abrir calculadora'}
-                        pressed={openTab === 'calculator'}
-                        onClick={() => handleOpen('calculator')}
-                    />
-                ) : null}
-                {breakdown ? (
-                    <ToolFab
-                        src={BREAKDOWN_ICON}
-                        ariaLabel={openTab === 'breakdown' ? 'Cerrar desglose' : 'Abrir desglose'}
-                        pressed={openTab === 'breakdown'}
-                        onClick={() => handleOpen('breakdown')}
-                    />
-                ) : null}
-            </div>
-        </div>,
-        document.body,
+    return (
+        <>
+            <span
+                ref={anchorRef}
+                data-element="quick-fab-anchor"
+                aria-hidden
+                className="pointer-events-none absolute left-0 top-0 h-0 w-0 overflow-hidden"
+            />
+            {createPortal(
+                <div
+                    ref={dockRef}
+                    data-component="QuickCashToolsFabs"
+                    data-overlay={onModal ? 'modal' : undefined}
+                    data-dragging={dragging ? 'true' : undefined}
+                    className={cn(className, 'pointer-events-none fixed right-0 z-[208]')}
+                    style={{
+                        right: onModal ? `${edgeRight}px` : undefined,
+                        visibility: placed ? undefined : 'hidden',
+                        bottom:
+                            bottom == null
+                                ? 'var(--quick-fab-lift, env(safe-area-inset-bottom, 0px))'
+                                : `${bottom}px`,
+                    }}
+                >
+                    <div
+                        data-element="dock"
+                        role="group"
+                        aria-label="Herramientas de recuento"
+                        onPointerDown={onPointerDown}
+                        onPointerMove={onPointerMove}
+                        onPointerUp={endDrag}
+                        onPointerCancel={endDrag}
+                        className="pointer-events-auto flex cursor-grab touch-none select-none flex-col items-center gap-1 rounded-l-ds-superficie bg-ds-superficie p-1 shadow-ds-pagina active:cursor-grabbing"
+                    >
+                        {calculator ? (
+                            <ToolFab
+                                src={CALCULATOR_ICON}
+                                ariaLabel={openTab === 'calculator' ? 'Cerrar calculadora' : 'Abrir calculadora'}
+                                pressed={openTab === 'calculator'}
+                                framed={onModal}
+                                onClick={() => handleOpen('calculator')}
+                            />
+                        ) : null}
+                        {breakdown ? (
+                            <ToolFab
+                                src={BREAKDOWN_ICON}
+                                ariaLabel={openTab === 'breakdown' ? 'Cerrar desglose' : 'Abrir desglose'}
+                                pressed={openTab === 'breakdown'}
+                                framed={onModal}
+                                onClick={() => handleOpen('breakdown')}
+                            />
+                        ) : null}
+                    </div>
+                </div>,
+                document.body,
+            )}
+        </>
     );
 }
 

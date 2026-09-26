@@ -233,8 +233,9 @@
  * Calculadora/desglose: panel inferior simultáneo. El modal padre no se
  * subordina (no es una capa Modal). El overlay cede el hueco y alinea el
  * panel al canto de la herramienta. Los iconos viven en un dock vertical
- * pegado al canto derecho, fuera del modal y arrastrable por el usuario.
- * Por defecto sobre la TabBar; el overlay reserva el ancho del dock.
+ * pegado al canto derecho del modal que lo contiene, fuera de su flujo.
+ * No reserva ancho: el panel no cambia de medida por estos iconos.
+ * Por defecto sobre la TabBar.
  */
 @media (max-width: 1023px) {
   html:has([data-component='TabBar']:not([data-hidden='true'])) {

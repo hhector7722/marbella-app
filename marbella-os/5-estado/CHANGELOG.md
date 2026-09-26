@@ -15,7 +15,7 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-26
 
-- **El arqueo no ensancha el modal al desplazar.** Los dos accesos flotantes del arqueo de caja se superponen al canto derecho del panel: no reservan ancho y siguen a la vista al hacer scroll. Cada uno lleva contorno blanco. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+- **La calculadora y el desglose no cambian el ancho de ningún modal.** El dock queda fuera del flujo y, dentro de un modal, se superpone a su canto derecho. El scroll vertical no lo ensancha ni lo desplaza. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **La merma de receta expande hasta materia prima.** `processRecipeWaste` lee `recipe_stock_requirements_v2_rows` y escribe con `record_waste_movements`. Si la expansión no está bien, o la receta válida no tiene materias primas, no escribe. La merma manual de ingredientes no cambia. No hay stock de elaboraciones intermedias. Consumo personal sigue pendiente. [D32](DEUDA.md).
 

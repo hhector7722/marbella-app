@@ -641,7 +641,7 @@ export function Modal({
                 paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
                 paddingBottom: 'calc(max(1rem, env(safe-area-inset-bottom, 0px)) + var(--quick-tool-inset, 0px))',
                 paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-                paddingRight: 'calc(max(1rem, env(safe-area-inset-right, 0px)) + var(--quick-fab-dock, 0px))',
+                paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
             }}
             onClick={containModalEvent}
             onPointerDown={containModalEvent}
