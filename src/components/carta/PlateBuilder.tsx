@@ -98,7 +98,14 @@ export function PlateBuilder({
         }
       `}</style>
 
-      <div className="relative aspect-[1609/1464] w-full select-none">
+      <div
+        className="relative aspect-[1609/1464] w-full select-none"
+        style={
+          embedded
+            ? { transform: 'scale(0.85)', transformOrigin: '50% 50%' }
+            : undefined
+        }
+      >
         <Image
           src={`${PLATE_V15_BASE_PATH}/base/plate.png`}
           alt=""
@@ -171,7 +178,15 @@ export function PlateBuilder({
                 )}
                 style={{ left: `${pos.left}%`, top: `${pos.top}%`, opacity }}
               >
-                {label}
+                <span
+                  style={{
+                    display: 'inline-block',
+                    transform: embedded ? 'scale(1.1764705882)' : undefined,
+                    transformOrigin: 'center center',
+                  }}
+                >
+                  {label}
+                </span>
               </span>
             )
           }
@@ -185,7 +200,14 @@ export function PlateBuilder({
               className="absolute z-30 flex min-h-12 min-w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-0 bg-transparent p-1 touch-manipulation outline-none transition-colors active:bg-black/5 focus-visible:ring-2 focus-visible:ring-[#36606F]/30"
               style={{ left: `${pos.left}%`, top: `${pos.top}%` }}
             >
-              <span className={labelClass} style={{ opacity }}>
+              <span
+                className={labelClass}
+                style={{
+                  opacity,
+                  transform: embedded ? 'scale(1.1764705882)' : undefined,
+                  transformOrigin: 'center center',
+                }}
+              >
                 {label}
               </span>
             </button>
