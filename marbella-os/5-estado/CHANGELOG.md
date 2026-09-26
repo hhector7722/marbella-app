@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-09-26
+
+- **La ficha puede componer elaboraciones.** Ingredientes y elaboraciones conviven como componentes. La relación se guarda en `recipe_subrecipes`; el ciclo lo rechaza la base. El coste de la receta completa usa `get_recipe_cost_v2` cuando hay subrecetas. La media ración con subrecetas no calcula coste ni margen. Ventas, TPV y stock siguen sin expandirlas. `recipe_combos` sigue siendo el menú. [D32](DEUDA.md).
+
 ## 2026-09-25
 
 - **La ficha distingue receta vendible y elaboración interna.** El catálogo y la creación usan `is_sellable`, nunca el precio. Una elaboración interna exige rendimiento, no muestra precio ni food cost, y su ficha lee `get_recipe_cost_v2`. La ficha vendible sigue en `get_recipe_cost`. El panel de coste de elaboración sigue oculto en la vista restringida, con la misma puerta que el panel de precio: no se enseña información económica nueva al personal. «Sin categoría menú» lista solo recetas vendibles sin categoría. Todavía no se puede meter una receta dentro de otra, y las ventas no expanden elaboraciones. [D32](DEUDA.md).

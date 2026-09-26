@@ -51,6 +51,17 @@ import {
     isInternalRecipe,
     recipeCostV2StatusLabel,
 } from '@/lib/recipe-elaboration';
+import {
+    canAddRecipeComponent,
+    compatibleComponentUnits,
+    directIngredientLineCost,
+    directSubrecipeLineCost,
+    ingredientRowCostSource,
+    isValidComponentQuantity,
+    sheetCostSource,
+    subrecipeWriteErrorMessage,
+    type RecipeCostComponentNode,
+} from '@/lib/recipe-components';
 
 interface ViewState {
     location: 'pvp' | 'pavello';
@@ -97,6 +108,25 @@ type RecipeCostV2View = {
     ok?: boolean;
     total_cost_eur?: number | null;
     errors?: { status?: string }[] | null;
+    components?: RecipeCostComponentNode[] | null;
+};
+
+type RecipeComponentChild = {
+    id: string;
+    name: string;
+    photo_url: string | null;
+    is_sellable: boolean;
+    yield_quantity: number | null;
+    yield_unit: string | null;
+};
+
+type RecipeSubrecipeLine = {
+    id: string;
+    parent_recipe_id: string;
+    child_recipe_id: string;
+    quantity: number;
+    unit: string;
+    child: RecipeComponentChild;
 };
 
 interface RecipeListItem {
@@ -138,6 +168,17 @@ function RecipeDetailContent() {
 
     const [backendCost, setBackendCost] = useState<{ total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] } | null>(null);
     const [elaborationCost, setElaborationCost] = useState<RecipeCostV2View | null>(null);
+    const [subrecipes, setSubrecipes] = useState<RecipeSubrecipeLine[]>([]);
+    const [subrecipesLoaded, setSubrecipesLoaded] = useState(false);
+    const [componentKind, setComponentKind] = useState<'ingredient' | 'elaboration'>('ingredient');
+    const [recipeCandidates, setRecipeCandidates] = useState<RecipeComponentChild[]>([]);
+    const [deleteSubrecipeId, setDeleteSubrecipeId] = useState<string | null>(null);
+    const [deletingSubrecipe, setDeletingSubrecipe] = useState(false);
+    const [subrecipeEpoch, setSubrecipeEpoch] = useState(0);
+    const subrecipesRef = useRef<RecipeSubrecipeLine[]>([]);
+    const recipeRef = useRef<RecipeRow | null>(null);
+    const viewSizeRef = useRef<'full' | 'half'>('full');
+    const subrecipesOwnerRef = useRef<string | null>(null);
     const [simulatedPrice, setSimulatedPrice] = useState(0);
     const [savingPrice, setSavingPrice] = useState(false);
     const [applyingSimulation, setApplyingSimulation] = useState(false);
@@ -240,20 +281,74 @@ function RecipeDetailContent() {
         if (data) setAvailableIngredients(data);
     };
 
-    const fetchBackendCost = async (internal = recipe?.is_sellable === false) => {
-        if (internal) {
-            const { data, error } = await supabase.rpc('get_recipe_cost_v2', { p_recipe_id: recipeId });
-            if (error || !data || typeof data !== 'object' || Array.isArray(data)) {
-                setElaborationCost({ ok: false, total_cost_eur: null, errors: [{ status: 'RECIPE_NOT_FOUND' }] });
-                return;
-            }
-            setElaborationCost(data as RecipeCostV2View);
-            return;
-        }
-        const useHalf = view.size === 'half';
-        const { data, error } = await supabase.rpc('get_recipe_cost', { p_recipe_id: recipeId, p_use_half_ration: useHalf });
+    recipeRef.current = recipe;
+    viewSizeRef.current = view.size;
+
+    const rememberSubrecipes = (lines: RecipeSubrecipeLine[]) => {
+        subrecipesRef.current = lines;
+        setSubrecipes(lines);
+    };
+
+    const fetchLegacyCost = async (portion: 'full' | 'half') => {
+        const { data, error } = await supabase.rpc('get_recipe_cost', {
+            p_recipe_id: recipeId,
+            p_use_half_ration: portion === 'half',
+        });
         if (!error && data) setBackendCost(data as { total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] });
         else setBackendCost(null);
+    };
+
+    const fetchRecursiveCost = async () => {
+        const { data, error } = await supabase.rpc('get_recipe_cost_v2', { p_recipe_id: recipeId });
+        if (error || !data || typeof data !== 'object' || Array.isArray(data)) {
+            setElaborationCost({ ok: false, total_cost_eur: null, errors: [{ status: 'RECIPE_NOT_FOUND' }], components: [] });
+            return;
+        }
+        setElaborationCost(data as RecipeCostV2View);
+    };
+
+    const refreshSheetCost = async () => {
+        const current = recipeRef.current;
+        const source = sheetCostSource({
+            isSellable: current ? current.is_sellable !== false : true,
+            hasSubrecipes: subrecipesRef.current.length > 0,
+            portion: viewSizeRef.current,
+        });
+        if (source === 'legacy') {
+            await fetchLegacyCost(viewSizeRef.current);
+            return;
+        }
+        if (source === 'recursive') {
+            await fetchRecursiveCost();
+        }
+    };
+
+    const fetchRecipeSubrecipes = async (): Promise<RecipeSubrecipeLine[]> => {
+        const { data, error } = await supabase
+            .from('recipe_subrecipes')
+            .select('id, parent_recipe_id, child_recipe_id, quantity, unit, child:recipes!recipe_subrecipes_child_recipe_id_fkey (id, name, photo_url, is_sellable, yield_quantity, yield_unit)')
+            .eq('parent_recipe_id', recipeId);
+        if (error) {
+            toast.error('No se pudieron cargar las elaboraciones');
+            return subrecipesRef.current;
+        }
+        const lines = (data ?? []).flatMap((row) => {
+            const embedded = row.child;
+            const child = Array.isArray(embedded) ? embedded[0] : embedded;
+            if (!child) return [];
+            return [{
+                id: row.id,
+                parent_recipe_id: row.parent_recipe_id,
+                child_recipe_id: row.child_recipe_id,
+                quantity: Number(row.quantity),
+                unit: row.unit,
+                child,
+            }];
+        }).sort((a, b) => a.child.name.localeCompare(b.child.name, 'es'));
+        rememberSubrecipes(lines);
+        subrecipesOwnerRef.current = recipeId;
+        setSubrecipesLoaded(true);
+        return lines;
     };
 
     const fetchRecipe = async () => {
@@ -265,7 +360,14 @@ function RecipeDetailContent() {
                 .single();
 
             if (error) throw error;
+            recipeRef.current = data;
             setRecipe(data);
+            if (subrecipesOwnerRef.current !== recipeId) {
+                subrecipesRef.current = [];
+                setSubrecipes([]);
+                setSubrecipesLoaded(false);
+            }
+            await fetchRecipeSubrecipes();
 
             const sortedIngs = (data.recipe_ingredients || []).sort((a: RecipeIngredientRow, b: RecipeIngredientRow) =>
                 (a.ingredients?.name || '').localeCompare(b.ingredients?.name || '')
@@ -364,9 +466,9 @@ function RecipeDetailContent() {
     }
 
     useEffect(() => {
-        if (!recipeId || !recipe) return;
-        void fetchBackendCost(recipe.is_sellable === false);
-    }, [recipeId, view.size, recipe?.is_sellable]);
+        if (!recipeId || !recipe || !subrecipesLoaded) return;
+        void refreshSheetCost();
+    }, [recipeId, view.size, recipe?.is_sellable, subrecipes.length, subrecipesLoaded]);
 
     // --- 4. LÓGICA DE NEGOCIO ---
 
@@ -392,7 +494,27 @@ function RecipeDetailContent() {
     };
 
     const totalCostClient = ingredients.reduce((sum, ing) => sum + calculateIngredientCost(ing), 0);
-    const totalCost = backendCost != null ? backendCost.total_cost : totalCostClient;
+    const sheetCostMode = subrecipesLoaded && recipe
+        ? sheetCostSource({
+            isSellable: recipe.is_sellable !== false,
+            hasSubrecipes: subrecipes.length > 0,
+            portion: view.size,
+        })
+        : null;
+    const sheetCostEur: number | null = (() => {
+        if (sheetCostMode === 'legacy') return backendCost != null ? backendCost.total_cost : totalCostClient;
+        if (
+            sheetCostMode === 'recursive'
+            && elaborationCost?.ok === true
+            && typeof elaborationCost.total_cost_eur === 'number'
+            && Number.isFinite(elaborationCost.total_cost_eur)
+        ) {
+            return elaborationCost.total_cost_eur;
+        }
+        return null;
+    })();
+    const sheetCostKnown = sheetCostEur != null;
+    const totalCost = sheetCostEur ?? 0;
 
     const recipeIngredientCostIssueCount = useMemo(() => {
         if (isRestricted) return 0;
@@ -517,7 +639,7 @@ function RecipeDetailContent() {
         const column = view.size === 'full' ? 'quantity_gross' : 'quantity_half';
         await supabase.from('recipe_ingredients').update({ [column]: newQuantity }).eq('id', ingredientId);
         setIngredients(ingredients.map(ing => ing.id === ingredientId ? { ...ing, [column]: newQuantity } : ing));
-        fetchBackendCost();
+        void refreshSheetCost();
     };
 
     const handleCategoryUpdate = async (menuCat: MenuCategoryRow) => {
@@ -573,7 +695,95 @@ function RecipeDetailContent() {
     const openAddIngredientModal = () => {
         setForceAddIngredientUnit(false);
         setAddIngredientUnit('kg');
+        setComponentKind('ingredient');
+        setSearchTerm('');
         setShowIngredientModal(true);
+    };
+
+    const loadRecipeCandidates = async () => {
+        const { data, error } = await supabase
+            .from('recipes')
+            .select('id, name, photo_url, is_sellable, yield_quantity, yield_unit')
+            .neq('id', recipeId)
+            .order('name');
+        if (error) {
+            toast.error('No se pudieron buscar recetas');
+            return;
+        }
+        setRecipeCandidates(data ?? []);
+    };
+
+    const handleAddSubrecipe = async (child: RecipeComponentChild) => {
+        if (!canAddRecipeComponent({ yieldQuantity: child.yield_quantity, yieldUnit: child.yield_unit }) || !child.yield_unit) return;
+        const { error } = await supabase.from('recipe_subrecipes').insert({
+            parent_recipe_id: recipeId,
+            child_recipe_id: child.id,
+            quantity: 1,
+            unit: child.yield_unit,
+        });
+        if (error) {
+            toast.error(subrecipeWriteErrorMessage(error, 'add'));
+            return;
+        }
+        toast.success('Elaboración añadida');
+        await fetchRecipeSubrecipes();
+        await refreshSheetCost();
+        closeAddIngredientModal();
+        setComponentKind('ingredient');
+    };
+
+    const handleSubrecipeQuantityChange = async (line: RecipeSubrecipeLine, quantity: number) => {
+        if (!isValidComponentQuantity(quantity)) {
+            toast.error('La cantidad tiene que ser mayor que cero');
+            setSubrecipeEpoch((epoch) => epoch + 1);
+            return;
+        }
+        const previous = subrecipesRef.current;
+        rememberSubrecipes(previous.map((row) => (row.id === line.id ? { ...row, quantity } : row)));
+        const { error } = await supabase.from('recipe_subrecipes').update({ quantity }).eq('id', line.id);
+        if (error) {
+            toast.error(subrecipeWriteErrorMessage(error, 'save'));
+            rememberSubrecipes(previous);
+            setSubrecipeEpoch((epoch) => epoch + 1);
+            return;
+        }
+        await refreshSheetCost();
+    };
+
+    const handleSubrecipeUnitChange = async (line: RecipeSubrecipeLine, unit: string) => {
+        const allowed = compatibleComponentUnits(line.child.yield_unit);
+        if (!allowed.includes(unit)) {
+            toast.error('Esa unidad no convierte con el rendimiento');
+            setSubrecipeEpoch((epoch) => epoch + 1);
+            return;
+        }
+        const previous = subrecipesRef.current;
+        rememberSubrecipes(previous.map((row) => (row.id === line.id ? { ...row, unit } : row)));
+        const { error } = await supabase.from('recipe_subrecipes').update({ unit }).eq('id', line.id);
+        if (error) {
+            toast.error(subrecipeWriteErrorMessage(error, 'save'));
+            rememberSubrecipes(previous);
+            setSubrecipeEpoch((epoch) => epoch + 1);
+            return;
+        }
+        await refreshSheetCost();
+    };
+
+    const handleDeleteSubrecipe = async (id: string) => {
+        setDeletingSubrecipe(true);
+        try {
+            const { error } = await supabase.from('recipe_subrecipes').delete().eq('id', id);
+            if (error) {
+                toast.error(subrecipeWriteErrorMessage(error, 'save'));
+                return;
+            }
+            toast.success('Elaboración quitada');
+            setDeleteSubrecipeId(null);
+            await fetchRecipeSubrecipes();
+            await refreshSheetCost();
+        } finally {
+            setDeletingSubrecipe(false);
+        }
     };
 
     const handleAddIngredient = async (ingredientId: string, unit: string, ingredientName?: string) => {
@@ -586,7 +796,7 @@ function RecipeDetailContent() {
         });
         trackRecipeAddIngredient(namedEntitySummary(ingredientName ?? ingredientId));
         await fetchRecipe();
-        fetchBackendCost();
+        void refreshSheetCost();
         closeAddIngredientModal();
     };
 
@@ -614,7 +824,7 @@ function RecipeDetailContent() {
             }
 
             toast.success('Ingrediente eliminado');
-            fetchBackendCost();
+            void refreshSheetCost();
             setDeleteIngredientId(null);
         } finally {
             setDeletingIngredient(false);
@@ -662,7 +872,9 @@ function RecipeDetailContent() {
         return { color: 'text-red-600', label: '● Crítico', bg: 'bg-red-50' };
     };
 
-    const healthIndicator = getHealthIndicator(foodCost);
+    const healthIndicator = sheetCostKnown
+        ? getHealthIndicator(foodCost)
+        : { color: 'text-gray-400', label: '', bg: '' };
     const simulatedHealthIndicator = getHealthIndicator(simulatedFoodCost);
 
     const themeColors = view.location === 'pvp'
@@ -671,13 +883,17 @@ function RecipeDetailContent() {
 
     const filteredIngredients = availableIngredients.filter(ing => ing.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const QuantityInput = ({ initialValue, onSave }: { initialValue: number; onSave: (val: number) => void }) => {
+    const QuantityInput = ({ initialValue, onSave, positiveOnly = false, onReject }: { initialValue: number; onSave: (val: number) => void; positiveOnly?: boolean; onReject?: () => void }) => {
         const [localValue, setLocalValue] = useState<string>(initialValue ? initialValue.toString() : '');
         useEffect(() => { setLocalValue(initialValue ? initialValue.toString() : ''); }, [initialValue]);
         const handleCommit = () => {
             const parsed = parseFloat(localValue.replace(',', '.'));
-            if (!isNaN(parsed) && parsed >= 0) onSave(parsed);
-            else setLocalValue(initialValue.toString());
+            const accepted = Number.isFinite(parsed) && (positiveOnly ? parsed > 0 : parsed >= 0);
+            if (accepted) onSave(parsed);
+            else {
+                setLocalValue(initialValue.toString());
+                onReject?.();
+            }
         };
         return <input type="text" inputMode="decimal" value={localValue} onChange={(e) => setLocalValue(e.target.value)} onBlur={handleCommit} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} className="w-10 max-w-full px-0.5 py-0.5 border rounded text-center text-[10px] font-bold tabular-nums" />;
     };
@@ -792,7 +1008,7 @@ function RecipeDetailContent() {
                                         imageSrc={recipe.photo_url}
                                         imageAlt={recipe.name}
                                         price={internalRecipe ? null : recipe.sale_price}
-                                        priceClassName={!isRestricted && !internalRecipe ? healthIndicator.color : undefined}
+                                        priceClassName={!isRestricted && !internalRecipe && sheetCostKnown ? healthIndicator.color : undefined}
                                     />
                                 </button>
                             ) : (
@@ -800,7 +1016,7 @@ function RecipeDetailContent() {
                                     imageAlt={recipe.name}
                                     fallback={<Camera className="h-8 w-8 text-gray-300 md:h-10 md:w-10" />}
                                     price={internalRecipe ? null : recipe.sale_price}
-                                    priceClassName={!isRestricted && !internalRecipe ? healthIndicator.color : undefined}
+                                    priceClassName={!isRestricted && !internalRecipe && sheetCostKnown ? healthIndicator.color : undefined}
                                 />
                             )}
                         </div>
@@ -903,6 +1119,11 @@ function RecipeDetailContent() {
                                             ]}
                                         />
                                     </div>
+                                    {sheetCostMode === 'unavailable' ? (
+                                        <p className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-[10px] font-bold leading-snug text-amber-900" role="status">
+                                            La composición de media ración no está modelada para las elaboraciones. El PVP puede editarse, pero el coste y el margen no se calculan.
+                                        </p>
+                                    ) : null}
 
                                     <div className="my-2 flex items-start gap-1 shrink-0">
                                         <div className="min-w-0 flex-1 text-center">
@@ -962,7 +1183,7 @@ function RecipeDetailContent() {
                                             <div data-element="field-label">Precio</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
-                                            <div className={cn('text-sm font-black tabular-nums', healthIndicator.color)}>{(foodCost || 0).toFixed(0)}%</div>
+                                            <div className={cn('text-sm font-black tabular-nums', healthIndicator.color)}>{sheetCostKnown ? `${(foodCost || 0).toFixed(0)}%` : '—'}</div>
                                             <div data-element="field-label">FC</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
@@ -970,7 +1191,7 @@ function RecipeDetailContent() {
                                             <div data-element="field-label">Base</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
-                                            <div className="text-sm font-black tabular-nums text-gray-800">{(margin || 0).toFixed(2)}€</div>
+                                            <div className="text-sm font-black tabular-nums text-gray-800">{sheetCostKnown ? `${(margin || 0).toFixed(2)}€` : '—'}</div>
                                             <div data-element="field-label">Margen</div>
                                         </div>
                                     </div>
@@ -980,7 +1201,7 @@ function RecipeDetailContent() {
                                             Recomendado ({activeTargetFC}%)
                                         </span>
                                         <span className="shrink-0 text-xs font-black tabular-nums text-blue-600">
-                                            {(recommendedPrice || 0).toFixed(2)}€
+                                            {sheetCostKnown ? `${(recommendedPrice || 0).toFixed(2)}€` : '—'}
                                         </span>
                                         <Button
                                             type="button"
@@ -1041,7 +1262,7 @@ function RecipeDetailContent() {
                                                         FC
                                                     </div>
                                                     <div className="text-lg font-black text-white">
-                                                        {(simulatedFoodCost || 0).toFixed(0)}%
+                                                        {sheetCostKnown ? `${(simulatedFoodCost || 0).toFixed(0)}%` : '—'}
                                                     </div>
                                                 </div>
                                                 <div>
@@ -1057,7 +1278,7 @@ function RecipeDetailContent() {
                                                         Margen
                                                     </div>
                                                     <div className="text-lg font-black text-white">
-                                                        {(simulatedMargin || 0).toFixed(2)}€
+                                                        {sheetCostKnown ? `${(simulatedMargin || 0).toFixed(2)}€` : '—'}
                                                     </div>
                                                 </div>
                                             </div>
@@ -1093,7 +1314,7 @@ function RecipeDetailContent() {
                                 </colgroup>
                                 <thead>
                                     <tr>
-                                        <th scope="col">Ingredientes</th>
+                                        <th scope="col">Componentes</th>
                                         <th className="text-center">Cant</th>
                                         <th className="text-center">Ud</th>
                                         {!isRestricted && <th className="text-right">Coste</th>}
@@ -1111,6 +1332,10 @@ function RecipeDetailContent() {
                                             ingredientPackBridge(ing)
                                         );
                                         const costDisplayOk = costAnalysis.status === 'ok';
+                                        const ingredientCostFromV2 = sheetCostMode != null && ingredientRowCostSource(sheetCostMode) === 'v2';
+                                        const v2IngredientCost = ingredientCostFromV2
+                                            ? directIngredientLineCost(elaborationCost?.components, ing.id)
+                                            : null;
                                         return (
                                             <tr key={ing.id} className="transition-colors hover:bg-gray-50/80">
                                                 <td className="py-1 pe-2">
@@ -1141,14 +1366,28 @@ function RecipeDetailContent() {
                                                     {isRestricted ? (
                                                         <span className="font-bold text-gray-400">{ing.unit}</span>
                                                     ) : (
-                                                        <select value={ing.unit || 'kg'} onChange={e => { const u = e.target.value; supabase.from('recipe_ingredients').update({ unit: u }).eq('id', ing.id).then(() => { setIngredients(prev => prev.map(i => i.id === ing.id ? { ...i, unit: u } : i)); fetchBackendCost(); }); }} className="max-w-full rounded border border-gray-100 bg-white px-0.5 py-0.5 text-[10px] font-bold outline-none focus:border-[#36606F]">
+                                                        <select value={ing.unit || 'kg'} onChange={e => { const u = e.target.value; supabase.from('recipe_ingredients').update({ unit: u }).eq('id', ing.id).then(() => { setIngredients(prev => prev.map(i => i.id === ing.id ? { ...i, unit: u } : i)); void refreshSheetCost(); }); }} className="max-w-full rounded border border-gray-100 bg-white px-0.5 py-0.5 text-[10px] font-bold outline-none focus:border-[#36606F]">
                                                             {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                                         </select>
                                                     )}
                                                 </td>
                                                 {!isRestricted && (
                                                     <td className="px-2 py-1 text-right align-middle">
-                                                        {costDisplayOk ? (
+                                                        {ingredientCostFromV2 ? (
+                                                            v2IngredientCost?.costEur != null ? (
+                                                                <span className="font-black text-gray-700">
+                                                                    {formatElaborationCostEur(v2IngredientCost.costEur)}
+                                                                </span>
+                                                            ) : (
+                                                                <span
+                                                                    className="inline-flex items-center justify-end gap-0.5 font-black text-amber-700"
+                                                                    title={v2IngredientCost?.status ? recipeCostV2StatusLabel(v2IngredientCost.status) : undefined}
+                                                                >
+                                                                    {v2IngredientCost?.status ? <AlertCircle className="h-3 w-3 shrink-0 opacity-80" aria-hidden /> : null}
+                                                                    —
+                                                                </span>
+                                                            )
+                                                        ) : costDisplayOk ? (
                                                             <span className="font-black text-gray-700">
                                                                 {formatRecipeIngredientLineCostEur(costAnalysis.eur)}€
                                                             </span>
@@ -1175,6 +1414,85 @@ function RecipeDetailContent() {
                                             </tr>
                                         );
                                     })}
+                                    {subrecipes.length > 0 ? (
+                                        <tr>
+                                            <td colSpan={isRestricted ? 4 : 5} className="px-2 pt-2 text-[9px] font-bold uppercase tracking-wide text-zinc-400">
+                                                Elaboraciones
+                                            </td>
+                                        </tr>
+                                    ) : null}
+                                    {subrecipes.map((line) => {
+                                        const fullPortion = internalRecipe || view.size === 'full';
+                                        const lineCost = fullPortion && sheetCostMode === 'recursive'
+                                            ? directSubrecipeLineCost(elaborationCost?.components, line.id)
+                                            : { status: '', costEur: null };
+                                        const unitOptions = compatibleComponentUnits(line.child.yield_unit);
+                                        const unitChoices = unitOptions.includes(line.unit) ? unitOptions : [line.unit, ...unitOptions];
+                                        const yieldText = line.child.yield_quantity != null && line.child.yield_unit
+                                            ? `${formatYieldQuantity(Number(line.child.yield_quantity))} ${line.child.yield_unit}`
+                                            : null;
+                                        return (
+                                            <tr key={`${line.id}-${subrecipeEpoch}`} className="transition-colors hover:bg-gray-50/80">
+                                                <td className="py-1 pe-2">
+                                                    <div className="text-[10px] font-bold leading-tight text-gray-800">{line.child.name}</div>
+                                                    <div className="text-[8px] font-semibold uppercase tracking-wide text-zinc-400">
+                                                        {isInternalRecipe(line.child.is_sellable) ? 'Elaboración' : 'Vendible'}
+                                                        {yieldText ? ` · ${yieldText}` : ''}
+                                                        {!fullPortion ? ' · receta completa' : ''}
+                                                    </div>
+                                                </td>
+                                                <td className="px-0.5 py-1 text-center align-middle">
+                                                    {isRestricted ? (
+                                                        <span className="font-bold text-gray-700">{line.quantity}</span>
+                                                    ) : (
+                                                        <QuantityInput
+                                                            initialValue={line.quantity}
+                                                            positiveOnly
+                                                            onReject={() => toast.error('La cantidad tiene que ser mayor que cero')}
+                                                            onSave={(val) => { void handleSubrecipeQuantityChange(line, val); }}
+                                                        />
+                                                    )}
+                                                </td>
+                                                <td className="px-0.5 py-1 text-center align-middle">
+                                                    {isRestricted ? (
+                                                        <span className="font-bold text-gray-400">{line.unit}</span>
+                                                    ) : (
+                                                        <select
+                                                            value={line.unit}
+                                                            onChange={(e) => { void handleSubrecipeUnitChange(line, e.target.value); }}
+                                                            className="max-w-full rounded border border-gray-100 bg-white px-0.5 py-0.5 text-[10px] font-bold outline-none focus:border-[#36606F]"
+                                                        >
+                                                            {unitChoices.map((unit) => (
+                                                                <option key={unit} value={unit}>{unit === 'l' ? 'L' : unit}</option>
+                                                            ))}
+                                                        </select>
+                                                    )}
+                                                </td>
+                                                {!isRestricted && (
+                                                    <td className="px-2 py-1 text-right align-middle">
+                                                        {lineCost.costEur != null ? (
+                                                            <span className="font-black text-gray-700">{formatElaborationCostEur(lineCost.costEur)}</span>
+                                                        ) : (
+                                                            <span
+                                                                className="inline-flex items-center justify-end gap-0.5 font-black text-amber-700"
+                                                                title={lineCost.status ? recipeCostV2StatusLabel(lineCost.status) : undefined}
+                                                            >
+                                                                {lineCost.status ? <AlertCircle className="h-3 w-3 shrink-0 opacity-80" aria-hidden /> : null}
+                                                                —
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                )}
+                                                <td className="py-1 text-center align-middle">
+                                                    {!isRestricted && (
+                                                        <button type="button" onClick={() => setDeleteSubrecipeId(line.id)} className="rounded p-0.5 text-gray-300 transition-colors hover:bg-rose-50 hover:text-rose-500" aria-label={`Quitar ${line.child.name}`}>
+                                                            <Trash2 size={12} strokeWidth={3} />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                     {!isRestricted && (
                                         <>
                                         <tr
@@ -1188,7 +1506,7 @@ function RecipeDetailContent() {
                                             }}
                                             tabIndex={0}
                                             role="button"
-                                            aria-label="Incluir ingrediente"
+                                            aria-label="Añadir componente"
                                         >
                                             <td className="py-1.5">
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold italic tracking-normal text-zinc-400">
@@ -1212,7 +1530,11 @@ function RecipeDetailContent() {
                                                     ) : null}
                                                 </span>
                                             </td>
-                                            <td className="px-2 py-1.5 text-right text-[#5B8FB9]">{totalCost.toFixed(2)}€</td>
+                                            <td className="px-2 py-1.5 text-right text-[#5B8FB9]">
+                                                {sheetCostKnown
+                                                    ? (sheetCostMode === 'legacy' ? `${totalCost.toFixed(2)}€` : formatElaborationCostEur(sheetCostEur))
+                                                    : '—'}
+                                            </td>
                                             <td></td>
                                         </tr>
                                         </>
@@ -1450,10 +1772,28 @@ function RecipeDetailContent() {
                 layer="base"
                 instance="recipe-add-ingredient"
                 usageId="recipe-add-ingredient"
-                usageLabel="Añadir ingrediente receta"
-                title="Añadir ingrediente"
+                usageLabel="Añadir componente receta"
+                title="Añadir componente"
             >
-                <div className="flex flex-col">
+                <div className="flex flex-col gap-3">
+                    <PetroleumSegmented
+                        instance="recipe-add-component-kind"
+                        density="comfortable"
+                        aria-label="Tipo de componente"
+                        value={componentKind}
+                        onChange={(kind) => {
+                            const next = kind as 'ingredient' | 'elaboration';
+                            setComponentKind(next);
+                            setSearchTerm('');
+                            if (next === 'elaboration') void loadRecipeCandidates();
+                        }}
+                        options={[
+                            { value: 'ingredient', label: 'Ingrediente' },
+                            { value: 'elaboration', label: 'Elaboración' },
+                        ]}
+                    />
+                    {componentKind === 'ingredient' ? (
+                    <>
                     <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs font-bold text-gray-500 shrink-0">Forzar unidad:</span>
                         <select
@@ -1500,6 +1840,48 @@ function RecipeDetailContent() {
                             );
                         })}
                     </div>
+                    </>
+                    ) : (
+                    <>
+                    <SearchField
+                        instance="recipe-add-elaboration-search"
+                        placeholder="Buscar receta..."
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        autoFocus
+                    />
+                    <div className="max-h-[min(50vh,20rem)] overflow-y-auto space-y-1">
+                        {recipeCandidates
+                            .filter((candidate) => candidate.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                            .map((candidate) => {
+                                const addable = canAddRecipeComponent({
+                                    yieldQuantity: candidate.yield_quantity,
+                                    yieldUnit: candidate.yield_unit,
+                                });
+                                const yieldText = candidate.yield_quantity != null && candidate.yield_unit
+                                    ? `${formatYieldQuantity(Number(candidate.yield_quantity))} ${candidate.yield_unit}`
+                                    : 'Sin rendimiento';
+                                return (
+                                    <button
+                                        key={candidate.id}
+                                        type="button"
+                                        disabled={!addable}
+                                        onClick={() => { void handleAddSubrecipe(candidate); }}
+                                        className="flex min-h-12 w-full items-center justify-between gap-2 rounded p-2 text-left text-xs hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        <span className="min-w-0">
+                                            <span className="block truncate font-bold">{candidate.name}</span>
+                                            <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                                                {isInternalRecipe(candidate.is_sellable) ? 'Elaboración' : 'Vendible'}
+                                            </span>
+                                        </span>
+                                        <span className="shrink-0 font-mono text-[10px] text-gray-500">{addable ? yieldText : 'Sin rendimiento'}</span>
+                                    </button>
+                                );
+                            })}
+                    </div>
+                    </>
+                    )}
                 </div>
             </Modal>
             <Modal
@@ -1531,7 +1913,7 @@ function RecipeDetailContent() {
                     onSaved={() => {
                         void fetchRecipe();
                         void fetchAvailableIngredients();
-                        fetchBackendCost();
+                        void refreshSheetCost();
                     }}
                 />
             )}
@@ -1586,6 +1968,20 @@ function RecipeDetailContent() {
                 }}
             >
                 {`¿Quitar "${ingredients.find((ing) => ing.id === deleteIngredientId)?.ingredients?.name ?? 'este ingrediente'}" de la receta?`}
+            </ConfirmModal>
+            <ConfirmModal
+                open={!!deleteSubrecipeId}
+                onClose={() => { if (!deletingSubrecipe) setDeleteSubrecipeId(null); }}
+                title="Quitar elaboración"
+                confirmLabel="Quitar"
+                instance="recipe-subrecipe-delete-confirm"
+                usageLabel="Confirmar quitar elaboración de receta"
+                confirming={deletingSubrecipe}
+                onConfirm={() => {
+                    if (deleteSubrecipeId) void handleDeleteSubrecipe(deleteSubrecipeId);
+                }}
+            >
+                {`¿Quitar "${subrecipes.find((line) => line.id === deleteSubrecipeId)?.child.name ?? 'esta elaboración'}" de la receta? La elaboración no se borra.`}
             </ConfirmModal>
         </>
     );
