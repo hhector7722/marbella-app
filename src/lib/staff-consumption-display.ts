@@ -62,6 +62,36 @@ export function normalizeConsumptionRecipeName(name: string): string {
   return name.trim().toLowerCase();
 }
 
+/** Bocadillos sin opción medio (nombre normalizado). */
+const BOCADILLO_SIN_MEDIO = new Set([
+  'calamares bocadillo',
+  'hamburguesa',
+  'frankfurt',
+  'pollo bocadillo',
+  'roastbeef bocadillo',
+]);
+
+function isBocadillo(recipe: { name: string; category: string | null }): boolean {
+  const cat = recipe.category?.toLowerCase() ?? '';
+  if (cat.includes('bocadillo')) return true;
+  return recipe.name.toLowerCase().includes('bocadillo');
+}
+
+/**
+ * La media ración solo se ofrece en bocadillos directos.
+ * Si la receta contiene elaboraciones, o no sabemos si las contiene, no hay selector.
+ */
+export function requiresRacionChoice(recipe: {
+  name: string;
+  category: string | null;
+  has_subrecipes?: boolean;
+}): boolean {
+  if (recipe.has_subrecipes === true) return false;
+  if (!isBocadillo(recipe)) return false;
+  if (BOCADILLO_SIN_MEDIO.has(normalizeConsumptionRecipeName(recipe.name))) return false;
+  return true;
+}
+
 export function isDrinkConsumptionRecipe(recipe: { name: string; category: string | null }): boolean {
   const name = normalizeConsumptionRecipeName(recipe.name);
   const cat = recipe.category?.toLowerCase() ?? '';

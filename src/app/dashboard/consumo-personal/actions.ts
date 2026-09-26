@@ -96,6 +96,7 @@ export async function seedDefaultConsumptionRecipeOrder(): Promise<
   const { data: recipes, error } = await gate.supabase
     .from('recipes')
     .select('id, name, category, photo_url')
+    .eq('is_sellable', true)
     .order('name');
 
   if (error || !recipes) {

@@ -101,17 +101,31 @@ export type ConsumptionModalRecipe = {
   photo_url: string | null;
   sort_order: number;
   usage_count: number;
+  has_subrecipes: boolean;
 };
 
 export async function getConsumptionRecipes(): Promise<ConsumptionModalRecipe[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc('get_consumption_modal_recipes');
+  const [{ data, error }, subRes] = await Promise.all([
+    supabase.rpc('get_consumption_modal_recipes'),
+    supabase.from('recipe_subrecipes').select('parent_recipe_id'),
+  ]);
+
+  const parentIds = subRes.error
+    ? null
+    : new Set((subRes.data ?? []).map((row) => row.parent_recipe_id));
+  const hasSubrecipes = (recipeId: string) => parentIds === null || parentIds.has(recipeId);
+
+  if (subRes.error) {
+    console.error('[Consumption] recipe_subrecipes failed:', subRes.error);
+  }
 
   if (error) {
     console.error('[Consumption] get_consumption_modal_recipes failed:', error);
     const { data: fallback } = await supabase
       .from('recipes')
       .select('id, name, category, photo_url')
+      .eq('is_sellable', true)
       .order('name', { ascending: true });
     return (fallback ?? []).map((r) => ({
       id: r.id,
@@ -120,6 +134,7 @@ export async function getConsumptionRecipes(): Promise<ConsumptionModalRecipe[]>
       photo_url: r.photo_url,
       sort_order: 999999,
       usage_count: 0,
+      has_subrecipes: hasSubrecipes(r.id),
     }));
   }
 
@@ -139,5 +154,6 @@ export async function getConsumptionRecipes(): Promise<ConsumptionModalRecipe[]>
     photo_url: row.photo_url ?? null,
     sort_order: Number(row.sort_order ?? 999999),
     usage_count: Number(row.usage_count ?? 0),
+    has_subrecipes: hasSubrecipes(row.id),
   }));
 }

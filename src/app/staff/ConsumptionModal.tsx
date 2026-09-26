@@ -7,7 +7,7 @@ import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { SearchField } from '@/components/ui/SearchField';
 import {
   isDrinkConsumptionRecipe,
-  normalizeConsumptionRecipeName,
+  requiresRacionChoice,
   sortConsumptionRecipesForModal,
 } from '@/lib/staff-consumption-display';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
@@ -39,34 +39,14 @@ function withTimeout<T>(promise: Promise<T>, ms: number, reason: string): Promis
   });
 }
 
-/** Bocadillos sin opción medio (nombre normalizado). */
-const BOCADILLO_SIN_MEDIO = new Set([
-  'calamares bocadillo',
-  'hamburguesa',
-  'frankfurt',
-  'pollo bocadillo',
-  'roastbeef bocadillo',
-]);
-
 type ConsumptionStep = 'drinks' | 'food';
-
-function isBocadillo(recipe: { name: string; category: string | null }): boolean {
-  const cat = recipe.category?.toLowerCase() ?? '';
-  if (cat.includes('bocadillo')) return true;
-  return recipe.name.toLowerCase().includes('bocadillo');
-}
-
-function requiresRacionChoice(recipe: { name: string; category: string | null }): boolean {
-  if (!isBocadillo(recipe)) return false;
-  if (BOCADILLO_SIN_MEDIO.has(normalizeConsumptionRecipeName(recipe.name))) return false;
-  return true;
-}
 
 type Recipe = {
   id: string;
   name: string;
   photo_url: string | null;
   category: string | null;
+  has_subrecipes: boolean;
 };
 type CartItem = { recipe: Recipe; quantity: number; is_half: boolean };
 

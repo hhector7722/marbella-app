@@ -15,11 +15,13 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-26
 
+- **El consumo personal de ración completa expande hasta materia prima.** `process_staff_consumption` usa `recipe_stock_requirements_v2_rows` y sigue escribiendo `WASTE` con referencia `STAFF-*`. La media ración directa conserva `quantity_half` y la convierte a la unidad base. La media ración con subrecetas no se escribe. Una elaboración interna no es un producto de consumo. El ranking sigue pendiente. [D32](DEUDA.md).
+
 - **La calculadora y el desglose no cambian el ancho de ningún modal.** El dock queda fuera del flujo y, dentro de un modal, se superpone a su canto derecho. El scroll vertical no lo ensancha ni lo desplaza. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
-- **La merma de receta expande hasta materia prima.** `processRecipeWaste` lee `recipe_stock_requirements_v2_rows` y escribe con `record_waste_movements`. Si la expansión no está bien, o la receta válida no tiene materias primas, no escribe. La merma manual de ingredientes no cambia. No hay stock de elaboraciones intermedias. Consumo personal sigue pendiente. [D32](DEUDA.md).
+- **La merma de receta expande hasta materia prima.** `processRecipeWaste` lee `recipe_stock_requirements_v2_rows` y escribe con `record_waste_movements`. Si la expansión no está bien, o la receta válida no tiene materias primas, no escribe. La merma manual de ingredientes no cambia. No hay stock de elaboraciones intermedias. [D32](DEUDA.md).
 
-- **La venta TPV descuenta la expansión recursiva.** `process_ticket_stock_deduction` agrupa las líneas por receta, expande con `recipe_stock_requirements_v2_rows` y escribe un SALE por ingrediente físico. Si una receta con multiplicador neto positivo no está `ok`, no escribe nada del ticket. Una expansión válida y vacía no bloquea. Un ticket sin líneas persistidas no se cierra. Si hay líneas y el resultado es cero materias primas, la corrida queda en `private.ticket_stock_deduction_runs` con recuento cero; uno antiguo que ya tiene SALE y no está en esa tabla no se reprocesa ni se rellena. Consumo personal sigue sin usarla. [D32](DEUDA.md).
+- **La venta TPV descuenta la expansión recursiva.** `process_ticket_stock_deduction` agrupa las líneas por receta, expande con `recipe_stock_requirements_v2_rows` y escribe un SALE por ingrediente físico. Si una receta con multiplicador neto positivo no está `ok`, no escribe nada del ticket. Una expansión válida y vacía no bloquea. Un ticket sin líneas persistidas no se cierra. Si hay líneas y el resultado es cero materias primas, la corrida queda en `private.ticket_stock_deduction_runs` con recuento cero; uno antiguo que ya tiene SALE y no está en esa tabla no se reprocesa ni se rellena. [D32](DEUDA.md).
 
 - **La expansión de stock se puede leer en filas.** `recipe_stock_requirements_v2_rows` llama una vez a `get_recipe_stock_requirements_v2` y aplana el JSON. No recorre la receta. Si `ok` es false, las cantidades siguen sin ser seguras para escribir. [D32](DEUDA.md).
 
