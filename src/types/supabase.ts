@@ -6009,6 +6009,21 @@ export type Database = {
         Args: { p_recipe_id: string; p_recipe_multiplier?: number }
         Returns: Json
       }
+      recipe_stock_requirements_v2_rows: {
+        Args: { p_recipe_id: string; p_recipe_multiplier?: number }
+        Returns: {
+          contributions: Json | null
+          errors: Json | null
+          ingredient_count: number
+          ingredient_id: string | null
+          ingredient_name: string | null
+          ok: boolean
+          quantity_base: number | null
+          recipe_id: string
+          recipe_multiplier: number
+          unit_base: string | null
+        }[]
+      }
       get_staff_consumption_day_detail: {
         Args: { p_date: string; p_user_id?: string }
         Returns: Json
