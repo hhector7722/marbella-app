@@ -15,7 +15,9 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-26
 
-- **La expansión de stock se puede leer en filas.** `recipe_stock_requirements_v2_rows` llama una vez a `get_recipe_stock_requirements_v2` y aplana el JSON. No recorre la receta. Si `ok` es false, las cantidades siguen sin ser seguras para escribir. Ventas, mermas y consumo personal todavía no la usan. [D32](DEUDA.md).
+- **La venta TPV descuenta la expansión recursiva.** `process_ticket_stock_deduction` agrupa las líneas por receta, expande con `recipe_stock_requirements_v2_rows` y escribe un SALE por ingrediente físico. Si una receta con multiplicador neto positivo no está `ok`, no escribe nada del ticket. Una expansión válida y vacía no bloquea. Un ticket sin líneas persistidas no se cierra. Si hay líneas y el resultado es cero materias primas, la corrida queda en `private.ticket_stock_deduction_runs` con recuento cero; uno antiguo que ya tiene SALE y no está en esa tabla no se reprocesa ni se rellena. Mermas y consumo personal siguen sin usarla. [D32](DEUDA.md).
+
+- **La expansión de stock se puede leer en filas.** `recipe_stock_requirements_v2_rows` llama una vez a `get_recipe_stock_requirements_v2` y aplana el JSON. No recorre la receta. Si `ok` es false, las cantidades siguen sin ser seguras para escribir. [D32](DEUDA.md).
 
 - **La carta solo proyecta recetas vendibles.** El selector y los editores usan `is_sellable`. Un mapeo TPV hacia una elaboración interna no se borra: la carta lo ignora, no usa su precio ni su foto, y el artículo vuelve a poder enlazarse a una vendible. Las fichas de cocina siguen listando ambas y marcan la interna. Recetas TPV, ventas, stock, merma e importaciones siguen pendientes. [D32](DEUDA.md).
 

@@ -231,6 +231,7 @@ export async function POST(req: Request) {
         )
         if (errLin) {
           console.error(`[BDP Webhook] Error líneas de ${v.numero_documento}:`, errLin.message)
+          continue
         }
       }
 

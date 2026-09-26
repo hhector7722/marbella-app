@@ -255,7 +255,10 @@ app.post('/api/ventas', async (req, res) => {
                     { onConflict: 'numero_documento,linea' }
                 );
 
-                if (errLin) console.error(`Error líneas de ${v.numero_documento}:`, errLin.message);
+                if (errLin) {
+                    console.error(`Error líneas de ${v.numero_documento}:`, errLin.message);
+                    continue;
+                }
             }
 
             scheduleTicketStock(v);

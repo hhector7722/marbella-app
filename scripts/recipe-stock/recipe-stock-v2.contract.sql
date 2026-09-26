@@ -346,18 +346,18 @@ BEGIN
     RAISE EXCEPTION 'caso 29-31: el motor escribió';
   END IF;
 
-  -- 32–35. Callers y motores anteriores intactos.
+  -- 32. La venta usa el wrapper de B9.1 y no lee el escandallo directo.
   SELECT pg_get_function_identity_arguments(p.oid), p.prosrc
   INTO ticket_args, ticket_src
   FROM pg_proc p
   JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.proname = 'process_ticket_stock_deduction';
-  IF ticket_src IS NOT NULL AND (
-       ticket_args IS DISTINCT FROM 'p_numero_documento text'
-       OR ticket_src ILIKE '%get_recipe_stock_requirements_v2%'
-       OR ticket_src NOT ILIKE '%recipe_ingredients%'
-     ) THEN
-    RAISE EXCEPTION 'caso 32: la venta cambió';
+  IF ticket_src IS NULL
+     OR ticket_args IS DISTINCT FROM 'p_numero_documento text'
+     OR ticket_src NOT ILIKE '%recipe_stock_requirements_v2_rows%'
+     OR ticket_src ILIKE '%recipe_ingredients%'
+     OR ticket_src ILIKE '%WITH RECURSIVE%' THEN
+    RAISE EXCEPTION 'caso 32: la venta no usa el wrapper de stock';
   END IF;
   IF EXISTS (
     SELECT 1 FROM pg_proc p
