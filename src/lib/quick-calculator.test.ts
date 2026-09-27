@@ -17,7 +17,21 @@ function shown(keys: string[]): string {
 describe('calculadora al estilo iOS', () => {
     it('no resuelve la operación hasta pulsar igual', () => {
         assert.equal(shown(['2', '+', '3']), '3');
+        assert.equal(tap(['2', '+', '3']).tape, '2+3');
+        assert.equal(tap(['2', '+', '3']).evaluated, false);
         assert.equal(shown(['2', '+', '3', '=']), '5');
+        assert.equal(tap(['2', '+', '3', '=']).tape, '2+3');
+        assert.equal(tap(['2', '+', '3', '=']).evaluated, true);
+    });
+
+    it('la operación 6×6 se ve entera y el resultado conserva de dónde sale', () => {
+        const typing = tap(['6', '×', '6']);
+        assert.equal(typing.tape, '6×6');
+        assert.equal(typing.evaluated, false);
+        const done = tap(['6', '×', '6', '=']);
+        assert.equal(done.display, '36');
+        assert.equal(done.tape, '6×6');
+        assert.equal(done.evaluated, true);
     });
 
     it('el siguiente operador resuelve la operación pendiente', () => {

@@ -15,6 +15,12 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-27
 
+- **La calculadora reordena las dos columnas de la derecha.** De arriba abajo: AC y borrar, % y ÷, × y −, + e =. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **La calculadora enseña la operación completa.** Mientras se escribe, el visor grande muestra la cuenta (`6×6`). Tras el igual, esa cuenta queda en gris y el resultado ocupa el visor grande. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **Desglose y Calculadora se centran bajo el modal.** Van juntos, no pegados a los cantos. Sobre el fondo oscuro llevan el volumen del botón de sistema: hilo, brillo y sombra. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **El desglose de borrador recuerda el último recuento.** Se guarda en el dispositivo y vuelve al abrir el panel. El total deja el pie y ocupa la celda a la derecha de la moneda de 1 céntimo. «Nuevo», botón primario, pone las cantidades a cero. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **Otros del dashboard master tiene una segunda página.** Se desliza en horizontal y los puntos indican la página. Vitrina abre `/master/carta`.
