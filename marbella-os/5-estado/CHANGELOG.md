@@ -15,7 +15,9 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-26
 
-- **El consumo personal de ración completa expande hasta materia prima.** `process_staff_consumption` usa `recipe_stock_requirements_v2_rows` y sigue escribiendo `WASTE` con referencia `STAFF-*`. La media ración directa conserva `quantity_half` y la convierte a la unidad base. La media ración con subrecetas no se escribe. Una elaboración interna no es un producto de consumo. El ranking sigue pendiente. [D32](DEUDA.md).
+- **El ranking de margen usa el coste recursivo.** `get_product_margin_ranking` llama a `get_recipe_cost_v2` una vez por receta. Si ese coste no es válido, el coste y el margen quedan en blanco: no se sustituyen por cero. Las subrecetas entran en ese coste. Recetas TPV sigue pendiente. [D32](DEUDA.md).
+
+- **El consumo personal de ración completa expande hasta materia prima.** `process_staff_consumption` usa `recipe_stock_requirements_v2_rows` y sigue escribiendo `WASTE` con referencia `STAFF-*`. La media ración directa conserva `quantity_half` y la convierte a la unidad base. La media ración con subrecetas no se escribe. Una elaboración interna no es un producto de consumo. [D32](DEUDA.md).
 
 - **La calculadora y el desglose no cambian el ancho de ningún modal.** El dock queda fuera del flujo y, dentro de un modal, se superpone a su canto derecho. El scroll vertical no lo ensancha ni lo desplaza. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 

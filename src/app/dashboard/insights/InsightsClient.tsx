@@ -54,6 +54,13 @@ import {
   type InsightsFilterMode,
   type InsightsMonth,
 } from './insights-date-utils'
+import {
+  PRODUCT_MARGIN_BAR,
+  UNKNOWN_MARGIN_LABEL,
+  productMarginBarFill,
+  productMarginPercent,
+  rankingMoneyText,
+} from './product-margin-display'
 
 type SectionKey = 'hourly' | 'weekday' | 'products' | 'financial'
 
@@ -79,9 +86,6 @@ type InsightsClientProps = {
 const PETROLEO = '#36606F'
 const LABOR_RED = '#E07070'
 const MARGIN_GREEN = '#4CAF50'
-const MARGIN_BAR_HIGH = '#2E7D32'
-const MARGIN_BAR_MID = '#66BB6A'
-const MARGIN_BAR_LOW = '#FFA726'
 const HOURLY_CHART_START = 7
 const HOURLY_CHART_END = 23
 
@@ -340,12 +344,17 @@ function formatEuroChart(value: number, digits = 2): string {
   }).format(value)
 }
 
-function formatFoodCostPct(recipeCost: number, salePrice: number): string {
+function formatFoodCostPct(recipeCost: number | null, salePrice: number): string {
+  if (recipeCost == null) return UNKNOWN_MARGIN_LABEL
   if (salePrice <= 0) return ' '
   const pct = (recipeCost / salePrice) * 100
   const displayed = formatDisplayValue(Number(pct.toFixed(1)))
   if (displayed === ' ') return ' '
   return `${displayed}%`
+}
+
+function formatOptionalEuroKpi(value: number | null): string {
+  return rankingMoneyText(value, formatEuroKpi)
 }
 
 function formatEuroKpi(value: number): string {
@@ -546,17 +555,17 @@ function ProductDetailCard({
           value={product.total_units_sold === 0 ? ' ' : String(product.total_units_sold)}
         />
         <ProductStat prominent label="P. venta" value={formatEuroKpi(product.avg_sale_price)} />
-        <ProductStat prominent label="Coste receta" value={formatEuroKpi(product.recipe_cost)} />
+        <ProductStat prominent label="Coste receta" value={formatOptionalEuroKpi(product.recipe_cost)} />
         <ProductStat
           prominent
           label="Food cost"
           value={formatFoodCostPct(product.recipe_cost, product.avg_sale_price)}
         />
-        <ProductStat prominent label="Margen / ud." value={formatEuroKpi(product.margin_per_unit)} />
+        <ProductStat prominent label="Margen / ud." value={formatOptionalEuroKpi(product.margin_per_unit)} />
         <ProductStat
           prominent
           label="Margen total"
-          value={formatEuroKpi(product.total_margin_contribution)}
+          value={formatOptionalEuroKpi(product.total_margin_contribution)}
         />
       </div>
     </div>
@@ -898,16 +907,12 @@ export default function InsightsClient({
 
   const productChartData = useMemo(() => {
     return rankedProducts.map((p) => {
-      const marginPct =
-        p.avg_sale_price > 0 ? (p.margin_per_unit / p.avg_sale_price) * 100 : 0
-      let fill = MARGIN_BAR_MID
-      if (marginPct > 60) fill = MARGIN_BAR_HIGH
-      else if (marginPct < 30) fill = MARGIN_BAR_LOW
+      const marginPct = productMarginPercent(p.margin_per_unit, p.avg_sale_price)
       return {
         ...p,
         shortName:
           p.product_name.length > 8 ? `${p.product_name.slice(0, 6)}…` : p.product_name,
-        fill,
+        fill: productMarginBarFill(marginPct),
         marginPct,
       }
     })
@@ -1415,7 +1420,7 @@ export default function InsightsClient({
                 <SectionTitleRow
                   title="Margen producto"
                   legend={[
-                    { label: 'Margen total', color: MARGIN_BAR_MID, variant: 'bar' },
+                    { label: 'Margen total', color: PRODUCT_MARGIN_BAR.mid, variant: 'bar' },
                     { label: 'Unidades', color: '#9CA3AF', variant: 'line' },
                   ]}
                 />
