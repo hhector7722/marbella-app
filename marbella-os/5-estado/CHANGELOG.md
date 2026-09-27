@@ -6,16 +6,20 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-26
+revisado: 2026-09-27
 caducidad: no aplica
 supersede: PROJECT_STATUS.md (función de historial)
 ---
 
 # CHANGELOG
 
+## 2026-09-27
+
+- **La importación legacy y el Copilot dejan de componer recetas por su cuenta.** Un overwrite no toca una receta que ya contiene elaboraciones y no borra `recipe_subrecipes`. Una receta nueva queda vendible. `gestionar_recetas` lee `recipe_stock_requirements_v2_rows` y `get_recipe_cost_v2`: si la expansión o el coste no son válidos, no enseña cantidades parciales ni un cero falso. La ficha directa sin subrecetas sigue en `get_recipe_cost`. Queda pendiente la matriz final. [D32](DEUDA.md).
+
 ## 2026-09-26
 
-- **Recetas TPV solo mapea recetas vendibles y muestra la materia prima expandida.** El selector filtra `is_sellable`. El servidor rechaza mapear una elaboración interna y no borra un mapping antiguo. El panel lee `recipe_stock_requirements_v2_rows` con multiplicador 1. La composición se sigue editando en Recetas. Las importaciones siguen pendientes. [D32](DEUDA.md).
+- **Recetas TPV solo mapea recetas vendibles y muestra la materia prima expandida.** El selector filtra `is_sellable`. El servidor rechaza mapear una elaboración interna y no borra un mapping antiguo. El panel lee `recipe_stock_requirements_v2_rows` con multiplicador 1. La composición se sigue editando en Recetas. [D32](DEUDA.md).
 
 - **El ranking de margen usa el coste recursivo.** `get_product_margin_ranking` llama a `get_recipe_cost_v2` una vez por receta. Si ese coste no es válido, el coste y el margen quedan en blanco: no se sustituyen por cero. Las subrecetas entran en ese coste. [D32](DEUDA.md).
 

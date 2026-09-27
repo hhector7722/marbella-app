@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { decideLegacyRecipeImport } from '@/lib/legacy-recipe-import'
 import { catalanSignalHits, isProbablyCatalan, parseNum, parseQuantityAndUnit } from '@/lib/recipe-import-shared'
 import type { MenuCategoryRow } from '@/lib/recipe-menu-categories'
 import { denormalizedRecipeCategoryName, resolveMenuCategoryIdFromLegacyLabel } from '@/lib/recipe-menu-categories'
@@ -500,7 +501,7 @@ export async function importRecipes(
                 errors.push(`Receta "${recipeName}": no se pudo traducir catalán→es (se guarda texto original): ${msg}`)
             }
 
-            const insertPayload: Record<string, unknown> = {
+            const recipeMetadata: Record<string, unknown> = {
                 name: recipeName,
                 category: categoryDb,
                 menu_category_id: menuIdResolved,
@@ -518,15 +519,38 @@ export async function importRecipes(
                 errors.push(`Receta "${recipeName}": parece catalán pero falta GEMINI_API_KEY; no se tradujo.`)
             }
 
+            let ownsSubrecipes = false
+            if (existing?.id && overwriteExisting) {
+                const { data: ownSubrecipes, error: subErr } = await supabase
+                    .from('recipe_subrecipes')
+                    .select('id')
+                    .eq('parent_recipe_id', existing.id)
+                    .limit(1)
+                if (subErr) throw new Error(subErr.message)
+                ownsSubrecipes = (ownSubrecipes?.length ?? 0) > 0
+            }
+
+            const decision = decideLegacyRecipeImport({
+                recipeName,
+                exists: Boolean(existing?.id),
+                overwriteExisting,
+                ownsSubrecipes,
+            })
+            if (decision.action === 'skip') {
+                errors.push(`Receta ya existe (omitida): ${recipeName}`)
+                continue
+            }
+            if (decision.action === 'reject') {
+                errors.push(decision.message)
+                continue
+            }
+
             let recipeId: string | null = null
-            if (existing?.id) {
-                if (!overwriteExisting) {
-                    errors.push(`Receta ya existe (omitida): ${recipeName}`)
-                    continue
-                }
+            if (decision.action === 'overwrite') {
+                if (!existing?.id) throw new Error('No se pudo sobreescribir la receta.')
                 const { data: updatedRow, error: updErr } = await supabase
                     .from('recipes')
-                    .update(insertPayload as never)
+                    .update(recipeMetadata as never)
                     .eq('id', existing.id)
                     .select('id')
                     .maybeSingle()
@@ -540,7 +564,7 @@ export async function importRecipes(
             } else {
                 const { data: newRecipe, error: recipeError } = await supabase
                     .from('recipes')
-                    .insert(insertPayload as never)
+                    .insert({ ...recipeMetadata, is_sellable: true } as never)
                     .select('id')
                     .single()
 
@@ -597,7 +621,7 @@ export async function importRecipes(
 
             if (!recipeId) throw new Error('No se pudo resolver recipeId')
 
-            if (existing?.id && overwriteExisting) {
+            if (decision.action === 'overwrite') {
                 const { data: beforeLines, error: beforeErr } = await supabase
                     .from('recipe_ingredients')
                     .select('id')
