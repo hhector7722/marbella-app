@@ -89,29 +89,29 @@ const KEYPAD: { key: string; label: ReactNode; tone: KeyTone }[][] = [
         { key: '7', label: '7', tone: 'num' },
         { key: '8', label: '8', tone: 'num' },
         { key: '9', label: '9', tone: 'num' },
+        { key: 'AC', label: 'AC', tone: 'fn' },
         { key: 'back', label: <Delete size={18} strokeWidth={2.4} />, tone: 'fn' },
-        { key: '÷', label: '÷', tone: 'op' },
     ],
     [
         { key: '4', label: '4', tone: 'num' },
         { key: '5', label: '5', tone: 'num' },
         { key: '6', label: '6', tone: 'num' },
-        { key: 'AC', label: 'AC', tone: 'fn' },
-        { key: '×', label: '×', tone: 'op' },
+        { key: '%', label: '%', tone: 'fn' },
+        { key: '÷', label: '÷', tone: 'op' },
     ],
     [
         { key: '1', label: '1', tone: 'num' },
         { key: '2', label: '2', tone: 'num' },
         { key: '3', label: '3', tone: 'num' },
-        { key: '%', label: '%', tone: 'fn' },
+        { key: '×', label: '×', tone: 'op' },
         { key: '-', label: '−', tone: 'op' },
     ],
     [
         { key: '±', label: '⁺⁄₋', tone: 'num' },
         { key: '0', label: '0', tone: 'num' },
         { key: ',', label: ',', tone: 'num' },
-        { key: '=', label: '=', tone: 'op' },
         { key: '+', label: '+', tone: 'op' },
+        { key: '=', label: '=', tone: 'op' },
     ],
 ];
 
@@ -210,6 +210,10 @@ function IosCalculator({
         setCalc(next.state);
     }, []);
 
+    const showingResult = calc.evaluated && !calc.error;
+    const mainText = showingResult || calc.error ? calc.display : (calc.tape || calc.display);
+    const caption = showingResult ? calc.tape : '';
+    const mainSize = mainText.length > 14 ? 'text-[20px]' : mainText.length > 9 ? 'text-[26px]' : 'text-[32px]';
     const copyTarget = calc.error ? '0' : calc.display;
 
     return (
@@ -244,8 +248,11 @@ function IosCalculator({
                     </div>
                 </div>
                 <div className="min-w-0 flex-1 text-right">
-                    <div className="truncate text-[32px] font-light leading-none tabular-nums tracking-tight text-white">
-                        {calc.display}
+                    <div className="min-h-4 truncate text-[13px] font-medium tabular-nums text-[#8e8e93]">
+                        {caption || ' '}
+                    </div>
+                    <div className={cn('truncate font-light leading-none tabular-nums tracking-tight text-white', mainSize)}>
+                        {mainText}
                     </div>
                 </div>
             </div>
@@ -259,7 +266,7 @@ function IosCalculator({
                                 type="button"
                                 className="flex min-h-12 w-full shrink-0 items-baseline justify-between gap-3 border-0 border-b border-white/10 bg-transparent px-1 py-2 text-left"
                                 onClick={() => {
-                                    setCalc(loadCalcResult(entry.result));
+                                    setCalc(loadCalcResult(entry.result, entry.expression));
                                     setHistoryOpen(false);
                                 }}
                             >
@@ -567,10 +574,7 @@ export function QuickCashToolsFabs({
                         data-element="dock"
                         role="group"
                         aria-label="Herramientas de recuento"
-                        className={cn(
-                            'pointer-events-auto flex w-full items-center gap-2',
-                            calculator && !breakdown ? 'justify-end' : 'justify-between',
-                        )}
+                        className="pointer-events-auto flex w-full items-center justify-center gap-2"
                     >
                         {breakdown ? (
                             <Button

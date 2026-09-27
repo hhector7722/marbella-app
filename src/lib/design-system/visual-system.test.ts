@@ -1625,7 +1625,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tools, /--quick-tools-row/);
         assert.match(tools, /data-component="QuickCashToolsFabs"/);
         assert.match(tools, /data-element="dock"/);
-        assert.match(tools, /justify-between/);
+        assert.match(tools, /justify-center gap-2/);
+        assert.doesNotMatch(tools, /calculator && !breakdown \? 'justify-end'/);
         assert.doesNotMatch(tools, /flex-col-reverse/);
         assert.doesNotMatch(tools, /left-4/);
         assert.doesNotMatch(tools, /setPointerCapture/);
@@ -1658,6 +1659,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'fuera de un modal la fila se sienta sobre la TabBar',
         );
         assert.doesNotMatch(css, /data-dragging='true'/, 'la fila ya no se arrastra');
+        assert.match(
+            css,
+            /\[data-component='QuickCashToolsFabs'\] \[data-component='Button'\]\[data-variant='secondary'\]::before[\s\S]*?box-shadow:/,
+            'los botones de la fila llevan el volumen del sistema',
+        );
         const modal = readFileSync(join(SRC_ROOT, 'components/ui/modal.tsx'), 'utf8');
         assert.doesNotMatch(
             modal,
