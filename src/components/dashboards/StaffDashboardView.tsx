@@ -34,6 +34,7 @@ import {
     type PlantillaEmployeeRow,
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
+import { isManualTimeLogEntry } from '@/lib/staff/time-log-origin';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 import { invalidateHomeHistoryWeekCache } from '@/hooks/useEmployeeHistoryWeek';
 import { StaffAttendanceSummaryWidget } from '@/components/dashboards/staff/StaffAttendanceSummaryWidget';
@@ -770,7 +771,7 @@ export default function StaffDashboardView({
                     .insert({
                         user_id: userId,
                         clock_in: now.toISOString(),
-                        is_manual_entry: false,
+                        is_manual_entry: isManualTimeLogEntry('staff_clock'),
                         ...logCoords
                     })
                     .select()

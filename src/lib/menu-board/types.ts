@@ -25,9 +25,30 @@ export type MenuBoardCategory = {
   active: boolean;
 };
 
+export type MenuBoardCatalogProduct = {
+  articuloId: number;
+  boardSlug: MenuBoardSlug;
+  childName: string;
+  nameCa: string;
+  nameEs: string;
+  nameEn: string;
+  descriptionCa: string | null;
+  descriptionEs: string | null;
+  descriptionEn: string | null;
+  price: number;
+  secondaryPrice: number | null;
+  secondaryPriceLabelCa: string | null;
+  secondaryPriceLabelEs: string | null;
+  secondaryPriceLabelEn: string | null;
+  sortOrder: number;
+  itemKind: MenuBoardItemKind;
+  plateSection: MenuBoardPlateSection | null;
+};
+
 export type MenuBoardItem = {
   id: string;
   categoryId: string;
+  articuloId: number | null;
   nameCa: string;
   nameEs: string;
   nameEn: string;

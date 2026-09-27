@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-26
+revisado: 2026-09-27
 caducidad: 6 meses
 supersede: —
 ---
@@ -55,6 +55,8 @@ Las 72 tablas tipadas se agrupan en nueve dominios.
 **La regla que gobierna este dominio:** `time_logs` es hecho, `weekly_snapshots` y `weekly_snapshot_days` son resultado. Nada más produce horas ni el € extra del día. Ver [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md), [ADR-0011](../4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md).
 
 `profiles` conserva además los datos de la ficha de empleado: `dni` (NIF/NIE/Pasaporte), `afiliacion_seguridad_social`, `nacionalidad`, `fecha_nacimiento`, `domicilio`, `phone` y `email`. Son datos introducidos a mano, sin productor que los calcule. Conserva también `camera_fov_notice_acked_at`: el instante en que esa persona confirmó su primer fichaje de entrada viendo el aviso del campo de visión de la cámara. NULL significa que el aviso sigue pendiente. Cancelar el modal no escribe este campo.
+
+`profiles.staffing_mode` discrimina la plantilla operativa: `regular` (persona de plantilla) o `managed_extra` (slot Extra 1–3). `profiles.extra_slot` (1, 2 o 3) solo aplica a `managed_extra`. Los tres extras reutilizan `auth.users` → `profiles` → `shifts` → `time_logs` → Hours Engine; no tienen login operativo. Ver [GLOSARIO](../GLOSARIO.md) «Extra gestionado» y [HORAS](dominio/HORAS.md) §4.
 
 `employment_intakes` es el expediente de [alta laboral](../4-decisiones/ADR-0015-alta-laboral-por-token.md): datos del candidato, fotos del documento, categoría y tipo de contrato para el gestor, horas y fechas. No es la ficha. Al aplicar, los datos personales y el IBAN pasan a `profiles`; las horas y fechas, a `hours_contract_terms`. Categoría y tipo de contrato no tienen columna en el perfil: su dueño sigue siendo el expediente. Sin permiso a `anon`.
 

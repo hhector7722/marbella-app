@@ -29,6 +29,13 @@ import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import type { PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
+import {
+    isManagedExtraSlot,
+    managedExtraVisibleName,
+    pickNextManagedExtraSlot,
+    MANAGED_EXTRA_ACTION_LABEL,
+    type ManagedExtraSlotRef,
+} from '@/lib/staff/managed-extra-slots';
 import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
@@ -454,6 +461,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [shifts, setShifts] = useState<ScheduleShift[]>([]);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [availableProfiles, setAvailableProfiles] = useState<PlantillaEmployee[]>([]);
+    const [managedExtraSlots, setManagedExtraSlots] = useState<ManagedExtraSlotRef[]>([]);
     // Flag to avoid overwriting manual edits after initial autofill
     const primaryFetchedRef = useRef(false);
 
@@ -524,7 +532,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         try {
             const { data: employees } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, end_date, avatar_url, visible_in_plantilla')
+                .select('id, first_name, last_name, end_date, avatar_url, visible_in_plantilla, staffing_mode, extra_slot')
                 .eq('visible_in_plantilla', true)
                 .order('first_name');
 
@@ -553,10 +561,22 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 }
             });
 
-            const activeShifts = employees?.filter(emp => shiftMap.has(emp.id)).map(emp => {
+            const roster = employees ?? [];
+            const regularEmployees = roster.filter((emp) => emp.staffing_mode !== 'managed_extra');
+            const extraSlots: ManagedExtraSlotRef[] = [];
+            for (const emp of roster) {
+                if (emp.staffing_mode !== 'managed_extra') continue;
+                if (!isManagedExtraSlot(emp.extra_slot)) continue;
+                extraSlots.push({ slot: emp.extra_slot, profileId: emp.id });
+            }
+
+            const activeShifts = roster.filter(emp => shiftMap.has(emp.id)).map(emp => {
                 const existing = shiftMap.get(emp.id);
 
-                const displayName = firstGivenName(emp.first_name);
+                const displayName =
+                    emp.staffing_mode === 'managed_extra' && isManagedExtraSlot(emp.extra_slot)
+                        ? managedExtraVisibleName(emp.extra_slot)
+                        : firstGivenName(emp.first_name);
 
                 // Usamos los valores de borrador si existen, si no los publicados
                 const sTime = existing!.draft_start_time || existing!.start_time;
@@ -712,7 +732,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
             setShifts(activeShifts);
             managedIdsRef.current = activeShifts.map((s) => s.employeeId);
-            const profileOptions: PlantillaEmployee[] = (employees || []).map((employee) => ({
+            setManagedExtraSlots(extraSlots);
+            const profileOptions: PlantillaEmployee[] = regularEmployees.map((employee) => ({
                 id: employee.id,
                 first_name: employee.first_name ?? '',
                 last_name: employee.last_name ?? '',
@@ -762,6 +783,48 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             active: true
         };
         setShifts([...shifts, newShift]);
+        setHasUnsavedChanges(true);
+        setEditingIndex(shifts.length);
+        setShowAddEmployeeModal(false);
+    };
+
+    const nextManagedExtra = useMemo(
+        () => pickNextManagedExtraSlot(
+            managedExtraSlots,
+            new Set(shifts.map((shift) => shift.employeeId)),
+        ),
+        [managedExtraSlots, shifts],
+    );
+
+    const handleAddManagedExtra = () => {
+        const slot = pickNextManagedExtraSlot(
+            managedExtraSlots,
+            new Set(shifts.map((shift) => shift.employeeId)),
+        );
+        if (!slot) {
+            setShowAddEmployeeModal(false);
+            return;
+        }
+        const newShift: ScheduleShift = {
+            employeeId: slot.profileId,
+            name: managedExtraVisibleName(slot.slot),
+            avatar_url: null,
+            start: toHhMm(defaultStart || '08:00') || '08:00',
+            end: toHhMm(defaultEnd || '16:00') || '16:00',
+            activity: activity || '',
+            categoria: categoria || '',
+            participantsCount: participantsCount || '',
+            activity2: activity2 || '',
+            start2: defaultStart2 || '',
+            end2: defaultEnd2 || '',
+            participantsCount2: participantsCount2 || '',
+            categoria2: categoria2 || '',
+            active: true,
+        };
+        setShifts([...shifts, newShift]);
+        if (!managedIdsRef.current.includes(slot.profileId)) {
+            managedIdsRef.current = [...managedIdsRef.current, slot.profileId];
+        }
         setHasUnsavedChanges(true);
         setEditingIndex(shifts.length);
         setShowAddEmployeeModal(false);
@@ -1580,6 +1643,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 title="Añadir personal"
                 variant="profile-list"
                 onSelect={(emp) => handleAddEmployee(emp.id)}
+                listEndAction={
+                    nextManagedExtra
+                        ? { label: MANAGED_EXTRA_ACTION_LABEL, onClick: handleAddManagedExtra }
+                        : undefined
+                }
             />
 
             <Modal

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { formatMenuPrice } from '@/lib/menu-board/format';
-import type { MenuBoardCategory, MenuBoardItem, MenuBoardItemKind, MenuBoardMode, MenuBoardPlateSection } from '@/lib/menu-board/types';
+import type { MenuBoardCatalogProduct, MenuBoardCategory, MenuBoardItem, MenuBoardMode } from '@/lib/menu-board/types';
 import { deleteMenuBoardItem, reorderMenuBoardItems, saveMenuBoardItem } from '@/app/master/carta/actions';
 import { MenuSheet } from './MenuSheet';
 import './menu-board.css';
@@ -15,67 +15,35 @@ type Panel = 'manage' | 'preview';
 type Draft = {
   id?: string;
   categoryId: string;
-  nameCa: string;
-  nameEs: string;
-  nameEn: string;
-  descriptionCa: string;
-  descriptionEs: string;
-  descriptionEn: string;
-  price: string;
-  secondaryPrice: string;
-  secondaryPriceLabelCa: string;
-  secondaryPriceLabelEs: string;
-  secondaryPriceLabelEn: string;
+  articuloId: number | null;
   active: boolean;
-  itemKind: MenuBoardItemKind;
-  plateSection: MenuBoardPlateSection | null;
 };
 
 const EMPTY_DRAFT = (categoryId: string): Draft => ({
   categoryId,
-  nameCa: '',
-  nameEs: '',
-  nameEn: '',
-  descriptionCa: '',
-  descriptionEs: '',
-  descriptionEn: '',
-  price: '',
-  secondaryPrice: '',
-  secondaryPriceLabelCa: '',
-  secondaryPriceLabelEs: '',
-  secondaryPriceLabelEn: '',
+  articuloId: null,
   active: true,
-  itemKind: 'product',
-  plateSection: null,
 });
 
 function draftFromItem(item: MenuBoardItem): Draft {
   return {
     id: item.id,
     categoryId: item.categoryId,
-    nameCa: item.nameCa,
-    nameEs: item.nameEs,
-    nameEn: item.nameEn,
-    descriptionCa: item.descriptionCa ?? '',
-    descriptionEs: item.descriptionEs ?? '',
-    descriptionEn: item.descriptionEn ?? '',
-    price: item.price.toFixed(2).replace('.', ','),
-    secondaryPrice: item.secondaryPrice == null ? '' : item.secondaryPrice.toFixed(2).replace('.', ','),
-    secondaryPriceLabelCa: item.secondaryPriceLabelCa ?? '',
-    secondaryPriceLabelEs: item.secondaryPriceLabelEs ?? '',
-    secondaryPriceLabelEn: item.secondaryPriceLabelEn ?? '',
+    articuloId: item.articuloId,
     active: item.active,
-    itemKind: item.itemKind,
-    plateSection: item.plateSection,
   };
 }
 
 export function MenuBoardClient({
   categories,
   items,
+  catalog,
+  catalogError,
 }: {
   categories: MenuBoardCategory[];
   items: MenuBoardItem[];
+  catalog: MenuBoardCatalogProduct[];
+  catalogError: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -144,6 +112,7 @@ export function MenuBoardClient({
             Vista previa
           </Button>
         </div>
+        {catalogError ? <p className="text-sm font-semibold text-[var(--color-negativo)]">{catalogError}</p> : null}
         {error ? <p className="text-sm font-semibold text-[var(--color-negativo)]">{error}</p> : null}
 
         {panel === 'manage' ? (
@@ -154,8 +123,8 @@ export function MenuBoardClient({
                 <section key={category.id} className="space-y-2">
                   <div className="flex items-end justify-between gap-3">
                     <div>
-                      <h2 className="text-lg font-semibold text-[var(--color-texto)]">{category.nameCa}</h2>
-                      <p className="text-sm text-[var(--color-texto-fuerte)]">
+                      <h2 className="text-lg font-semibold">{category.nameCa}</h2>
+                      <p className="menu-board-muted text-sm">
                         {category.nameEs} · {category.nameEn}
                       </p>
                     </div>
@@ -172,14 +141,14 @@ export function MenuBoardClient({
                     <p className="text-sm font-semibold text-[var(--color-negativo)]">Esta hoja excede un A4.</p>
                   ) : null}
                   {list.length === 0 ? (
-                    <p className="text-sm text-[var(--color-texto-fuerte)]">Sin productos</p>
+                    <p className="menu-board-muted text-sm">Sin productos</p>
                   ) : (
-                    <ul className="divide-y divide-[var(--color-borde-marcado)] border-y border-[var(--color-borde-marcado)]">
+                    <ul className="menu-board-list">
                       {list.map((item, index) => (
                         <li key={item.id} className="flex flex-wrap items-center gap-2 py-2">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-[var(--color-texto)]">{item.nameCa}</p>
-                            <p className="truncate text-xs text-[var(--color-texto-fuerte)]">
+                            <p className="truncate text-sm font-semibold">{item.nameCa}</p>
+                            <p className="menu-board-muted truncate text-xs">
                               {[item.nameEs, item.nameEn].filter(Boolean).join(' · ') || 'Sin traducción'}
                             </p>
                           </div>
@@ -235,24 +204,25 @@ export function MenuBoardClient({
         {draft ? (
           <ItemForm
             draft={draft}
-            category={categories.find((category) => category.id === draft.categoryId)}
+            placedIds={new Set(items.flatMap((item) => (item.articuloId == null ? [] : [item.articuloId])))}
+            placedNames={items.filter((item) => item.categoryId === draft.categoryId && item.id !== draft.id).map((item) => item.nameCa)}
+            catalog={catalog.filter((product) => product.boardSlug === categories.find((category) => category.id === draft.categoryId)?.slug)}
+            current={items.find((item) => item.id === draft.id) ?? null}
             pending={pending}
             onChange={setDraft}
             onClose={() => setDraft(null)}
-            onSave={() =>
+            onSave={() => {
+              if (draft.articuloId == null) {
+                setError('Elige un producto de la carta');
+                return;
+              }
               run(() =>
                 saveMenuBoardItem(
-                  {
-                    ...draft,
-                    descriptionCa: draft.descriptionCa,
-                    descriptionEs: draft.descriptionEs,
-                    descriptionEn: draft.descriptionEn,
-                    plateSection: draft.itemKind === 'plate_option' ? draft.plateSection : null,
-                  },
+                  { categoryId: draft.categoryId, articuloId: draft.articuloId, active: draft.active },
                   draft.id,
                 ),
-              )
-            }
+              );
+            }}
           />
         ) : null}
       </Modal>
@@ -371,114 +341,93 @@ function Preview({
 
 function ItemForm({
   draft,
-  category,
+  catalog,
+  placedIds,
+  placedNames,
+  current,
   pending,
   onChange,
   onClose,
   onSave,
 }: {
   draft: Draft;
-  category: MenuBoardCategory | undefined;
+  catalog: MenuBoardCatalogProduct[];
+  placedIds: Set<number>;
+  placedNames: string[];
+  current: MenuBoardItem | null;
   pending: boolean;
   onChange: (draft: Draft) => void;
   onClose: () => void;
   onSave: () => void;
 }) {
-  const field = 'min-h-12 w-full rounded-md border border-[var(--color-borde-marcado)] bg-[var(--color-superficie)] px-3 text-sm';
+  const field =
+    'min-h-12 w-full rounded-md border border-[var(--color-borde-marcado)] bg-[var(--color-superficie)] px-3 text-sm text-[var(--color-texto)]';
+  const takenNames = new Set(placedNames);
+  const available = catalog.filter((product) => {
+    if (product.articuloId === draft.articuloId) return true;
+    if (placedIds.has(product.articuloId) || takenNames.has(product.nameCa)) return false;
+    return true;
+  });
+  const selected = catalog.find((product) => product.articuloId === draft.articuloId) ?? null;
+  const groups = new Map<string, MenuBoardCatalogProduct[]>();
+  for (const product of available) {
+    const list = groups.get(product.childName) ?? [];
+    list.push(product);
+    groups.set(product.childName, list);
+  }
+  const shown = selected ?? current;
   return (
     <form
-      className="grid gap-3 sm:grid-cols-2"
+      className="grid gap-3 text-[var(--color-texto)]"
       onSubmit={(event) => {
         event.preventDefault();
         onSave();
       }}
     >
-      <label className="block text-sm sm:col-span-2">
-        Nombre catalán
-        <input className={field} value={draft.nameCa} onChange={(event) => onChange({ ...draft, nameCa: event.target.value })} required />
-      </label>
       <label className="block text-sm">
-        Nombre español
-        <input className={field} value={draft.nameEs} onChange={(event) => onChange({ ...draft, nameEs: event.target.value })} />
+        Producto de la carta
+        <select
+          className={field}
+          value={draft.articuloId ?? ''}
+          required
+          disabled={draft.id != null && draft.articuloId != null}
+          onChange={(event) => onChange({ ...draft, articuloId: event.target.value ? Number(event.target.value) : null })}
+        >
+          <option value="">Elige un producto</option>
+          {[...groups.entries()].map(([name, products]) => (
+            <optgroup key={name} label={name}>
+              {products.map((product) => (
+                <option key={product.articuloId} value={product.articuloId}>
+                  {`${product.nameCa} — ${formatMenuPrice(product.price, 'ca')}`}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
       </label>
-      <label className="block text-sm">
-        Nombre inglés
-        <input className={field} value={draft.nameEn} onChange={(event) => onChange({ ...draft, nameEn: event.target.value })} />
-      </label>
-      <label className="block text-sm sm:col-span-2">
-        Descripción catalán
-        <input className={field} value={draft.descriptionCa} onChange={(event) => onChange({ ...draft, descriptionCa: event.target.value })} />
-      </label>
-      <label className="block text-sm">
-        Descripción español
-        <input className={field} value={draft.descriptionEs} onChange={(event) => onChange({ ...draft, descriptionEs: event.target.value })} />
-      </label>
-      <label className="block text-sm">
-        Descripción inglés
-        <input className={field} value={draft.descriptionEn} onChange={(event) => onChange({ ...draft, descriptionEn: event.target.value })} />
-      </label>
-      <label className="block text-sm">
-        Precio
-        <input className={field} inputMode="decimal" value={draft.price} onChange={(event) => onChange({ ...draft, price: event.target.value })} required />
-      </label>
-      <label className="block text-sm">
-        Segundo precio
-        <input className={field} inputMode="decimal" value={draft.secondaryPrice} onChange={(event) => onChange({ ...draft, secondaryPrice: event.target.value })} />
-      </label>
-      <label className="block text-sm">
-        Etiqueta segundo precio (CA)
-        <input className={field} value={draft.secondaryPriceLabelCa} onChange={(event) => onChange({ ...draft, secondaryPriceLabelCa: event.target.value })} />
-      </label>
-      <label className="block text-sm">
-        Etiqueta segundo precio (ES)
-        <input className={field} value={draft.secondaryPriceLabelEs} onChange={(event) => onChange({ ...draft, secondaryPriceLabelEs: event.target.value })} />
-      </label>
-      <label className="block text-sm">
-        Etiqueta segundo precio (EN)
-        <input className={field} value={draft.secondaryPriceLabelEn} onChange={(event) => onChange({ ...draft, secondaryPriceLabelEn: event.target.value })} />
-      </label>
-      {category?.slug === 'plats' ? (
-        <>
-          <label className="block text-sm">
-            Tipo
-            <select
-              className={field}
-              value={draft.itemKind}
-              onChange={(event) =>
-                onChange({
-                  ...draft,
-                  itemKind: event.target.value as MenuBoardItemKind,
-                  plateSection: event.target.value === 'plate_option' ? draft.plateSection ?? 'entrants' : null,
-                })
-              }
-            >
-              <option value="product">Producto</option>
-              <option value="plate">Plat Marbella</option>
-              <option value="plate_option">Opción de Plat Marbella</option>
-            </select>
-          </label>
-          {draft.itemKind === 'plate_option' ? (
-            <label className="block text-sm">
-              Sección
-              <select
-                className={field}
-                value={draft.plateSection ?? 'entrants'}
-                onChange={(event) => onChange({ ...draft, plateSection: event.target.value as MenuBoardPlateSection })}
-              >
-                <option value="entrants">Entrants</option>
-                <option value="principals">Principals</option>
-                <option value="side">Guarnició</option>
-              </select>
-            </label>
-          ) : null}
-        </>
+      {shown && (draft.articuloId != null || draft.id) ? (
+        <div className="space-y-1 text-sm">
+          <p className="font-semibold">{shown.nameCa}</p>
+          {shown.nameEs ? <p className="menu-board-muted">{shown.nameEs}</p> : null}
+          {shown.nameEn ? <p className="menu-board-muted">{shown.nameEn}</p> : null}
+          <p className="tabular-nums">
+            {formatMenuPrice(shown.price, 'ca')}
+            {shown.secondaryPrice != null ? ` · ${formatMenuPrice(shown.secondaryPrice, 'ca')}` : ''}
+          </p>
+          <p className="menu-board-muted">El precio sale de la carta virtual. No se edita aquí.</p>
+        </div>
+      ) : (
+        <p className="menu-board-muted text-sm">Elige un producto; el precio se rellena solo.</p>
+      )}
+      {draft.id == null && available.length === 0 ? (
+        <p className="text-sm text-[var(--color-negativo)]">No quedan productos de esta hoja en la carta virtual.</p>
       ) : null}
-      <label className="flex min-h-12 items-center gap-2 text-sm sm:col-span-2">
+      <label className="flex min-h-12 items-center gap-2 text-sm">
         <input type="checkbox" checked={draft.active} onChange={(event) => onChange({ ...draft, active: event.target.checked })} />
         Visible en la vitrina
       </label>
-      <div className="flex gap-2 sm:col-span-2">
-        <Button instance="carta-save" variant="primary" type="submit" loading={pending}>
+      <div className="flex gap-2">
+        <Button instance="carta-save" variant="primary" type="submit" loading={pending} disabled={draft.id == null && draft.articuloId == null}>
           Guardar
         </Button>
         <Button instance="carta-cancel" variant="secondary" type="button" onClick={onClose}>

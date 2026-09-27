@@ -27,6 +27,9 @@ import {
   filterVisiblePlantillaEmployees,
   PLANTILLA_EMPLOYEE_SELECT,
 } from '../staff/plantilla-employees.ts';
+import { resolveLaborWorkerDay } from './labor-worker-day.ts';
+
+const LABOR_PROFILE_SELECT = `${PLANTILLA_EMPLOYEE_SELECT}, staffing_mode`;
 
 export class LaborCostDayReadModelProjector {
   constructor(
@@ -77,7 +80,7 @@ export class LaborCostDayReadModelProjector {
     // 3. Obtener Plantilla de Trabajadores
     let profilesQuery = this.supabase
       .from('profiles')
-      .select(PLANTILLA_EMPLOYEE_SELECT);
+      .select(LABOR_PROFILE_SELECT);
 
     if (options?.userId) {
       profilesQuery = profilesQuery.eq('id', options.userId);
@@ -156,20 +159,25 @@ export class LaborCostDayReadModelProjector {
         fixedMoney = Money.zero();
       }
 
-      const totalMoney = fixedMoney.add(overtimeMoney);
-      const workerPct = Percentage.fromValues(totalMoney, netSalesMoney);
+      const decision = resolveLaborWorkerDay({
+        staffingMode: profile.staffing_mode,
+        hasActivity,
+        hasActiveContract,
+        includeAllContracted: includeAll,
+        fixed: fixedMoney.amount,
+        overtime: overtimeMoney.amount,
+      });
 
-      // Criterios de Inclusión:
-      // - Toggle OFF: Muestra únicamente trabajadores con actividad real
-      // - Toggle ON: Muestra trabajadores con contrato activo UNION trabajadores con actividad real
-      const shouldInclude = includeAll ? (hasActiveContract || hasActivity) : hasActivity;
-
-      if (shouldInclude) {
+      if (decision.include) {
+        const shownFixed = Money.from(decision.fixed);
+        const shownOvertime = Money.from(decision.overtime);
+        const totalMoney = shownFixed.add(shownOvertime);
+        const workerPct = Percentage.fromValues(totalMoney, netSalesMoney);
         workerDTOs.push({
           id: profile.id,
           name,
-          fixed: fixedMoney.amount,
-          overtime: overtimeMoney.amount,
+          fixed: shownFixed.amount,
+          overtime: shownOvertime.amount,
           total: totalMoney.amount,
           laborPctOfSales: netSalesMoney.isZero() ? null : workerPct.value,
           hasActivity,
@@ -177,8 +185,8 @@ export class LaborCostDayReadModelProjector {
           isEventual,
         });
 
-        summaryFixed = summaryFixed.add(fixedMoney);
-        summaryOvertime = summaryOvertime.add(overtimeMoney);
+        summaryFixed = summaryFixed.add(shownFixed);
+        summaryOvertime = summaryOvertime.add(shownOvertime);
       }
     }
 

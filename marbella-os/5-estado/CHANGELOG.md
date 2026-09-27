@@ -15,6 +15,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-27
 
+- **Tres extras gestionados reutilizables.** Extra 1–3 viven en `profiles` con `staffing_mode = managed_extra`, jornada 0 h y tarifa inicial 10 €/h. En el horario, una sola fila `Extra` asigna el slot libre de ese día. No fichan: manager escribe asistencia. Bootstrap idempotente: `npm run bootstrap:managed-extras`. [HORAS](../3-ingenieria/dominio/HORAS.md), [GLOSARIO](../GLOSARIO.md).
+
+- **La vitrina ya no admite un producto escrito a mano.** Se elige uno de la carta virtual y el precio se copia de ahí. Al abrir la hoja vacía se colocan los productos que ya tienen categoría. Helados y extras no tienen hoja.
+
 - **Al cerrar el desglose o la calculadora, la fila queda debajo del recuadro.** Vive en el marco, en el flujo, y no se coloca con una coordenada fija: no tapa el pie. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **En el desglose, Total y Nuevo se alinean con las cajas de cantidad.** «Nuevo» abraza la palabra y lleva el volumen del botón. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).

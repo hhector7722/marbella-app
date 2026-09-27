@@ -2605,6 +2605,8 @@ export type Database = {
           prefer_stock_hours: boolean | null
           preferred_language: string | null
           role: string | null
+          staffing_mode: string
+          extra_slot: number | null
           updated_at: string | null
           visible_in_plantilla: boolean
         }
@@ -2621,6 +2623,7 @@ export type Database = {
           domicilio?: string | null
           email?: string | null
           end_date?: string | null
+          extra_slot?: number | null
           fecha_nacimiento?: string | null
           first_name?: string | null
           hours_balance?: number | null
@@ -2640,6 +2643,7 @@ export type Database = {
           prefer_stock_hours?: boolean | null
           preferred_language?: string | null
           role?: string | null
+          staffing_mode?: string
           updated_at?: string | null
           visible_in_plantilla?: boolean
         }
@@ -2675,6 +2679,8 @@ export type Database = {
           prefer_stock_hours?: boolean | null
           preferred_language?: string | null
           role?: string | null
+          staffing_mode?: string
+          extra_slot?: number | null
           updated_at?: string | null
           visible_in_plantilla?: boolean
         }

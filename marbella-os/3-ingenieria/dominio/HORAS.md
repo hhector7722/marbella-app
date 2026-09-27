@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-07
+revisado: 2026-09-27
 caducidad: 6 meses
 supersede: —
 ---
@@ -113,13 +113,26 @@ Es la operacionalización de «ya se gestiona en su nómina»: el saldo pendient
 
 ---
 
-## 4. Cuando falta un dato
+## 4. Extra gestionado
+
+Tres slots reutilizables (`Extra 1`, `Extra 2`, `Extra 3`) con `staffing_mode = managed_extra`. No son un régimen nuevo del Hours Engine: usan un tramo `staff` real con `weekly_hours = 0`, bolsa desactivada y tarifa inicial 10 €/h en `hours_contract_terms`.
+
+Consecuencia del motor ya existente:
+
+- sin fichajes: ordinarias 0, extras 0, deuda 0, coste 0;
+- con fichajes: ordinarias 0, extras = horas trabajadas, deuda 0, coste = horas × tarifa.
+
+No fichan ellos: manager escribe `time_logs` con `is_manual_entry = true` y el Writer oficial (`writeProjectionFromWeek`) proyecta. En el editor de horario no aparecen como tres filas del selector: una sola acción `Extra` elige el slot libre de número más bajo **del día en edición**.
+
+---
+
+## 5. Cuando falta un dato
 
 Si faltan hechos de contrato o de frontera laboral, aplica el contrato efectivo que resuelve el Hours Engine. La ausencia de fichajes en una semana staff con lunes en agosto **no** es un error: es balance 0 por esta regla.
 
 ---
 
-## 5. Invariantes
+## 6. Invariantes
 
 | ID | Afirmación |
 |---|---|

@@ -9,6 +9,7 @@ import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, for
 import { trackGeofenceRejection } from '@/lib/usage/client';
 import { formatMadridHmFromIso, formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
+import { isManualTimeLogEntry } from '@/lib/staff/time-log-origin';
 
 export default function TimeTracker() {
     const supabase = createClient();
@@ -91,7 +92,8 @@ export default function TimeTracker() {
             const { data, error } = await supabase.from('time_logs').insert({
                 user_id: user.id,
                 input_lat: lat,
-                input_lng: lng
+                input_lng: lng,
+                is_manual_entry: isManualTimeLogEntry('staff_clock'),
             }).select().single();
             if (error) throw error;
 

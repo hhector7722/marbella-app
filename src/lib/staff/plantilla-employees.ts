@@ -10,6 +10,8 @@ export type PlantillaEmployeeRow = {
     avatar_url?: string | null;
     end_date?: string | null;
     visible_in_plantilla?: boolean | null;
+    staffing_mode?: string | null;
+    extra_slot?: number | null;
 };
 
 export function isHiddenPlantillaName(firstName?: string | null): boolean {

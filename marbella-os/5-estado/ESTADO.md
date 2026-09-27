@@ -27,7 +27,7 @@ El producto está en producción y sostiene la operación diaria del negocio. El
 
 ## Funciona y se usa a diario
 
-- **Fichaje y asistencia.** Fichaje, historial propio, vista de equipo y edición por día. La semana de una persona es la misma en Asistencia, mosaico Staff y horas extras, con el cromo de Cierres y un pie semanal. En el mosaico Staff flota sobre el petróleo, sin cabecera. La vista de plantilla comparte el cromo y no el pie.
+- **Fichaje y asistencia.** Fichaje, historial propio, vista de equipo y edición por día. La semana de una persona es la misma en Asistencia, mosaico Staff y horas extras, con el cromo de Cierres y un pie semanal. En el mosaico Staff flota sobre el petróleo, sin cabecera. La vista de plantilla comparte el cromo y no el pie. Tres extras gestionados (Extra 1–3) se asignan desde el horario con una sola acción `Extra` y los gestiona solo manager.
 - **Venta y sala.** Radar de sala en vivo y análisis de ventas. Los documentos que no son venta se excluyen correctamente de ventas, pendientes y cierre.
 - **Cocina.** Pantalla de cocina con tandas, color por tiempo de espera y cierre manual.
 - **Caja y tesorería.** Cierre diario con recuento por denominación, historial de cierres (resumen del mes y del último cierre sobre el calendario; el último cierre también vive como widget 4×1 en el mosaico Master), movimientos, arqueo, cambio entre cajas y libro mayor con saldo acumulado.

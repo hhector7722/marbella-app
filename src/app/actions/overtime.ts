@@ -17,6 +17,7 @@ import {
 } from '@/lib/hours-engine';
 import type { CivilDate } from '@/lib/hours-engine/types';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
+import { isManualTimeLogEntry } from '@/lib/staff/time-log-origin';
 
 async function assertCanManageStaffAttendance(
     supabase: Awaited<ReturnType<typeof createClient>>,
@@ -369,7 +370,10 @@ export async function updateWeeklyWorkerConfig(
                     payload.id = log.id;
                     toUpdate.push(payload);
                 } else {
-                    toInsert.push(payload);
+                    toInsert.push({
+                        ...payload,
+                        is_manual_entry: isManualTimeLogEntry('manager_manual'),
+                    });
                 }
             }
 
@@ -426,6 +430,7 @@ export async function createManagerFichaje(userId: string, dateStr: string, time
             clock_out: null,
             event_type: 'regular',
             clock_out_show_no_registrada: false,
+            is_manual_entry: isManualTimeLogEntry('manager_manual'),
         });
 
         if (insertErr) throw insertErr;

@@ -50,6 +50,7 @@ Reglas de uso:
 | **Expediente de alta** | Registro de ese proceso antes de que exista (o se vincule) el perfil. El candidato lo rellena por un enlace; el maestro completa categoría, tipo de contrato, horas y fechas. | `employment_intakes` |
 | **Nombre operativo** | Cómo se conoce a la persona en el bar y cómo aparece en la interfaz (plantilla, horarios, fichajes). Puede ser un apodo o el nombre habitual. No es el nombre de la gestoría. | `profiles.first_name`, `profiles.last_name` |
 | **Nombre de nómina** | Nombre oficial de la gestoría cuando discrepa del nombre operativo. Solo para emparejar liquidaciones y procesos contables. | `profiles.payroll_name` |
+| **Extra gestionado** | Slot reutilizable para personal eventual operado exclusivamente por manager. Tiene jornada contractual computable de 0 h, no genera deuda y todas sus horas trabajadas se clasifican como extras pagables según su tarifa. Existen exactamente tres: Extra 1, Extra 2 y Extra 3. En el selector de horario hay una sola acción `Extra` que asigna el slot libre de número más bajo ese día. | `profiles.staffing_mode = managed_extra`, `profiles.extra_slot` |
 
 ---
 
@@ -189,7 +190,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **PVP** | Precio de venta al público. Nunca se confunde con el coste. | — |
 | **PAV** | Precio con el que se compara el PVP en el análisis de rentabilidad. | — |
 | **Carta** | La oferta publicada al cliente. Superficie pública, sin sesión. | — |
-| **Carta física** | Las dos vitrinas de seis hojas A4. Una sola colección de productos. No es la carta pública. | `/master/carta` |
+| **Carta física** | Las dos vitrinas de seis hojas A4. Los productos y el precio salen de la carta virtual. En la vitrina se elige cuáles van y en qué orden. | `/master/carta` |
 | **Vitrina** | Acceso del dashboard master a la carta física. Vive en la segunda página de Otros. | — |
 | **Plato Marbella** | La ficha de plato en la carta pública, con su presentación propia. | — |
 

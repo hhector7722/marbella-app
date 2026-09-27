@@ -15,6 +15,9 @@ import { Money, Percentage } from '../payroll/value-objects.ts';
 import { loadOvertimeCostByDay } from './overtime-cost-from-projection.ts';
 import { formatYmdInMadrid, madridRangeUtcIso } from '../madrid-date-bounds.ts';
 import { filterVisiblePlantillaEmployees, PLANTILLA_EMPLOYEE_SELECT } from '../staff/plantilla-employees.ts';
+import { resolveLaborWorkerDay } from './labor-worker-day.ts';
+
+const LABOR_PROFILE_SELECT = `${PLANTILLA_EMPLOYEE_SELECT}, staffing_mode`;
 import { computePeriodReconciliation } from '../payroll/payroll-reconciliation-service.ts';
 
 export class LaborCostMonthReadModelProjector {
@@ -76,7 +79,7 @@ export class LaborCostMonthReadModelProjector {
     // 3. Plantilla.
     const { data: profileRows } = await this.supabase
       .from('profiles')
-      .select(PLANTILLA_EMPLOYEE_SELECT);
+      .select(LABOR_PROFILE_SELECT);
     const profiles = filterVisiblePlantillaEmployees(profileRows ?? []);
     const workerIds = profiles.map((p) => p.id);
 
@@ -125,7 +128,7 @@ export class LaborCostMonthReadModelProjector {
       }
     }
 
-    const workerDailyCosts: Record<string, Record<string, { fixed: Money; overtime: Money; hasActivity: boolean; hasActiveContract: boolean }>> = {};
+    const workerDailyCosts: Record<string, Record<string, { fixed: Money; overtime: Money; hasActivity: boolean; hasActiveContract: boolean; include: boolean }>> = {};
 
     for (const profile of profiles) {
       workerDailyCosts[profile.id] = {};
@@ -141,11 +144,20 @@ export class LaborCostMonthReadModelProjector {
         const hasActivity = hasClockIns || !overtimeMoney.isZero();
         let fixedMoney = dailyFixedByWorker[profile.id] ?? Money.zero();
         if (!hasActiveContract && isPayrollPending) fixedMoney = Money.zero();
-        workerDailyCosts[profile.id]![dayYmd] = {
-          fixed: fixedMoney,
-          overtime: overtimeMoney,
+        const decision = resolveLaborWorkerDay({
+          staffingMode: profile.staffing_mode,
           hasActivity,
           hasActiveContract,
+          includeAllContracted: includeAll,
+          fixed: fixedMoney.amount,
+          overtime: overtimeMoney.amount,
+        });
+        workerDailyCosts[profile.id]![dayYmd] = {
+          fixed: Money.from(decision.fixed),
+          overtime: Money.from(decision.overtime),
+          hasActivity,
+          hasActiveContract,
+          include: decision.include,
         };
       }
     }
@@ -162,7 +174,7 @@ export class LaborCostMonthReadModelProjector {
       for (const profile of profiles) {
         const workerData = workerDailyCosts[profile.id]?.[dayYmd];
         if (!workerData) continue;
-        const shouldInclude = includeAll ? workerData.hasActiveContract || workerData.hasActivity : workerData.hasActivity;
+        const shouldInclude = workerData.include;
         if (shouldInclude) {
           dayFixed = dayFixed.add(workerData.fixed);
           dayOvertime = dayOvertime.add(workerData.overtime);

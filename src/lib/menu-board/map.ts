@@ -20,6 +20,7 @@ type CategoryRow = {
 type ItemRow = {
   id: string;
   category_id: string;
+  articulo_id?: number | null;
   name_ca: string;
   name_es: string;
   name_en: string;
@@ -75,6 +76,7 @@ export function mapItem(row: ItemRow): MenuBoardItem {
   return {
     id: row.id,
     categoryId: row.category_id,
+    articuloId: row.articulo_id ?? null,
     nameCa: row.name_ca,
     nameEs: row.name_es,
     nameEn: row.name_en,

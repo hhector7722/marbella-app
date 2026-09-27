@@ -19,6 +19,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import type { EmployeeOption } from '@/components/modals/DaySummaryModal';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
+import { deriveManagedExtraPunctuality } from '@/lib/staff/managed-extra-punctuality';
 
 interface AttendanceDetailModalProps {
     isOpen: boolean;
@@ -373,6 +374,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
     const trackAttendanceDaySave = useTrackModalApply('attendance-detail', 'Detalle de asistencia');
 
     const [logs, setLogs] = useState<DayLogDraft[]>([]);
+    const [punctualityLabel, setPunctualityLabel] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editWeekModalOpen, setEditWeekModalOpen] = useState(false);
@@ -436,15 +438,33 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             const dateStr = format(date, 'yyyy-MM-dd');
             const { startIso, endIso } = madridDayUtcRangeIso(dateStr);
 
-            const { data, error } = await supabase
-                .from('time_logs')
-                .select('*')
-                .eq('user_id', userId)
-                .gte('clock_in', startIso)
-                .lte('clock_in', endIso)
-                .order('clock_in', { ascending: true });
+            const [logsRes, profileRes, shiftRes] = await Promise.all([
+                supabase
+                    .from('time_logs')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .gte('clock_in', startIso)
+                    .lte('clock_in', endIso)
+                    .order('clock_in', { ascending: true }),
+                supabase
+                    .from('profiles')
+                    .select('staffing_mode')
+                    .eq('id', userId)
+                    .maybeSingle(),
+                supabase
+                    .from('shifts')
+                    .select('start_time')
+                    .eq('user_id', userId)
+                    .eq('is_published', true)
+                    .gte('start_time', startIso)
+                    .lte('start_time', endIso)
+                    .order('start_time', { ascending: true })
+                    .limit(1)
+                    .maybeSingle(),
+            ]);
 
-            if (error) throw error;
+            if (logsRes.error) throw logsRes.error;
+            const data = logsRes.data;
 
             const rawLogs: DayLogDraft[] = data?.map((l) => {
                 const justified = Math.max(0, Number((l as { justified_hours?: number }).justified_hours) || 0);
@@ -472,9 +492,24 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             }) || [];
 
             setLogs(rawLogs);
+
+            if (profileRes.data?.staffing_mode === 'managed_extra') {
+                const firstRegular = (data ?? []).find(
+                    (log) => (log.event_type || 'regular') === 'regular' && !!log.clock_in,
+                );
+                const punctuality = deriveManagedExtraPunctuality({
+                    publishedShiftStartIso: shiftRes.data?.start_time ?? null,
+                    firstRegularClockInIso: firstRegular?.clock_in ?? null,
+                });
+                setPunctualityLabel(punctuality.label);
+            } else {
+                setPunctualityLabel(null);
+            }
+
             resetCreateFichaje();
         } catch (err) {
             console.error(err);
+            setPunctualityLabel(null);
             toast.error("Error al cargar registros");
         } finally {
             setLoading(false);
@@ -794,6 +829,9 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             scrollContent={false}
         >
                 <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+                    {!loading && punctualityLabel ? (
+                        <p className="px-1 pb-2 text-[12px] font-semibold text-white/80">{punctualityLabel}</p>
+                    ) : null}
                     {loading ? (
                         <div className="py-8 flex flex-col items-center justify-center gap-1.5">
                             <LoadingSpinner size="md" className="text-red-500" />
