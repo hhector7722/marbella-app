@@ -90,6 +90,11 @@ describe('PetroleumSegmented contract', () => {
             /\[data-component='PageScreen'\] \[data-element='toolbar'\] \[data-component='PetroleumSegmented'\] \[data-element='option'\]\[aria-checked='true'\]/,
             'en PageScreen la pestaña activa lleva relleno blanco'
         );
+        assert.match(
+            css,
+            /\[data-instance='recipe-price-location'\] \[data-element='option'\]\[aria-checked='true'\][\s\S]*?--color-texto-invertido/,
+            'en el precio de receta la opción activa invierte tinta'
+        );
     });
 
     it('piloto: Waste, recipes y SubNavVentas usan PetroleumSegmented', () => {
@@ -112,8 +117,8 @@ describe('PetroleumSegmented contract', () => {
         const recipes = readFileSync(join(SRC_ROOT, 'app/recipes/[id]/page.tsx'), 'utf8');
         assert.equal(
             (recipes.match(/<PetroleumSegmented/g) || []).length,
-            2,
-            'recipes/[id] debe tener dos PetroleumSegmented'
+            3,
+            'recipes/[id] debe tener ubicación, tamaño y tipo de componente'
         );
     });
 

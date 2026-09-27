@@ -4478,6 +4478,19 @@ button[data-element='catalog-filter'] {
   white-space: normal;
 }
 
+/*
+ * Precio de receta: el papel es blanco y superficie.inactiva no se distingue.
+ * La opción activa invierte tinta. Sin marca.
+ */
+[data-component='PetroleumSegmented'][data-instance='recipe-price-location'] [data-element='option'][aria-checked='true'],
+[data-component='PetroleumSegmented'][data-instance='recipe-price-size'] [data-element='option'][aria-checked='true'],
+[data-component='PetroleumSegmented'][data-instance='recipe-price-location'] [data-element='option'][aria-checked='true']:hover,
+[data-component='PetroleumSegmented'][data-instance='recipe-price-size'] [data-element='option'][aria-checked='true']:hover {
+  background-color: var(--color-texto);
+  color: var(--color-texto-invertido);
+  font-weight: 700;
+}
+
 [data-component='PageScreen'] [data-element='toolbar'] [data-component='PetroleumSegmented'],
 [data-component='PageScreen'] [data-element='period'] [data-component='PetroleumSegmented'],
 [data-component='PageScreen'] [data-element='period-start'] [data-component='PetroleumSegmented'] {

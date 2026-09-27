@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Pencil, Check, PlayCircle, AlertCircle } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Pencil, PlayCircle, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/SearchField';
+import { Field } from '@/components/ui/Field';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { CatalogSquare } from '@/components/catalog/CatalogTile';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -617,8 +618,11 @@ function RecipeDetailContent() {
         if (view.size === 'full') field = view.location === 'pvp' ? 'sale_price' : 'sales_price_pavello';
         else field = view.location === 'pvp' ? 'sale_price_half' : 'sale_price_half_pavello';
 
-        await updateRecipeField(field, num);
-        setSavingPrice(false);
+        try {
+            await updateRecipeField(field, num);
+        } finally {
+            setSavingPrice(false);
+        }
     };
 
     const startEditPrice = () => {
@@ -639,8 +643,12 @@ function RecipeDetailContent() {
             toast.error('Precio inválido');
             return;
         }
-        await handlePriceUpdate(String(parsed));
-        setIsEditingPrice(false);
+        try {
+            await handlePriceUpdate(String(parsed));
+            setIsEditingPrice(false);
+        } catch {
+            // updateRecipeField ya avisa; el modal sigue abierto para corregir o cancelar.
+        }
     };
 
     const handleQuantityChange = async (ingredientId: string, newQuantity: number) => {
@@ -885,9 +893,7 @@ function RecipeDetailContent() {
         : { color: 'text-gray-400', label: '', bg: '' };
     const simulatedHealthIndicator = getHealthIndicator(simulatedFoodCost);
 
-    const themeColors = view.location === 'pvp'
-        ? { toggle: 'bg-blue-600 text-white', toggleInactive: 'bg-gray-100 text-gray-600', border: 'border-blue-500' }
-        : { toggle: 'bg-orange-600 text-white', toggleInactive: 'bg-gray-100 text-gray-600', border: 'border-orange-500' };
+    const priceScopeLabel = `${view.location === 'pvp' ? 'PVP' : 'Pabellón'} · ${view.size === 'full' ? 'Entero' : 'Medio'}`;
 
     const filteredIngredients = availableIngredients.filter(ing => ing.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -1135,59 +1141,16 @@ function RecipeDetailContent() {
 
                                     <div className="my-2 flex items-start gap-1 shrink-0">
                                         <div className="min-w-0 flex-1 text-center">
-                                            {!isEditingPrice ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={startEditPrice}
-                                                    aria-label="Editar precio"
-                                                    className="w-full"
-                                                >
-                                                    <div className="text-lg font-black tabular-nums text-gray-800 md:text-xl">
-                                                        {(currentPrice || 0).toFixed(2)}€
-                                                    </div>
-                                                </button>
-                                            ) : (
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <input
-                                                        type="text"
-                                                        inputMode="decimal"
-                                                        value={priceDraft}
-                                                        onChange={(e) => setPriceDraft(e.target.value)}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') confirmEditPrice();
-                                                            if (e.key === 'Escape') cancelEditPrice();
-                                                        }}
-                                                        autoFocus
-                                                        placeholder="0"
-                                                        className={cn(
-                                                            "w-16 bg-transparent text-center text-lg font-black tabular-nums text-gray-800 outline-none border-b-2 md:text-xl",
-                                                            themeColors.border
-                                                        )}
-                                                    />
-                                                    <span className="text-lg font-black text-gray-800 md:text-xl">€</span>
-                                                    <Button
-                                                        type="button"
-                                                        variant="primary"
-                                                        instance="recipe-confirmar-precio"
-                                                        onClick={confirmEditPrice}
-                                                        disabled={savingPrice}
-                                                        loading={savingPrice}
-                                                        aria-label="Confirmar"
-                                                        icon={<Check className="w-5 h-5" />}
-                                                        className="shrink-0"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="secondary"
-                                                        instance="recipe-cancelar-precio"
-                                                        onClick={cancelEditPrice}
-                                                        disabled={savingPrice}
-                                                        aria-label="Cancelar"
-                                                        icon={<X className="w-5 h-5" />}
-                                                        className="shrink-0"
-                                                    />
+                                            <button
+                                                type="button"
+                                                onClick={startEditPrice}
+                                                aria-label={`Editar precio ${priceScopeLabel}`}
+                                                className="w-full"
+                                            >
+                                                <div className="text-lg font-black tabular-nums text-gray-800 md:text-xl">
+                                                    {(currentPrice || 0).toFixed(2)}€
                                                 </div>
-                                            )}
+                                            </button>
                                             <div data-element="field-label">Precio</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
@@ -1951,6 +1914,36 @@ function RecipeDetailContent() {
                     setRecipeMetaModalOpen(false);
                 }}
             />
+            <ConfirmModal
+                open={isEditingPrice}
+                onClose={cancelEditPrice}
+                title="Precio"
+                confirmLabel="Guardar"
+                cancelLabel="Cancelar"
+                confirmVariant="primary"
+                instance="recipe-price-edit"
+                usageLabel="Editar precio de receta"
+                confirming={savingPrice}
+                layer="base"
+                buttonsStretch
+                onConfirm={() => { void confirmEditPrice(); }}
+            >
+                <Field instance="recipe-price-draft" label={priceScopeLabel} htmlFor="recipe-price-draft">
+                    <input
+                        id="recipe-price-draft"
+                        type="text"
+                        inputMode="decimal"
+                        value={priceDraft}
+                        onChange={(e) => setPriceDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') void confirmEditPrice();
+                        }}
+                        autoFocus
+                        placeholder="0,00"
+                        className="text-center tabular-nums"
+                    />
+                </Field>
+            </ConfirmModal>
             <ConfirmModal
                 open={deleteRecipeOpen}
                 onClose={() => { if (!deletingRecipe) setDeleteRecipeOpen(false); }}
