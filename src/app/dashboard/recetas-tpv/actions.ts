@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { guardTpvMappingWrite } from '@/lib/recipe-tpv-materials'
 
 async function requireManager() {
   const supabase = await createClient()
@@ -36,11 +37,38 @@ export async function upsertMapping(
   if (!gate.ok) return { success: false, error: gate.error }
 
   const supabase = gate.supabase
+  const shape = guardTpvMappingWrite({
+    articuloId: articulo_id,
+    recipeId: recipe_id,
+    factor: factor_porcion,
+    recipe: { is_sellable: true },
+  })
+  if (!shape.ok) return { success: false, error: shape.error }
+
+  const { data: recipe, error: recipeError } = await supabase
+    .from('recipes')
+    .select('id, is_sellable')
+    .eq('id', shape.recipeId)
+    .maybeSingle()
+
+  if (recipeError) return { success: false, error: recipeError.message }
+
+  const decision = guardTpvMappingWrite({
+    articuloId: shape.articuloId,
+    recipeId: shape.recipeId,
+    factor: shape.factor,
+    recipe: recipe ? { is_sellable: recipe.is_sellable } : null,
+  })
+  if (!decision.ok) return { success: false, error: decision.error }
 
   const { error } = await supabase
     .from('map_tpv_receta')
     .upsert(
-      { articulo_id, recipe_id, factor_porcion },
+      {
+        articulo_id: decision.articuloId,
+        recipe_id: decision.recipeId,
+        factor_porcion: decision.factor,
+      },
       { onConflict: 'articulo_id', ignoreDuplicates: false }
     )
 
@@ -132,75 +160,6 @@ export async function upsertSupplierMappingForIngredientAction(params: {
 
   revalidatePath('/dashboard/recetas-tpv')
   revalidatePath('/dashboard/albaranes')
-  revalidatePath('/recipes')
-  return { success: true as const }
-}
-
-export async function addRecipeIngredientLineAction(params: {
-  recipe_id: string
-  ingredient_id: string
-  unit?: string
-}) {
-  const gate = await requireManager()
-  if (!gate.ok) return { success: false, error: gate.error }
-
-  const rid = String(params.recipe_id ?? '').trim()
-  const iid = String(params.ingredient_id ?? '').trim()
-  if (!rid || !iid) return { success: false, error: 'Receta o ingrediente inválidos.' }
-
-  const unitDb = String(params.unit ?? 'kg').trim() || 'kg'
-
-  const { data: dup, error: dupErr } = await gate.supabase
-    .from('recipe_ingredients')
-    .select('id')
-    .eq('recipe_id', rid)
-    .eq('ingredient_id', iid)
-    .maybeSingle()
-
-  if (dupErr) {
-    console.error('addRecipeIngredientLineAction dup:', dupErr)
-    return { success: false, error: dupErr.message }
-  }
-  if (dup) return { success: false, error: 'Ese ingrediente ya está en el escandallo de esta receta.' }
-
-  const { error } = await gate.supabase.from('recipe_ingredients').insert({
-    recipe_id: rid,
-    ingredient_id: iid,
-    quantity_gross: 1,
-    quantity_half: 0.5,
-    unit: unitDb,
-  })
-
-  if (error) {
-    console.error('addRecipeIngredientLineAction:', error)
-    return { success: false, error: error.message }
-  }
-
-  revalidatePath('/dashboard/recetas-tpv')
-  revalidatePath('/recipes')
-  return { success: true as const }
-}
-
-export async function deleteRecipeIngredientLineAction(params: { recipe_id: string; ingredient_id: string }) {
-  const gate = await requireManager()
-  if (!gate.ok) return { success: false, error: gate.error }
-
-  const rid = String(params.recipe_id ?? '').trim()
-  const iid = String(params.ingredient_id ?? '').trim()
-  if (!rid || !iid) return { success: false, error: 'Receta o ingrediente inválidos.' }
-
-  const { error } = await gate.supabase
-    .from('recipe_ingredients')
-    .delete()
-    .eq('recipe_id', rid)
-    .eq('ingredient_id', iid)
-
-  if (error) {
-    console.error('deleteRecipeIngredientLineAction:', error)
-    return { success: false, error: error.message }
-  }
-
-  revalidatePath('/dashboard/recetas-tpv')
   revalidatePath('/recipes')
   return { success: true as const }
 }

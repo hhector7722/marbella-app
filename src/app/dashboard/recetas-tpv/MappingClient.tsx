@@ -11,14 +11,17 @@ import { Button } from '@/components/ui/button'
 import { TABLE_COMPONENT_ID } from '@/lib/design-system'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchField } from '@/components/ui/SearchField'
-import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
-import type { AlbaranLearnedName, MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
 import {
-  addRecipeIngredientLineAction,
+  formatMaterialLine,
+  type AlbaranLearnedName,
+  type RecipeMaterialMatchRow,
+  type RecipeMaterialProjection,
+} from '@/lib/recipe-tpv-materials'
+import type { MappingRow, Recipe, TpvArticle } from './page'
+import {
   deleteMapping,
-  deleteRecipeIngredientLineAction,
   deleteSupplierMappingByIdAction,
   deleteSupplierMappingCompositeAction,
   upsertMapping,
@@ -79,15 +82,13 @@ export default function MappingClient({
   articles,
   recipes,
   suppliersMini,
-  ingredientsMini,
-  recipeIngredientMatchByRecipeId,
+  recipeMaterialByRecipeId,
 }: {
   mappings: MappingRow[]
   articles: TpvArticle[]
   recipes: Recipe[]
   suppliersMini: { id: number; name: string }[]
-  ingredientsMini: { id: string; name: string }[]
-  recipeIngredientMatchByRecipeId: Record<string, RecipeIngredientMatchRow[]>
+  recipeMaterialByRecipeId: Record<string, RecipeMaterialProjection>
 }) {
   const router = useRouter()
   const [query, setQuery] = useState('')
@@ -159,8 +160,9 @@ export default function MappingClient({
 
   const matchSearchBlob = (recipeId: string | null) => {
     if (!recipeId) return ''
-    const rows = recipeIngredientMatchByRecipeId[recipeId] ?? []
-    return rows
+    const projection = recipeMaterialByRecipeId[recipeId]
+    if (!projection || projection.status !== 'ok') return ''
+    return projection.rows
       .map(
         (row) =>
           `${row.ingredient_name} ${row.albaran.map((a) => `${a.supplier_item_name} ${a.supplier_name ?? ''}`).join(' ')}`
@@ -182,7 +184,7 @@ export default function MappingClient({
       const blob = `${r.nombre} ${String(r.articulo_id)} ${r.departamento ?? ''} ${r.recipe_name ?? ''} ${matchSearchBlob(rid)}`.toLowerCase()
       return blob.includes(q)
     })
-  }, [uiRows, query, status, drafts, recipeIngredientMatchByRecipeId, deptFilter])
+  }, [uiRows, query, status, drafts, recipeMaterialByRecipeId, deptFilter])
 
   /** Sin agrupación por departamento en la UI: solo orden estable (dept + nombre). */
   const sortedRows = useMemo(() => {
@@ -195,7 +197,7 @@ export default function MappingClient({
     return copy
   }, [filtered])
 
-  const modalMatchRows = ingModal ? (recipeIngredientMatchByRecipeId[ingModal.recipe_id] ?? []) : []
+  const modalProjection = ingModal ? (recipeMaterialByRecipeId[ingModal.recipe_id] ?? null) : null
 
   const getDraft = (row: UiRow) => {
     const existing = drafts[row.articulo_id]
@@ -375,7 +377,7 @@ export default function MappingClient({
               const hasChanges =
                 draft.recipe_id !== row.recipe_id || Number(draft.factor) !== Number(row.factor_porcion ?? 1)
               const rid = effectiveRecipeId(row)
-              const matchRows = rid ? (recipeIngredientMatchByRecipeId[rid] ?? []) : []
+              const projection = rid ? (recipeMaterialByRecipeId[rid] ?? null) : null
               const recipeLabel = recipes.find((x) => x.id === rid)?.name ?? row.recipe_name ?? '—'
 
               return (
@@ -406,6 +408,11 @@ export default function MappingClient({
                       micro
                       recipes={recipes}
                       selectedId={draft.recipe_id}
+                      unlistedName={
+                        draft.recipe_id && !recipes.some((recipe) => recipe.id === draft.recipe_id)
+                          ? row.recipe_name
+                          : null
+                      }
                       onSelect={(id) => setDraft(row.articulo_id, { recipe_id: id })}
                       onClear={() => setDraft(row.articulo_id, { recipe_id: null })}
                     />
@@ -432,7 +439,7 @@ export default function MappingClient({
                       )}
                       aria-label="Abrir detalle de ingredientes y albarán"
                     >
-                      <IngredientEscandalloBlock rows={matchRows} hasRecipe={Boolean(rid)} />
+                      <IngredientEscandalloBlock projection={projection} hasRecipe={Boolean(rid)} />
                     </button>
                   </div>
 
@@ -478,9 +485,8 @@ export default function MappingClient({
         articuloNombre={ingModal?.articulo_nombre ?? ''}
         recipeId={ingModal?.recipe_id ?? ''}
         recipeName={ingModal?.recipe_name ?? ''}
-        matchRows={modalMatchRows}
+        projection={modalProjection}
         suppliersMini={suppliersMini}
-        ingredientsMini={ingredientsMini}
         onDone={() => router.refresh()}
       />
     </div>
@@ -488,23 +494,36 @@ export default function MappingClient({
 }
 
 function IngredientEscandalloBlock({
-  rows,
+  projection,
   hasRecipe,
 }: {
-  rows: RecipeIngredientMatchRow[]
+  projection: RecipeMaterialProjection | null
   hasRecipe: boolean
 }) {
   if (!hasRecipe) {
     return <span className="block text-left text-[10px] leading-none text-zinc-300">—</span>
   }
-  if (rows.length === 0) {
-    return <span className="block text-left text-[9px] leading-tight text-zinc-400">Sin líneas</span>
+  if (!projection || projection.status === 'invalid') {
+    return (
+      <span className="block text-left text-[9px] leading-tight text-zinc-500">
+        No se pudieron expandir las materias primas de esta receta.
+      </span>
+    )
+  }
+  if (projection.rows.length === 0) {
+    return (
+      <span className="block text-left text-[9px] leading-tight text-zinc-400">
+        Sin materias primas configuradas.
+      </span>
+    )
   }
   return (
     <div className="space-y-0.5 text-left">
-      {rows.map((line) => (
+      {projection.rows.map((line) => (
         <div key={line.ingredient_id} className="text-left">
-          <span className="block text-[8px] font-bold leading-snug text-[#36606F]">{line.ingredient_name}</span>
+          <span className="block text-[8px] font-bold leading-snug text-[#36606F]">
+            {formatMaterialLine(line.ingredient_name, line.quantity_base, line.unit_base)}
+          </span>
           {line.albaran.length === 0 ? (
             <div className="text-[8px] leading-tight text-zinc-400">→ —</div>
           ) : (
@@ -531,9 +550,8 @@ function IngredientEscandalloModal({
   articuloNombre,
   recipeId,
   recipeName,
-  matchRows,
+  projection,
   suppliersMini,
-  ingredientsMini,
   onDone,
 }: {
   open: boolean
@@ -541,16 +559,13 @@ function IngredientEscandalloModal({
   articuloNombre: string
   recipeId: string
   recipeName: string
-  matchRows: RecipeIngredientMatchRow[]
+  projection: RecipeMaterialProjection | null
   suppliersMini: { id: number; name: string }[]
-  ingredientsMini: { id: string; name: string }[]
   onDone: () => void
 }) {
+  const matchRows: RecipeMaterialMatchRow[] = projection?.status === 'ok' ? projection.rows : []
   const [pending, startTransition] = useTransition()
   const [addByIng, setAddByIng] = useState<Record<string, { supplierId: string; text: string; factor: string }>>({})
-  const [linkIngredientId, setLinkIngredientId] = useState('')
-  const [linkUnit, setLinkUnit] = useState('kg')
-  const [pendingRemoveIngredientId, setPendingRemoveIngredientId] = useState<string | null>(null)
 
   const escandalloInitKey = useMemo(
     () => (open ? { matchRows, suppliersMini } : null),
@@ -568,25 +583,6 @@ function IngredientEscandalloModal({
       setAddByIng(init)
     }
   }
-
-  const linkResetKey = useMemo(
-    () => (open ? { recipeId, matchRows } : null),
-    [open, recipeId, matchRows]
-  )
-  const [prevLinkResetKey, setPrevLinkResetKey] = useState<typeof linkResetKey>(null)
-  if (linkResetKey !== prevLinkResetKey) {
-    setPrevLinkResetKey(linkResetKey)
-    if (linkResetKey) {
-      setLinkIngredientId('')
-      setLinkUnit('kg')
-    }
-  }
-
-  const excludeIngredientIds = useMemo(() => new Set(matchRows.map((r) => r.ingredient_id)), [matchRows])
-  const linkableIngredients = useMemo(
-    () => ingredientsMini.filter((i) => i.id && !excludeIngredientIds.has(i.id)),
-    [ingredientsMini, excludeIngredientIds]
-  )
 
   const setAdd = (ingredientId: string, patch: Partial<{ supplierId: string; text: string; factor: string }>) => {
     setAddByIng((prev) => {
@@ -648,27 +644,6 @@ function IngredientEscandalloModal({
     )
   }
 
-  const removeIngredientFromRecipe = (ingredientId: string) => {
-    setPendingRemoveIngredientId(ingredientId)
-  }
-
-  const confirmRemoveIngredient = () => {
-    const ingredientId = pendingRemoveIngredientId
-    setPendingRemoveIngredientId(null)
-    if (!ingredientId) return
-    void runAsync(() => deleteRecipeIngredientLineAction({ recipe_id: recipeId, ingredient_id: ingredientId }))
-  }
-
-  const submitLinkIngredient = () => {
-    if (!linkIngredientId) {
-      toast.error('Elige un ingrediente.')
-      return
-    }
-    void runAsync(() =>
-      addRecipeIngredientLineAction({ recipe_id: recipeId, ingredient_id: linkIngredientId, unit: linkUnit })
-    )
-  }
-
   const subtitle =
     articuloNombre && recipeName
       ? `${articuloNombre} · ${recipeName}`
@@ -689,23 +664,22 @@ function IngredientEscandalloModal({
       scrollContent
     >
         <div className="px-2 py-2">
-          {matchRows.length === 0 ? (
-            <div className="space-y-2">
-              <p className="text-[11px] leading-snug text-zinc-600">
-                Escandallo vacío. Añade ingredientes del catálogo (misma receta que en{' '}
-                <span className="font-semibold">/recipes</span>).
-              </p>
-              <RecipeLinkIngredientBlock
-                title="Vincular"
-                pending={pending}
-                linkableIngredients={linkableIngredients}
-                linkIngredientId={linkIngredientId}
-                linkUnit={linkUnit}
-                onChangeIngredient={setLinkIngredientId}
-                onChangeUnit={setLinkUnit}
-                onSubmit={submitLinkIngredient}
-              />
-            </div>
+          <p className="mb-2 text-[11px] leading-snug text-zinc-600">
+            Materias primas de una ración completa.{' '}
+            <Link
+              href={recipeId ? `/recipes/${recipeId}` : '/recipes'}
+              className="inline-flex min-h-12 items-center font-semibold text-[#36606F] underline"
+              onClick={onClose}
+            >
+              Edita la composición en Recetas
+            </Link>
+          </p>
+          {projection?.status === 'invalid' ? (
+            <p className="text-[11px] leading-snug text-zinc-600">
+              No se pudieron expandir las materias primas de esta receta.
+            </p>
+          ) : matchRows.length === 0 ? (
+            <p className="text-[11px] leading-snug text-zinc-600">Sin materias primas configuradas.</p>
           ) : (
             <>
               <ul className="space-y-2">
@@ -719,7 +693,7 @@ function IngredientEscandalloModal({
                           className="text-[11px] font-bold leading-tight text-[#36606F] hover:underline"
                           onClick={onClose}
                         >
-                          {line.ingredient_name}
+                          {formatMaterialLine(line.ingredient_name, line.quantity_base, line.unit_base)}
                         </Link>
                         <p className="truncate font-mono text-[8px] leading-none text-zinc-400">{line.ingredient_id}</p>
                       </div>
@@ -777,16 +751,6 @@ function IngredientEscandalloModal({
                         <div className="mt-1 flex items-center justify-end gap-1">
                           <Button
                             type="button"
-                            variant="destructive"
-                            instance={`recetas-tpv-eliminar-ingrediente-${line.ingredient_id}`}
-                            disabled={pending}
-                            onClick={() => removeIngredientFromRecipe(line.ingredient_id)}
-                            className="shrink-0"
-                          >
-                            Eliminar
-                          </Button>
-                          <Button
-                            type="button"
                             variant="primary"
                             instance={`recetas-tpv-guardar-albaran-${line.ingredient_id}`}
                             disabled={pending}
@@ -801,101 +765,11 @@ function IngredientEscandalloModal({
                   )
                 })}
               </ul>
-              <div className="mt-2 border-t border-zinc-100 pt-2">
-                <RecipeLinkIngredientBlock
-                  title="Otro ingrediente"
-                  pending={pending}
-                  linkableIngredients={linkableIngredients}
-                  linkIngredientId={linkIngredientId}
-                  linkUnit={linkUnit}
-                  onChangeIngredient={setLinkIngredientId}
-                  onChangeUnit={setLinkUnit}
-                  onSubmit={submitLinkIngredient}
-                />
-              </div>
             </>
           )}
         </div>
     </Modal>
-    <ConfirmModal
-      open={pendingRemoveIngredientId != null}
-      onClose={() => { if (!pending) setPendingRemoveIngredientId(null) }}
-      title="Quitar ingrediente"
-      confirmLabel="Quitar"
-      instance="recetas-tpv-remove-ingredient-confirm"
-      usageLabel="Confirmar quitar ingrediente de receta"
-      confirming={pending}
-      onConfirm={confirmRemoveIngredient}
-    >
-      ¿Quitar este ingrediente de la receta en la base de datos?
-    </ConfirmModal>
     </>
-  )
-}
-
-function RecipeLinkIngredientBlock({
-  title,
-  pending,
-  linkableIngredients,
-  linkIngredientId,
-  linkUnit,
-  onChangeIngredient,
-  onChangeUnit,
-  onSubmit,
-}: {
-  title: string
-  pending: boolean
-  linkableIngredients: { id: string; name: string }[]
-  linkIngredientId: string
-  linkUnit: string
-  onChangeIngredient: (v: string) => void
-  onChangeUnit: (v: string) => void
-  onSubmit: () => void
-}) {
-  return (
-    <div className="rounded-md border border-dashed border-zinc-200 bg-zinc-50/60 p-1.5">
-      <p className="text-[8px] font-bold uppercase text-zinc-600">{title}</p>
-      <div className="mt-1 flex flex-wrap items-stretch gap-1">
-        <select
-          className="h-8 min-h-8 min-w-0 flex-1 rounded border border-zinc-200 bg-white px-1 text-[10px] sm:max-w-[65%]"
-          value={linkIngredientId}
-          onChange={(e) => onChangeIngredient(e.target.value)}
-          aria-label="Ingrediente"
-        >
-          <option value="">Ingrediente…</option>
-          {linkableIngredients.map((i) => (
-            <option key={i.id} value={i.id}>
-              {i.name}
-            </option>
-          ))}
-        </select>
-        <select
-          className="h-8 min-h-8 w-[4.5rem] shrink-0 rounded border border-zinc-200 bg-white px-1 text-[10px]"
-          value={linkUnit}
-          onChange={(e) => onChangeUnit(e.target.value)}
-          aria-label="Unidad"
-        >
-          <option value="kg">kg</option>
-          <option value="g">g</option>
-          <option value="l">l</option>
-          <option value="ml">ml</option>
-          <option value="ud">ud</option>
-        </select>
-        <Button
-          type="button"
-          variant="primary"
-          instance="recetas-tpv-añadir-ingrediente"
-          disabled={pending}
-          onClick={onSubmit}
-          className="shrink-0"
-        >
-          Añadir
-        </Button>
-      </div>
-      {linkableIngredients.length === 0 ? (
-        <p className="mt-1 text-[9px] text-amber-800">Sin ingredientes libres en la lista.</p>
-      ) : null}
-    </div>
   )
 }
 
@@ -925,6 +799,7 @@ function FilterButton({
 function RecipeCombobox({
   recipes,
   selectedId,
+  unlistedName = null,
   onSelect,
   onClear,
   compact = false,
@@ -932,6 +807,7 @@ function RecipeCombobox({
 }: {
   recipes: Recipe[]
   selectedId: string | null
+  unlistedName?: string | null
   onSelect: (id: string) => void
   onClear: () => void
   compact?: boolean
@@ -953,6 +829,7 @@ function RecipeCombobox({
   }, [])
 
   const selectedRecipe = useMemo(() => recipes.find((r) => r.id === selectedId), [recipes, selectedId])
+  const selectedLabel = selectedRecipe?.name ?? (selectedId ? unlistedName : null)
   const filteredRecipes = useMemo(() => {
     if (!search.trim()) return recipes.slice(0, 60)
     const q = search.toLowerCase()
@@ -985,10 +862,10 @@ function RecipeCombobox({
             micro
               ? 'whitespace-normal break-words text-left leading-snug [overflow-wrap:anywhere]'
               : 'truncate',
-            selectedRecipe ? 'text-zinc-900' : 'text-zinc-400'
+            selectedLabel ? 'text-zinc-900' : 'text-zinc-400'
           )}
         >
-          {selectedRecipe ? selectedRecipe.name : micro ? '\u00A0' : '…'}
+          {selectedLabel ? selectedLabel : micro ? '\u00A0' : '…'}
         </span>
         {!micro ? (
           <ChevronDown className={cn('shrink-0 text-zinc-400 transition-transform', chev, isOpen && 'rotate-180')} />
