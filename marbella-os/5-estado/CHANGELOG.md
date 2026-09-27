@@ -15,6 +15,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-27
 
+- **Al cerrar el desglose o la calculadora, la fila queda debajo del modal.** El alto de la fila se reserva antes de medir el canto, así no tapa el pie. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **En el desglose, Total y Nuevo se alinean con las cajas de cantidad.** «Nuevo» abraza la palabra y lleva el volumen del botón. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **La calculadora reordena las dos columnas de la derecha.** De arriba abajo: AC y borrar, % y ÷, × y −, + e =. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **La calculadora enseña la operación completa.** Mientras se escribe, el visor grande muestra la cuenta (`6×6`). Tras el igual, esa cuenta queda en gris y el resultado ocupa el visor grande. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
