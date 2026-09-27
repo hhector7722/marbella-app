@@ -15,7 +15,9 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-27
 
-- **La importación legacy y el Copilot dejan de componer recetas por su cuenta.** Un overwrite no toca una receta que ya contiene elaboraciones y no borra `recipe_subrecipes`. Una receta nueva queda vendible. `gestionar_recetas` lee `recipe_stock_requirements_v2_rows` y `get_recipe_cost_v2`: si la expansión o el coste no son válidos, no enseña cantidades parciales ni un cero falso. La ficha directa sin subrecetas sigue en `get_recipe_cost`. Queda pendiente la matriz final. [D32](DEUDA.md).
+- **La matriz de elaboraciones intermedias cierra B0–B10.** El listado de Recetas usa `get_recipe_cost_v2` cuando hay elaboraciones: un coste inválido o sin materia prima no sale como óptimo. La vendible sin subrecetas sigue en `get_recipe_cost`. Pesto y Brava siguen pendientes de datos reales. [D32](DEUDA.md).
+
+- **La importación legacy y el Copilot dejan de componer recetas por su cuenta.** Un overwrite no toca una receta que ya contiene elaboraciones y no borra `recipe_subrecipes`. Una receta nueva queda vendible. `gestionar_recetas` lee `recipe_stock_requirements_v2_rows` y `get_recipe_cost_v2`: si la expansión o el coste no son válidos, no enseña cantidades parciales ni un cero falso. La ficha directa sin subrecetas sigue en `get_recipe_cost`. [D32](DEUDA.md).
 
 ## 2026-09-26
 

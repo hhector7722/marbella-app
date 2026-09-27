@@ -350,6 +350,16 @@ BEGIN
     RAISE EXCEPTION 'caso 25: el coste escribe o lee stock';
   END IF;
 
+  result := public.get_recipe_cost_v2(gen_random_uuid());
+  IF (result->>'ok')::boolean IS NOT FALSE
+     OR result->'total_cost_eur' <> 'null'::jsonb
+     OR NOT EXISTS (
+       SELECT 1 FROM jsonb_array_elements(result->'errors') e
+       WHERE e->>'status' = 'RECIPE_NOT_FOUND'
+     ) THEN
+    RAISE EXCEPTION 'caso inexistente: %', result;
+  END IF;
+
   IF has_function_privilege('anon', 'public.get_recipe_cost_v2(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'anon puede ejecutar get_recipe_cost_v2';
   END IF;
