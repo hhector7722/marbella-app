@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import type { ReactNode } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -84,6 +85,7 @@ export function DenominationCountGrid({
     onZoom,
     showAvailable = false,
     compact = false,
+    trailing,
 }: {
     counts: Record<number, number>;
     onAdjust: (denom: number, delta: number) => void;
@@ -93,6 +95,8 @@ export function DenominationCountGrid({
     onZoom?: (denom: number) => void;
     showAvailable?: boolean;
     compact?: boolean;
+    /** Celdas extra en la misma rejilla, después de la última moneda. */
+    trailing?: ReactNode;
 }) {
     return (
         <div
@@ -161,6 +165,7 @@ export function DenominationCountGrid({
                     </div>
                 );
             })}
+            {trailing}
         </div>
     );
 }

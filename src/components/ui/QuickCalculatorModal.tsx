@@ -6,7 +6,6 @@ import {
     useLayoutEffect,
     useRef,
     useState,
-    type PointerEvent as ReactPointerEvent,
     type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -16,14 +15,29 @@ import { cn } from '@/lib/utils';
 import { DENOMINATIONS } from '@/lib/constants';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
+import {
+    readBreakdownDraft,
+    writeBreakdownDraft,
+    type BreakdownCounts,
+} from '@/lib/quick-breakdown-draft';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Button } from '@/components/ui/button';
+import {
+    INITIAL_CALC,
+    loadCalcResult,
+    pressCalcKey,
+    type CalcOp,
+    type CalcState,
+} from '@/lib/quick-calculator';
 
 export type QuickCashTool = 'calculator' | 'breakdown';
 
 const CALCULATOR_ICON = '/icons/calculadora.png';
-const BREAKDOWN_ICON = '/icons/desglose.png';
 const INSET_VAR = '--quick-tool-inset';
 const FAB_DOCK_VAR = '--quick-fab-dock';
+const TOOLS_ROW_VAR = '--quick-tools-row';
+/** Aire entre el canto inferior del modal y la fila de herramientas. */
+const TOOLS_ROW_GAP = 8;
 
 /** Alto común del panel (calculadora y desglose), sin el área segura. */
 const QUICK_PANEL_H = 'h-[16.625rem]';
@@ -57,44 +71,15 @@ function clearFabDock() {
     root.removeAttribute('data-quick-fab');
 }
 
-function toEvalExpr(expr: string): string {
-    return expr
-        .replace(/÷/g, '/')
-        .replace(/×/g, '*')
-        .replace(/,/g, '.')
-        .replace(/−/g, '-');
+function applyToolsRow(px: number) {
+    const next = `${Math.max(0, Math.round(px))}px`;
+    const root = document.documentElement;
+    if (root.style.getPropertyValue(TOOLS_ROW_VAR) === next) return;
+    root.style.setProperty(TOOLS_ROW_VAR, next);
 }
 
-function safeEval(expr: string): number | null {
-    const trimmed = toEvalExpr(expr).replace(/\s/g, '');
-    if (!trimmed) return null;
-    if (!/^[\d.+*\-/]+$/.test(trimmed)) return null;
-    try {
-        const result = Function('"use strict"; return (' + trimmed + ')')();
-        return typeof result === 'number' && Number.isFinite(result) ? result : null;
-    } catch {
-        return null;
-    }
-}
-
-function formatCalcNumber(n: number): string {
-    if (!Number.isFinite(n)) return ' ';
-    const rounded = Math.abs(n - Math.round(n)) < 1e-10 ? Math.round(n) : Number(n.toFixed(10));
-    return String(rounded).replace('.', ',');
-}
-
-function liveValue(expr: string): number | null {
-    const evalStr = toEvalExpr(expr).replace(/\s/g, '');
-    if (!evalStr) return null;
-    const ready = evalStr.replace(/[+\-*/.]+$/, '');
-    if (!ready) return null;
-    return safeEval(ready);
-}
-
-function lastNumberSpan(expr: string): { start: number; value: string } | null {
-    const match = expr.match(/([0-9]+(?:,[0-9]*)?)$/);
-    if (!match || match.index == null) return null;
-    return { start: match.index, value: match[1] };
+function clearToolsRow() {
+    document.documentElement.style.setProperty(TOOLS_ROW_VAR, '0px');
 }
 
 type KeyTone = 'num' | 'fn' | 'op';
@@ -130,8 +115,6 @@ const KEYPAD: { key: string; label: ReactNode; tone: KeyTone }[][] = [
     ],
 ];
 
-const OPS = new Set(['+', '-', '×', '÷']);
-
 function MinimizeHandle({
     onMinimize,
     tone,
@@ -159,31 +142,48 @@ function IosCalcKey({
     children,
     onClick,
     ariaLabel,
+    active = false,
 }: {
     tone: KeyTone;
     children: ReactNode;
     onClick: () => void;
     ariaLabel: string;
+    /** Operador pendiente, como en iOS: fondo blanco y glifo naranja. */
+    active?: boolean;
 }) {
     return (
         <button
             type="button"
             aria-label={ariaLabel}
+            aria-pressed={active || undefined}
             onClick={onClick}
             className={cn(
                 'flex h-12 min-h-12 w-full min-w-0 items-center justify-center rounded-full text-[20px] font-medium tabular-nums transition-transform active:scale-95',
                 tone === 'num' && 'text-white',
                 tone === 'fn' && 'text-[#1c1c1e] text-[16px] font-semibold',
-                tone === 'op' && 'text-white text-[22px]',
+                tone === 'op' && !active && 'text-white text-[22px]',
+                tone === 'op' && active && 'text-[22px]',
             )}
             style={{
-                background:
-                    tone === 'num' ? CALC.num : tone === 'fn' ? CALC.fn : CALC.op,
+                background: active
+                    ? '#ffffff'
+                    : tone === 'num'
+                        ? CALC.num
+                        : tone === 'fn'
+                            ? CALC.fn
+                            : CALC.op,
+                color: active ? CALC.op : undefined,
             }}
         >
             {children}
         </button>
     );
+}
+
+function pendingOpMatches(key: string, op: CalcOp | null): boolean {
+    if (!op) return false;
+    if (op === '−') return key === '-' || key === '−';
+    return key === op;
 }
 
 function IosCalculator({
@@ -193,85 +193,24 @@ function IosCalculator({
     onCopyValue: (value: string) => void;
     onMinimize: () => void;
 }) {
-    const [expr, setExpr] = useState('');
-    const [justEvaluated, setJustEvaluated] = useState(false);
+    const [calc, setCalc] = useState<CalcState>(INITIAL_CALC);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [history, setHistory] = useState<HistoryEntry[]>([]);
 
-    const result = liveValue(expr);
-    const resultLabel = result == null ? (expr ? ' ' : '0') : formatCalcNumber(result);
+    const calcRef = useRef(calc);
+    calcRef.current = calc;
 
     const handleKey = useCallback((key: string) => {
-        if (key === 'AC') {
-            setExpr('');
-            setJustEvaluated(false);
-            return;
+        const next = pressCalcKey(calcRef.current, key);
+        calcRef.current = next.state;
+        if (next.committed) {
+            const entry = next.committed;
+            setHistory((items) => [entry, ...items].slice(0, 40));
         }
-        if (key === 'back') {
-            setJustEvaluated(false);
-            setExpr((prev) => prev.slice(0, -1));
-            return;
-        }
-        if (key === '=') {
-            const val = liveValue(expr);
-            if (val == null || !expr) return;
-            const shown = formatCalcNumber(val);
-            setHistory((prev) => [{ expression: expr, result: shown }, ...prev].slice(0, 40));
-            setExpr(shown);
-            setJustEvaluated(true);
-            return;
-        }
-        if (key === '±') {
-            setJustEvaluated(false);
-            setExpr((prev) => {
-                const span = lastNumberSpan(prev);
-                if (!span) return prev.startsWith('−') ? prev.slice(1) : prev ? `−${prev}` : prev;
-                const before = prev.slice(0, span.start);
-                if (before.endsWith('−')) return `${before.slice(0, -1)}${span.value}`;
-                return `${before}−${span.value}`;
-            });
-            return;
-        }
-        if (key === '%') {
-            setJustEvaluated(false);
-            setExpr((prev) => {
-                const span = lastNumberSpan(prev);
-                if (!span) return prev;
-                const n = Number(span.value.replace(',', '.'));
-                if (!Number.isFinite(n)) return prev;
-                return `${prev.slice(0, span.start)}${formatCalcNumber(n / 100)}`;
-            });
-            return;
-        }
-        if (key === ',') {
-            const startFresh = justEvaluated;
-            setJustEvaluated(false);
-            setExpr((prev) => {
-                if (startFresh) return '0,';
-                const span = lastNumberSpan(prev);
-                if (span?.value.includes(',')) return prev;
-                if (!span) return `${prev}0,`;
-                return `${prev},`;
-            });
-            return;
-        }
-        if (OPS.has(key)) {
-            const op = key === '-' ? '−' : key;
-            setJustEvaluated(false);
-            setExpr((prev) => {
-                if (!prev) return op === '−' ? '−' : prev;
-                const last = prev.slice(-1);
-                if (OPS.has(last) || last === '−') return `${prev.slice(0, -1)}${op}`;
-                return `${prev}${op}`;
-            });
-            return;
-        }
-        const startFresh = justEvaluated;
-        setJustEvaluated(false);
-        setExpr((prev) => (startFresh ? key : `${prev}${key}`));
-    }, [expr, justEvaluated]);
+        setCalc(next.state);
+    }, []);
 
-    const copyTarget = resultLabel === ' ' ? '0' : resultLabel;
+    const copyTarget = calc.error ? '0' : calc.display;
 
     return (
         <div className="pb-[env(safe-area-inset-bottom,0px)]">
@@ -305,11 +244,8 @@ function IosCalculator({
                     </div>
                 </div>
                 <div className="min-w-0 flex-1 text-right">
-                    <div className="truncate text-[13px] font-medium tabular-nums text-[#8e8e93]">
-                        {expr || ' '}
-                    </div>
                     <div className="truncate text-[32px] font-light leading-none tabular-nums tracking-tight text-white">
-                        {resultLabel}
+                        {calc.display}
                     </div>
                 </div>
             </div>
@@ -323,8 +259,7 @@ function IosCalculator({
                                 type="button"
                                 className="flex min-h-12 w-full shrink-0 items-baseline justify-between gap-3 border-0 border-b border-white/10 bg-transparent px-1 py-2 text-left"
                                 onClick={() => {
-                                    setExpr(entry.result);
-                                    setJustEvaluated(true);
+                                    setCalc(loadCalcResult(entry.result));
                                     setHistoryOpen(false);
                                 }}
                             >
@@ -339,6 +274,7 @@ function IosCalculator({
                             <IosCalcKey
                                 key={`${cell.key}-${i}`}
                                 tone={cell.tone}
+                                active={calc.waiting && pendingOpMatches(cell.key, calc.pendingOp)}
                                 ariaLabel={cell.key === 'back' ? 'Borrar' : cell.key === 'AC' ? 'Borrar todo' : String(cell.key)}
                                 onClick={() => handleKey(cell.key)}
                             >
@@ -354,8 +290,16 @@ function IosCalculator({
 }
 
 function BreakdownDraft({ onMinimize }: { onMinimize: () => void }) {
-    const [counts, setCounts] = useState<Record<number, number>>({});
+    const [counts, setCounts] = useState<BreakdownCounts>(() => readBreakdownDraft(DENOMINATIONS));
+    const countsRef = useRef(counts);
+    countsRef.current = counts;
     const total = DENOMINATIONS.reduce((sum, d) => sum + d * (counts[d] || 0), 0);
+
+    const commit = (next: BreakdownCounts) => {
+        countsRef.current = next;
+        setCounts(next);
+        writeBreakdownDraft(next, DENOMINATIONS);
+    };
 
     return (
         <div className="bg-white pb-[env(safe-area-inset-bottom,0px)]">
@@ -368,22 +312,44 @@ function BreakdownDraft({ onMinimize }: { onMinimize: () => void }) {
                     compact
                     counts={counts}
                     onAdjust={(denom, delta) => {
-                        setCounts((prev) => ({
-                            ...prev,
-                            [denom]: Math.max(0, (prev[denom] || 0) + delta),
-                        }));
+                        const prev = countsRef.current;
+                        const qty = Math.max(0, (prev[denom] || 0) + delta);
+                        const next = { ...prev };
+                        if (qty === 0) delete next[denom];
+                        else next[denom] = qty;
+                        commit(next);
                     }}
                     onChange={(denom, raw) => {
-                        const num = raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0);
-                        setCounts((prev) => ({ ...prev, [denom]: num }));
+                        const qty = raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0);
+                        const next = { ...countsRef.current };
+                        if (qty === 0) delete next[denom];
+                        else next[denom] = qty;
+                        commit(next);
                     }}
+                    trailing={
+                        <>
+                            <div className="flex min-w-0 flex-col items-center justify-center gap-0.5">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                                    Total
+                                </span>
+                                <span className="max-w-full truncate text-center text-[12px] font-black tabular-nums leading-none text-zinc-800">
+                                    {total > 0.005 ? formatCurrencySpanish(total) : ' '}
+                                </span>
+                            </div>
+                            <div className="flex min-w-0 items-center justify-center">
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    layout="fill"
+                                    instance="quick-breakdown-new"
+                                    onClick={() => commit({})}
+                                >
+                                    Nuevo
+                                </Button>
+                            </div>
+                        </>
+                    }
                 />
-            </div>
-            <div className="flex h-8 shrink-0 items-center justify-between gap-2 border-t border-zinc-100 px-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total</span>
-                <span className="text-base font-black tabular-nums text-zinc-800">
-                    {total > 0.005 ? formatCurrencySpanish(total) : ' '}
-                </span>
             </div>
         </div>
         </div>
@@ -488,98 +454,17 @@ export function QuickCalculatorModal({
     );
 }
 
-function ToolFab({
-    src,
-    ariaLabel,
-    onClick,
-    pressed,
-    framed = false,
-}: {
-    src: string;
-    ariaLabel: string;
-    onClick: () => void;
-    pressed?: boolean;
-    /** Contorno blanco encima del icono. No cambia la caja de 48 px. */
-    framed?: boolean;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-label={ariaLabel}
-            aria-pressed={pressed}
-            className="relative flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radio-superficie)] border-0 bg-transparent p-0 transition-all hover:brightness-110 active:scale-95"
-        >
-            <img
-                src={src}
-                alt=""
-                draggable={false}
-                className={cn(
-                    'pointer-events-none h-full w-full object-contain',
-                    src === BREAKDOWN_ICON && 'p-[13%]',
-                )}
-            />
-            {framed ? (
-                <span
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 z-[1] rounded-[var(--radio-superficie)] border-2 border-[var(--color-superficie)]"
-                />
-            ) : null}
-        </button>
-    );
-}
-
-const QUICK_FAB_TOP_GAP = 8;
-const QUICK_FAB_DRAG_THRESHOLD = 6;
-const DOCK_BOTTOM_KEY = 'marbella:quick-cash-tools-dock-bottom';
-
-/** Distancia desde el canto inferior que reserva la TabBar (o el área segura). */
-function measureQuickFabBaseBottom(): number {
-    if (typeof window === 'undefined') return 0;
-    const probe = document.createElement('div');
-    probe.style.cssText =
-        'position:fixed;left:0;bottom:0;width:0;height:var(--quick-fab-lift, env(safe-area-inset-bottom, 0px));pointer-events:none;visibility:hidden;';
-    document.body.appendChild(probe);
-    const height = Math.round(probe.getBoundingClientRect().height);
-    probe.remove();
-    return Number.isFinite(height) ? height : 0;
-}
-
-function readStoredDockBottom(): number | null {
-    if (typeof window === 'undefined') return null;
-    try {
-        const raw = window.localStorage.getItem(DOCK_BOTTOM_KEY);
-        if (!raw) return null;
-        const n = Number(raw);
-        return Number.isFinite(n) ? n : null;
-    } catch {
-        return null;
-    }
-}
-
-function writeStoredDockBottom(px: number): void {
-    if (typeof window === 'undefined') return;
-    try {
-        window.localStorage.setItem(DOCK_BOTTOM_KEY, String(Math.round(px)));
-    } catch {
-        // Sin persistencia: la posición sigue funcionando durante la sesión.
-    }
-}
-
-function clampDockBottom(value: number, base: number, max: number): number {
-    return Math.min(Math.max(value, base), Math.max(base, max));
-}
+type ToolsRowBox = { top: number; left: number; width: number };
 
 /**
- * Acceso flotante a calculadora y desglose: dock vertical pegado al canto
- * derecho, arrastrable por toda la altura. Por defecto sobre la TabBar, con
- * la calculadora encima del desglose. Al abrir el panel, el dock se retira.
+ * Fila de acceso a calculadora y desglose, fuera del modal y debajo de él.
+ * Desglose a la izquierda (botón secundario) y calculadora a la derecha
+ * (botón primario). No entra en el ancho del modal. Al abrir el panel, se retira.
  */
 export function QuickCashToolsFabs({
     calculator,
     breakdown,
     isOpen,
-    openTab,
     onOpen,
     className,
 }: {
@@ -593,20 +478,8 @@ export function QuickCashToolsFabs({
     const dockRef = useRef<HTMLDivElement>(null);
     const anchorRef = useRef<HTMLSpanElement>(null);
     const [mounted, setMounted] = useState(false);
-    const [bottom, setBottom] = useState<number | null>(null);
-    const [edgeRight, setEdgeRight] = useState<number | null>(null);
+    const [box, setBox] = useState<ToolsRowBox | null>(null);
     const [placed, setPlaced] = useState(false);
-    const [dragging, setDragging] = useState(false);
-    const dragRef = useRef<{
-        id: number;
-        startY: number;
-        startBottom: number;
-        base: number;
-        dockHeight: number;
-        moved: boolean;
-    } | null>(null);
-    const lastBottomRef = useRef<number | null>(null);
-    const suppressClickRef = useRef(false);
 
     useEffect(() => {
         setMounted(true);
@@ -614,19 +487,33 @@ export function QuickCashToolsFabs({
 
     useLayoutEffect(() => {
         if (!mounted) return;
-        // El dock no escribe ancho: ningún modal reserva gutter por estos iconos.
         clearFabDock();
-        if (isOpen) return;
+        if (isOpen) {
+            clearToolsRow();
+            return;
+        }
         const sync = () => {
             const modal = anchorRef.current?.closest('[data-component="Modal"]');
             const container = modal?.querySelector('[data-element="container"]');
-            if (!(container instanceof HTMLElement)) {
-                setEdgeRight(null);
+            const dock = dockRef.current;
+            if (!(container instanceof HTMLElement) || !dock) {
+                setBox(null);
                 setPlaced(true);
+                clearToolsRow();
                 return;
             }
-            const next = Math.max(0, Math.round(window.innerWidth - container.getBoundingClientRect().right));
-            setEdgeRight((prev) => (prev === next ? prev : next));
+            const rect = container.getBoundingClientRect();
+            const next = {
+                top: Math.round(rect.bottom + TOOLS_ROW_GAP),
+                left: Math.round(rect.left),
+                width: Math.round(rect.width),
+            };
+            setBox((prev) =>
+                prev && prev.top === next.top && prev.left === next.left && prev.width === next.width
+                    ? prev
+                    : next,
+            );
+            applyToolsRow(dock.getBoundingClientRect().height + TOOLS_ROW_GAP);
             setPlaced(true);
         };
         sync();
@@ -634,93 +521,20 @@ export function QuickCashToolsFabs({
         const container = modal?.querySelector('[data-element="container"]');
         const observer = new ResizeObserver(sync);
         if (container instanceof HTMLElement) observer.observe(container);
+        if (dockRef.current) observer.observe(dockRef.current);
         window.addEventListener('resize', sync);
         return () => {
             observer.disconnect();
             window.removeEventListener('resize', sync);
             clearFabDock();
+            clearToolsRow();
         };
     }, [mounted, calculator, breakdown, isOpen]);
-
-    // Posición vertical: por defecto sobre la TabBar; si el usuario la movió, se restaura.
-    useLayoutEffect(() => {
-        if (!mounted || isOpen) return;
-        const apply = () => {
-            const base = measureQuickFabBaseBottom();
-            const max =
-                window.innerHeight - (dockRef.current?.offsetHeight ?? 0) - QUICK_FAB_TOP_GAP;
-            const stored = readStoredDockBottom();
-            const next = clampDockBottom(stored ?? base, base, max);
-            lastBottomRef.current = next;
-            setBottom(next);
-        };
-        apply();
-        window.addEventListener('resize', apply);
-        return () => window.removeEventListener('resize', apply);
-    }, [mounted, isOpen, calculator, breakdown]);
 
     if (!calculator && !breakdown) return null;
     if (!mounted || isOpen) return null;
 
-    const onModal = edgeRight != null;
-
-    const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-        if (event.pointerType === 'mouse' && event.button !== 0) return;
-        const base = measureQuickFabBaseBottom();
-        suppressClickRef.current = false;
-        dragRef.current = {
-            id: event.pointerId,
-            startY: event.clientY,
-            startBottom: bottom ?? base,
-            base,
-            dockHeight: dockRef.current?.offsetHeight ?? 0,
-            moved: false,
-        };
-    };
-
-    const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-        const drag = dragRef.current;
-        if (!drag || drag.id !== event.pointerId) return;
-        const delta = drag.startY - event.clientY;
-        if (!drag.moved && Math.abs(delta) < QUICK_FAB_DRAG_THRESHOLD) return;
-        if (!drag.moved) {
-            // Solo se captura al confirmarse el arrastre: un toque simple deja
-            // que el botón reciba su click con normalidad.
-            drag.moved = true;
-            suppressClickRef.current = true;
-            try {
-                dockRef.current?.setPointerCapture(event.pointerId);
-            } catch {
-                // Sin captura el arrastre sigue mientras el puntero esté encima.
-            }
-        }
-        setDragging(true);
-        const max = window.innerHeight - drag.dockHeight - QUICK_FAB_TOP_GAP;
-        const next = clampDockBottom(drag.startBottom + delta, drag.base, max);
-        lastBottomRef.current = next;
-        setBottom(next);
-        event.preventDefault();
-    };
-
-    const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
-        const drag = dragRef.current;
-        if (!drag || drag.id !== event.pointerId) return;
-        dragRef.current = null;
-        setDragging(false);
-        try {
-            dockRef.current?.releasePointerCapture(event.pointerId);
-        } catch {
-            // no-op
-        }
-        if (drag.moved && lastBottomRef.current != null) {
-            writeStoredDockBottom(lastBottomRef.current);
-        }
-    };
-
-    const handleOpen = (tab: QuickCashTool) => {
-        if (suppressClickRef.current) return;
-        onOpen(tab);
-    };
+    const onModal = box != null;
 
     return (
         <>
@@ -735,44 +549,48 @@ export function QuickCashToolsFabs({
                     ref={dockRef}
                     data-component="QuickCashToolsFabs"
                     data-overlay={onModal ? 'modal' : undefined}
-                    data-dragging={dragging ? 'true' : undefined}
-                    className={cn(className, 'pointer-events-none fixed right-0 z-[208]')}
-                    style={{
-                        right: onModal ? `${edgeRight}px` : undefined,
-                        visibility: placed ? undefined : 'hidden',
-                        bottom:
-                            bottom == null
-                                ? 'var(--quick-fab-lift, env(safe-area-inset-bottom, 0px))'
-                                : `${bottom}px`,
-                    }}
+                    className={cn(className, 'pointer-events-none fixed z-[208]')}
+                    style={
+                        onModal
+                            ? {
+                                  top: `${box.top}px`,
+                                  left: `${box.left}px`,
+                                  width: `${box.width}px`,
+                                  right: 'auto',
+                                  bottom: 'auto',
+                                  visibility: placed ? undefined : 'hidden',
+                              }
+                            : { visibility: placed ? undefined : 'hidden' }
+                    }
                 >
                     <div
                         data-element="dock"
                         role="group"
                         aria-label="Herramientas de recuento"
-                        onPointerDown={onPointerDown}
-                        onPointerMove={onPointerMove}
-                        onPointerUp={endDrag}
-                        onPointerCancel={endDrag}
-                        className="pointer-events-auto flex cursor-grab touch-none select-none flex-col items-center gap-1 rounded-l-ds-superficie bg-ds-superficie p-1 shadow-ds-pagina active:cursor-grabbing"
+                        className={cn(
+                            'pointer-events-auto flex w-full items-center gap-2',
+                            calculator && !breakdown ? 'justify-end' : 'justify-between',
+                        )}
                     >
-                        {calculator ? (
-                            <ToolFab
-                                src={CALCULATOR_ICON}
-                                ariaLabel={openTab === 'calculator' ? 'Cerrar calculadora' : 'Abrir calculadora'}
-                                pressed={openTab === 'calculator'}
-                                framed={onModal}
-                                onClick={() => handleOpen('calculator')}
-                            />
-                        ) : null}
                         {breakdown ? (
-                            <ToolFab
-                                src={BREAKDOWN_ICON}
-                                ariaLabel={openTab === 'breakdown' ? 'Cerrar desglose' : 'Abrir desglose'}
-                                pressed={openTab === 'breakdown'}
-                                framed={onModal}
-                                onClick={() => handleOpen('breakdown')}
-                            />
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                instance="quick-tools-breakdown"
+                                onClick={() => onOpen('breakdown')}
+                            >
+                                Desglose
+                            </Button>
+                        ) : null}
+                        {calculator ? (
+                            <Button
+                                type="button"
+                                variant="primary"
+                                instance="quick-tools-calculator"
+                                onClick={() => onOpen('calculator')}
+                            >
+                                Calculadora
+                            </Button>
                         ) : null}
                     </div>
                 </div>,

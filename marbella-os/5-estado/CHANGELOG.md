@@ -15,6 +15,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-27
 
+- **El desglose de borrador recuerda el último recuento.** Se guarda en el dispositivo y vuelve al abrir el panel. El total deja el pie y ocupa la celda a la derecha de la moneda de 1 céntimo. «Nuevo», botón primario, pone las cantidades a cero. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **Otros del dashboard master tiene una segunda página.** Se desliza en horizontal y los puntos indican la página. Vitrina abre `/master/carta`.
+
 - **La matriz de elaboraciones intermedias cierra B0–B10.** El listado de Recetas usa `get_recipe_cost_v2` cuando hay elaboraciones: un coste inválido o sin materia prima no sale como óptimo. La vendible sin subrecetas sigue en `get_recipe_cost`. Pesto y Brava siguen pendientes de datos reales. [D32](DEUDA.md).
 
 - **La importación legacy y el Copilot dejan de componer recetas por su cuenta.** Un overwrite no toca una receta que ya contiene elaboraciones y no borra `recipe_subrecipes`. Una receta nueva queda vendible. `gestionar_recetas` lee `recipe_stock_requirements_v2_rows` y `get_recipe_cost_v2`: si la expansión o el coste no son válidos, no enseña cantidades parciales ni un cero falso. La ficha directa sin subrecetas sigue en `get_recipe_cost`. [D32](DEUDA.md).
@@ -27,7 +31,7 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **El consumo personal de ración completa expande hasta materia prima.** `process_staff_consumption` usa `recipe_stock_requirements_v2_rows` y sigue escribiendo `WASTE` con referencia `STAFF-*`. La media ración directa conserva `quantity_half` y la convierte a la unidad base. La media ración con subrecetas no se escribe. Una elaboración interna no es un producto de consumo. [D32](DEUDA.md).
 
-- **La calculadora y el desglose no cambian el ancho de ningún modal.** El dock queda fuera del flujo y, dentro de un modal, se superpone a su canto derecho. El scroll vertical no lo ensancha ni lo desplaza. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+- **Desglose y Calculadora pasan a una fila bajo el modal.** «Desglose» queda a la izquierda, botón secundario, y «Calculadora» a la derecha, botón primario. No llevan icono y no cambian el ancho del modal. La calculadora ya no muestra el resultado al teclear: sigue la lógica de la calculadora básica de iOS y resuelve al pulsar `=` o el siguiente operador. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **La merma de receta expande hasta materia prima.** `processRecipeWaste` lee `recipe_stock_requirements_v2_rows` y escribe con `record_waste_movements`. Si la expansión no está bien, o la receta válida no tiene materias primas, no escribe. La merma manual de ingredientes no cambia. No hay stock de elaboraciones intermedias. [D32](DEUDA.md).
 

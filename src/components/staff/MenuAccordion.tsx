@@ -308,7 +308,6 @@ export function MenuAccordion({
     categoryCoverById = {},
     categoryCoverScaleById = {},
     homeCompact = false,
-    embeddedCarta = false,
     eventOrder,
     eventEncargoEdit,
 }: {
@@ -341,8 +340,6 @@ export function MenuAccordion({
     categoryCoverScaleById?: Record<string, CartaPhotoScale>
     /** Home staff/carta: grid más compacto sin scroll */
     homeCompact?: boolean
-    /** Carta pública cargada en iframe de marbella-web. */
-    embeddedCarta?: boolean
     /** Pedido por evento: misma carta con +/− por producto */
     eventOrder?: EventOrderCartaControl
     /** Configuración del encargo (productos/categorías/límites). */
@@ -1638,7 +1635,6 @@ export function MenuAccordion({
                                             rows={platoBundleRows}
                                             lang={lang}
                                             launcherArticuloId={platoLauncherArticuloId ?? null}
-                                            embedded={embeddedCarta}
                                             className="min-h-0 flex-1"
                                             eventOrder={eventOrder}
                                         />

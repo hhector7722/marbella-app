@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-25
+revisado: 2026-09-27
 caducidad: 6 meses
 supersede: —
 ---
@@ -189,6 +189,8 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **PVP** | Precio de venta al público. Nunca se confunde con el coste. | — |
 | **PAV** | Precio con el que se compara el PVP en el análisis de rentabilidad. | — |
 | **Carta** | La oferta publicada al cliente. Superficie pública, sin sesión. | — |
+| **Carta física** | Las dos vitrinas de seis hojas A4. Una sola colección de productos. No es la carta pública. | `/master/carta` |
+| **Vitrina** | Acceso del dashboard master a la carta física. Vive en la segunda página de Otros. | — |
 | **Plato Marbella** | La ficha de plato en la carta pública, con su presentación propia. | — |
 
 ---
