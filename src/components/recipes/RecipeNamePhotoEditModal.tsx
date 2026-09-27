@@ -248,7 +248,7 @@ export function RecipeNamePhotoEditModal({
                     label={kindDraft === 'internal' ? 'Rendimiento del lote' : 'Rendimiento del lote (opcional)'}
                     htmlFor="recipe-edit-yield"
                 >
-                    <div className="flex gap-2">
+                    <div className="grid w-full min-w-0 grid-cols-2 gap-2">
                         <input
                             id="recipe-edit-yield"
                             type="text"
@@ -257,13 +257,13 @@ export function RecipeNamePhotoEditModal({
                             onChange={(e) => setYieldQuantityDraft(e.target.value)}
                             autoComplete="off"
                             placeholder="1000"
-                            className="min-h-12"
+                            className="min-w-0"
                         />
                         <select
                             aria-label="Unidad del rendimiento"
                             value={yieldUnitDraft}
                             onChange={(e) => setYieldUnitDraft(e.target.value)}
-                            className="min-h-12 w-24 shrink-0"
+                            className="min-w-0"
                         >
                             <option value="">Unidad</option>
                             {RECIPE_UNIT_OPTIONS.map((option) => (
