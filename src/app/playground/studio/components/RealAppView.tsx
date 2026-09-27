@@ -4,6 +4,19 @@ import React, { useEffect, useRef } from 'react';
 import { SANDBOX_ROUTES, useSandboxStore, useActiveEstetica } from '../store';
 import type { Recipe, SandboxRoute, StudioFontFamily, VisualOverrides } from '../types';
 
+/** Señal explícita para StudioPreviewClient. No activar el sandbox solo por estar en un iframe. */
+function withStudioPreview(route: string): string {
+    const hashIndex = route.indexOf('#');
+    const hash = hashIndex >= 0 ? route.slice(hashIndex) : '';
+    const withoutHash = hashIndex >= 0 ? route.slice(0, hashIndex) : route;
+    const queryIndex = withoutHash.indexOf('?');
+    const path = queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash;
+    const params = new URLSearchParams(queryIndex >= 0 ? withoutHash.slice(queryIndex + 1) : '');
+    params.set('studioPreview', '1');
+    const qs = params.toString();
+    return `${path}?${qs}${hash}`;
+}
+
 export function RealAppView({ recipeOverride, overrides = {}, fontFamily, globalScale, background, onDragEnd }: { recipeOverride?: Recipe; overrides?: VisualOverrides; fontFamily?: StudioFontFamily; globalScale?: string; background?: any; onDragEnd?: (key: string, x: string, y: string) => void }) {
     const route = useSandboxStore(s => s.route);
     const setRoute = useSandboxStore(s => s.setRoute);
@@ -68,7 +81,7 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, global
     return (
         <iframe 
             ref={iframeRef}
-            src={route} 
+            src={withStudioPreview(route)} 
             className="w-full h-full border-0 bg-white" 
             title="Marbella Studio Preview"
         />

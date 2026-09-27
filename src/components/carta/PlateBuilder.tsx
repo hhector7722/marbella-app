@@ -51,13 +51,11 @@ const FALLBACK_BY_SLOT: Readonly<
 export function PlateBuilder({
   lang,
   activeSlot = null,
-  embedded = false,
   children,
   className,
 }: {
   lang: CartaLang
   activeSlot?: PlatoMarbellaSlot | null
-  embedded?: boolean
   children: ReactNode
   className?: string
 }) {
@@ -82,7 +80,6 @@ export function PlateBuilder({
 
   return (
     <div
-      data-embedded={embedded ? 'true' : undefined}
       className={cn('relative mx-auto w-full max-w-[21rem] sm:max-w-[23rem]', className)}
     >
       <style>{`
@@ -98,14 +95,7 @@ export function PlateBuilder({
         }
       `}</style>
 
-      <div
-        className="relative aspect-[1609/1464] w-full select-none"
-        style={
-          embedded
-            ? { transform: 'scale(0.85)', transformOrigin: '50% 50%' }
-            : undefined
-        }
-      >
+      <div className="relative aspect-[1609/1464] w-full select-none">
         <Image
           src={`${PLATE_V15_BASE_PATH}/base/plate.png`}
           alt=""
@@ -178,15 +168,7 @@ export function PlateBuilder({
                 )}
                 style={{ left: `${pos.left}%`, top: `${pos.top}%`, opacity }}
               >
-                <span
-                  style={{
-                    display: 'inline-block',
-                    transform: embedded ? 'scale(1.1764705882)' : undefined,
-                    transformOrigin: 'center center',
-                  }}
-                >
-                  {label}
-                </span>
+                {label}
               </span>
             )
           }
@@ -202,11 +184,7 @@ export function PlateBuilder({
             >
               <span
                 className={labelClass}
-                style={{
-                  opacity,
-                  transform: embedded ? 'scale(1.1764705882)' : undefined,
-                  transformOrigin: 'center center',
-                }}
+                style={{ opacity }}
               >
                 {label}
               </span>

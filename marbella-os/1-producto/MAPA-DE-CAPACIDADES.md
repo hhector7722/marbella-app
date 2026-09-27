@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-25
+revisado: 2026-09-27
 caducidad: 3 meses
 supersede: —
 ---
@@ -128,7 +128,7 @@ Saber lo que cuesta lo que se sirve.
 Publicar la oferta al cliente y consultarla en sala.
 
 - **Actores**: cliente, persona en turno, responsable de operación.
-- **Superficies**: carta pública sin sesión, carta interna, editor de carta.
+- **Superficies**: carta pública sin sesión, carta interna, editor de carta, carta física en `/master/carta` (acceso Vitrina, en Otros del dashboard master).
 - **Reglas propias**: es superficie pública y no expone dato interno alguno; la ficha de plato tiene presentación propia; las fotografías se normalizan al subirse. Quién edita la carta está en [ACTORES-Y-ROLES](./ACTORES-Y-ROLES.md).
 - **Estado**: consolidada.
 - **Especificación**: pendiente.

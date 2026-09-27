@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { VisualOverrides, SandboxRoute, GlobalBackground, Recipe, StudioFontFamily, ViewportPreset } from '@/app/playground/studio/types';
 import { useSandboxStore } from '@/app/playground/studio/store';
@@ -8,8 +8,31 @@ import { VisualLabSurface } from '@/app/playground/studio/components/VisualLab';
 import { DesignProvider } from '@/app/playground/studio/screens/system';
 import { enableSandboxRuntime, disableSandboxRuntime } from '@/lib/sandbox/client';
 
+const STUDIO_PREVIEW_STORAGE_KEY = 'marbella-studio-preview';
+
+/**
+ * El sandbox del Studio solo debe arrancar en el iframe del playground.
+ * `window !== window.parent` no basta: marbella-web también embebe `/carta?embed=1`
+ * y el VisualLab anula transforms (p. ej. el scale 0.93 del plato) y paddings.
+ * La señal explícita es `studioPreview=1`, que RealAppView añade al src.
+ * sessionStorage cubre navegaciones internas del mismo iframe que pierdan el query.
+ */
+function isStudioPreviewFrame(): boolean {
+    if (typeof window === 'undefined' || window === window.parent) return false;
+    if (new URLSearchParams(window.location.search).get('studioPreview') === '1') return true;
+    try {
+        return sessionStorage.getItem(STUDIO_PREVIEW_STORAGE_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
+function subscribeStudioPreview() {
+    return () => {};
+}
+
 export function StudioPreviewClient({ children }: { children: React.ReactNode }) {
-    const [inIframe, setInIframe] = useState(false);
+    const inStudioPreview = useSyncExternalStore(subscribeStudioPreview, isStudioPreviewFrame, () => false);
     const [overrides, setOverrides] = useState<VisualOverrides>({});
     const [background, setBackground] = useState<GlobalBackground | null>(null);
     const [recipe, setRecipe] = useState<Recipe>({});
@@ -19,9 +42,13 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
     const pathname = usePathname();
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && window !== window.parent) {
-            setInIframe(true);
-            
+        if (inStudioPreview) {
+            try {
+                sessionStorage.setItem(STUDIO_PREVIEW_STORAGE_KEY, '1');
+            } catch {
+                /* storage partitioned or blocked */
+            }
+
             enableSandboxRuntime(() => false);
 
             // Notify parent we are ready to receive sync data
@@ -45,7 +72,7 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
             let cancelled = false;
             void fetch('/playground/studio/fonts')
                 .then(response => response.ok ? response.json() : [])
-                .then((available: any[]) => {
+                .then((available: { family: string; url: string; format: string }[]) => {
                     if (cancelled) return;
                     available.forEach(font => {
                         const face = new FontFace(font.family, `url("${font.url}") format("${font.format}")`);
@@ -61,19 +88,19 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
                 cancelled = true;
             };
         }
-    }, [pathname]);
+    }, [pathname, inStudioPreview]);
 
     useEffect(() => {
-        if (inIframe) {
+        if (inStudioPreview) {
             if (globalScale) {
                 document.documentElement.style.fontSize = globalScale;
             } else {
                 document.documentElement.style.removeProperty('font-size');
             }
         }
-    }, [inIframe, globalScale]);
+    }, [inStudioPreview, globalScale]);
 
-    if (!inIframe) return <>{children}</>;
+    if (!inStudioPreview) return <>{children}</>;
 
     // Cuando estamos en el iframe del Studio, inyectamos la capa visual real
     const bgStyle: React.CSSProperties = {};

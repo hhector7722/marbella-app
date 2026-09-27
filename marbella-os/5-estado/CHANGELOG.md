@@ -6,20 +6,28 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-26
+revisado: 2026-09-27
 caducidad: no aplica
 supersede: PROJECT_STATUS.md (función de historial)
 ---
 
 # CHANGELOG
 
+## 2026-09-27
+
+- **El desglose de borrador recuerda el último recuento.** Se guarda en el dispositivo y vuelve al abrir el panel. El total deja el pie y ocupa la celda a la derecha de la moneda de 1 céntimo. «Nuevo», botón primario, pone las cantidades a cero. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
+- **Otros del dashboard master tiene una segunda página.** Se desliza en horizontal y los puntos indican la página. Vitrina abre `/master/carta`.
+
 ## 2026-09-26
 
-- **El ranking de margen usa el coste recursivo.** `get_product_margin_ranking` llama a `get_recipe_cost_v2` una vez por receta. Si ese coste no es válido, el coste y el margen quedan en blanco: no se sustituyen por cero. Las subrecetas entran en ese coste. Recetas TPV sigue pendiente. [D32](DEUDA.md).
+- **Recetas TPV solo mapea recetas vendibles y muestra la materia prima expandida.** El selector filtra `is_sellable`. El servidor rechaza mapear una elaboración interna y no borra un mapping antiguo. El panel lee `recipe_stock_requirements_v2_rows` con multiplicador 1. La composición se sigue editando en Recetas. Las importaciones siguen pendientes. [D32](DEUDA.md).
+
+- **El ranking de margen usa el coste recursivo.** `get_product_margin_ranking` llama a `get_recipe_cost_v2` una vez por receta. Si ese coste no es válido, el coste y el margen quedan en blanco: no se sustituyen por cero. Las subrecetas entran en ese coste. [D32](DEUDA.md).
 
 - **El consumo personal de ración completa expande hasta materia prima.** `process_staff_consumption` usa `recipe_stock_requirements_v2_rows` y sigue escribiendo `WASTE` con referencia `STAFF-*`. La media ración directa conserva `quantity_half` y la convierte a la unidad base. La media ración con subrecetas no se escribe. Una elaboración interna no es un producto de consumo. [D32](DEUDA.md).
 
-- **La calculadora y el desglose no cambian el ancho de ningún modal.** El dock queda fuera del flujo y, dentro de un modal, se superpone a su canto derecho. El scroll vertical no lo ensancha ni lo desplaza. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+- **Desglose y Calculadora pasan a una fila bajo el modal.** «Desglose» queda a la izquierda, botón secundario, y «Calculadora» a la derecha, botón primario. No llevan icono y no cambian el ancho del modal. La calculadora ya no muestra el resultado al teclear: sigue la lógica de la calculadora básica de iOS y resuelve al pulsar `=` o el siguiente operador. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **La merma de receta expande hasta materia prima.** `processRecipeWaste` lee `recipe_stock_requirements_v2_rows` y escribe con `record_waste_movements`. Si la expansión no está bien, o la receta válida no tiene materias primas, no escribe. La merma manual de ingredientes no cambia. No hay stock de elaboraciones intermedias. [D32](DEUDA.md).
 

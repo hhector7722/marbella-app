@@ -1605,10 +1605,15 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
 
         const tools = readFileSync(join(SRC_ROOT, 'components/ui/QuickCalculatorModal.tsx'), 'utf8');
-        assert.match(tools, /fixed right-0/);
-        assert.doesNotMatch(tools, /bottom-20|right-4/);
+        assert.doesNotMatch(tools, /fixed right-0|bottom-20|right-4/);
         assert.match(tools, /\/icons\/calculadora\.png/);
-        assert.match(tools, /\/icons\/desglose\.png/);
+        assert.doesNotMatch(tools, /\/icons\/desglose\.png/);
+        assert.match(tools, /Desglose\s*<\/Button>/);
+        assert.match(tools, /Calculadora\s*<\/Button>/);
+        assert.match(tools, /variant="secondary"/);
+        assert.match(tools, /variant="primary"/);
+        assert.match(tools, /pressCalcKey/);
+        assert.doesNotMatch(tools, /liveValue|safeEval/);
         assert.match(tools, /DenominationCountGrid/);
         assert.match(tools, /Mostrar historial/);
         assert.match(tools, /Copiar valor/);
@@ -1617,13 +1622,14 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(tools, /html-to-image|toPng|WhatsApp/);
         assert.doesNotMatch(tools, /registerModalSurface/);
         assert.match(tools, /--quick-fab-dock/);
+        assert.match(tools, /--quick-tools-row/);
         assert.match(tools, /data-component="QuickCashToolsFabs"/);
         assert.match(tools, /data-element="dock"/);
-        assert.match(tools, /flex-col/);
+        assert.match(tools, /justify-between/);
         assert.doesNotMatch(tools, /flex-col-reverse/);
         assert.doesNotMatch(tools, /left-4/);
-        assert.match(tools, /setPointerCapture/);
-        assert.match(tools, /DOCK_BOTTOM_KEY/);
+        assert.doesNotMatch(tools, /setPointerCapture/);
+        assert.doesNotMatch(tools, /DOCK_BOTTOM_KEY/);
         assert.match(tools, /object-contain/);
         assert.doesNotMatch(tools, /object-cover/);
         assert.match(tools, /aria-label="Minimizar"/);
@@ -1634,6 +1640,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tools, /h-12 min-h-12 w-full min-w-0/);
         assert.match(tools, /QUICK_PANEL_H/);
         assert.match(tools, /<DenominationCountGrid[\s\S]*?compact/);
+        assert.match(tools, /Nuevo\s*<\/Button>/);
+        assert.match(tools, /readBreakdownDraft/);
+        assert.doesNotMatch(tools, /border-t border-zinc-100/, 'el desglose no tiene pie de total');
         assert.doesNotMatch(tools, /max-h-\[min\(55dvh,28rem\)\]/);
 
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
@@ -1645,15 +1654,20 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
-            /\[data-component='QuickCashToolsFabs'\] \{[\s\S]*?bottom:\s*var\(--quick-fab-lift/,
-            'la posición inferior la fija el lift, no cada instancia',
+            /\[data-component='QuickCashToolsFabs'\]:not\(\[data-overlay='modal'\]\) \{[\s\S]*?bottom:\s*var\(--quick-fab-lift/,
+            'fuera de un modal la fila se sienta sobre la TabBar',
         );
-        assert.match(css, /data-dragging='true'/, 'el arrastre no anima la posición');
+        assert.doesNotMatch(css, /data-dragging='true'/, 'la fila ya no se arrastra');
         const modal = readFileSync(join(SRC_ROOT, 'components/ui/modal.tsx'), 'utf8');
         assert.doesNotMatch(
             modal,
             /paddingRight:[\s\S]*?--quick-fab-dock/,
             'el overlay no reserva el ancho del dock',
+        );
+        assert.match(
+            modal,
+            /paddingBottom:[\s\S]*?--quick-tools-row/,
+            'el overlay reserva el alto de la fila bajo el modal',
         );
         assert.doesNotMatch(tools, /applyFabDock/, 'el dock no publica su ancho');
     });
