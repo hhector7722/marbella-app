@@ -247,10 +247,11 @@
   left: max(1rem, env(safe-area-inset-left, 0px));
   bottom: var(--quick-fab-lift, env(safe-area-inset-bottom, 0px));
 }
-/* Sobre el backdrop oscuro el hilo negro no se lee. El aro claro y la sombra
-   dan el mismo volumen que el botón del pie, que vive sobre papel. */
+/* El primario no trae hilo. Sobre el backdrop oscuro, y en «Nuevo» del
+   desglose, el aro y la sombra dan el volumen del botón del pie. */
 [data-component='QuickCashToolsFabs'] [data-component='Button'][data-variant='secondary']::before,
-[data-component='QuickCashToolsFabs'] [data-component='Button'][data-variant='primary']::before {
+[data-component='QuickCashToolsFabs'] [data-component='Button'][data-variant='primary']::before,
+[data-component='QuickCashToolsPanel'] [data-component='Button'][data-instance='quick-breakdown-new']::before {
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.4),
     0 0 0 1px rgba(24, 24, 27, 0.35),
@@ -4458,6 +4459,19 @@ button[data-element='catalog-filter'] {
   padding-block: var(--espacio-1);
   font-size: 10px;
   letter-spacing: normal;
+}
+
+/* Editar receta: las dos opciones se reparten el ancho y el texto queda centrado. */
+[data-component='PetroleumSegmented'][data-instance='recipe-edit-kind'] {
+  display: flex;
+  width: 100%;
+}
+
+[data-component='PetroleumSegmented'][data-instance='recipe-edit-kind'] [data-element='option'] {
+  flex: 1 1 0;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
 }
 
 [data-component='PageScreen'] [data-element='toolbar'] [data-component='PetroleumSegmented'],

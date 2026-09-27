@@ -335,24 +335,31 @@ function BreakdownDraft({ onMinimize }: { onMinimize: () => void }) {
                     }}
                     trailing={
                         <>
-                            <div className="flex min-w-0 flex-col items-center justify-center gap-0.5">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                    Total
-                                </span>
-                                <span className="max-w-full truncate text-center text-[12px] font-black tabular-nums leading-none text-zinc-800">
-                                    {total > 0.005 ? formatCurrencySpanish(total) : ' '}
-                                </span>
+                            <div className="flex flex-col items-center gap-0.5">
+                                <div className="h-7 w-full shrink-0" aria-hidden />
+                                <div className="flex h-7 w-full flex-col items-center justify-center">
+                                    <span className="max-w-full truncate text-center text-[12px] font-black tabular-nums leading-none text-zinc-800">
+                                        {total > 0.005 ? formatCurrencySpanish(total) : ' '}
+                                    </span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                        Total
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex min-w-0 items-center justify-center">
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    layout="fill"
-                                    instance="quick-breakdown-new"
-                                    onClick={() => commit({})}
-                                >
-                                    Nuevo
-                                </Button>
+                            <div className="flex flex-col items-center gap-0.5">
+                                <div className="h-7 w-full shrink-0" aria-hidden />
+                                <div className="relative flex h-7 w-full items-center justify-center">
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Button
+                                            type="button"
+                                            variant="primary"
+                                            instance="quick-breakdown-new"
+                                            onClick={() => commit({})}
+                                        >
+                                            Nuevo
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                         </>
                     }
@@ -509,6 +516,8 @@ export function QuickCashToolsFabs({
                 clearToolsRow();
                 return;
             }
+            const rowHeight = Math.round(dock.getBoundingClientRect().height);
+            applyToolsRow(rowHeight + TOOLS_ROW_GAP);
             const rect = container.getBoundingClientRect();
             const next = {
                 top: Math.round(rect.bottom + TOOLS_ROW_GAP),
@@ -520,7 +529,6 @@ export function QuickCashToolsFabs({
                     ? prev
                     : next,
             );
-            applyToolsRow(dock.getBoundingClientRect().height + TOOLS_ROW_GAP);
             setPlaced(true);
         };
         sync();

@@ -1642,6 +1642,12 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tools, /QUICK_PANEL_H/);
         assert.match(tools, /<DenominationCountGrid[\s\S]*?compact/);
         assert.match(tools, /Nuevo\s*<\/Button>/);
+        assert.doesNotMatch(tools, /layout="fill"/, 'Nuevo abraza la palabra');
+        assert.match(
+            tools,
+            /applyToolsRow\(rowHeight \+ TOOLS_ROW_GAP\);[\s\S]*?container\.getBoundingClientRect/,
+            'la fila se mide después de reservar su alto',
+        );
         assert.match(tools, /readBreakdownDraft/);
         assert.doesNotMatch(tools, /border-t border-zinc-100/, 'el desglose no tiene pie de total');
         assert.doesNotMatch(tools, /max-h-\[min\(55dvh,28rem\)\]/);
@@ -1663,6 +1669,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             css,
             /\[data-component='QuickCashToolsFabs'\] \[data-component='Button'\]\[data-variant='secondary'\]::before[\s\S]*?box-shadow:/,
             'los botones de la fila llevan el volumen del sistema',
+        );
+        assert.match(
+            css,
+            /\[data-instance='quick-breakdown-new'\]::before/,
+            'Nuevo lleva el volumen del botón',
         );
         const modal = readFileSync(join(SRC_ROOT, 'components/ui/modal.tsx'), 'utf8');
         assert.doesNotMatch(
