@@ -15,7 +15,7 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-27
 
-- **Al cerrar el desglose o la calculadora, la fila queda debajo del modal.** El alto de la fila se reserva antes de medir el canto, así no tapa el pie. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+- **Al cerrar el desglose o la calculadora, la fila queda debajo del recuadro.** Vive en el marco, en el flujo, y no se coloca con una coordenada fija: no tapa el pie. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **En el desglose, Total y Nuevo se alinean con las cajas de cantidad.** «Nuevo» abraza la palabra y lleva el volumen del botón. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
@@ -29,9 +29,13 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **Otros del dashboard master tiene una segunda página.** Se desliza en horizontal y los puntos indican la página. Vitrina abre `/master/carta`.
 
+- **La matriz de elaboraciones intermedias cierra B0–B10.** El listado de Recetas usa `get_recipe_cost_v2` cuando hay elaboraciones: un coste inválido o sin materia prima no sale como óptimo. La vendible sin subrecetas sigue en `get_recipe_cost`. Pesto y Brava siguen pendientes de datos reales. [D32](DEUDA.md).
+
+- **La importación legacy y el Copilot dejan de componer recetas por su cuenta.** Un overwrite no toca una receta que ya contiene elaboraciones y no borra `recipe_subrecipes`. Una receta nueva queda vendible. `gestionar_recetas` lee `recipe_stock_requirements_v2_rows` y `get_recipe_cost_v2`: si la expansión o el coste no son válidos, no enseña cantidades parciales ni un cero falso. La ficha directa sin subrecetas sigue en `get_recipe_cost`. [D32](DEUDA.md).
+
 ## 2026-09-26
 
-- **Recetas TPV solo mapea recetas vendibles y muestra la materia prima expandida.** El selector filtra `is_sellable`. El servidor rechaza mapear una elaboración interna y no borra un mapping antiguo. El panel lee `recipe_stock_requirements_v2_rows` con multiplicador 1. La composición se sigue editando en Recetas. Las importaciones siguen pendientes. [D32](DEUDA.md).
+- **Recetas TPV solo mapea recetas vendibles y muestra la materia prima expandida.** El selector filtra `is_sellable`. El servidor rechaza mapear una elaboración interna y no borra un mapping antiguo. El panel lee `recipe_stock_requirements_v2_rows` con multiplicador 1. La composición se sigue editando en Recetas. [D32](DEUDA.md).
 
 - **El ranking de margen usa el coste recursivo.** `get_product_margin_ranking` llama a `get_recipe_cost_v2` una vez por receta. Si ese coste no es válido, el coste y el margen quedan en blanco: no se sustituyen por cero. Las subrecetas entran en ese coste. [D32](DEUDA.md).
 

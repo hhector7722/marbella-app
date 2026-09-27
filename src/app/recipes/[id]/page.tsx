@@ -40,6 +40,7 @@ import {
     sortMenuCategoriesForRecipes,
 } from '@/lib/recipe-menu-categories';
 import {
+    attachCanonicalListCosts,
     getRecipeFoodCostStatus,
     parseFoodCostFilterParam,
     RECIPE_FOOD_COST_SELECT,
@@ -399,7 +400,14 @@ function RecipeDetailContent() {
             }
             const { data } = await q;
             if (data) {
-                const list = data.filter(
+                const withCosts = await attachCanonicalListCosts(data, async (id) => {
+                    const { data: payload, error: costError } = await supabase.rpc('get_recipe_cost_v2', {
+                        p_recipe_id: id,
+                    });
+                    if (costError || !payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+                    return payload as { ok?: boolean; total_cost_eur?: number | null; components?: { kind?: string }[] | null };
+                });
+                const list = withCosts.filter(
                     (r) => !isInternalRecipe(r.is_sellable) && getRecipeFoodCostStatus(r) === foodCostFilter,
                 );
                 setAllRecipes(list);

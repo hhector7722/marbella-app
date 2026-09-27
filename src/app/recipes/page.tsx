@@ -27,7 +27,9 @@ import { resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 import { isInternalRecipe, yieldFieldsForSave } from '@/lib/recipe-elaboration';
 import {
     FOOD_COST_FILTER_OPTIONS,
+    type CanonicalListCost,
     type FoodCostStatus,
+    attachCanonicalListCosts,
     getRecipeFoodCostStatus,
     parseFoodCostFilterParam,
 } from '@/lib/recipe-food-cost';
@@ -48,6 +50,8 @@ interface Recipe {
         unit: string | null;
         ingredients: { current_price: number; purchase_unit?: string; pack_unit_size_qty?: number | null; pack_unit_size_unit?: string | null } | { current_price: number; purchase_unit?: string; pack_unit_size_qty?: number | null; pack_unit_size_unit?: string | null }[] | null;
     }[];
+    recipe_subrecipes?: { id: string }[] | null;
+    canonical_cost?: CanonicalListCost | null;
 }
 
 function RecipesContent() {
@@ -201,11 +205,18 @@ function RecipesContent() {
             const { data, error } = await supabase
                 .from('recipes')
                 .select(
-                    `id, name, category, menu_category_id, sale_price, is_sellable, yield_quantity, yield_unit, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit))`,
+                    `id, name, category, menu_category_id, sale_price, is_sellable, yield_quantity, yield_unit, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit)), recipe_subrecipes!recipe_subrecipes_parent_recipe_id_fkey(id)`,
                 )
                 .order('name');
             if (error) throw error;
-            setRecipes(data || []);
+            const rows = await attachCanonicalListCosts(data || [], async (recipeId) => {
+                const { data: payload, error: costError } = await supabase.rpc('get_recipe_cost_v2', {
+                    p_recipe_id: recipeId,
+                });
+                if (costError || !payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+                return payload as CanonicalListCost;
+            });
+            setRecipes(rows);
         } catch (error) { console.error('Error fetching recipes:', error); } finally { setLoading(false); }
     }
 

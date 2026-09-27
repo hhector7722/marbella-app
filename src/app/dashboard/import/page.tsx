@@ -498,7 +498,7 @@ export default function ImportPage() {
                                             className="h-4 w-4"
                                         />
                                         <span className="text-[11px] font-semibold text-blue-900">
-                                            Sobreescribir receta si ya existe (actualiza datos y reemplaza ingredientes)
+                                            Sobreescribir receta si ya existe (actualiza datos y reemplaza ingredientes; no se permite si contiene elaboraciones)
                                         </span>
                                     </label>
                                     <ul className="list-disc list-inside font-mono bg-white/50 p-2 rounded space-y-1">

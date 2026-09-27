@@ -81,7 +81,7 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, global
     return (
         <iframe 
             ref={iframeRef}
-            src={withStudioPreview(route)} 
+            src={withStudioPreview(route)}
             className="w-full h-full border-0 bg-white" 
             title="Marbella Studio Preview"
         />
