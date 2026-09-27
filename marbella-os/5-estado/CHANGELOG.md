@@ -15,7 +15,7 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-27
 
-- **Al cerrar el desglose o la calculadora, la fila queda debajo del modal.** El alto de la fila se reserva antes de medir el canto, así no tapa el pie. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+- **Al cerrar el desglose o la calculadora, la fila queda debajo del recuadro.** Vive en el marco, en el flujo, y no se coloca con una coordenada fija: no tapa el pie. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 - **En el desglose, Total y Nuevo se alinean con las cajas de cantidad.** «Nuevo» abraza la palabra y lleva el volumen del botón. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 

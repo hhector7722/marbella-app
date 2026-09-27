@@ -1643,11 +1643,13 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tools, /<DenominationCountGrid[\s\S]*?compact/);
         assert.match(tools, /Nuevo\s*<\/Button>/);
         assert.doesNotMatch(tools, /layout="fill"/, 'Nuevo abraza la palabra');
+        assert.match(tools, /data-element="frame"/, 'dentro del modal la fila entra en el marco');
         assert.match(
             tools,
-            /applyToolsRow\(rowHeight \+ TOOLS_ROW_GAP\);[\s\S]*?container\.getBoundingClientRect/,
-            'la fila se mide después de reservar su alto',
+            /onModal \? 'relative z-10 w-full shrink-0' : 'fixed z-\[208\]'/,
+            'en el modal la fila no es una capa fija',
         );
+        assert.doesNotMatch(tools, /container\.getBoundingClientRect/, 'la fila no se coloca midiendo el recuadro');
         assert.match(tools, /readBreakdownDraft/);
         assert.doesNotMatch(tools, /border-t border-zinc-100/, 'el desglose no tiene pie de total');
         assert.doesNotMatch(tools, /max-h-\[min\(55dvh,28rem\)\]/);
@@ -1663,6 +1665,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             css,
             /\[data-component='QuickCashToolsFabs'\]:not\(\[data-overlay='modal'\]\) \{[\s\S]*?bottom:\s*var\(--quick-fab-lift/,
             'fuera de un modal la fila se sienta sobre la TabBar',
+        );
+        assert.match(
+            css,
+            /\[data-element='frame'\]:has\(> \[data-component='QuickCashToolsFabs'\]\[data-overlay='modal'\]\) > \[role='dialog'\]/,
+            'el diálogo cede el alto de la fila',
         );
         assert.doesNotMatch(css, /data-dragging='true'/, 'la fila ya no se arrastra');
         assert.match(

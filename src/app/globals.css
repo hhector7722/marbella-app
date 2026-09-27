@@ -247,6 +247,10 @@
   left: max(1rem, env(safe-area-inset-left, 0px));
   bottom: var(--quick-fab-lift, env(safe-area-inset-bottom, 0px));
 }
+/* La fila vive en el marco, debajo del recuadro. El diálogo cede su alto. */
+[data-element='frame']:has(> [data-component='QuickCashToolsFabs'][data-overlay='modal']) > [role='dialog'] {
+  max-height: calc(100% - var(--tactil-minimo) - var(--espacio-2));
+}
 /* El primario no trae hilo. Sobre el backdrop oscuro, y en «Nuevo» del
    desglose, el aro y la sombra dan el volumen del botón del pie. */
 [data-component='QuickCashToolsFabs'] [data-component='Button'][data-variant='secondary']::before,

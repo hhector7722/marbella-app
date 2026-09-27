@@ -36,8 +36,6 @@ const CALCULATOR_ICON = '/icons/calculadora.png';
 const INSET_VAR = '--quick-tool-inset';
 const FAB_DOCK_VAR = '--quick-fab-dock';
 const TOOLS_ROW_VAR = '--quick-tools-row';
-/** Aire entre el canto inferior del modal y la fila de herramientas. */
-const TOOLS_ROW_GAP = 8;
 
 /** Alto común del panel (calculadora y desglose), sin el área segura. */
 const QUICK_PANEL_H = 'h-[16.625rem]';
@@ -69,13 +67,6 @@ function clearFabDock() {
     const root = document.documentElement;
     root.style.setProperty(FAB_DOCK_VAR, '0px');
     root.removeAttribute('data-quick-fab');
-}
-
-function applyToolsRow(px: number) {
-    const next = `${Math.max(0, Math.round(px))}px`;
-    const root = document.documentElement;
-    if (root.style.getPropertyValue(TOOLS_ROW_VAR) === next) return;
-    root.style.setProperty(TOOLS_ROW_VAR, next);
 }
 
 function clearToolsRow() {
@@ -468,12 +459,11 @@ export function QuickCalculatorModal({
     );
 }
 
-type ToolsRowBox = { top: number; left: number; width: number };
-
 /**
- * Fila de acceso a calculadora y desglose, fuera del modal y debajo de él.
- * Desglose a la izquierda (botón secundario) y calculadora a la derecha
- * (botón primario). No entra en el ancho del modal. Al abrir el panel, se retira.
+ * Fila de acceso a calculadora y desglose, fuera del recuadro y debajo de él.
+ * Dentro de un modal vive en el marco, en el flujo: no se coloca con una
+ * coordenada fija, así no puede tapar el pie. Fuera de un modal se sienta
+ * sobre la TabBar. No entra en el ancho del recuadro. Al abrir el panel, se retira.
  */
 export function QuickCashToolsFabs({
     calculator,
@@ -489,11 +479,9 @@ export function QuickCashToolsFabs({
     onOpen: (tab: QuickCashTool) => void;
     className?: string;
 }) {
-    const dockRef = useRef<HTMLDivElement>(null);
     const anchorRef = useRef<HTMLSpanElement>(null);
     const [mounted, setMounted] = useState(false);
-    const [box, setBox] = useState<ToolsRowBox | null>(null);
-    const [placed, setPlaced] = useState(false);
+    const [frame, setFrame] = useState<HTMLElement | null>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -502,45 +490,15 @@ export function QuickCashToolsFabs({
     useLayoutEffect(() => {
         if (!mounted) return;
         clearFabDock();
+        clearToolsRow();
         if (isOpen) {
-            clearToolsRow();
+            setFrame(null);
             return;
         }
-        const sync = () => {
-            const modal = anchorRef.current?.closest('[data-component="Modal"]');
-            const container = modal?.querySelector('[data-element="container"]');
-            const dock = dockRef.current;
-            if (!(container instanceof HTMLElement) || !dock) {
-                setBox(null);
-                setPlaced(true);
-                clearToolsRow();
-                return;
-            }
-            const rowHeight = Math.round(dock.getBoundingClientRect().height);
-            applyToolsRow(rowHeight + TOOLS_ROW_GAP);
-            const rect = container.getBoundingClientRect();
-            const next = {
-                top: Math.round(rect.bottom + TOOLS_ROW_GAP),
-                left: Math.round(rect.left),
-                width: Math.round(rect.width),
-            };
-            setBox((prev) =>
-                prev && prev.top === next.top && prev.left === next.left && prev.width === next.width
-                    ? prev
-                    : next,
-            );
-            setPlaced(true);
-        };
-        sync();
         const modal = anchorRef.current?.closest('[data-component="Modal"]');
-        const container = modal?.querySelector('[data-element="container"]');
-        const observer = new ResizeObserver(sync);
-        if (container instanceof HTMLElement) observer.observe(container);
-        if (dockRef.current) observer.observe(dockRef.current);
-        window.addEventListener('resize', sync);
+        const next = modal?.querySelector('[data-element="frame"]');
+        setFrame(next instanceof HTMLElement ? next : null);
         return () => {
-            observer.disconnect();
-            window.removeEventListener('resize', sync);
             clearFabDock();
             clearToolsRow();
         };
@@ -549,7 +507,7 @@ export function QuickCashToolsFabs({
     if (!calculator && !breakdown) return null;
     if (!mounted || isOpen) return null;
 
-    const onModal = box != null;
+    const onModal = frame != null;
 
     return (
         <>
@@ -561,22 +519,14 @@ export function QuickCashToolsFabs({
             />
             {createPortal(
                 <div
-                    ref={dockRef}
                     data-component="QuickCashToolsFabs"
                     data-overlay={onModal ? 'modal' : undefined}
-                    className={cn(className, 'pointer-events-none fixed z-[208]')}
-                    style={
-                        onModal
-                            ? {
-                                  top: `${box.top}px`,
-                                  left: `${box.left}px`,
-                                  width: `${box.width}px`,
-                                  right: 'auto',
-                                  bottom: 'auto',
-                                  visibility: placed ? undefined : 'hidden',
-                              }
-                            : { visibility: placed ? undefined : 'hidden' }
-                    }
+                    className={cn(
+                        className,
+                        'pointer-events-none',
+                        onModal ? 'relative z-10 w-full shrink-0' : 'fixed z-[208]',
+                    )}
+                    style={onModal ? { marginTop: 'var(--espacio-2)' } : undefined}
                 >
                     <div
                         data-element="dock"
@@ -606,7 +556,7 @@ export function QuickCashToolsFabs({
                         ) : null}
                     </div>
                 </div>,
-                document.body,
+                frame ?? document.body,
             )}
         </>
     );
