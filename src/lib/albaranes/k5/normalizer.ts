@@ -29,7 +29,7 @@ import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-sna
 import { canonicalSupplierItemKey } from './supplier-item-key.ts'
 import { deriveVariableWeightEvidence } from './variable-weight.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v8' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v9' as const
 
 export type K5MappingSnapshot = {
   id: string
