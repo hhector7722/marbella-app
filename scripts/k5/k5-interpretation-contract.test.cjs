@@ -23,6 +23,8 @@ const mappedSnapshot = read('src/lib/albaranes/k5/mapped-snapshot.ts')
 const variableWeightHelper = read('src/lib/albaranes/k5/variable-weight.ts')
 const lineMappingModal = read('src/components/albaranes/LineMappingModal.tsx')
 const batchActions = read('src/app/dashboard/albaranes/k5/batch-actions.ts')
+const k5QueueActions = read('src/app/dashboard/albaranes/k5/actions.ts')
+const k5QueuePage = read('src/app/dashboard/albaranes/k5/page.tsx')
 const batchReview = read('src/components/albaranes/K5BatchReceiptReview.tsx')
 const evidenceModal = read('src/components/albaranes/DocumentEvidenceModal.tsx')
 
@@ -90,7 +92,7 @@ test('automatización Docling genera K5 solo para la extracción explícita y es
   assert.doesNotMatch(autoProposalRoute, /auto_map_invoice_lines_fuzzy/)
 })
 
-test('automatización Docling está firmada y ocurre entre evidencia persistida y cierre del lease', () => {
+test('automatización K5 es best-effort entre evidencia persistida y cierre del lease', () => {
   assert.match(autoProposalRoute, /createHmac\('sha256'/)
   assert.match(autoProposalRoute, /x-k5-timestamp/)
   assert.match(autoProposalRoute, /x-k5-signature/)
@@ -103,7 +105,20 @@ test('automatización Docling está firmada y ocurre entre evidencia persistida 
   assert.ok(persistAt >= 0 && k5At > persistAt, 'K5 debe ejecutarse después de persistir evidencia')
   assert.ok(autoApplyAt > k5At, 'K4 automático solo puede evaluarse después de K5')
   assert.ok(completeAt > autoApplyAt, 'el lease solo se cierra después de evaluar el autoaplicado')
+  assert.match(doclingWorker, /k5Automation = \{ ok: false, error: errorMessage\(error\) \}/)
+  assert.match(doclingWorker, /if \(k5Automation\?\.ok\)/)
+  assert.match(doclingWorker, /skipped:k5_auto_proposal_failed/)
   assert.match(doclingWorker, /k4AutoApply = \{ ok: false, error: errorMessage\(error\) \}/)
+})
+
+test('cola K5 distingue processing, no_table, failed y ausencia de extracción', () => {
+  assert.match(k5QueueActions, /kind: 'processing'/)
+  assert.match(k5QueueActions, /kind: 'no_table'/)
+  assert.match(k5QueueActions, /kind: 'failed'/)
+  assert.match(k5QueueActions, /kind: 'missing'/)
+  assert.match(k5QueuePage, /Docling procesó el documento, pero no detectó una tabla estructurada/)
+  assert.match(k5QueuePage, /Docling no pudo completar la extracción de este albarán/)
+  assert.doesNotMatch(k5QueuePage, /no tiene una extracción Docling correcta disponible/)
 })
 
 test('legacy seguro se importa solo como proposed y sin efectos económicos', () => {
