@@ -18,6 +18,7 @@ import {
   type ExactRatio,
 } from './exact-decimal.ts'
 import {
+  extractDoclingLayoutTables,
   extractDoclingTables,
   matchProfileTable,
   normalizeEvidenceLabel,
@@ -28,7 +29,7 @@ import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-sna
 import { canonicalSupplierItemKey } from './supplier-item-key.ts'
 import { deriveVariableWeightEvidence } from './variable-weight.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v7' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v8' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -50,6 +51,7 @@ export type K5LegacyIdentitySnapshot = {
 export type K5ProposalStatus = 'needs_mapping' | 'needs_review' | 'excluded' | 'ready_for_review'
 
 export type K5NormalizedProposal = {
+  provenanceSource: 'docling_evidence' | 'docling_layout_fallback'
   sourceTableIndex: number | null
   sourceRowIndex: number | null
   sourceItemName: string | null
@@ -327,7 +329,8 @@ function mappingNormalization(
 function allObservedMeasures(table: K5EvidenceTable, rowIndex: number): string[] {
   const row = table.rows.find((candidate) => candidate.index === rowIndex)
   if (!row) return []
-  return row.cells.filter((cell) => /\d\s*(?:KG|G|L|ML|CL|PZ|BU|CJ|UD|UN)\b/i.test(cell))
+  return (row.observedCells ?? row.cells)
+    .filter((cell) => /\d\s*(?:KG|G|L|ML|CL|PZ|BU|CJ|UD|UN)\b/i.test(cell))
 }
 
 export function normalizeDoclingEvidence(params: {
@@ -338,8 +341,17 @@ export function normalizeDoclingEvidence(params: {
   legacyIdentities?: readonly K5LegacyIdentitySnapshot[]
 }): K5NormalizationResult {
   const { profile, rawArtifact, supplierId, mappings, legacyIdentities = [] } = params
-  const tables = extractDoclingTables(rawArtifact)
-  const match = matchProfileTable(profile, tables)
+  const nativeTables = extractDoclingTables(rawArtifact)
+  const nativeMatch = matchProfileTable(profile, nativeTables)
+  const layoutTables = extractDoclingLayoutTables(profile, rawArtifact)
+  const layoutMatch = matchProfileTable(profile, layoutTables)
+  const match = layoutMatch && (
+    !nativeMatch
+    || nativeMatch.fieldColumns.product == null
+    || layoutMatch.score > nativeMatch.score
+  )
+    ? layoutMatch
+    : nativeMatch
   const observedIssuer = detectObservedIssuer(profile, rawArtifact)
 
   if (!match) {
@@ -349,13 +361,17 @@ export function normalizeDoclingEvidence(params: {
       normalizerVersion: K5_NORMALIZER_VERSION,
       observedIssuer,
       proposals: [{
+        provenanceSource: 'docling_evidence',
         sourceTableIndex: null,
         sourceRowIndex: null,
         sourceItemName: null,
         mappingVersionId: null,
         ingredientId: null,
         status: 'needs_review',
-        observed: { tables_found: tables.length },
+        observed: {
+          native_tables_found: nativeTables.length,
+          layout_tables_found: layoutTables.length,
+        },
         interpreted: {},
         normalized: {},
         pricing: {},
@@ -374,10 +390,13 @@ export function normalizeDoclingEvidence(params: {
     }
   }
 
+  const provenanceSource: K5NormalizedProposal['provenanceSource'] = match.table.source === 'layout_fallback'
+    ? 'docling_layout_fallback'
+    : 'docling_evidence'
   const semanticRows = match.table.rows.map((row) => rowByProfileFields(match, row))
   const proposals = semanticRows.map((semanticRow, index): K5NormalizedProposal => {
     const product = semanticText(semanticRow, 'product')
-    const rawCells = match.table.rows[index]!.cells
+    const rawCells = match.table.rows[index]!.observedCells ?? match.table.rows[index]!.cells
     const variableWeight = profile.interpretation.kind === 'mixed_measure_review'
       ? deriveVariableWeightEvidence({
           rawCells,
@@ -436,6 +455,7 @@ export function normalizeDoclingEvidence(params: {
 
     if (interpreted.status === 'excluded') {
       return {
+        provenanceSource,
         sourceTableIndex: match.table.index,
         sourceRowIndex: match.table.rows[index]!.index,
         sourceItemName: product,
@@ -486,6 +506,7 @@ export function normalizeDoclingEvidence(params: {
     const quantityString = lineQuantity ? toFiniteDecimalString(lineQuantity) : null
 
     return {
+      provenanceSource,
       sourceTableIndex: match.table.index,
       sourceRowIndex: match.table.rows[index]!.index,
       sourceItemName: product,
