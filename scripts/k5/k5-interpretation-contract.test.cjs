@@ -113,7 +113,7 @@ test('automatización K5 es best-effort entre evidencia persistida y cierre del 
   assert.match(doclingWorker, /k4AutoApply = \{ ok: false, error: errorMessage\(error\) \}/)
 })
 
-test('no_table entra en K5 por layout pero no puede autoaplicarse sin revisión humana', () => {
+test('no_table entra en K5 por layout, admite confirmación humana y nunca autoaplicado', () => {
   assert.match(autoProposalRoute, /extraction\.status !== 'success' && extraction\.status !== 'no_table'/)
   assert.match(interpretationActions, /extraction\.status !== 'success' && extraction\.status !== 'no_table'/)
   assert.match(k5QueueActions, /\.in\('status', \['success', 'no_table'\]\)/)
@@ -122,8 +122,9 @@ test('no_table entra en K5 por layout pero no puede autoaplicarse sin revisión 
   assert.match(interpretationActions, /source: n\.evidenceSource/)
   assert.match(layoutFallbackMigration, /de\.status = 'no_table'::public\.extraction_status/)
   assert.match(layoutFallbackMigration, /provenance->>'source' = 'docling_layout_fallback'/)
-  assert.match(layoutFallbackMigration, /provenance->>'revision' = 'human_mapping_selection'/)
+  assert.doesNotMatch(layoutFallbackMigration, /provenance->>'revision' = 'human_mapping_selection'/)
   assert.match(autoApplyRoute, /text\(provenance\.source\) !== 'docling_evidence'/)
+  assert.match(autoReceiptMigration, /provenance->>'source'.*docling_evidence/)
 })
 
 test('cola K5 distingue processing, no_table, failed y ausencia de extracción', () => {
