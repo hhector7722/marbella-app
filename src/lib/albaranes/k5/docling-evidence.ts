@@ -94,6 +94,7 @@ export function normalizeEvidenceLabel(value: string): string {
 
 function canonicalHeaderLabel(value: string): string {
   return normalizeEvidenceLabel(value)
+    .replace(/%\s+/g, '%')
     .split(' ')
     .map((token) => {
       if (token === 'preu') return 'precio'
