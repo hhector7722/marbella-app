@@ -28,7 +28,7 @@ import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-sna
 import { canonicalSupplierItemKey } from './supplier-item-key.ts'
 import { deriveVariableWeightEvidence } from './variable-weight.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v6' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v7' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -490,7 +490,7 @@ export function normalizeDoclingEvidence(params: {
       sourceRowIndex: match.table.rows[index]!.index,
       sourceItemName: product,
       mappingVersionId: mapping?.id ?? null,
-      ingredientId: mapping?.ingredientId ?? legacyIngredientId,
+      ingredientId: mapping?.ingredientId ?? null,
       status,
       observed: { ...semanticRow, raw_cells: match.table.rows[index]!.cells },
       interpreted: {
@@ -518,6 +518,7 @@ export function normalizeDoclingEvidence(params: {
         ? ['mapping_missing']
         : unique([
             ...semanticReasons,
+            ...(!mapping ? ['mapping_missing'] : []),
             ...(legacyIngredientId ? ['legacy_identity_requires_presentation_validation'] : []),
             ...(status === 'needs_review' && mapping && !normalization ? ['price_not_normalizable'] : []),
           ]),
