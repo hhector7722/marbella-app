@@ -272,11 +272,17 @@ function bestHeaderColumn(headers: readonly string[], aliases: readonly string[]
 }
 
 function looksNumericOrMeasured(value: string): boolean {
-  const normalized = normalizeEvidenceLabel(value)
-  if (!normalized) return true
-  if (/^[-+]?\d+(?:[.,]\d+)?(?:\s*(?:kg|g|l|ml|cl|ud|uds|uni|cj|pz|bu|%))?$/.test(normalized)) {
+  const compact = value
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, '')
+  if (!compact) return true
+  if (/^[-+]?\d+(?:[.,]\d+)?(?:kg|g|l|ml|cl|ud|uds|uni|cj|pz|bu|%)?$/.test(compact)) {
     return true
   }
+  const normalized = normalizeEvidenceLabel(value)
   return !/[a-z]{2,}/.test(normalized)
 }
 
