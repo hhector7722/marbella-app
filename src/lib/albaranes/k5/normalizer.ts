@@ -347,9 +347,9 @@ export function normalizeDoclingEvidence(params: {
     : extractDoclingLayoutTables(profile, rawArtifact, tables.length)
   const match = nativeMatch ?? matchProfileTable(profile, layoutTables)
   const observedIssuer = detectObservedIssuer(profile, rawArtifact)
-  const evidenceSource = match?.table.source === 'docling_layout'
-    ? 'docling_layout_fallback'
-    : 'docling_evidence'
+  const evidenceSource = nativeMatch
+    ? 'docling_evidence'
+    : 'docling_layout_fallback'
 
   if (!match) {
     return {
