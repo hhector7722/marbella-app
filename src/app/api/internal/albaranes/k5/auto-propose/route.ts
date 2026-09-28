@@ -364,6 +364,34 @@ async function generateAutomaticProposals(
     return { ok: true, skipped: 'invoice_created_by_missing', created: 0, materialized: 0 }
   }
 
+  const { data: jobData, error: jobError } = await supabase
+    .from('document_processing_jobs')
+    .select('id,source_attachment_id')
+    .eq('id', params.jobId)
+    .eq('invoice_id', invoiceId)
+    .maybeSingle()
+  const job = jobData as { source_attachment_id?: string | null } | null
+  if (jobError || !job) throw new Error('No se pudo identificar la fuente documental del job K5.')
+
+  let expectedSourceHash = text(invoice.content_sha256)
+  const sourceAttachmentId = text(job.source_attachment_id)
+  if (sourceAttachmentId) {
+    const { data: attachmentData, error: attachmentError } = await supabase
+      .from('purchase_invoice_attachments')
+      .select('id,invoice_id,content_sha256')
+      .eq('id', sourceAttachmentId)
+      .eq('invoice_id', invoiceId)
+      .maybeSingle()
+    const attachment = attachmentData as { content_sha256?: string | null } | null
+    if (attachmentError || !attachment) {
+      throw new Error('No se pudo abrir el adjunto fuente del job K5.')
+    }
+    expectedSourceHash = text(attachment.content_sha256)
+    if (!expectedSourceHash) {
+      return { ok: true, skipped: 'stale_extraction', created: 0, materialized: 0 }
+    }
+  }
+
   const { data: extractionData, error: extractionError } = await supabase
     .from('document_extractions')
     .select('id,invoice_id,file_version_hash,extractor_version,raw_json_artifact,status')
@@ -384,7 +412,7 @@ async function generateAutomaticProposals(
   }
 
   const sourceFileHash = text(extraction.file_version_hash)
-  if (!sourceFileHash || (invoice.content_sha256 && text(invoice.content_sha256) !== sourceFileHash)) {
+  if (!sourceFileHash || (expectedSourceHash && expectedSourceHash !== sourceFileHash)) {
     return { ok: true, skipped: 'stale_extraction', created: 0, materialized: 0 }
   }
 
