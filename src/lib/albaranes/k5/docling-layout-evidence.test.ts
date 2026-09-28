@@ -7,6 +7,7 @@ import {
   matchProfileTable,
   rowByProfileFields,
 } from './docling-evidence.ts'
+import { normalizeDoclingEvidence } from './normalizer.ts'
 
 function textSpan(text: string, left: number, right: number, top: number, bottom: number) {
   return {
@@ -244,4 +245,50 @@ test('fallback híbrido usa cabecera de texts y recupera líneas que Docling mar
   assert.equal(second.quantity, '2,000 UNI')
   assert.equal(second.unit_price, '1,730')
   assert.equal(second.line_amount, '3,46')
+})
+
+
+test('normalizador etiqueta el fallback como evidencia de layout y nunca como Docling nativo', () => {
+  const profile: SupplierProfile = {
+    ...directProfile,
+    id: 'supplier:7:santa-layout',
+    supplier: {
+      id: 7,
+      canonical_name: 'Santa Layout',
+      aliases: [],
+      observed_document_identities: ['Santa Layout'],
+    },
+    fields: {
+      quantity: { aliases: ['Unidades'], meaning: 'unidades' },
+      product: { aliases: ['Artículo'], meaning: 'producto' },
+      unit_price: { aliases: ['Precio'], meaning: 'precio' },
+      line_amount: { aliases: ['Importe'], meaning: 'importe' },
+    },
+    interpretation: { kind: 'direct_line', quantity_unit: 'unit', amount_tax_basis: 'without_tax' },
+  }
+
+  const raw = artifact({
+    texts: [
+      textSpan('Unidades', 50, 130, 100, 120),
+      textSpan('Articulo', 300, 390, 100, 120),
+      textSpan('Precio', 700, 760, 100, 120),
+      textSpan('Importe', 830, 900, 100, 120),
+      textSpan('5', 80, 95, 150, 170),
+      textSpan('BACON FOOD SERVICE', 300, 520, 150, 170),
+      textSpan('5.99', 715, 755, 150, 170),
+      textSpan('29.95', 840, 895, 150, 170),
+    ],
+  })
+
+  const proposal = normalizeDoclingEvidence({
+    profile,
+    rawArtifact: raw,
+    supplierId: 7,
+    mappings: [],
+  }).proposals[0]!
+
+  assert.equal(proposal.provenanceSource, 'docling_layout_fallback')
+  assert.equal(proposal.sourceItemName, 'BACON FOOD SERVICE')
+  assert.equal(proposal.status, 'needs_mapping')
+  assert.ok(proposal.reviewReasons.includes('mapping_missing'))
 })
