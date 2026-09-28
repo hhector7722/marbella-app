@@ -10,7 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8')
 
 const scanner = read('src/app/dashboard/scanner/actions.ts')
 const migration = read('supabase/migrations/20260915104503_scanner_enqueue_docling_evidence.sql')
-const setBasedPersistence = read('supabase/migrations/20260928113000_k3_set_based_evidence_persistence.sql')
+const setBasedPersistence = read('supabase/migrations/20260928093953_k3_set_based_evidence_persistence.sql')
 const edgeWorker = read('supabase/functions/docling-evidence-worker/index.ts')
 const localWorker = read('integrations/docling-worker/worker.py')
 const localCompose = read('integrations/docling-worker/compose.yaml')
