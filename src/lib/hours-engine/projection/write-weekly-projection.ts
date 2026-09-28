@@ -23,7 +23,7 @@ import {
   resolveOpeningCarryIn,
 } from '../opening-carry.ts';
 import { expectedHoursLookupFromRows } from '../expected-hours.ts';
-import { assertExpectedHoursMatchContract } from '../expected-hours-contract-validation.ts';
+import { validateExpectedHoursContractDays } from '../expected-hours-contract-validation.ts';
 import { loadEmployeeBoundaryFacts } from '../load-employee-facts.ts';
 import { liquidateWeek } from '../liquidation-engine.ts';
 import { priceLiquidationOvertime } from '../week-card-from-liquidation.ts';
@@ -331,7 +331,7 @@ export async function writeWeeklyProjection(
     try {
       const expectedHoursByDay = expectedHoursByWeek(weekStart);
       if (expectedHoursByDay != null) {
-        assertExpectedHoursMatchContract(employee, weekStart, expectedHoursByDay);
+        validateExpectedHoursContractDays(employee, weekStart, expectedHoursByDay);
       }
       const liquidation = liquidateWeek({
         employee,

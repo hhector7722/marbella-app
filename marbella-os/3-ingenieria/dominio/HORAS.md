@@ -79,7 +79,7 @@ Esto crea, cuando corresponde, una franja neutra: las horas exentas por agosto p
 
 ### Semanas frontera
 
-La distribución la guarda un manager en el editor semanal de `/staff/history`. Los días de agosto se pueden rellenar: guardar 8 h un sábado cerrado significa «tenía 8 previstas y quedan exentas», no «tenía 0».
+La distribución la guarda un manager en el editor semanal de `/staff/history`. **El total previsto puede ser distinto de la jornada contractual de referencia**: esta se muestra solo para comparar y sigue definiendo el umbral de extras. La deuda se determina por las horas previstas fuera de agosto; no se exige igualdad entre ambos totales. Los días de agosto se pueden rellenar: guardar 8 h un sábado cerrado significa «tenía 8 previstas y quedan exentas», no «tenía 0». Los días sin contrato staff activo no pueden tener horas previstas positivas.
 
 Ejemplo, 40 h previstas de lunes a viernes y 0 el fin de semana, semana **27 jul–2 ago**, 32 h fichadas y el viernes sin fichaje:
 

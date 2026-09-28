@@ -9,7 +9,6 @@ import { describe, it } from 'node:test';
 import { buildAugustClosureEditorModel } from './august-closure-editor-model.ts';
 import { resolveEffectiveContract, weeklyContractReferenceHours } from './contract-resolver.ts';
 import {
-  assertExpectedHoursMatchReference,
   assertSavableExpectedWeek,
   expectedHoursLookupFromRows,
   expectedHoursUpsertPayload,
@@ -18,7 +17,7 @@ import {
   summarizeClosureHours,
 } from './expected-hours.ts';
 import {
-  assertExpectedHoursMatchContract,
+  validateExpectedHoursContractDays,
   expectedHoursContractReference,
 } from './expected-hours-contract-validation.ts';
 import { liquidateWeek } from './liquidation-engine.ts';
@@ -518,91 +517,109 @@ describe('editor de /staff/history', () => {
     assert.equal(model!.canSave, true);
   });
 
-  it('rechaza si el total no es la jornada de referencia', () => {
+  it('permite guardar 32 h aunque la referencia contractual sea 40 h', () => {
     const model = buildAugustClosureEditorModel({
       weekStart: '2026-07-27',
       weeklyContractHours: 40,
       persisted: 'configured',
       draft: [8, 8, 8, 8, 0, 0, 0],
     });
-    assert.equal(model!.error, 'El total previsto debe sumar 40 h para esta semana.');
+    assert.equal(model!.error, null);
     assert.equal(model!.preview?.expectedTotal, 32);
     assert.equal(model!.preview?.referenceHours, 40);
+    assert.equal(model!.preview?.requiredHours, 32);
+    assert.equal(model!.canSave, true);
+  });
+
+  it('admite una distribución de cero horas explícitas', () => {
+    const model = buildAugustClosureEditorModel({
+      weekStart: '2026-07-27',
+      weeklyContractHours: 40,
+      persisted: 'unconfigured',
+      draft: [0, null, null, null, null, null, null],
+    });
+    assert.equal(model!.preview?.expectedTotal, 0);
+    assert.equal(model!.canSave, true);
+  });
+
+  it('no permite horas diarias fuera de 0–24', () => {
+    const model = buildAugustClosureEditorModel({
+      weekStart: '2026-07-27',
+      weeklyContractHours: 40,
+      persisted: 'unconfigured',
+      draft: [25, null, null, null, null, null, null],
+    });
     assert.equal(model!.canSave, false);
+    assert.equal(model!.error, 'Cada día debe contener entre 0 y 24 horas.');
   });
 });
 
-describe('total previsto contra la jornada de referencia', () => {
+describe('distribución independiente del total contractual', () => {
   const week = '2026-07-27' as CivilDate;
 
   it('A. referencia 40 y total 40: acepta', () => {
-    const byDay = distribution(week, MAMADOU);
-    const reference = weeklyContractReferenceHours(staff(40), week);
-    assert.equal(reference, 40);
-    const summary = assertExpectedHoursMatchReference(week, byDay, reference);
-    assert.equal(summary.expectedTotal, 40);
-    assert.equal(summary.requiredHours, 40);
+    const result = validateExpectedHoursContractDays(staff(40), week, distribution(week, MAMADOU));
+    assert.equal(result.referenceHours, 40);
+    assert.equal(result.summary.expectedTotal, 40);
+    assert.equal(result.summary.requiredHours, 40);
   });
 
-  it('B. referencia 40 y total 32: rechaza', () => {
+  it('B. referencia 40 y total 32: acepta y la deuda exigible es 32', () => {
+    const employee = staff(40);
     const byDay = distribution(week, [8, 8, 8, 8, 0, 0, 0]);
-    assert.throws(
-      () => assertExpectedHoursMatchReference(week, byDay, 40),
-      (error: unknown) =>
-        error instanceof ExpectedHoursError &&
-        error.code === 'reference_mismatch' &&
-        error.message === 'El total previsto debe sumar 40 h para esta semana.',
-    );
+    const result = validateExpectedHoursContractDays(employee, week, byDay);
+    assert.equal(result.referenceHours, 40);
+    assert.equal(result.summary.expectedTotal, 32);
+    assert.equal(result.summary.requiredHours, 32);
+    assert.equal(debtOf(employee, week, byDay), 32);
   });
 
   it('C. referencia 16 y total 16: acepta', () => {
-    const byDay = distribution(week, SILVIA);
-    const summary = assertExpectedHoursMatchReference(week, byDay, 16);
-    assert.equal(summary.expectedTotal, 16);
-    assert.equal(summary.requiredHours, 0);
+    const result = validateExpectedHoursContractDays(staff(16), week, distribution(week, SILVIA));
+    assert.equal(result.referenceHours, 16);
+    assert.equal(result.summary.expectedTotal, 16);
+    assert.equal(result.summary.requiredHours, 0);
   });
 
-  it('D. cliente manipulado con total incorrecto: el servidor rechaza', () => {
-    const manipulated = distribution(week, [8, 8, 8, 8, 0, 0, 0]);
-    assert.throws(
-      () => assertExpectedHoursMatchReference(week, manipulated, 40),
-      (error: unknown) =>
-        error instanceof ExpectedHoursError && error.code === 'reference_mismatch',
-    );
-    const action = readFileSync('src/app/actions/weekly-expected-hours.ts', 'utf8');
-    assert.match(action, /assertExpectedHoursMatchContract/);
-    assert.match(action, /loadEmployeeBoundaryFacts/);
+  it('D. referencia 40 y total 48: acepta sin modificar el umbral de extras', () => {
+    const employee = staff(40);
+    const byDay = distribution(week, [8, 8, 8, 8, 8, 8, 0]);
+    const result = validateExpectedHoursContractDays(employee, week, byDay);
+    assert.equal(result.referenceHours, 40);
+    assert.equal(result.summary.expectedTotal, 48);
+    assert.equal(result.summary.closureExemptHours, 8);
+    assert.equal(result.summary.requiredHours, 40);
+    const liquidation = liquidateWeek({
+      employee,
+      weekStart: week,
+      logs: [worked('2026-07-27', 8), worked('2026-07-28', 8), worked('2026-07-29', 8), worked('2026-07-30', 8), worked('2026-07-31', 8)].flat(),
+      isPaid: false,
+      carryIn: 0,
+      expectedHoursByDay: byDay,
+    });
+    assert.equal(liquidation.hoursWorked, 40);
+    assert.equal(liquidation.overtimeHours, 0);
   });
 
-  it('E. alta parcial: no exige indebidamente 40', () => {
+  it('E. alta parcial: referencia 28,5 y total 16 en días activos: acepta', () => {
     const employee = staff(40, '2026-07-29');
-    const reference = weeklyContractReferenceHours(employee, week);
-    assert.notEqual(reference, 40);
-    assert.equal(reference, 28.5);
-    assert.throws(
-      () => assertExpectedHoursMatchReference(week, distribution(week, MAMADOU), reference),
-      (error: unknown) =>
-        error instanceof ExpectedHoursError && error.code === 'reference_mismatch',
-    );
+    assert.equal(weeklyContractReferenceHours(employee, week), 28.5);
+    const byDay = distribution(week, [0, 0, 8, 8, 0, 0, 0]);
+    const result = validateExpectedHoursContractDays(employee, week, byDay);
+    assert.equal(result.referenceHours, 28.5);
+    assert.equal(result.summary.expectedTotal, 16);
+    assert.equal(debtOf(employee, week, byDay), 16);
   });
 
-  it('F. baja parcial: referencia proporcional de los días activos', () => {
-    const ended = staff(40, '2020-01-06');
-    ended.terms[0]!.effectiveTo = '2026-07-29';
-    const reference = weeklyContractReferenceHours(ended, week);
-    assert.equal(reference, 17);
-    assert.throws(
-      () => assertExpectedHoursMatchReference(week, distribution(week, MAMADOU), reference),
-      (error: unknown) =>
-        error instanceof ExpectedHoursError && error.code === 'reference_mismatch',
-    );
-    assert.doesNotThrow(() =>
-      assertExpectedHoursMatchReference(
-        week,
-        distribution(week, [8, 8, 1, 0, 0, 0, 0]),
-        reference,
-      ),
-    );
+  it('F. baja parcial: referencia 17 y total 16 en días activos: acepta', () => {
+    const employee = staff(40);
+    employee.terms[0]!.effectiveTo = '2026-07-29';
+    assert.equal(weeklyContractReferenceHours(employee, week), 17);
+    const byDay = distribution(week, [8, 8, 0, 0, 0, 0, 0]);
+    const result = validateExpectedHoursContractDays(employee, week, byDay);
+    assert.equal(result.referenceHours, 17);
+    assert.equal(result.summary.expectedTotal, 16);
+    assert.equal(debtOf(employee, week, byDay), 16);
   });
 
   it('G. gap contractual: las horas del gap no crean obligación', () => {
@@ -635,7 +652,7 @@ describe('total previsto contra la jornada de referencia', () => {
     assert.equal(debtOf(gap, week, withoutGapHours), 24);
   });
 
-  it('H. cambio de jornada dentro de la semana: referencia por tramos', () => {
+  it('H. cambio de jornada dentro de la semana: referencia informativa por tramos', () => {
     const changed: EmployeeBoundaryFacts = {
       employeeId: 'emp',
       joiningDate: '2020-01-06',
@@ -659,15 +676,13 @@ describe('total previsto contra la jornada de referencia', () => {
         },
       ],
     };
-    const reference = weeklyContractReferenceHours(changed, week);
-    assert.equal(reference, 28.5);
-    assert.doesNotThrow(() =>
-      assertExpectedHoursMatchReference(
-        week,
-        distribution(week, [8, 8, 1, 5, 5, 1.5, 0]),
-        reference,
-      ),
+    const result = validateExpectedHoursContractDays(
+      changed,
+      week,
+      distribution(week, [8, 8, 1, 5, 5, 0, 0]),
     );
+    assert.equal(result.referenceHours, 28.5);
+    assert.equal(result.summary.expectedTotal, 27);
   });
 
   it('I. semana no frontera: no se puede guardar distribución', () => {
@@ -678,8 +693,17 @@ describe('total previsto contra la jornada de referencia', () => {
     );
   });
 
+  it('la acción y el Writer validan días activos sin exigir igualdad de totales', () => {
+    const action = readFileSync('src/app/actions/weekly-expected-hours.ts', 'utf8');
+    const writer = readFileSync('src/lib/hours-engine/projection/write-weekly-projection.ts', 'utf8');
+    assert.match(action, /validateExpectedHoursContractDays\(employee, monday, byDay\)/);
+    assert.match(writer, /validateExpectedHoursContractDays\(employee, weekStart, expectedHoursByDay\)/);
+    assert.doesNotMatch(action, /reference_mismatch|assertExpectedHoursMatchReference/);
+    assert.doesNotMatch(writer, /reference_mismatch|assertExpectedHoursMatchReference/);
+  });
+
   it('semana completa activa: 40 horas válidas aceptadas por la función compartida', () => {
-    const result = assertExpectedHoursMatchContract(
+    const result = validateExpectedHoursContractDays(
       staff(40),
       week,
       distribution(week, MAMADOU),
@@ -699,7 +723,7 @@ describe('total previsto contra la jornada de referencia', () => {
       ],
     };
     assert.throws(
-      () => assertExpectedHoursMatchContract(employee, week, distribution(week, [0, 0, 14.5, 14, 0, 0, 0])),
+      () => validateExpectedHoursContractDays(employee, week, distribution(week, [0, 0, 14.5, 14, 0, 0, 0])),
       (error: unknown) => error instanceof ExpectedHoursError && error.code === 'inactive_day',
     );
   });
@@ -714,14 +738,14 @@ describe('total previsto contra la jornada de referencia', () => {
         { effectiveFrom: '2026-07-31', effectiveTo: null, weeklyHours: 40, bagMode: false, regime: 'staff' },
       ],
     };
-    const result = assertExpectedHoursMatchContract(employee, week, distribution(week, [8, 3.5, 0, 0, 8, 8, 1]));
+    const result = validateExpectedHoursContractDays(employee, week, distribution(week, [8, 3.5, 0, 0, 8, 8, 1]));
     assert.equal(result.referenceHours, 28.5);
   });
 
   it('pre-alta con horas previstas: rechaza', () => {
     const employee = staff(40, '2026-07-29');
     assert.throws(
-      () => assertExpectedHoursMatchContract(employee, week, distribution(week, [8, 0, 8, 8, 8, 4.5, 0])),
+      () => validateExpectedHoursContractDays(employee, week, distribution(week, [8, 0, 8, 8, 8, 4.5, 0])),
       (error: unknown) => error instanceof ExpectedHoursError && error.code === 'inactive_day',
     );
   });
@@ -730,7 +754,7 @@ describe('total previsto contra la jornada de referencia', () => {
     const employee = staff(40);
     employee.terms[0]!.effectiveTo = '2026-07-29';
     assert.throws(
-      () => assertExpectedHoursMatchContract(employee, week, distribution(week, [8, 8, 1, 8, 0, 0, 0])),
+      () => validateExpectedHoursContractDays(employee, week, distribution(week, [8, 8, 1, 8, 0, 0, 0])),
       (error: unknown) => error instanceof ExpectedHoursError && error.code === 'inactive_day',
     );
   });
@@ -754,13 +778,13 @@ describe('total previsto contra la jornada de referencia', () => {
         { effectiveFrom: '2026-07-30', effectiveTo: null, weeklyHours: 0, bagMode: false, regime: 'fixed' },
       ],
     };
-    const result = assertExpectedHoursMatchContract(employee, week, distribution(week, [8, 8, 1, 0, 0, 0, 0]));
+    const result = validateExpectedHoursContractDays(employee, week, distribution(week, [8, 8, 1, 0, 0, 0, 0]));
     assert.equal(result.referenceHours, 17);
   });
 
   it('Writer valida antes de liquidar y escribir snapshots', () => {
     const writer = readFileSync('src/lib/hours-engine/projection/write-weekly-projection.ts', 'utf8');
-    const validation = writer.indexOf('assertExpectedHoursMatchContract(employee, weekStart, expectedHoursByDay)');
+    const validation = writer.indexOf('validateExpectedHoursContractDays(employee, weekStart, expectedHoursByDay)');
     const liquidation = writer.indexOf('const liquidation = liquidateWeek', validation);
     const snapshotWrite = writer.indexOf("from('weekly_snapshots')", liquidation);
     assert.ok(validation >= 0);

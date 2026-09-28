@@ -75,9 +75,6 @@ export function buildAugustClosureEditorModel(input: {
     ? summarizeClosureHours(days, Object.fromEntries(days.map((day, index) => [day, draft[index]!])))
     : null;
   const weekly = input.weeklyContractHours;
-  const mismatch =
-    preview != null && Math.abs(preview.expectedTotal - weekly) > 1e-9;
-
   return {
     pendingLabel:
       input.persisted === 'unconfigured' && untouched ? 'Distribución pendiente' : null,
@@ -96,9 +93,7 @@ export function buildAugustClosureEditorModel(input: {
           requiredHours: preview.requiredHours,
         }
       : null,
-    error: mismatch
-      ? `El total previsto debe sumar ${formatHours(weekly)} h para esta semana.`
-      : null,
-    canSave: hasInput && complete && !mismatch,
+    error: hasInput && !complete ? 'Cada día debe contener entre 0 y 24 horas.' : null,
+    canSave: hasInput && complete,
   };
 }

@@ -22,7 +22,6 @@ export type ExpectedHoursFailureCode =
   | 'duplicate_day'
   | 'invalid_hours'
   | 'not_partial_week'
-  | 'reference_mismatch'
   | 'inactive_day'
   | 'no_staff_contract';
 
@@ -81,29 +80,6 @@ export function summarizeClosureHours(
     closureExemptHours,
     requiredHours: expectedTotal - closureExemptHours,
   };
-}
-
-/**
- * El total previsto de la semana debe coincidir con la jornada contractual de
- * referencia: la misma que el motor resuelve para los días activos. Una semana
- * contractual completa exige la jornada entera; alta, baja, gap o cambio de
- * jornada exigen solo la referencia de los días activos. No es un aviso: si no
- * coincide, no se guarda.
- */
-export function assertExpectedHoursMatchReference(
-  weekStart: CivilDate,
-  byDay: ExpectedHoursByDay,
-  referenceHours: number,
-): ClosureHoursSummary {
-  const { days } = weekBounds(weekStart);
-  const summary = summarizeClosureHours(days, byDay);
-  if (Math.abs(summary.expectedTotal - referenceHours) > 1e-9) {
-    throw new ExpectedHoursError(
-      'reference_mismatch',
-      `El total previsto debe sumar ${referenceHours} h para esta semana.`,
-    );
-  }
-  return summary;
 }
 
 /**

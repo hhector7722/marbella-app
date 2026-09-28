@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-09-28
+
+- **La distribución de semanas frontera de agosto admite totales diferentes de la jornada contractual.** En `/staff/history` el botón Guardar no exige igualdad: el total previsto fuera de agosto determina la deuda, mientras la jornada contractual mantiene el umbral de extras. Se siguen rechazando horas en días sin contrato staff activo y valores diarios fuera de 0–24. [HORAS](../3-ingenieria/dominio/HORAS.md).
+
 ## 2026-09-27
 
 - **Las semanas frontera del cierre de agosto admiten una distribución prevista por trabajador.** En `/staff/history`, el resumen semanal permite al manager indicar las siete horas previstas cuando una semana cruza agosto. Ese hecho vive en `weekly_expected_hours`: las horas previstas que caen en agosto quedan exentas de deuda sin reducir el umbral de extras. No se deriva de fichajes ni de `shifts`; `weekly_snapshots` y `weekly_snapshot_days` siguen siendo resultado exclusivo del Writer. [HORAS](../3-ingenieria/dominio/HORAS.md), [DEUDA](DEUDA.md).

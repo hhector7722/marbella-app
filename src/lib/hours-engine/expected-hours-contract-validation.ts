@@ -47,7 +47,7 @@ export function expectedHoursContractReference(
   return activeStaffDays(employee, weekStart).referenceHours;
 }
 
-export function assertExpectedHoursMatchContract(
+export function validateExpectedHoursContractDays(
   employee: EmployeeBoundaryFacts,
   weekStart: CivilDate,
   byDay: ExpectedHoursByDay,
@@ -64,20 +64,11 @@ export function assertExpectedHoursMatchContract(
     }
   }
 
-  const summary = summarizeClosureHours(days, byDay);
-  const activeTotal = [...contract.days].reduce(
-    (total, day) => total + (byDay[day] ?? 0),
-    0,
-  );
-  if (Math.abs(activeTotal - contract.referenceHours) > 1e-9) {
-    throw new ExpectedHoursError(
-      'reference_mismatch',
-      `El total previsto debe sumar ${contract.referenceHours} h para esta semana.`,
-    );
-  }
-
+  // La jornada contractual es informativa y conserva el umbral de extras.
+  // La distribución prevista puede sumar más o menos: determina la deuda
+  // solo para los días staff activos fuera del cierre de agosto.
   return {
     referenceHours: contract.referenceHours,
-    summary,
+    summary: summarizeClosureHours(days, byDay),
   };
 }

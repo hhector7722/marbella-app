@@ -14,7 +14,7 @@ import {
   summarizeClosureHours,
 } from '@/lib/hours-engine/expected-hours';
 import {
-  assertExpectedHoursMatchContract,
+  validateExpectedHoursContractDays,
   expectedHoursContractReference,
 } from '@/lib/hours-engine/expected-hours-contract-validation';
 import type { CivilDate } from '@/lib/hours-engine/types';
@@ -139,11 +139,11 @@ export async function saveWeeklyExpectedHours(
     return { success: false as const, error: failureMessage(error) };
   }
 
-  // El total debe cuadrar con la jornada contractual real (hours_contract_terms),
-  // no con lo que mande el cliente. Misma referencia que el Hours Engine.
+  // La suma prevista puede diferir de la jornada contratada. Comprobamos
+  // que ningún día sin contrato staff activo reciba horas previstas.
   try {
     const employee = await loadEmployeeBoundaryFacts(supabase, userId);
-    assertExpectedHoursMatchContract(employee, monday, byDay);
+    validateExpectedHoursContractDays(employee, monday, byDay);
   } catch (error) {
     return { success: false as const, error: failureMessage(error) };
   }
