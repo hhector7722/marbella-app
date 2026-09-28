@@ -107,5 +107,3 @@ jobs:
           src/app/dashboard/albaranes/interpretation-actions.ts
           src/app/dashboard/albaranes/k5/actions.ts
           src/app/dashboard/albaranes/k5/page.tsx
-          src/app/api/internal/albaranes/k5/auto-propose/route.ts
-          src/components/albaranes/InterpretationProposalPanel.tsx
