@@ -22,6 +22,8 @@ import {
   overtimeRateOverrideLookupFromRows,
   resolveOpeningCarryIn,
 } from '../opening-carry.ts';
+import { expectedHoursLookupFromRows } from '../expected-hours.ts';
+import { assertExpectedHoursMatchContract } from '../expected-hours-contract-validation.ts';
 import { loadEmployeeBoundaryFacts } from '../load-employee-facts.ts';
 import { liquidateWeek } from '../liquidation-engine.ts';
 import { priceLiquidationOvertime } from '../week-card-from-liquidation.ts';
@@ -217,7 +219,7 @@ export async function writeWeeklyProjection(
   const { weekEnd: horizonEndDay } = weekBounds(toWeekStart);
   const { startIso, endIso } = madridRangeUtcIso(logsFrom, horizonEndDay);
 
-  const [logsRes, snapsRes] = await Promise.all([
+  const [logsRes, snapsRes, expectedRes] = await Promise.all([
     client
       .from('time_logs')
       .select('clock_in, clock_out, total_hours')
@@ -229,6 +231,12 @@ export async function writeWeeklyProjection(
       .select(
         'week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot',
       )
+      .eq('user_id', userId)
+      .gte('week_start', logsFrom)
+      .lte('week_start', toWeekStart),
+    client
+      .from('weekly_expected_hours')
+      .select('week_start, day, expected_hours')
       .eq('user_id', userId)
       .gte('week_start', logsFrom)
       .lte('week_start', toWeekStart),
@@ -246,8 +254,15 @@ export async function writeWeeklyProjection(
       error: `writeWeeklyProjection: weekly_snapshots (overrides): ${snapsRes.error.message}`,
     };
   }
+  if (expectedRes.error) {
+    return {
+      ok: false,
+      error: `writeWeeklyProjection: weekly_expected_hours: ${expectedRes.error.message}`,
+    };
+  }
 
   const snapRows = snapsRes.data ?? [];
+  const expectedHoursByWeek = expectedHoursLookupFromRows(expectedRes.data ?? []);
   const isPaidByWeek = isPaidLookupFromRows(snapRows);
   const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapRows);
   const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(snapRows);
@@ -268,6 +283,7 @@ export async function writeWeeklyProjection(
         logs: engineLogs,
         isPaidByWeek,
         bagModeOverrideByWeek,
+        expectedHoursByWeek,
       });
     }
     const pre = validateWriterPreconditions({
@@ -285,6 +301,7 @@ export async function writeWeeklyProjection(
       logs: engineLogs,
       isPaidByWeek,
       bagModeOverrideByWeek,
+      expectedHoursByWeek,
     });
   } catch (err) {
     return {
@@ -312,6 +329,10 @@ export async function writeWeeklyProjection(
     const isPaid = isPaidByWeek(weekStart);
 
     try {
+      const expectedHoursByDay = expectedHoursByWeek(weekStart);
+      if (expectedHoursByDay != null) {
+        assertExpectedHoursMatchContract(employee, weekStart, expectedHoursByDay);
+      }
       const liquidation = liquidateWeek({
         employee,
         weekStart,
@@ -319,6 +340,7 @@ export async function writeWeeklyProjection(
         isPaid,
         carryIn,
         bagModeOverride,
+        expectedHoursByDay,
       });
       carryIn = liquidation.carryOut;
 

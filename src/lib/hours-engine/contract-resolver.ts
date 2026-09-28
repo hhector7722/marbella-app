@@ -1,15 +1,19 @@
+import { summarizeClosureHours } from './expected-hours.ts';
 import type {
   CivilDate,
+  ClosureObligationSource,
   ContractSegment,
   ContractTermFact,
   EffectiveContractWeek,
   EmployeeBoundaryFacts,
+  ExpectedHoursByDay,
 } from './types.ts';
 import { roundMarbellaHours } from './marbella-round.ts';
 import {
   compareCivilDate,
   isAugustCivilDate,
   isCivilDateInRange,
+  isPartialAugustClosureWeek,
   weekBounds,
 } from './week-dates.ts';
 
@@ -67,12 +71,40 @@ function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta' | '
 }
 
 /**
+ * Jornada que puede generar deuda.
+ *
+ * Staff, semana frontera con distribución: suma de horas previstas de los
+ * días de este tramo que no son agosto. Un día de pre-alta o gap no entra.
+ * Staff sin distribución: días civiles del tramo fuera de agosto / 7 × jornada.
+ * El resto de regímenes no exime agosto.
+ * La jornada efectiva (ordinarias/extras y alta/baja) no cambia aquí.
+ */
+function debtHoursForTerm(
+  days: readonly CivilDate[],
+  term: ContractTermFact,
+  expectedHoursByDay: ExpectedHoursByDay | null,
+): number {
+  const rawContracted = (days.length / 7) * term.weeklyHours;
+  if (term.regime !== 'staff') {
+    return roundMarbellaHours(rawContracted);
+  }
+  if (expectedHoursByDay == null) {
+    const openDayCount = days.filter((day) => !isAugustCivilDate(day)).length;
+    return roundMarbellaHours((openDayCount / 7) * term.weeklyHours);
+  }
+  const { requiredHours } = summarizeClosureHours(days, expectedHoursByDay);
+  return roundMarbellaHours(Math.max(0, requiredHours));
+}
+
+/**
  * Único punto autorizado a resolver el contrato efectivo semanal.
  * Compone por tramo: días/7 × jornada, redondeado Marbella (enteros o medias).
  *
- * Para staff también resuelve la jornada que puede generar deuda de asistencia:
- * los días civiles de agosto quedan exentos, pero siguen formando parte de la
- * jornada efectiva usada para clasificar ordinarias/extras.
+ * Para staff también resuelve la jornada que puede generar deuda de asistencia.
+ * Agosto exime deuda. En una semana frontera, solo si hay distribución
+ * prevista de esa semana: la deuda es la suma fuera de agosto. Si no hay
+ * distribución, se prorratea por días civiles. Fuera de la frontera, la
+ * distribución se ignora. La jornada efectiva sigue incluyendo agosto.
  *
  * Pre-alta = antes del primer tramo.
  * Gap = huecos entre tramos o después del último tramo.
@@ -80,9 +112,17 @@ function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta' | '
 export function resolveEffectiveContract(
   employee: EmployeeBoundaryFacts,
   weekStart: CivilDate,
+  expectedHoursByDay?: ExpectedHoursByDay | null,
 ): EffectiveContractWeek {
   const { weekEnd, days } = weekBounds(weekStart);
   const { terms } = employee;
+  const closureObligationSource: ClosureObligationSource = !isPartialAugustClosureWeek(weekStart)
+    ? 'not_boundary'
+    : expectedHoursByDay == null
+      ? 'legacy_unconfigured'
+      : 'weekly_expected_hours';
+  const appliedExpected =
+    closureObligationSource === 'weekly_expected_hours' ? expectedHoursByDay! : null;
 
   const firstTermDate = getFirstTermDate(terms);
 
@@ -143,13 +183,7 @@ export function resolveEffectiveContract(
     const contractedHours = roundMarbellaHours(
       (g.days.length / 7) * term.weeklyHours,
     );
-    const debtDays =
-      term.regime === 'staff'
-        ? g.days.filter((day) => !isAugustCivilDate(day))
-        : g.days;
-    const debtContractedHours = roundMarbellaHours(
-      (debtDays.length / 7) * term.weeklyHours,
-    );
+    const debtContractedHours = debtHoursForTerm(g.days, term, appliedExpected);
     return {
       days: g.days,
       weeklyHoursOfTerm: term.weeklyHours,
@@ -173,7 +207,22 @@ export function resolveEffectiveContract(
     weekEnd,
     contractedHoursEffective,
     segments,
+    closureObligationSource,
   };
+}
+
+/**
+ * Jornada contractual de referencia de la semana: la jornada contratada
+ * efectiva de los tramos activos, con la misma semántica del motor
+ * (días del tramo / 7 × jornada, redondeo Marbella). Pre-alta y gap aportan 0.
+ * No descuenta agosto: es el objetivo de la distribución prevista, no la deuda.
+ * La reutilizan la server action y el editor para no divergir del motor.
+ */
+export function weeklyContractReferenceHours(
+  employee: EmployeeBoundaryFacts,
+  weekStart: CivilDate,
+): number {
+  return resolveEffectiveContract(employee, weekStart).contractedHoursEffective;
 }
 
 /**

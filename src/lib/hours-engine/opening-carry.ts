@@ -19,6 +19,7 @@ import {
 import type {
   CivilDate,
   EmployeeBoundaryFacts,
+  ExpectedHoursByDay,
   TimeLogFact,
 } from './types.ts';
 
@@ -68,6 +69,11 @@ export function resolveOpeningCarryIn(input: {
   isPaidByWeek: (weekStart: CivilDate) => boolean;
   /** Override Bolsa/Pago; ausente → null (contrato). */
   bagModeOverrideByWeek?: (weekStart: CivilDate) => boolean | null;
+  /**
+   * Distribución prevista por lunes. Ausente: las fronteras usan el
+   * prorrateo civil legado. Una frontera a medias lanza.
+   */
+  expectedHoursByWeek?: (weekStart: CivilDate) => ExpectedHoursByDay | null;
 }): number {
   assertMonday(input.chainStart);
 
@@ -90,6 +96,7 @@ export function resolveOpeningCarryIn(input: {
       isPaid: input.isPaidByWeek(weekStart),
       carryIn,
       bagModeOverride: input.bagModeOverrideByWeek?.(weekStart) ?? null,
+      expectedHoursByDay: input.expectedHoursByWeek?.(weekStart) ?? null,
     });
     carryIn = result.carryOut;
   }

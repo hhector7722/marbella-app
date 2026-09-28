@@ -86,3 +86,17 @@ export function previousWeekStart(weekStart: CivilDate): CivilDate {
 export function isAugustCivilDate(day: CivilDate): boolean {
   return civilDateToParts(day).m === 8;
 }
+
+/**
+ * Semana que contiene al menos un día de agosto y al menos un día fuera.
+ * Una semana entera de agosto, o una semana sin ningún día de agosto, no lo es.
+ * Exige lunes. No fija años ni las dos fronteras de 2026.
+ */
+export function isPartialAugustClosureWeek(weekStart: CivilDate): boolean {
+  const { days } = weekBounds(weekStart);
+  let augustDays = 0;
+  for (const day of days) {
+    if (isAugustCivilDate(day)) augustDays += 1;
+  }
+  return augustDays > 0 && augustDays < days.length;
+}

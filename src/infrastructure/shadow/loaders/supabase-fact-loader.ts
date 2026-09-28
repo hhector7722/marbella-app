@@ -11,11 +11,13 @@ import {
   overtimeRateOverrideLookupFromRows,
   resolveOpeningCarryIn,
 } from '../../../lib/hours-engine/opening-carry.ts';
+import { expectedHoursLookupFromRows } from '../../../lib/hours-engine/expected-hours.ts';
 import { loadEmployeeBoundaryFacts } from '../../../lib/hours-engine/load-employee-facts.ts';
 import { liquidateWeek } from '../../../lib/hours-engine/liquidation-engine.ts';
 import { weekBounds } from '../../../lib/hours-engine/week-dates.ts';
 import type {
   EmployeeBoundaryFacts,
+  ExpectedHoursByDay,
   TimeLogFact,
 } from '../../../lib/hours-engine/types.ts';
 import {
@@ -51,6 +53,7 @@ type EmployeeCache = {
   isPaidByWeek: (weekStart: string) => boolean;
   bagModeOverrideByWeek: (weekStart: string) => boolean | null;
   overtimeRateOverrideByWeek: (weekStart: string) => number | null;
+  expectedHoursByWeek: (weekStart: string) => ExpectedHoursByDay | null;
   profilePreferStock: boolean | null;
 };
 
@@ -126,7 +129,7 @@ export function createSupabaseShadowFactLoader(
       const logsFrom = timelineStart ?? options.horizonEndWeekStart;
       const { startIso, endIso } = madridRangeUtcIso(logsFrom, horizonEndDay);
 
-      const [logsResult, snapsResult] = await Promise.all([
+      const [logsResult, snapsResult, expectedResult] = await Promise.all([
         client
           .from('time_logs')
           .select('clock_in, clock_out, total_hours, justified_hours')
@@ -146,6 +149,12 @@ export function createSupabaseShadowFactLoader(
               .eq('user_id', employeeId)
               .gte('week_start', options.horizonEndWeekStart)
               .lte('week_start', options.horizonEndWeekStart),
+        client
+          .from('weekly_expected_hours')
+          .select('week_start, day, expected_hours')
+          .eq('user_id', employeeId)
+          .gte('week_start', logsFrom)
+          .lte('week_start', options.horizonEndWeekStart),
       ]);
 
       if (logsResult.error) {
@@ -153,6 +162,9 @@ export function createSupabaseShadowFactLoader(
       }
       if (snapsResult.error) {
         throw new Error(`weekly_snapshots: ${snapsResult.error.message}`);
+      }
+      if (expectedResult.error) {
+        throw new Error(`weekly_expected_hours: ${expectedResult.error.message}`);
       }
 
       const logRows = (logsResult.data ?? []) as LogRow[];
@@ -179,6 +191,7 @@ export function createSupabaseShadowFactLoader(
         bagModeOverrideByWeek: bagModeOverrideLookupFromRows(snapRows),
         overtimeRateOverrideByWeek:
           overtimeRateOverrideLookupFromRows(snapRows),
+        expectedHoursByWeek: expectedHoursLookupFromRows(expectedResult.data ?? []),
         profilePreferStock: prefer,
       };
     })();
@@ -210,6 +223,7 @@ export function createSupabaseShadowFactLoader(
           logs: cache.engineLogs,
           isPaidByWeek: cache.isPaidByWeek,
           bagModeOverrideByWeek: cache.bagModeOverrideByWeek,
+          expectedHoursByWeek: cache.expectedHoursByWeek,
         });
 
         const bagModeOverride =
@@ -231,6 +245,7 @@ export function createSupabaseShadowFactLoader(
           isPaid,
           carryIn: openingCarryIn,
           bagModeOverride,
+          expectedHoursByDay: cache.expectedHoursByWeek(subject.weekStart),
         });
 
         return {

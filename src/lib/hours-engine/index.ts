@@ -6,6 +6,7 @@
 export {
   resolveEffectiveContract,
   resolveEffectiveOvertimeRate,
+  weeklyContractReferenceHours,
 } from './contract-resolver.ts';
 export { relationshipEndDate } from './contract-resolver.ts';
 export { aggregateWeekAttendance } from './attendance-aggregator.ts';

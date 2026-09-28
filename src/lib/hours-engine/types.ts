@@ -11,6 +11,21 @@ export type CivilDate = string;
 
 export type ContractRegime = 'staff' | 'manager' | 'fixed';
 
+/**
+ * Horas previstas por día civil de una semana (hecho de empleado + semana).
+ * No forma parte del tramo contractual.
+ */
+export type ExpectedHoursByDay = Readonly<Record<CivilDate, number>>;
+
+/**
+ * De dónde salió la jornada que puede generar deuda en esta liquidación.
+ * `legacy_unconfigured` solo en una semana frontera de agosto sin 7 filas.
+ */
+export type ClosureObligationSource =
+  | 'not_boundary'
+  | 'legacy_unconfigured'
+  | 'weekly_expected_hours';
+
 /** Régimen efectivo de un segmento de liquidación. */
 export type SegmentRegime = ContractRegime | 'pre_alta' | 'gap';
 
@@ -69,6 +84,11 @@ export type LiquidationInput = {
    * `true`/`false` fuerza todos los tramos; `null`/`undefined` → bagMode del contrato.
    */
   bagModeOverride?: boolean | null;
+  /**
+   * Distribución prevista de la semana frontera. Ausente: el resolver
+   * no la usa. En una semana que no cruza agosto se ignora.
+   */
+  expectedHoursByDay?: ExpectedHoursByDay | null;
 };
 
 export type ContractSegment = {
@@ -80,8 +100,10 @@ export type ContractSegment = {
   contractedHours: number;
   /**
    * Jornada del tramo que puede generar deuda de asistencia.
-   * En staff excluye los días civiles de agosto; ordinarias/extras siguen usando
-   * contractedHours, por lo que la exención no convierte horas en extras.
+   * En staff, agosto no genera deuda. En una semana frontera configurada,
+   * es la suma de horas previstas de los días del tramo fuera de agosto.
+   * Sin esa distribución, el prorrateo civil legado. Ordinarias y extras
+   * siguen usando contractedHours.
    */
   debtContractedHours: number;
   bagMode: boolean;
@@ -101,6 +123,8 @@ export type EffectiveContractWeek = {
   segments: readonly ContractSegment[];
   /** Suma de contractedHours de segmentos de tramo (pre-alta aporta 0). */
   contractedHoursEffective: number;
+  /** Origen de la exención de agosto usada al resolver la deuda. */
+  closureObligationSource: ClosureObligationSource;
 };
 
 export type AttendanceDay = {
@@ -168,4 +192,9 @@ export type LiquidationResult = {
    * Dominio: [HORAS](../marbella-os/3-ingenieria/dominio/HORAS.md).
    */
   settledAtContractEnd?: boolean;
+  /**
+   * Origen de la deuda de cierre. Lo rellena el motor. Quien arme un
+   * resultado a mano puede omitirlo.
+   */
+  closureObligationSource?: ClosureObligationSource;
 };

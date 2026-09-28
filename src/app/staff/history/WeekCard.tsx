@@ -5,10 +5,13 @@ import { X, Coins, Landmark } from 'lucide-react';
 import { parseISO, startOfWeek } from 'date-fns';
 import { cn, calculateRoundedHours } from '@/lib/utils';
 import { toast } from 'sonner';
+import { AugustClosureDistribution } from '@/components/staff/AugustClosureDistribution';
 import { SpecialDayLabel } from '@/components/staff/SpecialDayLabel';
 import LaborConditionsView from '@/components/profile/LaborConditionsView';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import type { CivilDate } from '@/lib/hours-engine/types';
+import { isPartialAugustClosureWeek, mondayOnOrBefore } from '@/lib/hours-engine/week-dates';
 import type { HistoryWeekDto } from '@/lib/read-models/week-display-from-engine';
 
 const EVENT_TYPES = [
@@ -76,6 +79,8 @@ export function WeekCard({
 }: WeekCardProps) {
     const interactive = !readOnly;
     const overridesEnabled = interactive && !!showWeekOverrides;
+    const weekMonday = mondayOnOrBefore(week.startDate.split('T')[0]! as CivilDate);
+    const showAugustClosure = overridesEnabled && isPartialAugustClosureWeek(weekMonday);
     const [managerOverridesOpen, setManagerOverridesOpen] = useState(false);
     const [localContracted, setLocalContracted] = useState<string>(
         week.summary.limitHours !== undefined && week.summary.limitHours !== null 
@@ -385,7 +390,8 @@ export function WeekCard({
             </div>
 
             {overridesEnabled && managerOverridesOpen && userId && onApplyWeekOverrides && (
-                <div className="bg-zinc-50 border-t border-gray-100 flex flex-wrap items-center gap-2 px-3 py-2 shrink-0">
+                <div className="bg-zinc-50 border-t border-gray-100 flex flex-col gap-2 px-3 py-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Overtime</span>
                         <div className="flex bg-zinc-200 p-0.5 rounded-lg">
@@ -456,6 +462,13 @@ export function WeekCard({
                     >
                         Aplicar
                     </Button>
+                    </div>
+                    {showAugustClosure ? (
+                        <AugustClosureDistribution
+                            userId={userId}
+                            weekStart={weekMonday}
+                        />
+                    ) : null}
                 </div>
             )}
 

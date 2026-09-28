@@ -58,7 +58,11 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
     bagModeOverride === true || bagModeOverride === false ? bagModeOverride : bagMode;
 
   const attendance = aggregateWeekAttendance(employee, weekStart, logs);
-  const contract = resolveEffectiveContract(employee, weekStart);
+  const contract = resolveEffectiveContract(
+    employee,
+    weekStart,
+    input.expectedHoursByDay,
+  );
 
   const segmentInputs = contract.segments.map((seg) => ({
     ...seg,
@@ -99,6 +103,7 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
       segments: [],
       dailyBreakdown,
       settledAtContractEnd: settledAtEnd,
+      closureObligationSource: contract.closureObligationSource,
     };
   }
 
@@ -157,5 +162,6 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
     segments,
     dailyBreakdown,
     settledAtContractEnd: settledAtEnd,
+    closureObligationSource: contract.closureObligationSource,
   };
 }

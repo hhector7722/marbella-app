@@ -1,5 +1,5 @@
 <!-- Generado desde 45 documentos de marbella-os/.
-     Huella del origen: 3db7ab711cccd86d
+     Huella del origen: 84b61a1a92b3f493
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -22,8 +22,8 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2026-10-29 | `marbella-os/5-estado/ROADMAP.md` | 2026-07-29 | 3 meses | propiedad del producto |
 | 2026-11-25 | `marbella-os/README.md` | 2026-08-25 | 3 meses | propiedad del producto |
 | 2026-12-18 | `marbella-os/3-ingenieria/SEGURIDAD.md` | 2026-09-18 | 3 meses | propiedad del producto |
-| 2026-12-26 | `marbella-os/5-estado/DEUDA.md` | 2026-09-26 | 3 meses | propiedad del producto |
 | 2026-12-27 | `marbella-os/1-producto/MAPA-DE-CAPACIDADES.md` | 2026-09-27 | 3 meses | propiedad del producto |
+| 2026-12-27 | `marbella-os/5-estado/DEUDA.md` | 2026-09-27 | 3 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/1-producto/capacidades/README.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/1-producto/RECORRIDOS.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/3-ingenieria/CALIDAD.md` | 2026-07-29 | 6 meses | propiedad del producto |

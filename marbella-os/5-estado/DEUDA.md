@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-26
+revisado: 2026-09-27
 caducidad: 3 meses
 supersede: —
 ---
@@ -453,6 +453,16 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 **Coste**: una elaboración ya puede entrar en otra receta, costearse en la ficha, descontarse en una venta nueva, mermarse, consumirse en ración completa y entrar en el ranking de margen hasta materia prima. Recetas TPV muestra esa misma expansión y no la vuelve a guardar como líneas directas. La importación legacy y el Copilot tampoco crean un segundo motor. Si el coste no es válido, el ranking no lo sustituye por cero. La media ración directa conserva su cantidad histórica. La media ración con subrecetas sigue sin estar soportada. Lo que queda fuera del modelo es cargar Pesto y Brava cuando haya datos, y el lector legacy de una vendible sin subrecetas.
 
 **Disparador de pago**: los bloques de implementación posteriores al cierre documental del 2026-09-25. No incluye limpiar `recipe_combos`.
+
+---
+
+## D33 · Distribución de las semanas frontera de agosto sin introducir
+
+**Prioridad: alta.** La tabla `weekly_expected_hours` ya es el hecho: horas previstas de una semana que cruza agosto, por persona y por día. No es un patrón permanente del contrato. Hasta que un manager guarde las siete filas de cada frontera, el motor sigue el prorrateo civil (días fuera de agosto / 7) y lo marca como legado. No se copia de fichajes ni de `shifts`.
+
+**Coste**: las fronteras de 2026 (27 jul–2 ago y 31 ago–6 sep) siguen mal para quien no trabaja los siete días, hasta guardar la distribución y recalcular la proyección desde esa semana.
+
+**Disparador de pago**: aplicar la migración, guardar las siete filas de cada persona en cada frontera y recalcular con el Writer desde el lunes de esa semana. La de julio, desde `2026-07-27`.
 
 ---
 

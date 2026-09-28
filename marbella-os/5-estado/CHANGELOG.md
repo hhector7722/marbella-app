@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-27
 
+- **Las semanas frontera del cierre de agosto admiten una distribución prevista por trabajador.** En `/staff/history`, el resumen semanal permite al manager indicar las siete horas previstas cuando una semana cruza agosto. Ese hecho vive en `weekly_expected_hours`: las horas previstas que caen en agosto quedan exentas de deuda sin reducir el umbral de extras. No se deriva de fichajes ni de `shifts`; `weekly_snapshots` y `weekly_snapshot_days` siguen siendo resultado exclusivo del Writer. [HORAS](../3-ingenieria/dominio/HORAS.md), [DEUDA](DEUDA.md).
+
 - **Tres extras gestionados reutilizables.** Extra 1–3 viven en `profiles` con `staffing_mode = managed_extra`, jornada 0 h y tarifa inicial 10 €/h. En el horario, una sola fila `Extra` asigna el slot libre de ese día. No fichan: manager escribe asistencia. Bootstrap idempotente: `npm run bootstrap:managed-extras`. [HORAS](../3-ingenieria/dominio/HORAS.md), [GLOSARIO](../GLOSARIO.md).
 
 - **La vitrina ya no admite un producto escrito a mano.** Se elige uno de la carta virtual y el precio se copia de ahí. Al abrir la hoja vacía se colocan los productos que ya tienen categoría. Helados y extras no tienen hoja.

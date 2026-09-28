@@ -1,5 +1,5 @@
 <!-- Generado desde 53 documentos de marbella-os/.
-     Huella del origen: b7477b6da51e8ce8
+     Huella del origen: 4a256d92c633875e
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -34,11 +34,11 @@ texto crea un segundo dueño, y eso es exactamente lo que prohíbe `CANON §5`.
 | `INV-C09` | Deuda nunca se “paga”: `carryOut ≤ 0` cuando `balanceFinal ≤ 0` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-C10` | ≤ 1 tramo abierto por empleado; sin solapes en `hours_contract_terms` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 1 |
 | `INV-D01` | **Mismos hechos** + **mismos overrides** + **misma versión Hours Engine** + **misma versión Cost Engine** ⇒ **misma proyección de resultado… | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 9 |
-| `INV-H01` | En staff, `debtContractedHours` se prorratea solo con los días contractuales fuera de agosto | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
-| `INV-H02` | Si todos los días contractuales del segmento staff caen en agosto, el segmento no puede producir balance negativo | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
-| `INV-H03` | Ordinarias/extras se calculan contra `contractedHours`, no contra `debtContractedHours`; la exención no crea extras | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
-| `INV-H04` | En semana mixta, el lado negativo del balance no puede superar la deuda correspondiente a los días fuera de agosto | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
-| `INV-H05` | Fuera de agosto, `debtContractedHours = contractedHours` y la regla staff vuelve a `horas − contrato` | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H01` | En staff, una semana frontera con siete horas previstas debe `debtContractedHours` igual a la suma prevista de los días activos fuera de ag… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H02` | Si lo exigible del segmento staff es 0, el segmento no puede producir balance negativo | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H03` | Ordinarias/extras se calculan contra `contractedHours`, no contra `debtContractedHours`; la exención no crea extras ni baja el umbral | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H04` | En semana frontera, el lado negativo del balance no puede superar las horas previstas fuera de agosto, o la parte civil legada si aún no ha… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H05` | Fuera de una semana frontera, `debtContractedHours = contractedHours` en staff salvo la semana entera de agosto, donde la deuda es 0 | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
 | `INV-H06` | En la semana que contiene la fecha de fin del contrato (y posteriores), `carryOut = 0`, sea el saldo crédito o deuda | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
 | `INV-H07` | Si existe un tramo abierto, no aplica saldo de fin: `carryOut` sigue la cadena normal de [ADR-0001](../../4-decisiones/ADR-0001-hours-engin… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
 | `INV-J01` | Tras writer: `pending_balance = carryIn` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 2 |

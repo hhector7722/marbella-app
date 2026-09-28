@@ -16,7 +16,9 @@ export type RegimeSegmentInput = {
   contractedHours: number;
   /**
    * Horas del segmento que pueden generar deuda de asistencia.
-   * Para staff, Contract Resolver excluye aquí los días civiles de agosto.
+   * Para staff, Contract Resolver ya ha eximido agosto (horas previstas
+   * fuera del cierre en una semana frontera; si no hay distribución,
+   * por día civil).
    * Ordinarias/extras siguen usando contractedHours.
    */
   debtContractedHours: number;
