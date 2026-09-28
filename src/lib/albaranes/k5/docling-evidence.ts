@@ -38,6 +38,7 @@ type LayoutHeaderField = {
   field: FieldName
   item: LayoutTextItem
   score: number
+  anchorX: number
 }
 
 function integer(value: unknown, fallback: number): number {
@@ -91,14 +92,36 @@ export function normalizeEvidenceLabel(value: string): string {
     .replace(/\s+/g, ' ')
 }
 
+function canonicalHeaderLabel(value: string): string {
+  return normalizeEvidenceLabel(value)
+    .split(' ')
+    .map((token) => {
+      if (token === 'preu') return 'precio'
+      if (token === 'descripcio') return 'descripcion'
+      if (token === 'article') return 'articulo'
+      return token
+    })
+    .join(' ')
+}
+
 function aliasMatchScore(header: string, alias: string): number {
-  const normalizedHeader = normalizeEvidenceLabel(header)
-  const normalizedAlias = normalizeEvidenceLabel(alias)
+  const normalizedHeader = canonicalHeaderLabel(header)
+  const normalizedAlias = canonicalHeaderLabel(alias)
   if (!normalizedHeader || !normalizedAlias) return 0
   if (normalizedHeader === normalizedAlias) return 3
   if (normalizedHeader.includes(normalizedAlias)) return 2
   if (normalizedAlias.includes(normalizedHeader)) return 1
   return 0
+}
+
+function aliasAnchorX(item: LayoutTextItem, alias: string): number {
+  const normalizedHeader = canonicalHeaderLabel(item.text)
+  const normalizedAlias = canonicalHeaderLabel(alias)
+  if (!normalizedHeader || !normalizedAlias) return centerX(item)
+  const index = normalizedHeader.indexOf(normalizedAlias)
+  if (index < 0) return centerX(item)
+  const fraction = (index + normalizedAlias.length / 2) / normalizedHeader.length
+  return item.left + (item.right - item.left) * fraction
 }
 
 function fieldWeight(field: FieldName): number {
@@ -383,35 +406,29 @@ function headerFieldCandidates(
   ]>) {
     let best: LayoutHeaderField | null = null
     for (const item of inBand) {
-      const score = Math.max(0, ...definition.aliases.map((alias) => aliasMatchScore(item.text, alias)))
-      if (score <= 0) continue
+      const aliasMatches = definition.aliases
+        .map((alias) => ({ alias, score: aliasMatchScore(item.text, alias) }))
+        .sort((a, b) => b.score - a.score)
+      const strongest = aliasMatches[0]
+      const score = strongest?.score ?? 0
+      if (score <= 0 || !strongest) continue
       if (
         !best
         || score > best.score
         || (score === best.score && Math.abs(centerY(item) - bandCenterY) < Math.abs(centerY(best.item) - bandCenterY))
       ) {
-        best = { field, item, score }
+        best = {
+          field,
+          item,
+          score,
+          anchorX: aliasAnchorX(item, strongest.alias),
+        }
       }
     }
     if (best) chosen.push(best)
   }
 
-  const byItem = new Map<number, LayoutHeaderField[]>()
-  for (const candidate of chosen) {
-    const list = byItem.get(candidate.item.index) ?? []
-    list.push(candidate)
-    byItem.set(candidate.item.index, list)
-  }
-
-  return chosen.filter((candidate) => {
-    const siblings = byItem.get(candidate.item.index) ?? []
-    if (siblings.length <= 1) return true
-    const strongest = [...siblings].sort((a, b) =>
-      (b.score * fieldWeight(b.field)) - (a.score * fieldWeight(a.field))
-      || fieldWeight(b.field) - fieldWeight(a.field)
-    )[0]
-    return strongest?.field === candidate.field
-  })
+  return chosen
 }
 
 function layoutHeaderScore(fields: readonly LayoutHeaderField[]): number {
@@ -475,10 +492,10 @@ export function extractDoclingLayoutTables(
 
     if (bestFields.length === 0) continue
 
-    const orderedFields = [...bestFields].sort((a, b) => centerX(a.item) - centerX(b.item))
+    const orderedFields = [...bestFields].sort((a, b) => a.anchorX - b.anchorX)
     const headerY = orderedFields.reduce((sum, field) => sum + centerY(field.item), 0) / orderedFields.length
     const origin = orderedFields[0]!.item.origin
-    const centers = orderedFields.map((field) => centerX(field.item))
+    const centers = orderedFields.map((field) => field.anchorX)
     const leftBound = centers[0]! - 140
     const rightBound = centers[centers.length - 1]! + 140
 
