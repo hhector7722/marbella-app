@@ -305,18 +305,28 @@ function inferProductColumn(
 
 function hasReviewableStructure(
   profile: SupplierProfile,
-  fieldColumns: Partial<Record<FieldName, number>>
+  fields: ReadonlySet<FieldName>,
+  allowPartialWithoutProduct = false
 ): boolean {
-  const hasProduct = fieldColumns.product != null
-  const hasQuantity = fieldColumns.quantity != null || fieldColumns.cases != null
-  const hasEconomics = (
-    fieldColumns.unit_price != null
-    || fieldColumns.net_unit_price != null
-    || fieldColumns.line_amount != null
-    || fieldColumns.line_amount_tax_included != null
-    || fieldColumns.price_with_tax != null
-  )
-  return hasProduct && hasQuantity && (hasEconomics || profile.interpretation.kind === 'internal_water')
+  const hasProduct = fields.has('product')
+  const hasQuantity = fields.has('quantity') || fields.has('cases')
+  const economicFields: FieldName[] = [
+    'unit_price',
+    'net_unit_price',
+    'line_amount',
+    'line_amount_tax_included',
+    'price_with_tax',
+  ]
+  const economicCount = economicFields.filter((field) => fields.has(field)).length
+
+  if (hasProduct && hasQuantity) {
+    return economicCount > 0 || profile.interpretation.kind === 'internal_water'
+  }
+
+  // Una tabla de líneas puede conservar evidencia útil aunque el producto
+  // haya perdido su cabecera (caso Videla). Exigimos cantidad y al menos dos
+  // magnitudes económicas para no confundirla con una tabla de bases/IVA.
+  return allowPartialWithoutProduct && !hasProduct && hasQuantity && economicCount >= 2
 }
 
 export type ProfileTableMatch = {
@@ -333,6 +343,7 @@ export function matchProfileTable(
 
   for (const table of tables) {
     const fieldColumns: Partial<Record<FieldName, number>> = {}
+    const matchedFields = new Set<FieldName>()
     let score = 0
 
     for (const [fieldName, definition] of Object.entries(profile.fields) as Array<[
@@ -340,7 +351,10 @@ export function matchProfileTable(
       NonNullable<SupplierProfile['fields'][FieldName]>
     ]>) {
       const resolution = bestHeaderColumn(table.headers, definition.aliases)
-      if (resolution.matched) score += fieldName === 'product' ? 4 : 1
+      if (resolution.matched) {
+        matchedFields.add(fieldName)
+        score += fieldName === 'product' ? 4 : 1
+      }
       if (resolution.column >= 0) fieldColumns[fieldName] = resolution.column
     }
 
@@ -348,11 +362,12 @@ export function matchProfileTable(
       const inferred = inferProductColumn(profile, table, new Set(Object.values(fieldColumns)))
       if (inferred != null) {
         fieldColumns.product = inferred
+        matchedFields.add('product')
         score += 2
       }
     }
 
-    if (!hasReviewableStructure(profile, fieldColumns)) continue
+    if (!hasReviewableStructure(profile, matchedFields, true)) continue
     const candidate = { table, fieldColumns, score }
     if (!best || candidate.score > best.score) best = candidate
   }
@@ -497,11 +512,8 @@ function findLayoutHeader(profile: SupplierProfile, document: Record<string, unk
         }
       }
 
-      if (!hasReviewableStructure(profile, Object.fromEntries(
-        Object.keys(anchors).map((field) => [field, 0])
-      ) as Partial<Record<FieldName, number>>)) {
-        continue
-      }
+      const anchoredFields = new Set(Object.keys(anchors) as FieldName[])
+      if (!hasReviewableStructure(profile, anchoredFields)) continue
 
       const score = [...strengths.entries()].reduce(
         (sum, [field, strength]) => sum + headerWeight(field) * strength,
@@ -703,10 +715,9 @@ function layoutTableForPage(
   if (columns.length < 2) return null
 
   const fieldColumns = resolveLayoutFieldColumns(profile, header, columns)
-  if (!hasReviewableStructure(profile, fieldColumns)) return null
-
   const fields = (Object.keys(profile.fields) as FieldName[])
     .filter((field) => fieldColumns[field] != null)
+  if (!hasReviewableStructure(profile, new Set(fields))) return null
   const headers = fields.map((field) => profile.fields[field]!.aliases[0] ?? field)
   const mappedColumnIndexes = new Set(fields.map((field) => fieldColumns[field]!))
 
