@@ -93,6 +93,15 @@ test('automatización Docling genera K5 solo para la extracción explícita y es
   assert.doesNotMatch(autoProposalRoute, /auto_map_invoice_lines_fuzzy/)
 })
 
+test('K5 valida el hash contra el adjunto cuando el job usa source_attachment_id', () => {
+  assert.match(autoProposalRoute, /.select('id,source_attachment_id')/)
+  assert.match(autoProposalRoute, /.from('purchase_invoice_attachments')/)
+  assert.match(autoProposalRoute, /.eq('id', sourceAttachmentId)/)
+  assert.match(autoProposalRoute, /.eq('invoice_id', invoiceId)/)
+  assert.match(autoProposalRoute, /expectedSourceHash = text(attachment.content_sha256)/)
+  assert.match(autoProposalRoute, /expectedSourceHash && expectedSourceHash !== sourceFileHash/)
+})
+
 test('automatización K5 es best-effort entre evidencia persistida y cierre del lease', () => {
   assert.match(autoProposalRoute, /createHmac\('sha256'/)
   assert.match(autoProposalRoute, /x-k5-timestamp/)
