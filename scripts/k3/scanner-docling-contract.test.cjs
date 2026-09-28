@@ -13,6 +13,7 @@ const migration = read('supabase/migrations/20260915104503_scanner_enqueue_docli
 const setBasedPersistence = read('supabase/migrations/20260928113000_k3_set_based_evidence_persistence.sql')
 const edgeWorker = read('supabase/functions/docling-evidence-worker/index.ts')
 const localWorker = read('integrations/docling-worker/worker.py')
+const localCompose = read('integrations/docling-worker/compose.yaml')
 
 test('el scanner conserva el original y encola una sola intención durable Docling', () => {
   assert.match(scanner, /storage\.from\('albaranes'\)\.upload/)
@@ -53,6 +54,11 @@ test('worker y Edge Function permanecen evidence-only, incluidos los errores', (
   assert.doesNotMatch(edgeWorker, /stock_movements|apply_receipt_line|ingredient_price_history|supplier_item_mappings/)
   assert.doesNotMatch(localWorker, /createClient|SUPABASE_SERVICE_ROLE_KEY|stock_movements|purchase_invoice_lines/)
   assert.doesNotMatch(localWorker, /"rawArtifact": \{"error"/)
+})
+
+test('Docling Serve y el worker comparten la misma ventana de espera síncrona', () => {
+  assert.match(localCompose, /DOCLING_SERVE_MAX_SYNC_WAIT: "840"/)
+  assert.match(localCompose, /WORKER_HTTP_TIMEOUT_SECONDS: "840"/)
 })
 
 test('la finalización solo cambia estado operativo y evidencia; no introduce efectos económicos', () => {
