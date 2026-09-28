@@ -373,8 +373,8 @@ async function generateAutomaticProposals(
     status?: string
   } | null
   if (extractionError || !extraction) throw new Error('No se pudo cargar la extracción Docling para K5.')
-  if (extraction.status !== 'success') {
-    return { ok: true, skipped: 'extraction_not_success', created: 0, materialized: 0 }
+  if (!['success', 'no_table'].includes(text(extraction.status))) {
+    return { ok: true, skipped: 'extraction_not_reviewable', created: 0, materialized: 0 }
   }
 
   const sourceFileHash = text(extraction.file_version_hash)
