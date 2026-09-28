@@ -160,7 +160,7 @@ export async function listK5InvoiceCandidatesAction(): Promise<
       .from('document_extractions')
       .select('id,invoice_id,status')
       .in('invoice_id', invoiceIds)
-      .eq('status', 'success'),
+      .in('status', ['success', 'no_table']),
     gate.supabase
       .from('purchase_interpretation_proposals')
       .select('id,proposal_set_id,purchase_invoice_id,supersedes_proposal_id,provenance,created_at')
