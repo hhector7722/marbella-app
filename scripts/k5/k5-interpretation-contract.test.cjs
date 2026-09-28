@@ -13,6 +13,7 @@ const idempotentRetryMigration = read('supabase/migrations/20260915194800_k5_ide
 const priceScaleMigration = read('supabase/migrations/20260915195000_k5_compare_price_at_canonical_scale.sql')
 const trustedLegacyMigration = read('supabase/migrations/20260918114615_k5_import_trusted_legacy_mappings.sql')
 const autoReceiptMigration = read('supabase/migrations/20260917215500_k5_service_auto_receipt_delegate.sql')
+const layoutFallbackMigration = read('supabase/migrations/20260928024500_k5_layout_fallback_review.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const autoProposalRoute = read('src/app/api/internal/albaranes/k5/auto-propose/route.ts')
@@ -106,7 +107,8 @@ test('automatización K5 es best-effort entre evidencia persistida y cierre del 
   assert.ok(autoApplyAt > k5At, 'K4 automático solo puede evaluarse después de K5')
   assert.ok(completeAt > autoApplyAt, 'el lease solo se cierra después de evaluar el autoaplicado')
   assert.match(doclingWorker, /k5Automation = \{ ok: false, error: errorMessage\(error\) \}/)
-  assert.match(doclingWorker, /if \(k5Automation\?\.ok\)/)
+  assert.match(doclingWorker, /if \(payload\.status === "success" && k5Automation\?\.ok\)/)
+  assert.match(doclingWorker, /skipped:layout_fallback_requires_human_review/)
   assert.match(doclingWorker, /skipped:k5_auto_proposal_failed/)
   assert.match(doclingWorker, /k4AutoApply = \{ ok: false, error: errorMessage\(error\) \}/)
 })
@@ -119,6 +121,17 @@ test('cola K5 distingue processing, no_table, failed y ausencia de extracción',
   assert.match(k5QueuePage, /Docling procesó el documento, pero no detectó una tabla estructurada/)
   assert.match(k5QueuePage, /Docling no pudo completar la extracción de este albarán/)
   assert.doesNotMatch(k5QueuePage, /no tiene una extracción Docling correcta disponible/)
+})
+
+test('no_table solo entra por fallback layout y nunca por auto-apply', () => {
+  assert.match(interpretationActions, /\['success', 'no_table'\]\.includes\(text\(extraction\.status\)\)/)
+  assert.match(autoProposalRoute, /\['success', 'no_table'\]\.includes\(text\(extraction\.status\)\)/)
+  assert.match(autoProposalRoute, /source: n\.provenanceSource/)
+  assert.match(interpretationActions, /source: n\.provenanceSource/)
+  assert.match(layoutFallbackMigration, /de\.status = 'no_table'::public\.extraction_status[\s\S]*docling_layout_fallback/)
+  assert.match(layoutFallbackMigration, /v_extraction\.status = 'no_table'::public\.extraction_status[\s\S]*v_proposal\.provenance->>'source'/)
+  assert.match(autoReceiptMigration, /provenance->>'source'.*docling_evidence/)
+  assert.doesNotMatch(autoReceiptMigration, /docling_layout_fallback/)
 })
 
 test('legacy seguro se importa solo como proposed y sin efectos económicos', () => {
