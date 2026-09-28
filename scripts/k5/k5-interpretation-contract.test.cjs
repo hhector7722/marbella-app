@@ -102,6 +102,13 @@ test('K5 valida el hash contra el adjunto cuando el job usa source_attachment_id
   assert.ok(autoProposalRoute.includes('expectedSourceHash && expectedSourceHash !== sourceFileHash'))
 })
 
+test('K5 reemplaza el placeholder profile_table_not_found al recuperar filas reales', () => {
+  assert.ok(autoProposalRoute.includes("row.review_reasons.some((reason) => text(reason) === 'profile_table_not_found')"))
+  assert.ok(autoProposalRoute.includes('proposal.sourceTableIndex != null'))
+  assert.ok(autoProposalRoute.includes('proposal.sourceRowIndex != null'))
+  assert.ok(autoProposalRoute.includes('if (canSupersedePlaceholder) staleDocumentPlaceholder = null'))
+})
+
 test('automatización K5 es best-effort entre evidencia persistida y cierre del lease', () => {
   assert.match(autoProposalRoute, /createHmac\('sha256'/)
   assert.match(autoProposalRoute, /x-k5-timestamp/)

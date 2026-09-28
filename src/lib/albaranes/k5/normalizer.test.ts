@@ -401,6 +401,114 @@ test('Ametller elige la cabecera de líneas dentro de una tabla con secciones de
 })
 
 
+test('Ametller real: recupera cabecera semántica sin flag y columnas fusionadas', () => {
+  const ametllerProfile: SupplierProfile = {
+    ...directProfile,
+    id: 'supplier:1:ametller',
+    supplier: {
+      id: 1,
+      canonical_name: 'Ametller',
+      aliases: ['Ametller Origen'],
+      observed_document_identities: ['Ametller Origen S.L.'],
+    },
+    fields: {
+      code: { aliases: ['Código'], meaning: 'código' },
+      product: { aliases: ['Descripción'], meaning: 'producto' },
+      quantity: { aliases: ['Cantidad'], meaning: 'cantidad facturada' },
+      unit_price: { aliases: ['Precio por unidad / kg', 'P.U.', 'Precio'], meaning: 'precio' },
+      discount_value: { aliases: ['Descuento'], meaning: 'descuento' },
+      line_amount: { aliases: ['Importe'], meaning: 'importe' },
+      tax_percent: { aliases: ['% IVA'], meaning: 'IVA' },
+    },
+    interpretation: {
+      kind: 'direct_line',
+      accepted_quantity_units: ['unit', 'kg'],
+      amount_tax_basis: 'without_tax',
+      rounding_tolerance: 0.01,
+    },
+    needs_review: [],
+  }
+
+  const raw = artifact([
+    {
+      data: {
+        table_cells: [
+          cell(0, 0, 'Albaran Fecha', true),
+          cell(0, 1, 'Pedido Cliente', true),
+          cell(0, 2, 'CIF', true),
+          cell(0, 9, 'Observaciones', true),
+          cell(3, 0, 'Ruta', true),
+          cell(3, 1, 'Conductor', true),
+          cell(3, 7, '%IVA', true),
+          cell(4, 0, 'Codigo Lote Descripcion Cantidad Pedido2026-51-124309 deFecha24/09/2026'),
+          cell(4, 4, 'Precio'),
+          cell(4, 5, 'Importe'),
+          cell(4, 6, 'Dto. Neto'),
+          cell(5, 0, '41423 L092625C14A Aceite Oliva Suave 5L'),
+          cell(5, 1, '1,000UNI'),
+          cell(5, 4, '23,990'),
+          cell(5, 5, '23,99'),
+          cell(6, 0, '42019'),
+          cell(6, 1, '2,000 BOL'),
+          cell(6, 2, 'B260925 Ensalada Mezclum 7 Brotes Bolsa 500g'),
+          cell(6, 4, '4,490'),
+          cell(6, 5, '8,98'),
+        ],
+      },
+    },
+    {
+      data: {
+        table_cells: [
+          cell(0, 0, 'Imp.Bruto'),
+          cell(0, 1, 'Descuentos'),
+          cell(0, 2, 'Bases IVA'),
+          cell(0, 3, '%IVA'),
+          cell(1, 0, '32,97'),
+          cell(1, 2, '32,97'),
+        ],
+      },
+    },
+  ], 'Ametller Origen S.L.')
+
+  const result = normalizeDoclingEvidence({
+    profile: ametllerProfile,
+    rawArtifact: raw,
+    supplierId: 1,
+    mappings: [{
+      id: 'mapping-aceite',
+      supplierItemName: 'Aceite Oliva Suave 5L',
+      ingredientId: 'ingredient-aceite',
+      conversionFactor: '1',
+      lineBillingUnit: 'ud',
+      lineContentQty: '5',
+      lineContentUnit: 'l',
+      purchaseUnit: 'l',
+      baseUnit: 'ml',
+    }],
+  })
+
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v9')
+  assert.equal(result.proposals.length, 2)
+
+  const aceite = result.proposals[0]!
+  assert.equal(aceite.sourceTableIndex, 0)
+  assert.equal(aceite.sourceRowIndex, 5)
+  assert.equal(aceite.sourceItemName, '41423 L092625C14A Aceite Oliva Suave 5L')
+  assert.equal(aceite.lineQuantity, '1')
+  assert.equal(aceite.observedUnitPrice, '23.99')
+  assert.equal(aceite.lineTotal, '23.99')
+  assert.equal(aceite.mappingVersionId, 'mapping-aceite')
+
+  const mezclum = result.proposals[1]!
+  assert.equal(mezclum.sourceTableIndex, 0)
+  assert.equal(mezclum.sourceRowIndex, 6)
+  assert.equal(mezclum.sourceItemName, 'B260925 Ensalada Mezclum 7 Brotes Bolsa 500g')
+  assert.equal(mezclum.lineQuantity, '2')
+  assert.equal(mezclum.observedUnitPrice, '4.49')
+  assert.equal(mezclum.lineTotal, '8.98')
+})
+
+
 test('Videla: peso variable reconciliado usa kg económico y conserva piezas como evidencia', () => {
   const videlaProfile: SupplierProfile = {
     ...directProfile,
