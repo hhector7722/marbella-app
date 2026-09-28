@@ -182,6 +182,43 @@ test('Videla: dos tablas parciales no se aceptan como tabla de líneas y el layo
   assert.equal(row.line_amount, '28,89')
 })
 
+test('Shers: TIP PRECIO DTO P.UN comparte bbox pero conserva cuatro columnas distintas', () => {
+  const profile = supplierProfileForId(8)!
+  const raw = artifact({
+    texts: [
+      textItem(0, 'CODIGO', 122, 1160, 65),
+      textItem(1, 'DESCRIPCION', 299, 1168, 100),
+      textItem(2, 'CANTIDAD', 511, 1171, 80),
+      textItem(3, 'TIP PRECIO DTO. P.UN.', 616, 1171, 185),
+      textItem(4, '%IVA', 914, 1167, 45),
+      textItem(5, 'IMPORTE', 999, 1166, 70),
+      textItem(6, '05087', 118, 1130, 45),
+      textItem(7, 'RAMSENCERA1,5LC/6', 185, 1134, 184),
+      textItem(8, '15,00', 548, 1141, 46),
+      textItem(9, 'CA', 604, 1140, 29),
+      textItem(10, '17,57', 667, 1143, 47),
+      textItem(11, '6,55', 726, 1144, 34),
+      textItem(12, '11,02', 768, 1140, 40),
+      textItem(13, '4,00', 929, 1136, 34),
+      textItem(14, '165,34', 1020, 1135, 54),
+    ],
+  })
+
+  const layout = extractDoclingLayoutTables(profile, raw)
+  const match = matchProfileTable(profile, layout)
+  assert.ok(match)
+  const row = rowByProfileFields(match, match.table.rows[0]!)
+  assert.equal(row.code, '05087')
+  assert.equal(row.product, 'RAMSENCERA1,5LC/6')
+  assert.equal(row.quantity, '15,00')
+  assert.equal(row.unit_type, 'CA')
+  assert.equal(row.unit_price, '17,57')
+  assert.equal(row.discount_value, '6,55')
+  assert.equal(row.net_unit_price, '11,02')
+  assert.equal(row.tax_percent, '4,00')
+  assert.equal(row.line_amount, '165,34')
+})
+
 test('Ametller: la cabecera semántica gana aunque Docling marque una fila de producto como header', () => {
   const profile = supplierProfileForId(1)!
   const raw = artifact({
