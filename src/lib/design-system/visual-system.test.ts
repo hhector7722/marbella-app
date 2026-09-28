@@ -1566,6 +1566,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'components/cash/CashBreakdownModal.tsx',
             'app/dashboard/history/page.tsx',
             'components/staff/StaffCajaCambioModal.tsx',
+            'components/dashboards/MasterDashboardView.tsx',
+            'components/dashboards/AdminDashboardView.tsx',
+            'app/dashboard/overtime/page.tsx',
         ];
         for (const rel of both) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
@@ -1578,13 +1581,25 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
 
         const calculatorOnly = [
             'app/dashboard/inventory/InventoryClient.tsx',
-            'app/dashboard/overtime/page.tsx',
             'components/orders/OrderSummaryModal.tsx',
         ];
         for (const rel of calculatorOnly) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
             assert.match(source, /<QuickCashTools calculator \/>/, `${rel} solo monta calculadora`);
             assert.doesNotMatch(source, /<QuickCashTools[^>]*breakdown/, `${rel} no monta desglose`);
+        }
+
+        // Los tres accesos al detalle semanal comparten la misma fila bajo el modal,
+        // sin insertar controles en la lista de trabajadores ni alterar su ancho.
+        for (const [rel, instance] of [
+            ['components/dashboards/MasterDashboardView.tsx', 'master-overtime-week-detail'],
+            ['components/dashboards/AdminDashboardView.tsx', 'admin-overtime-week-detail'],
+            ['app/dashboard/overtime/page.tsx', 'overtime-week-detail'],
+        ]) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            const weeklyModal = source.split(`instance="${instance}"`)[1]?.split('</Modal>')[0] ?? '';
+            assert.match(weeklyModal, /<QuickCashTools calculator breakdown \/>/, `${rel} monta ambos botones en el modal semanal`);
+            assert.equal((weeklyModal.match(/<QuickCashTools/g) ?? []).length, 1, `${rel} no duplica la fila`);
         }
 
         const change = readFileSync(join(SRC_ROOT, 'components/CashChangeModal.tsx'), 'utf8');

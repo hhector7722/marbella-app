@@ -23,6 +23,7 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { Modal } from '@/components/ui/modal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { randomId } from '@/lib/random-id';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
@@ -903,6 +904,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                                 <EmptyState instance="master-overtime-week-none" variant="none" title="Sin importes esta semana" />
                             )}
                         </div>
+                        <QuickCashTools calculator breakdown />
                     </Modal>
                 );
             })() : null}

@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { StaffSelectionModal, type PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
 import { Modal } from '@/components/ui/modal';
+import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { OpsHomeScreen } from '@/components/dashboards/OpsHomeScreen';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
@@ -1021,6 +1022,7 @@ const AdminDashboardView = ({
                             )}
                         </div>
                     </div>
+                    <QuickCashTools calculator breakdown />
                 </Modal>
                 );
             })()}

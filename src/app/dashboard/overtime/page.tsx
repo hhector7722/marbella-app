@@ -319,7 +319,6 @@ export default function OvertimePage() {
                                 metrics={[]}
                                 total={weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
                             />
-                            <QuickCashTools calculator />
                             <div>
                                 {weekStaff.map((s) => (
                                     <StaffOvertimeRow
@@ -338,6 +337,7 @@ export default function OvertimePage() {
                                 )}
                             </div>
                         </div>
+                        <QuickCashTools calculator breakdown />
                     </Modal>
                 );
             })()}

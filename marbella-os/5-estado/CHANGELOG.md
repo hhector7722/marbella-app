@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-09-28
 
+- **El detalle semanal de horas extras incorpora Calculadora y Desglose.** En los modales de semana del dashboard master, del dashboard administrativo y de `/dashboard/overtime`, ambos accesos aparecen debajo del recuadro con la fila reutilizable `QuickCashTools`, sin modificar el ancho ni la lista de trabajadores. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 - **La distribución de semanas frontera de agosto admite totales diferentes de la jornada contractual.** En `/staff/history` el botón Guardar no exige igualdad: el total previsto fuera de agosto determina la deuda, mientras la jornada contractual mantiene el umbral de extras. Se siguen rechazando horas en días sin contrato staff activo y valores diarios fuera de 0–24. [HORAS](../3-ingenieria/dominio/HORAS.md).
 
 ## 2026-09-27
