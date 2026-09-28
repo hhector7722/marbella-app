@@ -10,6 +10,7 @@ function normalizeLabel(value: string): string {
 }
 
 const AMETLLER_PREFIX = /^(?:[A-Z]\d{3}[A-Z]\d{6}|[A-Z]\d{6}[A-Z]\d{2}[A-Z]|[A-Z]\d{10}|[A-Z]\d{8}|[A-Z]\d{6})\s*/i
+const AMETLLER_ARTICLE_BEFORE_TECHNICAL_PREFIX = /^\d{3,6}\s+(?=[A-Z]\d)/i
 
 /**
  * Ametller concatena en algunos documentos un código técnico delante de la
@@ -20,7 +21,8 @@ const AMETLLER_PREFIX = /^(?:[A-Z]\d{3}[A-Z]\d{6}|[A-Z]\d{6}[A-Z]\d{2}[A-Z]|[A-Z
 export function stripSupplierTechnicalPrefix(value: string, supplierId: number): string {
   const raw = String(value ?? '').trim()
   if (supplierId !== 1) return raw
-  const stripped = raw.replace(AMETLLER_PREFIX, '').trim()
+  const withoutArticleCode = raw.replace(AMETLLER_ARTICLE_BEFORE_TECHNICAL_PREFIX, '').trim()
+  const stripped = withoutArticleCode.replace(AMETLLER_PREFIX, '').trim()
   return stripped || raw
 }
 
