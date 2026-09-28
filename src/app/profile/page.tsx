@@ -10,7 +10,7 @@ import { Surface } from '@/components/ui/Surface';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CreditCard, Pencil } from 'lucide-react';
+import { CreditCard, Pencil, Plus } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
@@ -106,6 +106,7 @@ function ProfileContent() {
     const [plantillaLoading, setPlantillaLoading] = useState(false);
     const [viewerRole, setViewerRole] = useState<string | null>(null);
     const [editContractSignal, setEditContractSignal] = useState(0);
+    const [newLaborTermSignal, setNewLaborTermSignal] = useState(0);
     const [isEditingLabor, setIsEditingLabor] = useState(false);
 
     const fullName = profile
@@ -525,14 +526,25 @@ function ProfileContent() {
                                             Condiciones laborales
                                         </h2>
                                         {canManageLaborConditions && !isEditingLabor ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => setEditContractSignal((n) => n + 1)}
-                                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 active:scale-[0.98]"
-                                                aria-label="Editar condiciones laborales"
-                                            >
-                                                <Pencil size={16} strokeWidth={2} />
-                                            </button>
+                                            <div className="flex shrink-0 items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewLaborTermSignal((n) => n + 1)}
+                                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 active:scale-[0.98]"
+                                                    aria-label="Crear nuevo tramo laboral"
+                                                    title="Crear nuevo tramo laboral"
+                                                >
+                                                    <Plus size={18} strokeWidth={2} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEditContractSignal((n) => n + 1)}
+                                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 active:scale-[0.98]"
+                                                    aria-label="Editar condiciones laborales"
+                                                >
+                                                    <Pencil size={16} strokeWidth={2} />
+                                                </button>
+                                            </div>
                                         ) : null}
                                     </div>
                                     <LaborConditionsView
@@ -544,6 +556,7 @@ function ProfileContent() {
                                             endDate: endDateYmd,
                                         }}
                                         editRequestSignal={editContractSignal}
+                                        newTermRequestSignal={newLaborTermSignal}
                                         onEditingChange={setIsEditingLabor}
                                         onSaveSuccess={() => void fetchInitialData()}
                                     />

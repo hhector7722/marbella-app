@@ -62,6 +62,8 @@ type Props = {
   contractDates?: { joiningDate?: string | null; endDate?: string | null };
   /** Cada incremento dispara la edición del tramo vigente desde fuera. */
   editRequestSignal?: number;
+  /** Cada incremento abre el formulario para crear un nuevo tramo. */
+  newTermRequestSignal?: number;
   /** Ocultar los botones de acción de la vista (el padre pone su propio icono). */
   hideViewActions?: boolean;
   /** Activa el modo acordeón colapsable en dos columnas. */
@@ -78,6 +80,7 @@ export default function LaborConditionsView({
   showHistory = true,
   contractDates,
   editRequestSignal,
+  newTermRequestSignal,
   hideViewActions = false,
   collapsible = false,
   onEditingChange,
@@ -198,7 +201,14 @@ export default function LaborConditionsView({
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const editRequestRef = useRef(0);
+  const newTermRequestRef = useRef(0);
   useEffect(() => {
+    if (newTermRequestSignal != null && newTermRequestSignal > newTermRequestRef.current) {
+      if (loading) return;
+      newTermRequestRef.current = newTermRequestSignal;
+      startNewVigencia();
+      return;
+    }
     if (editRequestSignal == null) return;
     if (editRequestSignal > editRequestRef.current) {
       editRequestRef.current = editRequestSignal;
@@ -208,7 +218,7 @@ export default function LaborConditionsView({
         startEditVigente();
       }
     }
-  }, [editRequestSignal, expandedIndex, terms, vigente]);
+  }, [editRequestSignal, newTermRequestSignal, loading, expandedIndex, terms, vigente]);
 
   const handleSave = async () => {
     setSaving(true);
