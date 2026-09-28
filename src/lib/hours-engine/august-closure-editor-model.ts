@@ -66,11 +66,12 @@ export function buildAugustClosureEditorModel(input: {
     closureLabel: isAugustCivilDate(day) ? 'Cierre empresa' : null,
   }));
 
+  const hasInput = draft.some((hours) => hours != null);
   const complete = draft.every(
-    (hours) => hours != null && Number.isFinite(hours) && hours >= 0 && hours <= 24,
+    (hours) => hours == null || (Number.isFinite(hours) && hours >= 0 && hours <= 24),
   );
   const untouched = draft.every((hours) => hours == null);
-  const preview = complete
+  const preview = hasInput && complete
     ? summarizeClosureHours(days, Object.fromEntries(days.map((day, index) => [day, draft[index]!])))
     : null;
   const weekly = input.weeklyContractHours;
@@ -98,6 +99,6 @@ export function buildAugustClosureEditorModel(input: {
     error: mismatch
       ? `El total previsto debe sumar ${formatHours(weekly)} h para esta semana.`
       : null,
-    canSave: complete && !mismatch,
+    canSave: hasInput && complete && !mismatch,
   };
 }

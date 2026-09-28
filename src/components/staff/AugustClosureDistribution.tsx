@@ -82,7 +82,7 @@ export function AugustClosureDistribution({
     const result = await saveWeeklyExpectedHours(
       userId,
       weekStart,
-      days.map((day, index) => ({ day, expectedHours: draft[index]! })),
+      days.map((day, index) => ({ day, expectedHours: draft[index] ?? 0 })),
     );
     setSaving(false);
     if (!result.success) {

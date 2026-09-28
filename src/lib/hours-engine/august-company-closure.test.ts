@@ -506,6 +506,18 @@ describe('editor de /staff/history', () => {
     assert.equal(model!.canSave, true);
   });
 
+  it('permite dejar vacíos los días sin horas y los interpreta como cero', () => {
+    const model = buildAugustClosureEditorModel({
+      weekStart: '2026-07-27',
+      weeklyContractHours: 40,
+      persisted: 'unconfigured',
+      draft: [8, 8, 8, 8, 8, null, null],
+    });
+    assert.ok(model);
+    assert.equal(model!.preview?.expectedTotal, 40);
+    assert.equal(model!.canSave, true);
+  });
+
   it('rechaza si el total no es la jornada de referencia', () => {
     const model = buildAugustClosureEditorModel({
       weekStart: '2026-07-27',
