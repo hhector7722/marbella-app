@@ -167,7 +167,7 @@ export function InterpretationProposalPanel({ invoiceId, isManager, onChanged }:
         proposals: result.proposals,
         profile: result.profile,
       })
-      const successful = result.extractions.filter((extraction) => extraction.status === 'success')
+      const successful = result.extractions.filter((extraction) => ['success', 'no_table'].includes(extraction.status))
       setSelectedExtractionId((current) => {
         if (current && successful.some((extraction) => extraction.id === current)) return current
         return successful.length === 1 ? successful[0]!.id : ''
@@ -258,12 +258,12 @@ export function InterpretationProposalPanel({ invoiceId, isManager, onChanged }:
             <Section
               title="Extracción seleccionada"
               value={selectedExtraction
-                ? `${shortId(selectedExtraction.id)} · ${selectedExtraction.extractorVersion} · hash ${shortId(selectedExtraction.fileVersionHash)}`
+                ? `${shortId(selectedExtraction.id)} · ${selectedExtraction.status} · ${selectedExtraction.extractorVersion} · hash ${shortId(selectedExtraction.fileVersionHash)}`
                 : 'Selecciona una extracción explícita.'}
             />
           </div>
 
-          {context.extractions.filter((extraction) => extraction.status === 'success').length > 1 ? (
+          {context.extractions.filter((extraction) => ['success', 'no_table'].includes(extraction.status)).length > 1 ? (
             <label className="block min-w-0">
               <span className="mb-1 block text-[9px] font-black uppercase tracking-wider text-zinc-400">
                 Evidencia a interpretar
@@ -278,7 +278,7 @@ export function InterpretationProposalPanel({ invoiceId, isManager, onChanged }:
                   .filter((extraction) => extraction.status === 'success')
                   .map((extraction) => (
                     <option key={extraction.id} value={extraction.id}>
-                      {shortId(extraction.id)} · {extraction.extractorVersion} · {new Date(extraction.extractedAt).toLocaleString('es-ES')}
+                      {shortId(extraction.id)} · {extraction.status} · {extraction.extractorVersion} · {new Date(extraction.extractedAt).toLocaleString('es-ES')}
                     </option>
                   ))}
               </select>
