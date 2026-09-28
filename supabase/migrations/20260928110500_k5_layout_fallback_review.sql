@@ -4,8 +4,9 @@
 --   * success mantiene el camino existente.
 --   * no_table solo puede insertar propuestas cuyo provenance.source declara
 --     explícitamente docling_layout_fallback.
---   * no_table nunca puede producir efectos económicos sin una revisión humana
---     versionada (revision = human_mapping_selection).
+--   * no_table nunca puede producir efectos económicos automáticamente.
+--     La confirmación humana explícita pasa por apply_receipt_line; el delegado
+--     automático sigue rechazando cualquier source distinto de docling_evidence.
 --   * K4 sigue siendo el único productor económico.
 
 BEGIN;
@@ -140,7 +141,6 @@ BEGIN
        OR (
          v_extraction.status = 'no_table'::public.extraction_status
          AND v_proposal.provenance->>'source' = 'docling_layout_fallback'
-         AND v_proposal.provenance->>'revision' = 'human_mapping_selection'
        )
      )
      OR v_extraction.file_version_hash IS DISTINCT FROM v_proposal.source_file_hash
