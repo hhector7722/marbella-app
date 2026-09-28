@@ -156,7 +156,6 @@ export async function seedMenuBoardFromVirtualMenu(): Promise<ActionResult> {
     return [{ ...snapshot(product, true, next), category_id: id }];
   });
   if (rows.length === 0) {
-    revalidatePath('/master/carta');
     return { ok: true };
   }
 
@@ -170,7 +169,6 @@ export async function seedMenuBoardFromVirtualMenu(): Promise<ActionResult> {
     }
     return { ok: false, error: inserted.error.message };
   }
-  revalidatePath('/master/carta');
   return { ok: true };
 }
 
