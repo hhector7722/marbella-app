@@ -89,6 +89,7 @@ test('mapping confirmado y presentación exacta producen ready_for_review', () =
   assert.equal(result.proposals.length, 1)
   const proposal = result.proposals[0]!
   assert.equal(proposal.status, 'ready_for_review')
+  assert.equal(proposal.provenanceSource, 'docling_evidence')
   assert.equal(proposal.lineQuantity, '15.6')
   assert.equal(proposal.observedUnitPrice, '9.75')
   assert.equal(proposal.lineTotal, '152.1')
