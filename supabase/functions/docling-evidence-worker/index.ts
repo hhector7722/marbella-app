@@ -271,7 +271,10 @@ Deno.serve(async (request) => {
       // K3/Docling termina por su propia evidencia. K5 es una fase posterior
       // best-effort: un fallo interpretativo nunca puede convertir una
       // extracción válida en OCR fallido.
-      if (payload.status === "success" && evidenceExtractionId) {
+      if (
+        (payload.status === "success" || payload.status === "no_table")
+        && evidenceExtractionId
+      ) {
         try {
           k5Automation = await triggerK5AutoProposal({
             jobId: payload.jobId,
@@ -285,9 +288,10 @@ Deno.serve(async (request) => {
           k5Automation = { ok: false, error: errorMessage(error) }
         }
 
-        // K4 solo se evalúa si K5 produjo una propuesta válida. También sigue
-        // siendo best-effort y nunca altera el resultado operativo de Docling.
-        if (k5Automation?.ok) {
+        // Solo la evidencia nativa success puede llegar al auto-apply.
+        // no_table puede generar propuestas por layout, pero siempre exige
+        // revisión humana aunque K5 consiga reconstruir todas las líneas.
+        if (payload.status === "success" && k5Automation?.ok) {
           try {
             k4AutoApply = await triggerK4AutoApply({
               jobId: payload.jobId,
@@ -299,6 +303,8 @@ Deno.serve(async (request) => {
             console.error("docling-evidence-worker k4-auto-apply", error)
             k4AutoApply = { ok: false, error: errorMessage(error) }
           }
+        } else if (payload.status === "no_table") {
+          k4AutoApply = { ok: false, error: "skipped:layout_fallback_requires_human_review" }
         } else {
           k4AutoApply = { ok: false, error: "skipped:k5_auto_proposal_failed" }
         }
