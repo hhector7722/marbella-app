@@ -94,6 +94,7 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm exec tsc --noEmit
       - name: Focused lint
+        if: ${{ always() }}
         run: >-
           pnpm exec eslint
           supabase/functions/docling-evidence-worker/index.ts
