@@ -288,7 +288,11 @@ function hasRequiredStructure(
     'price_with_tax',
   ]
 
-  if (profileDefinesAny(profile, measureFields) && !fieldColumnsContainAny(fieldColumns, measureFields)) {
+  if (
+    profile.interpretation.kind !== 'mixed_measure_review'
+    && profileDefinesAny(profile, measureFields)
+    && !fieldColumnsContainAny(fieldColumns, measureFields)
+  ) {
     return false
   }
   if (profileDefinesAny(profile, economicFields) && !fieldColumnsContainAny(fieldColumns, economicFields)) {
