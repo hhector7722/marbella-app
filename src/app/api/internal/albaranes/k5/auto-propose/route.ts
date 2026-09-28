@@ -19,7 +19,7 @@ import { isK5ReusableMappingVersion } from '@/lib/albaranes/k5/trusted-mapping'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-type AdminClient = ReturnType<typeof createClient<any>>
+type AdminClient = ReturnType<typeof createClient>
 
 type AutoProposalRequest = {
   jobId: string
@@ -534,7 +534,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'No autorizado.' }, { status: 401 })
   }
 
-  const supabase = createClient<any>(url, serviceRoleKey, {
+  const supabase = createClient(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 
