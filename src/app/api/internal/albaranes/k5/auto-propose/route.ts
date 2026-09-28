@@ -469,9 +469,26 @@ async function generateAutomaticProposals(
   const activeBySource = new Map(
     activeBefore.map((row) => [sourceKey(row.source_table_index, row.source_row_index), row])
   )
+  let staleDocumentPlaceholder = activeBefore.find((row) =>
+    text(row.document_extraction_id) === extractionId
+    && row.source_table_index == null
+    && row.source_row_index == null
+    && Array.isArray(row.review_reasons)
+    && row.review_reasons.some((reason) => text(reason) === 'profile_table_not_found')
+  ) ?? null
+
   const proposalSetId = crypto.randomUUID()
   const payloads = normalized.map((proposal) => {
-    const previous = activeBySource.get(sourceKey(proposal.sourceTableIndex, proposal.sourceRowIndex))
+    const sourcePrevious = activeBySource.get(sourceKey(proposal.sourceTableIndex, proposal.sourceRowIndex))
+    const canSupersedePlaceholder = (
+      !sourcePrevious
+      && staleDocumentPlaceholder
+      && proposal.sourceTableIndex != null
+      && proposal.sourceRowIndex != null
+    )
+    const previous = sourcePrevious ?? (canSupersedePlaceholder ? staleDocumentPlaceholder : null)
+    if (canSupersedePlaceholder) staleDocumentPlaceholder = null
+
     return proposalPayload({
       normalized: proposal,
       proposalSetId,
