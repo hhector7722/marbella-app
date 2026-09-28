@@ -96,6 +96,7 @@ test('mapping confirmado y presentación exacta producen ready_for_review', () =
   assert.equal(proposal.physicalQuantity, '15600')
   assert.equal(proposal.normalizedUnitPrice, '9.75')
   assert.deepEqual(proposal.reviewReasons, [])
+  assert.equal(proposal.mappingVersionId === null, proposal.ingredientId === null)
 })
 
 test('sin mapping seguro no inventa factor 1', () => {
@@ -151,10 +152,12 @@ test('alias legacy único identifica ingrediente pero exige validar presentació
     legacyIdentities: [{ supplierItemName: 'Calamar', ingredientId: 'ingredient-legacy' }],
   }).proposals[0]!
 
-  assert.equal(proposal.ingredientId, 'ingredient-legacy')
+  assert.equal(proposal.ingredientId, null)
   assert.equal(proposal.mappingVersionId, null)
   assert.equal(proposal.status, 'needs_review')
+  assert.ok(proposal.reviewReasons.includes('mapping_missing'))
   assert.ok(proposal.reviewReasons.includes('legacy_identity_requires_presentation_validation'))
+  assert.equal(proposal.mappingVersionId === null, proposal.ingredientId === null)
   assert.deepEqual(proposal.normalized, {})
   assert.equal(proposal.physicalQuantity, null)
   assert.equal(proposal.purchaseQuantity, null)
