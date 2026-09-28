@@ -40,7 +40,7 @@ function unavailableCopy(
     case 'no_table':
       return {
         title: 'Docling procesó el documento, pero no detectó una tabla estructurada',
-        body: 'La evidencia existe, pero todavía no está disponible para Revisión K5. El fallback de layout se añadirá en la siguiente fase.',
+        body: 'La evidencia existe y K5 puede intentar reconstruir las líneas por posición. Si no aparecen en la cola, recarga para revalidar el fallback de layout.',
         detail: availability.detail,
         failed: false,
       }
@@ -139,7 +139,7 @@ export default async function K5ReviewPage({
 
       {result.invoices.length === 0 ? (
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm font-bold text-zinc-600">
-          No hay albaranes con una extracción Docling estructurada disponible para revisar.
+          No hay albaranes con evidencia Docling interpretable disponible para revisar.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[18rem_minmax(0,1fr)]">
