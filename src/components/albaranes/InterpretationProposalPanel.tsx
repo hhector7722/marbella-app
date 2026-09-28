@@ -167,10 +167,12 @@ export function InterpretationProposalPanel({ invoiceId, isManager, onChanged }:
         proposals: result.proposals,
         profile: result.profile,
       })
-      const successful = result.extractions.filter((extraction) => extraction.status === 'success')
+      const interpretable = result.extractions.filter(
+        (extraction) => extraction.status === 'success' || extraction.status === 'no_table'
+      )
       setSelectedExtractionId((current) => {
-        if (current && successful.some((extraction) => extraction.id === current)) return current
-        return successful.length === 1 ? successful[0]!.id : ''
+        if (current && interpretable.some((extraction) => extraction.id === current)) return current
+        return interpretable.length === 1 ? interpretable[0]!.id : ''
       })
     } finally {
       setLoading(false)
@@ -263,7 +265,9 @@ export function InterpretationProposalPanel({ invoiceId, isManager, onChanged }:
             />
           </div>
 
-          {context.extractions.filter((extraction) => extraction.status === 'success').length > 1 ? (
+          {context.extractions.filter(
+            (extraction) => extraction.status === 'success' || extraction.status === 'no_table'
+          ).length > 1 ? (
             <label className="block min-w-0">
               <span className="mb-1 block text-[9px] font-black uppercase tracking-wider text-zinc-400">
                 Evidencia a interpretar
@@ -275,10 +279,10 @@ export function InterpretationProposalPanel({ invoiceId, isManager, onChanged }:
               >
                 <option value="">Seleccionar explícitamente…</option>
                 {context.extractions
-                  .filter((extraction) => extraction.status === 'success')
+                  .filter((extraction) => extraction.status === 'success' || extraction.status === 'no_table')
                   .map((extraction) => (
                     <option key={extraction.id} value={extraction.id}>
-                      {shortId(extraction.id)} · {extraction.extractorVersion} · {new Date(extraction.extractedAt).toLocaleString('es-ES')}
+                      {shortId(extraction.id)} · {extraction.status === 'no_table' ? 'layout' : 'tabla'} · {extraction.extractorVersion} · {new Date(extraction.extractedAt).toLocaleString('es-ES')}
                     </option>
                   ))}
               </select>
