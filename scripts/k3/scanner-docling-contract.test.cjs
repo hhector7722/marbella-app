@@ -10,6 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8')
 
 const scanner = read('src/app/dashboard/scanner/actions.ts')
 const migration = read('supabase/migrations/20260915104503_scanner_enqueue_docling_evidence.sql')
+const setBasedPersistence = read('supabase/migrations/20260928113000_k3_set_based_evidence_persistence.sql')
 const edgeWorker = read('supabase/functions/docling-evidence-worker/index.ts')
 const localWorker = read('integrations/docling-worker/worker.py')
 
@@ -32,6 +33,18 @@ test('la cola relaciona documento, hash y versión; retry no sustituye evidence 
   assert.match(migration, /evidence_extraction_id IS NULL/)
   assert.match(migration, /immutable_failure_count/)
   assert.match(migration, /'requeued'/)
+})
+
+test('persist_document_evidence evita el bucle por celda y conserva idempotencia', () => {
+  assert.match(setBasedPersistence, /WITH table_data AS/)
+  assert.match(setBasedPersistence, /inserted_tables AS/)
+  assert.match(setBasedPersistence, /inserted_columns AS/)
+  assert.match(setBasedPersistence, /inserted_rows AS/)
+  assert.match(setBasedPersistence, /inserted_cells AS/)
+  assert.match(setBasedPersistence, /'inserted', false/)
+  assert.doesNotMatch(setBasedPersistence, /FOR v_cell IN/)
+  assert.doesNotMatch(setBasedPersistence, /FOR v_row IN/)
+  assert.doesNotMatch(setBasedPersistence, /FOR v_column IN/)
 })
 
 test('worker y Edge Function permanecen evidence-only, incluidos los errores', () => {
