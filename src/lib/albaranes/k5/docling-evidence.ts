@@ -144,7 +144,7 @@ function semanticHeaderScore(
   profile?: SupplierProfile
 ): number {
   if (!profile) return 0
-  const anchors = cells.filter((cell) => cell.columnHeader && cell.row === row && cell.text)
+  const anchors = cells.filter((cell) => cell.row === row && cell.text)
   let score = 0
   for (const [fieldName, definition] of Object.entries(profile.fields) as Array<[
     FieldName,
@@ -163,34 +163,102 @@ function selectExplicitHeaderRow(
   cells: readonly K5EvidenceCell[],
   profile?: SupplierProfile
 ): number {
+  const allRows = [...new Set(cells.map((cell) => cell.row))].sort((a, b) => a - b)
+  let semanticRow = allRows[0] ?? 0
+  let bestSemantic = 0
+  let bestSemanticDensity = -1
+
+  for (const row of allRows) {
+    const anchors = cells.filter((cell) => cell.row === row && cell.text)
+    const semantic = semanticHeaderScore(cells, row, profile)
+    const density = anchors.length
+    if (
+      semantic > bestSemantic
+      || (semantic === bestSemantic && semantic > 0 && density > bestSemanticDensity)
+    ) {
+      bestSemantic = semantic
+      bestSemanticDensity = density
+      semanticRow = row
+    }
+  }
+
+  if (bestSemantic > 0) return semanticRow
+
   const headerRows = [...new Set(cells.filter((cell) => cell.columnHeader).map((cell) => cell.row))]
   if (headerRows.length === 0) return 0
 
   let bestRow = headerRows[0]!
-  let bestSemantic = -1
   let bestDensity = -1
-
   for (const row of headerRows) {
     const anchors = cells.filter((cell) => cell.columnHeader && cell.row === row && cell.text)
     const coveredColumns = new Set<number>()
     for (const cell of anchors) {
       for (let offset = 0; offset < cell.columnSpan; offset += 1) coveredColumns.add(cell.column + offset)
     }
-
-    const semantic = semanticHeaderScore(cells, row, profile)
     const density = anchors.length * 100 + coveredColumns.size
-    if (
-      semantic > bestSemantic
-      || (semantic === bestSemantic && density > bestDensity)
-      || (semantic === bestSemantic && density === bestDensity && row > bestRow)
-    ) {
-      bestSemantic = semantic
+    if (density > bestDensity || (density === bestDensity && row > bestRow)) {
       bestDensity = density
       bestRow = row
     }
   }
 
   return bestRow
+}
+
+const QUANTITY_UNIT_TOKEN = /^(?:KG|G|L|ML|CL|PZ|BU|CJ|UD|UND|UN|UNI|BOL|CAJA|CAJAS)$/i
+
+function observedQuantityScore(value: string): number {
+  const compact = value.trim().replace(/\s+/g, '')
+  if (!compact) return 0
+  if (QUANTITY_UNIT_TOKEN.test(compact)) return 1
+  return /^[+-]?\d+(?:[.,]\d+)?(?:KG|G|L|ML|CL|PZ|BU|CJ|UD|UND|UN|UNI|BOL|CAJA|CAJAS)$/i.test(compact)
+    ? 3
+    : 0
+}
+
+function bestHeaderColumnForAliases(headers: readonly string[], aliases: readonly string[]): number {
+  let bestColumn = -1
+  let bestScore = 0
+  for (let column = 0; column < headers.length; column += 1) {
+    const score = Math.max(0, ...aliases.map((alias) => aliasMatchScore(headers[column] ?? '', alias)))
+    if (score > bestScore) {
+      bestScore = score
+      bestColumn = column
+    }
+  }
+  return bestColumn
+}
+
+function recoverMergedQuantityHeader(
+  profile: SupplierProfile | undefined,
+  headers: string[],
+  grid: readonly string[][],
+  headerRow: number
+): void {
+  const productAliases = profile?.fields.product?.aliases ?? []
+  const quantityAliases = profile?.fields.quantity?.aliases ?? []
+  if (productAliases.length === 0 || quantityAliases.length === 0) return
+
+  const productColumn = bestHeaderColumnForAliases(headers, productAliases)
+  const quantityColumn = bestHeaderColumnForAliases(headers, quantityAliases)
+  if (productColumn < 0 || quantityColumn !== productColumn) return
+
+  let bestColumn = -1
+  let bestScore = 0
+  for (let column = 0; column < headers.length; column += 1) {
+    if (column === productColumn) continue
+    const score = grid
+      .slice(headerRow + 1)
+      .reduce((sum, row) => sum + observedQuantityScore(row[column] ?? ''), 0)
+    if (score > bestScore) {
+      bestScore = score
+      bestColumn = column
+    }
+  }
+
+  if (bestColumn >= 0 && bestScore >= 3) {
+    headers[bestColumn] = quantityAliases[0]!
+  }
 }
 
 function isHeaderOnlyRow(cells: readonly K5EvidenceCell[], row: number): boolean {
@@ -236,6 +304,7 @@ export function extractDoclingTables(
 
     const headerRow = selectExplicitHeaderRow(cells, profile)
     const headers = grid[headerRow].map((value, column) => value.trim() || `column_${column}`)
+    recoverMergedQuantityHeader(profile, headers, grid, headerRow)
     const rows = grid
       .map((row, rowIndex) => ({ row, rowIndex }))
       .filter(({ rowIndex, row }) =>
@@ -589,13 +658,80 @@ export function extractDoclingLayoutTables(
   return tables
 }
 
+function firstEconomicColumn(match: ProfileTableMatch, fallback: number): number {
+  const columns = ([
+    'unit_price',
+    'net_unit_price',
+    'line_amount',
+    'line_amount_tax_included',
+    'price_with_tax',
+  ] as FieldName[])
+    .map((field) => match.fieldColumns[field])
+    .filter((column): column is number => column != null)
+  return columns.length > 0 ? Math.min(...columns) : fallback
+}
+
+function recoverProductText(
+  match: ProfileTableMatch,
+  row: K5EvidenceTable['rows'][number],
+  productColumn: number
+): string {
+  const primary = (row.cells[productColumn] ?? '').trim()
+  if (/[A-Za-zÀ-ÿ]{3,}/u.test(primary)) return primary
+
+  const boundary = firstEconomicColumn(match, row.cells.length)
+  const blocked = new Set<number>([
+    productColumn,
+    match.fieldColumns.quantity,
+    match.fieldColumns.cases,
+  ].filter((column): column is number => column != null))
+
+  const candidate = row.cells
+    .map((text, column) => ({ text: text.trim(), column }))
+    .filter(({ text, column }) =>
+      column < boundary
+      && !blocked.has(column)
+      && /[A-Za-zÀ-ÿ]{3,}/u.test(text)
+    )
+    .sort((a, b) => b.text.length - a.text.length)[0]
+
+  return candidate?.text ?? primary
+}
+
+function recoverQuantityText(
+  match: ProfileTableMatch,
+  row: K5EvidenceTable['rows'][number],
+  quantityColumn: number
+): string {
+  const primary = (row.cells[quantityColumn] ?? '').trim()
+  if (/\d/.test(primary) || !QUANTITY_UNIT_TOKEN.test(primary.replace(/\s+/g, ''))) return primary
+
+  const boundary = firstEconomicColumn(match, row.cells.length)
+  const numeric = row.cells
+    .map((text, column) => ({ text: text.trim(), column }))
+    .find(({ text, column }) =>
+      column < boundary
+      && column !== quantityColumn
+      && column !== match.fieldColumns.product
+      && /^[+-]?\d+(?:[.,]\d+)?$/.test(text)
+    )
+
+  return numeric ? `${numeric.text} ${primary}`.trim() : primary
+}
+
 export function rowByProfileFields(
   match: ProfileTableMatch,
   row: K5EvidenceTable['rows'][number]
 ): EvidenceRow {
   const result: EvidenceRow = {}
   for (const [fieldName, column] of Object.entries(match.fieldColumns) as Array<[FieldName, number]>) {
-    result[fieldName] = row.cells[column] ?? ''
+    if (fieldName === 'product') {
+      result[fieldName] = recoverProductText(match, row, column)
+    } else if (fieldName === 'quantity') {
+      result[fieldName] = recoverQuantityText(match, row, column)
+    } else {
+      result[fieldName] = row.cells[column] ?? ''
+    }
   }
   return result
 }
