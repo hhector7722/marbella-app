@@ -663,20 +663,18 @@ function resolveLayoutFieldColumns(
 function valueForColumn(row: readonly LayoutSpan[], columns: readonly LayoutColumn[], columnIndex: number): string {
   const target = columns[columnIndex]
   if (!target) return ''
-  const nearest = row
-    .map((span) => ({
-      span,
-      distance: Math.abs(span.centerX - target.centerX),
-    }))
-    .sort((a, b) => a.distance - b.distance)
 
-  const maxDistance = Math.max(28, nearest[1]
-    ? Math.abs(columns[columnIndex]!.centerX - columns[Math.max(0, Math.min(columns.length - 1, columnIndex + (columnIndex === columns.length - 1 ? -1 : 1)))]!.centerX) * 0.48
-    : 80)
+  const previous = columns[columnIndex - 1]
+  const next = columns[columnIndex + 1]
+  const leftBoundary = previous
+    ? (previous.centerX + target.centerX) / 2
+    : Number.NEGATIVE_INFINITY
+  const rightBoundary = next
+    ? (target.centerX + next.centerX) / 2
+    : Number.POSITIVE_INFINITY
 
-  return nearest
-    .filter((candidate) => candidate.distance <= maxDistance)
-    .map((candidate) => candidate.span)
+  return row
+    .filter((span) => span.centerX > leftBoundary && span.centerX <= rightBoundary)
     .sort((a, b) => a.centerX - b.centerX)
     .map((span) => span.text.trim())
     .filter(Boolean)
