@@ -25,6 +25,7 @@ on:
       - 'scripts/k3/**'
       - 'scripts/k5/**'
       - 'supabase/migrations/*k5*'
+      - 'supabase/migrations/*k3*'
       - '.github/workflows/k5.yml'
   pull_request:
     paths:
@@ -48,6 +49,7 @@ on:
       - 'scripts/k3/**'
       - 'scripts/k5/**'
       - 'supabase/migrations/*k5*'
+      - 'supabase/migrations/*k3*'
       - '.github/workflows/k5.yml'
 
 jobs:
