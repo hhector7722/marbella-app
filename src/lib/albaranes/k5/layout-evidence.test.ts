@@ -220,3 +220,95 @@ test('Ametller: la cabecera semántica gana aunque Docling marque una fila de pr
   assert.equal(row.unit_price, '1,500')
   assert.equal(row.line_amount, '3,00')
 })
+
+
+test('Shers: el resumen económico no suplanta la tabla de productos y el layout conserva P.UN', () => {
+  const profile = supplierProfileForId(8)!
+  const raw = artifact({
+    tables: [{
+      data: {
+        table_cells: [
+          tableCell(0, 0, '%/IVA', true),
+          tableCell(0, 1, 'IMPORTE', true),
+          tableCell(1, 0, '10'),
+          tableCell(1, 1, '42,50'),
+        ],
+      },
+    }],
+    texts: [
+      textItem(0, 'CODIGO', 70, 1000),
+      textItem(1, 'DESCRIPCION', 220, 1000, 140),
+      textItem(2, 'CANTIDAD', 520, 1000),
+      textItem(3, 'TIP', 625, 1000, 35),
+      textItem(4, 'PREU', 700, 1000, 55),
+      textItem(5, 'DTO', 790, 1000, 40),
+      textItem(6, 'P.UN', 855, 1000, 55),
+      textItem(7, 'IMPORTE', 965, 1000, 70),
+      textItem(8, '100200', 75, 950, 60),
+      textItem(9, 'BEG.CIVADA BARISTA YOSOY 1L C6', 180, 950, 280),
+      textItem(10, '6', 535, 950, 25),
+      textItem(11, 'UN', 630, 950, 30),
+      textItem(12, '2,10', 705, 950, 45),
+      textItem(13, '0,00', 795, 950, 45),
+      textItem(14, '2,10', 860, 950, 45),
+      textItem(15, '12,60', 970, 950, 55),
+    ],
+  })
+
+  const native = extractDoclingTables(raw, profile)
+  assert.equal(matchProfileTable(profile, native), null)
+
+  const layout = extractDoclingLayoutTables(profile, raw, native.length)
+  const match = matchProfileTable(profile, layout)
+  assert.ok(match)
+  const row = rowByProfileFields(match, match.table.rows[0]!)
+  assert.equal(row.product, 'BEG.CIVADA BARISTA YOSOY 1L C6')
+  assert.equal(row.quantity, '6')
+  assert.equal(row.unit_type, 'UN')
+  assert.equal(row.unit_price, '2,10')
+  assert.equal(row.net_unit_price, '2,10')
+  assert.equal(row.line_amount, '12,60')
+})
+
+test('Panabad: una tabla nativa válida sigue teniendo prioridad y no necesita fallback de layout', () => {
+  const profile = supplierProfileForId(2)!
+  const raw = artifact({
+    tables: [{
+      data: {
+        table_cells: [
+          tableCell(0, 0, 'Article', true),
+          tableCell(0, 1, 'Descripció', true),
+          tableCell(0, 2, 'Lliurat', true),
+          tableCell(0, 3, 'Preu', true),
+          tableCell(0, 4, '%', true),
+          tableCell(0, 5, 'Import', true),
+          tableCell(1, 0, '1505126'),
+          tableCell(1, 1, 'BRIOCHE BURGER - 40 uds.'),
+          tableCell(1, 2, '2'),
+          tableCell(1, 3, '33,86'),
+          tableCell(1, 4, '38'),
+          tableCell(1, 5, '41,99'),
+        ],
+      },
+    }],
+    texts: [
+      textItem(0, 'Article', 80, 1000),
+      textItem(1, 'Descripció', 240, 1000),
+      textItem(2, 'Lliurat', 560, 1000),
+      textItem(3, 'Preu', 700, 1000),
+      textItem(4, '%', 800, 1000),
+      textItem(5, 'Import', 900, 1000),
+    ],
+  })
+
+  const native = extractDoclingTables(raw, profile)
+  const nativeMatch = matchProfileTable(profile, native)
+  assert.ok(nativeMatch)
+  assert.equal(nativeMatch.table.source, 'docling_table')
+  const row = rowByProfileFields(nativeMatch, nativeMatch.table.rows[0]!)
+  assert.equal(row.product, 'BRIOCHE BURGER - 40 uds.')
+  assert.equal(row.quantity, '2')
+  assert.equal(row.unit_price, '33,86')
+  assert.equal(row.discount_percent, '38')
+  assert.equal(row.line_amount, '41,99')
+})
