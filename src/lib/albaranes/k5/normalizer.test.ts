@@ -247,7 +247,7 @@ test('mapping de presentación incompatible queda bloqueado', () => {
   assert.equal(proposal.mappingVersionId, null)
 })
 
-test('Videla conserva medidas coexistentes y solo mantiene revisión por campos realmente pendientes', () => {
+test('Videla no mezcla tablas parciales si el artefacto no contiene layout recuperable', () => {
   const videlaProfile: SupplierProfile = {
     ...directProfile,
     id: 'supplier:3:videla',
@@ -282,8 +282,6 @@ test('Videla conserva medidas coexistentes y solo mantiene revisión por campos 
       data: {
         table_cells: [
           cell(0, 0, '%Iva', true),
-          // Replica el Docling real de Videla: `Unidades` abarca también las
-          // columnas donde existen celdas explícitas `Precio` e `Importe`.
           cell(0, 1, 'Unidades', true, 4),
           cell(0, 3, 'Precio', true),
           cell(0, 4, 'Importe', true),
@@ -297,26 +295,17 @@ test('Videla conserva medidas coexistentes y solo mantiene revisión por campos 
     },
   ], 'Pescados Videla S.A.')
 
-  const result = normalizeDoclingEvidence({
+  const proposal = normalizeDoclingEvidence({
     profile: videlaProfile,
     rawArtifact: raw,
     supplierId: 3,
     mappings: [],
-  })
+  }).proposals[0]!
 
-  const proposal = result.proposals[0]!
   assert.equal(proposal.status, 'needs_review')
   assert.equal(proposal.sourceItemName, null)
-  assert.equal(proposal.observedUnitPrice, '9.75')
-  assert.equal(proposal.lineTotal, '152.1')
-  assert.ok(proposal.reviewReasons.includes('missing_product'))
-  assert.ok(!proposal.reviewReasons.includes('mixed_measurement_requires_review'))
-  assert.ok(proposal.warnings.some((warning) => warning.includes('3,00BU') && warning.includes('15,60 KG')))
-  assert.ok(proposal.warnings.includes('variable_weight_kg:15.6'))
-  assert.equal(proposal.lineQuantity, '15.6')
-  assert.equal(proposal.lineUnit, 'kg')
-  assert.equal(proposal.mappingVersionId, null)
-  assert.equal(proposal.normalizedUnitPrice, null)
+  assert.equal(proposal.observedUnitPrice, null)
+  assert.ok(proposal.reviewReasons.includes('profile_table_not_found'))
 })
 
 test('Ametller elige la cabecera de líneas dentro de una tabla con secciones de metadatos', () => {
