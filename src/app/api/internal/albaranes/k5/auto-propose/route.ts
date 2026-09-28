@@ -181,6 +181,7 @@ function proposalPayload(params: {
     profile_version: params.profileVersion,
     profile_hash: params.profileHash,
     normalizer_version: K5_NORMALIZER_VERSION,
+    provenance_source: n.provenanceSource,
     source_table_index: n.sourceTableIndex,
     source_row_index: n.sourceRowIndex,
     mapping_version_id: n.mappingVersionId,
@@ -241,7 +242,7 @@ function proposalPayload(params: {
     provenance: {
       schema_version: 'k5-v1',
       profile_hash_kind: params.profileHash ? 'canonical-json-sha256-v1' : null,
-      source: 'docling_evidence',
+      source: n.provenanceSource,
       trigger: 'docling_completion',
       correlation_id: params.correlationId,
       economic_effects: false,
@@ -390,6 +391,9 @@ async function generateAutomaticProposals(
 
   if (!versioned) {
     normalized = [{
+      provenanceSource: text(extraction.status) === 'no_table'
+        ? 'docling_layout_fallback'
+        : 'docling_evidence',
       sourceTableIndex: null,
       sourceRowIndex: null,
       sourceItemName: null,
