@@ -41,6 +41,21 @@ En producción LXC los secretos viven fuera del repo, con permisos `0600`:
 
 `DOCLING_WORKER_TOKEN` autentica el worker ante la Edge Function y `DOCLING_API_KEY` protege Docling Serve en localhost. Nunca versionar sus valores.
 
+Docling Serve espera solo 120 s por defecto en los endpoints síncronos. El worker usa 840 s, así que producción debe declarar también:
+
+```env
+DOCLING_SERVE_MAX_SYNC_WAIT=840
+```
+
+en `/etc/marbella-docling/docling-serve.env`. Tras cambiarlo:
+
+```bash
+systemctl restart docling-serve.service
+systemctl restart docling-worker.service
+```
+
+Si esta variable falta, un documento que tarde más de 120 s termina en HTTP 504 aunque el worker todavía esté dispuesto a esperar.
+
 El modo Docker de `compose.yaml` se conserva como alternativa de desarrollo. En el CT 105 de producción no se usa Docker.
 
 ## Arranque Docker opcional

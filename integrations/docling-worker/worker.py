@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -262,35 +263,43 @@ def process_one(settings: Settings) -> bool:
         tables, metrics = docling_to_evidence(raw)
         metrics["elapsed_ms"] = round((monotonic() - started) * 1000)
         metrics["docling_status"] = "success"
-        complete(
-            settings,
-            {
-                "jobId": job["id"],
-                "leaseToken": job["leaseToken"],
-                "status": "success" if tables else "no_table",
-                "rawArtifact": raw,
-                "tables": tables if tables else None,
-                "metrics": metrics,
-                "error": None,
-            },
-        )
-    except Exception as error:  # El fallo queda trazado en el job; no se fabrica evidencia de error.
+        completion_payload = {
+            "jobId": job["id"],
+            "leaseToken": job["leaseToken"],
+            "status": "success" if tables else "no_table",
+            "rawArtifact": raw,
+            "tables": tables if tables else None,
+            "metrics": metrics,
+            "error": None,
+        }
+    except Exception as error:  # Solo conversión/adaptación Docling puede fabricar un status=failed.
         safe_error = redact_error(error)
         metrics = {
             "elapsed_ms": round((monotonic() - started) * 1000),
             "docling_status": "failed",
             "exception_type": type(error).__name__,
         }
-        complete(
-            settings,
-            {
-                "jobId": job["id"],
-                "leaseToken": job["leaseToken"],
-                "status": "failed",
-                "tables": None,
-                "metrics": metrics,
-                "error": safe_error,
-            },
+        completion_payload = {
+            "jobId": job["id"],
+            "leaseToken": job["leaseToken"],
+            "status": "failed",
+            "tables": None,
+            "metrics": metrics,
+            "error": safe_error,
+        }
+
+    # Un fallo comunicando /complete NO cambia el resultado de Docling ni
+    # dispara un segundo completion. La lease queda abierta y podrá reclamarse
+    # al caducar; persist_document_evidence es idempotente por documento/hash/versión.
+    try:
+        complete(settings, completion_payload)
+    except Exception as error:
+        safe_error = redact_error(error)
+        print(
+            f"docling-worker completion failed for job {job.get('id', '?')} "
+            f"status={completion_payload['status']}: {safe_error}",
+            file=sys.stderr,
+            flush=True,
         )
     return True
 

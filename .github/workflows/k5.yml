@@ -21,8 +21,11 @@ on:
       - 'src/components/albaranes/K5BatchReceiptReview.tsx'
       - 'src/components/albaranes/K5MappingAssistant.tsx'
       - 'supabase/functions/docling-evidence-worker/**'
+      - 'integrations/docling-worker/**'
+      - 'scripts/k3/**'
       - 'scripts/k5/**'
       - 'supabase/migrations/*k5*'
+      - 'supabase/migrations/*k3*'
       - '.github/workflows/k5.yml'
   pull_request:
     paths:
@@ -42,8 +45,11 @@ on:
       - 'src/components/albaranes/K5BatchReceiptReview.tsx'
       - 'src/components/albaranes/K5MappingAssistant.tsx'
       - 'supabase/functions/docling-evidence-worker/**'
+      - 'integrations/docling-worker/**'
+      - 'scripts/k3/**'
       - 'scripts/k5/**'
       - 'supabase/migrations/*k5*'
+      - 'supabase/migrations/*k3*'
       - '.github/workflows/k5.yml'
 
 jobs:
@@ -55,6 +61,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Install dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
       - name: Exact arithmetic and normalizer
         run: >-
           node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test
@@ -63,6 +73,7 @@ jobs:
           src/lib/albaranes/k5/trusted-mapping.test.ts
           src/lib/albaranes/k5/variable-weight.test.ts
           src/lib/albaranes/k5/normalizer.test.ts
+          src/lib/albaranes/k5/layout-evidence.test.ts
           src/lib/albaranes/k5/normalizer-ametller-decimals.test.ts
           src/lib/albaranes/k5/normalizer-ametller-bag.test.ts
           src/lib/albaranes/k5/case-discount-normalizer.test.ts
@@ -76,12 +87,27 @@ jobs:
           src/lib/albaranes/supplier-profiles/supplier-profiles.test.ts
       - name: K5/K4 safety contract
         run: node --test scripts/k5/k5-interpretation-contract.test.cjs
+      - name: K3 Docling worker and scanner contracts
+        run: |
+          npm run test:k3:docling-worker
+          npm run test:k3:scanner-docling
       - name: K4 receipt contract
         run: npm run test:k4:receipt-contract
       - name: Canonical pricing and single UX contract
         run: npm run test:pricing
       - name: TypeScript check
-        run: |
-          corepack enable
-          pnpm install --frozen-lockfile
-          pnpm exec tsc --noEmit
+        run: pnpm exec tsc --noEmit
+      - name: Focused lint
+        if: ${{ always() }}
+        run: >-
+          pnpm exec eslint
+          supabase/functions/docling-evidence-worker/index.ts
+          src/lib/albaranes/k5/docling-evidence.ts
+          src/lib/albaranes/k5/layout-evidence.test.ts
+          src/lib/albaranes/k5/normalizer.ts
+          src/lib/albaranes/k5/normalizer.test.ts
+          src/app/dashboard/albaranes/interpretation-actions.ts
+          src/app/dashboard/albaranes/k5/actions.ts
+          src/app/dashboard/albaranes/k5/page.tsx
+          src/lib/read-models/labor-cost-day-projector.ts
+          src/lib/read-models/labor-cost-month-projector.ts

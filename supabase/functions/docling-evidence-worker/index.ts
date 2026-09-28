@@ -29,6 +29,7 @@ type K5AutomationResult = {
   skipped?: string
   normalizerVersion?: string
   proposalSetId?: string | null
+  error?: string
 }
 
 type K4AutoApplyResult = {
@@ -267,30 +268,44 @@ Deno.serve(async (request) => {
         evidenceExtractionId = String((evidence as { extraction_id?: string } | null)?.extraction_id ?? "") || null
       }
 
-      // La propuesta K5 forma parte del contrato durable: si falla, se reintenta
-      // el job completo de forma idempotente y no se cierra el lease.
-      if (payload.status === "success" && evidenceExtractionId) {
-        k5Automation = await triggerK5AutoProposal({
-          jobId: payload.jobId,
-          leaseToken: payload.leaseToken,
-          invoiceId: job.invoice_id,
-          extractionId: evidenceExtractionId,
-          correlationId: job.correlation_id ?? null,
-        })
-
-        // La aplicación económica es deliberadamente best-effort. Cualquier
-        // duda o error deja la propuesta disponible para revisión humana, pero
-        // nunca convierte una extracción Docling válida en OCR fallido.
+      // K3/Docling termina por su propia evidencia. K5 es una fase posterior
+      // best-effort: un fallo interpretativo nunca puede convertir una
+      // extracción válida en OCR fallido.
+      if ((payload.status === "success" || payload.status === "no_table") && evidenceExtractionId) {
         try {
-          k4AutoApply = await triggerK4AutoApply({
+          k5Automation = await triggerK5AutoProposal({
             jobId: payload.jobId,
             leaseToken: payload.leaseToken,
             invoiceId: job.invoice_id,
             extractionId: evidenceExtractionId,
+            correlationId: job.correlation_id ?? null,
           })
         } catch (error) {
-          console.error("docling-evidence-worker k4-auto-apply", error)
-          k4AutoApply = { ok: false, error: errorMessage(error) }
+          console.error("docling-evidence-worker k5-auto-proposal", error)
+          k5Automation = { ok: false, error: errorMessage(error) }
+        }
+
+        // K4 solo se evalúa si K5 produjo una propuesta válida. También sigue
+        // siendo best-effort y nunca altera el resultado operativo de Docling.
+        if (payload.status === "success" && k5Automation?.ok) {
+          try {
+            k4AutoApply = await triggerK4AutoApply({
+              jobId: payload.jobId,
+              leaseToken: payload.leaseToken,
+              invoiceId: job.invoice_id,
+              extractionId: evidenceExtractionId,
+            })
+          } catch (error) {
+            console.error("docling-evidence-worker k4-auto-apply", error)
+            k4AutoApply = { ok: false, error: errorMessage(error) }
+          }
+        } else {
+          k4AutoApply = {
+            ok: false,
+            error: payload.status === "no_table"
+              ? "skipped:layout_fallback_requires_human_review"
+              : "skipped:k5_auto_proposal_failed",
+          }
         }
       }
 

@@ -10,8 +10,10 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8')
 
 const scanner = read('src/app/dashboard/scanner/actions.ts')
 const migration = read('supabase/migrations/20260915104503_scanner_enqueue_docling_evidence.sql')
+const setBasedPersistence = read('supabase/migrations/20260928113000_k3_set_based_evidence_persistence.sql')
 const edgeWorker = read('supabase/functions/docling-evidence-worker/index.ts')
 const localWorker = read('integrations/docling-worker/worker.py')
+const localCompose = read('integrations/docling-worker/compose.yaml')
 
 test('el scanner conserva el original y encola una sola intención durable Docling', () => {
   assert.match(scanner, /storage\.from\('albaranes'\)\.upload/)
@@ -34,12 +36,29 @@ test('la cola relaciona documento, hash y versión; retry no sustituye evidence 
   assert.match(migration, /'requeued'/)
 })
 
+test('persist_document_evidence evita el bucle por celda y conserva idempotencia', () => {
+  assert.match(setBasedPersistence, /WITH table_data AS/)
+  assert.match(setBasedPersistence, /inserted_tables AS/)
+  assert.match(setBasedPersistence, /inserted_columns AS/)
+  assert.match(setBasedPersistence, /inserted_rows AS/)
+  assert.match(setBasedPersistence, /inserted_cells AS/)
+  assert.match(setBasedPersistence, /'inserted', false/)
+  assert.doesNotMatch(setBasedPersistence, /FOR v_cell IN/)
+  assert.doesNotMatch(setBasedPersistence, /FOR v_row IN/)
+  assert.doesNotMatch(setBasedPersistence, /FOR v_column IN/)
+})
+
 test('worker y Edge Function permanecen evidence-only, incluidos los errores', () => {
   assert.match(edgeWorker, /persist_document_evidence/)
   assert.match(edgeWorker, /complete_docling_evidence_job/)
   assert.doesNotMatch(edgeWorker, /stock_movements|apply_receipt_line|ingredient_price_history|supplier_item_mappings/)
   assert.doesNotMatch(localWorker, /createClient|SUPABASE_SERVICE_ROLE_KEY|stock_movements|purchase_invoice_lines/)
   assert.doesNotMatch(localWorker, /"rawArtifact": \{"error"/)
+})
+
+test('Docling Serve y el worker comparten la misma ventana de espera síncrona', () => {
+  assert.match(localCompose, /DOCLING_SERVE_MAX_SYNC_WAIT: "840"/)
+  assert.match(localCompose, /WORKER_HTTP_TIMEOUT_SECONDS: "840"/)
 })
 
 test('la finalización solo cambia estado operativo y evidencia; no introduce efectos económicos', () => {

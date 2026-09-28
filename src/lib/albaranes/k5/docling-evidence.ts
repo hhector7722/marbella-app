@@ -1,5 +1,7 @@
 import type { EvidenceRow, FieldName, SupplierProfile } from '../supplier-profiles/types.ts'
 
+export type K5EvidenceSource = 'docling_table' | 'docling_layout'
+
 export type K5EvidenceCell = {
   row: number
   column: number
@@ -11,6 +13,7 @@ export type K5EvidenceCell = {
 
 export type K5EvidenceTable = {
   index: number
+  source: K5EvidenceSource
   headers: string[]
   rows: Array<{
     index: number
@@ -20,9 +23,32 @@ export type K5EvidenceTable = {
   cells: K5EvidenceCell[]
 }
 
+type LayoutTextItem = {
+  index: number
+  page: number
+  text: string
+  left: number
+  right: number
+  bottom: number
+  top: number
+  origin: string
+}
+
+type LayoutHeaderField = {
+  field: FieldName
+  item: LayoutTextItem
+  score: number
+  anchorX: number
+}
+
 function integer(value: unknown, fallback: number): number {
   const parsed = typeof value === 'number' ? value : Number.parseInt(String(value ?? ''), 10)
   return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function finiteNumber(value: unknown): number | null {
+  const parsed = typeof value === 'number' ? value : Number(String(value ?? ''))
+  return Number.isFinite(parsed) ? parsed : null
 }
 
 function doclingDocument(rawArtifact: unknown): Record<string, unknown> | null {
@@ -56,12 +82,93 @@ function tableCells(table: unknown): K5EvidenceCell[] {
   })
 }
 
-function selectExplicitHeaderRow(cells: readonly K5EvidenceCell[]): number {
+export function normalizeEvidenceLabel(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9%]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
+function canonicalHeaderLabel(value: string): string {
+  return normalizeEvidenceLabel(value)
+    .replace(/%\s+/g, '%')
+    .split(' ')
+    .map((token) => {
+      if (token === 'preu') return 'precio'
+      if (token === 'descripcio') return 'descripcion'
+      if (token === 'article') return 'articulo'
+      return token
+    })
+    .join(' ')
+}
+
+function aliasMatchScore(header: string, alias: string): number {
+  const normalizedHeader = canonicalHeaderLabel(header)
+  const normalizedAlias = canonicalHeaderLabel(alias)
+  if (!normalizedHeader || !normalizedAlias) return 0
+  if (normalizedHeader === normalizedAlias) return 3
+  if (normalizedHeader.includes(normalizedAlias)) return 2
+  if (normalizedAlias.includes(normalizedHeader)) return 1
+  return 0
+}
+
+function aliasAnchorX(item: LayoutTextItem, alias: string): number {
+  const normalizedHeader = canonicalHeaderLabel(item.text)
+  const normalizedAlias = canonicalHeaderLabel(alias)
+  if (!normalizedHeader || !normalizedAlias) return centerX(item)
+  const index = normalizedHeader.indexOf(normalizedAlias)
+  if (index < 0) return centerX(item)
+  const fraction = (index + normalizedAlias.length / 2) / normalizedHeader.length
+  return item.left + (item.right - item.left) * fraction
+}
+
+function fieldWeight(field: FieldName): number {
+  if (field === 'product') return 8
+  if (field === 'quantity' || field === 'cases') return 4
+  if (
+    field === 'unit_price'
+    || field === 'net_unit_price'
+    || field === 'line_amount'
+    || field === 'line_amount_tax_included'
+    || field === 'price_with_tax'
+  ) return 4
+  return 1
+}
+
+function semanticHeaderScore(
+  cells: readonly K5EvidenceCell[],
+  row: number,
+  profile?: SupplierProfile
+): number {
+  if (!profile) return 0
+  const anchors = cells.filter((cell) => cell.columnHeader && cell.row === row && cell.text)
+  let score = 0
+  for (const [fieldName, definition] of Object.entries(profile.fields) as Array<[
+    FieldName,
+    NonNullable<SupplierProfile['fields'][FieldName]>
+  ]>) {
+    const best = Math.max(
+      0,
+      ...anchors.flatMap((cell) => definition.aliases.map((alias) => aliasMatchScore(cell.text, alias)))
+    )
+    if (best > 0) score += fieldWeight(fieldName) * best
+  }
+  return score
+}
+
+function selectExplicitHeaderRow(
+  cells: readonly K5EvidenceCell[],
+  profile?: SupplierProfile
+): number {
   const headerRows = [...new Set(cells.filter((cell) => cell.columnHeader).map((cell) => cell.row))]
   if (headerRows.length === 0) return 0
 
   let bestRow = headerRows[0]!
-  let bestScore = -1
+  let bestSemantic = -1
+  let bestDensity = -1
 
   for (const row of headerRows) {
     const anchors = cells.filter((cell) => cell.columnHeader && cell.row === row && cell.text)
@@ -70,14 +177,15 @@ function selectExplicitHeaderRow(cells: readonly K5EvidenceCell[]): number {
       for (let offset = 0; offset < cell.columnSpan; offset += 1) coveredColumns.add(cell.column + offset)
     }
 
-    // Los albaranes reales pueden contener varias secciones marcadas como
-    // column_header dentro de una misma tabla (metadatos arriba y líneas de
-    // producto después). Preferimos la sección de cabecera más densa. Así una
-    // fila como `Código | Descripción | Cantidad | Precio | Importe | ...`
-    // gana sobre `Albarán | Fecha | CIF | ...` sin usar conocimiento de negocio.
-    const score = anchors.length * 100 + coveredColumns.size
-    if (score > bestScore || (score === bestScore && row > bestRow)) {
-      bestScore = score
+    const semantic = semanticHeaderScore(cells, row, profile)
+    const density = anchors.length * 100 + coveredColumns.size
+    if (
+      semantic > bestSemantic
+      || (semantic === bestSemantic && density > bestDensity)
+      || (semantic === bestSemantic && density === bestDensity && row > bestRow)
+    ) {
+      bestSemantic = semantic
+      bestDensity = density
       bestRow = row
     }
   }
@@ -90,7 +198,10 @@ function isHeaderOnlyRow(cells: readonly K5EvidenceCell[], row: number): boolean
   return anchors.length > 0 && anchors.every((cell) => cell.columnHeader)
 }
 
-export function extractDoclingTables(rawArtifact: unknown): K5EvidenceTable[] {
+export function extractDoclingTables(
+  rawArtifact: unknown,
+  profile?: SupplierProfile
+): K5EvidenceTable[] {
   const document = doclingDocument(rawArtifact)
   const rawTables = document?.tables
   if (!Array.isArray(rawTables)) return []
@@ -113,11 +224,6 @@ export function extractDoclingTables(rawArtifact: unknown): K5EvidenceTable[] {
         for (let colOffset = 0; colOffset < cell.columnSpan; colOffset += 1) {
           const row = cell.row + rowOffset
           const column = cell.column + colOffset
-          // Docling puede devolver cabeceras solapadas: una celda amplia como
-          // `Unidades` puede abarcar columnas que también tienen celdas
-          // explícitas `Precio` e `Importe`. El ancla real de una celda debe
-          // prevalecer siempre sobre el texto heredado de un span; entre spans,
-          // la celda más específica (menor área) gana de forma determinista.
           const isAnchor = rowOffset === 0 && colOffset === 0
           const priority = (isAnchor ? 1_000_000 : 0) - area
           if (priority > priorities[row]![column]!) {
@@ -128,7 +234,7 @@ export function extractDoclingTables(rawArtifact: unknown): K5EvidenceTable[] {
       }
     }
 
-    const headerRow = selectExplicitHeaderRow(cells)
+    const headerRow = selectExplicitHeaderRow(cells, profile)
     const headers = grid[headerRow].map((value, column) => value.trim() || `column_${column}`)
     const rows = grid
       .map((row, rowIndex) => ({ row, rowIndex }))
@@ -143,28 +249,8 @@ export function extractDoclingTables(rawArtifact: unknown): K5EvidenceTable[] {
         raw: Object.fromEntries(headers.map((header, column) => [header, row[column] ?? ''])),
       }))
 
-    return [{ index: tableIndex, headers, rows, cells }]
+    return [{ index: tableIndex, source: 'docling_table', headers, rows, cells }]
   })
-}
-
-export function normalizeEvidenceLabel(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9%]+/g, ' ')
-    .trim()
-    .replace(/\s+/g, ' ')
-}
-
-function aliasMatchScore(header: string, alias: string): number {
-  const normalizedHeader = normalizeEvidenceLabel(header)
-  const normalizedAlias = normalizeEvidenceLabel(alias)
-  if (!normalizedHeader || !normalizedAlias) return 0
-  if (normalizedHeader === normalizedAlias) return 3
-  if (normalizedHeader.includes(normalizedAlias)) return 2
-  if (normalizedAlias.includes(normalizedHeader)) return 1
-  return 0
 }
 
 type HeaderResolution = {
@@ -172,13 +258,6 @@ type HeaderResolution = {
   matched: boolean
 }
 
-/**
- * Elige la columna por la coincidencia semántica más fuerte. Una coincidencia
- * exacta siempre gana a una inclusión parcial (p. ej. `Precio con descuento`
- * no puede resolverse como `Precio`). Si dos columnas empatan con la misma
- * fuerza, el campo cuenta para identificar la tabla pero no se selecciona una
- * columna: la evidencia ambigua debe permanecer ambigua.
- */
 function bestHeaderColumn(headers: readonly string[], aliases: readonly string[]): HeaderResolution {
   let bestColumn = -1
   let bestScore = 0
@@ -207,6 +286,45 @@ export type ProfileTableMatch = {
   score: number
 }
 
+function profileDefinesAny(profile: SupplierProfile, fields: readonly FieldName[]): boolean {
+  return fields.some((field) => Boolean(profile.fields[field]))
+}
+
+function fieldColumnsContainAny(
+  fieldColumns: Partial<Record<FieldName, number>>,
+  fields: readonly FieldName[]
+): boolean {
+  return fields.some((field) => fieldColumns[field] != null)
+}
+
+function hasRequiredStructure(
+  profile: SupplierProfile,
+  fieldColumns: Partial<Record<FieldName, number>>
+): boolean {
+  if (fieldColumns.product == null) return false
+
+  const measureFields: FieldName[] = ['quantity', 'cases']
+  const economicFields: FieldName[] = [
+    'unit_price',
+    'net_unit_price',
+    'line_amount',
+    'line_amount_tax_included',
+    'price_with_tax',
+  ]
+
+  if (
+    profile.interpretation.kind !== 'mixed_measure_review'
+    && profileDefinesAny(profile, measureFields)
+    && !fieldColumnsContainAny(fieldColumns, measureFields)
+  ) {
+    return false
+  }
+  if (profileDefinesAny(profile, economicFields) && !fieldColumnsContainAny(fieldColumns, economicFields)) {
+    return false
+  }
+  return Object.keys(fieldColumns).length >= 2
+}
+
 export function matchProfileTable(
   profile: SupplierProfile,
   tables: readonly K5EvidenceTable[]
@@ -222,15 +340,253 @@ export function matchProfileTable(
       NonNullable<SupplierProfile['fields'][FieldName]>
     ]>) {
       const resolution = bestHeaderColumn(table.headers, definition.aliases)
-      if (resolution.matched) score += fieldName === 'product' ? 3 : 1
+      if (resolution.matched) score += fieldWeight(fieldName)
       if (resolution.column >= 0) fieldColumns[fieldName] = resolution.column
     }
 
+    if (!hasRequiredStructure(profile, fieldColumns)) continue
     const candidate = { table, fieldColumns, score }
     if (!best || candidate.score > best.score) best = candidate
   }
 
   return best && best.score > 0 ? best : null
+}
+
+function layoutTextItems(rawArtifact: unknown): LayoutTextItem[] {
+  const document = doclingDocument(rawArtifact)
+  const rawTexts = document?.texts
+  if (!Array.isArray(rawTexts)) return []
+
+  return rawTexts.flatMap((candidate, index): LayoutTextItem[] => {
+    if (!candidate || typeof candidate !== 'object') return []
+    const row = candidate as Record<string, unknown>
+    const text = String(row.text ?? '').trim()
+    const prov = Array.isArray(row.prov) ? row.prov[0] : null
+    if (!text || !prov || typeof prov !== 'object') return []
+    const p = prov as Record<string, unknown>
+    const bbox = p.bbox
+    if (!bbox || typeof bbox !== 'object') return []
+    const box = bbox as Record<string, unknown>
+    const left = finiteNumber(box.l)
+    const right = finiteNumber(box.r)
+    const bottom = finiteNumber(box.b)
+    const top = finiteNumber(box.t)
+    if (left == null || right == null || bottom == null || top == null) return []
+    return [{
+      index,
+      page: Math.max(1, integer(p.page_no, 1)),
+      text,
+      left,
+      right,
+      bottom,
+      top,
+      origin: String(box.coord_origin ?? 'BOTTOMLEFT').toUpperCase(),
+    }]
+  })
+}
+
+function centerX(item: LayoutTextItem): number {
+  return (item.left + item.right) / 2
+}
+
+function centerY(item: LayoutTextItem): number {
+  return (item.bottom + item.top) / 2
+}
+
+function headerFieldCandidates(
+  profile: SupplierProfile,
+  items: readonly LayoutTextItem[],
+  bandCenterY: number
+): LayoutHeaderField[] {
+  const inBand = items.filter((item) => Math.abs(centerY(item) - bandCenterY) <= 34)
+  const chosen: LayoutHeaderField[] = []
+
+  for (const [field, definition] of Object.entries(profile.fields) as Array<[
+    FieldName,
+    NonNullable<SupplierProfile['fields'][FieldName]>
+  ]>) {
+    let best: LayoutHeaderField | null = null
+    for (const item of inBand) {
+      const aliasMatches = definition.aliases
+        .map((alias) => ({ alias, score: aliasMatchScore(item.text, alias) }))
+        .sort((a, b) => b.score - a.score)
+      const strongest = aliasMatches[0]
+      const score = strongest?.score ?? 0
+      if (score <= 0 || !strongest) continue
+      if (
+        !best
+        || score > best.score
+        || (score === best.score && Math.abs(centerY(item) - bandCenterY) < Math.abs(centerY(best.item) - bandCenterY))
+      ) {
+        best = {
+          field,
+          item,
+          score,
+          anchorX: aliasAnchorX(item, strongest.alias),
+        }
+      }
+    }
+    if (best) chosen.push(best)
+  }
+
+  return chosen
+}
+
+function layoutHeaderScore(fields: readonly LayoutHeaderField[]): number {
+  return fields.reduce((sum, field) => sum + fieldWeight(field.field) * field.score, 0)
+}
+
+function layoutHeaderIsUsable(profile: SupplierProfile, fields: readonly LayoutHeaderField[]): boolean {
+  const syntheticColumns: Partial<Record<FieldName, number>> = {}
+  fields.forEach((field, index) => {
+    syntheticColumns[field.field] = index
+  })
+  return hasRequiredStructure(profile, syntheticColumns)
+}
+
+function downDistance(headerY: number, item: LayoutTextItem, origin: string): number {
+  return origin === 'TOPLEFT'
+    ? centerY(item) - headerY
+    : headerY - centerY(item)
+}
+
+function groupLayoutRows(items: readonly LayoutTextItem[]): LayoutTextItem[][] {
+  const ordered = [...items].sort((a, b) => centerY(b) - centerY(a) || a.left - b.left)
+  const groups: LayoutTextItem[][] = []
+
+  for (const item of ordered) {
+    const y = centerY(item)
+    const existing = groups.find((group) => {
+      const average = group.reduce((sum, member) => sum + centerY(member), 0) / group.length
+      return Math.abs(average - y) <= 11
+    })
+    if (existing) existing.push(item)
+    else groups.push([item])
+  }
+
+  return groups
+}
+
+export function extractDoclingLayoutTables(
+  profile: SupplierProfile,
+  rawArtifact: unknown,
+  startIndex = 0
+): K5EvidenceTable[] {
+  const items = layoutTextItems(rawArtifact)
+  const pages = [...new Set(items.map((item) => item.page))].sort((a, b) => a - b)
+  const tables: K5EvidenceTable[] = []
+
+  for (const page of pages) {
+    const pageItems = items.filter((item) => item.page === page)
+    let bestFields: LayoutHeaderField[] = []
+    let bestScore = -1
+
+    for (const anchor of pageItems) {
+      const fields = headerFieldCandidates(profile, pageItems, centerY(anchor))
+      if (!layoutHeaderIsUsable(profile, fields)) continue
+      const score = layoutHeaderScore(fields)
+      if (score > bestScore) {
+        bestScore = score
+        bestFields = fields
+      }
+    }
+
+    if (bestFields.length === 0) continue
+
+    const orderedFields = [...bestFields].sort((a, b) => a.anchorX - b.anchorX)
+    const headerY = orderedFields.reduce((sum, field) => sum + centerY(field.item), 0) / orderedFields.length
+    const origin = orderedFields[0]!.item.origin
+    const centers = orderedFields.map((field) => field.anchorX)
+    const leftBound = centers[0]! - 140
+    const rightBound = centers[centers.length - 1]! + 140
+
+    const dataItems = pageItems.filter((item) => {
+      const distance = downDistance(headerY, item, origin)
+      const x = centerX(item)
+      return distance > 5 && x >= leftBound && x <= rightBound
+    })
+
+    const rowGroups = groupLayoutRows(dataItems)
+    const headers = orderedFields.map((field) =>
+      profile.fields[field.field]?.aliases[0] ?? field.field
+    )
+    const fieldByColumn = orderedFields.map((field) => field.field)
+    const rows: K5EvidenceTable['rows'] = []
+
+    for (const group of rowGroups) {
+      const cells = Array.from({ length: orderedFields.length }, () => '')
+      const sortedGroup = [...group].sort((a, b) => a.left - b.left)
+      for (const item of sortedGroup) {
+        const x = centerX(item)
+        let bestColumn = 0
+        let bestDistance = Number.POSITIVE_INFINITY
+        centers.forEach((center, column) => {
+          const distance = Math.abs(center - x)
+          if (distance < bestDistance) {
+            bestDistance = distance
+            bestColumn = column
+          }
+        })
+        cells[bestColumn] = [cells[bestColumn], item.text].filter(Boolean).join(' ').trim()
+      }
+
+      const semantic: Partial<Record<FieldName, string>> = {}
+      fieldByColumn.forEach((field, column) => {
+        semantic[field] = cells[column] ?? ''
+      })
+      const product = semantic.product?.trim() ?? ''
+      const hasMeasureOrEconomics = [
+        semantic.quantity,
+        semantic.cases,
+        semantic.unit_price,
+        semantic.net_unit_price,
+        semantic.line_amount,
+        semantic.line_amount_tax_included,
+        semantic.price_with_tax,
+      ].some((value) => Boolean(value?.trim()))
+
+      if (!product || !hasMeasureOrEconomics) continue
+      const stableIndex = Math.min(...group.map((item) => item.index))
+      rows.push({
+        index: stableIndex,
+        cells,
+        raw: Object.fromEntries(headers.map((header, column) => [header, cells[column] ?? ''])),
+      })
+    }
+
+    if (rows.length === 0) continue
+
+    const cells: K5EvidenceCell[] = [
+      ...headers.map((header, column) => ({
+        row: 0,
+        column,
+        rowSpan: 1,
+        columnSpan: 1,
+        text: header,
+        columnHeader: true,
+      })),
+      ...rows.flatMap((row, rowIndex) =>
+        row.cells.map((cell, column) => ({
+          row: rowIndex + 1,
+          column,
+          rowSpan: 1,
+          columnSpan: 1,
+          text: cell,
+          columnHeader: false,
+        }))
+      ),
+    ]
+
+    tables.push({
+      index: startIndex + tables.length,
+      source: 'docling_layout',
+      headers,
+      rows,
+      cells,
+    })
+  }
+
+  return tables
 }
 
 export function rowByProfileFields(

@@ -11,6 +11,7 @@ const profileMissingMigration = read('supabase/migrations/20260915194600_k5_opti
 const supersessionMigration = read('supabase/migrations/20260915194700_k5_supersession_chain.sql')
 const idempotentRetryMigration = read('supabase/migrations/20260915194800_k5_idempotent_receipt_retry.sql')
 const priceScaleMigration = read('supabase/migrations/20260915195000_k5_compare_price_at_canonical_scale.sql')
+const layoutFallbackMigration = read('supabase/migrations/20260928110500_k5_layout_fallback_review.sql')
 const trustedLegacyMigration = read('supabase/migrations/20260918114615_k5_import_trusted_legacy_mappings.sql')
 const autoReceiptMigration = read('supabase/migrations/20260917215500_k5_service_auto_receipt_delegate.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
@@ -23,6 +24,8 @@ const mappedSnapshot = read('src/lib/albaranes/k5/mapped-snapshot.ts')
 const variableWeightHelper = read('src/lib/albaranes/k5/variable-weight.ts')
 const lineMappingModal = read('src/components/albaranes/LineMappingModal.tsx')
 const batchActions = read('src/app/dashboard/albaranes/k5/batch-actions.ts')
+const k5QueueActions = read('src/app/dashboard/albaranes/k5/actions.ts')
+const k5QueuePage = read('src/app/dashboard/albaranes/k5/page.tsx')
 const batchReview = read('src/components/albaranes/K5BatchReceiptReview.tsx')
 const evidenceModal = read('src/components/albaranes/DocumentEvidenceModal.tsx')
 
@@ -90,7 +93,7 @@ test('automatización Docling genera K5 solo para la extracción explícita y es
   assert.doesNotMatch(autoProposalRoute, /auto_map_invoice_lines_fuzzy/)
 })
 
-test('automatización Docling está firmada y ocurre entre evidencia persistida y cierre del lease', () => {
+test('automatización K5 es best-effort entre evidencia persistida y cierre del lease', () => {
   assert.match(autoProposalRoute, /createHmac\('sha256'/)
   assert.match(autoProposalRoute, /x-k5-timestamp/)
   assert.match(autoProposalRoute, /x-k5-signature/)
@@ -103,7 +106,35 @@ test('automatización Docling está firmada y ocurre entre evidencia persistida 
   assert.ok(persistAt >= 0 && k5At > persistAt, 'K5 debe ejecutarse después de persistir evidencia')
   assert.ok(autoApplyAt > k5At, 'K4 automático solo puede evaluarse después de K5')
   assert.ok(completeAt > autoApplyAt, 'el lease solo se cierra después de evaluar el autoaplicado')
+  assert.match(doclingWorker, /k5Automation = \{ ok: false, error: errorMessage\(error\) \}/)
+  assert.match(doclingWorker, /if \(payload\.status === "success" && k5Automation\?\.ok\)/)
+  assert.match(doclingWorker, /skipped:k5_auto_proposal_failed/)
+  assert.match(doclingWorker, /skipped:layout_fallback_requires_human_review/)
   assert.match(doclingWorker, /k4AutoApply = \{ ok: false, error: errorMessage\(error\) \}/)
+})
+
+test('no_table entra en K5 por layout, admite confirmación humana y nunca autoaplicado', () => {
+  assert.match(autoProposalRoute, /extraction\.status !== 'success' && extraction\.status !== 'no_table'/)
+  assert.match(interpretationActions, /extraction\.status !== 'success' && extraction\.status !== 'no_table'/)
+  assert.match(k5QueueActions, /\.in\('status', \['success', 'no_table'\]\)/)
+  assert.match(doclingWorker, /payload\.status === "success" \|\| payload\.status === "no_table"/)
+  assert.match(autoProposalRoute, /source: n\.evidenceSource/)
+  assert.match(interpretationActions, /source: n\.evidenceSource/)
+  assert.match(layoutFallbackMigration, /de\.status = 'no_table'::public\.extraction_status/)
+  assert.match(layoutFallbackMigration, /provenance->>'source' = 'docling_layout_fallback'/)
+  assert.doesNotMatch(layoutFallbackMigration, /provenance->>'revision' = 'human_mapping_selection'/)
+  assert.match(autoApplyRoute, /text\(provenance\.source\) !== 'docling_evidence'/)
+  assert.match(autoReceiptMigration, /provenance->>'source'.*docling_evidence/)
+})
+
+test('cola K5 distingue processing, no_table, failed y ausencia de extracción', () => {
+  assert.match(k5QueueActions, /kind: 'processing'/)
+  assert.match(k5QueueActions, /kind: 'no_table'/)
+  assert.match(k5QueueActions, /kind: 'failed'/)
+  assert.match(k5QueueActions, /kind: 'missing'/)
+  assert.match(k5QueuePage, /Docling procesó el documento, pero no detectó una tabla estructurada/)
+  assert.match(k5QueuePage, /Docling no pudo completar la extracción de este albarán/)
+  assert.doesNotMatch(k5QueuePage, /no tiene una extracción Docling correcta disponible/)
 })
 
 test('legacy seguro se importa solo como proposed y sin efectos económicos', () => {

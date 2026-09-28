@@ -194,6 +194,7 @@ function proposalPayload(params: {
     profile_version: params.profileVersion,
     profile_hash: params.profileHash,
     normalizer_version: K5_NORMALIZER_VERSION,
+    evidence_source: n.evidenceSource,
     source_table_index: n.sourceTableIndex,
     source_row_index: n.sourceRowIndex,
     mapping_version_id: n.mappingVersionId,
@@ -254,7 +255,7 @@ function proposalPayload(params: {
     provenance: {
       schema_version: 'k5-v1',
       profile_hash_kind: params.profileHash ? 'canonical-json-sha256-v1' : null,
-      source: 'docling_evidence',
+      source: n.evidenceSource,
       economic_effects: false,
     },
   }
@@ -460,8 +461,12 @@ export async function generateInterpretationProposalsAction(params: {
     .eq('id', extractionId)
     .eq('invoice_id', invoiceId)
     .maybeSingle()
-  if (extractionError || !extraction || extraction.status !== 'success') {
-    return { success: false, message: 'La extracción seleccionada no existe o todavía no es evidencia válida.' }
+  if (
+    extractionError
+    || !extraction
+    || (extraction.status !== 'success' && extraction.status !== 'no_table')
+  ) {
+    return { success: false, message: 'La extracción seleccionada no existe o todavía no contiene evidencia Docling interpretable.' }
   }
 
   const sourceFileHash = text(extraction.file_version_hash)
@@ -478,6 +483,9 @@ export async function generateInterpretationProposalsAction(params: {
 
   if (!versioned) {
     normalized = [{
+      evidenceSource: extraction.status === 'no_table'
+        ? 'docling_layout_fallback'
+        : 'docling_evidence',
       sourceTableIndex: null,
       sourceRowIndex: null,
       sourceItemName: null,

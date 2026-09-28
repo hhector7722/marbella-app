@@ -18,6 +18,7 @@ import {
   type ExactRatio,
 } from './exact-decimal.ts'
 import {
+  extractDoclingLayoutTables,
   extractDoclingTables,
   matchProfileTable,
   normalizeEvidenceLabel,
@@ -28,7 +29,7 @@ import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-sna
 import { canonicalSupplierItemKey } from './supplier-item-key.ts'
 import { deriveVariableWeightEvidence } from './variable-weight.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v6' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v8' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -50,6 +51,7 @@ export type K5LegacyIdentitySnapshot = {
 export type K5ProposalStatus = 'needs_mapping' | 'needs_review' | 'excluded' | 'ready_for_review'
 
 export type K5NormalizedProposal = {
+  evidenceSource: 'docling_evidence' | 'docling_layout_fallback'
   sourceTableIndex: number | null
   sourceRowIndex: number | null
   sourceItemName: string | null
@@ -338,9 +340,16 @@ export function normalizeDoclingEvidence(params: {
   legacyIdentities?: readonly K5LegacyIdentitySnapshot[]
 }): K5NormalizationResult {
   const { profile, rawArtifact, supplierId, mappings, legacyIdentities = [] } = params
-  const tables = extractDoclingTables(rawArtifact)
-  const match = matchProfileTable(profile, tables)
+  const tables = extractDoclingTables(rawArtifact, profile)
+  const nativeMatch = matchProfileTable(profile, tables)
+  const layoutTables = nativeMatch
+    ? []
+    : extractDoclingLayoutTables(profile, rawArtifact, tables.length)
+  const match = nativeMatch ?? matchProfileTable(profile, layoutTables)
   const observedIssuer = detectObservedIssuer(profile, rawArtifact)
+  const evidenceSource = nativeMatch
+    ? 'docling_evidence'
+    : 'docling_layout_fallback'
 
   if (!match) {
     return {
@@ -349,13 +358,14 @@ export function normalizeDoclingEvidence(params: {
       normalizerVersion: K5_NORMALIZER_VERSION,
       observedIssuer,
       proposals: [{
+        evidenceSource: 'docling_evidence',
         sourceTableIndex: null,
         sourceRowIndex: null,
         sourceItemName: null,
         mappingVersionId: null,
         ingredientId: null,
         status: 'needs_review',
-        observed: { tables_found: tables.length },
+        observed: { tables_found: tables.length, layout_tables_found: layoutTables.length },
         interpreted: {},
         normalized: {},
         pricing: {},
@@ -436,6 +446,7 @@ export function normalizeDoclingEvidence(params: {
 
     if (interpreted.status === 'excluded') {
       return {
+        evidenceSource,
         sourceTableIndex: match.table.index,
         sourceRowIndex: match.table.rows[index]!.index,
         sourceItemName: product,
@@ -486,11 +497,12 @@ export function normalizeDoclingEvidence(params: {
     const quantityString = lineQuantity ? toFiniteDecimalString(lineQuantity) : null
 
     return {
+      evidenceSource,
       sourceTableIndex: match.table.index,
       sourceRowIndex: match.table.rows[index]!.index,
       sourceItemName: product,
       mappingVersionId: mapping?.id ?? null,
-      ingredientId: mapping?.ingredientId ?? legacyIngredientId,
+      ingredientId: mapping?.ingredientId ?? null,
       status,
       observed: { ...semanticRow, raw_cells: match.table.rows[index]!.cells },
       interpreted: {
@@ -518,6 +530,7 @@ export function normalizeDoclingEvidence(params: {
         ? ['mapping_missing']
         : unique([
             ...semanticReasons,
+            ...(!mapping ? ['mapping_missing'] : []),
             ...(legacyIngredientId ? ['legacy_identity_requires_presentation_validation'] : []),
             ...(status === 'needs_review' && mapping && !normalization ? ['price_not_normalizable'] : []),
           ]),

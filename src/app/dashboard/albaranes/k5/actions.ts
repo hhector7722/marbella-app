@@ -14,6 +14,11 @@ export type K5InvoiceCandidate = {
   activeProposals: number
 }
 
+export type K5InvoiceAvailability = {
+  kind: 'processing' | 'no_table' | 'failed' | 'missing' | 'supplier_missing' | 'discarded' | 'available'
+  detail: string | null
+}
+
 type ManagerGate =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>> }
   | { ok: false; message: string }
@@ -40,6 +45,91 @@ async function requireManager(): Promise<ManagerGate> {
 
 function text(value: unknown): string {
   return String(value ?? '').trim()
+}
+
+export async function getK5InvoiceAvailabilityAction(params: { invoiceId: string }): Promise<
+  | { success: true; availability: K5InvoiceAvailability }
+  | { success: false; message: string }
+> {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  const invoiceId = text(params?.invoiceId)
+  if (!invoiceId) return { success: false, message: 'Albarán inválido.' }
+
+  const { data: invoice, error: invoiceError } = await gate.supabase
+    .from('purchase_invoices')
+    .select('id,supplier_id,status,ocr_error')
+    .eq('id', invoiceId)
+    .maybeSingle()
+  if (invoiceError) return { success: false, message: 'No se pudo comprobar el estado del albarán.' }
+  if (!invoice) return { success: false, message: 'El albarán solicitado no existe.' }
+
+  if (text(invoice.status) === 'discarded') {
+    return { success: true, availability: { kind: 'discarded', detail: null } }
+  }
+  if (invoice.supplier_id == null) {
+    return { success: true, availability: { kind: 'supplier_missing', detail: null } }
+  }
+
+  const [{ data: extractionRows, error: extractionError }, { data: jobRows, error: jobError }] = await Promise.all([
+    gate.supabase
+      .from('document_extractions')
+      .select('status,extracted_at')
+      .eq('invoice_id', invoiceId)
+      .order('extracted_at', { ascending: false }),
+    gate.supabase
+      .from('document_processing_jobs')
+      .select('status,last_error,attempt_count,created_at,completed_at')
+      .eq('invoice_id', invoiceId)
+      .order('created_at', { ascending: false })
+      .limit(1),
+  ])
+
+  if (extractionError || jobError) {
+    return { success: false, message: 'No se pudo comprobar la extracción Docling de este albarán.' }
+  }
+
+  const extractions = (extractionRows ?? []) as Array<Record<string, unknown>>
+  const latestExtraction = extractions[0] ?? null
+  const latestJob = ((jobRows ?? []) as Array<Record<string, unknown>>)[0] ?? null
+  const invoiceStatus = text(invoice.status)
+  const jobStatus = text(latestJob?.status)
+
+  if (jobStatus === 'pending' || jobStatus === 'leased' || invoiceStatus === 'processing') {
+    const attemptCount = Number(latestJob?.attempt_count)
+    return {
+      success: true,
+      availability: {
+        kind: 'processing',
+        detail: Number.isFinite(attemptCount) && attemptCount > 0 ? `Intento Docling ${attemptCount}.` : null,
+      },
+    }
+  }
+
+  if (extractions.some((row) => text(row.status) === 'success')) {
+    return { success: true, availability: { kind: 'available', detail: null } }
+  }
+
+  if (text(latestExtraction?.status) === 'no_table') {
+    return { success: true, availability: { kind: 'no_table', detail: null } }
+  }
+
+  if (
+    jobStatus === 'failed'
+    || text(latestExtraction?.status) === 'failed'
+    || invoiceStatus === 'ocr_failed'
+  ) {
+    return {
+      success: true,
+      availability: {
+        kind: 'failed',
+        detail: text(latestJob?.last_error) || text(invoice.ocr_error) || null,
+      },
+    }
+  }
+
+  return { success: true, availability: { kind: 'missing', detail: null } }
 }
 
 export async function listK5InvoiceCandidatesAction(): Promise<
@@ -70,7 +160,7 @@ export async function listK5InvoiceCandidatesAction(): Promise<
       .from('document_extractions')
       .select('id,invoice_id,status')
       .in('invoice_id', invoiceIds)
-      .eq('status', 'success'),
+      .in('status', ['success', 'no_table']),
     gate.supabase
       .from('purchase_interpretation_proposals')
       .select('id,proposal_set_id,purchase_invoice_id,supersedes_proposal_id,provenance,created_at')

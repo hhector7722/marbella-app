@@ -19,7 +19,13 @@ import { isK5ReusableMappingVersion } from '@/lib/albaranes/k5/trusted-mapping'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-type AdminClient = ReturnType<typeof createClient<any>>
+function createAdminClient(url: string, serviceRoleKey: string) {
+  return createClient(url, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+}
+
+type AdminClient = ReturnType<typeof createAdminClient>
 
 type AutoProposalRequest = {
   jobId: string
@@ -181,6 +187,7 @@ function proposalPayload(params: {
     profile_version: params.profileVersion,
     profile_hash: params.profileHash,
     normalizer_version: K5_NORMALIZER_VERSION,
+    evidence_source: n.evidenceSource,
     source_table_index: n.sourceTableIndex,
     source_row_index: n.sourceRowIndex,
     mapping_version_id: n.mappingVersionId,
@@ -241,7 +248,7 @@ function proposalPayload(params: {
     provenance: {
       schema_version: 'k5-v1',
       profile_hash_kind: params.profileHash ? 'canonical-json-sha256-v1' : null,
-      source: 'docling_evidence',
+      source: n.evidenceSource,
       trigger: 'docling_completion',
       correlation_id: params.correlationId,
       economic_effects: false,
@@ -372,8 +379,8 @@ async function generateAutomaticProposals(
     status?: string
   } | null
   if (extractionError || !extraction) throw new Error('No se pudo cargar la extracción Docling para K5.')
-  if (extraction.status !== 'success') {
-    return { ok: true, skipped: 'extraction_not_success', created: 0, materialized: 0 }
+  if (extraction.status !== 'success' && extraction.status !== 'no_table') {
+    return { ok: true, skipped: 'extraction_not_interpretable', created: 0, materialized: 0 }
   }
 
   const sourceFileHash = text(extraction.file_version_hash)
@@ -390,6 +397,9 @@ async function generateAutomaticProposals(
 
   if (!versioned) {
     normalized = [{
+      evidenceSource: extraction.status === 'no_table'
+        ? 'docling_layout_fallback'
+        : 'docling_evidence',
       sourceTableIndex: null,
       sourceRowIndex: null,
       sourceItemName: null,
@@ -530,9 +540,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'No autorizado.' }, { status: 401 })
   }
 
-  const supabase = createClient<any>(url, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
+  const supabase = createAdminClient(url, serviceRoleKey)
 
   const { data: leaseData, error: leaseError } = await supabase
     .from('document_processing_jobs')

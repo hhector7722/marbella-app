@@ -2,7 +2,11 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import K5ReviewClient from './K5ReviewClient'
-import { listK5InvoiceCandidatesAction } from './actions'
+import {
+  getK5InvoiceAvailabilityAction,
+  listK5InvoiceCandidatesAction,
+  type K5InvoiceAvailability,
+} from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +14,73 @@ function formatDate(value: string | null): string {
   if (!value) return 'Sin fecha'
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
   return match ? `${match[3]}/${match[2]}/${match[1]}` : value
+}
+
+function unavailableCopy(
+  availability: K5InvoiceAvailability | null,
+  lookupError: string | null
+): { title: string; body: string; detail: string | null; failed: boolean } {
+  if (lookupError) {
+    return {
+      title: 'No se pudo comprobar el estado Docling',
+      body: lookupError,
+      detail: null,
+      failed: true,
+    }
+  }
+
+  switch (availability?.kind) {
+    case 'processing':
+      return {
+        title: 'Docling todavía está procesando este albarán',
+        body: 'La extracción sigue pendiente o con una lease activa. Vuelve a abrir la revisión cuando termine.',
+        detail: availability.detail,
+        failed: false,
+      }
+    case 'no_table':
+      return {
+        title: 'Docling procesó el documento, pero no detectó una tabla estructurada',
+        body: 'La evidencia existe y K5 puede intentar reconstruir las líneas por posición. Si no aparecen en la cola, recarga para revalidar el fallback de layout.',
+        detail: availability.detail,
+        failed: false,
+      }
+    case 'failed':
+      return {
+        title: 'Docling no pudo completar la extracción de este albarán',
+        body: 'La extracción terminó con un error operativo. Puedes revisar el detalle y reintentar desde el albarán.',
+        detail: availability.detail,
+        failed: true,
+      }
+    case 'supplier_missing':
+      return {
+        title: 'Falta identificar el proveedor',
+        body: 'K5 necesita un proveedor asignado antes de interpretar este albarán.',
+        detail: null,
+        failed: false,
+      }
+    case 'discarded':
+      return {
+        title: 'Este albarán está descartado',
+        body: 'Los albaranes descartados no entran en la cola de Revisión K5.',
+        detail: null,
+        failed: false,
+      }
+    case 'available':
+      return {
+        title: 'La extracción Docling ya está disponible',
+        body: 'La cola de revisión puede haber cambiado mientras abrías la página. Recarga para volver a construirla.',
+        detail: null,
+        failed: false,
+      }
+    case 'missing':
+    default:
+      return {
+        title: 'Este albarán todavía no tiene una extracción Docling disponible',
+        body: 'No hay una extracción estructurada ni un trabajo Docling activo que K5 pueda revisar.',
+        detail: null,
+        failed: false,
+      }
+  }
 }
 
 export default async function K5ReviewPage({
@@ -43,6 +114,14 @@ export default async function K5ReviewPage({
     ? requestedInvoice?.id ?? null
     : result.invoices[0]?.id ?? null
   const requestedInvoiceUnavailable = Boolean(requestedId && !requestedInvoice)
+  let unavailableAvailability: K5InvoiceAvailability | null = null
+  let unavailableLookupError: string | null = null
+  if (requestedInvoiceUnavailable && requestedId) {
+    const availabilityResult = await getK5InvoiceAvailabilityAction({ invoiceId: requestedId })
+    if (availabilityResult.success) unavailableAvailability = availabilityResult.availability
+    else unavailableLookupError = availabilityResult.message
+  }
+  const unavailable = unavailableCopy(unavailableAvailability, unavailableLookupError)
 
   return (
     <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-5">
@@ -60,7 +139,7 @@ export default async function K5ReviewPage({
 
       {result.invoices.length === 0 ? (
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm font-bold text-zinc-600">
-          No hay albaranes con una extracción Docling correcta disponible para revisar.
+          No hay albaranes con evidencia Docling interpretable disponible para revisar.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[18rem_minmax(0,1fr)]">
@@ -86,8 +165,20 @@ export default async function K5ReviewPage({
 
           <div className="min-w-0">
             {requestedInvoiceUnavailable ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-bold text-amber-900">
-                Este albarán no tiene una extracción Docling correcta disponible para Revisión K5.
+              <div
+                className={`rounded-2xl border p-5 ${
+                  unavailable.failed
+                    ? 'border-red-200 bg-red-50 text-red-900'
+                    : 'border-amber-200 bg-amber-50 text-amber-900'
+                }`}
+              >
+                <div className="text-sm font-black">{unavailable.title}</div>
+                <div className="mt-1 text-xs font-semibold leading-relaxed">{unavailable.body}</div>
+                {unavailable.detail ? (
+                  <div className="mt-3 rounded-xl border border-current/15 bg-white/60 px-3 py-2 text-[11px] font-semibold leading-relaxed">
+                    {unavailable.detail}
+                  </div>
+                ) : null}
               </div>
             ) : (
               <K5ReviewClient initialInvoices={result.invoices} initialSelectedId={selectedId} />

@@ -29,7 +29,7 @@ import {
 } from '../staff/plantilla-employees.ts';
 import { resolveLaborWorkerDay } from './labor-worker-day.ts';
 
-const LABOR_PROFILE_SELECT = `${PLANTILLA_EMPLOYEE_SELECT}, staffing_mode`;
+const LABOR_PROFILE_SELECT = `${PLANTILLA_EMPLOYEE_SELECT}, staffing_mode` as const;
 
 export class LaborCostDayReadModelProjector {
   constructor(
