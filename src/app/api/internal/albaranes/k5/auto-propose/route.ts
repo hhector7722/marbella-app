@@ -391,7 +391,9 @@ async function generateAutomaticProposals(
 
   if (!versioned) {
     normalized = [{
-      evidenceSource: 'docling_evidence',
+      evidenceSource: extraction.status === 'no_table'
+        ? 'docling_layout_fallback'
+        : 'docling_evidence',
       sourceTableIndex: null,
       sourceRowIndex: null,
       sourceItemName: null,
