@@ -361,7 +361,7 @@ export function normalizeDoclingEvidence(params: {
       normalizerVersion: K5_NORMALIZER_VERSION,
       observedIssuer,
       proposals: [{
-        provenanceSource: 'docling_evidence',
+        provenanceSource: 'docling_layout_fallback',
         sourceTableIndex: null,
         sourceRowIndex: null,
         sourceItemName: null,
