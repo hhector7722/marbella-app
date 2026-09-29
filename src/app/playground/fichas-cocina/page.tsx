@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { ChefHat, Download, ImagePlus, Printer, Save, Trash2, Camera } from 'lucide-react';
+import { ChefHat, Download, Printer, Save, Trash2, Camera } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 
 type Recipe = {
@@ -317,359 +317,324 @@ export default function FichasCocinaPage() {
     setMessage('PDF generado correctamente');
   }
 
+  const photosReady = steps.filter(step => Boolean(step.image)).length;
+  const keyPointsReady = keyPoints.filter(Boolean).length;
+  const avoidPointsReady = avoidPoints.filter(Boolean).length;
+  const sheetChecks = recipe
+    ? [
+        { label: 'Receta', detail: recipe.name, done: true },
+        { label: 'Fotos', detail: photosReady + '/' + steps.length, done: steps.length > 0 && photosReady === steps.length },
+        { label: 'Claves', detail: String(keyPointsReady), done: keyPointsReady > 0 },
+        { label: 'Vista', detail: 'Lista', done: true },
+      ]
+    : [];
+  const completedChecks = sheetChecks.filter(item => item.done).length;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-zinc-300 gap-3">
-        <div className="h-6 w-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-        <span className="text-sm font-semibold tracking-wide">Cargando catálogo de recetas…</span>
+      <div className="flex h-full min-h-[520px] items-center justify-center bg-[#f6f7f8] text-zinc-500">
+        <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-200 border-t-[#36606f]" />
+          <span className="text-xs font-bold">Cargando recetas…</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 p-4 md:p-8 print:p-0 print:bg-white">
-      {/* Estilo local para impresión física perfecta en A3 Horizontal */}
-      <style>{`
-        @media print {
-          @page {
-            size: A3 landscape;
-            margin: 0;
-          }
-          body {
-            background-color: white !important;
-            color: black !important;
-          }
-          .print-hidden {
-            display: none !important;
-          }
-        }
-      `}</style>
+    <div className="h-full min-h-0 bg-[#f6f7f8] text-zinc-900 print:bg-white">
+      <style>{'@media print { @page { size: A3 landscape; margin: 0; } body { background: white !important; } }'}</style>
 
-      <div className="mx-auto max-w-[1600px] space-y-6">
-        {/* Cabecera / Controles Superiores */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5 print:hidden">
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.25em] text-[#36606F]">
-              Procedimientos Operativos Cocina
+      <div className="mx-auto flex h-full min-h-0 max-w-[1800px] flex-col gap-3">
+        <header className="flex h-11 shrink-0 items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 shadow-sm print:hidden">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2">
+              <h1 className="truncate text-sm font-black text-zinc-900">Fichas de cocina</h1>
+              {recipe && <span className="truncate text-[11px] font-semibold text-zinc-400">/ {recipe.name}</span>}
             </div>
-            <h1 className="text-2xl font-black tracking-tight mt-1 text-zinc-900">
-              Diseño de Fichas de Elaboración
-            </h1>
-            <p className="text-xs text-zinc-500 mt-1">
-              Visualización estricta en A3 Horizontal. Diseñado para lectura rápida y operatividad real.
-            </p>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={saveSheet}
-              disabled={!recipe || saving}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition-colors px-4 text-xs font-bold text-white disabled:opacity-40"
-            >
-              <Save size={14} />
-              {saving ? 'Guardando…' : 'Guardar Datos'}
-            </button>
+
+          <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={generatePdf}
               disabled={!recipe}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#36606f] hover:bg-[#2f5d6a] transition-colors px-4 text-xs font-bold text-white disabled:opacity-40"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40"
             >
-              <Download size={14} />
-              Exportar PDF A3
+              <Download size={13} />
+              PDF
             </button>
             <button
               onClick={() => window.print()}
               disabled={!recipe}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-50 transition-colors px-4 text-xs font-bold text-zinc-700"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40"
             >
-              <Printer size={14} />
-              Imprimir Ficha
+              <Printer size={13} />
+              Imprimir
+            </button>
+            <button
+              onClick={saveSheet}
+              disabled={!recipe || saving}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#36606f] px-3 text-[11px] font-black text-white transition-colors hover:bg-[#2f5663] disabled:opacity-40"
+            >
+              <Save size={13} />
+              {saving ? 'Guardando…' : 'Guardar'}
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* Zona del Editor y Selección */}
-        <div className="grid gap-6 lg:grid-cols-[340px_1fr] print:hidden">
-          {/* Panel Lateral: Selección de Receta */}
-          <aside className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-5 h-fit">
-            <div>
-              <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                Receta de cocina
-              </label>
+        <main className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[250px_minmax(520px,1fr)_360px] print:block">
+          <aside className="flex min-h-0 flex-col gap-3 print:hidden">
+            <section className="shrink-0 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-400">Receta</span>
+                {recipe && (
+                  <span className="rounded-full bg-[#36606f]/10 px-2 py-0.5 text-[9px] font-black uppercase text-[#36606f]">
+                    {recipe.category || 'Sin categoría'}
+                  </span>
+                )}
+              </div>
+
               <select
                 value={recipeId}
                 onChange={e => setRecipeId(e.target.value)}
-                className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[#36606f] focus:border-[#36606f] transition-all"
+                className="h-9 w-full rounded-lg border border-zinc-300 bg-white px-2.5 text-xs font-bold outline-none transition focus:border-[#36606f] focus:ring-1 focus:ring-[#36606f]"
               >
-                <option value="">Selecciona una receta…</option>
+                <option value="">Selecciona receta…</option>
                 {recipes.map(r => (
                   <option key={r.id} value={r.id}>
-                    {r.is_sellable === false ? `${r.name} · Elaboración` : r.name}
+                    {r.is_sellable === false ? r.name + ' · Elaboración' : r.name}
                   </option>
                 ))}
               </select>
+
+              {recipe && (
+                <div className="mt-3">
+                  <div className="relative aspect-[16/9] overflow-hidden rounded-lg border border-zinc-100 bg-zinc-100">
+                    {recipe.photo_url ? (
+                      <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-zinc-300">
+                        <ChefHat size={30} strokeWidth={1.2} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-black text-zinc-900">{recipe.name}</div>
+                      <div className="mt-0.5 flex flex-wrap gap-1.5 text-[10px] font-bold text-zinc-500">
+                        <span>{recipe.servings ?? 1} ración{recipe.servings === 1 ? '' : 'es'}</span>
+                        {recipe.preparation_time ? <span>· {recipe.preparation_time} min</span> : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <section className="min-h-0 flex-1 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-black text-zinc-900">Estado</h2>
+                <span className="text-[10px] font-bold text-zinc-400">
+                  {recipe ? completedChecks + '/' + sheetChecks.length : '—'}
+                </span>
+              </div>
+
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-100">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  style={{ width: recipe && sheetChecks.length ? (completedChecks / sheetChecks.length) * 100 + '%' : '0%' }}
+                />
+              </div>
+
+              <div className="mt-3 grid gap-2">
+                {sheetChecks.map(item => (
+                  <div key={item.label} className="flex items-center gap-2 rounded-lg bg-zinc-50 px-2 py-2">
+                    <span
+                      className={
+                        'grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-black ' +
+                        (item.done ? 'bg-emerald-500 text-white' : 'bg-zinc-200 text-zinc-500')
+                      }
+                    >
+                      {item.done ? '✓' : '·'}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] font-black text-zinc-700">{item.label}</div>
+                      <div className="truncate text-[9px] font-semibold text-zinc-400">{item.detail}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </aside>
+
+          <section className="flex min-h-0 flex-col gap-3 print:hidden">
+            <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
+              <div className="mb-2 flex shrink-0 items-center justify-between border-b border-zinc-100 pb-2">
+                <div>
+                  <h2 className="text-sm font-black text-zinc-900">Pasos</h2>
+                  <p className="text-[9px] font-semibold text-zinc-400">
+                    Texto de la ficha técnica + foto de referencia
+                  </p>
+                </div>
+                <span className="rounded-full bg-[#36606f]/10 px-2 py-1 text-[9px] font-black uppercase text-[#36606f]">
+                  {steps.length} pasos · {photosReady} fotos
+                </span>
+              </div>
+
+              {!recipe ? (
+                <div className="flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-400">
+                  Selecciona una receta
+                </div>
+              ) : steps.length === 0 ? (
+                <div className="flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-400">
+                  Esta receta no tiene pasos de elaboración
+                </div>
+              ) : (
+                <div
+                  className="grid min-h-0 flex-1 gap-2"
+                  style={{ gridTemplateRows: 'repeat(' + steps.length + ', minmax(0, 1fr))' }}
+                >
+                  {steps.map((step, i) => (
+                    <div
+                      key={i}
+                      className="grid min-h-0 grid-cols-[28px_88px_minmax(0,1fr)] items-center gap-2.5 rounded-lg border border-zinc-200 bg-zinc-50/60 px-2 py-1.5"
+                    >
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-[#36606f] text-[10px] font-black text-white">
+                        {i + 1}
+                      </span>
+
+                      <label className="relative h-[clamp(38px,7vh,72px)] cursor-pointer overflow-hidden rounded-md border border-zinc-200 bg-white">
+                        {step.image ? (
+                          <img src={step.image} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center gap-0.5 text-zinc-400">
+                            <Camera size={13} />
+                            <span className="text-[7px] font-black">AÑADIR FOTO</span>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 cursor-pointer opacity-0"
+                          onChange={e => {
+                            const f = e.target.files?.[0];
+                            if (f) void uploadStepImage(i, f);
+                          }}
+                        />
+                      </label>
+
+                      <p className="line-clamp-3 min-w-0 text-[11px] font-semibold leading-snug text-zinc-700">
+                        {step.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {recipe && (
-              <div className="rounded-xl bg-zinc-50 p-4 border border-zinc-150 space-y-2">
-                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                  Detalles del Plato
-                </div>
-                <div className="text-sm font-extrabold text-zinc-800">{recipe.name}</div>
-                <div className="text-xs text-zinc-500 font-semibold flex flex-wrap gap-x-3 gap-y-1">
-                  <span>{recipe.category || 'Sin categoría'}</span>
-                  <span>•</span>
-                  <span>{recipe.servings ?? 1} raciones</span>
-                  {recipe.preparation_time && (
-                    <>
-                      <span>•</span>
-                      <span>{recipe.preparation_time} min</span>
-                    </>
-                  )}
+            <div className="grid shrink-0 grid-cols-2 gap-3">
+              <ListEditor title="Puntos clave" values={keyPoints} setValues={setKeyPoints} />
+              <ListEditor title="No hacer" values={avoidPoints} setValues={setAvoidPoints} />
+            </div>
+          </section>
+
+          <aside className="flex min-h-0 flex-col rounded-xl border border-zinc-200 bg-white p-3 shadow-sm print:fixed print:inset-0 print:z-50 print:h-[297mm] print:w-[420mm] print:border-0 print:bg-white print:p-0 print:shadow-none">
+            <div className="mb-2 flex shrink-0 items-center justify-between print:hidden">
+              <div>
+                <h2 className="text-sm font-black text-zinc-900">Vista previa</h2>
+                <p className="text-[9px] font-semibold text-zinc-400">A3 horizontal</p>
+              </div>
+              {recipe && (
+                <span className="rounded-full bg-zinc-100 px-2 py-1 text-[9px] font-bold text-zinc-500">
+                  {recipe.name}
+                </span>
+              )}
+            </div>
+
+            {!recipe ? (
+              <div className="flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-400 print:hidden">
+                Sin receta seleccionada
+              </div>
+            ) : (
+              <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden print:block print:h-full print:w-full">
+                <div
+                  id="kitchen-sheet"
+                  className="aspect-[1.414/1] w-full overflow-hidden rounded-lg border border-zinc-200 bg-[#fcfbfa] p-[4%] shadow-inner print:h-full print:w-full print:aspect-auto print:rounded-none print:border-0 print:p-[14mm] print:shadow-none"
+                >
+                  <div className="flex h-full min-h-0 flex-col">
+                    <div className="flex shrink-0 items-end justify-between border-b-2 border-[#36606f] pb-2">
+                      <h2 className="truncate text-[clamp(13px,1.4vw,22px)] font-black uppercase tracking-tight text-zinc-900">
+                        {recipe.name}
+                      </h2>
+                      <div className="shrink-0 pl-2 text-[7px] font-bold uppercase tracking-wider text-zinc-400">
+                        {recipe.servings ?? 1} ración{recipe.servings === 1 ? '' : 'es'}
+                        {recipe.preparation_time ? ' · ' + recipe.preparation_time + ' min' : ''}
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex min-h-0 flex-1 gap-2">
+                      <div className="flex w-[29%] shrink-0 flex-col gap-2">
+                        <div className="min-h-0 flex-1 overflow-hidden rounded-md border border-zinc-200 bg-white p-1.5">
+                          {recipe.photo_url ? (
+                            <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full rounded object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-zinc-200">
+                              <ChefHat size={22} strokeWidth={1} />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="h-[37%] overflow-hidden rounded-md bg-[#0b1c36] p-2 text-white">
+                          <div className="text-[6px] font-black uppercase tracking-widest text-emerald-400">Puntos clave</div>
+                          <ul className="mt-1 space-y-0.5 text-[6px] leading-tight text-zinc-200">
+                            {keyPoints.filter(Boolean).slice(0, 4).map((x, i) => (
+                              <li key={i}>• {x}</li>
+                            ))}
+                          </ul>
+                          {avoidPoints.filter(Boolean).length > 0 && (
+                            <>
+                              <div className="mt-1.5 text-[6px] font-black uppercase tracking-widest text-rose-300">No hacer</div>
+                              <ul className="mt-1 space-y-0.5 text-[6px] leading-tight text-zinc-200">
+                                {avoidPoints.filter(Boolean).slice(0, 3).map((x, i) => (
+                                  <li key={i}>• {x}</li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid min-h-0 flex-1 grid-cols-2 gap-1.5">
+                        {steps.slice(0, 8).map((step, i) => (
+                          <div key={i} className="flex min-h-0 flex-col overflow-hidden rounded-md border border-zinc-200 bg-white p-1.5">
+                            <div className="mb-1 flex shrink-0 items-center gap-1">
+                              <span className="text-[9px] font-black text-[#36606f]">{String(i + 1).padStart(2, '0')}</span>
+                            </div>
+                            <div className="min-h-0 flex-1 overflow-hidden rounded bg-zinc-50">
+                              {step.image ? (
+                                <img src={step.image} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-zinc-200">
+                                  <ChefHat size={15} strokeWidth={1} />
+                                </div>
+                              )}
+                            </div>
+                            <p className="mt-1 line-clamp-2 shrink-0 text-[6px] font-semibold leading-tight text-zinc-600">
+                              {step.text}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </aside>
-
-          {/* Formulario de Contenido de la Ficha */}
-          {recipe && (
-            <section className="space-y-6">
-              {/* Carga de Imágenes para cada Paso */}
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                  <h2 className="font-bold text-zinc-800">Fotografías de los Pasos</h2>
-                  <span className="text-xs font-black bg-[#36606f]/10 text-[#36606f] px-2.5 py-1 rounded-full">
-                    {steps.length} Pasos Detectados
-                  </span>
-                </div>
-
-                <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-                  {steps.map((step, i) => {
-                    return (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 p-3 hover:border-zinc-300 bg-zinc-50/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#36606f] text-xs font-black text-white">
-                            {i + 1}
-                          </span>
-                          <div className="min-w-0">
-                            <span className="text-xs font-medium text-zinc-700 block">
-                              {step.text}
-                            </span>
-                          </div>
-                        </div>
-
-                        <label className="relative flex h-14 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-zinc-350 bg-white hover:bg-zinc-50 transition-colors shadow-sm">
-                          {step.image ? (
-                            <img src={step.image} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="flex flex-col items-center gap-0.5 text-zinc-400">
-                              <Camera size={14} />
-                              <span className="text-[8px] font-extrabold tracking-tight">FOTO</span>
-                            </div>
-                          )}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                            onChange={e => {
-                              const f = e.target.files?.[0];
-                              if (f) void uploadStepImage(i, f);
-                            }}
-                          />
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Editores de Listas */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <ListEditor title="Puntos Clave" values={keyPoints} setValues={setKeyPoints} />
-                <ListEditor title="No Hacer" values={avoidPoints} setValues={setAvoidPoints} />
-              </div>
-            </section>
-          )}
-        </div>
-
-        {/* --- VISTA PREVIA EXCLUSIVA DEL CARTEL (A3 HORIZONTAL - ESCALADO) --- */}
-        {recipe && (
-          <div className="space-y-3">
-            <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] print:hidden">
-              Vista previa del póster (A3 Horizontal)
-            </h3>
-
-            {/* Contenedor que simula proporciones de A3 horizontal (Aspect Ratio 1.414:1) */}
-            <div className="w-full overflow-x-auto pb-6 flex justify-center print:p-0">
-              <div className="min-w-[1024px] max-w-[1400px] w-full">
-                <div
-                  id="kitchen-sheet"
-                  className="w-full aspect-[1.414/1] bg-[#fcfbfa] p-[4%] border border-zinc-200/80 shadow-2xl rounded-2xl relative flex flex-col justify-between print:fixed print:inset-0 print:w-[420mm] print:h-[297mm] print:p-[14mm] print:bg-white print:shadow-none print:border-none print:rounded-none print:m-0 print:z-50"
-                >
-                  {/* Header de la Ficha */}
-                  <div className="border-b-[3px] border-[#36606f] pb-3 flex justify-between items-end w-full">
-                    <div>
-                      <h2 className="mt-1.5 text-2xl md:text-3xl font-black uppercase leading-none tracking-tight text-zinc-900">
-                        {recipe.name}
-                      </h2>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[10px] md:text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                        {recipe.servings ?? 1} raciones {recipe.preparation_time ? ` · ${recipe.preparation_time} min` : ''}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bloque de Contenido */}
-                  <div className="flex-1 min-h-0 w-full mt-4 flex gap-5">
-                    {/* Columna Izquierda: Resultado Esperado & Puntos Clave (30% de ancho) */}
-                    <div className="w-[30%] flex flex-col gap-4 h-full shrink-0 justify-between">
-                      {/* Foto del resultado final */}
-                      <div className="flex-1 rounded-xl overflow-hidden border border-zinc-200 bg-white flex flex-col p-3 shadow-sm min-h-0">
-                        <div className="flex-1 w-full rounded-lg overflow-hidden relative bg-zinc-50 border border-zinc-100">
-                          {recipe.photo_url ? (
-                            <img
-                              src={recipe.photo_url}
-                              alt={recipe.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-full w-full flex flex-col items-center justify-center text-zinc-300 gap-1">
-                              <ChefHat size={32} strokeWidth={1.2} />
-                              <span className="text-[9px] font-bold">Sin foto final</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Tarjeta de advertencias y consejos */}
-                      <div className="h-[40%] rounded-xl bg-[#0b1c36] text-white p-4 flex flex-col justify-between shadow-md relative overflow-hidden shrink-0">
-                        <div className="space-y-3 overflow-y-auto max-h-full pr-1">
-                          <div>
-                            <h3 className="text-[9px] font-black tracking-widest text-emerald-400 uppercase">
-                              PUNTOS CLAVE
-                            </h3>
-                            <ul className="mt-1.5 space-y-1 text-[9px] text-zinc-200">
-                              {keyPoints.filter(Boolean).map((x, i) => (
-                                <li key={i} className="flex items-start gap-1">
-                                  <span className="text-emerald-400 font-bold">•</span>
-                                  <span>{x}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          {avoidPoints.filter(Boolean).length > 0 && (
-                            <div>
-                              <h3 className="text-[9px] font-black tracking-widest text-rose-450 uppercase">
-                                NO HACER
-                              </h3>
-                              <ul className="mt-1.5 space-y-1 text-[9px] text-zinc-200">
-                                {avoidPoints.filter(Boolean).map((x, i) => (
-                                  <li key={i} className="flex items-start gap-1">
-                                    <span className="text-rose-400 font-bold">•</span>
-                                    <span>{x}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Columna Derecha: Cuadrícula de Pasos Adaptativa (70% de ancho) */}
-                    <div className="flex-1 flex flex-col gap-4 h-full min-w-0">
-                      {/* Fila 1 */}
-                      <div
-                        className={`grid gap-4 ${
-                          fila1.length === 4 ? 'grid-cols-4' : fila1.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
-                        } ${fila2.length > 0 ? 'h-[calc(50%-8px)]' : 'h-full'}`}
-                      >
-                        {fila1.map((step, idx) => {
-                          const numStr = String(idx + 1).padStart(2, '0');
-                          return (
-                            <div
-                              key={idx}
-                              className="bg-white rounded-xl border border-zinc-200 p-3 shadow-sm flex flex-col justify-between min-h-0 relative overflow-hidden"
-                            >
-                              <div className="flex items-baseline gap-1.5 border-b border-zinc-100 pb-1.5">
-                                <span className="text-xl md:text-2xl font-black text-[#36606f] leading-none tracking-tight">
-                                  {numStr}
-                                </span>
-                              </div>
-
-                              <div className="flex-1 w-full rounded-lg overflow-hidden relative bg-zinc-50 border border-zinc-100 min-h-0 my-2">
-                                {step.image ? (
-                                  <img src={step.image} alt="" className="h-full w-full object-cover" />
-                                ) : (
-                                  <div className="h-full w-full flex items-center justify-center text-zinc-200">
-                                    <ChefHat size={28} strokeWidth={1} />
-                                  </div>
-                                )}
-                              </div>
-
-                              <p className="text-[9px] font-medium text-zinc-600 leading-snug">
-                                {step.text}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Fila 2 */}
-                      {fila2.length > 0 && (
-                        <div
-                          className={`grid gap-4 ${
-                            fila2.length === 4 ? 'grid-cols-4' : fila2.length === 3 ? 'grid-cols-3' : 'grid-cols-2'
-                          } h-[calc(50%-8px)]`}
-                        >
-                          {fila2.map((step, idx) => {
-                            const numStr = String(fila1.length + idx + 1).padStart(2, '0');
-                              return (
-                              <div
-                                key={idx}
-                                className="bg-white rounded-xl border border-zinc-200 p-3 shadow-sm flex flex-col justify-between min-h-0 relative overflow-hidden"
-                              >
-                                <div className="flex items-baseline gap-1.5 border-b border-zinc-100 pb-1.5">
-                                  <span className="text-xl md:text-2xl font-black text-[#36606f] leading-none tracking-tight">
-                                    {numStr}
-                                  </span>
-                                  <span className="text-[9px] font-black tracking-widest text-[#36606f] uppercase truncate">
-                                    {parsed.action}
-                                  </span>
-                                </div>
-
-                                <div className="flex-1 w-full rounded-lg overflow-hidden relative bg-zinc-50 border border-zinc-100 min-h-0 my-2">
-                                  {step.image ? (
-                                    <img src={step.image} alt="" className="h-full w-full object-cover" />
-                                  ) : (
-                                    <div className="h-full w-full flex items-center justify-center text-zinc-200">
-                                      <ChefHat size={28} strokeWidth={1} />
-                                    </div>
-                                  )}
-                                </div>
-
-                                <p className="text-[9px] font-medium text-zinc-600 leading-snug line-clamp-2 min-h-[2.4em] flex items-center">
-                                  {parsed.description}
-                                </p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        </main>
 
         {message && (
-          <div className="fixed bottom-4 right-4 rounded-xl bg-zinc-900 px-4 py-3 text-xs font-bold text-white shadow-xl print:hidden animate-in slide-in-from-bottom duration-350">
+          <div className="fixed bottom-4 right-4 z-[60] rounded-lg bg-zinc-950 px-3 py-2 text-[11px] font-bold text-white shadow-xl print:hidden">
             {message}
           </div>
         )}
@@ -688,41 +653,44 @@ function ListEditor({
   setValues: (v: string[]) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
-      <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
-        <h2 className="font-extrabold text-sm text-zinc-800 uppercase tracking-wider">{title}</h2>
+    <div className="flex min-h-[118px] flex-col rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
+      <div className="mb-2 flex shrink-0 items-center justify-between">
+        <h2 className="text-xs font-black text-zinc-900">{title}</h2>
         <button
           type="button"
           onClick={() => setValues([...values, ''])}
-          className="text-xs font-black text-[#36606F] hover:text-[#2f5d6a] transition-colors"
+          className="rounded-md px-1.5 py-1 text-[9px] font-black text-[#36606f] transition hover:bg-[#36606f]/10"
         >
-          + Añadir Punto
+          + Añadir
         </button>
       </div>
 
-      <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
+      <div className="grid gap-1.5">
+        {values.length === 0 && (
+          <button
+            type="button"
+            onClick={() => setValues([''])}
+            className="h-8 rounded-lg border border-dashed border-zinc-200 text-[10px] font-bold text-zinc-400 hover:bg-zinc-50"
+          >
+            + Añadir punto
+          </button>
+        )}
+
         {values.map((value, i) => (
-          <div key={i} className="flex gap-2 items-center">
+          <div key={i} className="flex items-center gap-1.5">
             <input
               value={value}
-              onChange={e =>
-                setValues(
-                  values.map((x, j) => (j === i ? e.target.value : x))
-                )
-              }
-              className="h-10 min-w-0 flex-1 rounded-xl border border-zinc-300 px-3 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#36606f] focus:border-[#36606f] transition-all"
-              placeholder={
-                title === 'Puntos Clave'
-                  ? 'Ej. Freír exactamente 2 min'
-                  : 'Ej. No servir con exceso de aceite'
-              }
+              onChange={e => setValues(values.map((x, j) => (j === i ? e.target.value : x)))}
+              className="h-8 min-w-0 flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 text-[10px] font-semibold text-zinc-700 outline-none transition focus:border-[#36606f] focus:bg-white focus:ring-1 focus:ring-[#36606f]"
+              placeholder={title === 'Puntos clave' ? 'Ej. Freír exactamente 2 min' : 'Ej. No sobrecargar la freidora'}
             />
             <button
               type="button"
+              aria-label={'Eliminar ' + title.toLowerCase()}
               onClick={() => setValues(values.filter((_, j) => j !== i))}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 transition-colors text-zinc-400 hover:text-zinc-600"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-zinc-200 text-zinc-400 transition hover:bg-zinc-50 hover:text-zinc-700"
             >
-              <Trash2 size={14} />
+              <Trash2 size={12} />
             </button>
           </div>
         ))}
