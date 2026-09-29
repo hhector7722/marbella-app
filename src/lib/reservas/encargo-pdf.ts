@@ -243,8 +243,8 @@ function drawMetaInline(
   doc.text(normalizedLabel, x, y)
 
   const labelWidth = doc.getTextWidth(normalizedLabel)
-  const valueX = x + labelWidth + 2.2
-  const available = Math.max(8, maxWidth - labelWidth - 2.2)
+  const valueRight = x + maxWidth
+  const available = Math.max(8, maxWidth - labelWidth - 3)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
@@ -255,7 +255,7 @@ function drawMetaInline(
     shown = shown.slice(0, -1)
   }
   if (shown !== value && shown.length > 2) shown = `${shown.slice(0, -1)}…`
-  doc.text(shown, valueX, y)
+  doc.text(shown, valueRight, y, { align: 'right' })
 }
 
 function drawMeta(doc: PdfDoc, meta: EncargoPdfMeta, y: number) {
