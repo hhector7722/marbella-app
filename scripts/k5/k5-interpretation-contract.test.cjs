@@ -28,6 +28,7 @@ const k5QueueActions = read('src/app/dashboard/albaranes/k5/actions.ts')
 const k5QueuePage = read('src/app/dashboard/albaranes/k5/page.tsx')
 const batchReview = read('src/components/albaranes/K5BatchReceiptReview.tsx')
 const evidenceModal = read('src/components/albaranes/DocumentEvidenceModal.tsx')
+const albaranesHistory = read('src/app/dashboard/albaranes/AlbaranesHistoricoClient.tsx')
 
 test('las migraciones K5 tienen una versión única por timestamp', () => {
   const names = fs.readdirSync(path.join(root, 'supabase/migrations'))
@@ -283,6 +284,17 @@ test('las excepciones K5 sin línea tienen salida manual sin efectos económicos
   assert.match(batchReview, /dashboard\/albaranes\?id=.*&line=/)
   assert.match(evidenceModal, /Completar datos/)
   assert.match(evidenceModal, /Revisar compra/)
+})
+
+test('la revisión operativa vive dentro del propio albarán y prepara líneas sin efectos económicos', () => {
+  assert.match(albaranesHistory, /listK5BatchReviewAction/)
+  assert.match(albaranesHistory, /prepareK5ManualReviewLineAction/)
+  assert.match(albaranesHistory, /generateInterpretationProposalsAction/)
+  assert.match(albaranesHistory, /Pendiente de revisión/)
+  assert.match(albaranesHistory, /Pulsa una línea para editarla/)
+  assert.match(albaranesHistory, /openLineMappingModal\(l\)/)
+  assert.doesNotMatch(albaranesHistory, /href=\{\`\/dashboard\/albaranes\/k5/)
+  assert.doesNotMatch(albaranesHistory, />\s*Revisión K5\s*</)
 })
 
 test('la corrección humana versiona los datos completados antes de K4', () => {
