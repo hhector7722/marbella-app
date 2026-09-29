@@ -19,6 +19,7 @@ import {
 } from './exact-decimal.ts'
 import {
   extractDoclingLayoutTables,
+  extractDoclingReviewFallbackRows,
   extractDoclingTables,
   matchProfileTable,
   normalizeEvidenceLabel,
@@ -29,7 +30,7 @@ import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-sna
 import { canonicalSupplierItemKey } from './supplier-item-key.ts'
 import { deriveVariableWeightEvidence } from './variable-weight.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v9' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v10' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -332,6 +333,14 @@ function allObservedMeasures(table: K5EvidenceTable, rowIndex: number): string[]
   return row.cells.filter((cell) => /\d\s*(?:KG|G|L|ML|CL|PZ|BU|CJ|UD|UN)\b/i.test(cell))
 }
 
+function fallbackDecimalString(value: string | null): string | null {
+  if (!value) return null
+  const match = value.match(/[+-]?\d+(?:[.,]\d+)?/)
+  if (!match) return null
+  const parsed = parseExactDecimal(match[0])
+  return parsed ? toFiniteDecimalString(parsed) : null
+}
+
 export function normalizeDoclingEvidence(params: {
   profile: SupplierProfile
   rawArtifact: unknown
@@ -352,6 +361,57 @@ export function normalizeDoclingEvidence(params: {
     : 'docling_layout_fallback'
 
   if (!match) {
+    const fallbackRows = extractDoclingReviewFallbackRows(profile, rawArtifact, tables)
+    if (fallbackRows.length > 0) {
+      return {
+        supplierProfileId: profile.id,
+        supplierProfileVersion: profile.version,
+        normalizerVersion: K5_NORMALIZER_VERSION,
+        observedIssuer,
+        proposals: fallbackRows.map((row): K5NormalizedProposal => {
+          const lineQuantity = fallbackDecimalString(row.quantity)
+          const observedUnitPrice = fallbackDecimalString(row.unitPrice)
+          const lineTotal = fallbackDecimalString(row.lineTotal)
+          const lineUnit = observedBillingUnit(row.quantity, profileBillingFallback(profile))
+
+          return {
+            // Un fallback genérico prioriza recall para revisión humana. Aunque
+            // provenga de una tabla nativa, nunca hereda confianza económica:
+            // K4 debe seguir bloqueándolo hasta confirmación humana.
+            evidenceSource: 'docling_layout_fallback',
+            sourceTableIndex: row.sourceTableIndex,
+            sourceRowIndex: row.sourceRowIndex,
+            sourceItemName: row.product,
+            mappingVersionId: null,
+            ingredientId: null,
+            status: 'needs_review',
+            observed: {
+              recovery_mode: 'generic_recall',
+              evidence_source: row.source,
+              raw_cells: row.rawCells,
+              quantity_text: row.quantity,
+              unit_price_text: row.unitPrice,
+              line_total_text: row.lineTotal,
+            },
+            interpreted: {},
+            normalized: {},
+            pricing: {},
+            reviewReasons: ['generic_evidence_fallback', 'mapping_requires_human_review'],
+            warnings: ['generic_recovery_unverified'],
+            lineQuantity,
+            lineUnit,
+            observedUnitPrice,
+            lineTotal,
+            physicalQuantity: null,
+            baseUnit: null,
+            purchaseQuantity: null,
+            purchaseUnit: null,
+            normalizedUnitPrice: null,
+          }
+        }),
+      }
+    }
+
     return {
       supplierProfileId: profile.id,
       supplierProfileVersion: profile.version,

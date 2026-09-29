@@ -3,6 +3,7 @@ import test from 'node:test'
 import { supplierProfileForId } from './profile-registry.ts'
 import {
   extractDoclingLayoutTables,
+  extractDoclingReviewFallbackRows,
   extractDoclingTables,
   matchProfileTable,
   rowByProfileFields,
@@ -128,6 +129,42 @@ test('Sanilec: una tabla de IVA sin producto se rechaza y el layout recupera las
   assert.equal(row.quantity, '2 UNI')
   assert.equal(row.unit_price, '1,20')
   assert.equal(row.line_amount, '2,40')
+})
+
+test('Sanilec: fallback de recall conserva descripción aunque la fila OCR no traiga economía completa', () => {
+  const profile = supplierProfileForId(9)!
+  const raw = artifact({
+    tables: [{
+      data: {
+        table_cells: [
+          tableCell(0, 0, 'Neto', true),
+          tableCell(0, 1, '%Dto.', true),
+          tableCell(0, 2, 'Base Imponible', true),
+          tableCell(1, 0, 'PORTES'),
+          tableCell(1, 1, '0,000'),
+        ],
+      },
+    }],
+    texts: [
+      textItem(0, 'Articulo', 100, 1000),
+      textItem(1, 'Descripcion', 300, 1000, 120),
+      textItem(2, 'Cantidad', 580, 1000),
+      textItem(3, 'Precio', 730, 1000),
+      textItem(4, 'Importe', 970, 1000),
+      textItem(5, 'TW2851', 105, 955, 55),
+      textItem(6, 'TARRINA REDONDA microondable TRANSP.165ml.', 250, 955, 300),
+    ],
+  })
+
+  const native = extractDoclingTables(raw, profile)
+  assert.equal(matchProfileTable(profile, native), null)
+
+  const rows = extractDoclingReviewFallbackRows(profile, raw, native)
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0]!.product, 'TARRINA REDONDA microondable TRANSP.165ml.')
+  assert.equal(rows[0]!.source, 'docling_layout')
+  assert.equal(rows[0]!.unitPrice, null)
+  assert.equal(rows[0]!.lineTotal, null)
 })
 
 test('Videla: dos tablas parciales no se aceptan como tabla de líneas y el layout reúne la fila', () => {
