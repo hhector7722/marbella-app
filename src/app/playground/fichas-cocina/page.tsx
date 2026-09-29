@@ -814,7 +814,6 @@ export default function FichasCocinaPage() {
           >
             <KitchenSheetPreview
               recipeName={recipe.name}
-              category={category}
               servings={servings}
               preparationTime={recipe.preparation_time}
               mainImageUrl={mainImageUrl}
