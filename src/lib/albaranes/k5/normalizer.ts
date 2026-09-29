@@ -341,6 +341,58 @@ function fallbackDecimalString(value: string | null): string | null {
   return parsed ? toFiniteDecimalString(parsed) : null
 }
 
+function genericRecallProposals(
+  profile: SupplierProfile,
+  rawArtifact: unknown,
+  tables: readonly K5EvidenceTable[]
+): K5NormalizedProposal[] {
+  return extractDoclingReviewFallbackRows(profile, rawArtifact, tables).map((row): K5NormalizedProposal => {
+    const lineQuantity = fallbackDecimalString(row.quantity)
+    const observedUnitPrice = fallbackDecimalString(row.unitPrice)
+    const lineTotal = fallbackDecimalString(row.lineTotal)
+    const lineUnit = observedBillingUnit(row.quantity, profileBillingFallback(profile))
+
+    return {
+      // El fallback genérico existe para no perder filas legibles cuando la
+      // estructura exacta del proveedor falla. Nunca hereda confianza
+      // económica: K4 debe seguir bloqueándolo hasta confirmación humana.
+      evidenceSource: 'docling_layout_fallback',
+      sourceTableIndex: row.sourceTableIndex,
+      sourceRowIndex: row.sourceRowIndex,
+      sourceItemName: row.product,
+      mappingVersionId: null,
+      ingredientId: null,
+      status: 'needs_review',
+      observed: {
+        recovery_mode: 'generic_recall',
+        evidence_source: row.source,
+        raw_cells: row.rawCells,
+        quantity_text: row.quantity,
+        unit_price_text: row.unitPrice,
+        line_total_text: row.lineTotal,
+      },
+      interpreted: {},
+      normalized: {},
+      pricing: {},
+      reviewReasons: ['generic_evidence_fallback', 'mapping_requires_human_review'],
+      warnings: ['generic_recovery_unverified'],
+      lineQuantity,
+      lineUnit,
+      observedUnitPrice,
+      lineTotal,
+      physicalQuantity: null,
+      baseUnit: null,
+      purchaseQuantity: null,
+      purchaseUnit: null,
+      normalizedUnitPrice: null,
+    }
+  })
+}
+
+function recallSourceKey(proposal: K5NormalizedProposal): string {
+  return `${proposal.sourceTableIndex ?? 'document'}:${proposal.sourceRowIndex ?? 'document'}`
+}
+
 export function normalizeDoclingEvidence(params: {
   profile: SupplierProfile
   rawArtifact: unknown
@@ -361,54 +413,14 @@ export function normalizeDoclingEvidence(params: {
     : 'docling_layout_fallback'
 
   if (!match) {
-    const fallbackRows = extractDoclingReviewFallbackRows(profile, rawArtifact, tables)
-    if (fallbackRows.length > 0) {
+    const fallbackProposals = genericRecallProposals(profile, rawArtifact, tables)
+    if (fallbackProposals.length > 0) {
       return {
         supplierProfileId: profile.id,
         supplierProfileVersion: profile.version,
         normalizerVersion: K5_NORMALIZER_VERSION,
         observedIssuer,
-        proposals: fallbackRows.map((row): K5NormalizedProposal => {
-          const lineQuantity = fallbackDecimalString(row.quantity)
-          const observedUnitPrice = fallbackDecimalString(row.unitPrice)
-          const lineTotal = fallbackDecimalString(row.lineTotal)
-          const lineUnit = observedBillingUnit(row.quantity, profileBillingFallback(profile))
-
-          return {
-            // Un fallback genérico prioriza recall para revisión humana. Aunque
-            // provenga de una tabla nativa, nunca hereda confianza económica:
-            // K4 debe seguir bloqueándolo hasta confirmación humana.
-            evidenceSource: 'docling_layout_fallback',
-            sourceTableIndex: row.sourceTableIndex,
-            sourceRowIndex: row.sourceRowIndex,
-            sourceItemName: row.product,
-            mappingVersionId: null,
-            ingredientId: null,
-            status: 'needs_review',
-            observed: {
-              recovery_mode: 'generic_recall',
-              evidence_source: row.source,
-              raw_cells: row.rawCells,
-              quantity_text: row.quantity,
-              unit_price_text: row.unitPrice,
-              line_total_text: row.lineTotal,
-            },
-            interpreted: {},
-            normalized: {},
-            pricing: {},
-            reviewReasons: ['generic_evidence_fallback', 'mapping_requires_human_review'],
-            warnings: ['generic_recovery_unverified'],
-            lineQuantity,
-            lineUnit,
-            observedUnitPrice,
-            lineTotal,
-            physicalQuantity: null,
-            baseUnit: null,
-            purchaseQuantity: null,
-            purchaseUnit: null,
-            normalizedUnitPrice: null,
-          }
-        }),
+        proposals: fallbackProposals,
       }
     }
 
@@ -606,6 +618,49 @@ export function normalizeDoclingEvidence(params: {
       normalizedUnitPrice: normalization?.normalizedUnitPrice ?? null,
     }
   })
+
+  const namedStrict = proposals.filter((proposal) => Boolean(proposal.sourceItemName))
+  const fallbackProposals = genericRecallProposals(profile, rawArtifact, tables)
+
+  if (fallbackProposals.length > 0) {
+    // Si la tabla "encaja" pero no produce ningún nombre útil, el match
+    // estructural era un falso positivo: mostrar el recall genérico es mejor
+    // que seis filas vacías.
+    if (namedStrict.length === 0) {
+      return {
+        supplierProfileId: profile.id,
+        supplierProfileVersion: profile.version,
+        normalizerVersion: K5_NORMALIZER_VERSION,
+        observedIssuer,
+        proposals: fallbackProposals,
+      }
+    }
+
+    // Cuando el perfil sí aporta líneas fiables, se conservan. Solo se añaden
+    // filas plausibles que el camino estricto omitió, siempre como needs_review.
+    const strictSources = new Set(namedStrict.map(recallSourceKey))
+    const strictProducts = new Set(
+      namedStrict
+        .map((proposal) => normalizeEvidenceLabel(proposal.sourceItemName ?? ''))
+        .filter(Boolean)
+    )
+    const supplements = fallbackProposals.filter((proposal) => {
+      const productKey = normalizeEvidenceLabel(proposal.sourceItemName ?? '')
+      return !strictSources.has(recallSourceKey(proposal))
+        && Boolean(productKey)
+        && !strictProducts.has(productKey)
+    })
+
+    if (supplements.length > 0) {
+      return {
+        supplierProfileId: profile.id,
+        supplierProfileVersion: profile.version,
+        normalizerVersion: K5_NORMALIZER_VERSION,
+        observedIssuer,
+        proposals: [...proposals.filter((proposal) => Boolean(proposal.sourceItemName)), ...supplements],
+      }
+    }
+  }
 
   return {
     supplierProfileId: profile.id,
