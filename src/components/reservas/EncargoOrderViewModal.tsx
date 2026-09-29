@@ -89,23 +89,26 @@ export function EncargoOrderViewModal({
     if (printBusy || items.length === 0) return
     setPrintBusy(true)
     try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
       const html = buildEncargoPrintHtml(
         {
           encargoDate: formatEncargoPrintDate(encargoDate),
           encargoTime,
           encargoName,
           contactPhone: contactPhone ?? null,
+          guestCount,
+          logoUrl: `${origin}/icons/logo-white.png`,
         },
         items
       )
       await printEncargoHtml(html)
     } catch (error) {
-      console.error('encargo print failed', error)
-      toast.error('No se pudo preparar la impresión del pedido.')
+      console.error('encargo quote print failed', error)
+      toast.error('No se pudo preparar el presupuesto.')
     } finally {
       setPrintBusy(false)
     }
-  }, [printBusy, encargoName, encargoDate, encargoTime, contactPhone, items])
+  }, [printBusy, encargoName, encargoDate, encargoTime, contactPhone, guestCount, items])
 
   const handlePrintInvoice = useCallback(async () => {
     if (invoiceBusy || items.length === 0) return
@@ -119,7 +122,7 @@ export function EncargoOrderViewModal({
           encargoName,
           contactPhone: contactPhone ?? null,
           guestCount,
-          logoUrl: `${origin}/icons/logo-share.png`,
+          logoUrl: `${origin}/icons/logo-white.png`,
         },
         items
       )
@@ -211,7 +214,7 @@ export function EncargoOrderViewModal({
               onClick={() => void handlePrint()}
               disabled={items.length === 0 || printBusy}
               className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-              aria-label="Imprimir comanda"
+              aria-label="Imprimir presupuesto"
             >
               {printBusy ? (
                 <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
