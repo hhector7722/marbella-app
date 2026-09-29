@@ -29,11 +29,9 @@ La configuración específica de la ficha contiene:
 
 - imagen opcional por paso;
 - imagen principal opcional que sustituye solo dentro de la ficha a recipes.photo_url;
-- puntos clave manuales;
-- puntos de “No hacer” manuales;
 - orientación A3 horizontal o vertical.
 
-La plantilla no genera ni altera fotografías automáticamente. Las presenta con ratios y recorte coherentes.
+La plantilla no genera ni altera fotografías automáticamente. Las presenta completas, centradas y sin recorte.
 
 ## Editor
 
@@ -45,7 +43,7 @@ En smartphone, edición y vista previa son modos separados de la misma herramien
 
 Vista previa, PDF e impresión usan la misma composición visual y respetan la orientación elegida.
 
-La ficha incluye identidad Marbella, nombre de receta, metadata, imagen principal, pasos con número, imagen y texto, además de puntos clave y no hacer.
+La ficha incluye identidad Marbella, nombre de receta, metadata, imagen principal y pasos con número, imagen y texto.
 
 ## Acceso
 

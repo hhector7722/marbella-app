@@ -25,3 +25,5 @@ caducidad: no aplica
 - Vista previa, PDF e impresión comparten la misma plantilla visual.
 - Categoría, raciones y elaboración siguen teniendo su fuente de verdad en public.recipes.
 - Orientación, imagen principal específica, imágenes por paso y puntos operativos se guardan en public.recipe_kitchen_sheets.
+
+- La ficha final elimina rótulos auxiliares, Puntos clave y No hacer; los pasos quedan sin cards ni contornos y las imágenes se muestran completas sin recorte.
