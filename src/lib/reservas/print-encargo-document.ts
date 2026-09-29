@@ -5,6 +5,9 @@ export type EncargoPrintMeta = {
   encargoTime: string
   encargoName: string
   contactPhone: string | null
+  /** URL absoluta del logo (necesaria en el iframe de impresión). */
+  logoUrl: string
+  guestCount?: number | null
 }
 
 function escapeHtml(value: string) {
@@ -29,209 +32,46 @@ function isMobileDevice() {
 }
 
 export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
-  const contactValue = meta.contactPhone?.trim() ? escapeHtml(meta.contactPhone.trim()) : '&nbsp;'
-  const rows = items
-    .map((it) => {
-      const note = it.notes?.trim() ?? ''
-      const isHalfNote = /^(1\/2|½|medio|mitad|half)$/i.test(note)
-      let productLabel = String(it.name ?? '').trim()
-      productLabel = productLabel
-        .replace(/^1\/2\s*·\s*/i, '1/2 ')
-        .replace(/^½\s*·\s*/i, '1/2 ')
-      if (isHalfNote && !/^(1\/2|½)\b/i.test(productLabel)) {
-        productLabel = `1/2 ${productLabel}`
-      }
-      const noteCell = note && !isHalfNote ? escapeHtml(note) : '&nbsp;'
-      const qty = it.quantity > 0 ? String(it.quantity) : ''
-      return `<tr>
-        <td class="col-product">${escapeHtml(productLabel)}</td>
-        <td class="col-note">${noteCell}</td>
-        <td class="col-qty">${qty}</td>
-      </tr>`
-    })
-    .join('')
+  const guestCount = meta.guestCount != null && meta.guestCount > 0 ? meta.guestCount : null
+  const totalGross = items.reduce((sum, it) => {
+    const qty = Math.max(0, Number(it.quantity) || 0)
+    const unit = Math.max(0, Number(it.unit_price) || 0)
+    return sum + qty * unit
+  }, 0)
+  const perPerson = guestCount ? totalGross / guestCount : null
+  const quoteRef = `PRES-${meta.encargoDate.replace(/\\D/g, '')}-${meta.encargoTime.replace(/\\D/g, '')}`
 
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pedido por encargo</title>
-  <style>
-    * { box-sizing: border-box; }
-    @page { size: auto; margin: 10mm 12mm; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: auto;
-      min-height: 0;
-      color: #2F3A45;
-      background: #ffffff;
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-    }
-    .print-doc { padding: 0; }
-    .doc-chrome {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 12px;
-      padding-bottom: 8px;
-      margin-bottom: 16px;
-      border-bottom: 0.5pt solid #D9E2EC;
-    }
-    .doc-brand {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: #2F3A45;
-    }
-    .doc-chrome-title {
-      font-size: 8px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #6B7280;
-    }
-    h1 {
-      font-size: 18px;
-      margin: 0 0 16px;
-      font-weight: 700;
-      color: #2F3A45;
-    }
-    .doc-meta { margin: 0 0 20px; }
-    .meta-row {
-      display: table;
-      width: 100%;
-      table-layout: auto;
-      font-size: 10px;
-      line-height: 1.35;
-      white-space: nowrap;
-    }
-    .meta-item {
-      display: table-cell;
-      padding-right: 12px;
-      vertical-align: baseline;
-      white-space: nowrap;
-    }
-    .meta-label {
-      font-size: 8px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #6B7280;
-      margin-right: 4px;
-    }
-    .meta-value { font-weight: 700; color: #2F3A45; }
-    table.order-table {
-      width: 100%;
-      border-collapse: collapse;
-      color: #2F3A45;
-      table-layout: auto;
-    }
-    th {
-      background: #1F5FAF;
-      font-size: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #FFFFFF;
-      padding: 8px;
-      text-align: left;
-      white-space: nowrap;
-    }
-    th.col-product, td.col-product {
-      width: auto;
-      font-weight: 700;
-      text-align: left;
-      white-space: nowrap;
-    }
-    th.col-note, td.col-note {
-      width: auto;
-      text-align: left;
-      white-space: nowrap;
-      font-size: 10px;
-      font-weight: 500;
-      text-transform: lowercase;
-      padding-left: 10px;
-      padding-right: 10px;
-      color: #6B7280;
-    }
-    th.col-qty, td.col-qty {
-      width: 1%;
-      text-align: center;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-    }
-    td {
-      padding: 10px 8px;
-      color: #2F3A45;
-      vertical-align: middle;
-      font-size: 10px;
-    }
-    tbody tr:nth-child(even) { background: #F8FAFC; }
-    tbody tr + tr { border-top: 0.5pt solid #D9E2EC; }
-    @media print {
-      html, body {
-        height: auto !important;
-        min-height: 0 !important;
-        overflow: visible !important;
-        background: #ffffff !important;
-        color: #2F3A45 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-      .print-doc { padding: 0; page-break-after: avoid; }
-      table.order-table { page-break-inside: avoid; }
-      th { background: #1F5FAF !important; color: #FFFFFF !important; }
-      tbody tr:nth-child(even) { background: #F8FAFC !important; }
-      .meta-label, .doc-chrome-title, td.col-note { color: #6B7280 !important; }
-      .meta-value, h1, td { color: #2F3A45 !important; }
-    }
-  </style>
-</head>
-<body>
-  <div class="print-doc">
-    <header class="doc-chrome">
-      <span class="doc-brand">MARBELLA</span>
-      <span class="doc-chrome-title">Pedido por encargo</span>
-    </header>
-    <h1>Pedido por encargo</h1>
-    <section class="doc-meta">
-      <div class="meta-row">
-        <div class="meta-item">
-          <span class="meta-label">Fecha</span><span class="meta-value">${escapeHtml(meta.encargoDate)}</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Hora</span><span class="meta-value">${escapeHtml(meta.encargoTime)}</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Nombre</span><span class="meta-value">${escapeHtml(meta.encargoName)}</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Contacto</span><span class="meta-value">${contactValue}</span>
-        </div>
+  const invoiceHtml = buildEncargoInvoiceHtml(
+    {
+      ...meta,
+      invoiceRef: quoteRef,
+    },
+    items
+  )
+
+  const perPersonBlock =
+    perPerson == null
+      ? ''
+      : `<section class="per-person">
+      <div>
+        <p class="per-person-label">Presupuesto por persona</p>
+        <p class="per-person-note">Importe medio calculado sobre ${guestCount} comensales.</p>
       </div>
-    </section>
-    <section class="doc-table">
-      <table class="order-table">
-        <colgroup>
-          <col class="col-product" />
-          <col class="col-note" />
-          <col class="col-qty" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="col-product">Producto</th>
-            <th class="col-note" aria-hidden="true">&nbsp;</th>
-            <th class="col-qty">Cantidad</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </section>
-  </div>
-</body>
-</html>`
+      <div class="per-person-value">${formatEuro(perPerson)}</div>
+    </section>`
+
+  const quoteFooter = `${perPersonBlock}
+    <footer class="document-note">
+      Precios con IVA incluido. Tipo impositivo 10% (hostelería).
+    </footer>`
+
+  return invoiceHtml
+    .replace(
+      `<title>Factura — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>`,
+      `<title>Presupuesto — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>`
+    )
+    .replace('<h1 class="doc-title">Factura</h1>', '<h1 class="doc-title">Presupuesto</h1>')
+    .replace(/<footer class="thanks">[\\s\\S]*?<\\/footer>/, quoteFooter)
 }
 
 const IVA_RATE = 0.1
@@ -264,9 +104,6 @@ function productLabelForPrint(it: EventOrderItem): string {
 }
 
 export type EncargoInvoiceMeta = EncargoPrintMeta & {
-  /** URL absoluta del logo (necesaria en el iframe de impresión). */
-  logoUrl: string
-  guestCount?: number | null
   /** Número / referencia visible en la factura. */
   invoiceRef?: string | null
 }
@@ -314,7 +151,7 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
   <title>Factura — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>
   <style>
     * { box-sizing: border-box; }
-    @page { size: auto; margin: 10mm 12mm; }
+    @page { size: A4; margin: 0; }
     html, body {
       margin: 0;
       padding: 0;
@@ -324,23 +161,30 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       background: #ffffff;
       font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
     }
-    .print-doc { padding: 0; max-width: 180mm; margin: 0 auto; }
+    .print-doc {
+      width: 100%;
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 12mm 14mm 14mm;
+    }
     .brand {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 12px;
       margin-bottom: 16px;
       border-bottom: 0.5pt solid #D9E2EC;
       padding-bottom: 12px;
     }
     .brand-logo {
-      width: 48px;
-      height: 48px;
+      width: 58px;
+      height: 58px;
       object-fit: contain;
-      flex-shrink: 0;
-      background: #D9E2EC;
-      border-radius: 4px;
-      padding: 4px;
+      flex: 0 0 58px;
+      display: block;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      padding: 0;
     }
     .brand-text { min-width: 0; flex: 1; }
     .brand-name {
@@ -385,7 +229,7 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
     }
     .meta-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px 16px;
       margin: 0 0 16px;
       font-size: 11px;
@@ -402,12 +246,16 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
     .meta-block .value { font-weight: 700; color: #2F3A45; }
     table.invoice-table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       table-layout: auto;
       margin-bottom: 14px;
+      border: 0.5pt solid #D9E2EC;
+      border-radius: 10px;
+      overflow: hidden;
     }
     th {
-      background: #1F5FAF;
+      background: #36606F;
       font-size: 8px;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -423,6 +271,7 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       color: #2F3A45;
     }
     tbody tr:nth-child(even) { background: #F8FAFC; }
+    tbody tr:last-child td { border-bottom: 0; }
     th.col-product, td.col-product { font-weight: 700; text-align: left; }
     th.col-note, td.col-note {
       font-size: 10px;
@@ -462,12 +311,56 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
     .totals-row.total {
       margin-top: 4px;
       padding-top: 8px;
-      border-top: 1.5pt solid #1F5FAF;
+      border-top: 1.5pt solid #36606F;
       font-size: 13px;
       font-weight: 700;
       color: #2F3A45;
     }
-    .totals-row.total span:last-child { color: #1F5FAF; }
+    .totals-row.total span:last-child { color: #36606F; }
+    .per-person {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 16px;
+      padding: 12px 14px;
+      border: 0.5pt solid #CBD5D8;
+      border-radius: 10px;
+      background: #F5F8F9;
+    }
+    .per-person-label {
+      margin: 0;
+      font-size: 8px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #2A4A56;
+    }
+    .per-person-note {
+      margin: 4px 0 0;
+      font-size: 9px;
+      line-height: 1.35;
+      color: #6B7280;
+    }
+    .per-person-value {
+      flex: 0 0 auto;
+      font-size: 17px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #2A4A56;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .document-note {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 0.5pt solid #D9E2EC;
+      font-size: 8px;
+      line-height: 1.4;
+      color: #6B7280;
+    }
     .thanks {
       text-align: center;
       margin-top: 20px;
@@ -478,7 +371,7 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       margin: 0;
       font-size: 13px;
       font-weight: 700;
-      color: #1F5FAF;
+      color: #36606F;
     }
     .thanks .sub {
       margin-top: 4px;
@@ -502,9 +395,9 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      .print-doc { padding: 0; page-break-after: avoid; }
+      .print-doc { padding: 12mm 14mm 14mm; page-break-after: avoid; }
       table.invoice-table { page-break-inside: avoid; }
-      th { background: #1F5FAF !important; color: #FFFFFF !important; }
+      th { background: #36606F !important; color: #FFFFFF !important; }
       tbody tr:nth-child(even) { background: #F8FAFC !important; }
     }
   </style>
@@ -604,7 +497,7 @@ export function printEncargoHtml(html: string): Promise<void> {
 
   return new Promise((resolve) => {
     const iframe = document.createElement('iframe')
-    iframe.setAttribute('title', 'Imprimir pedido')
+    iframe.setAttribute('title', 'Imprimir documento')
     iframe.setAttribute('aria-hidden', 'true')
 
     if (mobile) {
