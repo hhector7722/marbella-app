@@ -52,36 +52,6 @@ function slug(value: string) {
     .replace(/^-|-$/g, '');
 }
 
-/**
- * Parsea el texto del paso para extraer el título de acción y la indicación.
- * Formato esperado: "ACCIÓN: Indicación detallada" o "ACCIÓN Indicación" o por defecto.
- */
-function parseStepText(text: string) {
-  const trimmed = text.trim();
-  const colonIdx = trimmed.indexOf(':');
-  
-  if (colonIdx > 0 && colonIdx < 22) {
-    const action = trimmed.substring(0, colonIdx).toUpperCase().trim();
-    const description = trimmed.substring(colonIdx + 1).trim();
-    return { action, description };
-  }
-  
-  const words = trimmed.split(/\s+/);
-  if (words.length > 0 && words[0] === words[0].toUpperCase() && words[0].length > 1) {
-    const action = words[0];
-    const description = words.slice(1).join(' ');
-    return { action, description };
-  }
-  
-  if (words.length >= 2) {
-    const action = words.slice(0, 2).join(' ').toUpperCase();
-    const description = words.slice(2).join(' ');
-    return { action, description };
-  }
-  
-  return { action: 'ELABORAR', description: trimmed };
-}
-
 export default function FichasCocinaPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [recipeId, setRecipeId] = useState('');
@@ -187,29 +157,27 @@ export default function FichasCocinaPage() {
     pdf.setFillColor(252, 251, 249);
     pdf.rect(0, 0, W, H, 'F');
 
-    // Header
-    pdf.setTextColor(54, 96, 111); // Color marca --color-marca
+    // Header: solo información propia de la receta, sin rótulos genéricos.
+    pdf.setTextColor(24, 24, 27);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.text('MARBELLA · BAR · COCINA · BUEN AMBIENTE', margin, 18);
-
-    pdf.setTextColor(24, 24, 27); // Color texto fuerte
     pdf.setFontSize(26);
-    pdf.text(recipe.name.toUpperCase(), margin, 30);
+    pdf.text(recipe.name.toUpperCase(), margin, 22);
 
     pdf.setTextColor(115, 115, 115);
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
-    const metaStr = `${recipe.servings ?? 1} ración${recipe.servings === 1 ? '' : 'es'}  ·  ${recipe.preparation_time ? `${recipe.preparation_time} min` : 'FICHA OPERATIVA'}`;
-    pdf.text(metaStr, margin, 37);
+    const metaParts = [
+      `${recipe.servings ?? 1} ración${recipe.servings === 1 ? '' : 'es'}`,
+      recipe.preparation_time ? `${recipe.preparation_time} min` : null,
+    ].filter(Boolean);
+    pdf.text(metaParts.join('  ·  '), margin, 29);
 
-    // Línea de cabecera en petróleo
     pdf.setDrawColor(54, 96, 111);
     pdf.setLineWidth(1.2);
-    pdf.line(margin, 42, W - margin, 42);
+    pdf.line(margin, 34, W - margin, 34);
 
     // Dimensiones de la composición
-    const startY = 49;
+    const startY = 41;
     const totalContentH = 234; // 297 - 49 - 14 (margin)
     const colGap = 8;
     const leftColW = 110;
@@ -224,22 +192,17 @@ export default function FichasCocinaPage() {
     pdf.setLineWidth(0.3);
     pdf.roundedRect(margin, startY, leftColW, finalPhotoH, 3, 3, 'FD');
 
-    pdf.setTextColor(54, 96, 111);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8);
-    pdf.text('RESULTADO ESPERADO / PLATO FINAL', margin + 6, startY + 10);
-
     if (recipe.photo_url) {
       try {
         const img = await urlToDataUrl(recipe.photo_url);
-        pdf.addImage(img, 'JPEG', margin + 6, startY + 16, leftColW - 12, finalPhotoH - 24, undefined, 'FAST');
+        pdf.addImage(img, 'JPEG', margin + 6, startY + 6, leftColW - 12, finalPhotoH - 12, undefined, 'FAST');
       } catch (e) {
         pdf.setFillColor(244, 244, 245);
-        pdf.rect(margin + 6, startY + 16, leftColW - 12, finalPhotoH - 24, 'F');
+        pdf.rect(margin + 6, startY + 6, leftColW - 12, finalPhotoH - 12, 'F');
       }
     } else {
       pdf.setFillColor(244, 244, 245);
-      pdf.rect(margin + 6, startY + 16, leftColW - 12, finalPhotoH - 24, 'F');
+      pdf.rect(margin + 6, startY + 6, leftColW - 12, finalPhotoH - 12, 'F');
     }
 
     // Puntos clave & No Hacer card (40% del alto disponible)
@@ -284,12 +247,6 @@ export default function FichasCocinaPage() {
       }
     }
 
-    // Footer interno
-    pdf.setTextColor(115, 115, 115);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(6.5);
-    pdf.text('FICHA OPERATIVA · MARBELLA · USO INTERNO COCINA', margin + 8, cardY + cardH - 6);
-
     // --- Columna Derecha: Grilla de Pasos adaptativa ---
     const rowGap = 6;
     const stepCardH = fila2.length > 0 ? (totalContentH - rowGap) / 2 : totalContentH;
@@ -303,23 +260,19 @@ export default function FichasCocinaPage() {
       pdf.roundedRect(cardX, cardYPos, cardW, stepCardH, 3, 3, 'FD');
 
       const numStr = String(numIndex).padStart(2, '0');
-      const parsed = parseStepText(stepItem.text);
+      const stepLines = pdf.splitTextToSize(stepItem.text, cardW - 12);
 
-      // Número paso en petróleo
+      // Número de paso
       pdf.setTextColor(54, 96, 111);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(22);
       pdf.text(numStr, cardX + 6, cardYPos + 12);
 
-      // Título de acción corto
-      pdf.setFontSize(9);
-      pdf.text(parsed.action.toUpperCase(), cardX + 18, cardYPos + 9);
-
-      // Fotografía grande
+      // Fotografía grande; el espacio inferior se adapta al texto real del paso.
       const imageOffsetTop = 16;
-      const textSpaceH = 18;
+      const textSpaceH = Math.max(18, stepLines.length * 3.6 + 7);
       const imgW = cardW - 12;
-      const imgH = stepCardH - imageOffsetTop - textSpaceH;
+      const imgH = Math.max(28, stepCardH - imageOffsetTop - textSpaceH);
       const imageY = cardYPos + imageOffsetTop;
 
       if (stepItem.image) {
@@ -335,13 +288,12 @@ export default function FichasCocinaPage() {
         pdf.rect(cardX + 6, imageY, imgW, imgH, 'F');
       }
 
-      // Indicación breve al pie de la foto
+      // Texto exacto de la ficha técnica, sin reinterpretar ni recortar.
       pdf.setTextColor(39, 39, 42);
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(7.5);
       const textY = imageY + imgH + 4;
-      const lines = pdf.splitTextToSize(parsed.description, cardW - 12);
-      pdf.text(lines.slice(0, 2), cardX + 6, textY);
+      pdf.text(stepLines, cardX + 6, textY);
     };
 
     // Renderizar Fila 1 en PDF
@@ -492,7 +444,6 @@ export default function FichasCocinaPage() {
 
                 <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
                   {steps.map((step, i) => {
-                    const parsed = parseStepText(step.text);
                     return (
                       <div
                         key={i}
@@ -503,11 +454,8 @@ export default function FichasCocinaPage() {
                             {i + 1}
                           </span>
                           <div className="min-w-0">
-                            <span className="text-[10px] font-black text-[#36606f] tracking-wider block uppercase leading-none mb-1">
-                              {parsed.action}
-                            </span>
-                            <span className="text-xs font-medium text-zinc-600 truncate block">
-                              {parsed.description}
+                            <span className="text-xs font-medium text-zinc-700 block">
+                              {step.text}
                             </span>
                           </div>
                         </div>
@@ -563,18 +511,12 @@ export default function FichasCocinaPage() {
                   {/* Header de la Ficha */}
                   <div className="border-b-[3px] border-[#36606f] pb-3 flex justify-between items-end w-full">
                     <div>
-                      <div className="text-[9px] md:text-[10px] font-black tracking-[0.25em] text-[#36606f] uppercase">
-                        MARBELLA · BAR · COCINA · BUEN AMBIENTE
-                      </div>
                       <h2 className="mt-1.5 text-2xl md:text-3xl font-black uppercase leading-none tracking-tight text-zinc-900">
                         {recipe.name}
                       </h2>
                     </div>
                     <div className="text-right">
-                      <div className="text-[9px] md:text-[10px] font-black tracking-widest text-[#36606f] uppercase">
-                        FICHA DE ELABORACIÓN
-                      </div>
-                      <div className="mt-1.5 text-[10px] md:text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                      <div className="text-[10px] md:text-xs font-bold text-zinc-500 uppercase tracking-wider">
                         {recipe.servings ?? 1} raciones {recipe.preparation_time ? ` · ${recipe.preparation_time} min` : ''}
                       </div>
                     </div>
@@ -586,9 +528,6 @@ export default function FichasCocinaPage() {
                     <div className="w-[30%] flex flex-col gap-4 h-full shrink-0 justify-between">
                       {/* Foto del resultado final */}
                       <div className="flex-1 rounded-xl overflow-hidden border border-zinc-200 bg-white flex flex-col p-3 shadow-sm min-h-0">
-                        <span className="text-[9px] font-black tracking-widest text-[#36606f] mb-2 block uppercase">
-                          RESULTADO ESPERADO / PLATO FINAL
-                        </span>
                         <div className="flex-1 w-full rounded-lg overflow-hidden relative bg-zinc-50 border border-zinc-100">
                           {recipe.photo_url ? (
                             <img
@@ -638,9 +577,6 @@ export default function FichasCocinaPage() {
                             </div>
                           )}
                         </div>
-                        <div className="text-[7px] font-bold tracking-widest text-zinc-500 uppercase mt-2">
-                          FICHA OPERATIVA · MARBELLA · USO INTERNO
-                        </div>
                       </div>
                     </div>
 
@@ -654,7 +590,6 @@ export default function FichasCocinaPage() {
                       >
                         {fila1.map((step, idx) => {
                           const numStr = String(idx + 1).padStart(2, '0');
-                          const parsed = parseStepText(step.text);
                           return (
                             <div
                               key={idx}
@@ -663,9 +598,6 @@ export default function FichasCocinaPage() {
                               <div className="flex items-baseline gap-1.5 border-b border-zinc-100 pb-1.5">
                                 <span className="text-xl md:text-2xl font-black text-[#36606f] leading-none tracking-tight">
                                   {numStr}
-                                </span>
-                                <span className="text-[9px] font-black tracking-widest text-[#36606f] uppercase truncate">
-                                  {parsed.action}
                                 </span>
                               </div>
 
@@ -679,8 +611,8 @@ export default function FichasCocinaPage() {
                                 )}
                               </div>
 
-                              <p className="text-[9px] font-medium text-zinc-600 leading-snug line-clamp-2 min-h-[2.4em] flex items-center">
-                                {parsed.description}
+                              <p className="text-[9px] font-medium text-zinc-600 leading-snug">
+                                {step.text}
                               </p>
                             </div>
                           );
@@ -696,8 +628,7 @@ export default function FichasCocinaPage() {
                         >
                           {fila2.map((step, idx) => {
                             const numStr = String(fila1.length + idx + 1).padStart(2, '0');
-                            const parsed = parseStepText(step.text);
-                            return (
+                              return (
                               <div
                                 key={idx}
                                 className="bg-white rounded-xl border border-zinc-200 p-3 shadow-sm flex flex-col justify-between min-h-0 relative overflow-hidden"
