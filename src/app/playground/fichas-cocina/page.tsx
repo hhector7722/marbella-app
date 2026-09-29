@@ -831,8 +831,6 @@ export default function FichasCocinaPage() {
               preparationTime={recipe.preparation_time}
               mainImageUrl={mainImageUrl}
               steps={steps}
-              keyPoints={keyPoints}
-              avoidPoints={avoidPoints}
               orientation={orientation}
             />
           </div>
