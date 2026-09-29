@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react'
-import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import {
   AlertCircle,
@@ -43,6 +42,16 @@ import { Field } from '@/components/ui/Field'
 import { Notice } from '@/components/ui/Notice'
 import { SearchField } from '@/components/ui/SearchField'
 import { IngredientCreateForm, type IngredientCreateContext } from '@/components/ingredients/IngredientCreateForm'
+import {
+  listK5BatchReviewAction,
+  prepareK5ManualReviewLineAction,
+  type K5BatchReviewRow,
+  type K5BatchReviewSummary,
+} from './k5/batch-actions'
+import {
+  generateInterpretationProposalsAction,
+  listInterpretationContextAction,
+} from './interpretation-actions'
 import type {
   PurchaseInvoiceDetail,
   PurchaseInvoiceLine,
@@ -120,6 +129,25 @@ function isImagePath(filePath: string | null) {
   return p.endsWith('.jpg') || p.endsWith('.jpeg') || p.endsWith('.png') || p.endsWith('.webp')
 }
 
+function inlineReviewLabel(row: K5BatchReviewRow | null): string | null {
+  if (!row) return null
+  if (row.confirmed || row.disposition === 'confirmed') return 'Confirmado'
+  if (row.disposition === 'needs_mapping') return 'Mapear'
+  if (row.disposition === 'ready') return 'Confirmar'
+  if (row.disposition === 'order_review') return 'Revisar pedido'
+  if (row.disposition === 'needs_review' || row.disposition === 'unavailable') return 'Revisar'
+  if (row.disposition === 'excluded') return 'Excluida'
+  return 'Revisar'
+}
+
+function inlineReviewTone(row: K5BatchReviewRow | null): string {
+  if (!row) return 'text-zinc-500'
+  if (row.confirmed || row.disposition === 'confirmed') return 'text-emerald-700'
+  if (row.disposition === 'excluded') return 'text-zinc-500'
+  if (row.disposition === 'ready') return 'text-sky-700'
+  return 'text-amber-700'
+}
+
 export default function AlbaranesHistoricoClient({
   initialItems,
   initialHasMore,
@@ -153,6 +181,10 @@ export default function AlbaranesHistoricoClient({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveWarning, setSaveWarning] = useState<string | null>(null)
   const [draftLines, setDraftLines] = useState<Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }>>({})
+  const [inlineReviewRows, setInlineReviewRows] = useState<K5BatchReviewRow[]>([])
+  const [inlineReviewSummary, setInlineReviewSummary] = useState<K5BatchReviewSummary | null>(null)
+  const [inlineReviewLoading, setInlineReviewLoading] = useState(false)
+  const [inlineReviewError, setInlineReviewError] = useState<string | null>(null)
   const detailReqRef = useRef(0)
   const [supplierPickerOpen, setSupplierPickerOpen] = useState(false)
   const [supplierQuery, setSupplierQuery] = useState('')
@@ -318,6 +350,23 @@ export default function AlbaranesHistoricoClient({
       return hay.includes(q)
     })
   }, [items, query])
+
+  const inlineReviewByLineId = useMemo(() => {
+    const map = new Map<string, K5BatchReviewRow>()
+    for (const row of inlineReviewRows) {
+      if (row.lineId) map.set(row.lineId, row)
+    }
+    return map
+  }, [inlineReviewRows])
+
+  const inlineReviewPendingCount = useMemo(
+    () => inlineReviewRows.filter((row) =>
+      !row.confirmed
+      && row.disposition !== 'confirmed'
+      && row.disposition !== 'excluded'
+    ).length,
+    [inlineReviewRows]
+  )
 
   function resolveDateFilters(from: string, to: string) {
     const dateFrom = from.trim()
@@ -585,6 +634,86 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
+  async function loadInlineReview(
+    invoiceId: string,
+    reqId: number | null = null
+  ): Promise<{ linesChanged: boolean }> {
+    if (!isManager) {
+      setInlineReviewRows([])
+      setInlineReviewSummary(null)
+      setInlineReviewError(null)
+      return { linesChanged: false }
+    }
+
+    setInlineReviewLoading(true)
+    setInlineReviewError(null)
+    let linesChanged = false
+
+    try {
+      let batch = await listK5BatchReviewAction({ invoiceId })
+      if (!batch.success) {
+        setInlineReviewError(batch.message)
+        return { linesChanged: false }
+      }
+
+      // Los albaranes antiguos o una carrera puntual del worker pueden tener
+      // evidencia válida todavía sin propuestas. Abrir el albarán debe preparar
+      // la revisión automáticamente: la pantalla K5 no forma parte del flujo normal.
+      if (batch.summary.total === 0) {
+        const context = await listInterpretationContextAction({ invoiceId })
+        if (context.success && context.proposals.length === 0) {
+          const extraction = context.extractions.find(
+            (item) => item.status === 'success' || item.status === 'no_table'
+          )
+          if (extraction) {
+            const generated = await generateInterpretationProposalsAction({
+              invoiceId,
+              extractionId: extraction.id,
+            })
+            if (!generated.success) {
+              setInlineReviewError(generated.message)
+              return { linesChanged: false }
+            }
+            linesChanged = generated.created > 0
+            batch = await listK5BatchReviewAction({ invoiceId })
+            if (!batch.success) {
+              setInlineReviewError(batch.message)
+              return { linesChanged }
+            }
+          }
+        }
+      }
+
+      // Cualquier excepción que aún exista solo como propuesta se materializa
+      // como línea editable SIN stock/precio. Así el usuario siempre ve la lista
+      // directamente en el albarán y puede corregirla desde aquí.
+      const missingLines = batch.rows.filter(
+        (row) =>
+          !row.lineId
+          && ['needs_mapping', 'needs_review', 'unavailable'].includes(row.disposition)
+      )
+      for (const row of missingLines) {
+        const prepared = await prepareK5ManualReviewLineAction({
+          invoiceId,
+          proposalId: row.proposalId,
+        })
+        if (prepared.success) linesChanged = true
+      }
+
+      if (missingLines.length > 0) {
+        const refreshed = await listK5BatchReviewAction({ invoiceId })
+        if (refreshed.success) batch = refreshed
+      }
+
+      if (reqId != null && detailReqRef.current !== reqId) return { linesChanged }
+      setInlineReviewRows(batch.rows)
+      setInlineReviewSummary(batch.summary)
+      return { linesChanged }
+    } finally {
+      if (reqId == null || detailReqRef.current === reqId) setInlineReviewLoading(false)
+    }
+  }
+
   async function openDetail(id: string, focusLineId: string | null = null) {
     const reqId = ++detailReqRef.current
     setSelectedId(id)
@@ -595,16 +724,36 @@ export default function AlbaranesHistoricoClient({
     setSaveWarning(null)
     setDraftLines({})
     setStockStatusByLineId({})
+    setInlineReviewRows([])
+    setInlineReviewSummary(null)
+    setInlineReviewError(null)
     setLineForEditModal(null)
     setLineForMappingModal(null)
+    setLineForEvidenceModal(null)
+
     try {
-      const res = await getPurchaseInvoiceDetailAction(id)
+      let res = await getPurchaseInvoiceDetailAction(id)
       if (detailReqRef.current !== reqId) return
       if (!res.success) {
         setDetailError(res.message)
         return
       }
+
       setDetail(res.detail)
+
+      const status = String(res.detail.status ?? '').toLowerCase()
+      if (isManager && status !== 'processing' && status !== 'ocr_failed') {
+        const review = await loadInlineReview(id, reqId)
+        if (detailReqRef.current !== reqId) return
+        if (review.linesChanged) {
+          const refreshed = await getPurchaseInvoiceDetailAction(id)
+          if (refreshed.success) res = refreshed
+        }
+      }
+
+      if (detailReqRef.current !== reqId) return
+      setDetail(res.detail)
+
       const nextDraft: Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }> = {}
       for (const l of res.detail.lines) {
         nextDraft[l.id] = {
@@ -617,8 +766,8 @@ export default function AlbaranesHistoricoClient({
       setDraftLines(nextDraft)
 
       if (focusLineId && res.detail.lines.some((line) => line.id === focusLineId)) {
-        evidenceContextLineIdRef.current = focusLineId
-        setLineForEvidenceModal(focusLineId)
+        const line = res.detail.lines.find((item) => item.id === focusLineId) ?? null
+        if (line) setLineForEditModal(line)
       }
 
       const lineIds = res.detail.lines.map((l) => l.id)
@@ -719,6 +868,10 @@ export default function AlbaranesHistoricoClient({
     setSaveError(null)
     setSaveWarning(null)
     setDraftLines({})
+    setInlineReviewRows([])
+    setInlineReviewSummary(null)
+    setInlineReviewLoading(false)
+    setInlineReviewError(null)
     setSupplierPickerOpen(false)
     setSupplierQuery('')
     setSupplierResults([])
@@ -970,6 +1123,7 @@ export default function AlbaranesHistoricoClient({
         map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
       setStockStatusByLineId(map)
     }
+    if (isManager) await loadInlineReview(dRes.detail.id)
   }
 
 
@@ -1279,7 +1433,15 @@ export default function AlbaranesHistoricoClient({
                             >
                               <Check className="h-3.5 w-3.5" strokeWidth={3} />
                             </span>
-                          ) : null}
+                          ) : (
+                            <span
+                              className="inline-flex items-center rounded-md bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800"
+                              aria-label="Pendiente de revisión"
+                              title="Abre el albarán para revisar sus líneas"
+                            >
+                              Revisar
+                            </span>
+                          )}
                         </div>
                       </div>
                     </button>
@@ -1339,16 +1501,6 @@ export default function AlbaranesHistoricoClient({
         }
         headerTrailing={
           <>
-                    {isManager && detail?.id ? (
-                      <Link
-                        href={`/dashboard/albaranes/k5?id=${encodeURIComponent(detail.id)}`}
-                        className="relative flex h-full max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent px-2.5 text-[10px] font-black uppercase tracking-wide text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                        aria-label="Abrir Revisión K5"
-                        title="Revisión K5"
-                      >
-                        Revisión K5
-                      </Link>
-                    ) : null}
                     {isManager && detail?.id ? (
                       <button
                         type="button"
@@ -1513,6 +1665,47 @@ export default function AlbaranesHistoricoClient({
                     </div>
                   )}
 
+                  {detail && !isLoadingDetail && isManager ? (
+                    <div className="mb-2 flex min-w-0 items-center justify-between gap-3 rounded-xl bg-zinc-50 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                          Estado de revisión
+                        </div>
+                        {inlineReviewLoading ? (
+                          <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-zinc-600">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Preparando líneas…
+                          </div>
+                        ) : inlineReviewPendingCount > 0 ? (
+                          <div className="mt-0.5 text-xs font-black text-amber-700">
+                            Pendiente de revisión · {inlineReviewPendingCount} línea{inlineReviewPendingCount === 1 ? '' : 's'}
+                          </div>
+                        ) : inlineReviewSummary && inlineReviewSummary.total > 0 ? (
+                          <div className="mt-0.5 text-xs font-black text-emerald-700">
+                            Revisado · {inlineReviewSummary.confirmed} confirmada{inlineReviewSummary.confirmed === 1 ? '' : 's'}
+                          </div>
+                        ) : (
+                          <div className="mt-0.5 text-xs font-semibold text-zinc-500">
+                            Sin líneas pendientes.
+                          </div>
+                        )}
+                      </div>
+                      {inlineReviewPendingCount > 0 ? (
+                        <div className="shrink-0 text-right text-[10px] font-semibold leading-snug text-zinc-500">
+                          Pulsa una línea para editarla.
+                          <br />
+                          Usa Revisar/Mapear para confirmarla.
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {inlineReviewError ? (
+                    <Notice instance="albaran-inline-review-error" variant="negative" title="No se pudo preparar la revisión">
+                      {inlineReviewError}
+                    </Notice>
+                  ) : null}
+
                   {/* 4. SECCIÓN ARTÍCULOS */}
                   {isLoadingDetail ? (
                     <div className="flex flex-col items-center justify-center py-8 gap-2 text-sm font-bold text-zinc-600">
@@ -1530,7 +1723,7 @@ export default function AlbaranesHistoricoClient({
                             : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
                               ? 'No hay líneas: la evidencia falló y el original se conserva para reintentar.'
                               : String(detail.status ?? '').toLowerCase() === 'pending_mapping'
-                                ? 'La evidencia documental está disponible. Su interpretación y creación de líneas no forman parte de esta fase.'
+                                ? 'Preparando las líneas recuperadas para revisión…'
                                 : 'No hay líneas guardadas.'}
                         </div>
                       ) : (
@@ -1557,6 +1750,8 @@ export default function AlbaranesHistoricoClient({
                             const rectified = (stock?.rectifiedCount ?? 0) > 0
                             const excluded = isInvoiceLineExcluded(l)
                             const noMatch = !excluded && !l.ingredient_name
+                            const reviewRow = inlineReviewByLineId.get(l.id) ?? null
+                            const reviewLabel = inlineReviewLabel(reviewRow)
                             const needsRepair = lineNeedsStockRepair(l)
                             const displayName = l.ingredient_name
                               ? l.ingredient_name
@@ -1566,15 +1761,16 @@ export default function AlbaranesHistoricoClient({
                               <div
                                 key={l.id}
                                 onClick={() => {
-                                  setLineForEditModal(null)
                                   setLineForMappingModal(null)
+                                  setLineForEvidenceModal(null)
                                   setSupplierPickerOpen(false)
                                   setInvoiceImageViewerOpen(false)
                                   setIngredientCreateOpen(false)
-                                  evidenceContextLineIdRef.current = l.id
-                                  setLineForEvidenceModal(l.id)
+                                  evidenceContextLineIdRef.current = null
+                                  setLineForEditModal(l)
                                 }}
                                 className="group flex flex-row items-center gap-1.5 sm:gap-3 px-1 py-1.5 min-h-12 hover:bg-zinc-50 rounded-lg transition-colors cursor-pointer"
+                                title="Editar línea"
                               >
                                 <div className="flex-1 min-w-0 flex items-center gap-1.5">
                                   <span className="text-xs font-medium text-zinc-900 truncate min-w-0" title={displayName}>{displayName}</span>
@@ -1595,6 +1791,27 @@ export default function AlbaranesHistoricoClient({
                                     ) : null}
                                     {rectified ? (
                                       <span className="inline-flex text-amber-500" aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`} title={`Stock rectificado (REV${stock?.rectifiedCount})`}><RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
+                                    ) : null}
+                                    {reviewLabel ? (
+                                      reviewRow?.confirmed || reviewRow?.disposition === 'confirmed' || reviewRow?.disposition === 'excluded' ? (
+                                        <span className={cn('ml-1 text-[9px] font-black uppercase tracking-wide', inlineReviewTone(reviewRow))}>
+                                          {reviewLabel}
+                                        </span>
+                                      ) : isManager ? (
+                                        <button
+                                          type="button"
+                                          className={cn(
+                                            'ml-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide hover:bg-amber-100',
+                                            inlineReviewTone(reviewRow)
+                                          )}
+                                          onClick={(event) => {
+                                            event.stopPropagation()
+                                            openLineMappingModal(l)
+                                          }}
+                                        >
+                                          {reviewLabel}
+                                        </button>
+                                      ) : null
                                     ) : null}
                                   </div>
                                 </div>
