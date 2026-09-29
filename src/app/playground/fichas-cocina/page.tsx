@@ -633,7 +633,7 @@ export default function FichasCocinaPage() {
                               <img
                                 src={step.image}
                                 alt=""
-                                className="h-full w-full object-contain"
+                                className="h-full w-full rounded-[1.35cqw] object-contain"
                               />
                             ) : (
                               <div className="flex h-full flex-col items-center justify-center gap-1.5 text-zinc-400">
@@ -765,8 +765,7 @@ export default function FichasCocinaPage() {
                   >
                     <KitchenSheetPreview
                       recipeName={recipe.name}
-                      category={category}
-                      servings={servings}
+                            servings={servings}
                       preparationTime={recipe.preparation_time}
                       mainImageUrl={mainImageUrl}
                       steps={steps}
@@ -796,7 +795,6 @@ export default function FichasCocinaPage() {
             <div ref={exportRef} className="h-full w-full">
               <KitchenSheetPreview
                 recipeName={recipe.name}
-                category={category}
                 servings={servings}
                 preparationTime={recipe.preparation_time}
                 mainImageUrl={mainImageUrl}
@@ -832,7 +830,6 @@ export default function FichasCocinaPage() {
 
 function KitchenSheetPreview({
   recipeName,
-  category,
   servings,
   preparationTime,
   mainImageUrl,
@@ -840,7 +837,6 @@ function KitchenSheetPreview({
   orientation,
 }: {
   recipeName: string;
-  category: string;
   servings: number;
   preparationTime: number | null;
   mainImageUrl: string | null;
@@ -857,22 +853,19 @@ function KitchenSheetPreview({
           ? 3
           : 4;
 
-  const meta = [
-    category.trim() || 'Sin categoría',
+  const servingsLabel =
     String(Math.max(1, Math.round(Number(servings) || 1))) +
-      ' ración' +
-      (Number(servings) === 1 ? '' : 'es'),
-    preparationTime ? String(preparationTime) + ' min' : null,
-  ].filter(Boolean);
+    ' ración' +
+    (Number(servings) === 1 ? '' : 'es');
 
   return (
     <div className="h-full w-full overflow-hidden bg-white font-sans text-zinc-900 [container-type:inline-size]">
       <div className="flex h-full flex-col p-[2.35cqw]">
-        <header className="flex h-[5%] shrink-0 items-center justify-end">
+        <header className="flex h-[6%] shrink-0 items-center justify-end">
           <img
-            src="/icons/logo-share.png"
+            src="/icons/logo-white.png"
             alt="Bar La Marbella"
-            className="h-[4.2cqw] w-[5.4cqw] object-contain"
+            className="h-[5.4cqw] w-[5.4cqw] object-contain"
           />
         </header>
 
@@ -892,16 +885,17 @@ function KitchenSheetPreview({
               {recipeName}
             </h2>
 
-            <div className="mt-[1.25cqw] flex flex-wrap gap-[0.65cqw]">
-              {meta.map((item, index) => (
-                <span
-                  key={String(item) + String(index)}
-                  className="rounded-full border border-[#D9E2EC] bg-[#FAFAFA] px-[1cqw] py-[0.45cqw] font-semibold text-[#52525B]"
-                  style={{ fontSize: orientation === 'landscape' ? '0.9cqw' : '1.28cqw' }}
-                >
-                  {item}
-                </span>
-              ))}
+            <div
+              className="mt-[1.1cqw] flex items-center gap-[0.8cqw] font-bold text-[#52525B]"
+              style={{ fontSize: orientation === 'landscape' ? '1.05cqw' : '1.42cqw' }}
+            >
+              <span>{servingsLabel}</span>
+              {preparationTime ? (
+                <>
+                  <span className="font-normal text-zinc-300">·</span>
+                  <span>{preparationTime} min</span>
+                </>
+              ) : null}
             </div>
 
           </div>
@@ -928,30 +922,37 @@ function KitchenSheetPreview({
           {visibleSteps.map((step, index) => (
             <article
               key={index}
-              className="relative flex min-h-0 flex-col overflow-visible bg-transparent p-0"
+              className="flex min-h-0 flex-col overflow-visible bg-transparent p-0"
             >
-              <span
-                className="absolute left-[0.35cqw] top-[0.35cqw] z-10 grid aspect-square w-[1.8cqw] place-items-center rounded-full bg-[#1F5FAF] font-black text-white shadow-sm"
-                style={{ fontSize: orientation === 'landscape' ? '0.78cqw' : '1.05cqw' }}
-              >
-                {index + 1}
-              </span>
-
               <div
-                className="min-h-0 shrink-0 overflow-hidden rounded-[0.8cqw] bg-transparent p-0"
-                style={{ height: orientation === 'landscape' ? '52%' : '48%' }}
+                className="relative mx-auto max-w-full shrink-0 overflow-hidden rounded-[1.15cqw] bg-transparent"
+                style={{
+                  height: orientation === 'landscape' ? '56%' : '52%',
+                  aspectRatio: '16 / 9',
+                }}
               >
                 {step.image ? (
-                  <img src={step.image} alt="" className="h-full w-full rounded-[0.8cqw] object-contain" />
+                  <img
+                    src={step.image}
+                    alt=""
+                    className="h-full w-full rounded-[1.15cqw] object-contain"
+                  />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-zinc-300">
+                  <div className="flex h-full w-full items-center justify-center rounded-[1.15cqw] text-zinc-300">
                     <ChefHat size="16%" strokeWidth={1.1} />
                   </div>
                 )}
+
+                <span
+                  className="absolute left-[0.55cqw] top-[0.55cqw] z-10 grid aspect-square w-[2.25cqw] place-items-center rounded-full bg-[#C0263A] font-black text-white shadow-md ring-[0.22cqw] ring-white"
+                  style={{ fontSize: orientation === 'landscape' ? '0.95cqw' : '1.2cqw' }}
+                >
+                  {index + 1}
+                </span>
               </div>
 
               <p
-                className="min-h-0 flex-1 px-[0.35cqw] pt-[0.4cqw] text-center font-semibold leading-[1.18] text-[#27272A]"
+                className="min-h-0 flex-1 px-[0.55cqw] pt-[0.65cqw] text-center font-semibold leading-[1.28] text-[#27272A]"
                 style={{ fontSize: stepFontSize(step.text, orientation) }}
               >
                 {step.text || 'Paso pendiente de completar.'}
@@ -967,12 +968,12 @@ function KitchenSheetPreview({
 
 function stepFontSize(text: string, orientation: SheetOrientation) {
   if (orientation === 'portrait') {
-    if (text.length > 150) return '0.78cqw';
-    if (text.length > 95) return '0.88cqw';
-    return '0.98cqw';
+    if (text.length > 150) return '1cqw';
+    if (text.length > 95) return '1.12cqw';
+    return '1.28cqw';
   }
 
-  if (text.length > 150) return '0.46cqw';
-  if (text.length > 95) return '0.54cqw';
-  return '0.62cqw';
+  if (text.length > 150) return '0.78cqw';
+  if (text.length > 95) return '0.9cqw';
+  return '1.05cqw';
 }
