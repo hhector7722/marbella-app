@@ -487,7 +487,7 @@ test('Ametller real: recupera cabecera semántica sin flag y columnas fusionadas
     }],
   })
 
-  assert.equal(result.normalizerVersion, 'k5-normalizer-v9')
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v10')
   assert.equal(result.proposals.length, 2)
 
   const aceite = result.proposals[0]!
