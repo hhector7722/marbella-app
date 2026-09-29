@@ -464,7 +464,7 @@ export default function FichasCocinaPage() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:pr-1">
                   <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <div>
@@ -557,10 +557,10 @@ export default function FichasCocinaPage() {
                             <img
                               src={mainImageUrl}
                               alt={recipe.name}
-                              className="h-full w-full object-contain"
+                              className="h-full w-full rounded-[1.2cqw] object-contain"
                             />
                           ) : (
-                            <div className="flex h-full items-center justify-center text-zinc-300">
+                            <div className="flex h-full items-center justify-center rounded-[0.8cqw] bg-transparent text-zinc-300">
                               <ChefHat size={36} strokeWidth={1.25} />
                             </div>
                           )}
@@ -592,40 +592,40 @@ export default function FichasCocinaPage() {
                             </button>
                           </div>
                           <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                            Se usa como resultado final. La ficha conserva ratios y recorte uniforme para no alterar la percepción del tamaño del plato.
+                            Se usa como resultado final. La ficha muestra la imagen completa, sin recortarla.
                           </p>
                         </div>
                       </div>
                     </div>
                   </section>
 
-                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between gap-3">
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
+                    <div className="mb-2 flex items-center justify-between gap-3">
                       <div>
                         <h2 className="text-sm font-bold text-zinc-900">Pasos de elaboración</h2>
-                        <p className="mt-0.5 text-xs text-zinc-500">
+                        <p className="mt-0.5 text-[11px] text-zinc-500">
                           {steps.length} pasos · {photosReady} imágenes
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={addStep}
-                        className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-[#36606F] transition hover:bg-zinc-50"
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-semibold text-[#36606F] transition hover:bg-zinc-50"
                       >
-                        <Plus size={16} />
+                        <Plus size={14} />
                         Añadir paso
                       </button>
                     </div>
 
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                       {steps.map((step, index) => (
                         <article
                           key={index}
-                          className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3"
+                          className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-2"
                         >
-                          <div className="mb-2 flex items-center justify-between">
+                          <div className="mb-1.5 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#36606F] text-xs font-bold text-white">
+                              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#36606F] text-[11px] font-bold text-white">
                                 {index + 1}
                               </span>
                               <span className="text-xs font-bold text-zinc-700">Paso {index + 1}</span>
@@ -635,13 +635,13 @@ export default function FichasCocinaPage() {
                               onClick={() => removeStep(index)}
                               disabled={steps.length <= 1}
                               aria-label={'Eliminar paso ' + String(index + 1)}
-                              className="grid h-9 w-9 place-items-center rounded-lg text-zinc-400 transition hover:bg-white hover:text-rose-600 disabled:opacity-30"
+                              className="grid h-7 w-7 place-items-center rounded-lg text-zinc-400 transition hover:bg-white hover:text-rose-600 disabled:opacity-30"
                             >
                               <Trash2 size={15} />
                             </button>
                           </div>
 
-                          <label className="relative block aspect-[16/9] cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-white">
+                          <label className="relative block h-20 cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-white xl:h-16">
                             {step.image ? (
                               <img
                                 src={step.image}
@@ -650,8 +650,8 @@ export default function FichasCocinaPage() {
                               />
                             ) : (
                               <div className="flex h-full flex-col items-center justify-center gap-1.5 text-zinc-400">
-                                <Camera size={22} />
-                                <span className="text-xs font-semibold">Añadir foto</span>
+                                <Camera size={18} />
+                                <span className="text-[11px] font-semibold">Añadir foto</span>
                               </div>
                             )}
                             <input
@@ -676,7 +676,7 @@ export default function FichasCocinaPage() {
                                   ),
                                 )
                               }
-                              className="mt-2 text-xs font-semibold text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline"
+                              className="mt-1 text-[11px] font-semibold text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline"
                             >
                               Quitar foto
                             </button>
@@ -691,8 +691,8 @@ export default function FichasCocinaPage() {
                                 ),
                               )
                             }
-                            rows={3}
-                            className="mt-2 min-h-24 w-full resize-y rounded-lg border border-zinc-200 bg-white px-3 py-2 text-base leading-relaxed text-zinc-800 outline-none focus:border-[#36606F] md:text-sm"
+                            rows={2}
+                            className="mt-1.5 min-h-14 w-full resize-y rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-base leading-snug text-zinc-800 outline-none focus:border-[#36606F] md:text-xs"
                             placeholder="Describe el paso de elaboración"
                           />
                         </article>
@@ -726,7 +726,7 @@ export default function FichasCocinaPage() {
             <aside
               className={
                 (mobileMode === 'edit' ? 'hidden xl:flex ' : 'flex ') +
-                'min-h-[520px] flex-col rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm xl:min-h-0'
+                'h-fit min-h-0 flex-col rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm xl:self-start'
               }
             >
               <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
@@ -763,14 +763,17 @@ export default function FichasCocinaPage() {
                   Sin receta seleccionada
                 </div>
               ) : (
-                <div className="flex min-h-0 flex-1 items-start justify-center overflow-auto rounded-xl bg-zinc-100 p-2 md:p-3 xl:items-center">
+                <div className="flex min-h-0 w-full items-start justify-center overflow-hidden rounded-xl bg-transparent p-0">
                   <div
                     className={
-                      'w-full overflow-hidden rounded-lg bg-white shadow-[0_12px_40px_rgba(15,23,42,0.16)] ' +
-                      (orientation === 'landscape' ? 'max-w-[980px]' : 'max-w-[620px]')
+                      'overflow-hidden rounded-lg bg-white shadow-[0_12px_40px_rgba(15,23,42,0.16)] ' +
+                      (orientation === 'landscape'
+                        ? 'w-full'
+                        : 'w-auto max-w-full')
                     }
                     style={{
                       aspectRatio: orientation === 'landscape' ? '420 / 297' : '297 / 420',
+                      maxHeight: 'calc(100dvh - 190px)',
                     }}
                   >
                     <KitchenSheetPreview
@@ -878,14 +881,12 @@ function KitchenSheetPreview({
   return (
     <div className="h-full w-full overflow-hidden bg-white font-sans text-zinc-900 [container-type:inline-size]">
       <div className="flex h-full flex-col p-[2.35cqw]">
-        <header className="flex h-[6%] shrink-0 items-center justify-end pb-[0.4cqw]">
-          <div className="grid h-[4.2cqw] w-[4.2cqw] place-items-center overflow-hidden rounded-[1cqw] bg-[#1F5FAF] p-[0.55cqw]">
-            <img
-              src="/icons/logo-white.png"
-              alt="Bar La Marbella"
-              className="h-full w-full object-contain"
-            />
-          </div>
+        <header className="flex h-[5%] shrink-0 items-center justify-end">
+          <img
+            src="/icons/logo-share.png"
+            alt="Bar La Marbella"
+            className="h-[4.2cqw] w-[5.4cqw] object-contain"
+          />
         </header>
 
         <section
@@ -894,7 +895,7 @@ function KitchenSheetPreview({
               ? 'mt-[1.4cqw] grid min-h-0 shrink-0 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-[1.5cqw]'
               : 'mt-[1.4cqw] flex min-h-0 shrink-0 flex-col gap-[1.2cqw]'
           }
-          style={{ height: orientation === 'landscape' ? '26%' : '30%' }}
+          style={{ height: orientation === 'landscape' ? '24%' : '28%' }}
         >
           <div className="flex min-h-0 flex-col justify-center">
             <h2
@@ -918,7 +919,7 @@ function KitchenSheetPreview({
 
           </div>
 
-          <div className="min-h-0 overflow-hidden rounded-[1.2cqw] border border-[#D9E2EC] bg-[#F4F4F5]">
+          <div className="min-h-0 overflow-hidden rounded-[1.2cqw] bg-transparent">
             {mainImageUrl ? (
               <img
                 src={mainImageUrl}
@@ -934,7 +935,7 @@ function KitchenSheetPreview({
         </section>
 
         <div
-          className="mt-[1.2cqw] grid min-h-0 flex-1 gap-[1.1cqw]"
+          className="mt-[0.8cqw] grid min-h-0 flex-1 gap-[0.7cqw]"
           style={{ gridTemplateColumns: 'repeat(' + String(columns) + ', minmax(0, 1fr))' }}
         >
           {visibleSteps.map((step, index) => (
@@ -943,18 +944,18 @@ function KitchenSheetPreview({
               className="relative flex min-h-0 flex-col overflow-visible bg-transparent p-0"
             >
               <span
-                className="absolute left-[0.9cqw] top-[0.9cqw] z-10 grid aspect-square w-[2.8cqw] place-items-center rounded-full bg-[#1F5FAF] font-black text-white shadow-sm"
-                style={{ fontSize: orientation === 'landscape' ? '1.2cqw' : '1.6cqw' }}
+                className="absolute left-[0.35cqw] top-[0.35cqw] z-10 grid aspect-square w-[1.8cqw] place-items-center rounded-full bg-[#1F5FAF] font-black text-white shadow-sm"
+                style={{ fontSize: orientation === 'landscape' ? '0.78cqw' : '1.05cqw' }}
               >
                 {index + 1}
               </span>
 
               <div
-                className="min-h-0 shrink-0 overflow-hidden rounded-[0.6cqw] bg-[#F4F4F5] p-[0.35cqw]"
-                style={{ height: orientation === 'landscape' ? '68%' : '62%' }}
+                className="min-h-0 shrink-0 overflow-hidden rounded-[0.8cqw] bg-transparent p-0"
+                style={{ height: orientation === 'landscape' ? '52%' : '48%' }}
               >
                 {step.image ? (
-                  <img src={step.image} alt="" className="h-full w-full object-contain" />
+                  <img src={step.image} alt="" className="h-full w-full rounded-[0.8cqw] object-contain" />
                 ) : (
                   <div className="flex h-full items-center justify-center text-zinc-300">
                     <ChefHat size="16%" strokeWidth={1.1} />
@@ -963,7 +964,7 @@ function KitchenSheetPreview({
               </div>
 
               <p
-                className="min-h-0 flex-1 px-[0.15cqw] pt-[0.45cqw] font-semibold leading-[1.22] text-[#27272A]"
+                className="min-h-0 flex-1 px-[0.35cqw] pt-[0.4cqw] text-center font-semibold leading-[1.18] text-[#27272A]"
                 style={{ fontSize: stepFontSize(step.text, orientation) }}
               >
                 {step.text || 'Paso pendiente de completar.'}
@@ -979,12 +980,12 @@ function KitchenSheetPreview({
 
 function stepFontSize(text: string, orientation: SheetOrientation) {
   if (orientation === 'portrait') {
-    if (text.length > 150) return '0.92cqw';
-    if (text.length > 95) return '1.04cqw';
-    return '1.18cqw';
+    if (text.length > 150) return '0.78cqw';
+    if (text.length > 95) return '0.88cqw';
+    return '0.98cqw';
   }
 
-  if (text.length > 150) return '0.68cqw';
-  if (text.length > 95) return '0.78cqw';
-  return '0.9cqw';
+  if (text.length > 150) return '0.46cqw';
+  if (text.length > 95) return '0.54cqw';
+  return '0.62cqw';
 }
