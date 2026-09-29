@@ -372,6 +372,42 @@ test('fallback genérico infiere columna de producto cuando Docling omite su cab
   assert.ok(proposals.every((proposal) => proposal.reviewReasons.includes('generic_evidence_fallback')))
 })
 
+test('un match estructural con producto vacío cae a recall genérico en vez de ocultar la línea', () => {
+  const raw = artifact([{
+    data: {
+      table_cells: [
+        cell(0, 0, 'Producto', true),
+        cell(0, 1, 'Cantidad', true),
+        cell(0, 2, 'Precio', true),
+        cell(0, 3, 'Importe', true),
+        cell(0, 4, 'Detalle', true),
+        cell(1, 0, ''),
+        cell(1, 1, '2 KG'),
+        cell(1, 2, '5,00'),
+        cell(1, 3, '10,00'),
+        cell(1, 4, 'CALAMAR PREMIUM'),
+      ],
+    },
+  }])
+
+  const proposals = normalizeDoclingEvidence({
+    profile: directProfile,
+    rawArtifact: raw,
+    supplierId: 999,
+    mappings: [],
+  }).proposals
+
+  assert.equal(proposals.length, 1)
+  assert.equal(proposals[0]!.sourceItemName, 'CALAMAR PREMIUM')
+  assert.equal(proposals[0]!.status, 'needs_review')
+  assert.equal(proposals[0]!.lineQuantity, '2')
+  assert.equal(proposals[0]!.observedUnitPrice, '5')
+  assert.equal(proposals[0]!.lineTotal, '10')
+  assert.ok(proposals[0]!.reviewReasons.includes('generic_evidence_fallback'))
+  assert.equal(proposals[0]!.mappingVersionId, null)
+  assert.equal(proposals[0]!.ingredientId, null)
+})
+
 test('Ametller elige la cabecera de líneas dentro de una tabla con secciones de metadatos', () => {
   const ametllerProfile: SupplierProfile = {
     ...directProfile,
