@@ -7,6 +7,7 @@ export type StaffEncargoLineItem = {
   quantity: number
   notes: string
   name?: string
+  price_mode?: 'standard' | 'pavello'
 }
 
 export type DayAgendaReservationRow = {
@@ -61,6 +62,7 @@ export function parseOrderItems(raw: unknown): EventOrderItem[] {
       quantity?: number
       unit_price?: number
       notes?: string | null
+      price_mode?: 'standard' | 'pavello'
     }
     const product_id = String(row.product_id ?? '').trim()
     const quantity = Number(row.quantity) || 0
@@ -71,6 +73,7 @@ export function parseOrderItems(raw: unknown): EventOrderItem[] {
       quantity,
       unit_price: Number(row.unit_price) || 0,
       notes: row.notes ?? null,
+      price_mode: row.price_mode === 'pavello' ? 'pavello' : 'standard',
     })
   }
   return out
@@ -82,6 +85,7 @@ export function orderItemsToStaffLines(items: EventOrderItem[]): StaffEncargoLin
     quantity: it.quantity,
     notes: String(it.notes ?? '').trim(),
     name: it.name,
+    price_mode: it.price_mode === 'pavello' ? 'pavello' : 'standard',
   }))
 }
 
