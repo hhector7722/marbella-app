@@ -403,8 +403,8 @@
   }
 
   .menu-board-item-row {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    gap: 4px;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    gap: 3px;
     padding-block: 7px;
   }
 
@@ -441,9 +441,7 @@
   }
 
   .menu-board-row-actions {
-    grid-column: 1 / -1;
     justify-content: flex-end;
-    margin-top: -3px;
     gap: 0;
   }
 
