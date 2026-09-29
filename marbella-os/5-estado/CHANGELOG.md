@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-09-29
+
+- **Notificaciones de reserva y pedido cliente: sale Hernán y entra Willy.** Los avisos de nueva reserva y de pedido cliente (campana del calendario y push) dejan de avisar a Hernán y pasan a avisar a Willy. Destinatarios: Alba, Fernando, Willy y Héctor.
+
 ## 2026-09-28
 
 - **El detalle semanal de horas extras incorpora Calculadora y Desglose.** En los modales de semana del dashboard master, del dashboard administrativo y de `/dashboard/overtime`, ambos accesos aparecen debajo del recuadro con la fila reutilizable `QuickCashTools`, sin modificar el ancho ni la lista de trabajadores. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
