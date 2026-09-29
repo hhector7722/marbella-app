@@ -50,6 +50,13 @@ interface Movement {
 
 type TreasuryMovementRow = Tables<'v_treasury_movements_balance'>;
 
+// Los intercambios de caja física/TPV y los cambios staff pueden registrarse
+// como IN/OUT. La vista no expone exchange_group_id, así que se filtran por
+// sus conceptos identificativos sin alterar el libro ni el saldo acumulado.
+// El caso notes.is.null conserva movimientos legítimos sin observaciones.
+const HIDE_CASH_EXCHANGES_FILTER =
+    'notes.is.null,and(notes.not.ilike.Intercambio:*,notes.not.ilike."Cambio staff:*")';
+
 type BoxData = {
     id: string;
     name: string;
@@ -364,6 +371,7 @@ export default function MovementsPage() {
                 .lte('created_at', endISO)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
+                .or(HIDE_CASH_EXCHANGES_FILTER)
                 .order('created_at', { ascending: dateSortDir === 'asc' })
                 .order('id', { ascending: dateSortDir === 'asc' })
                 .range(from, to);
@@ -555,6 +563,7 @@ export default function MovementsPage() {
                 .lte('created_at', endISO)
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
+                .or(HIDE_CASH_EXCHANGES_FILTER)
                 .order('created_at', { ascending: dateSortDir === 'asc' })
                 .order('id', { ascending: dateSortDir === 'asc' })
                 .range(from, to);
