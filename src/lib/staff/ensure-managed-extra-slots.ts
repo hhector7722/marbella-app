@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { persistContractualChange } from '@/lib/hours-engine/persist-contract-terms.ts';
+import { persistContractualChange } from '../hours-engine/persist-contract-terms.ts';
 import {
   MANAGED_EXTRA_ACCOUNT_KIND,
   MANAGED_EXTRA_BAN_DURATION,
