@@ -39,6 +39,9 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
     return sum + qty * unit
   }, 0)
   const perPerson = guestCount ? totalGross / guestCount : null
+  const basePerPerson = guestCount ? totalGross / (1 + IVA_RATE) / guestCount : null
+  const ivaPerPerson =
+    perPerson != null && basePerPerson != null ? perPerson - basePerPerson : null
   const quoteRef = `PRES-${meta.encargoDate.replace(/\D/g, '')}-${meta.encargoTime.replace(/\D/g, '')}`
 
   const invoiceHtml = buildEncargoInvoiceHtml(
@@ -50,14 +53,27 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
   )
 
   const perPersonBlock =
-    perPerson == null
+    perPerson == null || basePerPerson == null || ivaPerPerson == null
       ? ''
       : `<section class="per-person">
-      <div>
+      <div class="per-person-heading">
         <p class="per-person-label">Presupuesto por persona</p>
         <p class="per-person-note">Importe medio calculado sobre ${guestCount} comensales.</p>
       </div>
-      <div class="per-person-value">${formatEuro(perPerson)}</div>
+      <div class="per-person-breakdown">
+        <div class="per-person-item">
+          <span>Base</span>
+          <strong>${formatEuro(basePerPerson)}</strong>
+        </div>
+        <div class="per-person-item">
+          <span>IVA 10%</span>
+          <strong>${formatEuro(ivaPerPerson)}</strong>
+        </div>
+        <div class="per-person-item total">
+          <span>Total</span>
+          <strong>${formatEuro(perPerson)}</strong>
+        </div>
+      </div>
     </section>`
 
   const quoteFooter = `${perPersonBlock}
@@ -321,13 +337,14 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 18px;
+      gap: 20px;
       margin-top: 16px;
       padding: 12px 14px;
       border: 0.5pt solid #CBD5D8;
       border-radius: 10px;
       background: #F5F8F9;
     }
+    .per-person-heading { min-width: 0; }
     .per-person-label {
       margin: 0;
       font-size: 8px;
@@ -342,15 +359,37 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       line-height: 1.35;
       color: #6B7280;
     }
-    .per-person-value {
+    .per-person-breakdown {
+      display: grid;
+      grid-template-columns: repeat(3, auto);
+      gap: 18px;
       flex: 0 0 auto;
-      font-size: 17px;
+    }
+    .per-person-item {
+      display: grid;
+      gap: 3px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .per-person-item span {
+      font-size: 7.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.055em;
+      color: #71717A;
+    }
+    .per-person-item strong {
+      font-size: 11px;
       line-height: 1;
-      font-weight: 800;
+      font-weight: 750;
+      color: #2F3A45;
+      font-variant-numeric: tabular-nums;
+    }
+    .per-person-item.total strong {
+      font-size: 16px;
+      font-weight: 850;
       letter-spacing: -0.02em;
       color: #2A4A56;
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
     }
     .document-note {
       text-align: center;
