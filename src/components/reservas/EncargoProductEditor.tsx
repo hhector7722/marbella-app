@@ -460,6 +460,9 @@ export function EncargoProductEditor({
   const [browseChild, setBrowseChild] = useState<string | null>(null)
   const [cartModalOpen, setCartModalOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [usePavelloPrice, setUsePavelloPrice] = useState(
+    () => initialItems.length > 0 && initialItems.every((item) => item.price_mode === 'pavello')
+  )
 
   const seedKey = useMemo(
     () => ({ initialItems, eventId }),
@@ -479,6 +482,9 @@ export function EncargoProductEditor({
     setSearch('')
     setShowInactiveInView(false)
     setCartModalOpen(false)
+    setUsePavelloPrice(
+      initialItems.length > 0 && initialItems.every((item) => item.price_mode === 'pavello')
+    )
   }
 
   const browseSyncKey = useMemo(
@@ -704,6 +710,7 @@ export function EncargoProductEditor({
         product_id: l.product_id,
         quantity: l.quantity,
         notes: l.notes.trim() || null,
+        price_mode: usePavelloPrice ? 'pavello' as const : 'standard' as const,
       }))
 
     if (payload.length === 0) {
@@ -727,7 +734,7 @@ export function EncargoProductEditor({
       toast.success('Pedido guardado')
       onSaved()
     })
-  }, [lines, orderId, eventId, eventName, onSaved])
+  }, [lines, orderId, eventId, eventName, onSaved, usePavelloPrice])
 
   const handleDelete = useCallback(() => {
     startTransition(async () => {
@@ -855,6 +862,30 @@ export function EncargoProductEditor({
 
   const editorHeaderTrailing = (
     <>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={usePavelloPrice}
+        onClick={() => setUsePavelloPrice((current) => !current)}
+        className="relative flex h-full max-h-full min-h-0 shrink-0 items-center gap-1.5 border-0 bg-transparent px-1.5 text-ds-texto shadow-none outline-none hover:bg-black/5 active:opacity-70"
+        aria-label="Usar precio de pabellón para todo el pedido"
+        title="Precio de pabellón"
+      >
+        <span className="text-[9px] font-black uppercase tracking-wide text-zinc-500">Pab.</span>
+        <span
+          className={cn(
+            'relative h-5 w-9 rounded-full transition-colors',
+            usePavelloPrice ? 'bg-[#36606F]' : 'bg-zinc-300'
+          )}
+        >
+          <span
+            className={cn(
+              'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+              usePavelloPrice ? 'translate-x-[18px]' : 'translate-x-0.5'
+            )}
+          />
+        </span>
+      </button>
       <button
         type="button"
         onClick={() => setCartModalOpen(true)}
