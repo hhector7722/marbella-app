@@ -23,6 +23,7 @@ import {
   buildEncargoInvoiceHtml,
   buildEncargoPrintHtml,
   printEncargoHtml,
+  type EncargoDocumentLanguage,
 } from '@/lib/reservas/print-encargo-document'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -73,6 +74,7 @@ export function EncargoOrderViewModal({
   const [localEnabled, setLocalEnabled] = useState(clientEditEnabled)
   const [localSubmittedAt, setLocalSubmittedAt] = useState<string | null>(clientOrderSubmittedAt)
   const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false)
+  const [printLanguageFor, setPrintLanguageFor] = useState<'quote' | 'invoice' | null>(null)
 
   const alreadySubmitted = isClientOrderSubmitted(localSubmittedAt)
   const linkOpen = localEnabled && !alreadySubmitted
@@ -85,7 +87,7 @@ export function EncargoOrderViewModal({
     return buildClientPedidoUrl(token, origin)
   }, [localToken])
 
-  const handlePrint = useCallback(async () => {
+  const handlePrint = useCallback(async (language: EncargoDocumentLanguage) => {
     if (printBusy || items.length === 0) return
     setPrintBusy(true)
     try {
@@ -98,6 +100,7 @@ export function EncargoOrderViewModal({
           contactPhone: contactPhone ?? null,
           guestCount,
           logoUrl: `${origin}/icons/logo-white.png`,
+          language,
         },
         items
       )
@@ -110,7 +113,7 @@ export function EncargoOrderViewModal({
     }
   }, [printBusy, encargoName, encargoDate, encargoTime, contactPhone, guestCount, items])
 
-  const handlePrintInvoice = useCallback(async () => {
+  const handlePrintInvoice = useCallback(async (language: EncargoDocumentLanguage) => {
     if (invoiceBusy || items.length === 0) return
     setInvoiceBusy(true)
     try {
@@ -123,6 +126,7 @@ export function EncargoOrderViewModal({
           contactPhone: contactPhone ?? null,
           guestCount,
           logoUrl: `${origin}/icons/logo-white.png`,
+          language,
         },
         items
       )
@@ -134,6 +138,19 @@ export function EncargoOrderViewModal({
       setInvoiceBusy(false)
     }
   }, [invoiceBusy, encargoName, encargoDate, encargoTime, contactPhone, guestCount, items])
+
+  const handlePrintLanguage = useCallback(
+    (language: EncargoDocumentLanguage) => {
+      const target = printLanguageFor
+      setPrintLanguageFor(null)
+      if (target === 'quote') {
+        void handlePrint(language)
+      } else if (target === 'invoice') {
+        void handlePrintInvoice(language)
+      }
+    },
+    [printLanguageFor, handlePrint, handlePrintInvoice]
+  )
 
   const handleEnableClientEdit = useCallback(() => {
     startTransition(async () => {
@@ -211,7 +228,7 @@ export function EncargoOrderViewModal({
           <>
             <button
               type="button"
-              onClick={() => void handlePrint()}
+              onClick={() => setPrintLanguageFor('quote')}
               disabled={items.length === 0 || printBusy}
               className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
               aria-label="Imprimir presupuesto"
@@ -232,7 +249,7 @@ export function EncargoOrderViewModal({
             </button>
             <button
               type="button"
-              onClick={() => void handlePrintInvoice()}
+              onClick={() => setPrintLanguageFor('invoice')}
               disabled={items.length === 0 || invoiceBusy}
               className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
               aria-label="Imprimir factura"
@@ -337,6 +354,37 @@ export function EncargoOrderViewModal({
               editarlo.
             </p>
           ) : null}
+        </div>
+      </Modal>
+
+      <Modal
+        open={printLanguageFor !== null}
+        onClose={() => {
+          if (!printBusy && !invoiceBusy) setPrintLanguageFor(null)
+        }}
+        variant="compact"
+        layer="derived"
+        instance="encargo-print-language"
+        parentInstance="encargo-order-view"
+        title={printLanguageFor === 'invoice' ? 'Idioma de la factura' : 'Idioma del presupuesto'}
+        closeOnBackdrop={!printBusy && !invoiceBusy}
+      >
+        <div className="grid gap-2 py-1">
+          {([
+            ['ca', 'Català'],
+            ['es', 'Español'],
+            ['en', 'English'],
+          ] as const).map(([language, label]) => (
+            <button
+              key={language}
+              type="button"
+              onClick={() => handlePrintLanguage(language)}
+              disabled={printBusy || invoiceBusy}
+              className="min-h-12 w-full rounded-xl border border-zinc-100 bg-white px-4 text-left text-sm font-bold text-zinc-800 transition-colors hover:bg-zinc-50 active:bg-zinc-100 disabled:opacity-50"
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </Modal>
 
