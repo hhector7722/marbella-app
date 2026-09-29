@@ -22,10 +22,7 @@ const DOCUMENT_COPY = {
     perPersonNote: (count: number) => `Importe medio calculado sobre ${count} comensales.`,
     base: 'Base',
     thanks: '¡Gracias por vuestra visita!',
-    seeYou: 'Os esperamos pronto en Bar La Marbella',
-    invoiceLegal: 'Factura simplificada. Precios con IVA incluido. Tipo impositivo 10% (hostelería).',
     quoteLegal: 'Precios con IVA incluido. Tipo impositivo 10%.',
-    vatContext: 'hostelería',
   },
   ca: {
     invoice: 'Factura',
@@ -46,10 +43,7 @@ const DOCUMENT_COPY = {
     perPersonNote: (count: number) => `Import mitjà calculat sobre ${count} comensals.`,
     base: 'Base',
     thanks: 'Gràcies per la vostra visita!',
-    seeYou: 'Us esperem aviat a Bar La Marbella',
-    invoiceLegal: 'Factura simplificada. Preus amb IVA inclòs. Tipus impositiu 10% (hostaleria).',
     quoteLegal: 'Preus amb IVA inclòs. Tipus impositiu 10%.',
-    vatContext: 'hostaleria',
   },
   en: {
     invoice: 'Invoice',
@@ -70,10 +64,7 @@ const DOCUMENT_COPY = {
     perPersonNote: (count: number) => `Average amount calculated for ${count} guests.`,
     base: 'Base',
     thanks: 'Thank you for your visit!',
-    seeYou: 'We hope to see you again soon at Bar La Marbella',
-    invoiceLegal: 'Simplified invoice. Prices include VAT. Tax rate 10% (hospitality).',
     quoteLegal: 'Prices include VAT. Tax rate 10%.',
-    vatContext: 'hospitality',
   },
 } as const
 
@@ -104,7 +95,11 @@ function formatDocumentPhone(value: string | null | undefined): string {
   const raw = String(value ?? '').trim()
   if (!raw) return ''
   const digits = raw.replace(/\D/g, '')
-  const local = /^34\d{9}$/.test(digits) ? digits.slice(2) : digits
+  const local = /^0034\d{9}$/.test(digits)
+    ? digits.slice(4)
+    : /^34\d{9}$/.test(digits)
+      ? digits.slice(2)
+      : digits
   if (/^[6789]\d{8}$/.test(local)) {
     return `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`
   }
@@ -184,7 +179,6 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
       `<h1 class="doc-title">${copy.invoice}</h1>`,
       `<h1 class="doc-title">${copy.quote}</h1>`
     )
-    .replace(`<div class="value">10% (${copy.vatContext})</div>`, '<div class="value">10%</div>')
     .replace(/<footer class="thanks">[\s\S]*?<\/footer>/, quoteFooter)
 }
 
@@ -312,13 +306,15 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       letter-spacing: -0.02em;
     }
     .brand-meta {
-      display: grid;
-      gap: 3px;
+      display: flex;
+      flex-direction: column;
+      row-gap: 3px;
       margin-top: 5px;
       color: #6B7280;
     }
     .brand-line {
       margin: 0;
+      padding: 0;
       font-size: 9px;
       line-height: 1.25;
       font-weight: 500;
@@ -351,16 +347,28 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       margin: 0 0 16px;
       font-size: 11px;
     }
+    .meta-block {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
+    }
     .meta-block label {
-      display: block;
+      display: inline;
+      flex: 0 0 auto;
       font-size: 8px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: #6B7280;
-      margin-bottom: 2px;
+      margin: 0;
     }
-    .meta-block .value { font-weight: 700; color: #2F3A45; }
+    .meta-block .value {
+      min-width: 0;
+      font-weight: 700;
+      color: #2F3A45;
+      white-space: nowrap;
+    }
     table.invoice-table {
       width: 100%;
       border-collapse: separate;
@@ -516,19 +524,6 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       font-weight: 700;
       color: #36606F;
     }
-    .thanks .sub {
-      margin-top: 4px;
-      font-size: 10px;
-      font-weight: 500;
-      color: #6B7280;
-    }
-    .legal-note {
-      margin-top: 10px;
-      font-size: 8px;
-      color: #6B7280;
-      text-align: center;
-      line-height: 1.4;
-    }
     @media print {
       html, body {
         height: auto !important;
@@ -540,7 +535,13 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       }
       .print-doc { padding: 12mm 14mm 14mm; page-break-after: avoid; }
       table.invoice-table { page-break-inside: avoid; }
-      th { background: #36606F !important; color: #FFFFFF !important; }
+      th {
+        background: #36606F !important;
+        color: #FFFFFF !important;
+        border: 0 !important;
+        box-shadow: none !important;
+      }
+      th + th { border-left: 0 !important; }
       tbody tr:nth-child(even) { background: #F8FAFC !important; }
     }
   </style>
@@ -587,7 +588,7 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       </div>
       <div class="meta-block">
         <label>${copy.vatApplied}</label>
-        <div class="value">10% (${copy.vatContext})</div>
+        <div class="value">10%</div>
       </div>
     </section>
 
@@ -621,10 +622,6 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
 
     <footer class="thanks">
       <p>${copy.thanks}</p>
-      <p class="sub">${copy.seeYou}</p>
-      <p class="legal-note">
-        ${copy.invoiceLegal}
-      </p>
     </footer>
   </div>
 </body>
