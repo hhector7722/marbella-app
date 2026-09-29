@@ -1,5 +1,83 @@
 import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/PedidosEventoClient'
 
+export type EncargoDocumentLanguage = 'ca' | 'es' | 'en'
+
+const DOCUMENT_COPY = {
+  es: {
+    invoice: 'Factura',
+    quote: 'Presupuesto',
+    client: 'Cliente',
+    contact: 'Contacto',
+    date: 'Fecha reserva',
+    time: 'Hora reserva',
+    guests: 'Comensales',
+    vatApplied: 'IVA aplicado',
+    product: 'Producto',
+    qty: 'Cant.',
+    unitPrice: 'P. unit.',
+    amount: 'Importe',
+    taxableBase: 'Base imponible',
+    total: 'Total',
+    perPerson: 'Presupuesto por persona',
+    perPersonNote: (count: number) => `Importe medio calculado sobre ${count} comensales.`,
+    base: 'Base',
+    thanks: '¡Gracias por vuestra visita!',
+    seeYou: 'Os esperamos pronto en Bar La Marbella',
+    invoiceLegal: 'Factura simplificada. Precios con IVA incluido. Tipo impositivo 10% (hostelería).',
+    quoteLegal: 'Precios con IVA incluido. Tipo impositivo 10%.',
+  },
+  ca: {
+    invoice: 'Factura',
+    quote: 'Pressupost',
+    client: 'Client',
+    contact: 'Contacte',
+    date: 'Data reserva',
+    time: 'Hora reserva',
+    guests: 'Comensals',
+    vatApplied: 'IVA aplicat',
+    product: 'Producte',
+    qty: 'Quant.',
+    unitPrice: 'P. unit.',
+    amount: 'Import',
+    taxableBase: 'Base imposable',
+    total: 'Total',
+    perPerson: 'Pressupost per persona',
+    perPersonNote: (count: number) => `Import mitjà calculat sobre ${count} comensals.`,
+    base: 'Base',
+    thanks: 'Gràcies per la vostra visita!',
+    seeYou: 'Us esperem aviat a Bar La Marbella',
+    invoiceLegal: 'Factura simplificada. Preus amb IVA inclòs. Tipus impositiu 10% (hostaleria).',
+    quoteLegal: 'Preus amb IVA inclòs. Tipus impositiu 10%.',
+  },
+  en: {
+    invoice: 'Invoice',
+    quote: 'Quote',
+    client: 'Client',
+    contact: 'Contact',
+    date: 'Booking date',
+    time: 'Booking time',
+    guests: 'Guests',
+    vatApplied: 'VAT applied',
+    product: 'Product',
+    qty: 'Qty.',
+    unitPrice: 'Unit price',
+    amount: 'Amount',
+    taxableBase: 'Taxable base',
+    total: 'Total',
+    perPerson: 'Quote per person',
+    perPersonNote: (count: number) => `Average amount calculated for ${count} guests.`,
+    base: 'Base',
+    thanks: 'Thank you for your visit!',
+    seeYou: 'We hope to see you again soon at Bar La Marbella',
+    invoiceLegal: 'Simplified invoice. Prices include VAT. Tax rate 10% (hospitality).',
+    quoteLegal: 'Prices include VAT. Tax rate 10%.',
+  },
+} as const
+
+function documentCopy(language: EncargoDocumentLanguage | undefined) {
+  return DOCUMENT_COPY[language ?? 'es']
+}
+
 export type EncargoPrintMeta = {
   encargoDate: string
   encargoTime: string
@@ -8,6 +86,7 @@ export type EncargoPrintMeta = {
   /** URL absoluta del logo (necesaria en el iframe de impresión). */
   logoUrl: string
   guestCount?: number | null
+  language?: EncargoDocumentLanguage
 }
 
 function escapeHtml(value: string) {
@@ -16,6 +95,17 @@ function escapeHtml(value: string) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+}
+
+function formatDocumentPhone(value: string | null | undefined): string {
+  const raw = String(value ?? '').trim()
+  if (!raw) return ''
+  const digits = raw.replace(/\D/g, '')
+  const local = /^34\d{9}$/.test(digits) ? digits.slice(2) : digits
+  if (/^[6789]\d{8}$/.test(local)) {
+    return `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`
+  }
+  return raw
 }
 
 function isIosDevice() {
@@ -32,6 +122,7 @@ function isMobileDevice() {
 }
 
 export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderItem[]) {
+  const copy = documentCopy(meta.language)
   const guestCount = meta.guestCount != null && meta.guestCount > 0 ? meta.guestCount : null
   const totalGross = items.reduce((sum, it) => {
     const qty = Math.max(0, Number(it.quantity) || 0)
@@ -57,12 +148,12 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
       ? ''
       : `<section class="per-person">
       <div class="per-person-heading">
-        <p class="per-person-label">Presupuesto por persona</p>
-        <p class="per-person-note">Importe medio calculado sobre ${guestCount} comensales.</p>
+        <p class="per-person-label">${copy.perPerson}</p>
+        <p class="per-person-note">${copy.perPersonNote(guestCount)}</p>
       </div>
       <div class="per-person-breakdown">
         <div class="per-person-item">
-          <span>Base</span>
+          <span>${copy.base}</span>
           <strong>${formatEuro(basePerPerson)}</strong>
         </div>
         <div class="per-person-item">
@@ -70,7 +161,7 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
           <strong>${formatEuro(ivaPerPerson)}</strong>
         </div>
         <div class="per-person-item total">
-          <span>Total</span>
+          <span>${copy.total}</span>
           <strong>${formatEuro(perPerson)}</strong>
         </div>
       </div>
@@ -78,15 +169,21 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
 
   const quoteFooter = `${perPersonBlock}
     <footer class="document-note">
-      Precios con IVA incluido. Tipo impositivo 10% (hostelería).
+      ${copy.quoteLegal}
     </footer>`
 
   return invoiceHtml
     .replace(
-      `<title>Factura — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>`,
-      `<title>Presupuesto — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>`
+      `<title>${copy.invoice} — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>`,
+      `<title>${copy.quote} — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>`
     )
-    .replace('<h1 class="doc-title">Factura</h1>', '<h1 class="doc-title">Presupuesto</h1>')
+    .replace(
+      `<h1 class="doc-title">${copy.invoice}</h1>`,
+      `<h1 class="doc-title">${copy.quote}</h1>`
+    )
+    .replace('<div class="value">10% (${language === 'ca' ? 'hostaleria' : language === 'en' ? 'hospitality' : 'hostelería'})</div>', '<div class="value">10%</div>')
+    .replace('<div class="value">10% (hostaleria)</div>', '<div class="value">10%</div>')
+    .replace('<div class="value">10% (hospitality)</div>', '<div class="value">10%</div>')
     .replace(/<footer class="thanks">[\s\S]*?<\/footer>/, quoteFooter)
 }
 
@@ -128,7 +225,10 @@ export type EncargoInvoiceMeta = EncargoPrintMeta & {
  * Factura simplificada para el cliente del pedido (IVA hostelería 10%, precios con IVA incluido).
  */
 export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOrderItem[]) {
-  const contactValue = meta.contactPhone?.trim() ? escapeHtml(meta.contactPhone.trim()) : '&nbsp;'
+  const language = meta.language ?? 'es'
+  const copy = documentCopy(language)
+  const formattedContact = formatDocumentPhone(meta.contactPhone)
+  const contactValue = formattedContact ? escapeHtml(formattedContact) : '&nbsp;'
   const guestValue =
     meta.guestCount != null && meta.guestCount > 0 ? String(meta.guestCount) : '&nbsp;'
 
@@ -160,11 +260,11 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
     `ENC-${meta.encargoDate.replace(/\D/g, '')}-${meta.encargoTime.replace(/\D/g, '')}`
 
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="${language}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Factura — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>
+  <title>${copy.invoice} — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>
   <style>
     * { box-sizing: border-box; }
     @page { size: A4; margin: 0; }
@@ -210,17 +310,17 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       color: #2F3A45;
       letter-spacing: -0.02em;
     }
-    .brand-legal {
-      margin: 2px 0 0;
-      font-size: 10px;
-      font-weight: 500;
+    .brand-meta {
+      display: grid;
+      gap: 3px;
+      margin-top: 5px;
       color: #6B7280;
     }
-    .brand-details {
-      margin: 6px 0 0;
+    .brand-line {
+      margin: 0;
       font-size: 9px;
-      line-height: 1.45;
-      color: #6B7280;
+      line-height: 1.25;
+      font-weight: 500;
     }
     .doc-title-row {
       display: flex;
@@ -278,7 +378,10 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       color: #FFFFFF;
       padding: 7px 6px;
       text-align: left;
+      border: 0 !important;
+      box-shadow: none !important;
     }
+    th + th { border-left: 0 !important; }
     td {
       padding: 8px 6px;
       font-size: 10px;
@@ -447,42 +550,42 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       <img class="brand-logo" src="${escapeHtml(meta.logoUrl)}" alt="${escapeHtml(INVOICE_COMPANY.tradeName)}" />
       <div class="brand-text">
         <p class="brand-name">${escapeHtml(INVOICE_COMPANY.tradeName)}</p>
-        <p class="brand-legal">${escapeHtml(INVOICE_COMPANY.legalName)} · CIF ${escapeHtml(INVOICE_COMPANY.cif)}</p>
-        <p class="brand-details">
-          ${escapeHtml(INVOICE_COMPANY.address)}<br />
-          Tel. ${escapeHtml(INVOICE_COMPANY.phone)} · ${escapeHtml(INVOICE_COMPANY.email)}
-        </p>
+        <div class="brand-meta">
+          <p class="brand-line">${escapeHtml(INVOICE_COMPANY.legalName)} · CIF ${escapeHtml(INVOICE_COMPANY.cif)}</p>
+          <p class="brand-line">${escapeHtml(INVOICE_COMPANY.address)}</p>
+          <p class="brand-line">Tel. ${escapeHtml(INVOICE_COMPANY.phone)} · ${escapeHtml(INVOICE_COMPANY.email)}</p>
+        </div>
       </div>
     </header>
 
     <div class="doc-title-row">
-      <h1 class="doc-title">Factura</h1>
+      <h1 class="doc-title">${copy.invoice}</h1>
       <span class="doc-ref">Ref. ${escapeHtml(invoiceRef)}</span>
     </div>
 
     <section class="meta-grid">
       <div class="meta-block">
-        <label>Cliente</label>
+        <label>${copy.client}</label>
         <div class="value">${escapeHtml(meta.encargoName)}</div>
       </div>
       <div class="meta-block">
-        <label>Contacto</label>
+        <label>${copy.contact}</label>
         <div class="value">${contactValue}</div>
       </div>
       <div class="meta-block">
-        <label>Fecha reserva</label>
+        <label>${copy.date}</label>
         <div class="value">${escapeHtml(meta.encargoDate)}</div>
       </div>
       <div class="meta-block">
-        <label>Hora reserva</label>
+        <label>${copy.time}</label>
         <div class="value">${escapeHtml(meta.encargoTime)}</div>
       </div>
       <div class="meta-block">
-        <label>Comensales</label>
+        <label>${copy.guests}</label>
         <div class="value">${guestValue}</div>
       </div>
       <div class="meta-block">
-        <label>IVA aplicado</label>
+        <label>${copy.vatApplied}</label>
         <div class="value">10% (hostelería)</div>
       </div>
     </section>
@@ -490,11 +593,11 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
     <table class="invoice-table">
       <thead>
         <tr>
-          <th class="col-product">Producto</th>
+          <th class="col-product">${copy.product}</th>
           <th class="col-note" aria-hidden="true">&nbsp;</th>
-          <th class="col-qty">Cant.</th>
-          <th class="col-unit">P. unit.</th>
-          <th class="col-amount">Importe</th>
+          <th class="col-qty">${copy.qty}</th>
+          <th class="col-unit">${copy.unitPrice}</th>
+          <th class="col-amount">${copy.amount}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -502,7 +605,7 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
 
     <div class="totals">
       <div class="totals-row">
-        <span>Base imponible</span>
+        <span>${copy.taxableBase}</span>
         <span>${formatEuro(baseImponible)}</span>
       </div>
       <div class="totals-row iva-rate">
@@ -510,16 +613,16 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
         <span>${formatEuro(ivaAmount)}</span>
       </div>
       <div class="totals-row total">
-        <span>Total</span>
+        <span>${copy.total}</span>
         <span>${formatEuro(totalGross)}</span>
       </div>
     </div>
 
     <footer class="thanks">
-      <p>¡Gracias por vuestra visita!</p>
-      <p class="sub">Os esperamos pronto en Bar La Marbella</p>
+      <p>${copy.thanks}</p>
+      <p class="sub">${copy.seeYou}</p>
       <p class="legal-note">
-        Factura simplificada. Precios con IVA incluido. Tipo impositivo 10% (hostelería).
+        ${copy.invoiceLegal}
       </p>
     </footer>
   </div>
