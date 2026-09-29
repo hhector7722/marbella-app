@@ -147,7 +147,7 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
   )
 
   const perPersonBlock =
-    perPerson == null || basePerPerson == null || ivaPerPerson == null
+    guestCount == null || perPerson == null || basePerPerson == null || ivaPerPerson == null
       ? ''
       : `<section class="per-person">
       <div class="per-person-heading">
