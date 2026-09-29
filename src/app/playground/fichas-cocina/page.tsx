@@ -440,51 +440,43 @@ export default function FichasCocinaPage() {
               }
             >
               {!recipe ? (
-                <div className="flex min-h-[360px] flex-1 items-center justify-center rounded-2xl border border-white/60 bg-white p-6 text-center shadow-sm">
-                  <div>
-                    <ChefHat className="mx-auto text-zinc-300" size={42} strokeWidth={1.25} />
-                    <h2 className="mt-3 text-base font-bold text-zinc-800">
-                      Selecciona una receta
-                    </h2>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      La ficha reutiliza los datos reales de recetas y guarda solo su configuración visual.
-                    </p>
-                    <select
-                      value={recipeId}
-                      onChange={event => setRecipeId(event.target.value)}
-                      className="mt-4 h-11 w-full max-w-sm rounded-xl border border-zinc-200 bg-white px-3 text-base font-medium outline-none focus:border-[#36606F] md:text-sm"
-                    >
-                      <option value="">Selecciona receta…</option>
-                      {recipes.map(item => (
-                        <option key={item.id} value={item.id}>
-                          {item.is_sellable === false ? item.name + ' · Elaboración' : item.name}
-                        </option>
-                      ))}
-                    </select>
+                <div className="self-start rounded-2xl border border-white/60 bg-white p-4 shadow-sm">
+                  <div className="flex max-w-full items-center gap-3">
+                    <ChefHat className="shrink-0 text-zinc-300" size={30} strokeWidth={1.25} />
+                    <div className="min-w-0">
+                      <h2 className="text-sm font-bold text-zinc-800">Selecciona una receta</h2>
+                      <select
+                        value={recipeId}
+                        onChange={event => setRecipeId(event.target.value)}
+                        className="mt-2 h-9 w-auto min-w-56 max-w-full rounded-lg border border-zinc-200 bg-white px-2.5 text-sm font-medium outline-none focus:border-[#36606F]"
+                      >
+                        <option value="">Selecciona receta…</option>
+                        {recipes.map(item => (
+                          <option key={item.id} value={item.id}>
+                            {item.is_sellable === false ? item.name + ' · Elaboración' : item.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:pr-1">
-                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <div>
-                        <h2 className="text-sm font-bold text-zinc-900">Información general</h2>
-                        <p className="mt-0.5 text-xs text-zinc-500">
-                          Datos reales de la receta y formato de la ficha
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-[#36606F]/10 px-2.5 py-1 text-[11px] font-bold text-[#36606F]">
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <h2 className="text-sm font-bold text-zinc-900">Información general</h2>
+                      <span className="rounded-full bg-[#36606F]/10 px-2 py-0.5 text-[10px] font-bold text-[#36606F]">
                         Plantilla fija
                       </span>
                     </div>
 
-                    <div className="grid gap-3 md:grid-cols-3">
-                      <label className="block">
-                        <span className="mb-1.5 block text-xs font-semibold text-zinc-600">Receta</span>
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(150px,1.15fr)_minmax(95px,0.72fr)_72px_minmax(185px,1.1fr)_minmax(175px,0.95fr)] xl:items-end">
+                      <label className="min-w-0">
+                        <span className="mb-1 block text-[11px] font-semibold text-zinc-600">Receta</span>
                         <select
                           value={recipeId}
                           onChange={event => setRecipeId(event.target.value)}
-                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-base font-medium outline-none focus:border-[#36606F] md:text-sm"
+                          className="h-9 w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2.5 text-sm font-medium outline-none focus:border-[#36606F]"
                         >
                           {recipes.map(item => (
                             <option key={item.id} value={item.id}>
@@ -494,106 +486,101 @@ export default function FichasCocinaPage() {
                         </select>
                       </label>
 
-                      <label className="block">
-                        <span className="mb-1.5 block text-xs font-semibold text-zinc-600">Categoría</span>
+                      <label className="min-w-0">
+                        <span className="mb-1 block text-[11px] font-semibold text-zinc-600">Categoría</span>
                         <input
                           value={category}
                           onChange={event => setCategory(event.target.value)}
-                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-base font-medium outline-none focus:border-[#36606F] md:text-sm"
+                          className="h-9 w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2.5 text-sm font-medium outline-none focus:border-[#36606F]"
                           placeholder="Ej. Tapas"
                         />
                       </label>
 
-                      <label className="block">
-                        <span className="mb-1.5 block text-xs font-semibold text-zinc-600">Raciones</span>
+                      <label className="min-w-0">
+                        <span className="mb-1 block text-[11px] font-semibold text-zinc-600">Raciones</span>
                         <input
                           type="number"
                           min={1}
                           step={1}
                           value={servings}
                           onChange={event => setServings(Number(event.target.value) || 1)}
-                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-base font-medium outline-none focus:border-[#36606F] md:text-sm"
+                          className="h-9 w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-medium outline-none focus:border-[#36606F]"
                         />
                       </label>
-                    </div>
 
-                    <div className="mt-4">
-                      <span className="mb-1.5 block text-xs font-semibold text-zinc-600">Orientación A3</span>
-                      <div className="grid max-w-md grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1">
-                        <button
-                          type="button"
-                          onClick={() => setOrientation('landscape')}
-                          className={
-                            'flex min-h-10 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition ' +
-                            (orientation === 'landscape'
-                              ? 'bg-white text-[#36606F] shadow-sm'
-                              : 'text-zinc-500')
-                          }
-                        >
-                          <Monitor size={16} />
-                          Horizontal
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setOrientation('portrait')}
-                          className={
-                            'flex min-h-10 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition ' +
-                            (orientation === 'portrait'
-                              ? 'bg-white text-[#36606F] shadow-sm'
-                              : 'text-zinc-500')
-                          }
-                        >
-                          <Smartphone size={16} />
-                          Vertical
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 border-t border-zinc-100 pt-4">
-                      <span className="mb-2 block text-xs font-semibold text-zinc-600">Imagen principal</span>
-                      <div className="grid gap-3 md:grid-cols-[200px_minmax(0,1fr)] md:items-center">
-                        <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
-                          {mainImageUrl ? (
-                            <img
-                              src={mainImageUrl}
-                              alt={recipe.name}
-                              className="h-full w-full rounded-[1.2cqw] object-contain"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center rounded-[0.8cqw] bg-transparent text-zinc-300">
-                              <ChefHat size={36} strokeWidth={1.25} />
-                            </div>
-                          )}
+                      <div className="min-w-0">
+                        <span className="mb-1 block text-[11px] font-semibold text-zinc-600">Orientación</span>
+                        <div className="grid h-9 grid-cols-2 gap-0.5 rounded-lg bg-zinc-100 p-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setOrientation('landscape')}
+                            className={
+                              'flex min-w-0 items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-semibold transition ' +
+                              (orientation === 'landscape'
+                                ? 'bg-white text-[#36606F] shadow-sm'
+                                : 'text-zinc-500')
+                            }
+                          >
+                            <Monitor size={13} />
+                            Horizontal
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setOrientation('portrait')}
+                            className={
+                              'flex min-w-0 items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-semibold transition ' +
+                              (orientation === 'portrait'
+                                ? 'bg-white text-[#36606F] shadow-sm'
+                                : 'text-zinc-500')
+                            }
+                          >
+                            <Smartphone size={13} />
+                            Vertical
+                          </button>
                         </div>
-                        <div>
-                          <div className="flex flex-wrap gap-2">
-                            <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50">
-                              <ImagePlus size={16} />
-                              Cambiar imagen
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={event => {
-                                  const file = event.target.files?.[0];
-                                  if (file) void uploadImage(file, 'main');
-                                  event.currentTarget.value = '';
-                                }}
+                      </div>
+
+                      <div className="min-w-0">
+                        <span className="mb-1 block text-[11px] font-semibold text-zinc-600">Imagen principal</span>
+                        <div className="flex h-9 min-w-0 items-center gap-1.5">
+                          <div className="h-9 w-12 shrink-0 overflow-hidden rounded-lg bg-transparent">
+                            {mainImageUrl ? (
+                              <img
+                                src={mainImageUrl}
+                                alt={recipe.name}
+                                className="h-full w-full rounded-lg object-contain"
                               />
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => setMainImageUrl(recipe.photo_url)}
-                              disabled={mainImageUrl === recipe.photo_url}
-                              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-40"
-                            >
-                              <RotateCcw size={15} />
-                              Foto de receta
-                            </button>
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-zinc-300">
+                                <ChefHat size={16} strokeWidth={1.25} />
+                              </div>
+                            )}
                           </div>
-                          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                            Se usa como resultado final. La ficha muestra la imagen completa, sin recortarla.
-                          </p>
+
+                          <label className="inline-flex h-9 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 text-[11px] font-semibold text-zinc-700 transition hover:bg-zinc-50">
+                            <ImagePlus size={13} className="shrink-0" />
+                            <span className="truncate">Cambiar</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={event => {
+                                const file = event.target.files?.[0];
+                                if (file) void uploadImage(file, 'main');
+                                event.currentTarget.value = '';
+                              }}
+                            />
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => setMainImageUrl(recipe.photo_url)}
+                            disabled={mainImageUrl === recipe.photo_url}
+                            aria-label="Restaurar foto de receta"
+                            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 disabled:opacity-30"
+                          >
+                            <RotateCcw size={13} />
+                          </button>
                         </div>
                       </div>
                     </div>
