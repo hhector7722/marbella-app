@@ -264,3 +264,204 @@
     display: none !important;
   }
 }
+
+
+/* Gestión de carta física */
+.menu-board-category-header {
+  padding: 10px 12px;
+  border-left: 5px solid var(--color-marca);
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-marca) 12%, white),
+      color-mix(in srgb, var(--color-marca) 3%, white)
+    );
+}
+
+.menu-board-category-title {
+  margin: 0;
+  color: var(--color-marca-intenso);
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.menu-board-category-translations {
+  margin-top: 3px;
+  color: color-mix(in srgb, var(--color-texto) 66%, var(--color-superficie));
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.menu-board-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding-block: 8px;
+}
+
+.menu-board-product-names {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: center;
+}
+
+.menu-board-name-ca,
+.menu-board-name-secondary {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-board-name-ca {
+  font-size: 0.875rem;
+  font-weight: 750;
+  color: var(--color-texto);
+}
+
+.menu-board-name-secondary {
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: color-mix(in srgb, var(--color-texto) 64%, var(--color-superficie));
+}
+
+.menu-board-prices {
+  min-width: 52px;
+  text-align: right;
+  font-size: 0.875rem;
+}
+
+.menu-board-secondary-price {
+  margin-top: 1px;
+  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--color-texto) 62%, var(--color-superficie));
+}
+
+.menu-board-status {
+  width: 42px;
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 750;
+  text-transform: lowercase;
+}
+
+.menu-board-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+/* Flechas: sin card ni contorno y mucho más próximas. */
+.menu-board-row-actions [data-component='Button'][data-instance^='carta-up-'],
+.menu-board-row-actions [data-component='Button'][data-instance^='carta-down-'] {
+  width: 30px;
+  min-width: 30px;
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  padding-inline: 0;
+}
+
+.menu-board-row-actions [data-component='Button'][data-instance^='carta-up-']::before,
+.menu-board-row-actions [data-component='Button'][data-instance^='carta-down-']::before {
+  display: none;
+}
+
+.menu-board-row-actions [data-component='Button'][data-instance^='carta-edit-'],
+.menu-board-row-actions [data-component='Button'][data-instance^='carta-delete-'] {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  padding-inline: 0;
+}
+
+@media (max-width: 720px) {
+  .menu-board-screen {
+    --menu-board-mobile-actions: 132px;
+  }
+
+  .menu-board-category-header {
+    padding: 9px 10px;
+  }
+
+  .menu-board-category-title {
+    font-size: 1.02rem;
+  }
+
+  .menu-board-category-translations {
+    display: none;
+  }
+
+  .menu-board-item-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 4px;
+    padding-block: 7px;
+  }
+
+  .menu-board-product-names {
+    display: block;
+    min-width: 0;
+  }
+
+  .menu-board-name-ca {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 0.82rem;
+    line-height: 1.15;
+  }
+
+  .menu-board-name-secondary {
+    display: none;
+  }
+
+  .menu-board-prices {
+    min-width: 42px;
+    font-size: 0.78rem;
+  }
+
+  .menu-board-secondary-price {
+    font-size: 0.66rem;
+  }
+
+  .menu-board-status {
+    width: 28px;
+    font-size: 0.62rem;
+  }
+
+  .menu-board-row-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    margin-top: -3px;
+    gap: 0;
+  }
+
+  .menu-board-row-actions [data-component='Button'][data-instance^='carta-up-'],
+  .menu-board-row-actions [data-component='Button'][data-instance^='carta-down-'] {
+    width: 26px;
+    min-width: 26px;
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+  }
+
+  .menu-board-row-actions [data-component='Button'][data-instance^='carta-edit-'],
+  .menu-board-row-actions [data-component='Button'][data-instance^='carta-delete-'] {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+    max-height: 34px;
+  }
+}

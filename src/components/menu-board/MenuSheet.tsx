@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { formatMenuAmount, formatMenuPrice } from '@/lib/menu-board/format';
 import type { MenuBoardCategory, MenuBoardItem, MenuBoardMode } from '@/lib/menu-board/types';
 import {
@@ -32,7 +32,7 @@ export function MenuSheet({ category, items, mode, expanded = false, onOverflow 
   const headRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [overflows, setOverflows] = useState(false);
-  const active = visibleItems(items);
+  const active = useMemo(() => visibleItems(items), [items]);
   const title = mode === 'en' ? category.nameEn : category.nameCa;
   const subtitle = mode === 'en' ? null : category.nameEs;
 
@@ -46,7 +46,7 @@ export function MenuSheet({ category, items, mode, expanded = false, onOverflow 
     const a4Content = frame.clientWidth * (297 / 210) - pad;
     const used = head.offsetHeight + content.scrollHeight;
     const next = used > a4Content + 1;
-    setOverflows(next);
+    setOverflows((current) => (current === next ? current : next));
     onOverflow(category.id, next);
   }, [category.id, active, mode, onOverflow, title, subtitle, expanded]);
 

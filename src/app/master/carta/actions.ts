@@ -197,14 +197,17 @@ export async function reorderMenuBoardItems(categoryId: string, orderedIds: stri
     return { ok: false, error: 'El orden no coincide con los productos de la categoría' };
   }
 
-  for (let index = 0; index < orderedIds.length; index += 1) {
-    const { error: updateError } = await gate.supabase
-      .from('menu_board_items')
-      .update({ sort_order: index + 1 })
-      .eq('id', orderedIds[index])
-      .eq('category_id', categoryId);
-    if (updateError) return { ok: false, error: updateError.message };
-  }
+  const updates = await Promise.all(
+    orderedIds.map((id, index) =>
+      gate.supabase
+        .from('menu_board_items')
+        .update({ sort_order: index + 1 })
+        .eq('id', id)
+        .eq('category_id', categoryId),
+    ),
+  );
+  const updateError = updates.find((result) => result.error)?.error;
+  if (updateError) return { ok: false, error: updateError.message };
 
   revalidatePath('/master/carta');
   return { ok: true };

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { formatMenuPrice } from '@/lib/menu-board/format';
@@ -48,6 +49,8 @@ export function MenuBoardClient({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [panel, setPanel] = useState<Panel>('manage');
+  const [localItems, setLocalItems] = useState<MenuBoardItem[]>(items);
+  const reorderTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [mode, setMode] = useState<MenuBoardMode>('ca');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,10 +62,20 @@ export function MenuBoardClient({
   const byCategory = useMemo(() => {
     const map = new Map<string, MenuBoardItem[]>();
     for (const category of categories) map.set(category.id, []);
-    for (const item of items) map.get(item.categoryId)?.push(item);
+    for (const item of localItems) map.get(item.categoryId)?.push(item);
     for (const list of map.values()) list.sort((a, b) => a.sortOrder - b.sortOrder);
     return map;
-  }, [categories, items]);
+  }, [categories, localItems]);
+
+  useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
+
+  useEffect(() => {
+    return () => {
+      for (const timer of Object.values(reorderTimers.current)) clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!printJob) return;
@@ -76,6 +89,13 @@ export function MenuBoardClient({
   }, [printJob]);
 
   const printSheets = categories.filter((category) => !printJob?.categoryId || category.id === printJob.categoryId);
+
+  const handleOverflow = useCallback((id: string, overflows: boolean) => {
+    setOverflowIds((current) => {
+      if (current[id] === overflows) return current;
+      return { ...current, [id]: overflows };
+    });
+  }, []);
 
   function run(action: () => Promise<{ ok: boolean; error?: string }>) {
     setError(null);
@@ -91,24 +111,71 @@ export function MenuBoardClient({
     });
   }
 
+  function persistOrder(categoryId: string, orderedIds: string[]) {
+    const existing = reorderTimers.current[categoryId];
+    if (existing) clearTimeout(existing);
+
+    reorderTimers.current[categoryId] = setTimeout(() => {
+      startTransition(async () => {
+        const result = await reorderMenuBoardItems(categoryId, orderedIds);
+        if (!result.ok) {
+          setError(result.error ?? 'No se ha podido guardar el orden');
+          router.refresh();
+        }
+      });
+    }, 120);
+  }
+
   function move(categoryId: string, index: number, direction: -1 | 1) {
     const list = byCategory.get(categoryId) ?? [];
     const next = index + direction;
     if (next < 0 || next >= list.length) return;
-    const ordered = list.map((item) => item.id);
-    const [moved] = ordered.splice(index, 1);
-    ordered.splice(next, 0, moved);
-    run(() => reorderMenuBoardItems(categoryId, ordered));
+
+    const reordered = list.slice();
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(next, 0, moved);
+
+    const sortOrderById = new Map(reordered.map((item, position) => [item.id, position + 1]));
+    setLocalItems((current) =>
+      current.map((item) => {
+        const nextOrder = sortOrderById.get(item.id);
+        return nextOrder == null ? item : { ...item, sortOrder: nextOrder };
+      }),
+    );
+
+    setError(null);
+    persistOrder(categoryId, reordered.map((item) => item.id));
   }
 
   return (
     <>
       <div className="menu-board-screen space-y-4">
-        <div className="flex flex-wrap gap-2">
-          <Button instance="carta-gestion" variant={panel === 'manage' ? 'primary' : 'secondary'} onClick={() => setPanel('manage')}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            instance="carta-back"
+            variant="secondary"
+            aria-label="Volver"
+            icon={<ArrowLeft size={19} strokeWidth={1.8} />}
+            onClick={() => router.push('/master/dashboard')}
+          />
+          <Button
+            instance="carta-gestion"
+            variant={panel === 'manage' ? 'primary' : 'secondary'}
+            onClick={() => {
+              setError(null);
+              setPanel('manage');
+            }}
+          >
             Gestión
           </Button>
-          <Button instance="carta-preview" variant={panel === 'preview' ? 'primary' : 'secondary'} onClick={() => setPanel('preview')}>
+          <Button
+            instance="carta-preview"
+            variant={panel === 'preview' ? 'primary' : 'secondary'}
+            onClick={() => {
+              setError(null);
+              setPanel('preview');
+            }}
+          >
             Vista previa
           </Button>
         </div>
@@ -121,10 +188,10 @@ export function MenuBoardClient({
               const list = byCategory.get(category.id) ?? [];
               return (
                 <section key={category.id} className="space-y-2">
-                  <div className="flex items-end justify-between gap-3">
-                    <div>
-                      <h2 className="text-lg font-semibold">{category.nameCa}</h2>
-                      <p className="menu-board-muted text-sm">
+                  <div className="menu-board-category-header flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="menu-board-category-title">{category.nameCa}</h2>
+                      <p className="menu-board-category-translations">
                         {category.nameEs} · {category.nameEn}
                       </p>
                     </div>
@@ -145,26 +212,52 @@ export function MenuBoardClient({
                   ) : (
                     <ul className="menu-board-list">
                       {list.map((item, index) => (
-                        <li key={item.id} className="flex flex-wrap items-center gap-2 py-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold">{item.nameCa}</p>
-                            <p className="menu-board-muted truncate text-xs">
-                              {[item.nameEs, item.nameEn].filter(Boolean).join(' · ') || 'Sin traducción'}
-                            </p>
+                        <li key={item.id} className="menu-board-item-row">
+                          <div className="menu-board-product-names">
+                            <p className="menu-board-name-ca">{item.nameCa}</p>
+                            <p className="menu-board-name-secondary">{item.nameEs || '—'}</p>
+                            <p className="menu-board-name-secondary">{item.nameEn || '—'}</p>
                           </div>
-                          <p className="shrink-0 text-sm font-semibold tabular-nums">{formatMenuPrice(item.price, 'ca')}</p>
-                          {item.secondaryPrice != null ? (
-                            <p className="shrink-0 text-sm tabular-nums">{formatMenuPrice(item.secondaryPrice, 'ca')}</p>
-                          ) : null}
-                          <p className="w-16 shrink-0 text-xs">{item.active ? 'activo' : 'oculto'}</p>
-                          <Button instance={`carta-up-${item.id}`} variant="tertiary" aria-label="Subir" onClick={() => move(category.id, index, -1)} icon={<span aria-hidden>↑</span>} />
-                          <Button instance={`carta-down-${item.id}`} variant="tertiary" aria-label="Bajar" onClick={() => move(category.id, index, 1)} icon={<span aria-hidden>↓</span>} />
-                          <Button instance={`carta-edit-${item.id}`} variant="secondary" onClick={() => setDraft(draftFromItem(item))}>
-                            Editar
-                          </Button>
-                          <Button instance={`carta-delete-${item.id}`} variant="destructive" onClick={() => setPendingDelete(item)}>
-                            Eliminar
-                          </Button>
+
+                          <div className="menu-board-prices">
+                            <p className="font-semibold tabular-nums">{formatMenuPrice(item.price, 'ca')}</p>
+                            {item.secondaryPrice != null ? (
+                              <p className="menu-board-secondary-price tabular-nums">{formatMenuPrice(item.secondaryPrice, 'ca')}</p>
+                            ) : null}
+                          </div>
+
+                          <p className="menu-board-status">{item.active ? 'act' : 'oculto'}</p>
+
+                          <div className="menu-board-row-actions">
+                            <Button
+                              instance={`carta-up-${item.id}`}
+                              variant="tertiary"
+                              aria-label="Subir"
+                              onClick={() => move(category.id, index, -1)}
+                              icon={<ChevronUp size={18} strokeWidth={2} />}
+                            />
+                            <Button
+                              instance={`carta-down-${item.id}`}
+                              variant="tertiary"
+                              aria-label="Bajar"
+                              onClick={() => move(category.id, index, 1)}
+                              icon={<ChevronDown size={18} strokeWidth={2} />}
+                            />
+                            <Button
+                              instance={`carta-edit-${item.id}`}
+                              variant="tertiary"
+                              aria-label="Editar"
+                              onClick={() => setDraft(draftFromItem(item))}
+                              icon={<Pencil size={17} strokeWidth={1.9} />}
+                            />
+                            <Button
+                              instance={`carta-delete-${item.id}`}
+                              variant="destructive"
+                              aria-label="Eliminar"
+                              onClick={() => setPendingDelete(item)}
+                              icon={<Trash2 size={17} strokeWidth={1.9} />}
+                            />
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -180,7 +273,7 @@ export function MenuBoardClient({
             mode={mode}
             onMode={setMode}
             onOpen={setOpenSheetId}
-            onOverflow={(id, overflows) => setOverflowIds((current) => ({ ...current, [id]: overflows }))}
+            onOverflow={handleOverflow}
             onPrintAll={() => setPrintJob({ mode })}
             onPrintOne={(categoryId) => setPrintJob({ mode, categoryId })}
           />
@@ -204,10 +297,10 @@ export function MenuBoardClient({
         {draft ? (
           <ItemForm
             draft={draft}
-            placedIds={new Set(items.flatMap((item) => (item.articuloId == null ? [] : [item.articuloId])))}
-            placedNames={items.filter((item) => item.categoryId === draft.categoryId && item.id !== draft.id).map((item) => item.nameCa)}
+            placedIds={new Set(localItems.flatMap((item) => (item.articuloId == null ? [] : [item.articuloId])))}
+            placedNames={localItems.filter((item) => item.categoryId === draft.categoryId && item.id !== draft.id).map((item) => item.nameCa)}
             catalog={catalog.filter((product) => product.boardSlug === categories.find((category) => category.id === draft.categoryId)?.slug)}
-            current={items.find((item) => item.id === draft.id) ?? null}
+            current={localItems.find((item) => item.id === draft.id) ?? null}
             pending={pending}
             onChange={setDraft}
             onClose={() => setDraft(null)}

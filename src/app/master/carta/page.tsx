@@ -58,8 +58,7 @@ export default async function MasterCartaPage() {
   return (
     <PageScreen
       title="Carta física"
-      subtitle="Productos y precios de la carta virtual"
-      backHref="/master/dashboard"
+      showBackButton={false}
       template="list"
       work="form"
       maxWidthClass="max-w-4xl lg:max-w-[72rem]"
