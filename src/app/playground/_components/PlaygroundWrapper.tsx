@@ -6,6 +6,7 @@ import PlaygroundShell from './PlaygroundShell';
 export default function PlaygroundWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isStudio = pathname === '/playground/studio';
+    const isKitchenSheets = pathname === '/playground/fichas-cocina';
 
     if (isStudio) {
         return <>{children}</>;
@@ -14,9 +15,15 @@ export default function PlaygroundWrapper({ children }: { children: React.ReactN
     return (
         <>
             <PlaygroundShell />
-            <div className="pt-20 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
-                {children}
-            </div>
+            {isKitchenSheets ? (
+                <div className="h-dvh overflow-hidden px-3 pb-3 pt-[68px]">
+                    {children}
+                </div>
+            ) : (
+                <div className="mx-auto max-w-[1400px] px-4 pb-20 pt-20 md:px-8">
+                    {children}
+                </div>
+            )}
         </>
     );
 }
