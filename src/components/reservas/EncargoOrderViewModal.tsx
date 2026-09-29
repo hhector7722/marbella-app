@@ -20,11 +20,11 @@ import {
   formatEncargoProductNote,
 } from '@/lib/encargo-staff-helpers'
 import {
-  buildEncargoInvoiceHtml,
-  buildEncargoPrintHtml,
-  printEncargoHtml,
+  createEncargoPdfPreviewWindow,
+  generateEncargoPdf,
+  openEncargoPdf,
   type EncargoDocumentLanguage,
-} from '@/lib/reservas/print-encargo-document'
+} from '@/lib/reservas/encargo-pdf'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -87,12 +87,16 @@ export function EncargoOrderViewModal({
     return buildClientPedidoUrl(token, origin)
   }, [localToken])
 
-  const handlePrint = useCallback(async (language: EncargoDocumentLanguage) => {
+  const handlePrint = useCallback(async (
+    language: EncargoDocumentLanguage,
+    previewWindow?: Window | null
+  ) => {
     if (printBusy || items.length === 0) return
     setPrintBusy(true)
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const html = buildEncargoPrintHtml(
+      const pdf = await generateEncargoPdf(
+        'quote',
         {
           encargoDate: formatEncargoPrintDate(encargoDate),
           encargoTime,
@@ -104,21 +108,30 @@ export function EncargoOrderViewModal({
         },
         items
       )
-      await printEncargoHtml(html)
+      openEncargoPdf(pdf, previewWindow)
     } catch (error) {
-      console.error('encargo quote print failed', error)
-      toast.error('No se pudo preparar el presupuesto.')
+      try {
+        previewWindow?.close()
+      } catch {
+        // La pestaña puede haber sido cerrada por el usuario.
+      }
+      console.error('encargo quote pdf failed', error)
+      toast.error('No se pudo generar el presupuesto PDF.')
     } finally {
       setPrintBusy(false)
     }
   }, [printBusy, encargoName, encargoDate, encargoTime, contactPhone, guestCount, items])
 
-  const handlePrintInvoice = useCallback(async (language: EncargoDocumentLanguage) => {
+  const handlePrintInvoice = useCallback(async (
+    language: EncargoDocumentLanguage,
+    previewWindow?: Window | null
+  ) => {
     if (invoiceBusy || items.length === 0) return
     setInvoiceBusy(true)
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const html = buildEncargoInvoiceHtml(
+      const pdf = await generateEncargoPdf(
+        'invoice',
         {
           encargoDate: formatEncargoPrintDate(encargoDate),
           encargoTime,
@@ -130,10 +143,15 @@ export function EncargoOrderViewModal({
         },
         items
       )
-      await printEncargoHtml(html)
+      openEncargoPdf(pdf, previewWindow)
     } catch (error) {
-      console.error('encargo invoice print failed', error)
-      toast.error('No se pudo preparar la factura.')
+      try {
+        previewWindow?.close()
+      } catch {
+        // La pestaña puede haber sido cerrada por el usuario.
+      }
+      console.error('encargo invoice pdf failed', error)
+      toast.error('No se pudo generar la factura PDF.')
     } finally {
       setInvoiceBusy(false)
     }
@@ -142,11 +160,16 @@ export function EncargoOrderViewModal({
   const handlePrintLanguage = useCallback(
     (language: EncargoDocumentLanguage) => {
       const target = printLanguageFor
+      if (!target) return
+
+      // Abrir la pestaña dentro del gesto del usuario evita el bloqueo de popups en Safari iOS.
+      const previewWindow = createEncargoPdfPreviewWindow()
       setPrintLanguageFor(null)
+
       if (target === 'quote') {
-        void handlePrint(language)
-      } else if (target === 'invoice') {
-        void handlePrintInvoice(language)
+        void handlePrint(language, previewWindow)
+      } else {
+        void handlePrintInvoice(language, previewWindow)
       }
     },
     [printLanguageFor, handlePrint, handlePrintInvoice]
@@ -231,7 +254,7 @@ export function EncargoOrderViewModal({
               onClick={() => setPrintLanguageFor('quote')}
               disabled={items.length === 0 || printBusy}
               className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-              aria-label="Imprimir presupuesto"
+              aria-label="Generar presupuesto PDF"
             >
               {printBusy ? (
                 <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
@@ -252,7 +275,7 @@ export function EncargoOrderViewModal({
               onClick={() => setPrintLanguageFor('invoice')}
               disabled={items.length === 0 || invoiceBusy}
               className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-              aria-label="Imprimir factura"
+              aria-label="Generar factura PDF"
             >
               {invoiceBusy ? (
                 <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
