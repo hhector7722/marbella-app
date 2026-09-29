@@ -16,7 +16,7 @@ export default function PlaygroundWrapper({ children }: { children: React.ReactN
         <>
             <PlaygroundShell />
             {isKitchenSheets ? (
-                <div className="h-dvh overflow-hidden px-3 pb-3 pt-[68px]">
+                <div className="min-h-dvh px-2 pb-4 pt-[64px] sm:px-3 sm:pb-3 sm:pt-[68px] xl:h-dvh xl:overflow-hidden">
                     {children}
                 </div>
             ) : (

@@ -1,9 +1,22 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { ChefHat, Download, Printer, Save, Trash2, Camera } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Camera,
+  ChefHat,
+  Download,
+  Eye,
+  ImagePlus,
+  Monitor,
+  Plus,
+  Printer,
+  RotateCcw,
+  Save,
+  Smartphone,
+  Trash2,
+} from 'lucide-react';
 import { jsPDF } from 'jspdf';
+import { createClient } from '@/utils/supabase/client';
 
 type Recipe = {
   id: string;
@@ -16,31 +29,22 @@ type Recipe = {
   is_sellable: boolean;
 };
 
-type Step = { text: string; image: string | null };
+type Step = {
+  text: string;
+  image: string | null;
+};
+
+type SheetOrientation = 'landscape' | 'portrait';
+type MobileMode = 'edit' | 'preview';
 
 const supabase = createClient();
 
-function splitSteps(value: string | null) {
+function splitSteps(value: string | null): Step[] {
   return (value ?? '')
     .split(/\r?\n/)
-    .map(s => s.trim())
+    .map(item => item.trim())
     .filter(Boolean)
     .map(text => ({ text, image: null }));
-}
-
-async function fileToDataUrl(file: File) {
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function urlToDataUrl(url: string) {
-  const response = await fetch(url, { mode: 'cors' });
-  const blob = await response.blob();
-  return await fileToDataUrl(new File([blob], 'image', { type: blob.type }));
 }
 
 function slug(value: string) {
@@ -52,594 +56,816 @@ function slug(value: string) {
     .replace(/^-|-$/g, '');
 }
 
+function cleanList(values: string[]) {
+  return values.map(value => value.trim()).filter(Boolean);
+}
+
+function sheetDimensions(orientation: SheetOrientation) {
+  return orientation === 'landscape'
+    ? { pdfWidth: 420, pdfHeight: 297, exportWidth: 1587, exportHeight: 1123 }
+    : { pdfWidth: 297, pdfHeight: 420, exportWidth: 1123, exportHeight: 1587 };
+}
+
 export default function FichasCocinaPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [recipeId, setRecipeId] = useState('');
   const [steps, setSteps] = useState<Step[]>([]);
+  const [category, setCategory] = useState('');
+  const [servings, setServings] = useState(1);
+  const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
+  const [orientation, setOrientation] = useState<SheetOrientation>('landscape');
   const [keyPoints, setKeyPoints] = useState<string[]>(['']);
   const [avoidPoints, setAvoidPoints] = useState<string[]>([]);
+  const [mobileMode, setMobileMode] = useState<MobileMode>('edit');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState('');
+  const exportRef = useRef<HTMLDivElement>(null);
 
-  const recipe = useMemo(() => recipes.find(r => r.id === recipeId) ?? null, [recipes, recipeId]);
+  const recipe = useMemo(
+    () => recipes.find(item => item.id === recipeId) ?? null,
+    [recipes, recipeId],
+  );
 
   useEffect(() => {
+    let active = true;
+
     void (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('recipes')
         .select('id,name,category,preparation_time,servings,photo_url,elaboration,is_sellable')
         .order('name');
-      if (data) setRecipes(data as Recipe[]);
+
+      if (!active) return;
+
+      if (error) {
+        setMessage('No se pudieron cargar las recetas: ' + error.message);
+      } else if (data) {
+        setRecipes(data as Recipe[]);
+      }
+
       setLoading(false);
     })();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (!recipe) return;
-    void (async () => {
-      setSteps(splitSteps(recipe.elaboration));
-      const { data } = await supabase
-        .from('recipe_kitchen_sheets')
-        .select('key_points,avoid_points,step_images')
-        .eq('recipe_id', recipe.id)
-        .maybeSingle();
-      if (data) {
-        const images = Array.isArray(data.step_images) ? (data.step_images as string[]) : [];
-        setSteps(splitSteps(recipe.elaboration).map((step, i) => ({ ...step, image: images[i] ?? null })));
-        setKeyPoints((data.key_points as string[] | null)?.length ? (data.key_points as string[]) : ['']);
-        setAvoidPoints((data.avoid_points as string[] | null) ?? []);
-      } else {
-        setKeyPoints(['']);
-        setAvoidPoints([]);
-      }
-      setMessage('');
-    })();
-  }, [recipe]);
-
-  async function uploadStepImage(index: number, file: File) {
-    if (!recipe) return;
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const path = `kitchen-sheets/${recipe.id}/step-${index + 1}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('recipes').upload(path, file, { contentType: file.type, upsert: false });
-    if (error) {
-      setMessage(`Error subiendo imagen: ${error.message}`);
+    if (!recipe) {
+      setSteps([]);
+      setCategory('');
+      setServings(1);
+      setMainImageUrl(null);
+      setOrientation('landscape');
+      setKeyPoints(['']);
+      setAvoidPoints([]);
       return;
     }
+
+    let active = true;
+
+    void (async () => {
+      const baseSteps = splitSteps(recipe.elaboration);
+
+      setSteps(baseSteps);
+      setCategory(recipe.category ?? '');
+      setServings(recipe.servings ?? 1);
+      setMainImageUrl(recipe.photo_url);
+      setOrientation('landscape');
+      setKeyPoints(['']);
+      setAvoidPoints([]);
+      setMessage('');
+
+      const { data, error } = await supabase
+        .from('recipe_kitchen_sheets')
+        .select('key_points,avoid_points,step_images,orientation,main_image_url')
+        .eq('recipe_id', recipe.id)
+        .maybeSingle();
+
+      if (!active) return;
+
+      if (error) {
+        setMessage('No se pudo cargar la ficha guardada: ' + error.message);
+        return;
+      }
+
+      if (!data) return;
+
+      const images = Array.isArray(data.step_images) ? (data.step_images as Array<string | null>) : [];
+      setSteps(
+        baseSteps.map((step, index) => ({
+          ...step,
+          image: typeof images[index] === 'string' ? images[index] : null,
+        })),
+      );
+      setKeyPoints(
+        Array.isArray(data.key_points) && data.key_points.length
+          ? (data.key_points as string[])
+          : [''],
+      );
+      setAvoidPoints(Array.isArray(data.avoid_points) ? (data.avoid_points as string[]) : []);
+      setOrientation(data.orientation === 'portrait' ? 'portrait' : 'landscape');
+      setMainImageUrl(
+        typeof data.main_image_url === 'string' && data.main_image_url
+          ? data.main_image_url
+          : recipe.photo_url,
+      );
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [recipe]);
+
+  async function uploadImage(file: File, kind: 'main' | 'step', stepIndex?: number) {
+    if (!recipe) return;
+
+    setMessage('Subiendo imagen…');
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const suffix = kind === 'main' ? 'main' : 'step-' + String((stepIndex ?? 0) + 1);
+    const path =
+      'kitchen-sheets/' +
+      recipe.id +
+      '/' +
+      suffix +
+      '-' +
+      String(Date.now()) +
+      '.' +
+      ext;
+
+    const { error } = await supabase.storage
+      .from('recipes')
+      .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+
+    if (error) {
+      setMessage('Error subiendo imagen: ' + error.message);
+      return;
+    }
+
     const { data } = supabase.storage.from('recipes').getPublicUrl(path);
-    setSteps(current => current.map((step, i) => (i === index ? { ...step, image: data.publicUrl } : step)));
+
+    if (kind === 'main') {
+      setMainImageUrl(data.publicUrl);
+    } else if (typeof stepIndex === 'number') {
+      setSteps(current =>
+        current.map((step, index) =>
+          index === stepIndex ? { ...step, image: data.publicUrl } : step,
+        ),
+      );
+    }
+
+    setMessage('Imagen preparada. Guarda la ficha para conservar el cambio.');
   }
 
   async function saveSheet() {
     if (!recipe) return;
+
+    const normalizedSteps = steps
+      .map(step => ({ ...step, text: step.text.trim() }))
+      .filter(step => Boolean(step.text));
+
+    if (!normalizedSteps.length) {
+      setMessage('La ficha necesita al menos un paso de elaboración.');
+      return;
+    }
+
+    const normalizedServings = Math.max(1, Math.round(Number(servings) || 1));
+    const normalizedCategory = category.trim() || null;
+    const now = new Date().toISOString();
+
     setSaving(true);
     setMessage('');
-    const payload = {
+
+    const { error: recipeError } = await supabase
+      .from('recipes')
+      .update({
+        category: normalizedCategory,
+        servings: normalizedServings,
+        elaboration: normalizedSteps.map(step => step.text).join('\n'),
+        updated_at: now,
+      })
+      .eq('id', recipe.id);
+
+    if (recipeError) {
+      setSaving(false);
+      setMessage('Error guardando la receta: ' + recipeError.message);
+      return;
+    }
+
+    const sheetPayload = {
       recipe_id: recipe.id,
-      key_points: keyPoints.map(x => x.trim()).filter(Boolean),
-      avoid_points: avoidPoints.map(x => x.trim()).filter(Boolean),
-      step_images: steps.map(s => s.image),
-      updated_at: new Date().toISOString(),
+      key_points: cleanList(keyPoints),
+      avoid_points: cleanList(avoidPoints),
+      step_images: normalizedSteps.map(step => step.image),
+      orientation,
+      main_image_url:
+        mainImageUrl && mainImageUrl !== recipe.photo_url ? mainImageUrl : null,
+      updated_at: now,
     };
-    const { error } = await supabase.from('recipe_kitchen_sheets').upsert(payload, { onConflict: 'recipe_id' });
+
+    const { error: sheetError } = await supabase
+      .from('recipe_kitchen_sheets')
+      .upsert(sheetPayload, { onConflict: 'recipe_id' });
+
     setSaving(false);
-    setMessage(error ? `Error: ${error.message}` : 'Ficha guardada correctamente');
+
+    if (sheetError) {
+      setMessage('Error guardando la ficha: ' + sheetError.message);
+      return;
+    }
+
+    setSteps(normalizedSteps);
+    setServings(normalizedServings);
+    setCategory(normalizedCategory ?? '');
+    setRecipes(current =>
+      current.map(item =>
+        item.id === recipe.id
+          ? {
+              ...item,
+              category: normalizedCategory,
+              servings: normalizedServings,
+              elaboration: normalizedSteps.map(step => step.text).join('\n'),
+            }
+          : item,
+      ),
+    );
+    setMessage('Ficha guardada correctamente');
   }
 
-  // Segmenta los pasos en Fila 1 y Fila 2 adaptativamente según el número de pasos totales (3 a 8)
-  const { fila1, fila2 } = useMemo(() => {
-    const n = Math.min(8, steps.length);
-    let limitFila1 = 3;
-    if (n === 3) limitFila1 = 3;
-    else if (n === 4) limitFila1 = 2;
-    else if (n === 5) limitFila1 = 3;
-    else if (n === 6) limitFila1 = 3;
-    else if (n === 7) limitFila1 = 4;
-    else if (n === 8) limitFila1 = 4;
-
-    return {
-      fila1: steps.slice(0, limitFila1),
-      fila2: steps.slice(limitFila1, n),
-    };
-  }, [steps]);
-
   async function generatePdf() {
-    if (!recipe) return;
+    if (!recipe || !exportRef.current) return;
+
+    setExporting(true);
     setMessage('Generando PDF…');
-    
-    // Configuración A3 Horizontal (Landscape: 420 x 297 mm)
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3', compress: true });
-    const W = 420;
-    const H = 297;
-    const margin = 14;
 
-    // Fondo blanco mate premium
-    pdf.setFillColor(252, 251, 249);
-    pdf.rect(0, 0, W, H, 'F');
+    try {
+      const { toPng } = await import('html-to-image');
+      await document.fonts.ready;
 
-    // Header: solo información propia de la receta, sin rótulos genéricos.
-    pdf.setTextColor(24, 24, 27);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(26);
-    pdf.text(recipe.name.toUpperCase(), margin, 22);
+      const dataUrl = await toPng(exportRef.current, {
+        cacheBust: true,
+        backgroundColor: '#FFFFFF',
+        pixelRatio: 1.35,
+      });
 
-    pdf.setTextColor(115, 115, 115);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(9);
-    const metaParts = [
-      `${recipe.servings ?? 1} ración${recipe.servings === 1 ? '' : 'es'}`,
-      recipe.preparation_time ? `${recipe.preparation_time} min` : null,
-    ].filter(Boolean);
-    pdf.text(metaParts.join('  ·  '), margin, 29);
+      const dimensions = sheetDimensions(orientation);
+      const pdf = new jsPDF({
+        orientation,
+        unit: 'mm',
+        format: 'a3',
+        compress: true,
+      });
 
-    pdf.setDrawColor(54, 96, 111);
-    pdf.setLineWidth(1.2);
-    pdf.line(margin, 34, W - margin, 34);
-
-    // Dimensiones de la composición
-    const startY = 41;
-    const totalContentH = 234; // 297 - 49 - 14 (margin)
-    const colGap = 8;
-    const leftColW = 110;
-    const rightColW = W - margin * 2 - leftColW - colGap; // 274 mm
-    const startRightX = margin + leftColW + colGap; // 132 mm
-
-    // --- Columna Izquierda: Foto Final + Puntos Clave ---
-    // Foto final (60% del alto disponible)
-    const finalPhotoH = 120;
-    pdf.setFillColor(255, 255, 255);
-    pdf.setDrawColor(228, 228, 231);
-    pdf.setLineWidth(0.3);
-    pdf.roundedRect(margin, startY, leftColW, finalPhotoH, 3, 3, 'FD');
-
-    if (recipe.photo_url) {
-      try {
-        const img = await urlToDataUrl(recipe.photo_url);
-        pdf.addImage(img, 'JPEG', margin + 6, startY + 6, leftColW - 12, finalPhotoH - 12, undefined, 'FAST');
-      } catch (e) {
-        pdf.setFillColor(244, 244, 245);
-        pdf.rect(margin + 6, startY + 6, leftColW - 12, finalPhotoH - 12, 'F');
-      }
-    } else {
-      pdf.setFillColor(244, 244, 245);
-      pdf.rect(margin + 6, startY + 6, leftColW - 12, finalPhotoH - 12, 'F');
+      pdf.addImage(
+        dataUrl,
+        'PNG',
+        0,
+        0,
+        dimensions.pdfWidth,
+        dimensions.pdfHeight,
+        undefined,
+        'FAST',
+      );
+      pdf.save(slug(recipe.name) + '-ficha-cocina-a3.pdf');
+      setMessage('PDF generado correctamente');
+    } catch (error) {
+      setMessage(
+        'No se pudo generar el PDF: ' +
+          (error instanceof Error ? error.message : 'error desconocido'),
+      );
+    } finally {
+      setExporting(false);
     }
+  }
 
-    // Puntos clave & No Hacer card (40% del alto disponible)
-    const cardY = startY + finalPhotoH + 6;
-    const cardH = totalContentH - finalPhotoH - 6; // ~108 mm
-    pdf.setFillColor(11, 28, 54); // Color envolvente bajo
-    pdf.roundedRect(margin, cardY, leftColW, cardH, 3, 3, 'F');
+  function addStep() {
+    setSteps(current => [...current, { text: '', image: null }]);
+  }
 
-    // Título Puntos Clave
-    pdf.setTextColor(110, 231, 183); // Verde esmeralda
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.text('PUNTOS CLAVE', margin + 8, cardY + 12);
-
-    pdf.setTextColor(244, 244, 245);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    let bulletY = cardY + 20;
-    for (const p of keyPoints.filter(Boolean)) {
-      const splitP = pdf.splitTextToSize(`• ${p}`, leftColW - 16);
-      pdf.text(splitP, margin + 8, bulletY);
-      bulletY += (splitP.length * 4);
-    }
-
-    // Título No Hacer (si existen)
-    const avoidArr = avoidPoints.filter(Boolean);
-    if (avoidArr.length > 0) {
-      pdf.setTextColor(253, 164, 175); // Rosa claro/rojo
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(10);
-      bulletY = cardY + 54;
-      pdf.text('NO HACER', margin + 8, bulletY);
-
-      pdf.setTextColor(244, 244, 245);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8);
-      bulletY += 8;
-      for (const p of avoidArr) {
-        const splitP = pdf.splitTextToSize(`• ${p}`, leftColW - 16);
-        pdf.text(splitP, margin + 8, bulletY);
-        bulletY += (splitP.length * 4);
-      }
-    }
-
-    // --- Columna Derecha: Grilla de Pasos adaptativa ---
-    const rowGap = 6;
-    const stepCardH = fila2.length > 0 ? (totalContentH - rowGap) / 2 : totalContentH;
-
-    // Helper para dibujar la tarjeta de un paso
-    const drawPdfStepCard = async (stepItem: Step, numIndex: number, cardX: number, cardYPos: number, cardW: number) => {
-      // Fondo blanco y borde gris sutil
-      pdf.setFillColor(255, 255, 255);
-      pdf.setDrawColor(228, 228, 231);
-      pdf.setLineWidth(0.3);
-      pdf.roundedRect(cardX, cardYPos, cardW, stepCardH, 3, 3, 'FD');
-
-      const numStr = String(numIndex).padStart(2, '0');
-      const stepLines = pdf.splitTextToSize(stepItem.text, cardW - 12);
-
-      // Número de paso
-      pdf.setTextColor(54, 96, 111);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(22);
-      pdf.text(numStr, cardX + 6, cardYPos + 12);
-
-      // Fotografía grande; el espacio inferior se adapta al texto real del paso.
-      const imageOffsetTop = 16;
-      const textSpaceH = Math.max(18, stepLines.length * 3.6 + 7);
-      const imgW = cardW - 12;
-      const imgH = Math.max(28, stepCardH - imageOffsetTop - textSpaceH);
-      const imageY = cardYPos + imageOffsetTop;
-
-      if (stepItem.image) {
-        try {
-          const img = await urlToDataUrl(stepItem.image);
-          pdf.addImage(img, 'JPEG', cardX + 6, imageY, imgW, imgH, undefined, 'FAST');
-        } catch (e) {
-          pdf.setFillColor(244, 244, 245);
-          pdf.rect(cardX + 6, imageY, imgW, imgH, 'F');
-        }
-      } else {
-        pdf.setFillColor(244, 244, 245);
-        pdf.rect(cardX + 6, imageY, imgW, imgH, 'F');
-      }
-
-      // Texto exacto de la ficha técnica, sin reinterpretar ni recortar.
-      pdf.setTextColor(39, 39, 42);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(7.5);
-      const textY = imageY + imgH + 4;
-      pdf.text(stepLines, cardX + 6, textY);
-    };
-
-    // Renderizar Fila 1 en PDF
-    const cardW1 = (rightColW - (fila1.length - 1) * colGap) / fila1.length;
-    for (let i = 0; i < fila1.length; i++) {
-      const stepX = startRightX + i * (cardW1 + colGap);
-      await drawPdfStepCard(fila1[i], i + 1, stepX, startY, cardW1);
-    }
-
-    // Renderizar Fila 2 en PDF
-    if (fila2.length > 0) {
-      const cardW2 = (rightColW - (fila2.length - 1) * colGap) / fila2.length;
-      for (let i = 0; i < fila2.length; i++) {
-        const stepX = startRightX + i * (cardW2 + colGap);
-        const stepY = startY + stepCardH + rowGap;
-        await drawPdfStepCard(fila2[i], fila1.length + i + 1, stepX, stepY, cardW2);
-      }
-    }
-
-    pdf.save(`${slug(recipe.name)}-poster-cocina.pdf`);
-    setMessage('PDF generado correctamente');
+  function removeStep(index: number) {
+    setSteps(current => current.filter((_, itemIndex) => itemIndex !== index));
   }
 
   const photosReady = steps.filter(step => Boolean(step.image)).length;
-  const keyPointsReady = keyPoints.filter(Boolean).length;
-  const avoidPointsReady = avoidPoints.filter(Boolean).length;
-  const sheetChecks = recipe
-    ? [
-        { label: 'Receta', detail: recipe.name, done: true },
-        { label: 'Fotos', detail: photosReady + '/' + steps.length, done: steps.length > 0 && photosReady === steps.length },
-        { label: 'Claves', detail: String(keyPointsReady), done: keyPointsReady > 0 },
-        { label: 'Vista', detail: 'Lista', done: true },
-      ]
-    : [];
-  const completedChecks = sheetChecks.filter(item => item.done).length;
+  const dimensions = sheetDimensions(orientation);
+  const printCss =
+    '@media print {' +
+    '@page { size: A3 ' +
+    orientation +
+    '; margin: 0; }' +
+    'html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; overflow: hidden !important; }' +
+    '#kitchen-sheet-print { position: fixed !important; inset: 0 !important; z-index: 2147483647 !important; display: block !important; width: ' +
+    String(dimensions.pdfWidth) +
+    'mm !important; height: ' +
+    String(dimensions.pdfHeight) +
+    'mm !important; background: #fff !important; }' +
+    '}';
 
   if (loading) {
     return (
-      <div className="flex h-full min-h-[520px] items-center justify-center bg-[#f6f7f8] text-zinc-500">
-        <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-200 border-t-[#36606f]" />
-          <span className="text-xs font-bold">Cargando recetas…</span>
+      <div className="flex min-h-[520px] items-center justify-center text-white/80">
+        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          <span className="text-sm font-semibold">Cargando recetas…</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full min-h-0 bg-[#f6f7f8] text-zinc-900 print:bg-white">
-      <style>{'@media print { @page { size: A3 landscape; margin: 0; } body { background: white !important; } }'}</style>
+    <>
+      <style>{printCss}</style>
 
-      <div className="mx-auto flex h-full min-h-0 max-w-[1800px] flex-col gap-3">
-        <header className="flex h-11 shrink-0 items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 shadow-sm print:hidden">
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-2">
-              <h1 className="truncate text-sm font-black text-zinc-900">Fichas de cocina</h1>
-              {recipe && <span className="truncate text-[11px] font-semibold text-zinc-400">/ {recipe.name}</span>}
+      <div className="flex min-h-full flex-col text-zinc-900 print:hidden xl:h-full xl:min-h-0">
+        <div className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-3 xl:min-h-0">
+          <header className="sticky top-0 z-30 flex min-h-12 shrink-0 items-center justify-between gap-3 rounded-2xl border border-white/60 bg-white/95 px-3 py-2 shadow-sm backdrop-blur xl:static">
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-bold text-zinc-900">Fichas de cocina</h1>
+              <p className="truncate text-xs text-zinc-500">
+                {recipe ? recipe.name : 'Plantilla operativa A3'}
+              </p>
             </div>
-          </div>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              onClick={generatePdf}
-              disabled={!recipe}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40"
-            >
-              <Download size={13} />
-              PDF
-            </button>
-            <button
-              onClick={() => window.print()}
-              disabled={!recipe}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40"
-            >
-              <Printer size={13} />
-              Imprimir
-            </button>
-            <button
-              onClick={saveSheet}
-              disabled={!recipe || saving}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#36606f] px-3 text-[11px] font-black text-white transition-colors hover:bg-[#2f5663] disabled:opacity-40"
-            >
-              <Save size={13} />
-              {saving ? 'Guardando…' : 'Guardar'}
-            </button>
-          </div>
-        </header>
-
-        <main className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[250px_minmax(520px,1fr)_360px] print:block">
-          <aside className="flex min-h-0 flex-col gap-3 print:hidden">
-            <section className="shrink-0 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-400">Receta</span>
-                {recipe && (
-                  <span className="rounded-full bg-[#36606f]/10 px-2 py-0.5 text-[9px] font-black uppercase text-[#36606f]">
-                    {recipe.category || 'Sin categoría'}
-                  </span>
-                )}
-              </div>
-
-              <select
-                value={recipeId}
-                onChange={e => setRecipeId(e.target.value)}
-                className="h-9 w-full rounded-lg border border-zinc-300 bg-white px-2.5 text-xs font-bold outline-none transition focus:border-[#36606f] focus:ring-1 focus:ring-[#36606f]"
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={generatePdf}
+                disabled={!recipe || exporting}
+                className="hidden h-9 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-40 sm:inline-flex"
               >
-                <option value="">Selecciona receta…</option>
-                {recipes.map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.is_sellable === false ? r.name + ' · Elaboración' : r.name}
-                  </option>
-                ))}
-              </select>
+                <Download size={15} />
+                {exporting ? 'Generando…' : 'PDF'}
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                disabled={!recipe}
+                className="hidden h-9 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-40 sm:inline-flex"
+              >
+                <Printer size={15} />
+                Imprimir
+              </button>
+              <button
+                type="button"
+                onClick={saveSheet}
+                disabled={!recipe || saving}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#36606F] px-3 text-xs font-bold text-white transition hover:bg-[#2F5D6A] disabled:opacity-40"
+              >
+                <Save size={15} />
+                {saving ? 'Guardando…' : 'Guardar'}
+              </button>
+            </div>
+          </header>
 
-              {recipe && (
-                <div className="mt-3">
-                  <div className="relative aspect-[16/9] overflow-hidden rounded-lg border border-zinc-100 bg-zinc-100">
-                    {recipe.photo_url ? (
-                      <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-zinc-300">
-                        <ChefHat size={30} strokeWidth={1.2} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-black text-zinc-900">{recipe.name}</div>
-                      <div className="mt-0.5 flex flex-wrap gap-1.5 text-[10px] font-bold text-zinc-500">
-                        <span>{recipe.servings ?? 1} ración{recipe.servings === 1 ? '' : 'es'}</span>
-                        {recipe.preparation_time ? <span>· {recipe.preparation_time} min</span> : null}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </section>
+          <div className="grid grid-cols-2 gap-1 rounded-xl border border-white/50 bg-white/10 p-1 xl:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileMode('edit')}
+              className={
+                'flex min-h-11 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition ' +
+                (mobileMode === 'edit'
+                  ? 'bg-white text-[#36606F] shadow-sm'
+                  : 'text-white/80')
+              }
+            >
+              <Smartphone size={17} />
+              Editar
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileMode('preview')}
+              className={
+                'flex min-h-11 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition ' +
+                (mobileMode === 'preview'
+                  ? 'bg-white text-[#36606F] shadow-sm'
+                  : 'text-white/80')
+              }
+            >
+              <Eye size={17} />
+              Vista previa
+            </button>
+          </div>
 
-            <section className="min-h-0 flex-1 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-black text-zinc-900">Estado</h2>
-                <span className="text-[10px] font-bold text-zinc-400">
-                  {recipe ? completedChecks + '/' + sheetChecks.length : '—'}
-                </span>
-              </div>
-
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-100">
-                <div
-                  className="h-full rounded-full bg-emerald-500 transition-all"
-                  style={{ width: recipe && sheetChecks.length ? (completedChecks / sheetChecks.length) * 100 + '%' : '0%' }}
-                />
-              </div>
-
-              <div className="mt-3 grid gap-2">
-                {sheetChecks.map(item => (
-                  <div key={item.label} className="flex items-center gap-2 rounded-lg bg-zinc-50 px-2 py-2">
-                    <span
-                      className={
-                        'grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-black ' +
-                        (item.done ? 'bg-emerald-500 text-white' : 'bg-zinc-200 text-zinc-500')
-                      }
-                    >
-                      {item.done ? '✓' : '·'}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-black text-zinc-700">{item.label}</div>
-                      <div className="truncate text-[9px] font-semibold text-zinc-400">{item.detail}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </aside>
-
-          <section className="flex min-h-0 flex-col gap-3 print:hidden">
-            <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
-              <div className="mb-2 flex shrink-0 items-center justify-between border-b border-zinc-100 pb-2">
-                <div>
-                  <h2 className="text-sm font-black text-zinc-900">Pasos</h2>
-                  <p className="text-[9px] font-semibold text-zinc-400">
-                    Texto de la ficha técnica + foto de referencia
-                  </p>
-                </div>
-                <span className="rounded-full bg-[#36606f]/10 px-2 py-1 text-[9px] font-black uppercase text-[#36606f]">
-                  {steps.length} pasos · {photosReady} fotos
-                </span>
-              </div>
-
+          <main className="grid flex-1 gap-3 xl:min-h-0 xl:grid-cols-[minmax(0,1.04fr)_minmax(500px,0.96fr)]">
+            <section
+              className={
+                (mobileMode === 'preview' ? 'hidden xl:flex ' : 'flex ') +
+                'min-h-0 flex-col'
+              }
+            >
               {!recipe ? (
-                <div className="flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-400">
-                  Selecciona una receta
-                </div>
-              ) : steps.length === 0 ? (
-                <div className="flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-400">
-                  Esta receta no tiene pasos de elaboración
+                <div className="flex min-h-[360px] flex-1 items-center justify-center rounded-2xl border border-white/60 bg-white p-6 text-center shadow-sm">
+                  <div>
+                    <ChefHat className="mx-auto text-zinc-300" size={42} strokeWidth={1.25} />
+                    <h2 className="mt-3 text-base font-bold text-zinc-800">
+                      Selecciona una receta
+                    </h2>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      La ficha reutiliza los datos reales de recetas y guarda solo su configuración visual.
+                    </p>
+                    <select
+                      value={recipeId}
+                      onChange={event => setRecipeId(event.target.value)}
+                      className="mt-4 h-11 w-full max-w-sm rounded-xl border border-zinc-200 bg-white px-3 text-base font-medium outline-none focus:border-[#36606F] md:text-sm"
+                    >
+                      <option value="">Selecciona receta…</option>
+                      {recipes.map(item => (
+                        <option key={item.id} value={item.id}>
+                          {item.is_sellable === false ? item.name + ' · Elaboración' : item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               ) : (
-                <div
-                  className="grid min-h-0 flex-1 gap-2"
-                  style={{ gridTemplateRows: 'repeat(' + steps.length + ', minmax(0, 1fr))' }}
-                >
-                  {steps.map((step, i) => (
-                    <div
-                      key={i}
-                      className="grid min-h-0 grid-cols-[28px_88px_minmax(0,1fr)] items-center gap-2.5 rounded-lg border border-zinc-200 bg-zinc-50/60 px-2 py-1.5"
-                    >
-                      <span className="grid h-7 w-7 place-items-center rounded-full bg-[#36606f] text-[10px] font-black text-white">
-                        {i + 1}
+                <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <h2 className="text-sm font-bold text-zinc-900">Información general</h2>
+                        <p className="mt-0.5 text-xs text-zinc-500">
+                          Datos reales de la receta y formato de la ficha
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-[#36606F]/10 px-2.5 py-1 text-[11px] font-bold text-[#36606F]">
+                        Plantilla fija
                       </span>
+                    </div>
 
-                      <label className="relative h-[clamp(38px,7vh,72px)] cursor-pointer overflow-hidden rounded-md border border-zinc-200 bg-white">
-                        {step.image ? (
-                          <img src={step.image} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex h-full flex-col items-center justify-center gap-0.5 text-zinc-400">
-                            <Camera size={13} />
-                            <span className="text-[7px] font-black">AÑADIR FOTO</span>
-                          </div>
-                        )}
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <label className="block">
+                        <span className="mb-1.5 block text-xs font-semibold text-zinc-600">Receta</span>
+                        <select
+                          value={recipeId}
+                          onChange={event => setRecipeId(event.target.value)}
+                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-base font-medium outline-none focus:border-[#36606F] md:text-sm"
+                        >
+                          {recipes.map(item => (
+                            <option key={item.id} value={item.id}>
+                              {item.is_sellable === false ? item.name + ' · Elaboración' : item.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="block">
+                        <span className="mb-1.5 block text-xs font-semibold text-zinc-600">Categoría</span>
                         <input
-                          type="file"
-                          accept="image/*"
-                          className="absolute inset-0 cursor-pointer opacity-0"
-                          onChange={e => {
-                            const f = e.target.files?.[0];
-                            if (f) void uploadStepImage(i, f);
-                          }}
+                          value={category}
+                          onChange={event => setCategory(event.target.value)}
+                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-base font-medium outline-none focus:border-[#36606F] md:text-sm"
+                          placeholder="Ej. Tapas"
                         />
                       </label>
 
-                      <p className="line-clamp-3 min-w-0 text-[11px] font-semibold leading-snug text-zinc-700">
-                        {step.text}
-                      </p>
+                      <label className="block">
+                        <span className="mb-1.5 block text-xs font-semibold text-zinc-600">Raciones</span>
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={servings}
+                          onChange={event => setServings(Number(event.target.value) || 1)}
+                          className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-base font-medium outline-none focus:border-[#36606F] md:text-sm"
+                        />
+                      </label>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            <div className="grid shrink-0 grid-cols-2 gap-3">
-              <ListEditor title="Puntos clave" values={keyPoints} setValues={setKeyPoints} />
-              <ListEditor title="No hacer" values={avoidPoints} setValues={setAvoidPoints} />
-            </div>
-          </section>
-
-          <aside className="flex min-h-0 flex-col rounded-xl border border-zinc-200 bg-white p-3 shadow-sm print:fixed print:inset-0 print:z-50 print:h-[297mm] print:w-[420mm] print:border-0 print:bg-white print:p-0 print:shadow-none">
-            <div className="mb-2 flex shrink-0 items-center justify-between print:hidden">
-              <div>
-                <h2 className="text-sm font-black text-zinc-900">Vista previa</h2>
-                <p className="text-[9px] font-semibold text-zinc-400">A3 horizontal</p>
-              </div>
-              {recipe && (
-                <span className="rounded-full bg-zinc-100 px-2 py-1 text-[9px] font-bold text-zinc-500">
-                  {recipe.name}
-                </span>
-              )}
-            </div>
-
-            {!recipe ? (
-              <div className="flex min-h-0 flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-400 print:hidden">
-                Sin receta seleccionada
-              </div>
-            ) : (
-              <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden print:block print:h-full print:w-full">
-                <div
-                  id="kitchen-sheet"
-                  className="aspect-[1.414/1] w-full overflow-hidden rounded-lg border border-zinc-200 bg-[#fcfbfa] p-[4%] shadow-inner print:h-full print:w-full print:aspect-auto print:rounded-none print:border-0 print:p-[14mm] print:shadow-none"
-                >
-                  <div className="flex h-full min-h-0 flex-col">
-                    <div className="flex shrink-0 items-end justify-between border-b-2 border-[#36606f] pb-2">
-                      <h2 className="truncate text-[clamp(13px,1.4vw,22px)] font-black uppercase tracking-tight text-zinc-900">
-                        {recipe.name}
-                      </h2>
-                      <div className="shrink-0 pl-2 text-[7px] font-bold uppercase tracking-wider text-zinc-400">
-                        {recipe.servings ?? 1} ración{recipe.servings === 1 ? '' : 'es'}
-                        {recipe.preparation_time ? ' · ' + recipe.preparation_time + ' min' : ''}
+                    <div className="mt-4">
+                      <span className="mb-1.5 block text-xs font-semibold text-zinc-600">Orientación A3</span>
+                      <div className="grid max-w-md grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1">
+                        <button
+                          type="button"
+                          onClick={() => setOrientation('landscape')}
+                          className={
+                            'flex min-h-10 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition ' +
+                            (orientation === 'landscape'
+                              ? 'bg-white text-[#36606F] shadow-sm'
+                              : 'text-zinc-500')
+                          }
+                        >
+                          <Monitor size={16} />
+                          Horizontal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOrientation('portrait')}
+                          className={
+                            'flex min-h-10 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition ' +
+                            (orientation === 'portrait'
+                              ? 'bg-white text-[#36606F] shadow-sm'
+                              : 'text-zinc-500')
+                          }
+                        >
+                          <Smartphone size={16} />
+                          Vertical
+                        </button>
                       </div>
                     </div>
 
-                    <div className="mt-2 flex min-h-0 flex-1 gap-2">
-                      <div className="flex w-[29%] shrink-0 flex-col gap-2">
-                        <div className="min-h-0 flex-1 overflow-hidden rounded-md border border-zinc-200 bg-white p-1.5">
-                          {recipe.photo_url ? (
-                            <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full rounded object-cover" />
+                    <div className="mt-4 border-t border-zinc-100 pt-4">
+                      <span className="mb-2 block text-xs font-semibold text-zinc-600">Imagen principal</span>
+                      <div className="grid gap-3 md:grid-cols-[200px_minmax(0,1fr)] md:items-center">
+                        <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
+                          {mainImageUrl ? (
+                            <img
+                              src={mainImageUrl}
+                              alt={recipe.name}
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
-                            <div className="flex h-full items-center justify-center text-zinc-200">
-                              <ChefHat size={22} strokeWidth={1} />
+                            <div className="flex h-full items-center justify-center text-zinc-300">
+                              <ChefHat size={36} strokeWidth={1.25} />
                             </div>
                           )}
                         </div>
-
-                        <div className="h-[37%] overflow-hidden rounded-md bg-[#0b1c36] p-2 text-white">
-                          <div className="text-[6px] font-black uppercase tracking-widest text-emerald-400">Puntos clave</div>
-                          <ul className="mt-1 space-y-0.5 text-[6px] leading-tight text-zinc-200">
-                            {keyPoints.filter(Boolean).slice(0, 4).map((x, i) => (
-                              <li key={i}>• {x}</li>
-                            ))}
-                          </ul>
-                          {avoidPoints.filter(Boolean).length > 0 && (
-                            <>
-                              <div className="mt-1.5 text-[6px] font-black uppercase tracking-widest text-rose-300">No hacer</div>
-                              <ul className="mt-1 space-y-0.5 text-[6px] leading-tight text-zinc-200">
-                                {avoidPoints.filter(Boolean).slice(0, 3).map((x, i) => (
-                                  <li key={i}>• {x}</li>
-                                ))}
-                              </ul>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="grid min-h-0 flex-1 grid-cols-2 gap-1.5">
-                        {steps.slice(0, 8).map((step, i) => (
-                          <div key={i} className="flex min-h-0 flex-col overflow-hidden rounded-md border border-zinc-200 bg-white p-1.5">
-                            <div className="mb-1 flex shrink-0 items-center gap-1">
-                              <span className="text-[9px] font-black text-[#36606f]">{String(i + 1).padStart(2, '0')}</span>
-                            </div>
-                            <div className="min-h-0 flex-1 overflow-hidden rounded bg-zinc-50">
-                              {step.image ? (
-                                <img src={step.image} alt="" className="h-full w-full object-cover" />
-                              ) : (
-                                <div className="flex h-full items-center justify-center text-zinc-200">
-                                  <ChefHat size={15} strokeWidth={1} />
-                                </div>
-                              )}
-                            </div>
-                            <p className="mt-1 line-clamp-2 shrink-0 text-[6px] font-semibold leading-tight text-zinc-600">
-                              {step.text}
-                            </p>
+                        <div>
+                          <div className="flex flex-wrap gap-2">
+                            <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50">
+                              <ImagePlus size={16} />
+                              Cambiar imagen
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={event => {
+                                  const file = event.target.files?.[0];
+                                  if (file) void uploadImage(file, 'main');
+                                  event.currentTarget.value = '';
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setMainImageUrl(recipe.photo_url)}
+                              disabled={mainImageUrl === recipe.photo_url}
+                              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-40"
+                            >
+                              <RotateCcw size={15} />
+                              Foto de receta
+                            </button>
                           </div>
-                        ))}
+                          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                            Se usa como resultado final. La ficha conserva ratios y recorte uniforme para no alterar la percepción del tamaño del plato.
+                          </p>
+                        </div>
                       </div>
                     </div>
+                  </section>
+
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <h2 className="text-sm font-bold text-zinc-900">Pasos de elaboración</h2>
+                        <p className="mt-0.5 text-xs text-zinc-500">
+                          {steps.length} pasos · {photosReady} imágenes
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addStep}
+                        className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-[#36606F] transition hover:bg-zinc-50"
+                      >
+                        <Plus size={16} />
+                        Añadir paso
+                      </button>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {steps.map((step, index) => (
+                        <article
+                          key={index}
+                          className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3"
+                        >
+                          <div className="mb-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#36606F] text-xs font-bold text-white">
+                                {index + 1}
+                              </span>
+                              <span className="text-xs font-bold text-zinc-700">Paso {index + 1}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeStep(index)}
+                              disabled={steps.length <= 1}
+                              aria-label={'Eliminar paso ' + String(index + 1)}
+                              className="grid h-9 w-9 place-items-center rounded-lg text-zinc-400 transition hover:bg-white hover:text-rose-600 disabled:opacity-30"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+
+                          <label className="relative block aspect-[16/9] cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-white">
+                            {step.image ? (
+                              <img
+                                src={step.image}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full flex-col items-center justify-center gap-1.5 text-zinc-400">
+                                <Camera size={22} />
+                                <span className="text-xs font-semibold">Añadir foto</span>
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="absolute inset-0 cursor-pointer opacity-0"
+                              onChange={event => {
+                                const file = event.target.files?.[0];
+                                if (file) void uploadImage(file, 'step', index);
+                                event.currentTarget.value = '';
+                              }}
+                            />
+                          </label>
+
+                          {step.image ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSteps(current =>
+                                  current.map((item, itemIndex) =>
+                                    itemIndex === index ? { ...item, image: null } : item,
+                                  ),
+                                )
+                              }
+                              className="mt-2 text-xs font-semibold text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline"
+                            >
+                              Quitar foto
+                            </button>
+                          ) : null}
+
+                          <textarea
+                            value={step.text}
+                            onChange={event =>
+                              setSteps(current =>
+                                current.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, text: event.target.value } : item,
+                                ),
+                              )
+                            }
+                            rows={3}
+                            className="mt-2 min-h-24 w-full resize-y rounded-lg border border-zinc-200 bg-white px-3 py-2 text-base leading-relaxed text-zinc-800 outline-none focus:border-[#36606F] md:text-sm"
+                            placeholder="Describe el paso de elaboración"
+                          />
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <ListEditor title="Puntos clave" values={keyPoints} setValues={setKeyPoints} />
+                    <ListEditor title="No hacer" values={avoidPoints} setValues={setAvoidPoints} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pb-2 xl:hidden">
+                    <button
+                      type="button"
+                      onClick={() => setMobileMode('preview')}
+                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-[#36606F] shadow-sm"
+                    >
+                      <Eye size={17} />
+                      Vista previa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveSheet}
+                      disabled={saving}
+                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#36606F] text-sm font-bold text-white shadow-sm disabled:opacity-40"
+                    >
+                      <Save size={17} />
+                      {saving ? 'Guardando…' : 'Guardar'}
+                    </button>
                   </div>
                 </div>
-              </div>
-            )}
-          </aside>
-        </main>
+              )}
+            </section>
 
-        {message && (
-          <div className="fixed bottom-4 right-4 z-[60] rounded-lg bg-zinc-950 px-3 py-2 text-[11px] font-bold text-white shadow-xl print:hidden">
+            <aside
+              className={
+                (mobileMode === 'edit' ? 'hidden xl:flex ' : 'flex ') +
+                'min-h-[520px] flex-col rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm xl:min-h-0'
+              }
+            >
+              <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-bold text-zinc-900">Vista previa de la ficha</h2>
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    A3 {orientation === 'landscape' ? 'horizontal' : 'vertical'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={generatePdf}
+                    disabled={!recipe || exporting}
+                    aria-label="Generar PDF"
+                    className="grid h-10 w-10 place-items-center rounded-lg border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-40"
+                  >
+                    <Download size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    disabled={!recipe}
+                    aria-label="Imprimir"
+                    className="grid h-10 w-10 place-items-center rounded-lg border border-zinc-200 text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-40"
+                  >
+                    <Printer size={17} />
+                  </button>
+                </div>
+              </div>
+
+              {!recipe ? (
+                <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 text-sm font-semibold text-zinc-400">
+                  Sin receta seleccionada
+                </div>
+              ) : (
+                <div className="flex min-h-0 flex-1 items-start justify-center overflow-auto rounded-xl bg-zinc-100 p-2 md:p-3 xl:items-center">
+                  <div
+                    className={
+                      'w-full overflow-hidden rounded-lg bg-white shadow-[0_12px_40px_rgba(15,23,42,0.16)] ' +
+                      (orientation === 'landscape' ? 'max-w-[980px]' : 'max-w-[620px]')
+                    }
+                    style={{
+                      aspectRatio: orientation === 'landscape' ? '420 / 297' : '297 / 420',
+                    }}
+                  >
+                    <KitchenSheetPreview
+                      recipeName={recipe.name}
+                      category={category}
+                      servings={servings}
+                      preparationTime={recipe.preparation_time}
+                      mainImageUrl={mainImageUrl}
+                      steps={steps}
+                      keyPoints={keyPoints}
+                      avoidPoints={avoidPoints}
+                      orientation={orientation}
+                    />
+                  </div>
+                </div>
+              )}
+            </aside>
+          </main>
+        </div>
+
+        {message ? (
+          <div className="fixed bottom-4 left-1/2 z-[80] max-w-[calc(100vw-24px)] -translate-x-1/2 rounded-xl bg-zinc-950 px-4 py-2.5 text-center text-xs font-semibold text-white shadow-xl xl:left-auto xl:right-4 xl:translate-x-0">
             {message}
           </div>
-        )}
+        ) : null}
       </div>
-    </div>
+
+      {recipe ? (
+        <>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed left-[-10000px] top-0 overflow-hidden"
+            style={{ width: dimensions.exportWidth, height: dimensions.exportHeight }}
+          >
+            <div ref={exportRef} className="h-full w-full">
+              <KitchenSheetPreview
+                recipeName={recipe.name}
+                category={category}
+                servings={servings}
+                preparationTime={recipe.preparation_time}
+                mainImageUrl={mainImageUrl}
+                steps={steps}
+                keyPoints={keyPoints}
+                avoidPoints={avoidPoints}
+                orientation={orientation}
+              />
+            </div>
+          </div>
+
+          <div
+            id="kitchen-sheet-print"
+            className="hidden overflow-hidden bg-white print:block"
+            style={{
+              width: String(dimensions.pdfWidth) + 'mm',
+              height: String(dimensions.pdfHeight) + 'mm',
+            }}
+          >
+            <KitchenSheetPreview
+              recipeName={recipe.name}
+              category={category}
+              servings={servings}
+              preparationTime={recipe.preparation_time}
+              mainImageUrl={mainImageUrl}
+              steps={steps}
+              keyPoints={keyPoints}
+              avoidPoints={avoidPoints}
+              orientation={orientation}
+            />
+          </div>
+        </>
+      ) : null}
+    </>
   );
 }
 
@@ -650,51 +876,298 @@ function ListEditor({
 }: {
   title: string;
   values: string[];
-  setValues: (v: string[]) => void;
+  setValues: (values: string[]) => void;
 }) {
   return (
-    <div className="flex min-h-[118px] flex-col rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
-      <div className="mb-2 flex shrink-0 items-center justify-between">
-        <h2 className="text-xs font-black text-zinc-900">{title}</h2>
+    <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-bold text-zinc-900">{title}</h2>
         <button
           type="button"
           onClick={() => setValues([...values, ''])}
-          className="rounded-md px-1.5 py-1 text-[9px] font-black text-[#36606f] transition hover:bg-[#36606f]/10"
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-[#36606F] transition hover:bg-[#36606F]/10"
         >
-          + Añadir
+          <Plus size={14} />
+          Añadir
         </button>
       </div>
 
-      <div className="grid gap-1.5">
-        {values.length === 0 && (
+      <div className="grid gap-2">
+        {values.length === 0 ? (
           <button
             type="button"
             onClick={() => setValues([''])}
-            className="h-8 rounded-lg border border-dashed border-zinc-200 text-[10px] font-bold text-zinc-400 hover:bg-zinc-50"
+            className="min-h-11 rounded-xl border border-dashed border-zinc-200 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-50"
           >
             + Añadir punto
           </button>
-        )}
+        ) : null}
 
-        {values.map((value, i) => (
-          <div key={i} className="flex items-center gap-1.5">
+        {values.map((value, index) => (
+          <div key={index} className="flex items-center gap-2">
             <input
               value={value}
-              onChange={e => setValues(values.map((x, j) => (j === i ? e.target.value : x)))}
-              className="h-8 min-w-0 flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 text-[10px] font-semibold text-zinc-700 outline-none transition focus:border-[#36606f] focus:bg-white focus:ring-1 focus:ring-[#36606f]"
-              placeholder={title === 'Puntos clave' ? 'Ej. Freír exactamente 2 min' : 'Ej. No sobrecargar la freidora'}
+              onChange={event =>
+                setValues(values.map((item, itemIndex) => (itemIndex === index ? event.target.value : item)))
+              }
+              className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-base text-zinc-800 outline-none transition focus:border-[#36606F] focus:bg-white md:text-sm"
+              placeholder={
+                title === 'Puntos clave'
+                  ? 'Ej. Freír exactamente 2 minutos'
+                  : 'Ej. No sobrecargar la freidora'
+              }
             />
             <button
               type="button"
               aria-label={'Eliminar ' + title.toLowerCase()}
-              onClick={() => setValues(values.filter((_, j) => j !== i))}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-zinc-200 text-zinc-400 transition hover:bg-zinc-50 hover:text-zinc-700"
+              onClick={() => setValues(values.filter((_, itemIndex) => itemIndex !== index))}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-zinc-200 text-zinc-400 transition hover:bg-zinc-50 hover:text-rose-600"
             >
-              <Trash2 size={12} />
+              <Trash2 size={15} />
             </button>
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+function KitchenSheetPreview({
+  recipeName,
+  category,
+  servings,
+  preparationTime,
+  mainImageUrl,
+  steps,
+  keyPoints,
+  avoidPoints,
+  orientation,
+}: {
+  recipeName: string;
+  category: string;
+  servings: number;
+  preparationTime: number | null;
+  mainImageUrl: string | null;
+  steps: Step[];
+  keyPoints: string[];
+  avoidPoints: string[];
+  orientation: SheetOrientation;
+}) {
+  const visibleSteps = steps.slice(0, 8);
+  const columns =
+    orientation === 'portrait'
+      ? 2
+      : visibleSteps.length <= 4
+        ? 2
+        : visibleSteps.length <= 6
+          ? 3
+          : 4;
+
+  const cleanedKeyPoints = cleanList(keyPoints);
+  const cleanedAvoidPoints = cleanList(avoidPoints);
+  const meta = [
+    category.trim() || 'Sin categoría',
+    String(Math.max(1, Math.round(Number(servings) || 1))) +
+      ' ración' +
+      (Number(servings) === 1 ? '' : 'es'),
+    preparationTime ? String(preparationTime) + ' min' : null,
+  ].filter(Boolean);
+
+  return (
+    <div className="h-full w-full overflow-hidden bg-white font-sans text-zinc-900 [container-type:inline-size]">
+      <div className="flex h-full flex-col p-[2.35cqw]">
+        <header className="flex h-[7%] shrink-0 items-center justify-between border-b border-[#D9E2EC] pb-[0.75cqw]">
+          <div className="flex items-center gap-[0.8cqw]">
+            <span
+              className="font-bold uppercase tracking-[0.18em] text-[#1F5FAF]"
+              style={{ fontSize: orientation === 'landscape' ? '0.86cqw' : '1.25cqw' }}
+            >
+              Ficha de cocina
+            </span>
+            <span className="h-[0.7cqw] w-[0.7cqw] rounded-full bg-[#1F5FAF]" />
+          </div>
+          <div className="grid h-[4.9cqw] w-[4.9cqw] place-items-center overflow-hidden rounded-[1cqw] bg-[#1F5FAF] p-[0.55cqw]">
+            <img
+              src="/icons/logo-white.png"
+              alt="Bar La Marbella"
+              className="h-full w-full object-contain"
+            />
+          </div>
+        </header>
+
+        <section
+          className={
+            orientation === 'landscape'
+              ? 'mt-[1.4cqw] grid min-h-0 shrink-0 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-[1.5cqw]'
+              : 'mt-[1.4cqw] flex min-h-0 shrink-0 flex-col gap-[1.2cqw]'
+          }
+          style={{ height: orientation === 'landscape' ? '30%' : '34%' }}
+        >
+          <div className="flex min-h-0 flex-col justify-center">
+            <h2
+              className="max-w-full font-black uppercase leading-[0.92] tracking-[-0.045em] text-[#18181B]"
+              style={{ fontSize: orientation === 'landscape' ? '4.7cqw' : '6.8cqw' }}
+            >
+              {recipeName}
+            </h2>
+
+            <div className="mt-[1.25cqw] flex flex-wrap gap-[0.65cqw]">
+              {meta.map((item, index) => (
+                <span
+                  key={String(item) + String(index)}
+                  className="rounded-full border border-[#D9E2EC] bg-[#FAFAFA] px-[1cqw] py-[0.45cqw] font-semibold text-[#52525B]"
+                  style={{ fontSize: orientation === 'landscape' ? '0.9cqw' : '1.28cqw' }}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+
+            <p
+              className="mt-[1.25cqw] max-w-[34cqw] leading-snug text-[#71717A]"
+              style={{ fontSize: orientation === 'landscape' ? '0.82cqw' : '1.15cqw' }}
+            >
+              Referencia visual y secuencia de elaboración para ejecución consistente en cocina.
+            </p>
+          </div>
+
+          <div className="min-h-0 overflow-hidden rounded-[1.2cqw] border border-[#D9E2EC] bg-[#F4F4F5]">
+            {mainImageUrl ? (
+              <img
+                src={mainImageUrl}
+                alt={recipeName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-zinc-300">
+                <ChefHat size="12%" strokeWidth={1.1} />
+              </div>
+            )}
+          </div>
+        </section>
+
+        <div className="mt-[1.15cqw] flex h-[5.2%] shrink-0 items-center rounded-full bg-[#EFF6FF] px-[1.2cqw]">
+          <span
+            className="font-black uppercase tracking-[0.14em] text-[#1F5FAF]"
+            style={{ fontSize: orientation === 'landscape' ? '0.9cqw' : '1.25cqw' }}
+          >
+            Pasos de elaboración
+          </span>
+        </div>
+
+        <div
+          className="mt-[0.9cqw] grid min-h-0 flex-1 gap-[0.8cqw]"
+          style={{ gridTemplateColumns: 'repeat(' + String(columns) + ', minmax(0, 1fr))' }}
+        >
+          {visibleSteps.map((step, index) => (
+            <article
+              key={index}
+              className="relative flex min-h-0 flex-col overflow-hidden rounded-[0.9cqw] border border-[#D9E2EC] bg-white p-[0.55cqw]"
+            >
+              <span
+                className="absolute left-[0.9cqw] top-[0.9cqw] z-10 grid aspect-square w-[2.8cqw] place-items-center rounded-full bg-[#1F5FAF] font-black text-white shadow-sm"
+                style={{ fontSize: orientation === 'landscape' ? '1.2cqw' : '1.6cqw' }}
+              >
+                {index + 1}
+              </span>
+
+              <div
+                className="min-h-0 shrink-0 overflow-hidden rounded-[0.6cqw] bg-[#F4F4F5]"
+                style={{ height: orientation === 'landscape' ? '59%' : '55%' }}
+              >
+                {step.image ? (
+                  <img src={step.image} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-zinc-300">
+                    <ChefHat size="16%" strokeWidth={1.1} />
+                  </div>
+                )}
+              </div>
+
+              <p
+                className="min-h-0 flex-1 px-[0.35cqw] pt-[0.55cqw] font-semibold leading-[1.22] text-[#27272A]"
+                style={{ fontSize: stepFontSize(step.text, orientation) }}
+              >
+                {step.text || 'Paso pendiente de completar.'}
+              </p>
+            </article>
+          ))}
+        </div>
+
+        <div
+          className="mt-[0.9cqw] grid shrink-0 grid-cols-2 gap-[0.8cqw]"
+          style={{ height: orientation === 'landscape' ? '10.5%' : '11.5%' }}
+        >
+          <OperationalNotes
+            title="Puntos clave"
+            values={cleanedKeyPoints}
+            tone="positive"
+            orientation={orientation}
+          />
+          <OperationalNotes
+            title="No hacer"
+            values={cleanedAvoidPoints}
+            tone="negative"
+            orientation={orientation}
+          />
+        </div>
+      </div>
     </div>
   );
+}
+
+function OperationalNotes({
+  title,
+  values,
+  tone,
+  orientation,
+}: {
+  title: string;
+  values: string[];
+  tone: 'positive' | 'negative';
+  orientation: SheetOrientation;
+}) {
+  const positive = tone === 'positive';
+
+  return (
+    <div
+      className={
+        'min-h-0 overflow-hidden rounded-[0.8cqw] border p-[0.75cqw] ' +
+        (positive
+          ? 'border-[#BBE3D1] bg-[#ECFDF5]'
+          : 'border-[#FECDD3] bg-[#FFF1F2]')
+      }
+    >
+      <div
+        className={'font-black uppercase tracking-[0.12em] ' + (positive ? 'text-[#1B7A4E]' : 'text-[#B91C1C]')}
+        style={{ fontSize: orientation === 'landscape' ? '0.72cqw' : '1.05cqw' }}
+      >
+        {title}
+      </div>
+      <div
+        className="mt-[0.3cqw] grid gap-[0.16cqw] leading-tight text-[#52525B]"
+        style={{ fontSize: orientation === 'landscape' ? '0.62cqw' : '0.92cqw' }}
+      >
+        {values.length ? (
+          values.slice(0, 4).map((value, index) => (
+            <div key={index}>• {value}</div>
+          ))
+        ) : (
+          <div className="text-[#A1A1AA]">Sin puntos añadidos</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function stepFontSize(text: string, orientation: SheetOrientation) {
+  if (orientation === 'portrait') {
+    if (text.length > 150) return '0.92cqw';
+    if (text.length > 95) return '1.04cqw';
+    return '1.18cqw';
+  }
+
+  if (text.length > 150) return '0.68cqw';
+  if (text.length > 95) return '0.78cqw';
+  return '0.9cqw';
 }
