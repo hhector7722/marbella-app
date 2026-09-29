@@ -25,6 +25,7 @@ const DOCUMENT_COPY = {
     seeYou: 'Os esperamos pronto en Bar La Marbella',
     invoiceLegal: 'Factura simplificada. Precios con IVA incluido. Tipo impositivo 10% (hostelería).',
     quoteLegal: 'Precios con IVA incluido. Tipo impositivo 10%.',
+    vatContext: 'hostelería',
   },
   ca: {
     invoice: 'Factura',
@@ -48,6 +49,7 @@ const DOCUMENT_COPY = {
     seeYou: 'Us esperem aviat a Bar La Marbella',
     invoiceLegal: 'Factura simplificada. Preus amb IVA inclòs. Tipus impositiu 10% (hostaleria).',
     quoteLegal: 'Preus amb IVA inclòs. Tipus impositiu 10%.',
+    vatContext: 'hostaleria',
   },
   en: {
     invoice: 'Invoice',
@@ -71,6 +73,7 @@ const DOCUMENT_COPY = {
     seeYou: 'We hope to see you again soon at Bar La Marbella',
     invoiceLegal: 'Simplified invoice. Prices include VAT. Tax rate 10% (hospitality).',
     quoteLegal: 'Prices include VAT. Tax rate 10%.',
+    vatContext: 'hospitality',
   },
 } as const
 
@@ -181,9 +184,7 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
       `<h1 class="doc-title">${copy.invoice}</h1>`,
       `<h1 class="doc-title">${copy.quote}</h1>`
     )
-    .replace('<div class="value">10% (${language === 'ca' ? 'hostaleria' : language === 'en' ? 'hospitality' : 'hostelería'})</div>', '<div class="value">10%</div>')
-    .replace('<div class="value">10% (hostaleria)</div>', '<div class="value">10%</div>')
-    .replace('<div class="value">10% (hospitality)</div>', '<div class="value">10%</div>')
+    .replace(`<div class="value">10% (${copy.vatContext})</div>`, '<div class="value">10%</div>')
     .replace(/<footer class="thanks">[\s\S]*?<\/footer>/, quoteFooter)
 }
 
@@ -586,7 +587,7 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       </div>
       <div class="meta-block">
         <label>${copy.vatApplied}</label>
-        <div class="value">10% (hostelería)</div>
+        <div class="value">10% (${copy.vatContext})</div>
       </div>
     </section>
 
