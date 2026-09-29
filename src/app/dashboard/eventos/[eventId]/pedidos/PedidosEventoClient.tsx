@@ -19,6 +19,7 @@ export type EventOrderItem = {
   quantity: number
   unit_price: number
   notes?: string | null
+  price_mode?: 'standard' | 'pavello'
 }
 
 export type EventOrderRow = {
