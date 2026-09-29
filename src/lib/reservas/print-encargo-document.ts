@@ -39,7 +39,7 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
     return sum + qty * unit
   }, 0)
   const perPerson = guestCount ? totalGross / guestCount : null
-  const quoteRef = `PRES-${meta.encargoDate.replace(/\\D/g, '')}-${meta.encargoTime.replace(/\\D/g, '')}`
+  const quoteRef = `PRES-${meta.encargoDate.replace(/\D/g, '')}-${meta.encargoTime.replace(/\D/g, '')}`
 
   const invoiceHtml = buildEncargoInvoiceHtml(
     {
@@ -71,7 +71,7 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
       `<title>Presupuesto — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>`
     )
     .replace('<h1 class="doc-title">Factura</h1>', '<h1 class="doc-title">Presupuesto</h1>')
-    .replace(/<footer class="thanks">[\\s\\S]*?<\\/footer>/, quoteFooter)
+    .replace(/<footer class="thanks">[\s\S]*?<\/footer>/, quoteFooter)
 }
 
 const IVA_RATE = 0.1
