@@ -23,6 +23,17 @@ export type K5EvidenceTable = {
   cells: K5EvidenceCell[]
 }
 
+export type K5ReviewFallbackRow = {
+  sourceTableIndex: number
+  sourceRowIndex: number
+  source: K5EvidenceSource
+  product: string
+  quantity: string | null
+  unitPrice: string | null
+  lineTotal: string | null
+  rawCells: string[]
+}
+
 type LayoutTextItem = {
   index: number
   page: number
@@ -421,6 +432,141 @@ export function matchProfileTable(
   return best && best.score > 0 ? best : null
 }
 
+const GENERIC_REVIEW_ALIASES = {
+  product: ['Descripción', 'Descripció', 'Producto', 'Producte', 'Artículo', 'Article', 'Item', 'Concepto'],
+  quantity: ['Cantidad', 'Quantitat', 'Qty', 'Unidades', 'Unitats', 'Uds', 'Cajas', 'Caixes'],
+  unitPrice: ['P.UN', 'P.U.', 'Precio', 'Preu', 'Precio unitario', 'Precio por unidad', 'Unit price'],
+  lineTotal: ['Importe', 'Import', 'Total línea', 'Total linea', 'Line total', 'Amount'],
+} as const
+
+const FALLBACK_MEASURE = /[+-]?\d+(?:[.,]\d+)?\s*(?:KG|G|L|ML|CL|PZ|BU|CJ|UD|UND|UN|UNI|BOL|CAJA|CAJAS|CAN)\b/i
+
+function reviewColumnForFields(
+  table: K5EvidenceTable,
+  profile: SupplierProfile,
+  fields: readonly FieldName[],
+  genericAliases: readonly string[]
+): number | null {
+  for (const field of fields) {
+    const aliases = profile.fields[field]?.aliases ?? []
+    if (aliases.length === 0) continue
+    const resolution = bestHeaderColumn(table.headers, aliases)
+    if (resolution.column >= 0) return resolution.column
+  }
+  const generic = bestHeaderColumn(table.headers, genericAliases)
+  return generic.column >= 0 ? generic.column : null
+}
+
+function fallbackProductLooksPlausible(profile: SupplierProfile, value: string): boolean {
+  const normalized = normalizeEvidenceLabel(value)
+  if (normalized.length < 4 || !/[a-z]{3}/.test(normalized)) return false
+
+  const supplierLabels = [
+    profile.supplier.canonical_name,
+    ...profile.supplier.aliases,
+    ...profile.supplier.observed_document_identities,
+  ].map(normalizeEvidenceLabel)
+  if (supplierLabels.includes(normalized)) return false
+
+  return !/^(?:total(?:\s|$)|total bases|total iva|base imponible|bases iva|bruto(?:\s|$)|imp bruto|mp bruto|descuentos?(?:\s|$)|fecha(?:\s|$)|factura(?:\s|$)|cod cliente|codigo cliente|cliente(?:\s|$)|pagina(?:\s|$)|pag(?:\s|$)|ruta(?:\s|$)|observaciones?(?:\s|$)|forma de pago|recibo(?:\s|$)|persona que|portes?(?:\s|$)|firma cliente|nif(?:\s|$)|cif(?:\s|$)|albaran(?:\s|$)|pedido(?:\s|$)|tancat(?:\s|$)|no hi ha|no acceptat|mal estat|unitat x caixa|errada producte|no carregat|car rep|tip fac|dom tip|neto(?:\s|$)|iva(?:\s|$))/.test(normalized)
+}
+
+function inferredFallbackProductColumn(
+  profile: SupplierProfile,
+  table: K5EvidenceTable,
+  blockedColumns: ReadonlySet<number>
+): number | null {
+  const maxColumns = Math.max(table.headers.length, ...table.rows.map((row) => row.cells.length), 0)
+  let bestColumn: number | null = null
+  let bestScore = 0
+
+  for (let column = 0; column < maxColumns; column += 1) {
+    if (blockedColumns.has(column)) continue
+    let score = 0
+    for (const row of table.rows) {
+      const value = (row.cells[column] ?? '').trim()
+      if (!fallbackProductLooksPlausible(profile, value)) continue
+      score += Math.min(20, 4 + Math.floor(normalizeEvidenceLabel(value).length / 6))
+    }
+    if (score > bestScore) {
+      bestScore = score
+      bestColumn = column
+    }
+  }
+
+  return bestScore >= 6 ? bestColumn : null
+}
+
+function fallbackMeasureCell(cells: readonly string[], excluded: ReadonlySet<number>): string | null {
+  const match = cells
+    .map((text, column) => ({ text: text.trim(), column }))
+    .find(({ text, column }) => !excluded.has(column) && FALLBACK_MEASURE.test(text))
+  return match?.text ?? null
+}
+
+function nativeReviewFallbackRows(
+  profile: SupplierProfile,
+  tables: readonly K5EvidenceTable[]
+): K5ReviewFallbackRow[] {
+  const rows: K5ReviewFallbackRow[] = []
+
+  for (const table of tables) {
+    const quantityColumn = reviewColumnForFields(table, profile, ['quantity', 'cases'], GENERIC_REVIEW_ALIASES.quantity)
+    const unitPriceColumn = reviewColumnForFields(
+      table,
+      profile,
+      ['net_unit_price', 'unit_price', 'price_with_tax'],
+      GENERIC_REVIEW_ALIASES.unitPrice
+    )
+    const lineTotalColumn = reviewColumnForFields(
+      table,
+      profile,
+      ['line_amount', 'line_amount_tax_included'],
+      GENERIC_REVIEW_ALIASES.lineTotal
+    )
+    const explicitProductColumn = reviewColumnForFields(table, profile, ['product'], GENERIC_REVIEW_ALIASES.product)
+    const blocked = new Set(
+      [quantityColumn, unitPriceColumn, lineTotalColumn].filter((column): column is number => column != null)
+    )
+    const productColumn = explicitProductColumn ?? inferredFallbackProductColumn(profile, table, blocked)
+    if (productColumn == null) continue
+
+    for (const row of table.rows) {
+      let product = (row.cells[productColumn] ?? '').trim()
+      if (!fallbackProductLooksPlausible(profile, product)) {
+        product = row.cells
+          .map((text) => text.trim())
+          .filter((text) => fallbackProductLooksPlausible(profile, text))
+          .sort((a, b) => b.length - a.length)[0] ?? ''
+      }
+      if (!fallbackProductLooksPlausible(profile, product)) continue
+
+      const excluded = new Set<number>([productColumn])
+      const quantityText = quantityColumn == null ? '' : (row.cells[quantityColumn] ?? '').trim()
+      const quantity = /\d/.test(quantityText)
+        ? quantityText
+        : fallbackMeasureCell(row.cells, excluded)
+      const unitPrice = unitPriceColumn == null ? null : ((row.cells[unitPriceColumn] ?? '').trim() || null)
+      const lineTotal = lineTotalColumn == null ? null : ((row.cells[lineTotalColumn] ?? '').trim() || null)
+      const nonEmptyCells = row.cells.filter((cell) => cell.trim()).length
+      if (!quantity && !unitPrice && !lineTotal && nonEmptyCells < 2 && product.length < 8) continue
+
+      rows.push({
+        sourceTableIndex: table.index,
+        sourceRowIndex: row.index,
+        source: table.source,
+        product,
+        quantity,
+        unitPrice,
+        lineTotal,
+        rawCells: [...row.cells],
+      })
+    }
+  }
+
+  return rows
+}
+
 function layoutTextItems(rawArtifact: unknown): LayoutTextItem[] {
   const document = doclingDocument(rawArtifact)
   const rawTexts = document?.texts
@@ -656,6 +802,126 @@ export function extractDoclingLayoutTables(
   }
 
   return tables
+}
+
+function looseLayoutReviewFallbackRows(
+  profile: SupplierProfile,
+  rawArtifact: unknown,
+  startIndex: number
+): K5ReviewFallbackRow[] {
+  const items = layoutTextItems(rawArtifact)
+  const pages = [...new Set(items.map((item) => item.page))].sort((a, b) => a - b)
+  const rows: K5ReviewFallbackRow[] = []
+  let tableOffset = 0
+
+  for (const page of pages) {
+    const pageItems = items.filter((item) => item.page === page)
+    let bestFields: LayoutHeaderField[] = []
+    let bestScore = -1
+
+    for (const anchor of pageItems) {
+      const fields = headerFieldCandidates(profile, pageItems, centerY(anchor))
+      const hasProduct = fields.some((field) => field.field === 'product')
+      if (!hasProduct || fields.length < 2) continue
+      const score = layoutHeaderScore(fields)
+      if (score > bestScore) {
+        bestScore = score
+        bestFields = fields
+      }
+    }
+    if (bestFields.length === 0) continue
+
+    const orderedFields = [...bestFields].sort((a, b) => a.anchorX - b.anchorX)
+    const headerY = orderedFields.reduce((sum, field) => sum + centerY(field.item), 0) / orderedFields.length
+    const origin = orderedFields[0]!.item.origin
+    const centers = orderedFields.map((field) => field.anchorX)
+    const leftBound = centers[0]! - 160
+    const rightBound = centers[centers.length - 1]! + 160
+    const productColumn = orderedFields.findIndex((field) => field.field === 'product')
+    const quantityColumn = orderedFields.findIndex((field) => field.field === 'quantity' || field.field === 'cases')
+    const unitPriceColumn = orderedFields.findIndex(
+      (field) => field.field === 'net_unit_price' || field.field === 'unit_price' || field.field === 'price_with_tax'
+    )
+    const lineTotalColumn = orderedFields.findIndex(
+      (field) => field.field === 'line_amount' || field.field === 'line_amount_tax_included'
+    )
+
+    const dataItems = pageItems.filter((item) => {
+      const distance = downDistance(headerY, item, origin)
+      const x = centerX(item)
+      return distance > 5 && x >= leftBound && x <= rightBound
+    })
+
+    for (const group of groupLayoutRows(dataItems)) {
+      const cells = Array.from({ length: orderedFields.length }, () => '')
+      for (const item of [...group].sort((a, b) => a.left - b.left)) {
+        const x = centerX(item)
+        let bestColumn = 0
+        let bestDistance = Number.POSITIVE_INFINITY
+        centers.forEach((center, column) => {
+          const distance = Math.abs(center - x)
+          if (distance < bestDistance) {
+            bestDistance = distance
+            bestColumn = column
+          }
+        })
+        cells[bestColumn] = [cells[bestColumn], item.text].filter(Boolean).join(' ').trim()
+      }
+
+      const product = productColumn < 0 ? '' : (cells[productColumn] ?? '').trim()
+      if (!fallbackProductLooksPlausible(profile, product)) continue
+      const excluded = new Set<number>(productColumn >= 0 ? [productColumn] : [])
+      const quantityText = quantityColumn < 0 ? '' : (cells[quantityColumn] ?? '').trim()
+      const quantity = /\d/.test(quantityText) ? quantityText : fallbackMeasureCell(cells, excluded)
+      const unitPrice = unitPriceColumn < 0 ? null : ((cells[unitPriceColumn] ?? '').trim() || null)
+      const lineTotal = lineTotalColumn < 0 ? null : ((cells[lineTotalColumn] ?? '').trim() || null)
+      const nonEmptyCells = cells.filter((cell) => cell.trim()).length
+      if (!quantity && !unitPrice && !lineTotal && nonEmptyCells < 2 && product.length < 8) continue
+
+      rows.push({
+        sourceTableIndex: startIndex + tableOffset,
+        sourceRowIndex: Math.min(...group.map((item) => item.index)),
+        source: 'docling_layout',
+        product,
+        quantity,
+        unitPrice,
+        lineTotal,
+        rawCells: cells,
+      })
+    }
+
+    tableOffset += 1
+  }
+
+  return rows
+}
+
+function dedupeReviewFallbackRows(rows: readonly K5ReviewFallbackRow[]): K5ReviewFallbackRow[] {
+  const seen = new Set<string>()
+  return rows.filter((row) => {
+    const key = [
+      row.sourceTableIndex,
+      row.sourceRowIndex,
+      normalizeEvidenceLabel(row.product),
+    ].join(':')
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+export function extractDoclingReviewFallbackRows(
+  profile: SupplierProfile,
+  rawArtifact: unknown,
+  nativeTables?: readonly K5EvidenceTable[]
+): K5ReviewFallbackRow[] {
+  const tables = nativeTables ?? extractDoclingTables(rawArtifact, profile)
+  const native = dedupeReviewFallbackRows(nativeReviewFallbackRows(profile, tables))
+  if (native.length > 0) return native
+
+  return dedupeReviewFallbackRows(
+    looseLayoutReviewFallbackRows(profile, rawArtifact, tables.length)
+  )
 }
 
 function firstEconomicColumn(match: ProfileTableMatch, fallback: number): number {
