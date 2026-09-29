@@ -247,7 +247,7 @@ test('mapping de presentación incompatible queda bloqueado', () => {
   assert.equal(proposal.mappingVersionId, null)
 })
 
-test('Videla no mezcla tablas parciales si el artefacto no contiene layout recuperable', () => {
+test('Videla conserva el producto para revisión aunque la tabla económica venga separada', () => {
   const videlaProfile: SupplierProfile = {
     ...directProfile,
     id: 'supplier:3:videla',
@@ -303,9 +303,73 @@ test('Videla no mezcla tablas parciales si el artefacto no contiene layout recup
   }).proposals[0]!
 
   assert.equal(proposal.status, 'needs_review')
-  assert.equal(proposal.sourceItemName, null)
+  assert.equal(proposal.sourceItemName, 'CALAMAR CONG.... CROQUETA COCIDO ENTRANA')
   assert.equal(proposal.observedUnitPrice, null)
-  assert.ok(proposal.reviewReasons.includes('profile_table_not_found'))
+  assert.ok(proposal.reviewReasons.includes('generic_evidence_fallback'))
+  assert.ok(proposal.warnings.includes('generic_recovery_unverified'))
+  assert.equal(proposal.mappingVersionId, null)
+  assert.equal(proposal.ingredientId, null)
+})
+
+test('fallback genérico infiere columna de producto cuando Docling omite su cabecera', () => {
+  const videlaProfile: SupplierProfile = {
+    ...directProfile,
+    id: 'supplier:3:videla-recall',
+    supplier: {
+      id: 3,
+      canonical_name: 'Videla',
+      aliases: ['Pescados Videla'],
+      observed_document_identities: ['Pescados Videla S.A.'],
+    },
+    fields: {
+      product: { aliases: ['Artículo'], meaning: 'producto' },
+      quantity: { aliases: ['Unidades'], meaning: 'medidas observadas' },
+      unit_price: { aliases: ['Precio'], meaning: 'precio' },
+      line_amount: { aliases: ['Importe'], meaning: 'importe' },
+    },
+    interpretation: { kind: 'mixed_measure_review', rounding_tolerance: 0.01 },
+    needs_review: [],
+  }
+
+  const raw = artifact([{
+    data: {
+      table_cells: [
+        cell(0, 1, '%Iva', true),
+        cell(0, 2, 'Unidades', true),
+        cell(0, 4, 'Precio', true),
+        cell(0, 5, 'Importe', true),
+        cell(1, 0, 'POLLO CONG PECHUGA'),
+        cell(1, 1, '10'),
+        cell(1, 2, '5,00CJ'),
+        cell(1, 3, '12,50 KG'),
+        cell(1, 4, '5,56'),
+        cell(1, 5, '69,50'),
+        cell(2, 0, 'CERDO LOMO CANA FILETEADO'),
+        cell(2, 1, '10'),
+        cell(2, 3, '8,14KG'),
+        cell(2, 4, '6,25'),
+        cell(2, 5, '50,88'),
+      ],
+    },
+  }], 'Pescados Videla S.A.')
+
+  const proposals = normalizeDoclingEvidence({
+    profile: videlaProfile,
+    rawArtifact: raw,
+    supplierId: 3,
+    mappings: [],
+  }).proposals
+
+  assert.equal(proposals.length, 2)
+  assert.deepEqual(
+    proposals.map((proposal) => proposal.sourceItemName),
+    ['POLLO CONG PECHUGA', 'CERDO LOMO CANA FILETEADO']
+  )
+  assert.equal(proposals[0]!.lineQuantity, '5')
+  assert.equal(proposals[0]!.observedUnitPrice, '5.56')
+  assert.equal(proposals[0]!.lineTotal, '69.5')
+  assert.ok(proposals.every((proposal) => proposal.status === 'needs_review'))
+  assert.ok(proposals.every((proposal) => proposal.reviewReasons.includes('generic_evidence_fallback')))
 })
 
 test('Ametller elige la cabecera de líneas dentro de una tabla con secciones de metadatos', () => {
