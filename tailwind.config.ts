@@ -37,6 +37,7 @@ const config: Config = {
                 "ds-informativo": "var(--color-informativo)",
                 "ds-informativo-fondo": "var(--color-informativo-fondo)",
                 "ds-critico": "var(--color-critico)",
+                "ds-naranja": "var(--color-naranja)",
             },
             borderRadius: {
                 "ds-control": "var(--radio-control)",

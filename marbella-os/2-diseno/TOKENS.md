@@ -99,6 +99,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | `color.informativo` | `#1F5FAF` | Información neutra, contexto | adoptado (piloto Notice / KpiStat vía `--color-informativo`) |
 | `color.informativo.fondo` | `#EFF6FF` | Fondo informativo | adoptado (piloto Notice vía `--color-informativo-fondo`) |
 | `color.critico` | `#B91C1C` | Fallo del sistema, no del negocio | adoptado (piloto Notice vía `--color-critico`) |
+| `color.naranja` | `#F97316` | Elemento que reclama atención sin bloquear ni ser error (p. ej. recuentos de inventario pendientes de certificar) | adoptado (Button `inventory-pending-counts-open` vía `--color-naranja`) |
 
 Los tokens semánticos de documentos impresos usan los mismos nombres con valores propios ya centralizados: positivo `#1B7A4E`, negativo `#B91C1C`, aviso `#B45309`, informativo `#1F5FAF`, con sus fondos correspondientes.
 

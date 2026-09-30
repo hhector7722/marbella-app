@@ -163,12 +163,12 @@ export function InventoryPageShell({
         managerEmptyHint={managerEmptyHint}
         pendingCount={pending.length}
         onOpenPending={openPanel}
-        rightSlot={
+        editSlot={
           <Button
             type="button"
             variant="tertiary"
             instance="inventory-visibility-edit"
-            icon={<Pencil strokeWidth={2} />}
+            icon={<Pencil strokeWidth={1.75} />}
             aria-label={visibilityEditMode ? 'Salir de edición de lista' : 'Editar lista de inventario'}
             onClick={() => setVisibilityEditMode((v) => !v)}
           />

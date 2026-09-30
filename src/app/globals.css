@@ -44,6 +44,7 @@
   --color-informativo: #1f5faf;
   --color-informativo-fondo: #eff6ff;
   --color-critico: #b91c1c;
+  --color-naranja: #f97316;
   --radio-superficie: 16px;
   --radio-control: 12px;
   --espacio-1: 4px;
@@ -2411,6 +2412,34 @@ html[data-quick-fab='open'] main {
 }
 [data-component='Button'][data-instance='inventory-filter-category']::before {
   box-shadow: none;
+}
+/* Pendientes: relleno naranja, solo aparece cuando hay recuentos pendientes. */
+[data-component='Button'][data-instance='inventory-pending-counts-open'] {
+  color: var(--color-texto-invertido);
+}
+[data-component='Button'][data-instance='inventory-pending-counts-open']::before {
+  background-color: var(--color-naranja);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-naranja) 88%, white),
+    var(--color-naranja)
+  );
+  box-shadow: none;
+}
+[data-component='Button'][data-instance='inventory-pending-counts-open']:hover:not(:disabled)::before {
+  background-color: color-mix(in srgb, var(--color-naranja) 85%, black);
+  background-image: none;
+}
+/* Nuevo: relleno blanco sobre el envolvente. */
+[data-component='Button'][data-instance='inventory-new-count'] {
+  color: var(--color-texto-fuerte);
+}
+[data-component='Button'][data-instance='inventory-new-count']::before {
+  background-color: var(--color-superficie);
+  background-image: none;
+}
+[data-component='Button'][data-instance='inventory-new-count']:hover:not(:disabled)::before {
+  background-color: color-mix(in srgb, var(--color-superficie) 88%, var(--color-texto-fuerte));
 }
 
 /*

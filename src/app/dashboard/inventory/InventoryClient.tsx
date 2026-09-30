@@ -40,6 +40,8 @@ interface InventoryClientProps {
   onCloseVisibilityEditMode?: () => void
   /** Acción de cabecera (p. ej. editar lista visible). */
   rightSlot?: ReactNode
+  /** Gerencia: botón de edición de la lista, en la fila del buscador. */
+  editSlot?: ReactNode
   /** Gerencia: recuentos pendientes de certificar (0 = sin pendientes). */
   pendingCount?: number
   /** Gerencia: abre el panel de recuentos pendientes. */
@@ -191,6 +193,7 @@ export function InventoryClient({
   visibilityEditMode = false,
   onCloseVisibilityEditMode,
   rightSlot,
+  editSlot,
   pendingCount = 0,
   onOpenPending,
 }: InventoryClientProps) {
@@ -677,7 +680,7 @@ export function InventoryClient({
           variant="tertiary"
           instance="inventory-filter-category"
           onClick={() => setIngredientFilterOpen((v) => !v)}
-          icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
+          icon={<Filter className="w-5 h-5" strokeWidth={1.75} />}
           aria-label="Filtrar por categoría"
           className="shrink-0"
         />
@@ -724,7 +727,9 @@ export function InventoryClient({
         ) : null}
       </div>
 
-      {!visibilityEditMode && onOpenPending ? (
+      {editSlot}
+
+      {!visibilityEditMode && onOpenPending && pendingCount > 0 ? (
         <Button
           type="button"
           variant="secondary"
@@ -732,7 +737,7 @@ export function InventoryClient({
           onClick={onOpenPending}
           className="shrink-0"
         >
-          {pendingCount > 0 ? `Pendientes (${pendingCount})` : 'Pendientes'}
+          {`Pendientes (${pendingCount})`}
         </Button>
       ) : null}
 
