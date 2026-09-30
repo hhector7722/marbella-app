@@ -1827,6 +1827,45 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_count_drafts: {
+        Row: {
+          ingredient_id: string
+          quantity_barra: number
+          quantity_camara: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ingredient_id: string
+          quantity_barra?: number
+          quantity_camara?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ingredient_id?: string
+          quantity_barra?: number
+          quantity_camara?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_count_drafts_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: true
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_count_drafts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_count_lines: {
         Row: {
           count_id: string

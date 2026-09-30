@@ -19,6 +19,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **Inventario: cromo en una sola fila y tarjetas con contorno blanco.** Buscador, Barra/Cámara, filtro, pendientes y Guardar comparten fila; los títulos de categoría van en blanco y las tarjetas llevan el mismo contorno blanco que la tarjeta de pedido. Desaparecen el subtítulo «Recuento de existencias por ubicación» y la etiqueta «Guardar recuento» (ahora «Guardar»). [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
+- **El borrador del recuento de inventario es compartido y en tiempo real, como el de pedidos.** Lo que apunta una persona lo ven las demás al instante y persiste aunque se cierre la aplicación. Se vacía al guardar y con el nuevo botón «Nuevo» (primario) del cromo. Deja de vivir en el dispositivo. [ADR-0020](../4-decisiones/ADR-0020-borrador-compartido-de-inventario.md).
+
 ## 2026-09-29
 
 - **Notificaciones de reserva y pedido cliente: sale Hernán y entra Willy.** Los avisos de nueva reserva y de pedido cliente (campana del calendario y push) dejan de avisar a Hernán y pasan a avisar a Willy. Destinatarios: Alba, Fernando, Willy y Héctor.

@@ -1,5 +1,5 @@
-<!-- Generado desde 68 documentos de marbella-os/.
-     Huella del origen: 2f8b4e30d85434e6
+<!-- Generado desde 69 documentos de marbella-os/.
+     Huella del origen: 98c89b1a8d3bdf9d
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -59,6 +59,7 @@ es `CANON §5`.
 | 80 | `marbella-os/4-decisiones/ADR-0017-archivado-de-ingredientes.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0018-elaboraciones-intermedias.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0019-inventario-captura-y-certificacion.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0020-borrador-compartido-de-inventario.md` |
 | 60 | `marbella-os/1-producto/PRINCIPIOS.md` |
 | 60 | `marbella-os/1-producto/VISION.md` |
 | 60 | `marbella-os/2-diseno/EXPERIENCIA.md` |

@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
+import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { Filter, Package, Trash2 } from 'lucide-react'
 import { QuickCashTools } from '@/components/ui/QuickCalculatorModal'
@@ -12,12 +13,6 @@ import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchField } from '@/components/ui/SearchField'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
-import {
-  clearInventoryDraft,
-  hasInventoryDraftContent,
-  readInventoryDraft,
-  writeInventoryDraft,
-} from '@/lib/inventory-draft'
 import { cn } from '@/lib/utils'
 
 type Ingredient = {
@@ -200,6 +195,7 @@ export function InventoryClient({
   onOpenPending,
 }: InventoryClientProps) {
   const router = useRouter()
+  const supabase = createClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [savingVisibility, setSavingVisibility] = useState(false)
   const [physicalCountsBarra, setPhysicalCountsBarra] = useState<Record<string, string>>({})
@@ -213,40 +209,170 @@ export function InventoryClient({
   const [ingredientCategory, setIngredientCategory] = useState<string | null>(null)
   const [ingredientFilterOpen, setIngredientFilterOpen] = useState(false)
 
-  // Borrador por usuario en el dispositivo: restaura al montar y se guarda en
-  // cada cambio. Solo se borra al certificar el recuento (handleSubmit).
-  const [draftSyncedFor, setDraftSyncedFor] = useState<string | null>(null)
+  // Borrador compartido en servidor (como pedidos): lo que apunta cualquiera lo
+  // ven los demás en vivo y persiste aunque se salga de la pantalla. Se vacía
+  // al guardar o al pulsar «Nuevo».
+  const lastSeenRef = useRef<{ barra: Record<string, number>; camara: Record<string, number> }>({
+    barra: {},
+    camara: {},
+  })
+  const dirtyIdsRef = useRef<Set<string>>(new Set())
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const draftReadyRef = useRef(false)
+  const remoteApplyRef = useRef(false)
 
+  const flushDrafts = useCallback(async () => {
+    if (!userId || dirtyIdsRef.current.size === 0) return
+    const ids = Array.from(dirtyIdsRef.current)
+    dirtyIdsRef.current.clear()
+    const { barra, camara } = lastSeenRef.current
+    const upserts: {
+      ingredient_id: string
+      quantity_barra: number
+      quantity_camara: number
+      updated_by: string
+      updated_at: string
+    }[] = []
+    const deletes: string[] = []
+    for (const id of ids) {
+      const b = barra[id] ?? 0
+      const c = camara[id] ?? 0
+      if (b === 0 && c === 0) {
+        deletes.push(id)
+      } else {
+        upserts.push({
+          ingredient_id: id,
+          quantity_barra: b,
+          quantity_camara: c,
+          updated_by: userId,
+          updated_at: new Date().toISOString(),
+        })
+      }
+    }
+    try {
+      if (upserts.length > 0) {
+        await supabase.from('inventory_count_drafts').upsert(upserts)
+      }
+      if (deletes.length > 0) {
+        await supabase.from('inventory_count_drafts').delete().in('ingredient_id', deletes)
+      }
+    } catch (error) {
+      console.error('No se pudo guardar el borrador de inventario', error)
+    }
+  }, [supabase, userId])
+
+  // Detecta cambios locales (nunca los aplicados por realtime) y los sincroniza
+  // al servidor con retardo, como el borrador de pedidos.
+  useEffect(() => {
+    const prev = lastSeenRef.current
+    const next = { barra: numericByIdBarra, camara: numericByIdCamara }
+    lastSeenRef.current = next
+    if (remoteApplyRef.current) {
+      remoteApplyRef.current = false
+      return
+    }
+    if (!draftReadyRef.current) return
+    const changed = new Set<string>()
+    for (const id of new Set([...Object.keys(prev.barra), ...Object.keys(next.barra)])) {
+      if ((prev.barra[id] ?? 0) !== (next.barra[id] ?? 0)) changed.add(id)
+    }
+    for (const id of new Set([...Object.keys(prev.camara), ...Object.keys(next.camara)])) {
+      if ((prev.camara[id] ?? 0) !== (next.camara[id] ?? 0)) changed.add(id)
+    }
+    if (changed.size === 0) return
+    changed.forEach((id) => dirtyIdsRef.current.add(id))
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+    syncTimerRef.current = setTimeout(() => {
+      void flushDrafts()
+    }, 600)
+  }, [numericByIdBarra, numericByIdCamara, flushDrafts])
+
+  const clearSharedDraft = useCallback(async () => {
+    dirtyIdsRef.current.clear()
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+    try {
+      await supabase
+        .from('inventory_count_drafts')
+        .delete()
+        .neq('ingredient_id', '00000000-0000-0000-0000-000000000000')
+    } catch (error) {
+      console.error('No se pudo vaciar el borrador de inventario', error)
+    }
+  }, [supabase])
+
+  // Carga inicial del borrador compartido.
   useEffect(() => {
     if (!userId) return
-    const draft = readInventoryDraft(userId)
-    /* eslint-disable react-hooks/set-state-in-effect -- restauración inicial desde localStorage (sistema externo) */
-    setPhysicalCountsBarra(draft?.physicalCountsBarra ?? {})
-    setNumericByIdBarra(draft?.numericByIdBarra ?? {})
-    setPhysicalCountsCamara(draft?.physicalCountsCamara ?? {})
-    setNumericByIdCamara(draft?.numericByIdCamara ?? {})
-    setDraftSyncedFor(userId)
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [userId])
-
-  useEffect(() => {
-    if (!userId || draftSyncedFor !== userId) return
-    const draft = {
-      physicalCountsBarra,
-      numericByIdBarra,
-      physicalCountsCamara,
-      numericByIdCamara,
+    let cancelled = false
+    const load = async () => {
+      const { data } = await supabase
+        .from('inventory_count_drafts')
+        .select('ingredient_id, quantity_barra, quantity_camara')
+      if (cancelled) return
+      const barra: Record<string, number> = {}
+      const camara: Record<string, number> = {}
+      for (const row of data ?? []) {
+        const b = Number(row.quantity_barra) || 0
+        const c = Number(row.quantity_camara) || 0
+        if (b !== 0) barra[row.ingredient_id] = b
+        if (c !== 0) camara[row.ingredient_id] = c
+      }
+      remoteApplyRef.current = true
+      setNumericByIdBarra(barra)
+      setNumericByIdCamara(camara)
+      draftReadyRef.current = true
     }
-    if (hasInventoryDraftContent(draft)) writeInventoryDraft(userId, draft)
-    else clearInventoryDraft(userId)
-  }, [
-    userId,
-    draftSyncedFor,
-    physicalCountsBarra,
-    numericByIdBarra,
-    physicalCountsCamara,
-    numericByIdCamara,
-  ])
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [supabase, userId])
+
+  // Realtime: el borrador es compartido, cualquiera ve lo que apuntan los demás.
+  useEffect(() => {
+    if (!userId) return
+    const removeKey = (prev: Record<string, number>, id: string) => {
+      if (!(id in prev)) return prev
+      const next = { ...prev }
+      delete next[id]
+      return next
+    }
+    const applyValue = (prev: Record<string, number>, id: string, value: number) => {
+      if (value === 0) return removeKey(prev, id)
+      if (prev[id] === value) return prev
+      return { ...prev, [id]: value }
+    }
+    const channel = supabase
+      .channel('inventory_count_drafts_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'inventory_count_drafts' },
+        (payload) => {
+          if (payload.eventType === 'DELETE') {
+            const id = (payload.old as { ingredient_id?: string }).ingredient_id
+            if (!id) return
+            remoteApplyRef.current = true
+            setNumericByIdBarra((prev) => removeKey(prev, id))
+            setNumericByIdCamara((prev) => removeKey(prev, id))
+            return
+          }
+          const row = payload.new as {
+            ingredient_id: string
+            quantity_barra: number | string
+            quantity_camara: number | string
+          }
+          const b = Number(row.quantity_barra) || 0
+          const c = Number(row.quantity_camara) || 0
+          remoteApplyRef.current = true
+          setNumericByIdBarra((prev) => applyValue(prev, row.ingredient_id, b))
+          setNumericByIdCamara((prev) => applyValue(prev, row.ingredient_id, c))
+        },
+      )
+      .subscribe()
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [supabase, userId])
 
   const sourceList: Ingredient[] = useMemo(() => {
     if (visibilityEditMode && managerFullList && managerFullList.length > 0) {
@@ -387,17 +513,26 @@ export function InventoryClient({
       const res = await processInventoryCounts(payload)
       if (res.success) {
         toast.success(res.message)
-        clearInventoryDraft(userId)
         setPhysicalCountsBarra({})
         setNumericByIdBarra({})
         setPhysicalCountsCamara({})
         setNumericByIdCamara({})
+        await clearSharedDraft()
       }
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Error al procesar el recuento.')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleNew = async () => {
+    setPhysicalCountsBarra({})
+    setNumericByIdBarra({})
+    setPhysicalCountsCamara({})
+    setNumericByIdCamara({})
+    await clearSharedDraft()
+    toast.success('Recuento vaciado.')
   }
 
   const hasAnyCount = useMemo(
@@ -627,6 +762,18 @@ export function InventoryClient({
           className="shrink-0"
         >
           Guardar lista
+        </Button>
+      ) : null}
+
+      {!visibilityEditMode ? (
+        <Button
+          type="button"
+          variant="primary"
+          instance="inventory-new-count"
+          onClick={handleNew}
+          className="shrink-0"
+        >
+          Nuevo
         </Button>
       ) : null}
 

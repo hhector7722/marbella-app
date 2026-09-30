@@ -57,6 +57,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0017](./ADR-0017-archivado-de-ingredientes.md) | Archivado de ingredientes en lugar de borrado | Vigente |
 | [0018](./ADR-0018-elaboraciones-intermedias.md) | Elaboraciones intermedias y subrecetas | Vigente |
 | [0019](./ADR-0019-inventario-captura-y-certificacion.md) | Recuento de inventario: captura libre y certificación por gerencia | Vigente |
+| [0020](./ADR-0020-borrador-compartido-de-inventario.md) | Borrador compartido del recuento de inventario | Vigente |
 
 ## Decisiones tomadas sin registrar
 
