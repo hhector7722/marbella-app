@@ -428,11 +428,13 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ## D30 · El borrador del recuento de inventario vive en el dispositivo
 
-**Prioridad: baja.** Las cantidades contadas en `/dashboard/inventory` se guardan en el dispositivo (`localStorage`, clave `inventory_count_draft_<userId>`) para no perderse al salir de la pantalla o cerrar la aplicación. Se restablecen solo al certificar el recuento.
+**Prioridad: baja.** Las cantidades contadas en `/dashboard/inventory` se guardan en el dispositivo (`localStorage`, clave `inventory_count_draft_<userId>`) mientras se rellena, para no perderse al salir de la pantalla o cerrar la aplicación. Se restablecen solo al certificar el recuento.
 
-**Coste**: el borrador no viaja al servidor. No se comparte entre dispositivos ni sobrevive a limpiar los datos del navegador; si el recuento se empieza en un dispositivo y se termina en otro, no se continúa.
+**Pago parcial (2026-09-30) — recuento pendiente en servidor:** al pulsar «Guardar», el recuento pasa a `inventory_counts` como pendiente de certificar ([ADR-0019](../4-decisiones/ADR-0019-inventario-captura-y-certificacion.md)). Ya queda auditado en el servidor y lo ve gerencia. Lo que sigue en el dispositivo es solo el recuento **en curso, antes de guardar**.
 
-**Disparador de pago**: cuando el recuento deba continuar entre dispositivos o quedar auditado antes de certificarse, moverlo a un borrador de servidor (tabla o columna con RLS por usuario).
+**Coste**: el borrador previo a «Guardar» no viaja al servidor. Un recuento empezado y no guardado no se comparte entre dispositivos ni sobrevive a limpiar los datos del navegador; si se empieza en un dispositivo y se termina en otro, no se continúa hasta guardar.
+
+**Disparador de pago**: cuando el recuento deba continuar entre dispositivos **antes** de pulsar «Guardar», mover el borrador en curso a servidor (tabla o columna con RLS por usuario).
 
 ---
 

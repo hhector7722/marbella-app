@@ -2399,6 +2399,21 @@ html[data-quick-fab='open'] main {
 }
 
 /*
+ * Inventario — catálogo sobre el envolvente (work='catalog'). Las tarjetas
+ * llevan el mismo contorno blanco que la tarjeta de pedido; el filtro va en
+ * blanco y sin el hilo oscuro del variant para leerse sobre el fondo.
+ */
+[data-element='inventory-product-card'] {
+  border: 1px solid var(--color-superficie);
+}
+[data-component='Button'][data-instance='inventory-filter-category'] {
+  color: var(--color-texto-invertido);
+}
+[data-component='Button'][data-instance='inventory-filter-category']::before {
+  box-shadow: none;
+}
+
+/*
  * QuantityStepper variante `bar`: la misma barra de recuento de la tarjeta de
  * pedido (cromo de tabla, tinta invertida, sin caja). Inventario la monta.
  */

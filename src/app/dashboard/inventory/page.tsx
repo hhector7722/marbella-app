@@ -1,7 +1,11 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
+import { isMasterDashboardUser } from '@/lib/master-dashboard'
+import { MASTER_VIEW_AS_COOKIE } from '@/lib/master-view-as'
 import { InventoryClient, type ManagerIngredientRow } from './InventoryClient'
 import { InventoryPageShell } from './InventoryPageShell'
+import { listPendingInventoryCounts } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,10 +37,36 @@ export default async function InventoryPage() {
     redirect('/login')
   }
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, email')
+    .eq('id', user.id)
+    .maybeSingle()
 
-  const role = profile?.role ?? 'staff'
-  const canEditInventoryList = role === 'manager' || role === 'admin'
+  let effectiveRole = profile?.role ?? 'staff'
+  let effectiveUserId = user.id
+
+  // El recuento respeta el modo experiencia: ver-como un trabajador muestra su
+  // versión de la pantalla, no la de gerencia.
+  if (isMasterDashboardUser(user.email ?? '')) {
+    const cookieStore = await cookies()
+    const viewAsId = cookieStore.get(MASTER_VIEW_AS_COOKIE)?.value?.trim() || null
+
+    if (viewAsId && viewAsId !== user.id) {
+      const { data: viewedProfile } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('id', viewAsId)
+        .maybeSingle()
+
+      if (viewedProfile) {
+        effectiveRole = viewedProfile.role ?? 'staff'
+        effectiveUserId = viewedProfile.id
+      }
+    }
+  }
+
+  const canEditInventoryList = effectiveRole === 'manager' || effectiveRole === 'admin'
 
   if (canEditInventoryList) {
     const { data: allRows, error } = await supabase
@@ -52,28 +82,30 @@ export default async function InventoryPage() {
 
     const managerFullList = (allRows ?? []).map((row) => toManagerRow(row as Record<string, unknown>))
     const visibleForGrid = managerFullList.filter((r) => r.inventory_visible)
+    const initialPending = await listPendingInventoryCounts()
 
     return (
       <InventoryPageShell
-        userId={user.id}
+        userId={effectiveUserId}
         visibleIngredients={visibleForGrid}
         managerFullList={managerFullList}
         managerEmptyHint={visibleForGrid.length === 0}
+        initialPending={initialPending}
       />
     )
   }
 
   const { data: ingredients, error } = await supabase
     .from('ingredients')
-      .select(SELECT_FIELDS)
-      .eq('inventory_visible', true)
-      .is('archived_at', null)
-      .order('category', { ascending: true })
+    .select(SELECT_FIELDS)
+    .eq('inventory_visible', true)
+    .is('archived_at', null)
+    .order('category', { ascending: true })
     .order('name', { ascending: true })
 
   if (error) {
     throw new Error('Fallo al cargar la base de inventario')
   }
 
-  return <InventoryClient initialIngredients={ingredients ?? []} userId={user.id} />
+  return <InventoryClient initialIngredients={ingredients ?? []} userId={effectiveUserId} />
 }

@@ -13,6 +13,12 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-09-30
+
+- **El recuento de inventario se captura y se certifica por separado.** Cualquier persona puede contar en `/dashboard/inventory` y guardar; el recuento queda pendiente de certificar. Solo `manager`/`admin` lo certifica (acceso «Pendientes» en el cromo de la pantalla) y entonces escribe movimientos `INVENTORY_COUNT` en el ledger. Rechazar no produce movimientos. El histórico (`/dashboard/inventory/ledger`) y la merma siguen restringidos a gerencia. [ADR-0019](../4-decisiones/ADR-0019-inventario-captura-y-certificacion.md).
+
+- **Inventario: cromo en una sola fila y tarjetas con contorno blanco.** Buscador, Barra/Cámara, filtro, pendientes y Guardar comparten fila; los títulos de categoría van en blanco y las tarjetas llevan el mismo contorno blanco que la tarjeta de pedido. Desaparecen el subtítulo «Recuento de existencias por ubicación» y la etiqueta «Guardar recuento» (ahora «Guardar»). [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+
 ## 2026-09-29
 
 - **Notificaciones de reserva y pedido cliente: sale Hernán y entra Willy.** Los avisos de nueva reserva y de pedido cliente (campana del calendario y push) dejan de avisar a Hernán y pasan a avisar a Willy. Destinatarios: Alba, Fernando, Willy y Héctor.

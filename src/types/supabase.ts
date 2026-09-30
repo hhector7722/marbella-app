@@ -1827,6 +1827,112 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_count_lines: {
+        Row: {
+          count_id: string
+          delta: number | null
+          id: string
+          ingredient_id: string
+          physical_stock: number
+          theoretical_stock: number
+          unit: string
+        }
+        Insert: {
+          count_id: string
+          delta?: number | null
+          id?: string
+          ingredient_id: string
+          physical_stock: number
+          theoretical_stock: number
+          unit: string
+        }
+        Update: {
+          count_id?: string
+          delta?: number | null
+          id?: string
+          ingredient_id?: string
+          physical_stock?: number
+          theoretical_stock?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_count_lines_count_id_fkey"
+            columns: ["count_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_count_lines_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_counts: {
+        Row: {
+          certified_at: string | null
+          certified_by: string | null
+          correlation_id: string
+          created_at: string
+          created_by: string
+          id: string
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          status: string
+        }
+        Insert: {
+          certified_at?: string | null
+          certified_by?: string | null
+          correlation_id?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+        }
+        Update: {
+          certified_at?: string | null
+          certified_by?: string | null
+          correlation_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_counts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_certified_by_fkey"
+            columns: ["certified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_rejected_by_fkey"
+            columns: ["rejected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kds_events: {
         Row: {
           articulo_id: number | null
@@ -6262,6 +6368,18 @@ export type Database = {
       }
       record_waste_movements: {
         Args: { p_correlation_id: string; p_items: Json; p_source?: string }
+        Returns: Json
+      }
+      certify_inventory_count: {
+        Args: { p_count_id: string }
+        Returns: Json
+      }
+      reject_inventory_count: {
+        Args: { p_count_id: string; p_reason?: string }
+        Returns: Json
+      }
+      submit_inventory_count: {
+        Args: { p_items: Json }
         Returns: Json
       }
       recipe_cost_v2_walk: {

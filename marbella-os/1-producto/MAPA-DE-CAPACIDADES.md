@@ -103,9 +103,9 @@ Recibir mercancía, saber lo que cuesta y detectar cuándo sube.
 
 Saber qué hay, qué se ha ido y por qué.
 
-- **Actores**: responsable de operación.
+- **Actores**: cualquier persona autenticada (captura del recuento); responsable de operación (certificación del recuento).
 - **Superficies**: inventario, historial de movimientos por ingrediente, mermas.
-- **Reglas propias**: todo cambio de stock deja rastro con su origen; las correcciones son movimientos, no ediciones.
+- **Reglas propias**: todo cambio de stock deja rastro con su origen; las correcciones son movimientos, no ediciones; cualquier persona puede contar y guardar, pero solo gerencia certifica y produce el movimiento de stock ([ADR-0019](../4-decisiones/ADR-0019-inventario-captura-y-certificacion.md)).
 - **Estado**: frágil.
 - **Especificación**: pendiente.
 

@@ -45,6 +45,10 @@ interface InventoryClientProps {
   onCloseVisibilityEditMode?: () => void
   /** Acción de cabecera (p. ej. editar lista visible). */
   rightSlot?: ReactNode
+  /** Gerencia: recuentos pendientes de certificar (0 = sin pendientes). */
+  pendingCount?: number
+  /** Gerencia: abre el panel de recuentos pendientes. */
+  onOpenPending?: () => void
 }
 
 function normalizeUnit(unit: string | null | undefined): string {
@@ -192,6 +196,8 @@ export function InventoryClient({
   visibilityEditMode = false,
   onCloseVisibilityEditMode,
   rightSlot,
+  pendingCount = 0,
+  onOpenPending,
 }: InventoryClientProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -422,7 +428,7 @@ export function InventoryClient({
         Object.entries(grouped).map(([category, items]) => (
           <section key={category} className="flex flex-col gap-3">
             {category ? (
-              <div className="px-0.5 text-sm font-black uppercase tracking-wide text-zinc-500">{category}</div>
+              <div className="px-0.5 text-sm font-black uppercase tracking-wide text-ds-texto-invertido">{category}</div>
             ) : null}
             <div className="grid grid-cols-3 gap-x-5 gap-y-6 pt-2 sm:grid-cols-4 sm:gap-x-6 sm:gap-y-8 md:grid-cols-5 md:gap-x-7 lg:grid-cols-5 lg:gap-x-5 lg:gap-y-6 xl:grid-cols-6 2xl:grid-cols-7">
               {items.map((item) => {
@@ -519,9 +525,9 @@ export function InventoryClient({
   )
 
   const toolbar = (
-    <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 items-center gap-2">
-        {!visibilityEditMode ? (
+    <div className="flex min-w-0 w-full shrink-0 items-center gap-1.5 sm:gap-2">
+      {!visibilityEditMode ? (
+        <div className="shrink-0">
           <PetroleumSegmented
             instance="inventory-location"
             density="compact"
@@ -533,100 +539,110 @@ export function InventoryClient({
               { value: 'CAMARA', label: 'Cámara' },
             ]}
           />
-        ) : null}
+        </div>
+      ) : null}
 
-        {visibilityEditMode && managerFullList?.length ? (
-          <Button
-            type="button"
-            variant="primary"
-            instance="inventory-save-visibility"
-            onClick={handleSaveVisibility}
-            disabled={savingVisibility}
-            loading={savingVisibility}
-            className="shrink-0"
-          >
-            Guardar lista
-          </Button>
-        ) : null}
-
-        {!visibilityEditMode ? (
-          <Button
-            type="button"
-            variant="primary"
-            instance="inventory-save-count"
-            onClick={handleSubmit}
-            disabled={submitDisabled}
-            loading={isSubmitting}
-            className="ml-auto shrink-0"
-          >
-            Guardar recuento
-          </Button>
-        ) : null}
+      <div className="min-w-0 flex-1">
+        <SearchField
+          instance="inventory-search"
+          placeholder="Buscar ingrediente…"
+          value={ingredientQuery}
+          onChange={setIngredientQuery}
+        />
       </div>
 
-      <div className="flex min-w-0 w-full shrink-0 items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <SearchField
-            instance="inventory-search"
-            placeholder="Buscar ingrediente…"
-            value={ingredientQuery}
-            onChange={setIngredientQuery}
-          />
-        </div>
+      <div className="relative shrink-0" data-inventory-filter-root="true">
+        <Button
+          type="button"
+          variant="tertiary"
+          instance="inventory-filter-category"
+          onClick={() => setIngredientFilterOpen((v) => !v)}
+          icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
+          aria-label="Filtrar por categoría"
+          className="shrink-0"
+        />
 
-        <div className="relative shrink-0" data-inventory-filter-root="true">
-          <Button
-            type="button"
-            variant="tertiary"
-            instance="inventory-filter-category"
-            onClick={() => setIngredientFilterOpen((v) => !v)}
-            icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
-            aria-label="Filtrar por categoría"
-            className="shrink-0"
-          />
-
-          {ingredientFilterOpen ? (
-            <div
-              className="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-zinc-100 bg-white text-zinc-900 shadow-2xl"
-              data-inventory-filter-root="true"
+        {ingredientFilterOpen ? (
+          <div
+            className="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-zinc-100 bg-white text-zinc-900 shadow-2xl"
+            data-inventory-filter-root="true"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setIngredientCategory(null)
+                setIngredientFilterOpen(false)
+              }}
+              className={cn(
+                'flex min-h-12 w-full items-center justify-between px-4 py-3 transition-colors hover:bg-zinc-50 active:bg-zinc-100',
+                !ingredientCategory && 'bg-zinc-50',
+              )}
             >
-              <button
-                type="button"
-                onClick={() => {
-                  setIngredientCategory(null)
-                  setIngredientFilterOpen(false)
-                }}
-                className={cn(
-                  'flex min-h-12 w-full items-center justify-between px-4 py-3 transition-colors hover:bg-zinc-50 active:bg-zinc-100',
-                  !ingredientCategory && 'bg-zinc-50',
-                )}
-              >
-                <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
-                <span className="text-[10px] font-black text-zinc-400">{sourceList.length}</span>
-              </button>
-              <div className="h-px bg-zinc-100" />
-              <div className="max-h-72 overflow-auto">
-                {ingredientCategories.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => {
-                      setIngredientCategory(c)
-                      setIngredientFilterOpen(false)
-                    }}
-                    className={cn(
-                      'min-h-12 w-full px-4 py-3 text-left transition-colors hover:bg-zinc-50 active:bg-zinc-100',
-                      ingredientCategory === c && 'bg-zinc-50',
-                    )}
-                  >
-                    <span className="text-[11px] font-black uppercase tracking-widest text-zinc-700">{c}</span>
-                  </button>
-                ))}
-              </div>
+              <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
+              <span className="text-[10px] font-black text-zinc-400">{sourceList.length}</span>
+            </button>
+            <div className="h-px bg-zinc-100" />
+            <div className="max-h-72 overflow-auto">
+              {ingredientCategories.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => {
+                    setIngredientCategory(c)
+                    setIngredientFilterOpen(false)
+                  }}
+                  className={cn(
+                    'min-h-12 w-full px-4 py-3 text-left transition-colors hover:bg-zinc-50 active:bg-zinc-100',
+                    ingredientCategory === c && 'bg-zinc-50',
+                  )}
+                >
+                  <span className="text-[11px] font-black uppercase tracking-widest text-zinc-700">{c}</span>
+                </button>
+              ))}
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
+
+      {!visibilityEditMode && onOpenPending ? (
+        <Button
+          type="button"
+          variant="secondary"
+          instance="inventory-pending-counts-open"
+          onClick={onOpenPending}
+          className="shrink-0"
+        >
+          {pendingCount > 0 ? `Pendientes (${pendingCount})` : 'Pendientes'}
+        </Button>
+      ) : null}
+
+      {visibilityEditMode && managerFullList?.length ? (
+        <Button
+          type="button"
+          variant="primary"
+          instance="inventory-save-visibility"
+          onClick={handleSaveVisibility}
+          disabled={savingVisibility}
+          loading={savingVisibility}
+          className="shrink-0"
+        >
+          Guardar lista
+        </Button>
+      ) : null}
+
+      {!visibilityEditMode ? (
+        <Button
+          type="button"
+          variant="primary"
+          instance="inventory-save-count"
+          onClick={handleSubmit}
+          disabled={submitDisabled}
+          loading={isSubmitting}
+          className="shrink-0"
+        >
+          Guardar
+        </Button>
+      ) : null}
     </div>
   )
 
@@ -634,7 +650,6 @@ export function InventoryClient({
     return (
       <DashboardDetailLayout
         title="Ingredientes"
-        subtitle="Recuento de existencias por ubicación"
         maxWidthClass="max-w-7xl"
         showBackButton={false}
         rightSlot={rightSlot}
@@ -657,7 +672,7 @@ export function InventoryClient({
   return (
     <DashboardDetailLayout
       title="Ingredientes"
-      subtitle={visibilityEditMode ? 'Activa o desactiva artículos del recuento' : 'Recuento de existencias por ubicación'}
+      subtitle={visibilityEditMode ? 'Activa o desactiva artículos del recuento' : undefined}
       maxWidthClass="max-w-7xl"
       showBackButton={false}
       rightSlot={rightSlot}
