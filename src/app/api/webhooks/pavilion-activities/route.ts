@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ingestPavilionActivityPdf } from '@/lib/pavilion-activities/ingest';
+
+export const maxDuration = 300;
 
 function getServiceSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -46,26 +48,52 @@ export async function POST(request: Request) {
       source: 'email',
     });
 
-    // Extracción autónoma. Incluso si el PDF ya estaba guardado, repetimos la
-    // extracción para permitir recuperar un intento anterior que falló en OCR.
-    const { parsePdf } = await import('@/lib/pavilion/parser');
-    const { importOccupations } = await import('@/lib/pavilion/importer');
+    // El PDF ya está guardado de forma durable. A partir de aquí no hacemos
+    // esperar a Google Apps Script: respondemos 200 y dejamos el OCR/importación
+    // ejecutándose en segundo plano dentro de la misma función de Vercel.
+    //
+    // Incluso si Storage ya tenía el PDF, repetimos la extracción para permitir
+    // recuperar un intento anterior que hubiera fallado en OCR.
+    after(async () => {
+      try {
+        const { parsePdf } = await import('@/lib/pavilion/parser');
+        const { importOccupations } = await import('@/lib/pavilion/importer');
 
-    const { occupations } = await parsePdf(fileBase64, filename);
-    const dateToUse = result.activityDate;
-    const occupationsWithDate = occupations.map(o => ({ ...o, date: dateToUse }));
+        const { occupations } = await parsePdf(fileBase64, filename);
+        const dateToUse = result.activityDate;
+        const occupationsWithDate = occupations.map((o) => ({ ...o, date: dateToUse }));
 
-    // Borramos previamente si hubiera algo en esa fecha, para reemplazar.
-    await supabase.from('activity_occurrences').delete().eq('activity_date', dateToUse);
+        // Reemplazamos las ocurrencias del día solo después de que el OCR haya
+        // terminado correctamente. Así un fallo de Mistral no borra datos válidos.
+        const { error: deleteError } = await supabase
+          .from('activity_occurrences')
+          .delete()
+          .eq('activity_date', dateToUse);
 
-    // Importamos las nuevas ocurrencias.
-    if (occupationsWithDate.length > 0) {
-      await importOccupations(supabase, occupationsWithDate);
-    }
+        if (deleteError) {
+          throw new Error(`Fallo eliminando actividades previas: ${deleteError.message}`);
+        }
+
+        if (occupationsWithDate.length > 0) {
+          await importOccupations(supabase, occupationsWithDate);
+        }
+
+        console.log(
+          `[webhooks/pavilion-activities] OCR/importación completados: ${filename} (${occupationsWithDate.length} ocupaciones)`,
+        );
+      } catch (parseError) {
+        console.error(
+          `[webhooks/pavilion-activities] Error OCR/importación en segundo plano para ${filename}:`,
+          parseError,
+        );
+      }
+    });
 
     return NextResponse.json(
       {
         success: true,
+        accepted: true,
+        processing: 'background',
         activityDate: result.activityDate,
         filePath: result.filePath,
         skippedStorage: Boolean(result.skipped),
