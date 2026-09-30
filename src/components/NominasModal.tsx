@@ -202,6 +202,23 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
         return row.filename.replace(/\.(pdf|docx?|jpe?g|png|webp)$/i, '') || 'Nómina';
     }
 
+    function subtitlePeriod(row: NominaRow) {
+        const year = row.year && row.year > 0 ? row.year : null;
+        const month = /^0?([1-9]|1[0-2])$/.exec(String(row.mes ?? '').trim());
+
+        if (year && month) {
+            return `Nómina ${year}-${String(parseInt(month[1], 10)).padStart(2, '0')}`;
+        }
+
+        const base = row.filename.replace(/\.(pdf|docx?|jpe?g|png|webp)$/i, '');
+        const match = base.match(/\b(0?[1-9]|1[0-2])[\s\-_/]+(\d{4})\b/);
+        if (match) {
+            return `Nómina ${match[2]}-${String(parseInt(match[1], 10)).padStart(2, '0')}`;
+        }
+
+        return base || 'Nómina';
+    }
+
     if (!isOpen) return null;
 
     const uploadTrailing = isManager && resolvedUserId ? (
@@ -255,7 +272,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                                     key={row.id}
                                     instance={`nominas-row-${row.id}`}
                                     title={labelPeriod(row)}
-                                    subtitle={row.filename.replace('.pdf', '')}
+                                    subtitle={subtitlePeriod(row)}
                                     onOpen={() => openNomina(row)}
                                     aria-label={`Abrir nómina ${labelPeriod(row)}`}
                                     trailing={
