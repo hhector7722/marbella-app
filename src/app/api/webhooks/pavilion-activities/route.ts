@@ -46,38 +46,21 @@ export async function POST(request: Request) {
       source: 'email',
     });
 
-    if (result.skipped) {
-      return NextResponse.json(
-        {
-          success: true,
-          skipped: true,
-          activityDate: result.activityDate,
-          message: 'Adjunto ya procesado',
-        },
-        { status: 200 },
-      );
-    }
+    // Extracción autónoma. Incluso si el PDF ya estaba guardado, repetimos la
+    // extracción para permitir recuperar un intento anterior que falló en OCR.
+    const { parsePdf } = await import('@/lib/pavilion/parser');
+    const { importOccupations } = await import('@/lib/pavilion/importer');
 
-    // Extracción Autónoma
-    try {
-      const { parsePdf } = await import('@/lib/pavilion/parser');
-      const { importOccupations } = await import('@/lib/pavilion/importer');
-      
-      const { occupations } = await parsePdf(fileBase64, filename);
-      const dateToUse = result.activityDate;
-      const occupationsWithDate = occupations.map(o => ({ ...o, date: dateToUse }));
-      
-      // Borramos previamente si hubiera algo en esa fecha, para reemplazar
-      await supabase.from('activity_occurrences').delete().eq('activity_date', dateToUse);
-      
-      // Importamos las nuevas ocurrencias
-      if (occupationsWithDate.length > 0) {
-        await importOccupations(supabase, occupationsWithDate);
-      }
-    } catch (parseError) {
-      console.error('[webhooks/pavilion-activities] Error en extracción autónoma:', parseError);
-      // Fallamos silenciosamente aquí porque el PDF ya se guardó correctamente.
-      // Así permitimos que el administrador lo intente manualmente si la IA falla.
+    const { occupations } = await parsePdf(fileBase64, filename);
+    const dateToUse = result.activityDate;
+    const occupationsWithDate = occupations.map(o => ({ ...o, date: dateToUse }));
+
+    // Borramos previamente si hubiera algo en esa fecha, para reemplazar.
+    await supabase.from('activity_occurrences').delete().eq('activity_date', dateToUse);
+
+    // Importamos las nuevas ocurrencias.
+    if (occupationsWithDate.length > 0) {
+      await importOccupations(supabase, occupationsWithDate);
     }
 
     return NextResponse.json(
@@ -85,6 +68,7 @@ export async function POST(request: Request) {
         success: true,
         activityDate: result.activityDate,
         filePath: result.filePath,
+        skippedStorage: Boolean(result.skipped),
       },
       { status: 200 },
     );
