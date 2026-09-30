@@ -34,7 +34,7 @@ export interface ParsePdfResult {
 }
 
 interface MistralOcrResponse {
-  document_annotation?: string | null;
+  document_annotation?: string | MistralOccupationsResult | null;
   model?: string;
 }
 
@@ -176,7 +176,49 @@ REGLES:
         document_url: `data:application/pdf;base64,${pdfBase64}`,
       },
       document_annotation_format: {
-        type: 'json_object',
+        type: 'json_schema',
+        json_schema: {
+          name: 'pavilion_occupations',
+          strict: true,
+          schema: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              date: {
+                type: 'string',
+                description: 'Data del document en format YYYY-MM-DD; cadena buida si no es pot determinar.',
+              },
+              occupations: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: {
+                    activity: {
+                      type: 'string',
+                      description: 'Nom de l’activitat sense codis numèrics inicials.',
+                    },
+                    start_time: {
+                      type: 'string',
+                      description: 'Hora d’inici en format HH:MM de 24 hores.',
+                    },
+                    end_time: {
+                      type: 'string',
+                      description: 'Hora de finalització en format HH:MM de 24 hores.',
+                    },
+                    venues: {
+                      type: 'array',
+                      items: { type: 'string' },
+                      description: 'Espais o pistes ocupats simultàniament.',
+                    },
+                  },
+                  required: ['activity', 'start_time', 'end_time', 'venues'],
+                },
+              },
+            },
+            required: ['date', 'occupations'],
+          },
+        },
       },
       document_annotation_prompt: prompt,
       include_image_base64: false,
@@ -191,11 +233,15 @@ REGLES:
   const data = (await res.json()) as MistralOcrResponse;
   const rawAnnotation = data.document_annotation;
 
-  if (!rawAnnotation || typeof rawAnnotation !== 'string') {
+  if (!rawAnnotation) {
     throw new Error('Mistral OCR no devolvió document_annotation.');
   }
 
-  return parseMistralAnnotation(rawAnnotation);
+  if (typeof rawAnnotation === 'string') {
+    return parseMistralAnnotation(rawAnnotation);
+  }
+
+  return rawAnnotation;
 }
 
 /**
