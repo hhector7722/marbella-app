@@ -1,8 +1,8 @@
 // src/lib/pavilion/parser.ts
 // ------------------------------------------------------------
-// Parser de PDFs del pabellón usando Gemini Vision OCR.
-// Reutiliza el mismo patrón de Gemini que el scanner de albaranes
-// y el importador de recetas de la aplicación.
+// Parser de PDFs del pabellón usando Mistral Document AI OCR.
+// Mantiene el mismo contrato que el parser anterior para no
+// modificar el webhook, la revisión ni el importador.
 // ------------------------------------------------------------
 //
 // Uso:
@@ -33,33 +33,24 @@ export interface ParsePdfResult {
   date: string;
 }
 
-interface GeminiContentPart {
-  text?: string;
-  inline_data?: { mime_type: string; data: string };
+interface MistralOcrResponse {
+  document_annotation?: string | null;
+  model?: string;
 }
 
-interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-      }>;
-    };
-  }>;
-}
-
-interface GeminiOccupationsResult {
+interface MistralOccupationsResult {
   date: string;
   occupations: Array<Omit<Occupation, 'date'>>;
 }
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const MISTRAL_OCR_MODEL = 'mistral-ocr-latest';
+const MISTRAL_OCR_URL = 'https://api.mistral.ai/v1/ocr';
 
-function getGeminiKey(): string {
-  const key = process.env.GEMINI_API_KEY;
+function getMistralKey(): string {
+  const key = process.env.MISTRAL_API_KEY;
   if (!key) {
     throw new Error(
-      'GEMINI_API_KEY no configurada. Añádela a .env.local',
+      'MISTRAL_API_KEY no configurada. Añádela a las variables de entorno.',
     );
   }
   return key;
@@ -69,16 +60,73 @@ function extractDateFromFilename(filename?: string): string | null {
   if (!filename) return null;
   const match = filename.match(/(\d{2})-(\d{2})-(\d{2})/);
   if (!match) return null;
-  const [_, dd, mm, yy] = match;
+  const [, dd, mm, yy] = match;
   const yyyy = Number(yy) > 50 ? `19${yy}` : `20${yy}`;
   return `${yyyy}-${mm}-${dd}`;
 }
 
-async function callGeminiOcr(
+function parseMistralAnnotation(raw: string): MistralOccupationsResult {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`JSON inválido de Mistral:\n${raw}`);
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Mistral devolvió una anotación vacía o inválida.');
+  }
+
+  const candidate = parsed as {
+    date?: unknown;
+    occupations?: unknown;
+  };
+
+  if (!Array.isArray(candidate.occupations)) {
+    throw new Error('Mistral no devolvió el array "occupations".');
+  }
+
+  const occupations = candidate.occupations.map((item, index) => {
+    if (!item || typeof item !== 'object') {
+      throw new Error(`Ocupación inválida en posición ${index}.`);
+    }
+
+    const row = item as {
+      activity?: unknown;
+      start_time?: unknown;
+      end_time?: unknown;
+      venues?: unknown;
+    };
+
+    if (
+      typeof row.activity !== 'string' ||
+      typeof row.start_time !== 'string' ||
+      typeof row.end_time !== 'string' ||
+      !Array.isArray(row.venues) ||
+      !row.venues.every((venue) => typeof venue === 'string')
+    ) {
+      throw new Error(`Ocupación incompleta o inválida en posición ${index}.`);
+    }
+
+    return {
+      activity: row.activity.trim(),
+      start_time: row.start_time.trim(),
+      end_time: row.end_time.trim(),
+      venues: row.venues.map((venue) => venue.trim()).filter(Boolean),
+    };
+  });
+
+  return {
+    date: typeof candidate.date === 'string' ? candidate.date.trim() : '',
+    occupations,
+  };
+}
+
+async function callMistralOcr(
   pdfBase64: string,
-): Promise<GeminiOccupationsResult> {
-  const apiKey = getGeminiKey();
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+): Promise<MistralOccupationsResult> {
+  const apiKey = getMistralKey();
 
   const prompt = `Ets un sistema d'OCR especialitzat en documents esportius.
 
@@ -87,12 +135,11 @@ Analitza aquest PDF d'una "Plantilla d'Ocupació del Recurs" del CEM La Mar Bell
 El document conté una graella d'ocupacions on:
 - Les COLUMNES són els recursos/espais (P1, P2, P3, P4, Sala 1, Sala 2, Exterior, Pista Polivalent, etc.)
 - Les FILES són les franges horàries (normalment de 08:00 a 23:00, intervals d'1 hora)
-- Cada CEL·LA conté el nom de l'activitat que ocupa aquell espai en aquella franja
+- Cada CEL·LA conté el nom de l'activitat que ocupa aquell espai en aquella franja.
 
-EXTRATU TOTES les ocupacions. No te'n deixis cap.
+EXTREU TOTES les ocupacions. No te'n deixis cap.
 
-Torna un JSON amb aquesta estructura exacta (respon només el JSON, sense markdown ni explicacions):
-
+Retorna exclusivament un objecte JSON amb aquesta estructura:
 {
   "date": "YYYY-MM-DD",
   "occupations": [
@@ -105,54 +152,55 @@ Torna un JSON amb aquesta estructura exacta (respon només el JSON, sense markdo
   ]
 }
 
-REGLES IMPORTANTS:
-1. Si una activitat ocupa diverses franges consecutives al MATEIX espai → una sola ocupació amb start_time i end_time.
-2. Si una activitat ocupa diversos espais a la vegada (mateixa franja) → tots els venues a la llista.
-3. end_time és l'hora en què ACABA l'activitat (no l'inici de la següent).
-4. No inventis activitats. Només extreu el que veus al PDF.
-5. Respecta els noms originals de les activitats (en català).
-6. IMPORTANT: El camp "activity" ha de contenir NOMÉS el nom de l'activitat, sense números, codis ni parèntesis numèrics al davant (ex: si veus "8287 KRAV MAGA" o "(8287) KRAV MAGA", posa "KRAV MAGA"). Elimina qualsevol número o codi que precedeixi el nom.
-7. Si no trobes la data al document, posa "date": "".`;
+REGLES:
+1. Si una activitat ocupa diverses franges consecutives al mateix espai, retorna una sola ocupació amb start_time i end_time.
+2. Si una activitat ocupa diversos espais a la vegada en la mateixa franja, posa tots els espais a venues.
+3. end_time és l'hora en què acaba l'activitat.
+4. No inventis activitats. Només extreu el que apareix al PDF.
+5. Respecta els noms originals de les activitats.
+6. El camp activity ha de contenir només el nom de l'activitat, sense números, codis ni parèntesis numèrics al davant. Per exemple, "8287 KRAV MAGA" o "(8287) KRAV MAGA" ha de quedar com "KRAV MAGA".
+7. Si no trobes la data al document, retorna "date": "".
+8. Les hores han d'estar sempre en format HH:MM de 24 hores.
+9. No afegeixis explicacions ni camps extra.`;
 
-  const res = await fetch(url, {
+  const res = await fetch(MISTRAL_OCR_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
-          ],
-        },
-      ],
-      generationConfig: { response_mime_type: 'application/json' },
+      model: MISTRAL_OCR_MODEL,
+      document: {
+        type: 'document_url',
+        document_url: `data:application/pdf;base64,${pdfBase64}`,
+      },
+      document_annotation_format: {
+        type: 'json_object',
+      },
+      document_annotation_prompt: prompt,
+      include_image_base64: false,
     }),
   });
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
-    throw new Error(`Gemini API error (${res.status}): ${errText}`);
+    throw new Error(`Mistral OCR API error (${res.status}): ${errText}`);
   }
 
-  const geminiData: GeminiResponse = await res.json();
-  const rawText =
-    geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const data = (await res.json()) as MistralOcrResponse;
+  const rawAnnotation = data.document_annotation;
 
-  if (!rawText || typeof rawText !== 'string') {
-    throw new Error('Gemini no retornà text');
+  if (!rawAnnotation || typeof rawAnnotation !== 'string') {
+    throw new Error('Mistral OCR no devolvió document_annotation.');
   }
 
-  try {
-    return JSON.parse(rawText);
-  } catch {
-    throw new Error(`JSON invàlid de Gemini:\n${rawText}`);
-  }
+  return parseMistralAnnotation(rawAnnotation);
 }
 
 /**
  * Parsea un PDF desde una ruta de archivo.
- * Lee el archivo, lo envía a Gemini Vision OCR y devuelve las ocupaciones.
+ * Lee el archivo, lo envía a Mistral Document AI OCR y devuelve las ocupaciones.
  */
 export async function parsePdfFromFile(pdfPath: string): Promise<ParsePdfResult> {
   const fs = await import('fs');
@@ -171,9 +219,9 @@ export async function parsePdf(
   pdfBase64: string,
   filename?: string,
 ): Promise<ParsePdfResult> {
-  const result = await callGeminiOcr(pdfBase64);
+  const result = await callMistralOcr(pdfBase64);
 
-  // La fecha del nombre del archivo tiene prioridad sobre la que extraiga Gemini.
+  // La fecha del nombre del archivo tiene prioridad sobre la extraída por OCR.
   const filenameDate = extractDateFromFilename(filename);
   const resolvedDate = filenameDate || result.date;
 
