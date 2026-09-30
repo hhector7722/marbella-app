@@ -660,24 +660,9 @@ export function InventoryClient({
   )
 
   const toolbar = (
-    <div className="flex min-w-0 w-full shrink-0 items-center gap-1.5 sm:gap-2">
-      {!visibilityEditMode ? (
-        <div className="shrink-0">
-          <PetroleumSegmented
-            instance="inventory-location"
-            density="compact"
-            aria-label="Ubicación del recuento"
-            value={locationMode}
-            onChange={(next) => setLocationMode(next as 'BARRA' | 'CAMARA')}
-            options={[
-              { value: 'BARRA', label: 'Barra' },
-              { value: 'CAMARA', label: 'Cámara' },
-            ]}
-          />
-        </div>
-      ) : null}
-
-      <div className="min-w-0 flex-1">
+    <div className="flex min-w-0 w-full flex-col gap-2">
+      <div className="flex min-w-0 w-full shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="min-w-0 flex-1">
         <SearchField
           instance="inventory-search"
           placeholder="Buscar ingrediente…"
@@ -789,6 +774,23 @@ export function InventoryClient({
         >
           Guardar
         </Button>
+      ) : null}
+      </div>
+
+      {!visibilityEditMode ? (
+        <div className="flex w-full justify-center">
+          <PetroleumSegmented
+            instance="inventory-location"
+            density="compact"
+            aria-label="Ubicación del recuento"
+            value={locationMode}
+            onChange={(next) => setLocationMode(next as 'BARRA' | 'CAMARA')}
+            options={[
+              { value: 'BARRA', label: 'Barra' },
+              { value: 'CAMARA', label: 'Cámara' },
+            ]}
+          />
+        </div>
       ) : null}
     </div>
   )
