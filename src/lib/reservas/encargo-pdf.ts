@@ -260,8 +260,8 @@ function drawMetaInline(
 
 function drawMeta(doc: PdfDoc, meta: EncargoPdfMeta, y: number) {
   const copy = copyFor(meta.language)
-  const colW = 56
-  const xs = [14, 76, 138]
+  const colW = 50
+  const xs = [14, 80, 146]
   const rowGap = 9
   const phone = formatDocumentPhone(meta.contactPhone) || '—'
   const guests = meta.guestCount != null && meta.guestCount > 0 ? String(meta.guestCount) : '—'
