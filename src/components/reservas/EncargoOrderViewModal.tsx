@@ -75,6 +75,8 @@ export function EncargoOrderViewModal({
   const [localSubmittedAt, setLocalSubmittedAt] = useState<string | null>(clientOrderSubmittedAt)
   const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false)
   const [printLanguageFor, setPrintLanguageFor] = useState<'quote' | 'invoice' | null>(null)
+  const [invoiceLanguage, setInvoiceLanguage] = useState<EncargoDocumentLanguage | null>(null)
+  const [invoiceNumber, setInvoiceNumber] = useState('')
 
   const alreadySubmitted = isClientOrderSubmitted(localSubmittedAt)
   const linkOpen = localEnabled && !alreadySubmitted
@@ -105,6 +107,7 @@ export function EncargoOrderViewModal({
           guestCount,
           logoUrl: `${origin}/icons/logo-white.png`,
           language,
+          invoiceNumber: invoiceNumberValue.trim() || null,
         },
         items
       )
@@ -124,6 +127,7 @@ export function EncargoOrderViewModal({
 
   const handlePrintInvoice = useCallback(async (
     language: EncargoDocumentLanguage,
+    invoiceNumberValue: string,
     previewWindow?: Window | null
   ) => {
     if (invoiceBusy || items.length === 0) return
@@ -162,18 +166,30 @@ export function EncargoOrderViewModal({
       const target = printLanguageFor
       if (!target) return
 
-      // Abrir la pestaña dentro del gesto del usuario evita el bloqueo de popups en Safari iOS.
-      const previewWindow = createEncargoPdfPreviewWindow()
       setPrintLanguageFor(null)
 
       if (target === 'quote') {
+        // Abrir la pestaña dentro del gesto del usuario evita el bloqueo de popups en Safari iOS.
+        const previewWindow = createEncargoPdfPreviewWindow()
         void handlePrint(language, previewWindow)
       } else {
-        void handlePrintInvoice(language, previewWindow)
+        setInvoiceLanguage(language)
+        setInvoiceNumber('')
       }
     },
-    [printLanguageFor, handlePrint, handlePrintInvoice]
+    [printLanguageFor, handlePrint]
   )
+
+  const handleGenerateInvoice = useCallback(() => {
+    if (!invoiceLanguage || invoiceBusy) return
+    // Abrir la pestaña dentro del gesto del usuario evita el bloqueo de popups en Safari iOS.
+    const previewWindow = createEncargoPdfPreviewWindow()
+    const language = invoiceLanguage
+    const number = invoiceNumber
+    setInvoiceLanguage(null)
+    setInvoiceNumber('')
+    void handlePrintInvoice(language, number, previewWindow)
+  }, [invoiceLanguage, invoiceNumber, invoiceBusy, handlePrintInvoice])
 
   const handleEnableClientEdit = useCallback(() => {
     startTransition(async () => {
@@ -408,6 +424,68 @@ export function EncargoOrderViewModal({
               {label}
             </button>
           ))}
+        </div>
+      </Modal>
+
+      <Modal
+        open={invoiceLanguage !== null}
+        onClose={() => {
+          if (!invoiceBusy) {
+            setInvoiceLanguage(null)
+            setInvoiceNumber('')
+          }
+        }}
+        variant="compact"
+        layer="derived"
+        instance="encargo-invoice-number"
+        parentInstance="encargo-order-view"
+        title="Número de factura"
+        closeOnBackdrop={!invoiceBusy}
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              instance="encargo-invoice-number-cancel"
+              disabled={invoiceBusy}
+              onClick={() => {
+                setInvoiceLanguage(null)
+                setInvoiceNumber('')
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="encargo-invoice-number-generate"
+              disabled={invoiceBusy}
+              loading={invoiceBusy}
+              loadingLabel="Generando factura"
+              onClick={handleGenerateInvoice}
+            >
+              Generar factura
+            </Button>
+          </>
+        }
+      >
+        <div className="py-2">
+          <label
+            htmlFor="encargo-invoice-number-input"
+            className="mb-2 block text-[12px] font-bold text-zinc-700"
+          >
+            Número de factura <span className="font-semibold text-zinc-400">(opcional)</span>
+          </label>
+          <input
+            id="encargo-invoice-number-input"
+            type="text"
+            value={invoiceNumber}
+            onChange={(event) => setInvoiceNumber(event.target.value)}
+            placeholder="Ej. 2026-001"
+            disabled={invoiceBusy}
+            autoFocus
+            className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 disabled:opacity-50"
+          />
         </div>
       </Modal>
 
