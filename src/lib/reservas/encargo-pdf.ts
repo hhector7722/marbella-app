@@ -11,6 +11,7 @@ export type EncargoPdfMeta = {
   logoUrl: string
   guestCount?: number | null
   language?: EncargoDocumentLanguage
+  invoiceNumber?: string | null
 }
 
 export type EncargoPdfResult = {
@@ -160,9 +161,10 @@ function filenameFor(kind: EncargoPdfKind, meta: EncargoPdfMeta): string {
 }
 
 function referenceFor(kind: EncargoPdfKind, meta: EncargoPdfMeta): string {
+  if (kind === 'invoice') return meta.invoiceNumber?.trim() ?? ''
   const date = meta.encargoDate.replace(/\D/g, '')
   const time = meta.encargoTime.replace(/\D/g, '')
-  return `${kind === 'invoice' ? 'ENC' : 'PRES'}-${date}-${time}`
+  return `PRES-${date}-${time}`
 }
 
 async function loadImageAsDataUrl(url: string): Promise<string | null> {
@@ -222,10 +224,13 @@ function drawTitle(doc: PdfDoc, kind: EncargoPdfKind, meta: EncargoPdfMeta, y: n
   doc.setFontSize(12)
   doc.text((kind === 'invoice' ? copy.invoice : copy.quote).toUpperCase(), 14, y)
 
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8.5)
-  doc.setTextColor(...MUTED)
-  doc.text(`Ref. ${referenceFor(kind, meta)}`, 196, y, { align: 'right' })
+  const reference = referenceFor(kind, meta)
+  if (reference) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8.5)
+    doc.setTextColor(...MUTED)
+    doc.text(kind === 'invoice' ? `N.º ${reference}` : `Ref. ${reference}`, 196, y, { align: 'right' })
+  }
 }
 
 function drawMetaInline(
