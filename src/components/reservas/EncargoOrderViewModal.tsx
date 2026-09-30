@@ -107,7 +107,6 @@ export function EncargoOrderViewModal({
           guestCount,
           logoUrl: `${origin}/icons/logo-white.png`,
           language,
-          invoiceNumber: invoiceNumberValue.trim() || null,
         },
         items
       )
@@ -144,6 +143,7 @@ export function EncargoOrderViewModal({
           guestCount,
           logoUrl: `${origin}/icons/logo-white.png`,
           language,
+          invoiceNumber: invoiceNumberValue.trim() || null,
         },
         items
       )
