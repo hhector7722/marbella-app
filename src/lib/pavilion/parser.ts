@@ -1,16 +1,8 @@
 // src/lib/pavilion/parser.ts
 // ------------------------------------------------------------
-// Parser de PDFs del pabellón usando Mistral Document AI OCR.
-// Mantiene el mismo contrato que el parser anterior para no
-// modificar el webhook, la revisión ni el importador.
-// ------------------------------------------------------------
-//
-// Uso:
-//   const { occupations } = await parsePdfFromFile('ruta/al.pdf');
-//   const { occupations } = await parsePdf(pdfBase64, '27-06-26-DS.pdf');
-//
-// Devuelve:
-//   [{ activity, start_time, end_time, venues[], date }]
+// Parser de PDFs del pabellón usando Mistral Document QnA.
+// El PDF contiene una cuadrícula rasterizada: necesitamos comprensión
+// visual/documental, no solo OCR de texto.
 // ------------------------------------------------------------
 
 export interface Occupation {
@@ -33,18 +25,23 @@ export interface ParsePdfResult {
   date: string;
 }
 
-interface MistralOcrResponse {
-  document_annotation?: string | MistralOccupationsResult | null;
-  model?: string;
-}
-
 interface MistralOccupationsResult {
   date: string;
   occupations: Array<Omit<Occupation, 'date'>>;
 }
 
-const MISTRAL_OCR_MODEL = 'mistral-ocr-latest';
-const MISTRAL_OCR_URL = 'https://api.mistral.ai/v1/ocr';
+interface MistralChatResponse {
+  choices?: Array<{
+    message?: {
+      content?: string | Array<{ type?: string; text?: string }>;
+    };
+  }>;
+}
+
+const MISTRAL_MODEL = 'mistral-medium-3-5';
+const MISTRAL_CHAT_URL = 'https://api.mistral.ai/v1/chat/completions';
+const MAX_REASONABLE_OCCUPATIONS = 120;
+const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 function getMistralKey(): string {
   const key = process.env.MISTRAL_API_KEY;
@@ -65,17 +62,38 @@ function extractDateFromFilename(filename?: string): string | null {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function parseMistralAnnotation(raw: string): MistralOccupationsResult {
-  let parsed: unknown;
+function cleanActivityName(value: string): string {
+  return value
+    .trim()
+    .replace(/^\s*(?:\(\s*\d+\s*\)|\[\s*\d+\s*\]|\d+)\s*[-.:)]?\s*/u, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
+function getChatContent(data: MistralChatResponse): string {
+  const content = data.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return content;
+
+  if (Array.isArray(content)) {
+    return content
+      .filter((part) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part) => part.text)
+      .join('');
+  }
+
+  throw new Error('Mistral no devolvió contenido en la respuesta.');
+}
+
+function parseAndValidateResult(raw: string): MistralOccupationsResult {
+  let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new Error(`JSON inválido de Mistral:\n${raw}`);
+    throw new Error(`JSON inválido de Mistral: ${raw.slice(0, 1000)}`);
   }
 
   if (!parsed || typeof parsed !== 'object') {
-    throw new Error('Mistral devolvió una anotación vacía o inválida.');
+    throw new Error('Mistral devolvió un objeto vacío o inválido.');
   }
 
   const candidate = parsed as {
@@ -87,7 +105,15 @@ function parseMistralAnnotation(raw: string): MistralOccupationsResult {
     throw new Error('Mistral no devolvió el array "occupations".');
   }
 
-  const occupations = candidate.occupations.map((item, index) => {
+  if (candidate.occupations.length > MAX_REASONABLE_OCCUPATIONS) {
+    throw new Error(
+      `Extracción sospechosa: ${candidate.occupations.length} ocupaciones (máximo permitido ${MAX_REASONABLE_OCCUPATIONS}).`,
+    );
+  }
+
+  const deduped = new Map<string, Omit<Occupation, 'date'>>();
+
+  candidate.occupations.forEach((item, index) => {
     if (!item || typeof item !== 'object') {
       throw new Error(`Ocupación inválida en posición ${index}.`);
     }
@@ -109,37 +135,72 @@ function parseMistralAnnotation(raw: string): MistralOccupationsResult {
       throw new Error(`Ocupación incompleta o inválida en posición ${index}.`);
     }
 
-    return {
-      activity: row.activity.trim(),
-      start_time: row.start_time.trim(),
-      end_time: row.end_time.trim(),
-      venues: row.venues.map((venue) => venue.trim()).filter(Boolean),
-    };
+    const activity = cleanActivityName(row.activity);
+    const startTime = row.start_time.trim();
+    const endTime = row.end_time.trim();
+    const venues = [...new Set(
+      row.venues.map((venue) => venue.trim().toUpperCase()).filter(Boolean),
+    )].sort();
+
+    if (!activity) {
+      throw new Error(`Actividad vacía en posición ${index}.`);
+    }
+    if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
+      throw new Error(
+        `Horario inválido en posición ${index}: ${startTime}-${endTime}.`,
+      );
+    }
+    if (venues.length === 0) {
+      throw new Error(`Ocupación sin espacio en posición ${index}.`);
+    }
+
+    const key = [
+      activity.toLocaleUpperCase('ca-ES'),
+      startTime,
+      endTime,
+      venues.join('|'),
+    ].join('::');
+
+    deduped.set(key, {
+      activity,
+      start_time: startTime,
+      end_time: endTime,
+      venues,
+    });
   });
 
   return {
     date: typeof candidate.date === 'string' ? candidate.date.trim() : '',
-    occupations,
+    occupations: [...deduped.values()],
   };
 }
 
-async function callMistralOcr(
+async function callMistralDocumentQna(
   pdfBase64: string,
 ): Promise<MistralOccupationsResult> {
   const apiKey = getMistralKey();
 
-  const prompt = `Ets un sistema d'OCR especialitzat en documents esportius.
+  const prompt = `Analitza visualment aquest PDF "Plantilla d'Ocupació del Recurs" del CEM La Mar Bella.
 
-Analitza aquest PDF d'una "Plantilla d'Ocupació del Recurs" del CEM La Mar Bella.
+IMPORTANT: la graella principal és una IMATGE dins del PDF. No et limitis al text OCR del títol: has d'interpretar visualment tota la graella.
 
-El document conté una graella d'ocupacions on:
-- Les COLUMNES són els recursos/espais (P1, P2, P3, P4, Sala 1, Sala 2, Exterior, Pista Polivalent, etc.)
-- Les FILES són les franges horàries (normalment de 08:00 a 23:00, intervals d'1 hora)
-- Cada CEL·LA conté el nom de l'activitat que ocupa aquell espai en aquella franja.
+ESTRUCTURA:
+- Cada COLUMNA és un espai/recurs. El nom de l'espai és la capçalera superior de la columna (P1, P2, P3, P4, PEX, TATAMI, ANTIC MODUL, NOU MODUL, TERR, GESPA, GESPA P, FORM-ATLE, ATL, ATL P, ANNEX, FOTO, OBS, OBS2, o la capçalera que aparegui realment).
+- Cada FILA representa una franja horària, normalment en intervals de 30 minuts.
+- Els blocs de color amb text són ocupacions. Les cel·les grises o buides NO són activitats.
+- Un bloc vertical que cobreix diverses franges representa UNA sola ocupació desde la seva hora inicial fins a la seva hora final.
+- No generis una ocupació por cada cel·la de 30 minuts.
+- Si exactament la mateixa activitat ocupa diversos espais simultàniament amb la mateixa hora inicial i final, retorna UNA sola ocupació amb tots aquests espais en venues.
+- venues ha de contenir EXCLUSIVAMENT noms de capçaleres de columna que existeixin al document; mai noms d'activitats.
 
-EXTREU TOTES les ocupacions. No te'n deixis cap.
+EXTREU totes les ocupacions reals que apareixen a la graella, ni més ni menys.
 
-Retorna exclusivament un objecte JSON amb aquesta estructura:
+NETEJA DEL NOM:
+- Elimina només el codi numèric inicial entre parèntesis o delante del nombre.
+- Conserva el resto del nombre tal como aparece.
+- Exemple: "(8287) KRAV MAGA" -> "KRAV MAGA".
+
+Retorna EXCLUSIVAMENT JSON vàlid:
 {
   "date": "YYYY-MM-DD",
   "occupations": [
@@ -147,106 +208,58 @@ Retorna exclusivament un objecte JSON amb aquesta estructura:
       "activity": "string",
       "start_time": "HH:MM",
       "end_time": "HH:MM",
-      "venues": ["string"]
+      "venues": ["P1"]
     }
   ]
 }
 
-REGLES:
-1. Si una activitat ocupa diverses franges consecutives al mateix espai, retorna una sola ocupació amb start_time i end_time.
-2. Si una activitat ocupa diversos espais a la vegada en la mateixa franja, posa tots els espais a venues.
-3. end_time és l'hora en què acaba l'activitat.
-4. No inventis activitats. Només extreu el que apareix al PDF.
-5. Respecta els noms originals de les activitats.
-6. El camp activity ha de contenir només el nom de l'activitat, sense números, codis ni parèntesis numèrics al davant. Per exemple, "8287 KRAV MAGA" o "(8287) KRAV MAGA" ha de quedar com "KRAV MAGA".
-7. Si no trobes la data al document, retorna "date": "".
-8. Les hores han d'estar sempre en format HH:MM de 24 hores.
-9. No afegeixis explicacions ni camps extra.`;
+REGLES CRÍTIQUES:
+1. No inventis activitats, espais ni hores.
+2. No converteixis textos de capçalera en activitats.
+3. No fragmentis un bloc continu en múltiples files horàries.
+4. start_time i end_time han de reflectir els límits visuals del bloc.
+5. Si un bloc acaba a 23:59, usa "23:59".
+6. Si no pots determinar alguna ocupació amb prou certesa, omet-la abans d'inventar-la.
+7. No afegeixis explicacions, markdown ni camps extra.`;
 
-  const res = await fetch(MISTRAL_OCR_URL, {
+  const res = await fetch(MISTRAL_CHAT_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: MISTRAL_OCR_MODEL,
-      document: {
-        type: 'document_url',
-        document_url: `data:application/pdf;base64,${pdfBase64}`,
-      },
-      document_annotation_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'pavilion_occupations',
-          strict: true,
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              date: {
-                type: 'string',
-                description: 'Data del document en format YYYY-MM-DD; cadena buida si no es pot determinar.',
-              },
-              occupations: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  additionalProperties: false,
-                  properties: {
-                    activity: {
-                      type: 'string',
-                      description: 'Nom de l’activitat sense codis numèrics inicials.',
-                    },
-                    start_time: {
-                      type: 'string',
-                      description: 'Hora d’inici en format HH:MM de 24 hores.',
-                    },
-                    end_time: {
-                      type: 'string',
-                      description: 'Hora de finalització en format HH:MM de 24 hores.',
-                    },
-                    venues: {
-                      type: 'array',
-                      items: { type: 'string' },
-                      description: 'Espais o pistes ocupats simultàniament.',
-                    },
-                  },
-                  required: ['activity', 'start_time', 'end_time', 'venues'],
-                },
-              },
+      model: MISTRAL_MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'document_url',
+              document_url: `data:application/pdf;base64,${pdfBase64}`,
             },
-            required: ['date', 'occupations'],
-          },
+          ],
         },
-      },
-      document_annotation_prompt: prompt,
-      include_image_base64: false,
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0,
+      random_seed: 0,
+      max_tokens: 12000,
     }),
   });
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
-    throw new Error(`Mistral OCR API error (${res.status}): ${errText}`);
+    throw new Error(`Mistral Document QnA error (${res.status}): ${errText}`);
   }
 
-  const data = (await res.json()) as MistralOcrResponse;
-  const rawAnnotation = data.document_annotation;
-
-  if (!rawAnnotation) {
-    throw new Error('Mistral OCR no devolvió document_annotation.');
-  }
-
-  if (typeof rawAnnotation === 'string') {
-    return parseMistralAnnotation(rawAnnotation);
-  }
-
-  return rawAnnotation;
+  const data = (await res.json()) as MistralChatResponse;
+  return parseAndValidateResult(getChatContent(data));
 }
 
 /**
  * Parsea un PDF desde una ruta de archivo.
- * Lee el archivo, lo envía a Mistral Document AI OCR y devuelve las ocupaciones.
  */
 export async function parsePdfFromFile(pdfPath: string): Promise<ParsePdfResult> {
   const fs = await import('fs');
@@ -258,18 +271,20 @@ export async function parsePdfFromFile(pdfPath: string): Promise<ParsePdfResult>
 
 /**
  * Parsea un PDF desde base64.
- * @param pdfBase64 - Contenido del PDF en base64
- * @param filename - Nombre del archivo (opcional, para extraer fecha)
  */
 export async function parsePdf(
   pdfBase64: string,
   filename?: string,
 ): Promise<ParsePdfResult> {
-  const result = await callMistralOcr(pdfBase64);
+  const result = await callMistralDocumentQna(pdfBase64);
 
-  // La fecha del nombre del archivo tiene prioridad sobre la extraída por OCR.
+  // La fecha del nombre del archivo es la fuente autoritativa cuando existe.
   const filenameDate = extractDateFromFilename(filename);
   const resolvedDate = filenameDate || result.date;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(resolvedDate)) {
+    throw new Error(`No se pudo resolver una fecha válida para ${filename ?? 'el PDF'}.`);
+  }
 
   const occupations: Occupation[] = result.occupations.map((occ) => ({
     ...occ,
