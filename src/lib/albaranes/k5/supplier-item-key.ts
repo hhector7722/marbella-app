@@ -9,7 +9,7 @@ function normalizeLabel(value: string): string {
     .replace(/\s+/g, ' ')
 }
 
-const AMETLLER_PREFIX = /^(?:[A-Z]\d{3}[A-Z]\d{6}|[A-Z]\d{6}[A-Z]\d{2}[A-Z]|[A-Z]\d{10}|[A-Z]\d{8}|[A-Z]\d{6})\s*/i
+const AMETLLER_PREFIX = /^(?:[A-Z]\d{3}[A-Z]\d{6}|[A-Z]\d{6}[A-Z]\d{2}[A-Z]|[A-Z]\d{10}|[A-Z]\d{9}|[A-Z]\d{8}|[A-Z]\d{6})\s*/i
 const AMETLLER_ARTICLE_BEFORE_TECHNICAL_PREFIX = /^\d{3,6}\s+(?=[A-Z]\d)/i
 
 /**
@@ -27,5 +27,10 @@ export function stripSupplierTechnicalPrefix(value: string, supplierId: number):
 }
 
 export function canonicalSupplierItemKey(value: string, supplierId: number): string {
-  return normalizeLabel(stripSupplierTechnicalPrefix(value, supplierId))
+  const normalized = normalizeLabel(stripSupplierTechnicalPrefix(value, supplierId))
+  // Ametller concatena con frecuencia palabras que en otros albaranes vienen
+  // separadas ("CebollaGorda" / "Cebolla Gorda", "AtunAceite" / "Atun Aceite").
+  // Tras retirar el código técnico, los espacios no forman parte de la
+  // identidad estable de ese proveedor.
+  return supplierId === 1 ? normalized.replace(/\s+/g, '') : normalized
 }

@@ -587,7 +587,7 @@ test('Ametller real: recupera cabecera semántica sin flag y columnas fusionadas
     }],
   })
 
-  assert.equal(result.normalizerVersion, 'k5-normalizer-v10')
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v11')
   assert.equal(result.proposals.length, 2)
 
   const aceite = result.proposals[0]!
@@ -682,4 +682,49 @@ test('Videla: peso variable reconciliado usa kg económico y conserva piezas com
       matched_measure: '2,18KG',
     }
   )
+})
+
+
+test('fallback genérico reutiliza mapping exacto y descarta metadatos sin señal de línea', () => {
+  const raw = artifact([{
+    data: {
+      table_cells: [
+        cell(0, 0, 'Producto', true),
+        cell(0, 1, 'Precio', true),
+        cell(1, 0, 'CALAMAR'),
+        cell(1, 1, '9,75'),
+        cell(2, 0, 'VENDEDOR REPARTIDOR'),
+        cell(2, 1, ''),
+      ],
+    },
+  }])
+
+  const result = normalizeDoclingEvidence({
+    profile: directProfile,
+    rawArtifact: raw,
+    supplierId: 999,
+    mappings: [{
+      id: 'mapping-fallback',
+      supplierItemName: 'CALAMAR',
+      ingredientId: 'ingredient-calamares',
+      conversionFactor: '1',
+      lineBillingUnit: 'kg',
+      lineContentQty: '1',
+      lineContentUnit: 'kg',
+      purchaseUnit: 'kg',
+      baseUnit: 'g',
+    }],
+  })
+
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v11')
+  assert.equal(result.proposals.length, 1)
+  const proposal = result.proposals[0]!
+  assert.equal(proposal.sourceItemName, 'CALAMAR')
+  assert.equal(proposal.mappingVersionId, 'mapping-fallback')
+  assert.equal(proposal.ingredientId, 'ingredient-calamares')
+  assert.equal(proposal.status, 'needs_review')
+  assert.equal(proposal.lineUnit, 'kg')
+  assert.ok(proposal.reviewReasons.includes('generic_evidence_fallback'))
+  assert.ok(proposal.reviewReasons.includes('mapping_requires_human_review'))
+  assert.ok(!result.proposals.some((item) => item.sourceItemName === 'VENDEDOR REPARTIDOR'))
 })

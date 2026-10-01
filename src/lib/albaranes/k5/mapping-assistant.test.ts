@@ -46,6 +46,8 @@ test('Ametller elimina códigos técnicos variables de la clave estable', () => 
   assert.equal(stripSupplierTechnicalPrefix('A00260915 Patata Monalisa Saco Entero 10 Kg', 1), 'Patata Monalisa Saco Entero 10 Kg')
   assert.equal(stripSupplierTechnicalPrefix('L092615C03BAtunAceite Bolsa 1Kg', 1), 'AtunAceite Bolsa 1Kg')
   assert.equal(stripSupplierTechnicalPrefix('B260915Ensalada Mezclum7Brotes Bolsa 500g', 1), 'Ensalada Mezclum7Brotes Bolsa 500g')
+  assert.equal(stripSupplierTechnicalPrefix('A203260930 Apio', 1), 'Apio')
+  assert.equal(canonicalSupplierItemKey('CebollaGorda', 1), canonicalSupplierItemKey('A00260915 Cebolla Gorda', 1))
   assert.equal(canonicalSupplierItemKey('A4041260915Limon1', 1), 'limon1')
   assert.equal(stripSupplierTechnicalPrefix('A00260915 producto', 99), 'A00260915 producto')
 })
