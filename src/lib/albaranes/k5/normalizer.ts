@@ -377,22 +377,6 @@ function fallbackDecimalString(value: string | null): string | null {
   return parsed ? toFiniteDecimalString(parsed) : null
 }
 
-const FALLBACK_PRESENTATION_SIGNAL =
-  /\d+(?:[.,]\d+)?\s*(?:kg|g|l|ml|cl|cc|pz|bu|cj|ud|uds|und|un|uni|bol|caja|cajas|can)\b/i
-
-function fallbackRowHasReviewSignal(params: {
-  product: string
-  lineQuantity: string | null
-  observedUnitPrice: string | null
-  lineTotal: string | null
-  mapping: K5MappingSnapshot | null
-  legacyIngredientId: string | null
-}): boolean {
-  if (params.mapping || params.legacyIngredientId) return true
-  if (params.lineQuantity || params.observedUnitPrice || params.lineTotal) return true
-  return FALLBACK_PRESENTATION_SIGNAL.test(params.product)
-}
-
 function genericRecallProposals(
   profile: SupplierProfile,
   rawArtifact: unknown,
@@ -408,21 +392,6 @@ function genericRecallProposals(
     const observedLineUnit = observedBillingUnit(row.quantity, profileBillingFallback(profile))
     const mapping = exactFallbackMapping(mappings, row.product, observedLineUnit, supplierId)
     const legacyIngredientId = legacyIngredientIdentity(legacyIdentities, row.product, supplierId)
-
-    // El recall genérico ya no convierte cualquier texto largo del documento
-    // en producto. Debe existir señal económica/presentación o una identidad
-    // conocida. Así desaparecen metadatos como "VENDEDOR REPARTIDOR",
-    // "Forma Facturación" o "N BULTOS" sin perder líneas reales incompletas.
-    if (!fallbackRowHasReviewSignal({
-      product: row.product,
-      lineQuantity,
-      observedUnitPrice,
-      lineTotal,
-      mapping,
-      legacyIngredientId,
-    })) {
-      return []
-    }
 
     const reviewReasons = mapping
       ? ['generic_evidence_fallback', 'mapping_requires_human_review']
