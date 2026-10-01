@@ -30,7 +30,7 @@ import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-sna
 import { canonicalSupplierItemKey } from './supplier-item-key.ts'
 import { deriveVariableWeightEvidence } from './variable-weight.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v10' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v11' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -185,6 +185,17 @@ function mappingSignature(mapping: K5MappingSnapshot): string {
   ])
 }
 
+function uniqueSemanticMapping(
+  mappings: readonly K5MappingSnapshot[]
+): K5MappingSnapshot | null {
+  const uniqueBySemantics = new Map<string, K5MappingSnapshot>()
+  for (const mapping of mappings) {
+    const signature = mappingSignature(mapping)
+    if (!uniqueBySemantics.has(signature)) uniqueBySemantics.set(signature, mapping)
+  }
+  return uniqueBySemantics.size === 1 ? [...uniqueBySemantics.values()][0]! : null
+}
+
 function compatibleMapping(
   mappings: readonly K5MappingSnapshot[],
   product: string | null,
@@ -199,14 +210,39 @@ function compatibleMapping(
   )
 
   // Distintos documentos pueden haber confirmado la misma presentación bajo
-  // códigos técnicos distintos. Se reutiliza solo si todas las coincidencias
-  // canónicas describen exactamente el mismo ingrediente y dimensionalidad.
-  const uniqueBySemantics = new Map<string, K5MappingSnapshot>()
-  for (const mapping of matching) {
-    const signature = mappingSignature(mapping)
-    if (!uniqueBySemantics.has(signature)) uniqueBySemantics.set(signature, mapping)
+  // códigos técnicos distintos. Solo se reutiliza cuando todas las
+  // coincidencias describen exactamente el mismo ingrediente y dimensionalidad.
+  return uniqueSemanticMapping(matching)
+}
+
+function exactFallbackMapping(
+  mappings: readonly K5MappingSnapshot[],
+  product: string | null,
+  observedUnit: string | null,
+  supplierId: number
+): K5MappingSnapshot | null {
+  if (!product) return null
+  const item = canonicalSupplierItemKey(product, supplierId)
+  if (!item) return null
+
+  const exact = mappings.filter(
+    (mapping) => canonicalSupplierItemKey(mapping.supplierItemName, supplierId) === item
+  )
+  if (exact.length === 0) return null
+
+  // Si Docling observó una unidad, nunca proponemos una presentación
+  // incompatible. Si la unidad se perdió en el fallback, una identidad exacta
+  // y semánticamente única sí puede reutilizarse como sugerencia humana.
+  if (observedUnit) {
+    return uniqueSemanticMapping(
+      exact.filter(
+        (mapping) =>
+          canonicalBillingUnit(mapping.lineBillingUnit) === canonicalBillingUnit(observedUnit)
+      )
+    )
   }
-  return uniqueBySemantics.size === 1 ? [...uniqueBySemantics.values()][0]! : null
+
+  return uniqueSemanticMapping(exact)
 }
 
 function legacyIngredientIdentity(
@@ -341,27 +377,70 @@ function fallbackDecimalString(value: string | null): string | null {
   return parsed ? toFiniteDecimalString(parsed) : null
 }
 
+const FALLBACK_PRESENTATION_SIGNAL =
+  /\d+(?:[.,]\d+)?\s*(?:kg|g|l|ml|cl|cc|pz|bu|cj|ud|uds|und|un|uni|bol|caja|cajas|can)\b/i
+
+function fallbackRowHasReviewSignal(params: {
+  product: string
+  lineQuantity: string | null
+  observedUnitPrice: string | null
+  lineTotal: string | null
+  mapping: K5MappingSnapshot | null
+  legacyIngredientId: string | null
+}): boolean {
+  if (params.mapping || params.legacyIngredientId) return true
+  if (params.lineQuantity || params.observedUnitPrice || params.lineTotal) return true
+  return FALLBACK_PRESENTATION_SIGNAL.test(params.product)
+}
+
 function genericRecallProposals(
   profile: SupplierProfile,
   rawArtifact: unknown,
-  tables: readonly K5EvidenceTable[]
+  tables: readonly K5EvidenceTable[],
+  supplierId: number,
+  mappings: readonly K5MappingSnapshot[],
+  legacyIdentities: readonly K5LegacyIdentitySnapshot[]
 ): K5NormalizedProposal[] {
-  return extractDoclingReviewFallbackRows(profile, rawArtifact, tables).map((row): K5NormalizedProposal => {
+  return extractDoclingReviewFallbackRows(profile, rawArtifact, tables).flatMap((row): K5NormalizedProposal[] => {
     const lineQuantity = fallbackDecimalString(row.quantity)
     const observedUnitPrice = fallbackDecimalString(row.unitPrice)
     const lineTotal = fallbackDecimalString(row.lineTotal)
-    const lineUnit = observedBillingUnit(row.quantity, profileBillingFallback(profile))
+    const observedLineUnit = observedBillingUnit(row.quantity, profileBillingFallback(profile))
+    const mapping = exactFallbackMapping(mappings, row.product, observedLineUnit, supplierId)
+    const legacyIngredientId = legacyIngredientIdentity(legacyIdentities, row.product, supplierId)
 
-    return {
+    // El recall genérico ya no convierte cualquier texto largo del documento
+    // en producto. Debe existir señal económica/presentación o una identidad
+    // conocida. Así desaparecen metadatos como "VENDEDOR REPARTIDOR",
+    // "Forma Facturación" o "N BULTOS" sin perder líneas reales incompletas.
+    if (!fallbackRowHasReviewSignal({
+      product: row.product,
+      lineQuantity,
+      observedUnitPrice,
+      lineTotal,
+      mapping,
+      legacyIngredientId,
+    })) {
+      return []
+    }
+
+    const reviewReasons = mapping
+      ? ['generic_evidence_fallback', 'mapping_requires_human_review']
+      : legacyIngredientId
+        ? ['generic_evidence_fallback', 'mapping_missing', 'legacy_identity_requires_presentation_validation']
+        : ['generic_evidence_fallback', 'mapping_missing']
+
+    return [{
       // El fallback genérico existe para no perder filas legibles cuando la
-      // estructura exacta del proveedor falla. Nunca hereda confianza
-      // económica: K4 debe seguir bloqueándolo hasta confirmación humana.
+      // estructura exacta del proveedor falla. Un mapping exacto y reutilizable
+      // puede preasignarse para revisión, pero la propuesta sigue bloqueada en
+      // needs_review y K4 no puede autoaplicarla.
       evidenceSource: 'docling_layout_fallback',
       sourceTableIndex: row.sourceTableIndex,
       sourceRowIndex: row.sourceRowIndex,
       sourceItemName: row.product,
-      mappingVersionId: null,
-      ingredientId: null,
+      mappingVersionId: mapping?.id ?? null,
+      ingredientId: mapping?.ingredientId ?? null,
       status: 'needs_review',
       observed: {
         recovery_mode: 'generic_recall',
@@ -370,14 +449,15 @@ function genericRecallProposals(
         quantity_text: row.quantity,
         unit_price_text: row.unitPrice,
         line_total_text: row.lineTotal,
+        ...(mapping ? { exact_reusable_mapping: true } : {}),
       },
       interpreted: {},
       normalized: {},
       pricing: {},
-      reviewReasons: ['generic_evidence_fallback', 'mapping_requires_human_review'],
+      reviewReasons,
       warnings: ['generic_recovery_unverified'],
       lineQuantity,
-      lineUnit,
+      lineUnit: observedLineUnit ?? mapping?.lineBillingUnit ?? null,
       observedUnitPrice,
       lineTotal,
       physicalQuantity: null,
@@ -385,7 +465,7 @@ function genericRecallProposals(
       purchaseQuantity: null,
       purchaseUnit: null,
       normalizedUnitPrice: null,
-    }
+    }]
   })
 }
 
@@ -413,7 +493,7 @@ export function normalizeDoclingEvidence(params: {
     : 'docling_layout_fallback'
 
   if (!match) {
-    const fallbackProposals = genericRecallProposals(profile, rawArtifact, tables)
+    const fallbackProposals = genericRecallProposals(profile, rawArtifact, tables, supplierId, mappings, legacyIdentities)
     if (fallbackProposals.length > 0) {
       return {
         supplierProfileId: profile.id,
@@ -620,7 +700,7 @@ export function normalizeDoclingEvidence(params: {
   })
 
   const namedStrict = proposals.filter((proposal) => Boolean(proposal.sourceItemName))
-  const fallbackProposals = genericRecallProposals(profile, rawArtifact, tables)
+  const fallbackProposals = genericRecallProposals(profile, rawArtifact, tables, supplierId, mappings, legacyIdentities)
 
   if (fallbackProposals.length > 0) {
     // Si la tabla "encaja" pero no produce ningún nombre útil, el match
