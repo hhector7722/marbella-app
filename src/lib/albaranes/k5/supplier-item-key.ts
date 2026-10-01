@@ -9,7 +9,7 @@ function normalizeLabel(value: string): string {
     .replace(/\s+/g, ' ')
 }
 
-const AMETLLER_PREFIX = /^(?:[A-Z]\\d{3}[A-Z]\\d{6}|[A-Z]\\d{6}[A-Z]\\d{2}[A-Z]|[A-Z]\\d{10}|[A-Z]\\d{9}|[A-Z]\\d{8}|[A-Z]\\d{6})\\s*/i
+const AMETLLER_PREFIX = /^(?:[A-Z]\d{3}[A-Z]\d{6}|[A-Z]\d{6}[A-Z]\d{2}[A-Z]|[A-Z]\d{10}|[A-Z]\d{9}|[A-Z]\d{8}|[A-Z]\d{6})\s*/i
 const AMETLLER_ARTICLE_BEFORE_TECHNICAL_PREFIX = /^\d{3,6}\s+(?=[A-Z]\d)/i
 
 /**
