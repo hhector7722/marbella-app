@@ -60,18 +60,50 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
         actId = newAct.id;
       }
 
-      const { data: existingOccs } = await supabase
-        .from('activity_occurrences')
-        .select('id')
-        .eq('activity_id', actId)
-        .eq('activity_date', item.data);
-
       const startTime = item.hora_convocatoria.length === 5
         ? `${item.hora_convocatoria}:00`
         : item.hora_convocatoria;
       const endTime = item.hora_finalitzacio.length === 5
         ? `${item.hora_finalitzacio}:00`
         : item.hora_finalitzacio;
+      const categoryIds = [...new Set(
+        (item.selected_category_ids || []).filter((catId) => catId),
+      )];
+
+      // Fuente durable de /reporte. Esta fila vive fuera de activity_occurrences,
+      // por lo que una reimportación de PDFs nunca puede borrar estos datos.
+      const { error: reportError } = await supabase
+        .from('activity_reports')
+        .upsert(
+          {
+            activity_date: item.data,
+            activity_id: actId,
+            form_start_time: startTime || null,
+            form_end_time: endTime || null,
+            total_participants: item.total_participants ?? null,
+            category_ids: categoryIds,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'activity_date,activity_id' },
+        );
+
+      if (reportError) {
+        throw new Error(
+          `Could not persist durable report for "${actName}" on ${item.data}: ${reportError.message}`,
+        );
+      }
+
+      const { data: existingOccs, error: existingOccsError } = await supabase
+        .from('activity_occurrences')
+        .select('id')
+        .eq('activity_id', actId)
+        .eq('activity_date', item.data);
+
+      if (existingOccsError) {
+        throw new Error(
+          `Could not load occurrences for "${actName}" on ${item.data}: ${existingOccsError.message}`,
+        );
+      }
 
       let occurrenceIds = existingOccs?.map(o => o.id) || [];
 
@@ -90,7 +122,8 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
             form_end_time: endTime || null,
             preferred_start_time: 'form',
             preferred_end_time: 'form',
-            total_participants: item.total_participants || null
+            total_participants: item.total_participants ?? null,
+            source_type: 'report',
           })
           .select('id')
           .single();
@@ -111,7 +144,7 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
             form_end_time: endTime || null,
             preferred_start_time: 'form',
             preferred_end_time: 'form',
-            total_participants: item.total_participants || null,
+            total_participants: item.total_participants ?? null,
           })
           .eq('id', occurrenceId);
 
@@ -129,9 +162,7 @@ export async function submitReporteAction(payloads: ReportePayload[]) {
           console.error('Error deleting occurrence_groups:', deleteGroupsErr);
         }
 
-        const groupsToInsert = (item.selected_category_ids || [])
-          .filter(catId => catId)
-          .map(catId => ({
+        const groupsToInsert = categoryIds.map(catId => ({
             occurrence_id: occurrenceId,
             category_id: catId,
             participants: item.total_participants || 0,
