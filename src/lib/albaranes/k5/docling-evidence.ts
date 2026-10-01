@@ -468,7 +468,7 @@ function fallbackProductLooksPlausible(profile: SupplierProfile, value: string):
   ].map(normalizeEvidenceLabel)
   if (supplierLabels.includes(normalized)) return false
 
-  return !/^(?:total(?:\s|$)|total bases|total iva|base imponible|bases iva|bruto(?:\s|$)|imp bruto|mp bruto|descuentos?(?:\s|$)|fecha(?:\s|$)|factura(?:\s|$)|cod cliente|codigo cliente|cliente(?:\s|$)|pagina(?:\s|$)|pag(?:\s|$)|ruta(?:\s|$)|observaciones?(?:\s|$)|forma de pago|recibo(?:\s|$)|persona que|portes?(?:\s|$)|firma cliente|nif(?:\s|$)|cif(?:\s|$)|albaran(?:\s|$)|pedido(?:\s|$)|tancat(?:\s|$)|no hi ha|no acceptat|mal estat|unitat x caixa|errada producte|no carregat|car rep|tip fac|dom tip|neto(?:\s|$)|iva(?:\s|$))/.test(normalized)
+  return !/^(?:total(?:\s|$)|total bases|total iva|base imponible|bases iva|bruto(?:\s|$)|imp bruto|mp bruto|descuentos?(?:\s|$)|fecha(?:\s|$)|factura(?:\s|$)|cod cliente|codigo cliente|cliente(?:\s|$)|pagina(?:\s|$)|pag(?:\s|$)|ruta(?:\s|$)|observaciones?(?:\s|$)|forma de pago|forma facturacion|referencia interna|vendedor(?:\s|$)|repartidor(?:\s|$)|vendedor repartidor|n bultos|numero bultos|ped cliente|no facturacion|recibo(?:\s|$)|persona que|portes?(?:\s|$)|firma cliente|nif(?:\s|$)|cif(?:\s|$)|albaran(?:\s|$)|pedido(?:\s|$)|tancat(?:\s|$)|no hi ha|no acceptat|mal estat|unitat x caixa|errada producte|no carregat|car rep|tip fac|dom tip|neto(?:\s|$)|iva(?:\s|$))/.test(normalized)
 }
 
 function inferredFallbackProductColumn(
