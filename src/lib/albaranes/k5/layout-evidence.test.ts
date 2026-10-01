@@ -386,3 +386,29 @@ test('Panabad: una tabla nativa válida sigue teniendo prioridad y no necesita f
   assert.equal(row.discount_percent, '38')
   assert.equal(row.line_amount, '41,99')
 })
+
+
+test('fallback descarta metadatos comerciales sin perder filas reales', () => {
+  const profile = supplierProfileForId(12)!
+  const raw = artifact({
+    tables: [{
+      data: {
+        table_cells: [
+          tableCell(0, 0, 'Descripción', true),
+          tableCell(0, 1, 'Precio', true),
+          tableCell(1, 0, 'CASERAS 60G-28U'),
+          tableCell(1, 1, '0,775'),
+          tableCell(2, 0, 'VENDEDOR REPARTIDOR'),
+          tableCell(3, 0, 'N BULTOS'),
+          tableCell(4, 0, 'PED.CLIENTE'),
+        ],
+      },
+    }],
+  })
+
+  const rows = extractDoclingReviewFallbackRows(profile, raw)
+  assert.ok(rows.some((row) => row.product === 'CASERAS 60G-28U'))
+  assert.ok(!rows.some((row) => row.product === 'VENDEDOR REPARTIDOR'))
+  assert.ok(!rows.some((row) => row.product === 'N BULTOS'))
+  assert.ok(!rows.some((row) => row.product === 'PED.CLIENTE'))
+})
