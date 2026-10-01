@@ -240,23 +240,78 @@ export async function importOccupations(
   }
 
   // --------------------------------------------------
-  // 3. Inserir activity_occurrences
+  // 3. Cargar overlays durables de /reporte
+  // --------------------------------------------------
+  interface ReportOverlay {
+    formStartTime: string | null;
+    formEndTime: string | null;
+    totalParticipants: number | null;
+    categoryIds: string[];
+  }
+
+  const reportByActivityId = new Map<string, ReportOverlay>();
+  const resolvedActivityIds = [...new Set(resolved.map((row) => row.activityId))];
+
+  if (resolvedActivityIds.length > 0) {
+    const { data: reportRows, error: reportError } = await supabase
+      .from('activity_reports')
+      .select(
+        'activity_id, form_start_time, form_end_time, total_participants, category_ids',
+      )
+      .eq('activity_date', date)
+      .in('activity_id', resolvedActivityIds);
+
+    if (reportError) {
+      throw new Error(
+        `Error carregant dades durables de /reporte: ${reportError.message}`,
+      );
+    }
+
+    for (const report of reportRows ?? []) {
+      reportByActivityId.set(report.activity_id as string, {
+        formStartTime: (report.form_start_time as string | null) ?? null,
+        formEndTime: (report.form_end_time as string | null) ?? null,
+        totalParticipants:
+          (report.total_participants as number | null) ?? null,
+        categoryIds: Array.isArray(report.category_ids)
+          ? (report.category_ids as string[]).filter(Boolean)
+          : [],
+      });
+    }
+  }
+
+  // --------------------------------------------------
+  // 4. Inserir activity_occurrences
   // --------------------------------------------------
   let occurrencesInserted = 0;
   let occurrenceVenuesInserted = 0;
 
   for (const row of resolved) {
+    const reportOverlay = reportByActivityId.get(row.activityId);
+    const formStartTime =
+      reportOverlay?.formStartTime ?? row.formStartTime ?? null;
+    const formEndTime =
+      reportOverlay?.formEndTime ?? row.formEndTime ?? null;
+    const totalParticipants =
+      reportOverlay?.totalParticipants ?? row.totalParticipants ?? null;
+
     const insertData: Record<string, unknown> = {
       activity_id: row.activityId,
       activity_date: date,
       start_time: row.startTime,
       end_time: row.endTime,
       source_type: 'pdf',
-      form_start_time: row.formStartTime || null,
-      form_end_time: row.formEndTime || null,
-      preferred_start_time: row.preferredStartTime || 'pdf',
-      preferred_end_time: row.preferredEndTime || 'pdf',
-      total_participants: row.totalParticipants || null,
+      form_start_time: formStartTime,
+      form_end_time: formEndTime,
+      preferred_start_time:
+        reportOverlay && formStartTime
+          ? 'form'
+          : row.preferredStartTime || 'pdf',
+      preferred_end_time:
+        reportOverlay && formEndTime
+          ? 'form'
+          : row.preferredEndTime || 'pdf',
+      total_participants: totalParticipants,
     };
     if (sourcePdfId) {
       insertData.source_pdf_id = sourcePdfId;
@@ -278,13 +333,21 @@ export async function importOccupations(
     // --------------------------------------------------
     // Insert occurrence_groups (categories)
     // --------------------------------------------------
-    if (row.occurrenceGroups && row.occurrenceGroups.length > 0) {
-      const groupRows = row.occurrenceGroups.map((g) => ({
-        occurrence_id: occurrenceId,
-        category_id: g.category_id,
-        participants: row.totalParticipants || 0,
-      }));
+    const reportCategoryIds = reportOverlay?.categoryIds ?? [];
+    const groupRows =
+      reportCategoryIds.length > 0
+        ? reportCategoryIds.map((categoryId) => ({
+            occurrence_id: occurrenceId,
+            category_id: categoryId,
+            participants: totalParticipants ?? 0,
+          }))
+        : (row.occurrenceGroups ?? []).map((g) => ({
+            occurrence_id: occurrenceId,
+            category_id: g.category_id,
+            participants: totalParticipants ?? 0,
+          }));
 
+    if (groupRows.length > 0) {
       const { error: gError } = await supabase
         .from('occurrence_groups')
         .insert(groupRows);
@@ -316,6 +379,25 @@ export async function importOccupations(
       }
 
       occurrenceVenuesInserted += row.venueIds.length;
+    }
+  }
+
+  // Si /reporte había creado una ocurrencia provisional antes de existir el
+  // PDF, ya podemos retirarla: la información queda preservada en
+  // activity_reports y copiada sobre las nuevas ocurrencias PDF.
+  const reportActivityIds = [...reportByActivityId.keys()];
+  if (reportActivityIds.length > 0) {
+    const { error: cleanupError } = await supabase
+      .from('activity_occurrences')
+      .delete()
+      .eq('activity_date', date)
+      .eq('source_type', 'report')
+      .in('activity_id', reportActivityIds);
+
+    if (cleanupError) {
+      throw new Error(
+        `Error eliminant placeholders de /reporte: ${cleanupError.message}`,
+      );
     }
   }
 
