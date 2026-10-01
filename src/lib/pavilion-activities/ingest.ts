@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { resolveActivityDate, madridIsoDateFromEpochMs } from '@/lib/pavilion-activities/date-parse';
 
@@ -16,13 +17,19 @@ export type IngestPavilionActivityParams = {
 };
 
 export type IngestPavilionActivityResult = {
+  sheetId: string;
   activityDate: string;
   filePath: string;
+  contentHash: string;
   skipped?: boolean;
 };
 
 function buildStoragePath(activityDate: string): string {
   return `${activityDate}/activity.pdf`;
+}
+
+function hashPdf(buffer: Buffer): string {
+  return createHash('sha256').update(buffer).digest('hex');
 }
 
 function assertPdfBuffer(buffer: Buffer): void {
@@ -48,7 +55,7 @@ export function resolvePavilionActivityDate(params: {
 
   const receivedAtMs = params.emailDate ? new Date(params.emailDate).getTime() : null;
 
-  // Un email puede traer 14 PDF: la fecha va en cada nombre de archivo, no en el asunto.
+  // Un email puede traer muchos PDF: la fecha va en cada nombre de archivo, no en el asunto.
   const fromFilename = resolveActivityDate({
     subject: null,
     filename: params.filename,
@@ -78,24 +85,7 @@ export async function ingestPavilionActivityPdf(
   assertPdfBuffer(params.pdfBuffer);
 
   const normalizedFilename = params.filename?.trim() || 'actividades.pdf';
-
-  if (params.gmailMessageId) {
-    const { data: existing } = await supabase
-      .from('pavilion_activity_sheets')
-      .select('id, activity_date, file_path')
-      .eq('gmail_message_id', params.gmailMessageId)
-      .eq('original_filename', normalizedFilename)
-      .maybeSingle();
-
-    if (existing) {
-      return {
-        activityDate: existing.activity_date as string,
-        filePath: existing.file_path as string,
-        skipped: true,
-      };
-    }
-  }
-
+  const contentHash = hashPdf(params.pdfBuffer);
   const activityDate = resolvePavilionActivityDate({
     filename: normalizedFilename,
     subject: params.subject,
@@ -105,6 +95,34 @@ export async function ingestPavilionActivityPdf(
 
   if (!activityDate) {
     throw new Error('No se pudo inferir la fecha del PDF (asunto, nombre o fecha de email).');
+  }
+
+  // Deduplicación por contenido, no solo por Gmail message id. Los reenvíos del
+  // mismo PDF pueden tener IDs de Gmail distintos.
+  const { data: sameContent, error: sameContentError } = await supabase
+    .from('pavilion_activity_sheets')
+    .select('id, activity_date, file_path, processing_status')
+    .eq('activity_date', activityDate)
+    .eq('content_hash', contentHash)
+    .maybeSingle();
+
+  if (sameContentError) {
+    throw new Error(`Fallo comprobando duplicado: ${sameContentError.message}`);
+  }
+
+  if (
+    sameContent &&
+    ['pending', 'processing', 'processed'].includes(
+      String(sameContent.processing_status ?? ''),
+    )
+  ) {
+    return {
+      sheetId: sameContent.id as string,
+      activityDate: sameContent.activity_date as string,
+      filePath: sameContent.file_path as string,
+      contentHash,
+      skipped: true,
+    };
   }
 
   const storagePath = buildStoragePath(activityDate);
@@ -120,24 +138,37 @@ export async function ingestPavilionActivityPdf(
     throw new Error(`Fallo Storage: ${uploadError.message}`);
   }
 
-  const { error: upsertError } = await supabase.from('pavilion_activity_sheets').upsert(
-    {
-      activity_date: activityDate,
-      file_path: storagePath,
-      source: params.source,
-      gmail_message_id: params.gmailMessageId ?? null,
-      original_filename: normalizedFilename,
-      uploaded_by: params.uploadedBy ?? null,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'activity_date' },
-  );
+  const { data: sheet, error: upsertError } = await supabase
+    .from('pavilion_activity_sheets')
+    .upsert(
+      {
+        activity_date: activityDate,
+        file_path: storagePath,
+        source: params.source,
+        gmail_message_id: params.gmailMessageId ?? null,
+        original_filename: normalizedFilename,
+        uploaded_by: params.uploadedBy ?? null,
+        content_hash: contentHash,
+        processing_status: 'pending',
+        processing_error: null,
+        processed_at: null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'activity_date' },
+    )
+    .select('id')
+    .single();
 
-  if (upsertError) {
-    throw new Error(`Fallo BD: ${upsertError.message}`);
+  if (upsertError || !sheet) {
+    throw new Error(`Fallo BD: ${upsertError?.message ?? 'sin fila devuelta'}`);
   }
 
-  return { activityDate, filePath: storagePath };
+  return {
+    sheetId: sheet.id as string,
+    activityDate,
+    filePath: storagePath,
+    contentHash,
+  };
 }
 
 export { madridIsoDateFromEpochMs };
