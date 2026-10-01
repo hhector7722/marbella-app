@@ -243,6 +243,7 @@ export async function importOccupations(
   // 3. Cargar overlays durables de /reporte
   // --------------------------------------------------
   interface ReportOverlay {
+    activityId: string;
     formStartTime: string | null;
     formEndTime: string | null;
     totalParticipants: number | null;
@@ -250,34 +251,34 @@ export async function importOccupations(
   }
 
   const reportByActivityId = new Map<string, ReportOverlay>();
-  const resolvedActivityIds = [...new Set(resolved.map((row) => row.activityId))];
+  const allReports: ReportOverlay[] = [];
 
-  if (resolvedActivityIds.length > 0) {
-    const { data: reportRows, error: reportError } = await supabase
-      .from('activity_reports')
-      .select(
-        'activity_id, form_start_time, form_end_time, total_participants, category_ids',
-      )
-      .eq('activity_date', date)
-      .in('activity_id', resolvedActivityIds);
+  const { data: reportRows, error: reportError } = await supabase
+    .from('activity_reports')
+    .select(
+      'activity_id, form_start_time, form_end_time, total_participants, category_ids',
+    )
+    .eq('activity_date', date);
 
-    if (reportError) {
-      throw new Error(
-        `Error carregant dades durables de /reporte: ${reportError.message}`,
-      );
-    }
+  if (reportError) {
+    throw new Error(
+      `Error carregant dades durables de /reporte: ${reportError.message}`,
+    );
+  }
 
-    for (const report of reportRows ?? []) {
-      reportByActivityId.set(report.activity_id as string, {
-        formStartTime: (report.form_start_time as string | null) ?? null,
-        formEndTime: (report.form_end_time as string | null) ?? null,
-        totalParticipants:
-          (report.total_participants as number | null) ?? null,
-        categoryIds: Array.isArray(report.category_ids)
-          ? (report.category_ids as string[]).filter(Boolean)
-          : [],
-      });
-    }
+  for (const report of reportRows ?? []) {
+    const overlay: ReportOverlay = {
+      activityId: report.activity_id as string,
+      formStartTime: (report.form_start_time as string | null) ?? null,
+      formEndTime: (report.form_end_time as string | null) ?? null,
+      totalParticipants:
+        (report.total_participants as number | null) ?? null,
+      categoryIds: Array.isArray(report.category_ids)
+        ? (report.category_ids as string[]).filter(Boolean)
+        : [],
+    };
+    allReports.push(overlay);
+    reportByActivityId.set(overlay.activityId, overlay);
   }
 
   // --------------------------------------------------
@@ -382,22 +383,77 @@ export async function importOccupations(
     }
   }
 
-  // Si /reporte había creado una ocurrencia provisional antes de existir el
-  // PDF, ya podemos retirarla: la información queda preservada en
-  // activity_reports y copiada sobre las nuevas ocurrencias PDF.
-  const reportActivityIds = [...reportByActivityId.keys()];
-  if (reportActivityIds.length > 0) {
-    const { error: cleanupError } = await supabase
+  // --------------------------------------------------
+  // 5. Garantir que /reporte siempre siga visible
+  // --------------------------------------------------
+  // Si el OCR no extrae una actividad que sí existe en /reporte (o la extrae
+  // con otro nombre), mantenemos una occurrence propia source_type='report'.
+  // Si el OCR sí la ha resuelto con el mismo activity_id, eliminamos el
+  // placeholder porque los datos del formulario ya están superpuestos en la
+  // occurrence PDF recién creada.
+  const importedActivityIds = new Set(resolved.map((row) => row.activityId));
+
+  for (const report of allReports) {
+    const { error: deletePlaceholderError } = await supabase
       .from('activity_occurrences')
       .delete()
       .eq('activity_date', date)
-      .eq('source_type', 'report')
-      .in('activity_id', reportActivityIds);
+      .eq('activity_id', report.activityId)
+      .eq('source_type', 'report');
 
-    if (cleanupError) {
+    if (deletePlaceholderError) {
       throw new Error(
-        `Error eliminant placeholders de /reporte: ${cleanupError.message}`,
+        `Error reconciliant placeholder de /reporte: ${deletePlaceholderError.message}`,
       );
+    }
+
+    if (importedActivityIds.has(report.activityId)) {
+      continue;
+    }
+
+    const placeholderStart = report.formStartTime ?? '00:00:00';
+    const placeholderEnd =
+      report.formEndTime ?? report.formStartTime ?? '00:00:00';
+
+    const { data: placeholder, error: placeholderError } = await supabase
+      .from('activity_occurrences')
+      .insert({
+        activity_id: report.activityId,
+        activity_date: date,
+        start_time: placeholderStart,
+        end_time: placeholderEnd,
+        source_type: 'report',
+        form_start_time: report.formStartTime,
+        form_end_time: report.formEndTime,
+        preferred_start_time: report.formStartTime ? 'form' : 'pdf',
+        preferred_end_time: report.formEndTime ? 'form' : 'pdf',
+        total_participants: report.totalParticipants,
+      })
+      .select('id')
+      .single();
+
+    if (placeholderError || !placeholder) {
+      throw new Error(
+        `Error restaurant activitat de /reporte: ${placeholderError?.message ?? 'sense fila'}`,
+      );
+    }
+
+    if (report.categoryIds.length > 0) {
+      const { error: groupsError } = await supabase
+        .from('occurrence_groups')
+        .insert(
+          report.categoryIds.map((categoryId) => ({
+            occurrence_id: placeholder.id as string,
+            category_id: categoryId,
+            participants: report.totalParticipants ?? 0,
+          })),
+        );
+
+      if (groupsError) {
+        throw new Error(
+          `Error restaurant categories de /reporte: ${groupsError.message}`,
+        );
+      }
     }
   }
 
