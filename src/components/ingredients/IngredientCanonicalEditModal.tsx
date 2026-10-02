@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/modal'
 import { cn } from '@/lib/utils'
 import {
   setIngredientArchivedAction,
-  setIngredientCurrentPriceAction,
+  setIngredientPriceAndUnitAction,
   uploadIngredientPhotoAction,
 } from '@/app/ingredients/actions'
 export interface Ingredient {
@@ -35,7 +35,9 @@ export interface Ingredient {
 type Props = {
   ingredient: Ingredient
   onClose: () => void
-  onSaved: () => void
+  onSaved: (updated?: { currentPrice: number; purchaseUnit: string }) => void
+  layer?: 'base' | 'derived'
+  parentInstance?: string
 }
 
 function priceInputValue(price: number): string {
@@ -58,10 +60,17 @@ function isAllowedImage(file: File): boolean {
   return /\.(jpe?g|png|webp)$/i.test(file.name)
 }
 
-export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: Props) {
+export function IngredientCanonicalEditModal({
+  ingredient,
+  onClose,
+  onSaved,
+  layer = 'base',
+  parentInstance,
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const stagedBlobRef = useRef<string | null>(null)
   const [newPrice, setNewPrice] = useState(() => priceInputValue(ingredient.current_price))
+  const [newUnit, setNewUnit] = useState(() => ingredient.purchase_unit || 'ud')
   const [baselineImageUrl, setBaselineImageUrl] = useState(ingredient.image_url ?? null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null)
@@ -79,9 +88,10 @@ export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: P
     baselinePrice != null
       ? !(Number.isFinite(parsedPrice) && Math.abs(parsedPrice - baselinePrice) < 1e-9)
       : newPrice.trim() !== ''
+  const unitChanged = newUnit !== (ingredient.purchase_unit || 'ud')
   const imageChanged = selectedFile != null
-  const canSave = (imageChanged || priceChanged) && (!priceChanged || validPrice)
-  const unit = ingredient.purchase_unit || 'ud'
+  const canSave = (imageChanged || priceChanged || unitChanged) && validPrice
+  const unit = newUnit || 'ud'
   const isArchived = Boolean(ingredient.archived_at)
   const displayImageSrc = previewBlobUrl ?? baselineImageUrl
 
@@ -126,11 +136,11 @@ export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: P
   }
 
   async function save() {
-    if (priceChanged && !validPrice) {
+    if (!validPrice) {
       toast.error('El precio debe ser mayor que cero.')
       return
     }
-    if (!imageChanged && !priceChanged) return
+    if (!imageChanged && !priceChanged && !unitChanged) return
 
     setSaving(true)
     try {
@@ -149,18 +159,18 @@ export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: P
         clearStagedImage()
       }
 
-      if (!priceChanged) {
+      if (!priceChanged && !unitChanged) {
         toast.success('Imagen actualizada.')
         onSaved()
         onClose()
         return
       }
 
-      const result = await setIngredientCurrentPriceAction(ingredient.id, parsedPrice)
+      const result = await setIngredientPriceAndUnitAction(ingredient.id, parsedPrice, newUnit)
       if (!result.ok) {
         if (imagePersisted) {
           onSaved()
-          toast.error(`La imagen se ha guardado, pero el precio no: ${result.message}`)
+          toast.error(`La imagen se ha guardado, pero precio/unidad no: ${result.message}`)
         } else {
           toast.error(result.message)
         }
@@ -168,14 +178,16 @@ export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: P
       }
 
       if (imagePersisted) toast.success('Imagen actualizada.')
-      if (result.changed) {
-        toast.success(
-          `Precio actualizado · ${formatPrice(ingredient.current_price)} € → ${formatPrice(result.currentPrice)} €`,
-        )
+      if (result.priceChanged || result.unitChanged) {
+        const changes = [
+          result.priceChanged ? `${formatPrice(result.currentPrice)} €` : null,
+          result.unitChanged ? `/${result.purchaseUnit}` : null,
+        ].filter(Boolean).join('')
+        toast.success(`Ingrediente actualizado · ${changes || 'sin cambios'}`)
       } else {
-        toast.success('El precio ya estaba actualizado.')
+        toast.success('El ingrediente ya estaba actualizado.')
       }
-      onSaved()
+      onSaved({ currentPrice: result.currentPrice, purchaseUnit: result.purchaseUnit })
       onClose()
     } finally {
       setSaving(false)
@@ -206,7 +218,8 @@ export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: P
         onClose={onClose}
         title={ingredient.name}
         variant="compact"
-        layer="base"
+        layer={layer}
+        parentInstance={parentInstance}
         instance="ingredient-canonical-price"
         usageId="ingredient-canonical-price"
         usageLabel="Editar precio de ingrediente"
@@ -244,6 +257,26 @@ export function IngredientCanonicalEditModal({ ingredient, onClose, onSaved }: P
             {formatPrice(ingredient.current_price)} €/{unit}
           </p>
         </section>
+
+        <Field
+          instance="ingredient-canonical-unit"
+          label="Unidad del precio"
+          htmlFor="ingredient-canonical-unit"
+        >
+          <select
+            id="ingredient-canonical-unit"
+            value={newUnit}
+            onChange={(event) => setNewUnit(event.target.value)}
+            className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
+          >
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="l">l</option>
+            <option value="ml">ml</option>
+            <option value="cl">cl</option>
+            <option value="ud">ud</option>
+          </select>
+        </Field>
 
         <Field
           instance="ingredient-canonical-new-price"
