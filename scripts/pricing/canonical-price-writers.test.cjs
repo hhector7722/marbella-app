@@ -112,6 +112,8 @@ test('la revisión de albarán no expone controles económicos internos', () => 
   assert.match(receiptReview, /Confirmar recepción/)
   assert.match(receiptReview, /onBackgroundStateChange/)
   assert.match(receiptReview, /IngredientCanonicalEditModal/)
+  assert.match(receiptReview, /open=\{open && !ingredientEditOpen\}/)
+  assert.match(receiptReview, /parentInstance="albaran-line-mapping"/)
   assert.match(receiptReview, /No se puede convertir/)
   assert.doesNotMatch(receiptReview, /setIngredientCurrentPriceAction/)
 })
