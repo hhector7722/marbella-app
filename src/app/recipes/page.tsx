@@ -205,7 +205,7 @@ function RecipesContent() {
             const { data, error } = await supabase
                 .from('recipes')
                 .select(
-                    `id, name, category, menu_category_id, sale_price, is_sellable, yield_quantity, yield_unit, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit)), recipe_subrecipes!recipe_subrecipes_parent_recipe_id_fkey(id)`,
+                    `id, name, category, menu_category_id, sale_price, is_sellable, yield_quantity, yield_unit, photo_url, servings, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit, density_g_per_ml)), recipe_subrecipes!recipe_subrecipes_parent_recipe_id_fkey(id)`,
                 )
                 .order('name');
             if (error) throw error;
