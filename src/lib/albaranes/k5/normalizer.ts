@@ -30,7 +30,7 @@ import { buildExactMappedSnapshot, type ExactMappedSnapshot } from './mapped-sna
 import { canonicalSupplierItemKey } from './supplier-item-key.ts'
 import { deriveVariableWeightEvidence } from './variable-weight.ts'
 
-export const K5_NORMALIZER_VERSION = 'k5-normalizer-v11' as const
+export const K5_NORMALIZER_VERSION = 'k5-normalizer-v12' as const
 
 export type K5MappingSnapshot = {
   id: string
@@ -438,6 +438,177 @@ function genericRecallProposals(
   })
 }
 
+
+function oneEditOrEqual(left: string, right: string): boolean {
+  if (left === right) return true
+  if (!left || !right || Math.abs(left.length - right.length) > 1) return false
+
+  let i = 0
+  let j = 0
+  let edits = 0
+  while (i < left.length && j < right.length) {
+    if (left[i] === right[j]) {
+      i += 1
+      j += 1
+      continue
+    }
+    edits += 1
+    if (edits > 1) return false
+    if (left.length > right.length) i += 1
+    else if (right.length > left.length) j += 1
+    else {
+      i += 1
+      j += 1
+    }
+  }
+  if (i < left.length || j < right.length) edits += 1
+  return edits <= 1
+}
+
+function splitSantaTeresaProductBlob(
+  value: string,
+  expectedCount: number,
+  aliases: readonly string[]
+): string[] | null {
+  const cleaned = String(value ?? '')
+    .replace(/^.*?\bart[ií]culo\b\s*/i, '')
+    .replace(/^[012]\s+/, '')
+    .trim()
+  if (!cleaned || expectedCount < 2) return null
+
+  const aliasPairs = aliases
+    .map((alias) => normalizeEvidenceLabel(alias).split(' ').filter(Boolean))
+    .filter((tokens) => tokens.length >= 2)
+    .map((tokens) => tokens.slice(0, 2))
+
+  const coarse = cleaned
+    .split(/\s+[012]\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  const splitChunk = (chunk: string): string[] => {
+    const words = [...chunk.matchAll(/\S+/g)].map((match) => ({
+      start: match.index ?? 0,
+      value: normalizeEvidenceLabel(match[0]).replace(/\s+/g, ''),
+    }))
+    if (words.length < 3) return [chunk.trim()]
+
+    const starts = [0]
+    for (let index = 1; index < words.length - 1; index += 1) {
+      const a = words[index]!.value
+      const b = words[index + 1]!.value
+      const matched = aliasPairs.some(([x, y]) => (
+        oneEditOrEqual(a, x!)
+        && oneEditOrEqual(b, y!)
+        && ((a === x && b === y) || a !== x || b !== y)
+      ))
+      if (matched) starts.push(index)
+    }
+
+    const uniqueStarts = [...new Set(starts)].sort((a, b) => a - b)
+    return uniqueStarts.map((wordIndex, position) => {
+      const start = words[wordIndex]!.start
+      const nextWordIndex = uniqueStarts[position + 1]
+      const end = nextWordIndex == null ? chunk.length : words[nextWordIndex]!.start
+      return chunk.slice(start, end).trim()
+    }).filter(Boolean)
+  }
+
+  const expanded = coarse.flatMap(splitChunk)
+  return expanded.length === expectedCount ? expanded : null
+}
+
+function santaTeresaCollapsedTableRecovery(params: {
+  profile: SupplierProfile
+  tables: readonly K5EvidenceTable[]
+  mappings: readonly K5MappingSnapshot[]
+  legacyIdentities: readonly K5LegacyIdentitySnapshot[]
+}): { tables: K5EvidenceTable[]; recovered: boolean } {
+  const { profile, tables, mappings, legacyIdentities } = params
+  if (profile.supplier.id !== 7) return { tables: [...tables], recovered: false }
+
+  let recovered = false
+  const aliases = [
+    ...mappings.map((mapping) => mapping.supplierItemName),
+    ...legacyIdentities.map((identity) => identity.supplierItemName),
+  ]
+
+  const nextTables = tables.map((table) => {
+    if (table.rows.length !== 1) return table
+    const row = table.rows[0]!
+    const headerKey = table.headers.map(normalizeEvidenceLabel)
+    const priceColumn = headerKey.findIndex((header) => header === 'precio' || header.includes('precio'))
+    const amountColumn = headerKey.findIndex((header) => header === 'importe' || header.includes('importe'))
+    if (priceColumn < 0 || amountColumn < 0) return table
+
+    const priceTokens = String(row.cells[priceColumn] ?? '').match(/[+-]?\d+(?:[.,]\d+)?/g) ?? []
+    const amountTokens = String(row.cells[amountColumn] ?? '').match(/[+-]?\d+(?:[.,]\d+)?/g) ?? []
+    if (priceTokens.length < 3 || priceTokens.length !== amountTokens.length) return table
+
+    let productColumn = -1
+    let productLength = 0
+    row.cells.forEach((cell, column) => {
+      if (column === priceColumn || column === amountColumn) return
+      const candidate = String(cell ?? '')
+      if (!/[A-Za-zÁÉÍÓÚáéíóúÑñ]{3}/.test(candidate)) return
+      if (candidate.length > productLength) {
+        productLength = candidate.length
+        productColumn = column
+      }
+    })
+    if (productColumn < 0) return table
+
+    const products = splitSantaTeresaProductBlob(
+      String(row.cells[productColumn] ?? ''),
+      priceTokens.length,
+      aliases
+    )
+    if (!products) return table
+
+    const taxPriceColumn = row.cells.findIndex((cell, column) => {
+      if (column === priceColumn || column === amountColumn || column === productColumn) return false
+      const tokens = String(cell ?? '').match(/[+-]?\d+(?:[.,]\d+)?/g) ?? []
+      return tokens.length === priceTokens.length
+    })
+    const taxPriceTokens = taxPriceColumn >= 0
+      ? (String(row.cells[taxPriceColumn] ?? '').match(/[+-]?\d+(?:[.,]\d+)?/g) ?? [])
+      : []
+
+    const headers = ['Unidades', 'Cajas', 'Artículo', 'Precio', 'Importe', 'PretIva']
+    const rows = products.map((product, index) => {
+      const price = parseExactDecimal(priceTokens[index]!)
+      const amount = parseExactDecimal(amountTokens[index]!)
+      const quantity = price && amount && isPositiveExact(price)
+        ? divideExact(amount, price)
+        : null
+      const quantityText = quantity ? toFiniteDecimalString(quantity) : null
+      const cells = [
+        quantityText ?? '',
+        '',
+        product,
+        priceTokens[index]!,
+        amountTokens[index]!,
+        taxPriceTokens[index] ?? '',
+      ]
+      const rowIndex = index === 0 ? row.index : row.index * 1000 + index
+      return {
+        index: rowIndex,
+        cells,
+        raw: Object.fromEntries(headers.map((header, column) => [header, cells[column] ?? ''])),
+      }
+    })
+
+    recovered = true
+    return {
+      ...table,
+      headers,
+      rows,
+    }
+  })
+
+  return { tables: nextTables, recovered }
+}
+
 function recallSourceKey(proposal: K5NormalizedProposal): string {
   return `${proposal.sourceTableIndex ?? 'document'}:${proposal.sourceRowIndex ?? 'document'}`
 }
@@ -450,7 +621,14 @@ export function normalizeDoclingEvidence(params: {
   legacyIdentities?: readonly K5LegacyIdentitySnapshot[]
 }): K5NormalizationResult {
   const { profile, rawArtifact, supplierId, mappings, legacyIdentities = [] } = params
-  const tables = extractDoclingTables(rawArtifact, profile)
+  const extractedTables = extractDoclingTables(rawArtifact, profile)
+  const santaTeresaRecovery = santaTeresaCollapsedTableRecovery({
+    profile,
+    tables: extractedTables,
+    mappings,
+    legacyIdentities,
+  })
+  const tables = santaTeresaRecovery.tables
   const nativeMatch = matchProfileTable(profile, tables)
   const layoutTables = nativeMatch
     ? []
@@ -558,6 +736,7 @@ export function normalizeDoclingEvidence(params: {
     })
     const reasons = unique([...interpretedReasons, ...economics.reasons])
     const warnings: string[] = []
+    if (santaTeresaRecovery.recovered) warnings.push('santa_teresa_collapsed_table_recovered')
 
     if (profile.interpretation.kind === 'mixed_measure_review') {
       const measures = allObservedMeasures(match.table, match.table.rows[index]!.index)
