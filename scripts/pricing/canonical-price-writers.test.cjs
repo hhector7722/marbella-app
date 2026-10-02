@@ -134,6 +134,6 @@ test('no quedan superficies legacy de precio o creación', () => {
     fs.existsSync(path.join(root, 'src/app/dashboard/albaranes-precios')),
     false,
   )
-  assert.match(ingredientActions, /density_g_per_ml/)
-  assert.match(ingredientActions, /canonicalBaseUnitForPurchaseUnit/)
+  assert.match(manualAction, /density_g_per_ml/)
+  assert.match(manualAction, /canonicalBaseUnitForPurchaseUnit/)
 })
