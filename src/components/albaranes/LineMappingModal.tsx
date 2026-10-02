@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Check, Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -36,6 +36,7 @@ import {
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
+import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal'
 type LineDimensionalDraft = {
   lineBillingUnit: string
   lineContentQty: string
@@ -90,6 +91,7 @@ export type LineMappingModalProps = {
   supplierId: number | null
   stockApplied?: boolean
   busy?: boolean
+  onBackgroundStateChange?: (lineId: string, phase: 'review' | 'confirm' | null) => void
   onClose: () => void
   onSuccess: () => void | Promise<void>
   onCreateIngredient?: () => void
@@ -104,6 +106,7 @@ export function LineMappingModal({
   supplierId,
   stockApplied = false,
   busy = false,
+  onBackgroundStateChange,
   onClose,
   onSuccess,
   onCreateIngredient,
@@ -135,6 +138,12 @@ export function LineMappingModal({
   const [previewing, setPreviewing] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [confirmationKey, setConfirmationKey] = useState<string | null>(null)
+  const [ingredientEditOpen, setIngredientEditOpen] = useState(false)
+  const preparedReviewByLineRef = useRef(new Map<string, {
+    mappingVersionId: string
+    receiptPreview: ReceiptPreview
+    confirmationKey: string
+  }>())
 
   const applySuggestion = useCallback(
     (
@@ -406,6 +415,33 @@ export function LineMappingModal({
       isVariableWeightMode,
     ]
   )
+
+  const presentationBlockingMessage = useMemo(() => {
+    if (!ingredientId) return 'Selecciona un ingrediente del catálogo.'
+    if (observedUnitPrice == null) return 'Indica un precio facturado válido.'
+    if (isVariableWeightMode) return null
+    if (dimensionalParsed.lineContentQty == null || dimensionalParsed.lineContentQty <= 0) {
+      return 'Indica cuánta cantidad contiene una unidad facturada.'
+    }
+    if (!dimensionalParsed.lineContentUnit) {
+      return 'Selecciona la unidad del contenido físico.'
+    }
+    if (!purchaseUnitForPresentation) {
+      return 'El ingrediente no tiene una unidad de compra válida.'
+    }
+    if (!presentationEconomics) {
+      return `No se puede convertir ${dimensionalParsed.lineContentUnit} a ${purchaseUnitForPresentation}. El albarán y el ingrediente usan unidades incompatibles. Edita la unidad del ingrediente aquí mismo.`
+    }
+    return null
+  }, [
+    ingredientId,
+    observedUnitPrice,
+    isVariableWeightMode,
+    dimensionalParsed.lineContentQty,
+    dimensionalParsed.lineContentUnit,
+    purchaseUnitForPresentation,
+    presentationEconomics,
+  ])
 
   const billingMassVolumeNorm = useMemo(
     () => billingMassVolumeNormForAuto(dimensional.lineBillingUnit, line?.line_unit),
