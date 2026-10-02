@@ -580,6 +580,43 @@ export default function AlbaranesHistoricoClient({
     return () => window.clearInterval(t)
   }, [hasProcessingItems, selectedId, items.length, activeDateFrom, activeDateTo, activeSupplierId])
 
+  async function handleReinterpretCurrentEvidence() {
+    if (!detail?.id) return
+    setOcrActionBusy(true)
+    setInlineReviewError(null)
+    try {
+      const context = await listInterpretationContextAction({ invoiceId: detail.id })
+      if (!context.success) {
+        toast.error(context.message)
+        return
+      }
+      const extraction = context.extractions.find(
+        (item) => item.status === 'success' || item.status === 'no_table'
+      )
+      if (!extraction) {
+        toast.error('Todavía no hay una extracción Docling reutilizable.')
+        return
+      }
+
+      const generated = await generateInterpretationProposalsAction({
+        invoiceId: detail.id,
+        extractionId: extraction.id,
+      })
+      if (!generated.success) {
+        toast.error(generated.message)
+        return
+      }
+
+      toast.success('Lectura actualizada con el intérprete más reciente.')
+      await openDetail(detail.id)
+      refresh()
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al volver a interpretar el albarán')
+    } finally {
+      setOcrActionBusy(false)
+    }
+  }
+
   async function handleRetryOcr() {
     if (!detail?.id) return
     setOcrActionBusy(true)
@@ -1690,13 +1727,28 @@ export default function AlbaranesHistoricoClient({
                           </div>
                         )}
                       </div>
-                      {inlineReviewPendingCount > 0 ? (
-                        <div className="shrink-0 text-right text-[10px] font-semibold leading-snug text-zinc-500">
-                          Pulsa una línea para editarla.
-                          <br />
-                          Usa Revisar/Mapear para confirmarla.
-                        </div>
-                      ) : null}
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        {inlineReviewPendingCount > 0 ? (
+                          <div className="text-right text-[10px] font-semibold leading-snug text-zinc-500">
+                            Pulsa una línea para editarla.
+                            <br />
+                            Usa Revisar/Mapear para confirmarla.
+                          </div>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="tertiary"
+                          instance="albaran-detail-reinterpret"
+                          className="h-7 px-2 text-[10px]"
+                          onClick={() => void handleReinterpretCurrentEvidence()}
+                          disabled={ocrActionBusy || inlineReviewLoading}
+                          loading={ocrActionBusy}
+                          loadingLabel="Leyendo…"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Volver a leer
+                        </Button>
+                      </div>
                     </div>
                   ) : null}
 

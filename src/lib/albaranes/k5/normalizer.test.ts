@@ -587,7 +587,7 @@ test('Ametller real: recupera cabecera semántica sin flag y columnas fusionadas
     }],
   })
 
-  assert.equal(result.normalizerVersion, 'k5-normalizer-v11')
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v12')
   assert.equal(result.proposals.length, 2)
 
   const aceite = result.proposals[0]!
@@ -716,7 +716,7 @@ test('fallback genérico reutiliza mapping exacto y descarta metadatos sin seña
     }],
   })
 
-  assert.equal(result.normalizerVersion, 'k5-normalizer-v11')
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v12')
   assert.equal(result.proposals.length, 1)
   const proposal = result.proposals[0]!
   assert.equal(proposal.sourceItemName, 'CALAMAR')
@@ -727,4 +727,99 @@ test('fallback genérico reutiliza mapping exacto y descarta metadatos sin seña
   assert.ok(proposal.reviewReasons.includes('generic_evidence_fallback'))
   assert.ok(proposal.reviewReasons.includes('mapping_requires_human_review'))
   assert.ok(!result.proposals.some((item) => item.sourceItemName === 'VENDEDOR REPARTIDOR'))
+})
+
+
+test('Santa Teresa recupera 24 líneas cuando Docling colapsa toda la tabla en una fila', () => {
+  const santaTeresaProfile: SupplierProfile = {
+    ...directProfile,
+    id: 'supplier:7:santa-teresa',
+    supplier: {
+      id: 7,
+      canonical_name: 'GRUP SANTA TERESA',
+      aliases: ['SANTA TERESA'],
+      observed_document_identities: ['GRUP SANTA TERESA'],
+    },
+    fields: {
+      quantity: { aliases: ['Unidades'], meaning: 'unidades facturadas' },
+      cases: { aliases: ['Cajas'], meaning: 'cajas informativas' },
+      product: { aliases: ['Artículo'], meaning: 'producto' },
+      unit_price: { aliases: ['Precio'], meaning: 'EUR/unidad sin IVA' },
+      line_amount: { aliases: ['Importe'], meaning: 'importe de línea sin IVA' },
+      price_with_tax: { aliases: ['PretIva'], meaning: 'EUR/unidad con IVA' },
+    },
+    interpretation: {
+      kind: 'direct_line',
+      quantity_unit: 'unit',
+      price_unit: 'EUR/unit',
+      amount_tax_basis: 'without_tax',
+    },
+    needs_review: [],
+  }
+
+  const raw = artifact([{
+    data: {
+      table_cells: [
+        cell(0, 0, 'Unidades'),
+        cell(0, 2, 'Ibee'),
+        cell(0, 3, 'Precio', true),
+        cell(0, 4, 'Importe', true),
+        cell(0, 5, 'Pre+Iva', true),
+        cell(1, 0, '1 2 6 6 6 15 24 24 24 24 24 24 24 24 24 48 48 2 48 2 72 3 72 3 120 5 216 9 264 11 432 18'),
+        cell(1, 1, 'secep Articulo 0 MIEL DE FLORES FRUBBO 350G 0 PIMIENT.PIQUILLO CR.370 BAIGOR 0 Q.EDAM BARRA ODELBURGER.OFERTA 1 OLIVAS EL FARO GIGANTES 1 ROLLO SECAMANOS 2/C SUAO 800gr 0 PINCHO CARACOL 100un. 1 NESTEA LIMONA S/SUCRE MARACUY 1 NESTEA LIMON LATA 33CL 1 SCHWEPPES TONICA S/R. 1 VOLL DAMM LATA 1 AIGUA MALAVELLA GAS 1/3 N/RET. 1 JUVER PINYA 200G. 1 CERVESA FREE DAMM TOSTADA 0,0 1 LATA S/ALCOHOL FREE DAMM. 1 BITTER KAS CRISTAL S/R.OFERTA 2 AQUARIUS NARANJA LATA IATA DAMM LEMON 33CL. AIGUA VICHY PETITA S/R. GERVEZA ALHAMBRA 1925 VERDE CACAOLAT PEQU.ENV.PLAST. 275CC AQUARIUS LATAS. GOCA COLA LATA NACIONAL 33CL GOCA COLA ZERO NACIONAL LATA RSTRELLA LATA DAMM'),
+        cell(1, 2, '0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.90 0.00 0.00 0.00 0.00 0.00 0.72 0.00 0.00 0.00 0.00 2.16 0.00 10.69 0.00 0.00'),
+        cell(1, 3, '3.75 2.95 5.95 6.95 2.80 0.80 0.75 0.57 0.75 0.54 0.70 0.50 0.50 0.46 0.80 0.70 0.41 0.70 0.80 1.15 0.70 0.60 0.60 0.54'),
+        cell(1, 4, '3.75 5.90 35.70 41.70 16.80 12.00 18.00 13.68 18.00 12.96 16.80 12.00 12.00 11.04 19.20 33.60 19.68 33.60 57.60 82.80 84.00 129.60 158.40 233.28'),
+        cell(1, 5, '4.13 3.25 6.19 7.65 3.39 0.97 0.83 0.69 0.91 0.65 0.77 0.61 0.61 0.56 0.97 0.85 0.50 0.77 0.97 1.27 0.85 0.73 0.73 0.65'),
+      ],
+    },
+  }], 'GRUP SANTA TERESA')
+
+  const aliases = [
+    'PIMIENT.PIQUILLO CR.370 BAIGOR',
+    'Q.EDAM BARRA ODELBURGER.OFERTA',
+    'OLIVAS EL FARO GIGANTES',
+    'ROLLO SECAMANOS 2/C SUAO 800gr',
+    'PINCHO CARACOL 100un.',
+    'NESTEA LIMONA S/SUCRE MARACUY',
+    'NESTEA LIMON LATA 33CL',
+    'SCHWEPPES TONICA S/R.',
+    'VOLL DAMM LATA',
+    'AIGUA MALAVELLA GAS 1/3 N/RET.',
+    'JUVER PINYA 200G.',
+    'CERVESA FREE DAMM TOSTADA 0,0',
+    'LATA S/ALCOHOL FREE DAMM.',
+    'BITTER KAS CRISTAL S/R.OFERTA',
+    'AQUARIUS NARANJA LATA',
+    'LATA DAMM LEMON 33CL.',
+    'AIGUA VICHY PETITA S/R.',
+    'CERVEZA ALHAMBRA 1925 VERDE',
+    'CACAOLAT PEQU.ENV.PLAST. 275CC',
+    'AQUARIUS LATAS.',
+    'COCA COLA LATA NACIONAL 33CL',
+    'COCA COLA ZERO NACIONAL LATA',
+    'ESTRELLA LATA DAMM',
+  ]
+
+  const result = normalizeDoclingEvidence({
+    profile: santaTeresaProfile,
+    rawArtifact: raw,
+    supplierId: 7,
+    mappings: [],
+    legacyIdentities: aliases.map((supplierItemName, index) => ({
+      supplierItemName,
+      ingredientId: `ingredient-${index}`,
+    })),
+  })
+
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v12')
+  assert.equal(result.proposals.length, 24)
+  assert.equal(result.proposals[0]!.sourceItemName, 'MIEL DE FLORES FRUBBO 350G')
+  assert.equal(result.proposals[0]!.lineQuantity, '1')
+  assert.equal(result.proposals[0]!.observedUnitPrice, '3.75')
+  assert.equal(result.proposals[0]!.lineTotal, '3.75')
+  assert.equal(result.proposals[15]!.sourceItemName, 'AQUARIUS NARANJA LATA')
+  assert.equal(result.proposals[16]!.sourceItemName, 'IATA DAMM LEMON 33CL.')
+  assert.equal(result.proposals[23]!.sourceItemName, 'RSTRELLA LATA DAMM')
+  assert.ok(result.proposals.every((proposal) => proposal.warnings.includes('santa_teresa_collapsed_table_recovered')))
 })
