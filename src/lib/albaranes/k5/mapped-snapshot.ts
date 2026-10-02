@@ -69,7 +69,7 @@ function convert(
   if (from === 'cl' && to === 'ml') return multiplyExact(quantity, ten)
   if (from === 'cl' && to === 'l') return divideExact(quantity, hundred)
 
-  if (!isPositiveExact(densityGPerMl)) return null
+  if (!densityGPerMl || !isPositiveExact(densityGPerMl)) return null
 
   const fromDimension = unitDimension(fromValue)
   const toDimension = unitDimension(toValue)
