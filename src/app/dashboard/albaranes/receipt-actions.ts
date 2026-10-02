@@ -143,7 +143,7 @@ async function supersedeK5ProposalWithMapping(params: {
 
   const { data: ingredient, error: ingredientError } = await params.supabase
     .from('ingredients')
-    .select('purchase_unit,base_unit,density_g_per_ml')
+    .select('*')
     .eq('id', params.ingredientId)
     .maybeSingle()
   if (ingredientError || !ingredient?.purchase_unit || !ingredient?.base_unit) {
@@ -177,7 +177,9 @@ async function supersedeK5ProposalWithMapping(params: {
       lineContentUnit: params.lineContentUnit,
       purchaseUnit: text(ingredient.purchase_unit),
       baseUnit: text(ingredient.base_unit),
-      densityGPerMl: ingredient.density_g_per_ml == null ? null : text(ingredient.density_g_per_ml),
+      densityGPerMl: (ingredient as Record<string, unknown>).density_g_per_ml == null
+        ? null
+        : text((ingredient as Record<string, unknown>).density_g_per_ml),
     },
   })
 
