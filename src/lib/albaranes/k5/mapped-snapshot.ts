@@ -83,6 +83,7 @@ function convert(
     const grams = convert(quantity, fromValue, 'g')
     if (!grams) return null
     const ml = divideExact(grams, densityGPerMl)
+    if (!ml) return null
     return convert(ml, 'ml', toValue)
   }
 
