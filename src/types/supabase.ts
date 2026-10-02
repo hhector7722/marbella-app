@@ -1876,6 +1876,8 @@ export type Database = {
           id: string
           ingredient_id: string
           physical_stock: number
+          quantity_barra: number
+          quantity_camara: number
           theoretical_stock: number
           unit: string
         }
@@ -1885,6 +1887,8 @@ export type Database = {
           id?: string
           ingredient_id: string
           physical_stock: number
+          quantity_barra?: number
+          quantity_camara?: number
           theoretical_stock: number
           unit: string
         }
@@ -1894,6 +1898,8 @@ export type Database = {
           id?: string
           ingredient_id?: string
           physical_stock?: number
+          quantity_barra?: number
+          quantity_camara?: number
           theoretical_stock?: number
           unit?: string
         }

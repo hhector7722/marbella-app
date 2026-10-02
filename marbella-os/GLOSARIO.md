@@ -123,7 +123,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Puente** | Proceso que extrae datos de BDP en el equipo del TPV y los envía a Marbella. | — |
 | **Pasarela** | Proceso que recibe lo que envía el puente y lo escribe en la base de datos de Marbella. | — |
 | **Ticket** | Documento de venta cerrado. | — |
-| **Comanda** | Petición de artículos asociada a una mesa, previa al ticket. | — |
+| **Comanda** | Petición de artículos asociada a una mesa, previa al ticket. En un encargo de evento, la comanda es la hoja que va a cocina: productos y cantidades, sin precios ni datos fiscales. | — |
 | **COMPROBANTE** | Documento que emite el TPV y **no es una venta**. Debe excluirse en todo cálculo de ventas y de pendientes. | `Numero_Documento = 'COMPROBANTE'` |
 | **Mesa** | Punto de consumo en sala, con estado y ticket abierto. | `estado_sala` |
 | **Radar de sala** | Vista en tiempo real de las mesas abiertas. | — |

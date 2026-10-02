@@ -205,12 +205,7 @@ export function InventoryPageShell({
                       {line.ingredientName}
                     </span>
                     <span className="shrink-0 text-right text-[11px] font-black tabular-nums text-zinc-500">
-                      {line.physicalStock} / {line.theoreticalStock} {line.unit}
-                      <span className={line.delta === 0 ? 'text-zinc-300' : 'text-amber-600'}>
-                        {' '}
-                        ({line.delta > 0 ? '+' : ''}
-                        {line.delta})
-                      </span>
+                      {`Barra ${line.quantityBarra} · Cámara ${line.quantityCamara} · Total ${line.total} ${line.unit}`}
                     </span>
                   </li>
                 ))}

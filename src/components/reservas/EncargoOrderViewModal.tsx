@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState, useTransition } from 'react'
-import { Loader2, Pencil, Printer, Receipt } from 'lucide-react'
+import { ChefHat, Loader2, Pencil, Printer, Receipt } from 'lucide-react'
 import { toast } from 'sonner'
 
 import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/PedidosEventoClient'
@@ -27,6 +27,7 @@ import {
 } from '@/lib/reservas/encargo-pdf'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { Field } from '@/components/ui/Field'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { TABLE_COMPONENT_ID } from '@/lib/design-system'
 
@@ -69,14 +70,17 @@ export function EncargoOrderViewModal({
   const tableRef = useRef<HTMLDivElement>(null)
   const [printBusy, setPrintBusy] = useState(false)
   const [invoiceBusy, setInvoiceBusy] = useState(false)
+  const [comandaBusy, setComandaBusy] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [localToken, setLocalToken] = useState<string | null>(clientEditToken)
   const [localEnabled, setLocalEnabled] = useState(clientEditEnabled)
   const [localSubmittedAt, setLocalSubmittedAt] = useState<string | null>(clientOrderSubmittedAt)
   const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false)
-  const [printLanguageFor, setPrintLanguageFor] = useState<'quote' | 'invoice' | null>(null)
+  const [printLanguageFor, setPrintLanguageFor] = useState<'quote' | 'invoice' | 'comanda' | null>(null)
   const [invoiceLanguage, setInvoiceLanguage] = useState<EncargoDocumentLanguage | null>(null)
   const [invoiceNumber, setInvoiceNumber] = useState('')
+  const [comandaLanguage, setComandaLanguage] = useState<EncargoDocumentLanguage | null>(null)
+  const [comandaObservations, setComandaObservations] = useState('')
 
   const alreadySubmitted = isClientOrderSubmitted(localSubmittedAt)
   const linkOpen = localEnabled && !alreadySubmitted
@@ -161,6 +165,43 @@ export function EncargoOrderViewModal({
     }
   }, [invoiceBusy, encargoName, encargoDate, encargoTime, contactPhone, guestCount, items])
 
+  const handlePrintComanda = useCallback(async (
+    language: EncargoDocumentLanguage,
+    observations: string,
+    previewWindow?: Window | null
+  ) => {
+    if (comandaBusy || items.length === 0) return
+    setComandaBusy(true)
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      const pdf = await generateEncargoPdf(
+        'comanda',
+        {
+          encargoDate: formatEncargoPrintDate(encargoDate),
+          encargoTime,
+          encargoName,
+          contactPhone: contactPhone ?? null,
+          guestCount,
+          logoUrl: `${origin}/icons/logo-white.png`,
+          language,
+          observations: observations.trim() || null,
+        },
+        items
+      )
+      openEncargoPdf(pdf, previewWindow)
+    } catch (error) {
+      try {
+        previewWindow?.close()
+      } catch {
+        // La pestaña puede haber sido cerrada por el usuario.
+      }
+      console.error('encargo comanda pdf failed', error)
+      toast.error('No se pudo generar la comanda PDF.')
+    } finally {
+      setComandaBusy(false)
+    }
+  }, [comandaBusy, encargoName, encargoDate, encargoTime, contactPhone, guestCount, items])
+
   const handlePrintLanguage = useCallback(
     (language: EncargoDocumentLanguage) => {
       const target = printLanguageFor
@@ -172,6 +213,9 @@ export function EncargoOrderViewModal({
         // Abrir la pestaña dentro del gesto del usuario evita el bloqueo de popups en Safari iOS.
         const previewWindow = createEncargoPdfPreviewWindow()
         void handlePrint(language, previewWindow)
+      } else if (target === 'comanda') {
+        setComandaLanguage(language)
+        setComandaObservations('')
       } else {
         setInvoiceLanguage(language)
         setInvoiceNumber('')
@@ -190,6 +234,17 @@ export function EncargoOrderViewModal({
     setInvoiceNumber('')
     void handlePrintInvoice(language, number, previewWindow)
   }, [invoiceLanguage, invoiceNumber, invoiceBusy, handlePrintInvoice])
+
+  const handleGenerateComanda = useCallback(() => {
+    if (!comandaLanguage || comandaBusy) return
+    // Abrir la pestaña dentro del gesto del usuario evita el bloqueo de popups en Safari iOS.
+    const previewWindow = createEncargoPdfPreviewWindow()
+    const language = comandaLanguage
+    const observations = comandaObservations
+    setComandaLanguage(null)
+    setComandaObservations('')
+    void handlePrintComanda(language, observations, previewWindow)
+  }, [comandaLanguage, comandaObservations, comandaBusy, handlePrintComanda])
 
   const handleEnableClientEdit = useCallback(() => {
     startTransition(async () => {
@@ -299,6 +354,19 @@ export function EncargoOrderViewModal({
                 <Receipt size={18} strokeWidth={2.5} />
               )}
             </button>
+            <button
+              type="button"
+              onClick={() => setPrintLanguageFor('comanda')}
+              disabled={items.length === 0 || comandaBusy}
+              className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+              aria-label="Generar comanda de cocina PDF"
+            >
+              {comandaBusy ? (
+                <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+              ) : (
+                <ChefHat size={18} strokeWidth={2.5} />
+              )}
+            </button>
           </>
         }
         footer={
@@ -399,14 +467,20 @@ export function EncargoOrderViewModal({
       <Modal
         open={printLanguageFor !== null}
         onClose={() => {
-          if (!printBusy && !invoiceBusy) setPrintLanguageFor(null)
+          if (!printBusy && !invoiceBusy && !comandaBusy) setPrintLanguageFor(null)
         }}
         variant="compact"
         layer="derived"
         instance="encargo-print-language"
         parentInstance="encargo-order-view"
-        title={printLanguageFor === 'invoice' ? 'Idioma de la factura' : 'Idioma del presupuesto'}
-        closeOnBackdrop={!printBusy && !invoiceBusy}
+        title={
+          printLanguageFor === 'invoice'
+            ? 'Idioma de la factura'
+            : printLanguageFor === 'comanda'
+              ? 'Idioma de la comanda'
+              : 'Idioma del presupuesto'
+        }
+        closeOnBackdrop={!printBusy && !invoiceBusy && !comandaBusy}
       >
         <div className="grid gap-2 py-1">
           {([
@@ -418,7 +492,7 @@ export function EncargoOrderViewModal({
               key={language}
               type="button"
               onClick={() => handlePrintLanguage(language)}
-              disabled={printBusy || invoiceBusy}
+              disabled={printBusy || invoiceBusy || comandaBusy}
               className="min-h-12 w-full rounded-xl border border-zinc-100 bg-white px-4 text-left text-sm font-bold text-zinc-800 transition-colors hover:bg-zinc-50 active:bg-zinc-100 disabled:opacity-50"
             >
               {label}
@@ -486,6 +560,68 @@ export function EncargoOrderViewModal({
             autoFocus
             className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 disabled:opacity-50"
           />
+        </div>
+      </Modal>
+
+      <Modal
+        open={comandaLanguage !== null}
+        onClose={() => {
+          if (!comandaBusy) {
+            setComandaLanguage(null)
+            setComandaObservations('')
+          }
+        }}
+        variant="compact"
+        layer="derived"
+        instance="encargo-comanda-observations"
+        parentInstance="encargo-order-view"
+        title="Comanda de cocina"
+        closeOnBackdrop={!comandaBusy}
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              instance="encargo-comanda-observations-cancel"
+              disabled={comandaBusy}
+              onClick={() => {
+                setComandaLanguage(null)
+                setComandaObservations('')
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="encargo-comanda-observations-generate"
+              disabled={comandaBusy}
+              loading={comandaBusy}
+              loadingLabel="Generando comanda"
+              onClick={handleGenerateComanda}
+            >
+              Generar comanda
+            </Button>
+          </>
+        }
+      >
+        <div className="py-2">
+          <Field
+            instance="encargo-comanda-observations-field"
+            label="Observaciones"
+            htmlFor="encargo-comanda-observations-input"
+            hint="Opcional. Si se rellena, aparece al final de la comanda."
+          >
+            <textarea
+              id="encargo-comanda-observations-input"
+              value={comandaObservations}
+              onChange={(event) => setComandaObservations(event.target.value)}
+              placeholder="Alergias, indicaciones de montaje, tiempos…"
+              rows={3}
+              disabled={comandaBusy}
+              autoFocus
+            />
+          </Field>
         </div>
       </Modal>
 

@@ -1,7 +1,7 @@
 import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/PedidosEventoClient'
 
 export type EncargoDocumentLanguage = 'ca' | 'es' | 'en'
-export type EncargoPdfKind = 'quote' | 'invoice'
+export type EncargoPdfKind = 'quote' | 'invoice' | 'comanda'
 
 export type EncargoPdfMeta = {
   encargoDate: string
@@ -12,6 +12,7 @@ export type EncargoPdfMeta = {
   guestCount?: number | null
   language?: EncargoDocumentLanguage
   invoiceNumber?: string | null
+  observations?: string | null
 }
 
 export type EncargoPdfResult = {
@@ -61,6 +62,9 @@ const COPY = {
     base: 'Base',
     thanks: '¡Gracias por vuestra visita!',
     quoteLegal: 'Precios con IVA incluido. Tipo impositivo 10%.',
+    comanda: 'Comanda',
+    note: 'Observación',
+    observations: 'Observaciones',
   },
   ca: {
     invoice: 'Factura',
@@ -82,6 +86,9 @@ const COPY = {
     base: 'Base',
     thanks: 'Gràcies per la vostra visita!',
     quoteLegal: 'Preus amb IVA inclòs. Tipus impositiu 10%.',
+    comanda: 'Comanda',
+    note: 'Observació',
+    observations: 'Observacions',
   },
   en: {
     invoice: 'Invoice',
@@ -103,6 +110,9 @@ const COPY = {
     base: 'Base',
     thanks: 'Thank you for your visit!',
     quoteLegal: 'Prices include VAT. Tax rate 10%.',
+    comanda: 'Kitchen order',
+    note: 'Note',
+    observations: 'Observations',
   },
 } as const
 
@@ -153,14 +163,21 @@ function safeFilenamePart(value: string): string {
     .slice(0, 60) || 'cliente'
 }
 
+function documentLabel(kind: EncargoPdfKind, language: EncargoDocumentLanguage | undefined): string {
+  const copy = copyFor(language)
+  if (kind === 'invoice') return copy.invoice
+  if (kind === 'comanda') return copy.comanda
+  return copy.quote
+}
+
 function filenameFor(kind: EncargoPdfKind, meta: EncargoPdfMeta): string {
-  const copy = copyFor(meta.language)
-  const label = kind === 'invoice' ? copy.invoice : copy.quote
+  const label = documentLabel(kind, meta.language)
   const date = meta.encargoDate.replace(/\D/g, '')
   return `${safeFilenamePart(label)}-${safeFilenamePart(meta.encargoName)}-${date}.pdf`
 }
 
 function referenceFor(kind: EncargoPdfKind, meta: EncargoPdfMeta): string {
+  if (kind === 'comanda') return ''
   if (kind === 'invoice') return meta.invoiceNumber?.trim() ?? ''
   const date = meta.encargoDate.replace(/\D/g, '')
   const time = meta.encargoTime.replace(/\D/g, '')
@@ -376,6 +393,90 @@ function ensureSpace(doc: PdfDoc, y: number, needed: number): number {
   return 18
 }
 
+function drawKitchenHeader(doc: PdfDoc, logoDataUrl: string | null) {
+  const left = 14
+  const top = 12
+  const logoSize = 17
+
+  if (logoDataUrl) {
+    try {
+      doc.addImage(logoDataUrl, 'PNG', left, top, logoSize, logoSize)
+    } catch {
+      // El documento sigue siendo válido aunque el logo no cargue.
+    }
+  }
+
+  const textX = left + logoSize + 6
+  doc.setTextColor(...TEXT)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(16)
+  doc.text(COMPANY.tradeName, textX, top + 4.5)
+
+  doc.setDrawColor(...LINE)
+  doc.setLineWidth(0.2)
+  doc.line(left, top + logoSize + 5, 196, top + logoSize + 5)
+}
+
+function drawKitchenTitle(doc: PdfDoc, meta: EncargoPdfMeta, y: number) {
+  const copy = copyFor(meta.language)
+  doc.setTextColor(...TEXT)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(12)
+  doc.text(copy.comanda.toUpperCase(), 14, y)
+
+  if (meta.encargoName.trim()) {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(...MUTED)
+    doc.text(meta.encargoName, 196, y, { align: 'right' })
+  }
+}
+
+function drawKitchenMeta(doc: PdfDoc, meta: EncargoPdfMeta, y: number) {
+  const copy = copyFor(meta.language)
+  const colW = 58
+  const xs = [14, 80, 146]
+  const guests = meta.guestCount != null && meta.guestCount > 0 ? String(meta.guestCount) : '—'
+
+  drawMetaInline(doc, copy.date, meta.encargoDate, xs[0], y, colW)
+  drawMetaInline(doc, copy.time, meta.encargoTime, xs[1], y, colW)
+  drawMetaInline(doc, copy.guests, guests, xs[2], y, colW)
+}
+
+function drawObservations(
+  doc: PdfDoc,
+  copy: ReturnType<typeof copyFor>,
+  observations: string | null | undefined,
+  y: number,
+): number {
+  const text = String(observations ?? '').trim()
+  if (!text) return y
+
+  const x = 14
+  const w = 182
+  const lines = doc.splitTextToSize(text, w - 10) as string[]
+  const lineHeight = 4.8
+  const h = 13 + lines.length * lineHeight
+  const top = ensureSpace(doc, y, h + 4)
+
+  doc.setFillColor(...SOFT_BRAND)
+  doc.setDrawColor(203, 213, 216)
+  doc.setLineWidth(0.2)
+  doc.roundedRect(x, top, w, h, 3, 3, 'FD')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7)
+  doc.setTextColor(...BRAND_DARK)
+  doc.text(copy.observations.toUpperCase(), x + 5, top + 7)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  doc.setTextColor(...TEXT)
+  doc.text(lines, x + 5, top + 13)
+
+  return top + h
+}
+
 export function createEncargoPdfPreviewWindow(): Window | null {
   if (typeof window === 'undefined') return null
   const preview = window.open('', '_blank')
@@ -434,6 +535,83 @@ export async function generateEncargoPdf(
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const margin = 14
   const contentWidth = 182
+
+  if (kind === 'comanda') {
+    drawKitchenHeader(doc, logoDataUrl)
+    drawKitchenTitle(doc, meta, 39)
+    drawKitchenMeta(doc, meta, 49)
+
+    const body = items.map((item) => {
+      const quantity = Math.max(0, Number(item.quantity) || 0)
+      return [
+        productLabel(item),
+        productNote(item),
+        quantity > 0 ? String(quantity) : '',
+      ]
+    })
+
+    const tableStartY = 67
+    let headerDrawnOnPage = -1
+
+    autoTable(doc, {
+      startY: tableStartY,
+      margin: { left: margin, right: margin, top: 15, bottom: 15 },
+      head: [[copy.product, copy.note, copy.qty]],
+      body,
+      theme: 'plain',
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        textColor: TEXT,
+        cellPadding: { top: 3.6, bottom: 3.6, left: 3, right: 3 },
+        valign: 'middle',
+        lineWidth: 0,
+      },
+      headStyles: {
+        fillColor: false as unknown as [number, number, number],
+        textColor: WHITE,
+        fontStyle: 'bold',
+        fontSize: 6.8,
+        cellPadding: { top: 3.1, bottom: 3.1, left: 3, right: 3 },
+        lineWidth: 0,
+      },
+      alternateRowStyles: { fillColor: SOFT },
+      columnStyles: {
+        0: { cellWidth: 'auto', fontStyle: 'bold' },
+        1: { cellWidth: 48, textColor: MUTED, fontSize: 8 },
+        2: { cellWidth: 20, halign: 'right', fontStyle: 'bold' },
+      },
+      willDrawCell: (data) => {
+        if (data.section !== 'head' || data.column.index !== 0) return
+        const pageNumber = data.pageNumber
+        if (headerDrawnOnPage === pageNumber) return
+        headerDrawnOnPage = pageNumber
+
+        const x = data.cell.x
+        const y = data.cell.y
+        const h = data.cell.height
+        doc.setFillColor(...BRAND)
+        doc.roundedRect(x, y, contentWidth, h, 2.8, 2.8, 'F')
+        doc.rect(x, y + h / 2, contentWidth, h / 2, 'F')
+      },
+    })
+
+    const kitchenDoc = doc as PdfDoc & { lastAutoTable?: { finalY?: number } }
+    const cursorY = Number(kitchenDoc.lastAutoTable?.finalY ?? tableStartY) + 10
+    drawObservations(doc, copy, meta.observations, cursorY)
+
+    doc.setProperties({
+      title: `${copy.comanda} - ${meta.encargoName}`,
+      subject: copy.comanda,
+      author: COMPANY.tradeName,
+      creator: 'Marbella App',
+    })
+
+    return {
+      blob: doc.output('blob'),
+      filename: filenameFor(kind, meta),
+    }
+  }
 
   drawCompanyHeader(doc, logoDataUrl)
   drawTitle(doc, kind, meta, 39)

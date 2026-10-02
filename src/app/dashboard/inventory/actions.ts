@@ -69,6 +69,8 @@ interface CountPayload {
   ingredient_id: string
   physical_stock: number
   theoretical_stock: number
+  quantity_barra: number
+  quantity_camara: number
   unit: string
 }
 
@@ -104,6 +106,8 @@ export async function processInventoryCounts(counts: CountPayload[]) {
         ingredient_id: count.ingredient_id,
         physical_stock: count.physical_stock,
         theoretical_stock: count.theoretical_stock,
+        quantity_barra: count.quantity_barra,
+        quantity_camara: count.quantity_camara,
         unit: count.unit,
       })),
     })
@@ -172,9 +176,9 @@ export type InventoryCountLine = {
   ingredientId: string
   ingredientName: string
   unit: string
-  physicalStock: number
-  theoreticalStock: number
-  delta: number
+  quantityBarra: number
+  quantityCamara: number
+  total: number
 }
 
 export type PendingInventoryCountDetail = {
@@ -254,7 +258,7 @@ export async function getInventoryCountDetail(
     supabase.from('profiles').select('first_name, last_name').eq('id', count.created_by).maybeSingle(),
     supabase
       .from('inventory_count_lines')
-      .select('ingredient_id, physical_stock, theoretical_stock, unit, delta')
+      .select('ingredient_id, physical_stock, quantity_barra, quantity_camara, unit')
       .eq('count_id', countId),
   ])
 
@@ -272,9 +276,9 @@ export async function getInventoryCountDetail(
     ingredientId: line.ingredient_id,
     ingredientName: nameById.get(line.ingredient_id) ?? 'Ingrediente',
     unit: line.unit,
-    physicalStock: Number(line.physical_stock),
-    theoreticalStock: Number(line.theoretical_stock),
-    delta: Number(line.delta),
+    quantityBarra: Number(line.quantity_barra) || 0,
+    quantityCamara: Number(line.quantity_camara) || 0,
+    total: Number(line.physical_stock) || 0,
   }))
 
   const createdByName =

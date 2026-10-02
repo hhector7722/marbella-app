@@ -79,6 +79,7 @@ Los documentos impresos comparten las reglas de [CONTENIDO-Y-TONO §4](CONTENIDO
 |---|---|---|
 | Hoja de jornada, plantilla y simulación | Interna | Migrado al sistema |
 | Encargo y factura de encargo | Cliente | Migrado al sistema |
+| Comanda de cocina de encargo | Interna | Migrado al sistema |
 | Pedido a proveedor | Proveedor | **Estilo heredado confirmado** |
 | Alta laboral | Gestoría | Migrado al sistema |
 

@@ -498,6 +498,8 @@ export function InventoryClient({
             ingredient_id: item.id,
             physical_stock: safePhysical,
             theoretical_stock: item.stock_current,
+            quantity_barra: roundQty(valBarra ?? 0, u),
+            quantity_camara: roundQty(valCamara ?? 0, u),
             unit: item.unit || 'ud',
           }
         })
@@ -505,6 +507,8 @@ export function InventoryClient({
           ingredient_id: string
           physical_stock: number
           theoretical_stock: number
+          quantity_barra: number
+          quantity_camara: number
           unit: string
         }[]
 

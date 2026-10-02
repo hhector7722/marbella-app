@@ -13,6 +13,12 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-10-02
+
+- **El recuento pendiente muestra lo contado, no la comparación con el stock teórico.** Al abrir un recuento pendiente, gerencia ve la cantidad de barra, la de cámara y el total que introdujo quien contó. El total físico y la cantidad teórica siguen guardándose para que la certificación calcule la diferencia. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).
+
+- **El encargo se imprime también como comanda de cocina.** El icono del gorro de cocina en el modal del pedido genera un PDF con el estilo del presupuesto pero sin precios ni datos fiscales: comensales, fecha, hora, productos con sus observaciones y cantidades. Admite los mismos idiomas (català, español, english) y un campo de observaciones que, si se rellena, aparece al final del documento; si se deja vacío, no se imprime. [DOCUMENTOS-IMPRESOS](../2-diseno/DOCUMENTOS-IMPRESOS.md).
+
 ## 2026-09-30
 
 - **El recuento de inventario se captura y se certifica por separado.** Cualquier persona puede contar en `/dashboard/inventory` y guardar; el recuento queda pendiente de certificar. Solo `manager`/`admin` lo certifica (acceso «Pendientes» en el cromo de la pantalla) y entonces escribe movimientos `INVENTORY_COUNT` en el ledger. Rechazar no produce movimientos. El histórico (`/dashboard/inventory/ledger`) y la merma siguen restringidos a gerencia. [ADR-0019](../4-decisiones/ADR-0019-inventario-captura-y-certificacion.md).
