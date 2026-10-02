@@ -806,7 +806,7 @@ export function LineMappingModal({
   return (
     <>
     <Modal
-      open={open}
+      open={open && !ingredientEditOpen}
       onClose={handleClose}
       variant="work"
       layer="derived"
