@@ -87,6 +87,8 @@ export function convertToPurchaseUnitQuantity(
 export type IngredientPackBridgeContext = {
   pack_unit_size_qty?: number | null
   pack_unit_size_unit?: string | null
+  /** Densidad específica del ingrediente. 1 ml = density_g_per_ml gramos. */
+  density_g_per_ml?: number | null
 }
 
 /**
@@ -115,6 +117,27 @@ export function convertToPurchaseUnitQuantityWithPackBridge(
   const direct = convertToPurchaseUnitQuantity(quantity, recipeUnit, purchaseUnit)
   if (direct != null) return direct
 
+  const density = Number(pack?.density_g_per_ml)
+  const fromDensity = normalizeUnit(recipeUnit)
+  const toDensity = normalizeUnit(purchaseUnit)
+  if (Number.isFinite(density) && density > 0) {
+    if (VOLUME_UNITS.includes(fromDensity) && MASS_UNITS.includes(toDensity)) {
+      const ml = volumeToMl(quantity, fromDensity)
+      if (ml != null) {
+        const grams = ml * density
+        if (toDensity === 'g') return grams
+        if (toDensity === 'kg') return grams / 1000
+      }
+    }
+    if (MASS_UNITS.includes(fromDensity) && VOLUME_UNITS.includes(toDensity)) {
+      const grams = fromDensity === 'kg' ? quantity * 1000 : quantity
+      const ml = grams / density
+      if (toDensity === 'ml') return ml
+      if (toDensity === 'cl') return ml / 10
+      if (toDensity === 'l') return ml / 1000
+    }
+  }
+
   const pq = Number(pack?.pack_unit_size_qty)
   const pUnitRaw = pack?.pack_unit_size_unit
   if (!Number.isFinite(pq) || pq <= 0 || pUnitRaw == null || !String(pUnitRaw).trim()) return null
@@ -125,7 +148,9 @@ export function convertToPurchaseUnitQuantityWithPackBridge(
 
   // Puente A: receta ud → compra masa o volumen (p. ej. 2 ud × 330 ml/ud → L de compra)
   if (from === 'ud' && (MASS_UNITS.includes(to) || VOLUME_UNITS.includes(to))) {
-    const piece = convertToPurchaseUnitQuantity(pq, pUnit, purchaseUnit)
+    const piece = convertToPurchaseUnitQuantityWithPackBridge(pq, pUnit, purchaseUnit, {
+      density_g_per_ml: pack?.density_g_per_ml,
+    })
     if (piece != null && piece > 0) return quantity * piece
     return null
   }
@@ -133,7 +158,9 @@ export function convertToPurchaseUnitQuantityWithPackBridge(
   // Puente B: receta masa/volumen → compra ud (p. ej. 50 g / 250 g por ud)
   if (to === 'ud' && (MASS_UNITS.includes(from) || VOLUME_UNITS.includes(from))) {
     if (unitDimension(normalizeUnit(pUnit)) !== unitDimension(from)) return null
-    const pieceInRecipeUnit = convertToPurchaseUnitQuantity(pq, pUnit, recipeUnit)
+    const pieceInRecipeUnit = convertToPurchaseUnitQuantityWithPackBridge(pq, pUnit, recipeUnit, {
+      density_g_per_ml: pack?.density_g_per_ml,
+    })
     if (pieceInRecipeUnit == null || pieceInRecipeUnit <= 0) return null
     return quantity / pieceInRecipeUnit
   }
@@ -226,7 +253,7 @@ export function recipeLineCostStatusHint(status: RecipeLineCostStatus): string {
     return 'Sin precio de compra en el ingrediente. Edita el artículo en Ingredientes o asigna precio desde albarán.'
   }
   if (status === 'incompatible_units') {
-    return 'No se puede convertir la unidad de la receta a la unidad de compra. Usa la misma familia (g/kg, ml/cl/L, ud) o indica la equivalencia física por unidad del ingrediente (p. ej. 330 ml por botella).'
+    return 'No se puede convertir la unidad de la receta a la unidad de compra. Usa la misma familia, indica la equivalencia física por unidad o configura la densidad del ingrediente para convertir masa ↔ volumen.'
   }
   return ''
 }
