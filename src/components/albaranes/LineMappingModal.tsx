@@ -143,6 +143,7 @@ export function LineMappingModal({
     mappingVersionId: string
     receiptPreview: ReceiptPreview
     confirmationKey: string
+    fingerprint: string
   }>())
 
   const applySuggestion = useCallback(
@@ -527,7 +528,7 @@ export function LineMappingModal({
   useEffect(() => {
     if (!open || !line || loading) return
     const prepared = preparedReviewByLineRef.current.get(line.id)
-    if (!prepared) return
+    if (!prepared || prepared.fingerprint !== proposalFingerprint) return
     setMappingVersionId(prepared.mappingVersionId)
     setSavedProposalFingerprint(proposalFingerprint)
     setReceiptPreview(prepared.receiptPreview)
@@ -731,6 +732,7 @@ export function LineMappingModal({
         mappingVersionId: savedMappingId,
         receiptPreview: previewResult.preview,
         confirmationKey: crypto.randomUUID(),
+        fingerprint: currentFingerprint,
       }
       preparedReviewByLineRef.current.set(currentLineId, prepared)
       toast.success('Revisión preparada. Ya puedes confirmar la recepción cuando quieras.')
