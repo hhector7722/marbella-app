@@ -15,6 +15,7 @@ export type ExactMappingInput = {
   lineContentUnit: string
   purchaseUnit: string
   baseUnit: string
+  densityGPerMl?: string | null
 }
 
 export type ExactMappedSnapshot = {
@@ -36,7 +37,20 @@ function unit(value: string): 'kg' | 'g' | 'l' | 'ml' | 'cl' | 'ud' | null {
   return null
 }
 
-function convert(quantity: ExactRatio, fromValue: string, toValue: string): ExactRatio | null {
+function unitDimension(value: string): 'mass' | 'volume' | 'count' | null {
+  const normalized = unit(value)
+  if (normalized === 'kg' || normalized === 'g') return 'mass'
+  if (normalized === 'l' || normalized === 'ml' || normalized === 'cl') return 'volume'
+  if (normalized === 'ud') return 'count'
+  return null
+}
+
+function convert(
+  quantity: ExactRatio,
+  fromValue: string,
+  toValue: string,
+  densityGPerMl?: ExactRatio | null,
+): ExactRatio | null {
   const from = unit(fromValue)
   const to = unit(toValue)
   if (!from || !to) return null
@@ -54,6 +68,25 @@ function convert(quantity: ExactRatio, fromValue: string, toValue: string): Exac
   if (from === 'ml' && to === 'cl') return divideExact(quantity, ten)
   if (from === 'cl' && to === 'ml') return multiplyExact(quantity, ten)
   if (from === 'cl' && to === 'l') return divideExact(quantity, hundred)
+
+  if (!densityGPerMl || !isPositiveExact(densityGPerMl)) return null
+
+  const fromDimension = unitDimension(fromValue)
+  const toDimension = unitDimension(toValue)
+  if (fromDimension === 'volume' && toDimension === 'mass') {
+    const ml = convert(quantity, fromValue, 'ml')
+    if (!ml) return null
+    const grams = multiplyExact(ml, densityGPerMl)
+    return convert(grams, 'g', toValue)
+  }
+  if (fromDimension === 'mass' && toDimension === 'volume') {
+    const grams = convert(quantity, fromValue, 'g')
+    if (!grams) return null
+    const ml = divideExact(grams, densityGPerMl)
+    if (!ml) return null
+    return convert(ml, 'ml', toValue)
+  }
+
   return null
 }
 
@@ -74,9 +107,10 @@ export function buildExactMappedSnapshot(params: {
   const observedUnitPrice = parseExactDecimal(params.observedUnitPrice)
   const factor = parseExactDecimal(params.mapping.conversionFactor)
   const content = parseExactDecimal(params.mapping.lineContentQty)
+  const density = params.mapping.densityGPerMl ? parseExactDecimal(params.mapping.densityGPerMl) : null
   if (!isPositiveExact(lineQuantity) || !isPositiveExact(observedUnitPrice) || !isPositiveExact(factor) || !isPositiveExact(content)) return null
 
-  const contentInPurchaseUnit = convert(content, params.mapping.lineContentUnit, params.mapping.purchaseUnit)
+  const contentInPurchaseUnit = convert(content, params.mapping.lineContentUnit, params.mapping.purchaseUnit, density)
   if (!contentInPurchaseUnit) return null
   if (
     contentInPurchaseUnit.numerator !== factor.numerator
@@ -84,7 +118,7 @@ export function buildExactMappedSnapshot(params: {
   ) return null
 
   const purchaseQuantity = multiplyExact(lineQuantity, factor)
-  const physicalQuantity = convert(purchaseQuantity, params.mapping.purchaseUnit, params.mapping.baseUnit)
+  const physicalQuantity = convert(purchaseQuantity, params.mapping.purchaseUnit, params.mapping.baseUnit, density)
   const normalizedUnitPrice = divideExact(observedUnitPrice, factor)
   if (!physicalQuantity || !normalizedUnitPrice) return null
 

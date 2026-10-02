@@ -114,3 +114,43 @@ test('v2: precio ausente y unidad incompatible se conservan juntos', () => {
     issues: ['INCOMPATIBLE_UNITS', 'MISSING_PRICE'],
   })
 })
+
+
+test('densidad convierte volumen de receta a kg de compra', () => {
+  const converted = convertToPurchaseUnitQuantityWithPackBridge(30, 'ml', 'kg', {
+    density_g_per_ml: 1.4,
+  })
+  assert.ok(converted != null)
+  assert.ok(Math.abs(converted - 0.042) < 1e-12)
+})
+
+test('densidad convierte masa a volumen en ambos sentidos', () => {
+  const litres = convertToPurchaseUnitQuantityWithPackBridge(140, 'g', 'l', {
+    density_g_per_ml: 1.4,
+  })
+  assert.ok(litres != null)
+  assert.ok(Math.abs(litres - 0.1) < 1e-12)
+})
+
+test('masa y volumen siguen bloqueados sin densidad específica', () => {
+  assert.equal(convertToPurchaseUnitQuantityWithPackBridge(30, 'ml', 'kg', {}), null)
+  assert.equal(
+    getRecipeIngredientLineCostAnalysis(30, 'ml', 'kg', 10.71, {}).status,
+    'incompatible_units',
+  )
+})
+
+test('coste de miel en ml usa precio por kg y densidad', () => {
+  const legacy = getRecipeIngredientLineCostAnalysis(30, 'ml', 'kg', 10.71, {
+    density_g_per_ml: 1.4,
+  })
+  assert.equal(legacy.status, 'ok')
+  assert.ok(Math.abs(legacy.eur - 0.44982) < 1e-12)
+
+  const v2 = getRecipeIngredientLineCostV2(30, 'ml', 'kg', 10.71, {
+    density_g_per_ml: 1.4,
+  })
+  assert.equal(v2.status, 'OK')
+  assert.ok(v2.costEur != null)
+  assert.ok(Math.abs(v2.costEur - 0.44982) < 1e-12)
+})

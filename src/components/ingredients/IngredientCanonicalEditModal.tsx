@@ -9,6 +9,7 @@ import { Field } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/modal'
 import { cn } from '@/lib/utils'
 import {
+  getIngredientCanonicalConfigAction,
   setIngredientArchivedAction,
   setIngredientPriceAndUnitAction,
   uploadIngredientPhotoAction,
@@ -28,6 +29,8 @@ export interface Ingredient {
   allergens?: string[]
   order_unit?: string | null
   recipe_unit?: string | null
+  density_g_per_ml?: number | null
+  base_unit?: string | null
   recommended_stock?: number | null
   archived_at?: string | null
 }
@@ -35,7 +38,13 @@ export interface Ingredient {
 type Props = {
   ingredient: Ingredient
   onClose: () => void
-  onSaved: (updated?: { currentPrice: number; purchaseUnit: string }) => void
+  onSaved: (updated?: {
+    currentPrice: number
+    purchaseUnit: string
+    recipeUnit: string
+    densityGPerMl: number | null
+    baseUnit: string
+  }) => void
   layer?: 'base' | 'derived'
   parentInstance?: string
 }
@@ -71,12 +80,35 @@ export function IngredientCanonicalEditModal({
   const stagedBlobRef = useRef<string | null>(null)
   const [newPrice, setNewPrice] = useState(() => priceInputValue(ingredient.current_price))
   const [newUnit, setNewUnit] = useState(() => ingredient.purchase_unit || 'ud')
+  const [recipeUnit, setRecipeUnit] = useState(() => ingredient.recipe_unit || ingredient.purchase_unit || 'ud')
+  const [densityDraft, setDensityDraft] = useState(() =>
+    ingredient.density_g_per_ml != null ? String(ingredient.density_g_per_ml).replace('.', ',') : ''
+  )
+  const [baselineRecipeUnit, setBaselineRecipeUnit] = useState(() => ingredient.recipe_unit || ingredient.purchase_unit || 'ud')
+  const [baselineDensity, setBaselineDensity] = useState<number | null>(() =>
+    ingredient.density_g_per_ml != null ? Number(ingredient.density_g_per_ml) : null
+  )
   const [baselineImageUrl, setBaselineImageUrl] = useState(ingredient.image_url ?? null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [archiving, setArchiving] = useState(false)
   const [confirmArchive, setConfirmArchive] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    void getIngredientCanonicalConfigAction(ingredient.id).then((result) => {
+      if (cancelled || !result.ok) return
+      const current = result.ingredient
+      setNewPrice(priceInputValue(current.currentPrice))
+      setNewUnit(current.purchaseUnit)
+      setRecipeUnit(current.recipeUnit)
+      setBaselineRecipeUnit(current.recipeUnit)
+      setBaselineDensity(current.densityGPerMl)
+      setDensityDraft(current.densityGPerMl != null ? String(current.densityGPerMl).replace('.', ',') : '')
+    })
+    return () => { cancelled = true }
+  }, [ingredient.id])
 
   const parsedPrice = Number(newPrice.trim().replace(',', '.'))
   const validPrice = Number.isFinite(parsedPrice) && parsedPrice > 0
@@ -89,10 +121,30 @@ export function IngredientCanonicalEditModal({
       ? !(Number.isFinite(parsedPrice) && Math.abs(parsedPrice - baselinePrice) < 1e-9)
       : newPrice.trim() !== ''
   const unitChanged = newUnit !== (ingredient.purchase_unit || 'ud')
+  const recipeUnitChanged = recipeUnit !== baselineRecipeUnit
+  const parsedDensity = densityDraft.trim() === '' ? null : Number(densityDraft.trim().replace(',', '.'))
+  const validDensity = parsedDensity == null || (Number.isFinite(parsedDensity) && parsedDensity > 0)
+  const densityChanged =
+    (baselineDensity == null) !== (parsedDensity == null)
+    || (baselineDensity != null && parsedDensity != null && Math.abs(baselineDensity - parsedDensity) >= 1e-9)
+  const unitDimension = (value: string) => {
+    const unit = String(value ?? '').trim().toLowerCase()
+    if (unit === 'kg' || unit === 'g') return 'mass'
+    if (unit === 'l' || unit === 'ml' || unit === 'cl') return 'volume'
+    if (unit === 'ud') return 'count'
+    return null
+  }
+  const purchaseDimension = unitDimension(newUnit)
+  const recipeDimension = unitDimension(recipeUnit)
+  const needsDensity =
+    (purchaseDimension === 'mass' && recipeDimension === 'volume')
+    || (purchaseDimension === 'volume' && recipeDimension === 'mass')
+  const densityReady = !needsDensity || (parsedDensity != null && validDensity)
   const imageChanged = selectedFile != null
+  const configChanged = priceChanged || unitChanged || recipeUnitChanged || densityChanged
   const canSave =
-    (imageChanged && !priceChanged && !unitChanged) ||
-    ((priceChanged || unitChanged) && validPrice)
+    (imageChanged && !configChanged) ||
+    (configChanged && validPrice && validDensity && densityReady)
   const unit = newUnit || 'ud'
   const isArchived = Boolean(ingredient.archived_at)
   const displayImageSrc = previewBlobUrl ?? baselineImageUrl
@@ -138,11 +190,19 @@ export function IngredientCanonicalEditModal({
   }
 
   async function save() {
-    if ((priceChanged || unitChanged) && !validPrice) {
+    if (configChanged && !validPrice) {
       toast.error('El precio debe ser mayor que cero.')
       return
     }
-    if (!imageChanged && !priceChanged && !unitChanged) return
+    if (!validDensity) {
+      toast.error('La densidad debe ser un número mayor que cero.')
+      return
+    }
+    if (needsDensity && parsedDensity == null) {
+      toast.error('Indica la densidad en g/ml para convertir entre masa y volumen.')
+      return
+    }
+    if (!imageChanged && !configChanged) return
 
     setSaving(true)
     try {
@@ -161,14 +221,20 @@ export function IngredientCanonicalEditModal({
         clearStagedImage()
       }
 
-      if (!priceChanged && !unitChanged) {
+      if (!configChanged) {
         toast.success('Imagen actualizada.')
         onSaved()
         onClose()
         return
       }
 
-      const result = await setIngredientPriceAndUnitAction(ingredient.id, parsedPrice, newUnit)
+      const result = await setIngredientPriceAndUnitAction(
+        ingredient.id,
+        parsedPrice,
+        newUnit,
+        recipeUnit,
+        parsedDensity,
+      )
       if (!result.ok) {
         if (imagePersisted) {
           onSaved()
@@ -180,16 +246,20 @@ export function IngredientCanonicalEditModal({
       }
 
       if (imagePersisted) toast.success('Imagen actualizada.')
-      if (result.priceChanged || result.unitChanged) {
-        const changes = [
-          result.priceChanged ? `${formatPrice(result.currentPrice)} €` : null,
-          result.unitChanged ? `/${result.purchaseUnit}` : null,
-        ].filter(Boolean).join('')
-        toast.success(`Ingrediente actualizado · ${changes || 'sin cambios'}`)
+      if (result.priceChanged || result.unitChanged || result.recipeUnitChanged || result.densityChanged) {
+        toast.success('Ingrediente actualizado.')
       } else {
         toast.success('El ingrediente ya estaba actualizado.')
       }
-      onSaved({ currentPrice: result.currentPrice, purchaseUnit: result.purchaseUnit })
+      setBaselineRecipeUnit(result.recipeUnit)
+      setBaselineDensity(result.densityGPerMl)
+      onSaved({
+        currentPrice: result.currentPrice,
+        purchaseUnit: result.purchaseUnit,
+        recipeUnit: result.recipeUnit,
+        densityGPerMl: result.densityGPerMl,
+        baseUnit: result.baseUnit,
+      })
       onClose()
     } finally {
       setSaving(false)
@@ -279,6 +349,51 @@ export function IngredientCanonicalEditModal({
             <option value="ud">ud</option>
           </select>
         </Field>
+
+        <Field
+          instance="ingredient-canonical-recipe-unit"
+          label="Unidad por defecto en recetas"
+          htmlFor="ingredient-canonical-recipe-unit"
+        >
+          <select
+            id="ingredient-canonical-recipe-unit"
+            value={recipeUnit}
+            onChange={(event) => setRecipeUnit(event.target.value)}
+            className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
+          >
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="l">l</option>
+            <option value="ml">ml</option>
+            <option value="cl">cl</option>
+            <option value="ud">ud</option>
+          </select>
+        </Field>
+
+        {needsDensity ? (
+          <Field
+            instance="ingredient-canonical-density"
+            label="Densidad"
+            htmlFor="ingredient-canonical-density"
+            error={!validDensity || parsedDensity == null ? 'Necesaria para convertir masa ↔ volumen.' : undefined}
+          >
+            <div className="flex min-h-12 items-center gap-2">
+              <input
+                id="ingredient-canonical-density"
+                inputMode="decimal"
+                autoComplete="off"
+                value={densityDraft}
+                onChange={(event) => setDensityDraft(event.target.value)}
+                className="min-w-0 flex-1 font-mono tabular-nums"
+                placeholder="1,40"
+              />
+              <span className="shrink-0 text-sm font-bold text-zinc-600">g/ml</span>
+            </div>
+            <p className="mt-1 text-[11px] font-medium leading-snug text-zinc-500">
+              Permite comprar por peso y usar el ingrediente por volumen en recetas.
+            </p>
+          </Field>
+        ) : null}
 
         <Field
           instance="ingredient-canonical-new-price"
