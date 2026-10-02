@@ -57,7 +57,7 @@ test('Ametller BOL queda listo cuando un mapping humano confirmado define bolsa 
   }
 
   const result = normalizeDoclingEvidence({ profile, rawArtifact, supplierId: 1, mappings: [mapping] })
-  assert.equal(result.normalizerVersion, 'k5-normalizer-v11')
+  assert.equal(result.normalizerVersion, 'k5-normalizer-v12')
   assert.equal(result.proposals.length, 1)
   const line = result.proposals[0]!
   assert.equal(line.status, 'ready_for_review')
