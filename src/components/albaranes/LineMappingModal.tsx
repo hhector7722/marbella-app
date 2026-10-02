@@ -524,6 +524,16 @@ export function LineMappingModal({
     [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor, isVariableWeightMode]
   )
 
+  useEffect(() => {
+    if (!open || !line || loading) return
+    const prepared = preparedReviewByLineRef.current.get(line.id)
+    if (!prepared) return
+    setMappingVersionId(prepared.mappingVersionId)
+    setSavedProposalFingerprint(proposalFingerprint)
+    setReceiptPreview(prepared.receiptPreview)
+    setConfirmationKey(prepared.confirmationKey)
+  }, [open, line, loading, proposalFingerprint])
+
   async function handleSaveMapping(options?: { refresh?: boolean; hydrate?: boolean }) {
     if (!line || !invoiceId || !ingredientId) {
       toast.error('Selecciona un ingrediente del catálogo.')
@@ -792,6 +802,7 @@ export function LineMappingModal({
   const headerTitle = `${line.original_name || 'Sin nombre'} — ${formatLineTotal(line.total_price)}`
 
   return (
+    <>
     <Modal
       open={open}
       onClose={handleClose}
@@ -909,6 +920,16 @@ export function LineMappingModal({
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="tertiary"
+                        instance="albaran-line-mapping-edit-ingredient"
+                        className="shrink-0"
+                        icon={<Pencil className="h-3.5 w-3.5" />}
+                        onClick={() => setIngredientEditOpen(true)}
+                      >
+                        Editar
+                      </Button>
                       <Button
                         type="button"
                         variant="tertiary"
@@ -1092,7 +1113,7 @@ export function LineMappingModal({
                         </div>
                       ) : (
                         <p className="mx-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-900">
-                          Completa el contenido físico para calcular automáticamente el precio de compra.
+                          {presentationBlockingMessage ?? 'No se puede calcular el precio de compra con estos datos.'}
                         </p>
                       )}
                     </>
@@ -1214,5 +1235,34 @@ export function LineMappingModal({
           )}
       </div>
     </Modal>
+
+    {ingredientEditOpen && ingredientId ? (
+      <IngredientCanonicalEditModal
+        ingredient={{
+          id: ingredientId,
+          name: ingredientLabel?.trim() || 'Ingrediente',
+          current_price: ingredientCurrentPrice ?? 0,
+          purchase_unit: ingredientPurchaseUnit || 'ud',
+        }}
+        layer="derived"
+        parentInstance="albaran-line-mapping"
+        onClose={() => setIngredientEditOpen(false)}
+        onSaved={(updated) => {
+          if (updated) {
+            setIngredientCurrentPrice(updated.currentPrice)
+            setIngredientPurchaseUnit(updated.purchaseUnit)
+            setSelectedIngredientMeta((current) => current ? {
+              ...current,
+              purchase_unit: updated.purchaseUnit,
+            } : current)
+            setReceiptPreview(null)
+            setMappingVersionId(null)
+            setSavedProposalFingerprint(null)
+            preparedReviewByLineRef.current.delete(line.id)
+          }
+        }}
+      />
+    ) : null}
+  </>
   )
 }
