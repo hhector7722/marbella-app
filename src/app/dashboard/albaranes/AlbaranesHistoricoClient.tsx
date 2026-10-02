@@ -205,6 +205,16 @@ export default function AlbaranesHistoricoClient({
   /** Línea de Evidence a reabrir al cerrar Edit/Mapping (Evidence-first). */
   const evidenceContextLineIdRef = useRef<string | null>(null)
   const [lineActionBusy, setLineActionBusy] = useState(false)
+  const [backgroundLineActions, setBackgroundLineActions] = useState<Record<string, 'review' | 'confirm'>>({})
+
+  function setBackgroundLineAction(lineId: string, phase: 'review' | 'confirm' | null) {
+    setBackgroundLineActions((current) => {
+      if (phase) return { ...current, [lineId]: phase }
+      const next = { ...current }
+      delete next[lineId]
+      return next
+    })
+  }
   const [ingredientCreateOpen, setIngredientCreateOpen] = useState(false)
   const [ingredientCreateInitialName, setIngredientCreateInitialName] = useState<string | null>(null)
   const [ingredientCreateTargetLineId, setIngredientCreateTargetLineId] = useState<string | null>(null)
@@ -1804,6 +1814,7 @@ export default function AlbaranesHistoricoClient({
                             const noMatch = !excluded && !l.ingredient_name
                             const reviewRow = inlineReviewByLineId.get(l.id) ?? null
                             const reviewLabel = inlineReviewLabel(reviewRow)
+                            const backgroundPhase = backgroundLineActions[l.id] ?? null
                             const needsRepair = lineNeedsStockRepair(l)
                             const displayName = l.ingredient_name
                               ? l.ingredient_name
@@ -1844,7 +1855,12 @@ export default function AlbaranesHistoricoClient({
                                     {rectified ? (
                                       <span className="inline-flex text-amber-500" aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`} title={`Stock rectificado (REV${stock?.rectifiedCount})`}><RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
-                                    {reviewLabel ? (
+                                    {backgroundPhase ? (
+                                      <span className="ml-1 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wide text-[#36606F]">
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        {backgroundPhase === 'review' ? 'Revisando…' : 'Confirmando…'}
+                                      </span>
+                                    ) : reviewLabel ? (
                                       reviewRow?.confirmed || reviewRow?.disposition === 'confirmed' || reviewRow?.disposition === 'excluded' ? (
                                         <span className={cn('ml-1 text-[9px] font-black uppercase tracking-wide', inlineReviewTone(reviewRow))}>
                                           {reviewLabel}
@@ -1929,7 +1945,11 @@ export default function AlbaranesHistoricoClient({
                       ? Boolean(stockStatusByLineId[lineForMappingModal.id]?.stockApplied)
                       : false
                   }
-                  busy={lineActionBusy}
+                  busy={
+                    lineActionBusy ||
+                    Boolean(lineForMappingModal && backgroundLineActions[lineForMappingModal.id])
+                  }
+                  onBackgroundStateChange={setBackgroundLineAction}
                   onClose={() => {
                     reopenEvidenceFromContext()
                   }}
