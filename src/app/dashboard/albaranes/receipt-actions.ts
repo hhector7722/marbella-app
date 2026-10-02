@@ -190,6 +190,8 @@ async function supersedeK5ProposalWithMapping(params: {
     if ([
       'mapping_missing',
       'mapping_presentation_incompatible',
+      'mapping_requires_human_review',
+      'legacy_identity_requires_presentation_validation',
       'price_not_normalizable',
       'unknown_quantity_unit',
     ].includes(reason)) return false
