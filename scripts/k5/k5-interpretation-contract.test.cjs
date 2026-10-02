@@ -13,6 +13,7 @@ const idempotentRetryMigration = read('supabase/migrations/20260915194800_k5_ide
 const priceScaleMigration = read('supabase/migrations/20260915195000_k5_compare_price_at_canonical_scale.sql')
 const layoutFallbackMigration = read('supabase/migrations/20260928093951_k5_layout_fallback_review.sql')
 const trustedLegacyMigration = read('supabase/migrations/20260918114615_k5_import_trusted_legacy_mappings.sql')
+const legacyPromotionMigration = read('supabase/migrations/20261002075500_k5_promote_legacy_mappings.sql')
 const autoReceiptMigration = read('supabase/migrations/20260917215500_k5_service_auto_receipt_delegate.sql')
 const interpretationActions = read('src/app/dashboard/albaranes/interpretation-actions.ts')
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
@@ -303,4 +304,18 @@ test('la corrección humana versiona los datos completados antes de K4', () => {
   assert.match(receiptActions, /reason === 'missing_quantity'/)
   assert.match(receiptActions, /reason === 'missing_unit_price'/)
   assert.match(receiptActions, /reason === 'missing_line_amount'/)
+})
+
+test('una revisión humana válida elimina bloqueos legacy ya resueltos', () => {
+  assert.match(receiptActions, /'legacy_identity_requires_presentation_validation'/)
+  assert.match(receiptActions, /'mapping_requires_human_review'/)
+  assert.match(receiptActions, /const status: K5MappingRevision\['status'\] = snapshot && reviewReasons\.length === 0/)
+})
+
+test('backfill K5 promueve mappings históricos compatibles sin crear efectos económicos', () => {
+  assert.match(legacyPromotionMigration, /'k5-legacy-import:' \|\| e\.id::text/)
+  assert.match(legacyPromotionMigration, /supersedes_id/)
+  assert.match(legacyPromotionMigration, /private\.k4_convert_quantity/)
+  assert.match(legacyPromotionMigration, /status[^\n]*proposed/i)
+  assert.doesNotMatch(legacyPromotionMigration, /stock_movements|ingredient_price_history|purchase_receipt_confirmations|apply_receipt_line\(/)
 })
