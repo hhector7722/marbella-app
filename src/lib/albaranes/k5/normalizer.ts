@@ -476,10 +476,10 @@ function splitSantaTeresaProductBlob(
     .trim()
   if (!cleaned || expectedCount < 2) return null
 
-  const aliasPairs = aliases
+  const aliasPrefixes = aliases
     .map((alias) => normalizeEvidenceLabel(alias).split(' ').filter(Boolean))
     .filter((tokens) => tokens.length >= 2)
-    .map((tokens) => tokens.slice(0, 2))
+    .map((tokens) => tokens.slice(0, Math.min(3, tokens.length)))
 
   const coarse = cleaned
     .split(/\s+[012]\s+/)
