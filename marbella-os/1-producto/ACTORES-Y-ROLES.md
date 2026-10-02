@@ -111,7 +111,7 @@ El token de un encargo es la única credencial: quien tiene el enlace, tiene acc
 - **`admin` y `manager`**: panel de gestión completo, ventas, sala, cocina, caja, tesorería, libro mayor, coste laboral, horas extras, inventario, compras, recetas, carta, importaciones.
 - **Solo `manager` y `admin`**: análisis de negocio.
 - **`staff` y `supervisor`**: dentro del panel de gestión solo alcanzan propinas, albaranes, escáner, eventos y el recuento de inventario. En inventario cuentan y guardan; solo `manager` y `admin` certifican el recuento. Cualquier otra ruta les devuelve a su panel de equipo.
-- **Master**: todo lo anterior más analítica de uso, analítica web, panel maestro y edición de condiciones de contrato.
+- **Master**: todo lo anterior más analítica de uso, analítica web, panel maestro, edición de condiciones de contrato y edición de la ficha de personal (datos personales, contacto y datos bancarios).
 
 #### Supervisor frente a staff
 

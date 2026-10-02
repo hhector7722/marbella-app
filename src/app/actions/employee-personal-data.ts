@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { isSandboxRequest } from '@/lib/sandbox/server';
+import { digitsPhoneEs } from '@/lib/alta-laboral/contact';
 
 export type EmployeePersonalDataInput = {
     firstName: string;
@@ -97,6 +98,68 @@ export async function updateEmployeePersonalData(
     }
 
     const { error } = await supabase.from('profiles').update(patch).eq('id', id);
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath('/profile');
+    return { success: true };
+}
+
+/** Contacto (teléfono) de la ficha, editable solo por master. */
+export async function updateEmployeeContact(
+    employeeId: string,
+    phone: string,
+): Promise<{ success: boolean; error?: string; simulated?: boolean }> {
+    if (await isSandboxRequest()) {
+        return { success: true, simulated: true };
+    }
+
+    const gate = await requireManagerSession();
+    if (!gate.ok || !gate.supabase) {
+        return { success: false, error: gate.error ?? 'Acceso denegado' };
+    }
+
+    const id = String(employeeId ?? '').trim();
+    if (!id) return { success: false, error: 'Empleado no indicado' };
+
+    const normalized = digitsPhoneEs(phone);
+    if (!/^\d{9}$/.test(normalized)) {
+        return { success: false, error: 'El teléfono debe tener 9 dígitos' };
+    }
+
+    const { error } = await gate.supabase.from('profiles').update({ phone: normalized }).eq('id', id);
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath('/profile');
+    return { success: true };
+}
+
+/** Datos bancarios (IBAN) de la ficha, editables solo por master. */
+export async function updateEmployeeBankAccount(
+    employeeId: string,
+    bankAccount: string,
+): Promise<{ success: boolean; error?: string; simulated?: boolean }> {
+    if (await isSandboxRequest()) {
+        return { success: true, simulated: true };
+    }
+
+    const gate = await requireManagerSession();
+    if (!gate.ok || !gate.supabase) {
+        return { success: false, error: gate.error ?? 'Acceso denegado' };
+    }
+
+    const id = String(employeeId ?? '').trim();
+    if (!id) return { success: false, error: 'Empleado no indicado' };
+
+    const normalized = String(bankAccount ?? '').replace(/\s+/g, '').toUpperCase();
+    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(normalized)) {
+        return { success: false, error: 'IBAN no válido' };
+    }
+
+    const { error } = await gate.supabase.from('profiles').update({ bank_account: normalized }).eq('id', id);
     if (error) {
         return { success: false, error: error.message };
     }

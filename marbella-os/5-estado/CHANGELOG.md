@@ -17,7 +17,9 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **El recuento pendiente muestra lo contado, no la comparación con el stock teórico.** Al abrir un recuento pendiente, gerencia ve la cantidad de barra, la de cámara y el total que introdujo quien contó. El total físico y la cantidad teórica siguen guardándose para que la certificación calcule la diferencia. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).
 
-- **El encargo se imprime también como comanda de cocina.** El icono del gorro de cocina en el modal del pedido genera un PDF con el estilo del presupuesto pero sin precios ni datos fiscales: comensales, fecha, hora, productos con sus observaciones y cantidades. Admite los mismos idiomas (català, español, english) y un campo de observaciones que, si se rellena, aparece al final del documento; si se deja vacío, no se imprime. [DOCUMENTOS-IMPRESOS](../2-diseno/DOCUMENTOS-IMPRESOS.md).
+- **Master edita el contacto y los datos bancarios de la ficha.** En `/profile`, los modales de «Contacto» y «Datos bancarios» ganan el lápiz de edición para el usuario master: teléfono e IBAN se guardan desde la propia ficha del empleado, con validación de 9 dígitos y de formato IBAN. [ACTORES-Y-ROLES](../1-producto/ACTORES-Y-ROLES.md).
+
+- **El encargo se imprime también como comanda de cocina.** El icono del gorro de cocina en el modal del pedido genera un PDF con el estilo del presupuesto pero sin precios ni datos fiscales: comensales, fecha, hora, productos con sus observaciones y cantidades. Admite los mismos idiomas (català, español, english) y un campo de observaciones que, si se rellena, aparece al final del documento; si se deja vacío, no se imprime. La comanda muestra el logo y el nombre alineados, sin el rótulo «Comanda»; la fila de datos es Fecha, Hora, Comensales y Cliente, con cada valor junto a su concepto; y solo lleva comida: las bebidas (categorías «Bebidas», «Cafetería») se excluyen. [DOCUMENTOS-IMPRESOS](../2-diseno/DOCUMENTOS-IMPRESOS.md).
 
 ## 2026-09-30
 

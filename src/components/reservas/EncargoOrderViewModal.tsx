@@ -19,6 +19,8 @@ import {
   formatEncargoProductLabel,
   formatEncargoProductNote,
 } from '@/lib/encargo-staff-helpers'
+import { isDrinkConsumptionRecipe } from '@/lib/staff-consumption-display'
+import { createClient } from '@/utils/supabase/client'
 import {
   createEncargoPdfPreviewWindow,
   generateEncargoPdf,
@@ -36,6 +38,33 @@ function formatEncargoPrintDate(ymd: string) {
   if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return ymd
   const [y, m, d] = parts
   return `${d}/${String(m).padStart(2, '0')}/${String(y % 100).padStart(2, '0')}`
+}
+
+/**
+ * La comanda de cocina solo lleva comida: descarta los productos de bebidas
+ * (categorías «Bebidas», «Cafetería»…) según el catálogo de productos de evento.
+ * Si no se puede resolver la categoría, se mantiene la línea.
+ */
+async function filterKitchenItems(items: EventOrderItem[]): Promise<EventOrderItem[]> {
+  if (items.length === 0) return items
+  const productIds = Array.from(new Set(items.map((it) => it.product_id)))
+  try {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('event_products')
+      .select('product_id, name, category')
+      .in('product_id', productIds)
+    if (error || !data) return items
+    const drinkIds = new Set(
+      data
+        .filter((row) => isDrinkConsumptionRecipe({ name: row.name, category: row.category }))
+        .map((row) => row.product_id),
+    )
+    if (drinkIds.size === 0) return items
+    return items.filter((it) => !drinkIds.has(it.product_id))
+  } catch {
+    return items
+  }
 }
 
 export function EncargoOrderViewModal({
@@ -173,6 +202,16 @@ export function EncargoOrderViewModal({
     if (comandaBusy || items.length === 0) return
     setComandaBusy(true)
     try {
+      const kitchenItems = await filterKitchenItems(items)
+      if (kitchenItems.length === 0) {
+        try {
+          previewWindow?.close()
+        } catch {
+          // La pestaña puede haber sido cerrada por el usuario.
+        }
+        toast.error('No hay comida en este pedido: la comanda quedaría vacía.')
+        return
+      }
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       const pdf = await generateEncargoPdf(
         'comanda',
@@ -186,7 +225,7 @@ export function EncargoOrderViewModal({
           language,
           observations: observations.trim() || null,
         },
-        items
+        kitchenItems
       )
       openEncargoPdf(pdf, previewWindow)
     } catch (error) {

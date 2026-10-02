@@ -595,8 +595,22 @@ function ProfileContent() {
                 canEdit={canManageLaborConditions}
                 onSaved={() => void fetchInitialData()}
             />
-            <ContactoModal isOpen={modalContacto} onClose={() => setModalContacto(false)} phone={profile.phone} />
-            <DatosBancariosModal isOpen={modalDatosBancarios} onClose={() => setModalDatosBancarios(false)} iban={profile.bank_account} />
+            <ContactoModal
+                isOpen={modalContacto}
+                onClose={() => setModalContacto(false)}
+                phone={profile.phone}
+                employeeId={profile.id}
+                canEdit={canManageLaborConditions}
+                onSaved={() => void fetchInitialData()}
+            />
+            <DatosBancariosModal
+                isOpen={modalDatosBancarios}
+                onClose={() => setModalDatosBancarios(false)}
+                iban={profile.bank_account}
+                employeeId={profile.id}
+                canEdit={canManageLaborConditions}
+                onSaved={() => void fetchInitialData()}
+            />
             <NominasMenuModal isOpen={nominasMenuOpen} onClose={() => setNominasMenuOpen(false)} onSelect={handleNominasMenuSelect} />
             <NominasModal isOpen={nominasListOpen} onClose={() => setNominasListOpen(false)} targetUserId={viewingOtherProfile ? profile.id : undefined} isManager={isManager} />
             <ComunicadosModal isOpen={comunicadosOpen} onClose={() => setComunicadosOpen(false)} userId={profile.id} isManager={isManager} />

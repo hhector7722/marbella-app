@@ -65,6 +65,8 @@ const COPY = {
     comanda: 'Comanda',
     note: 'Observación',
     observations: 'Observaciones',
+    dateShort: 'Fecha',
+    timeShort: 'Hora',
   },
   ca: {
     invoice: 'Factura',
@@ -89,6 +91,8 @@ const COPY = {
     comanda: 'Comanda',
     note: 'Observació',
     observations: 'Observacions',
+    dateShort: 'Data',
+    timeShort: 'Hora',
   },
   en: {
     invoice: 'Invoice',
@@ -113,6 +117,8 @@ const COPY = {
     comanda: 'Kitchen order',
     note: 'Note',
     observations: 'Observations',
+    dateShort: 'Date',
+    timeShort: 'Time',
   },
 } as const
 
@@ -410,37 +416,58 @@ function drawKitchenHeader(doc: PdfDoc, logoDataUrl: string | null) {
   doc.setTextColor(...TEXT)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(16)
-  doc.text(COMPANY.tradeName, textX, top + 4.5)
+  doc.text(COMPANY.tradeName, textX, top + logoSize / 2, { baseline: 'middle' })
 
   doc.setDrawColor(...LINE)
   doc.setLineWidth(0.2)
   doc.line(left, top + logoSize + 5, 196, top + logoSize + 5)
 }
 
-function drawKitchenTitle(doc: PdfDoc, meta: EncargoPdfMeta, y: number) {
-  const copy = copyFor(meta.language)
-  doc.setTextColor(...TEXT)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.text(copy.comanda.toUpperCase(), 14, y)
-
-  if (meta.encargoName.trim()) {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(...MUTED)
-    doc.text(meta.encargoName, 196, y, { align: 'right' })
-  }
-}
-
 function drawKitchenMeta(doc: PdfDoc, meta: EncargoPdfMeta, y: number) {
   const copy = copyFor(meta.language)
-  const colW = 58
-  const xs = [14, 80, 146]
   const guests = meta.guestCount != null && meta.guestCount > 0 ? String(meta.guestCount) : '—'
+  const client = meta.encargoName.trim() || '—'
+  const fields: Array<[string, string]> = [
+    [copy.dateShort, meta.encargoDate],
+    [copy.timeShort, meta.encargoTime],
+    [copy.guests, guests],
+    [copy.client, client],
+  ]
 
-  drawMetaInline(doc, copy.date, meta.encargoDate, xs[0], y, colW)
-  drawMetaInline(doc, copy.time, meta.encargoTime, xs[1], y, colW)
-  drawMetaInline(doc, copy.guests, guests, xs[2], y, colW)
+  const labelSize = 6.8
+  const valueSize = 9
+  const gap = 2
+  const colGap = 7
+  const maxWidth = 182
+  let x = 14
+
+  for (const [label, value] of fields) {
+    const labelText = label.toUpperCase()
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(labelSize)
+    const labelWidth = doc.getTextWidth(labelText)
+
+    // Trunca el valor para que cada campo quepa en el ancho disponible.
+    const remaining = maxWidth - (x - 14)
+    let shownValue = value
+    doc.setFontSize(valueSize)
+    while (shownValue.length > 1 && labelWidth + gap + doc.getTextWidth(shownValue) > remaining) {
+      shownValue = shownValue.slice(0, -1)
+    }
+    const valueWidth = doc.getTextWidth(shownValue)
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(labelSize)
+    doc.setTextColor(...MUTED)
+    doc.text(labelText, x, y)
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(valueSize)
+    doc.setTextColor(...TEXT)
+    doc.text(shownValue, x + labelWidth + gap, y)
+
+    x += labelWidth + gap + valueWidth + colGap
+  }
 }
 
 function drawObservations(
@@ -538,8 +565,7 @@ export async function generateEncargoPdf(
 
   if (kind === 'comanda') {
     drawKitchenHeader(doc, logoDataUrl)
-    drawKitchenTitle(doc, meta, 39)
-    drawKitchenMeta(doc, meta, 49)
+    drawKitchenMeta(doc, meta, 40)
 
     const body = items.map((item) => {
       const quantity = Math.max(0, Number(item.quantity) || 0)
@@ -550,7 +576,7 @@ export async function generateEncargoPdf(
       ]
     })
 
-    const tableStartY = 67
+    const tableStartY = 60
     let headerDrawnOnPage = -1
 
     autoTable(doc, {
@@ -578,7 +604,7 @@ export async function generateEncargoPdf(
       alternateRowStyles: { fillColor: SOFT },
       columnStyles: {
         0: { cellWidth: 'auto', fontStyle: 'bold' },
-        1: { cellWidth: 48, textColor: MUTED, fontSize: 8 },
+        1: { cellWidth: 72, textColor: MUTED, fontSize: 8 },
         2: { cellWidth: 20, halign: 'right', fontStyle: 'bold' },
       },
       willDrawCell: (data) => {
