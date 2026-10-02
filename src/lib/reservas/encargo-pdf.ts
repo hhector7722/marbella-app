@@ -437,37 +437,37 @@ function drawKitchenMeta(doc: PdfDoc, meta: EncargoPdfMeta, y: number) {
   const labelSize = 6.8
   const valueSize = 9
   const gap = 2
-  const colGap = 7
-  const maxWidth = 182
-  let x = 14
+  const between = 8
+  const startX = 14
+  const totalWidth = 182
+  const columnWidth = (totalWidth - between * (fields.length - 1)) / fields.length
 
-  for (const [label, value] of fields) {
+  fields.forEach(([label, value], index) => {
+    const x = startX + index * (columnWidth + between)
     const labelText = label.toUpperCase()
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(labelSize)
-    const labelWidth = doc.getTextWidth(labelText)
-
-    // Trunca el valor para que cada campo quepa en el ancho disponible.
-    const remaining = maxWidth - (x - 14)
-    let shownValue = value
-    doc.setFontSize(valueSize)
-    while (shownValue.length > 1 && labelWidth + gap + doc.getTextWidth(shownValue) > remaining) {
-      shownValue = shownValue.slice(0, -1)
-    }
-    const valueWidth = doc.getTextWidth(shownValue)
 
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(labelSize)
     doc.setTextColor(...MUTED)
+    const labelWidth = doc.getTextWidth(labelText)
     doc.text(labelText, x, y)
+
+    // Trunca el valor si supera el ancho de su columna.
+    const available = Math.max(4, columnWidth - labelWidth - gap)
+    doc.setFontSize(valueSize)
+    let shownValue = value
+    while (shownValue.length > 1 && doc.getTextWidth(shownValue) > available) {
+      shownValue = shownValue.slice(0, -1)
+    }
+    if (shownValue !== value && shownValue.length > 3) {
+      shownValue = `${shownValue.slice(0, -1)}…`
+    }
 
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(valueSize)
     doc.setTextColor(...TEXT)
     doc.text(shownValue, x + labelWidth + gap, y)
-
-    x += labelWidth + gap + valueWidth + colGap
-  }
+  })
 }
 
 function drawObservations(
