@@ -7,8 +7,31 @@ export type ManualPriceResult =
   | { ok: true; changed: boolean; currentPrice: number; purchaseUnit: string }
   | { ok: false; message: string }
 
+export type IngredientCanonicalConfig = {
+  currentPrice: number
+  purchaseUnit: string
+  baseUnit: string
+  recipeUnit: string
+  densityGPerMl: number | null
+}
+
 export type ManualPriceUnitResult =
-  | { ok: true; priceChanged: boolean; unitChanged: boolean; currentPrice: number; purchaseUnit: string }
+  | {
+      ok: true
+      priceChanged: boolean
+      unitChanged: boolean
+      recipeUnitChanged: boolean
+      densityChanged: boolean
+      currentPrice: number
+      purchaseUnit: string
+      baseUnit: string
+      recipeUnit: string
+      densityGPerMl: number | null
+    }
+  | { ok: false; message: string }
+
+export type IngredientCanonicalConfigResult =
+  | ({ ok: true } & IngredientCanonicalConfig)
   | { ok: false; message: string }
 
 export type ArchiveIngredientResult =
@@ -41,28 +64,21 @@ function photoFailureMessage(error: unknown): string {
   return 'No se ha podido guardar la imagen. Vuelve a intentarlo.'
 }
 
+const INGREDIENT_PHYSICAL_UNITS = new Set(['kg', 'g', 'l', 'ml', 'cl', 'ud'])
 
-export async function setIngredientPriceAndUnitAction(
-  ingredientId: string,
-  newPrice: number,
-  newPurchaseUnit: string,
-): Promise<ManualPriceUnitResult> {
-  const id = String(ingredientId ?? '').trim()
-  const price = Number(newPrice)
-  const purchaseUnit = String(newPurchaseUnit ?? '').trim().toLowerCase()
-  const allowedUnits = new Set(['kg', 'g', 'l', 'ml', 'cl', 'ud'])
+function canonicalBaseUnitForPurchaseUnit(unit: string): 'g' | 'ml' | 'ud' | null {
+  const normalized = String(unit ?? '').trim().toLowerCase()
+  if (normalized === 'kg' || normalized === 'g') return 'g'
+  if (normalized === 'l' || normalized === 'ml' || normalized === 'cl') return 'ml'
+  if (normalized === 'ud') return 'ud'
+  return null
+}
 
-  if (!id || !Number.isFinite(price) || price <= 0) {
-    return { ok: false, message: 'El precio debe ser mayor que cero.' }
-  }
-  if (!allowedUnits.has(purchaseUnit)) {
-    return { ok: false, message: 'Selecciona una unidad de compra válida.' }
-  }
-
+async function requireIngredientManager() {
   const supabase = await createClient()
   const { data: authData, error: authError } = await supabase.auth.getUser()
   if (authError || !authData.user) {
-    return { ok: false, message: 'La sesión ha caducado. Vuelve a entrar.' }
+    return { ok: false as const, message: 'La sesión ha caducado. Vuelve a entrar.', supabase: null }
   }
 
   const { data: profile, error: profileError } = await supabase
@@ -72,12 +88,75 @@ export async function setIngredientPriceAndUnitAction(
     .maybeSingle()
 
   if (profileError || !profile || !['manager', 'admin'].includes(String(profile.role))) {
-    return { ok: false, message: 'No tienes permiso para cambiar precio o unidad.' }
+    return { ok: false as const, message: 'No tienes permiso para editar ingredientes.', supabase: null }
+  }
+  return { ok: true as const, supabase }
+}
+
+export async function getIngredientCanonicalConfigAction(
+  ingredientId: string,
+): Promise<IngredientCanonicalConfigResult> {
+  const id = String(ingredientId ?? '').trim()
+  if (!INGREDIENT_ID_RE.test(id)) return { ok: false, message: 'Ingrediente no válido.' }
+
+  const gate = await requireIngredientManager()
+  if (!gate.ok) return { ok: false, message: gate.message }
+
+  const { data, error } = await gate.supabase
+    .from('ingredients')
+    .select('current_price,purchase_unit,base_unit,recipe_unit,density_g_per_ml')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (error || !data) return { ok: false, message: 'No se ha encontrado el ingrediente.' }
+
+  return {
+    ok: true,
+    currentPrice: Number(data.current_price),
+    purchaseUnit: String(data.purchase_unit ?? 'ud').trim().toLowerCase(),
+    baseUnit: String(data.base_unit ?? '').trim().toLowerCase(),
+    recipeUnit: String(data.recipe_unit ?? data.purchase_unit ?? 'ud').trim().toLowerCase(),
+    densityGPerMl: data.density_g_per_ml == null ? null : Number(data.density_g_per_ml),
+  }
+}
+
+
+export async function setIngredientPriceAndUnitAction(
+  ingredientId: string,
+  newPrice: number,
+  newPurchaseUnit: string,
+  newRecipeUnit?: string | null,
+  newDensityGPerMl?: number | null,
+): Promise<ManualPriceUnitResult> {
+  const id = String(ingredientId ?? '').trim()
+  const price = Number(newPrice)
+  const purchaseUnit = String(newPurchaseUnit ?? '').trim().toLowerCase()
+  const recipeUnit = String(newRecipeUnit ?? purchaseUnit).trim().toLowerCase()
+  const density =
+    newDensityGPerMl == null || String(newDensityGPerMl).trim() === ''
+      ? null
+      : Number(newDensityGPerMl)
+  const baseUnit = canonicalBaseUnitForPurchaseUnit(purchaseUnit)
+
+  if (!id || !Number.isFinite(price) || price <= 0) {
+    return { ok: false, message: 'El precio debe ser mayor que cero.' }
+  }
+  if (!INGREDIENT_PHYSICAL_UNITS.has(purchaseUnit) || !baseUnit) {
+    return { ok: false, message: 'Selecciona una unidad de compra válida.' }
+  }
+  if (!INGREDIENT_PHYSICAL_UNITS.has(recipeUnit)) {
+    return { ok: false, message: 'Selecciona una unidad de receta válida.' }
+  }
+  if (density != null && (!Number.isFinite(density) || density <= 0)) {
+    return { ok: false, message: 'La densidad debe ser mayor que cero o quedar vacía.' }
   }
 
-  const { data: existing, error: existingError } = await supabase
+  const gate = await requireIngredientManager()
+  if (!gate.ok) return { ok: false, message: gate.message }
+
+  const { data: existing, error: existingError } = await gate.supabase
     .from('ingredients')
-    .select('current_price,purchase_unit')
+    .select('current_price,purchase_unit,base_unit,recipe_unit,density_g_per_ml')
     .eq('id', id)
     .maybeSingle()
 
@@ -86,27 +165,50 @@ export async function setIngredientPriceAndUnitAction(
   }
 
   const oldPrice = Number(existing.current_price)
-  const oldUnit = String(existing.purchase_unit ?? '').trim().toLowerCase()
-  const priceChanged = !Number.isFinite(oldPrice) || Math.abs(oldPrice - price) >= 1e-9
-  const unitChanged = oldUnit !== purchaseUnit
+  const oldPurchaseUnit = String(existing.purchase_unit ?? '').trim().toLowerCase()
+  const oldBaseUnit = String(existing.base_unit ?? '').trim().toLowerCase()
+  const oldRecipeUnit = String(existing.recipe_unit ?? oldPurchaseUnit).trim().toLowerCase()
+  const oldDensity = existing.density_g_per_ml == null ? null : Number(existing.density_g_per_ml)
 
-  if (unitChanged) {
-    const { error: unitError } = await supabase
+  const priceChanged = !Number.isFinite(oldPrice) || Math.abs(oldPrice - price) >= 1e-9
+  const unitChanged = oldPurchaseUnit !== purchaseUnit || oldBaseUnit !== baseUnit
+  const recipeUnitChanged = oldRecipeUnit !== recipeUnit
+  const densityChanged =
+    oldDensity == null || density == null
+      ? oldDensity !== density
+      : Math.abs(oldDensity - density) >= 1e-9
+
+  if (unitChanged || recipeUnitChanged || densityChanged) {
+    const { error: unitError } = await gate.supabase
       .from('ingredients')
-      .update({ purchase_unit: purchaseUnit })
+      .update({
+        purchase_unit: purchaseUnit,
+        unit_type: purchaseUnit,
+        base_unit: baseUnit,
+        unit: baseUnit,
+        recipe_unit: recipeUnit,
+        density_g_per_ml: density,
+      })
       .eq('id', id)
+
     if (unitError) {
-      return { ok: false, message: 'No se ha podido guardar la unidad de compra.' }
+      const frozen = String(unitError.message ?? '').includes('K2_DOMAIN_WRITE_FREEZE')
+      return {
+        ok: false,
+        message: frozen
+          ? 'Las unidades están temporalmente bloqueadas por una migración. Inténtalo de nuevo cuando termine.'
+          : 'No se han podido guardar las unidades o la densidad del ingrediente.',
+      }
     }
   }
 
   if (priceChanged) {
-    const { data, error } = await supabase.rpc('set_ingredient_current_price', {
+    const { data, error } = await gate.supabase.rpc('set_ingredient_current_price', {
       p_ingredient_id: id,
       p_new_price: price,
     })
     if (error) {
-      return { ok: false, message: 'La unidad se ha guardado, pero no se ha podido guardar el precio.' }
+      return { ok: false, message: 'Las unidades se han guardado, pero no se ha podido guardar el precio.' }
     }
     const result = data as Record<string, unknown> | null
     if (!result || result.ok !== true) {
@@ -121,8 +223,13 @@ export async function setIngredientPriceAndUnitAction(
     ok: true,
     priceChanged,
     unitChanged,
+    recipeUnitChanged,
+    densityChanged,
     currentPrice: price,
     purchaseUnit,
+    baseUnit,
+    recipeUnit,
+    densityGPerMl: density,
   }
 }
 
