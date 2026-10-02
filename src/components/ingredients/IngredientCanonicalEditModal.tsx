@@ -90,7 +90,9 @@ export function IngredientCanonicalEditModal({
       : newPrice.trim() !== ''
   const unitChanged = newUnit !== (ingredient.purchase_unit || 'ud')
   const imageChanged = selectedFile != null
-  const canSave = (imageChanged || priceChanged || unitChanged) && validPrice
+  const canSave =
+    (imageChanged && !priceChanged && !unitChanged) ||
+    ((priceChanged || unitChanged) && validPrice)
   const unit = newUnit || 'ud'
   const isArchived = Boolean(ingredient.archived_at)
   const displayImageSrc = previewBlobUrl ?? baselineImageUrl
@@ -136,7 +138,7 @@ export function IngredientCanonicalEditModal({
   }
 
   async function save() {
-    if (!validPrice) {
+    if ((priceChanged || unitChanged) && !validPrice) {
       toast.error('El precio debe ser mayor que cero.')
       return
     }
