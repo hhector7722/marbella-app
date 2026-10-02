@@ -524,7 +524,7 @@ export function LineMappingModal({
     [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor, isVariableWeightMode]
   )
 
-  async function handleSaveMapping() {
+  async function handleSaveMapping(options?: { refresh?: boolean; hydrate?: boolean }) {
     if (!line || !invoiceId || !ingredientId) {
       toast.error('Selecciona un ingrediente del catálogo.')
       return
@@ -612,13 +612,15 @@ export function LineMappingModal({
         return
       }
 
-      setMappingVersionId(res.mappingVersionId)
-      setSavedProposalFingerprint(proposalFingerprint)
-      setReceiptPreview(null)
-      setConfirmationKey(null)
-      const orderRes = await listReceiptOrderAllocationOptionsAction({ ingredientId })
-      if (orderRes.success) setOrderOptions(orderRes.items)
-      else toast.error(orderRes.message)
+      if (options?.hydrate !== false) {
+        setMappingVersionId(res.mappingVersionId)
+        setSavedProposalFingerprint(proposalFingerprint)
+        setReceiptPreview(null)
+        setConfirmationKey(null)
+        const orderRes = await listReceiptOrderAllocationOptionsAction({ ingredientId })
+        if (orderRes.success) setOrderOptions(orderRes.items)
+        else toast.error(orderRes.message)
+      }
 
       const lineLabel = line.original_name?.trim() || line.id
       const ingredientName = ingredientLabel?.trim() || ingredientId || '?'
@@ -627,7 +629,7 @@ export function LineMappingModal({
         ingredientId: ingredientId ?? undefined,
       })
 
-      await onSuccess()
+      if (options?.refresh !== false) await onSuccess()
       return res.mappingVersionId
     } finally {
       setSaving(false)
@@ -684,40 +686,95 @@ export function LineMappingModal({
   }
 
   async function handleReview() {
-    if (mappingVersionId && savedProposalFingerprint === proposalFingerprint) {
-      await handlePreview()
+    if (!line) return
+    const currentLineId = line.id
+    const currentFingerprint = proposalFingerprint
+    const existingPrepared = preparedReviewByLineRef.current.get(currentLineId)
+    if (
+      existingPrepared
+      && mappingVersionId === existingPrepared.mappingVersionId
+      && savedProposalFingerprint === currentFingerprint
+    ) {
+      setReceiptPreview(existingPrepared.receiptPreview)
+      setConfirmationKey(existingPrepared.confirmationKey)
       return
     }
-    const savedMappingId = await handleSaveMapping()
-    if (!savedMappingId) return
-    await handlePreview(savedMappingId, true)
+
+    onBackgroundStateChange?.(currentLineId, 'review')
+    toast.message('Revisión iniciada en segundo plano. Puedes seguir con otra línea.')
+
+    const run = async () => {
+      const savedMappingId = await handleSaveMapping({ refresh: false, hydrate: false })
+      if (!savedMappingId) return
+
+      const previewResult = await previewReceiptLineAction({
+        lineId: currentLineId,
+        mappingVersionId: savedMappingId,
+        allocations: [],
+      })
+      if (!previewResult.success) {
+        toast.error(previewResult.message)
+        return
+      }
+
+      const prepared = {
+        mappingVersionId: savedMappingId,
+        receiptPreview: previewResult.preview,
+        confirmationKey: crypto.randomUUID(),
+      }
+      preparedReviewByLineRef.current.set(currentLineId, prepared)
+      toast.success('Revisión preparada. Ya puedes confirmar la recepción cuando quieras.')
+      await onSuccess()
+    }
+
+    handleClose()
+    void run()
+      .catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : 'No se pudo completar la revisión.')
+      })
+      .finally(() => {
+        onBackgroundStateChange?.(currentLineId, null)
+      })
   }
 
-  async function handleConfirm() {
+  function handleConfirm() {
     if (!line || !mappingVersionId || !receiptPreview || !confirmationKey) {
       toast.error('Prepara y revisa la vista previa antes de confirmar.')
       return
     }
     const allocations = buildAllocations()
     if (!allocations) return
-    setConfirming(true)
-    try {
+
+    const currentLineId = line.id
+    const currentMappingVersionId = mappingVersionId
+    const currentConfirmationKey = confirmationKey
+    onBackgroundStateChange?.(currentLineId, 'confirm')
+    toast.message('Confirmación iniciada en segundo plano. Puedes seguir trabajando.')
+
+    const run = async () => {
       const res = await applyReceiptLineAction({
-        lineId: line.id,
-        mappingVersionId,
+        lineId: currentLineId,
+        mappingVersionId: currentMappingVersionId,
         allocations,
-        idempotencyKey: confirmationKey,
+        idempotencyKey: currentConfirmationKey,
       })
       if (!res.success) {
         toast.error(res.message)
         return
       }
+      preparedReviewByLineRef.current.delete(currentLineId)
       toast.success('Recepción confirmada.')
       await onSuccess()
-      handleClose()
-    } finally {
-      setConfirming(false)
     }
+
+    handleClose()
+    void run()
+      .catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : 'No se pudo confirmar la recepción.')
+      })
+      .finally(() => {
+        onBackgroundStateChange?.(currentLineId, null)
+      })
   }
 
   function handleClose() {
