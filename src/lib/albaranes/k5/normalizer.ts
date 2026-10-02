@@ -479,7 +479,7 @@ function splitSantaTeresaProductBlob(
   const aliasPrefixes = aliases
     .map((alias) => normalizeEvidenceLabel(alias).split(' ').filter(Boolean))
     .filter((tokens) => tokens.length >= 2)
-    .map((tokens) => tokens.slice(0, Math.min(3, tokens.length)))
+    .map((tokens) => tokens.slice(0, 2))
 
   const coarse = cleaned
     .split(/\s+[012]\s+/)
@@ -512,9 +512,12 @@ function splitSantaTeresaProductBlob(
     }
 
     const uniqueStarts = [...new Set(starts)].sort((a, b) => a - b)
-    return uniqueStarts.map((wordIndex, position) => {
+    const stableStarts = uniqueStarts.filter((wordIndex, position) =>
+      position === 0 || wordIndex - uniqueStarts[position - 1]! >= 2
+    )
+    return stableStarts.map((wordIndex, position) => {
       const start = words[wordIndex]!.start
-      const nextWordIndex = uniqueStarts[position + 1]
+      const nextWordIndex = stableStarts[position + 1]
       const end = nextWordIndex == null ? chunk.length : words[nextWordIndex]!.start
       return chunk.slice(start, end).trim()
     }).filter(Boolean)
