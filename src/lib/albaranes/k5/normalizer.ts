@@ -495,13 +495,19 @@ function splitSantaTeresaProductBlob(
 
     const starts = [0]
     for (let index = 1; index < words.length - 1; index += 1) {
-      const a = words[index]!.value
-      const b = words[index + 1]!.value
-      const matched = aliasPairs.some(([x, y]) => (
-        oneEditOrEqual(a, x!)
-        && oneEditOrEqual(b, y!)
-        && ((a === x && b === y) || a !== x || b !== y)
-      ))
+      const matched = aliasPrefixes.some((prefix) => {
+        if (index + prefix.length > words.length) return false
+        let fuzzyEdits = 0
+        for (let offset = 0; offset < prefix.length; offset += 1) {
+          const observed = words[index + offset]!.value
+          const expected = prefix[offset]!
+          if (observed === expected) continue
+          if (!oneEditOrEqual(observed, expected)) return false
+          fuzzyEdits += 1
+          if (fuzzyEdits > 1) return false
+        }
+        return true
+      })
       if (matched) starts.push(index)
     }
 
