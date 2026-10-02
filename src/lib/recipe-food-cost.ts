@@ -33,12 +33,14 @@ export type RecipeFoodCostInput = {
               purchase_unit?: string;
               pack_unit_size_qty?: number | null;
               pack_unit_size_unit?: string | null;
+              density_g_per_ml?: number | null;
             }
           | {
               current_price: number;
               purchase_unit?: string;
               pack_unit_size_qty?: number | null;
               pack_unit_size_unit?: string | null;
+              density_g_per_ml?: number | null;
             }[]
           | null;
       }[]
@@ -110,6 +112,7 @@ export function getRecipeFoodCostStatus(recipe: RecipeFoodCostInput): FoodCostSt
       ? {
           pack_unit_size_qty: ingredient.pack_unit_size_qty,
           pack_unit_size_unit: ingredient.pack_unit_size_unit,
+          density_g_per_ml: ingredient.density_g_per_ml,
         }
       : undefined;
     return sum + recipeLineCost(item.quantity_gross, recipeUnit, purchaseUnit, price, pack);
@@ -119,4 +122,4 @@ export function getRecipeFoodCostStatus(recipe: RecipeFoodCostInput): FoodCostSt
 
 /** Select mínimo para calcular food cost en listados / navegación entre fichas. */
 export const RECIPE_FOOD_COST_SELECT =
-  'id, name, category, menu_category_id, sale_price, is_sellable, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit)), recipe_subrecipes!recipe_subrecipes_parent_recipe_id_fkey(id)' as const;
+  'id, name, category, menu_category_id, sale_price, is_sellable, recipe_ingredients (quantity_gross, unit, ingredients (current_price, purchase_unit, pack_unit_size_qty, pack_unit_size_unit, density_g_per_ml)), recipe_subrecipes!recipe_subrecipes_parent_recipe_id_fkey(id)' as const;
