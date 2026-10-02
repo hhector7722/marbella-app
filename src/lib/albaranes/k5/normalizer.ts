@@ -502,6 +502,13 @@ function splitSantaTeresaProductBlob(
           const observed = words[index + offset]!.value
           const expected = prefix[offset]!
           if (observed === expected) continue
+          if (
+            observed.length >= 4
+            && expected.length >= 4
+            && (observed.startsWith(expected) || expected.startsWith(observed))
+          ) {
+            continue
+          }
           if (!oneEditOrEqual(observed, expected)) return false
           fuzzyEdits += 1
           if (fuzzyEdits > 1) return false
