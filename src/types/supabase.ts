@@ -1744,6 +1744,7 @@ export type Database = {
           category: string
           created_at: string | null
           current_price: number
+          density_g_per_ml: number | null
           id: string
           image_url: string | null
           inventory_visible: boolean
@@ -1773,6 +1774,7 @@ export type Database = {
           category?: string
           created_at?: string | null
           current_price: number
+          density_g_per_ml?: number | null
           id?: string
           image_url?: string | null
           inventory_visible?: boolean
@@ -1802,6 +1804,7 @@ export type Database = {
           category?: string
           created_at?: string | null
           current_price?: number
+          density_g_per_ml?: number | null
           id?: string
           image_url?: string | null
           inventory_visible?: boolean
