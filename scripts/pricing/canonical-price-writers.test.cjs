@@ -81,6 +81,8 @@ test('la edición manual usa una acción de servidor y la RPC canónica', () => 
   assert.match(manualAction, /rpc\('set_ingredient_current_price'/)
   assert.match(canonicalEditor, /Precio actual/)
   assert.match(canonicalEditor, /Nuevo precio/)
+  assert.match(canonicalEditor, /Unidad del precio/)
+  assert.match(canonicalEditor, /setIngredientPriceAndUnitAction/)
   assert.match(canonicalEditor, /€\/\{unit\}/)
   assert.doesNotMatch(canonicalEditor, /pack_price|supplier_pricing_mode|conversion_factor/)
 })
@@ -108,6 +110,9 @@ test('la revisión de albarán no expone controles económicos internos', () => 
   assert.match(receiptReview, /Precio actual/)
   assert.match(receiptReview, /Precio nuevo/)
   assert.match(receiptReview, /Confirmar recepción/)
+  assert.match(receiptReview, /onBackgroundStateChange/)
+  assert.match(receiptReview, /IngredientCanonicalEditModal/)
+  assert.match(receiptReview, /No se puede convertir/)
   assert.doesNotMatch(receiptReview, /setIngredientCurrentPriceAction/)
 })
 

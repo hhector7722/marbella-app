@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Check, Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -36,6 +36,7 @@ import {
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
+import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal'
 type LineDimensionalDraft = {
   lineBillingUnit: string
   lineContentQty: string
@@ -90,6 +91,7 @@ export type LineMappingModalProps = {
   supplierId: number | null
   stockApplied?: boolean
   busy?: boolean
+  onBackgroundStateChange?: (lineId: string, phase: 'review' | 'confirm' | null) => void
   onClose: () => void
   onSuccess: () => void | Promise<void>
   onCreateIngredient?: () => void
@@ -104,6 +106,7 @@ export function LineMappingModal({
   supplierId,
   stockApplied = false,
   busy = false,
+  onBackgroundStateChange,
   onClose,
   onSuccess,
   onCreateIngredient,
@@ -135,6 +138,13 @@ export function LineMappingModal({
   const [previewing, setPreviewing] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [confirmationKey, setConfirmationKey] = useState<string | null>(null)
+  const [ingredientEditOpen, setIngredientEditOpen] = useState(false)
+  const preparedReviewByLineRef = useRef(new Map<string, {
+    mappingVersionId: string
+    receiptPreview: ReceiptPreview
+    confirmationKey: string
+    fingerprint: string
+  }>())
 
   const applySuggestion = useCallback(
     (
@@ -407,6 +417,33 @@ export function LineMappingModal({
     ]
   )
 
+  const presentationBlockingMessage = useMemo(() => {
+    if (!ingredientId) return 'Selecciona un ingrediente del catálogo.'
+    if (observedUnitPrice == null) return 'Indica un precio facturado válido.'
+    if (isVariableWeightMode) return null
+    if (dimensionalParsed.lineContentQty == null || dimensionalParsed.lineContentQty <= 0) {
+      return 'Indica cuánta cantidad contiene una unidad facturada.'
+    }
+    if (!dimensionalParsed.lineContentUnit) {
+      return 'Selecciona la unidad del contenido físico.'
+    }
+    if (!purchaseUnitForPresentation) {
+      return 'El ingrediente no tiene una unidad de compra válida.'
+    }
+    if (!presentationEconomics) {
+      return `No se puede convertir ${dimensionalParsed.lineContentUnit} a ${purchaseUnitForPresentation}. El albarán y el ingrediente usan unidades incompatibles. Edita la unidad del ingrediente aquí mismo.`
+    }
+    return null
+  }, [
+    ingredientId,
+    observedUnitPrice,
+    isVariableWeightMode,
+    dimensionalParsed.lineContentQty,
+    dimensionalParsed.lineContentUnit,
+    purchaseUnitForPresentation,
+    presentationEconomics,
+  ])
+
   const billingMassVolumeNorm = useMemo(
     () => billingMassVolumeNormForAuto(dimensional.lineBillingUnit, line?.line_unit),
     [dimensional.lineBillingUnit, line?.line_unit]
@@ -488,7 +525,17 @@ export function LineMappingModal({
     [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor, isVariableWeightMode]
   )
 
-  async function handleSaveMapping() {
+  useEffect(() => {
+    if (!open || !line || loading) return
+    const prepared = preparedReviewByLineRef.current.get(line.id)
+    if (!prepared || prepared.fingerprint !== proposalFingerprint) return
+    setMappingVersionId(prepared.mappingVersionId)
+    setSavedProposalFingerprint(proposalFingerprint)
+    setReceiptPreview(prepared.receiptPreview)
+    setConfirmationKey(prepared.confirmationKey)
+  }, [open, line, loading, proposalFingerprint])
+
+  async function handleSaveMapping(options?: { refresh?: boolean; hydrate?: boolean }) {
     if (!line || !invoiceId || !ingredientId) {
       toast.error('Selecciona un ingrediente del catálogo.')
       return
@@ -576,13 +623,15 @@ export function LineMappingModal({
         return
       }
 
-      setMappingVersionId(res.mappingVersionId)
-      setSavedProposalFingerprint(proposalFingerprint)
-      setReceiptPreview(null)
-      setConfirmationKey(null)
-      const orderRes = await listReceiptOrderAllocationOptionsAction({ ingredientId })
-      if (orderRes.success) setOrderOptions(orderRes.items)
-      else toast.error(orderRes.message)
+      if (options?.hydrate !== false) {
+        setMappingVersionId(res.mappingVersionId)
+        setSavedProposalFingerprint(proposalFingerprint)
+        setReceiptPreview(null)
+        setConfirmationKey(null)
+        const orderRes = await listReceiptOrderAllocationOptionsAction({ ingredientId })
+        if (orderRes.success) setOrderOptions(orderRes.items)
+        else toast.error(orderRes.message)
+      }
 
       const lineLabel = line.original_name?.trim() || line.id
       const ingredientName = ingredientLabel?.trim() || ingredientId || '?'
@@ -591,7 +640,7 @@ export function LineMappingModal({
         ingredientId: ingredientId ?? undefined,
       })
 
-      await onSuccess()
+      if (options?.refresh !== false) await onSuccess()
       return res.mappingVersionId
     } finally {
       setSaving(false)
@@ -648,40 +697,96 @@ export function LineMappingModal({
   }
 
   async function handleReview() {
-    if (mappingVersionId && savedProposalFingerprint === proposalFingerprint) {
-      await handlePreview()
+    if (!line) return
+    const currentLineId = line.id
+    const currentFingerprint = proposalFingerprint
+    const existingPrepared = preparedReviewByLineRef.current.get(currentLineId)
+    if (
+      existingPrepared
+      && mappingVersionId === existingPrepared.mappingVersionId
+      && savedProposalFingerprint === currentFingerprint
+    ) {
+      setReceiptPreview(existingPrepared.receiptPreview)
+      setConfirmationKey(existingPrepared.confirmationKey)
       return
     }
-    const savedMappingId = await handleSaveMapping()
-    if (!savedMappingId) return
-    await handlePreview(savedMappingId, true)
+
+    onBackgroundStateChange?.(currentLineId, 'review')
+    toast.message('Revisión iniciada en segundo plano. Puedes seguir con otra línea.')
+
+    const run = async () => {
+      const savedMappingId = await handleSaveMapping({ refresh: false, hydrate: false })
+      if (!savedMappingId) return
+
+      const previewResult = await previewReceiptLineAction({
+        lineId: currentLineId,
+        mappingVersionId: savedMappingId,
+        allocations: [],
+      })
+      if (!previewResult.success) {
+        toast.error(previewResult.message)
+        return
+      }
+
+      const prepared = {
+        mappingVersionId: savedMappingId,
+        receiptPreview: previewResult.preview,
+        confirmationKey: crypto.randomUUID(),
+        fingerprint: currentFingerprint,
+      }
+      preparedReviewByLineRef.current.set(currentLineId, prepared)
+      toast.success('Revisión preparada. Ya puedes confirmar la recepción cuando quieras.')
+      await onSuccess()
+    }
+
+    handleClose()
+    void run()
+      .catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : 'No se pudo completar la revisión.')
+      })
+      .finally(() => {
+        onBackgroundStateChange?.(currentLineId, null)
+      })
   }
 
-  async function handleConfirm() {
+  function handleConfirm() {
     if (!line || !mappingVersionId || !receiptPreview || !confirmationKey) {
       toast.error('Prepara y revisa la vista previa antes de confirmar.')
       return
     }
     const allocations = buildAllocations()
     if (!allocations) return
-    setConfirming(true)
-    try {
+
+    const currentLineId = line.id
+    const currentMappingVersionId = mappingVersionId
+    const currentConfirmationKey = confirmationKey
+    onBackgroundStateChange?.(currentLineId, 'confirm')
+    toast.message('Confirmación iniciada en segundo plano. Puedes seguir trabajando.')
+
+    const run = async () => {
       const res = await applyReceiptLineAction({
-        lineId: line.id,
-        mappingVersionId,
+        lineId: currentLineId,
+        mappingVersionId: currentMappingVersionId,
         allocations,
-        idempotencyKey: confirmationKey,
+        idempotencyKey: currentConfirmationKey,
       })
       if (!res.success) {
         toast.error(res.message)
         return
       }
+      preparedReviewByLineRef.current.delete(currentLineId)
       toast.success('Recepción confirmada.')
       await onSuccess()
-      handleClose()
-    } finally {
-      setConfirming(false)
     }
+
+    handleClose()
+    void run()
+      .catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : 'No se pudo confirmar la recepción.')
+      })
+      .finally(() => {
+        onBackgroundStateChange?.(currentLineId, null)
+      })
   }
 
   function handleClose() {
@@ -699,6 +804,7 @@ export function LineMappingModal({
   const headerTitle = `${line.original_name || 'Sin nombre'} — ${formatLineTotal(line.total_price)}`
 
   return (
+    <>
     <Modal
       open={open}
       onClose={handleClose}
@@ -816,6 +922,16 @@ export function LineMappingModal({
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="tertiary"
+                        instance="albaran-line-mapping-edit-ingredient"
+                        className="shrink-0"
+                        icon={<Pencil className="h-3.5 w-3.5" />}
+                        onClick={() => setIngredientEditOpen(true)}
+                      >
+                        Editar
+                      </Button>
                       <Button
                         type="button"
                         variant="tertiary"
@@ -999,7 +1115,7 @@ export function LineMappingModal({
                         </div>
                       ) : (
                         <p className="mx-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-900">
-                          Completa el contenido físico para calcular automáticamente el precio de compra.
+                          {presentationBlockingMessage ?? 'No se puede calcular el precio de compra con estos datos.'}
                         </p>
                       )}
                     </>
@@ -1121,5 +1237,34 @@ export function LineMappingModal({
           )}
       </div>
     </Modal>
+
+    {ingredientEditOpen && ingredientId ? (
+      <IngredientCanonicalEditModal
+        ingredient={{
+          id: ingredientId,
+          name: ingredientLabel?.trim() || 'Ingrediente',
+          current_price: ingredientCurrentPrice ?? 0,
+          purchase_unit: ingredientPurchaseUnit || 'ud',
+        }}
+        layer="derived"
+        parentInstance="albaran-line-mapping"
+        onClose={() => setIngredientEditOpen(false)}
+        onSaved={(updated) => {
+          if (updated) {
+            setIngredientCurrentPrice(updated.currentPrice)
+            setIngredientPurchaseUnit(updated.purchaseUnit)
+            setSelectedIngredientMeta((current) => current ? {
+              ...current,
+              purchase_unit: updated.purchaseUnit,
+            } : current)
+            setReceiptPreview(null)
+            setMappingVersionId(null)
+            setSavedProposalFingerprint(null)
+            preparedReviewByLineRef.current.delete(line.id)
+          }
+        }}
+      />
+    ) : null}
+  </>
   )
 }

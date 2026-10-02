@@ -7,6 +7,10 @@ export type ManualPriceResult =
   | { ok: true; changed: boolean; currentPrice: number; purchaseUnit: string }
   | { ok: false; message: string }
 
+export type ManualPriceUnitResult =
+  | { ok: true; priceChanged: boolean; unitChanged: boolean; currentPrice: number; purchaseUnit: string }
+  | { ok: false; message: string }
+
 export type ArchiveIngredientResult =
   | { ok: true; archivedAt: string | null }
   | { ok: false; message: string }
@@ -35,6 +39,91 @@ function photoFailureMessage(error: unknown): string {
     return msg
   }
   return 'No se ha podido guardar la imagen. Vuelve a intentarlo.'
+}
+
+
+export async function setIngredientPriceAndUnitAction(
+  ingredientId: string,
+  newPrice: number,
+  newPurchaseUnit: string,
+): Promise<ManualPriceUnitResult> {
+  const id = String(ingredientId ?? '').trim()
+  const price = Number(newPrice)
+  const purchaseUnit = String(newPurchaseUnit ?? '').trim().toLowerCase()
+  const allowedUnits = new Set(['kg', 'g', 'l', 'ml', 'cl', 'ud'])
+
+  if (!id || !Number.isFinite(price) || price <= 0) {
+    return { ok: false, message: 'El precio debe ser mayor que cero.' }
+  }
+  if (!allowedUnits.has(purchaseUnit)) {
+    return { ok: false, message: 'Selecciona una unidad de compra válida.' }
+  }
+
+  const supabase = await createClient()
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  if (authError || !authData.user) {
+    return { ok: false, message: 'La sesión ha caducado. Vuelve a entrar.' }
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', authData.user.id)
+    .maybeSingle()
+
+  if (profileError || !profile || !['manager', 'admin'].includes(String(profile.role))) {
+    return { ok: false, message: 'No tienes permiso para cambiar precio o unidad.' }
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from('ingredients')
+    .select('current_price,purchase_unit')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (existingError || !existing) {
+    return { ok: false, message: 'No se ha encontrado el ingrediente.' }
+  }
+
+  const oldPrice = Number(existing.current_price)
+  const oldUnit = String(existing.purchase_unit ?? '').trim().toLowerCase()
+  const priceChanged = !Number.isFinite(oldPrice) || Math.abs(oldPrice - price) >= 1e-9
+  const unitChanged = oldUnit !== purchaseUnit
+
+  if (unitChanged) {
+    const { error: unitError } = await supabase
+      .from('ingredients')
+      .update({ purchase_unit: purchaseUnit })
+      .eq('id', id)
+    if (unitError) {
+      return { ok: false, message: 'No se ha podido guardar la unidad de compra.' }
+    }
+  }
+
+  if (priceChanged) {
+    const { data, error } = await supabase.rpc('set_ingredient_current_price', {
+      p_ingredient_id: id,
+      p_new_price: price,
+    })
+    if (error) {
+      return { ok: false, message: 'La unidad se ha guardado, pero no se ha podido guardar el precio.' }
+    }
+    const result = data as Record<string, unknown> | null
+    if (!result || result.ok !== true) {
+      return {
+        ok: false,
+        message: typeof result?.message === 'string' ? result.message : 'No se ha podido guardar el precio.',
+      }
+    }
+  }
+
+  return {
+    ok: true,
+    priceChanged,
+    unitChanged,
+    currentPrice: price,
+    purchaseUnit,
+  }
 }
 
 export async function setIngredientCurrentPriceAction(
