@@ -491,6 +491,7 @@ function RecipeDetailContent() {
         return {
             pack_unit_size_qty: i.pack_unit_size_qty,
             pack_unit_size_unit: i.pack_unit_size_unit,
+            density_g_per_ml: i.density_g_per_ml,
         };
     };
 
