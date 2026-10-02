@@ -1824,6 +1824,7 @@ export default function AlbaranesHistoricoClient({
                               <div
                                 key={l.id}
                                 onClick={() => {
+                                  if (backgroundPhase) return
                                   setLineForMappingModal(null)
                                   setLineForEvidenceModal(null)
                                   setSupplierPickerOpen(false)
