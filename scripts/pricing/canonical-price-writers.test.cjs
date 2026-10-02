@@ -82,6 +82,9 @@ test('la edición manual usa una acción de servidor y la RPC canónica', () => 
   assert.match(canonicalEditor, /Precio actual/)
   assert.match(canonicalEditor, /Nuevo precio/)
   assert.match(canonicalEditor, /Unidad del precio/)
+  assert.match(canonicalEditor, /Unidad por defecto en recetas/)
+  assert.match(canonicalEditor, /Densidad/)
+  assert.match(canonicalEditor, /getIngredientCanonicalConfigAction/)
   assert.match(canonicalEditor, /setIngredientPriceAndUnitAction/)
   assert.match(canonicalEditor, /€\/\{unit\}/)
   assert.doesNotMatch(canonicalEditor, /pack_price|supplier_pricing_mode|conversion_factor/)
@@ -130,5 +133,7 @@ test('no quedan superficies legacy de precio o creación', () => {
   assert.equal(
     fs.existsSync(path.join(root, 'src/app/dashboard/albaranes-precios')),
     false,
-  )
+  )  assert.match(ingredientActions, /density_g_per_ml/)
+  assert.match(ingredientActions, /canonicalBaseUnitForPurchaseUnit/)
+
 })
