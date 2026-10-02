@@ -114,3 +114,37 @@ test('v2: precio ausente y unidad incompatible se conservan juntos', () => {
     issues: ['INCOMPATIBLE_UNITS', 'MISSING_PRICE'],
   })
 })
+
+
+test('densidad específica convierte masa y volumen sin inventar una equivalencia global', () => {
+  assert.equal(
+    convertToPurchaseUnitQuantityWithPackBridge(30, 'ml', 'kg', {
+      density_g_per_ml: 1.4,
+    }),
+    0.042,
+  )
+  assert.equal(
+    convertToPurchaseUnitQuantityWithPackBridge(140, 'g', 'l', {
+      density_g_per_ml: 1.4,
+    }),
+    0.1,
+  )
+  assert.equal(
+    convertToPurchaseUnitQuantityWithPackBridge(30, 'ml', 'kg', {}),
+    null,
+  )
+})
+
+test('miel: 30 ml cuestan 0,44982 € a 10,71 €/kg con densidad 1,4 g/ml', () => {
+  const analysis = getRecipeIngredientLineCostAnalysis(30, 'ml', 'kg', 10.71, {
+    density_g_per_ml: 1.4,
+  })
+  assert.equal(analysis.status, 'ok')
+  assert.ok(Math.abs(analysis.eur - 0.44982) < 1e-10)
+
+  const v2 = getRecipeIngredientLineCostV2(30, 'ml', 'kg', 10.71, {
+    density_g_per_ml: 1.4,
+  })
+  assert.equal(v2.status, 'OK')
+  assert.ok(v2.costEur != null && Math.abs(v2.costEur - 0.44982) < 1e-10)
+})
