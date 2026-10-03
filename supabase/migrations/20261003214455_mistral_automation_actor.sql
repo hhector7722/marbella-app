@@ -8,29 +8,8 @@ CREATE TABLE private.purchase_receipt_automation_actor (
 ALTER TABLE private.purchase_receipt_automation_actor ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE private.purchase_receipt_automation_actor FROM PUBLIC, anon, authenticated;
 
-DO $$
-BEGIN
-  IF (SELECT count(*) FROM auth.users
-      WHERE email = 'marbella-purchase-automation@marbella.invalid'
-        AND raw_app_meta_data->>'marbella_automation_actor' = 'purchase_receipt_v1') <> 1 THEN
-    RAISE EXCEPTION 'El actor técnico de compras no está provisionado de forma única.';
-  END IF;
-
-  INSERT INTO private.purchase_receipt_automation_actor (profile_id)
-  SELECT p.id
-  FROM public.profiles p
-  JOIN auth.users u ON u.id = p.id
-  WHERE u.email = 'marbella-purchase-automation@marbella.invalid'
-    AND u.raw_app_meta_data->>'marbella_automation_actor' = 'purchase_receipt_v1'
-    AND u.email_confirmed_at IS NULL
-    AND p.role = 'manager'
-    AND p.visible_in_plantilla = false;
-
-  IF (SELECT count(*) FROM private.purchase_receipt_automation_actor) <> 1 THEN
-    RAISE EXCEPTION 'El perfil del actor técnico no cumple las condiciones de seguridad.';
-  END IF;
-END;
-$$;
+-- No se siembra una identidad humana ni un UUID de producción en otras bases.
+-- La cuenta se crea por Auth Admin y se registra aquí de forma operativa.
 
 -- Registro append-only del actor económico y de la persona que capturó el papel.
 CREATE TABLE private.purchase_receipt_automation_audit (

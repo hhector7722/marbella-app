@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "b765ac2421c688db",
+  "_huella": "bd64410d8277e7b9",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -682,8 +682,23 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-01-29",
+      "vence": "2027-04-03",
       "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/3-ingenieria/operacion/RUNBOOK-ALBARANES-MISTRAL.md",
+      "documento": "RUNBOOK-ALBARANES-MISTRAL",
+      "clase": "vivo",
+      "estado": "vigente",
+      "capa": "ingenieria",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 20,
+      "vence": "2027-01-03",
+      "depende_de": [
+        "ADR-0022",
+        "SEGURIDAD"
+      ]
     },
     {
       "ruta": "marbella-os/3-ingenieria/operacion/RUNBOOK-BDP-VENTAS.md",

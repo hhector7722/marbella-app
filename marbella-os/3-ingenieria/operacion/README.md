@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-10-03
 caducidad: 6 meses
 ---
 
@@ -19,6 +19,7 @@ Procedimientos que se ejecutan sobre el sistema en funcionamiento: despliegues, 
 | Documento | Cuándo se usa |
 |---|---|
 | [Despliegue del puente con el punto de venta](./RUNBOOK-BDP-VENTAS.md) | Al actualizar el extractor o el receptor de ventas, y tras un hueco de datos |
+| [Mistral y actor técnico de recepción](./RUNBOOK-ALBARANES-MISTRAL.md) | Al preparar un entorno o investigar un bloqueo K4 automático |
 
 ## Pendientes
 
