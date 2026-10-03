@@ -464,7 +464,7 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ## D34 · Cobertura de presentaciones verificadas en albaranes
 
-**Prioridad: alta.** El benchmark Mistral del 2026-10-03 encontró 80 líneas entregadas y reconoció la identidad histórica de 73, pero solo 27 tenían una presentación reutilizable validada; 16 pasaron las comprobaciones previas de propuesta. La extracción documental ya no es el único cuello de botella. Los nombres OCR parecidos se detectan y se guardan como alias propuestos, pero K4 solo los confirma tras todas las validaciones.
+**Prioridad: alta.** El benchmark Mistral del 2026-10-03 encontró 80 líneas entregadas y reconoció la identidad histórica de 73, pero solo 27 tenían una presentación reutilizable validada. En la primera evaluación 16 líneas quedaron candidatas; al exigir también un total de documento verificable y comprobar el subtotal sin depender de que figure el IVA, quedan 7 candidatas antes de las barreras finales de K4. La extracción documental ya no es el único cuello de botella. Los nombres OCR parecidos se detectan y se guardan como alias propuestos, pero K4 solo los confirma tras todas las validaciones.
 
 **Coste**: muchos productos conocidos siguen apareciendo como excepción por falta de presentación confiable. Inferir un tamaño de caja o una densidad para subir la autonomía corrompería stock.
 
