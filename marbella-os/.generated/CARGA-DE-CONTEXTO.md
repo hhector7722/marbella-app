@@ -1,5 +1,5 @@
 <!-- Generado desde 69 documentos de marbella-os/.
-     Huella del origen: 1b6549000e39df69
+     Huella del origen: 6ead8b10496f24ca
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -51,7 +51,6 @@ es `CANON §5`.
 | 80 | `marbella-os/4-decisiones/ADR-0009-modal-subordinacion.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0010-jerarquia-visual-canonica.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md` |
-| 80 | `marbella-os/4-decisiones/ADR-0012-recepcion-trazable-y-evidencia-documental.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0013-confirmacion-atomica-de-recepcion.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0014-perfiles-versionados-interpretacion-albaranes.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0015-alta-laboral-por-token.md` |
@@ -60,6 +59,7 @@ es `CANON §5`.
 | 80 | `marbella-os/4-decisiones/ADR-0018-elaboraciones-intermedias.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0019-inventario-captura-y-certificacion.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0020-borrador-compartido-de-inventario.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md` |
 | 60 | `marbella-os/1-producto/PRINCIPIOS.md` |
 | 60 | `marbella-os/1-producto/VISION.md` |
 | 60 | `marbella-os/2-diseno/EXPERIENCIA.md` |
@@ -96,4 +96,4 @@ es `CANON §5`.
 | 20 | `marbella-os/GLOSARIO.md` |
 
 Todo lo que no aparece en esta tabla **no es normativo** y no autoriza ninguna
-decisión, empezando por los 49 documentos de `marbella-os/6-investigacion/`.
+decisión, empezando por los 50 documentos de `marbella-os/6-investigacion/`.

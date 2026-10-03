@@ -1620,7 +1620,7 @@ export default function AlbaranesHistoricoClient({
                               <div className="min-w-0">
                                 <p className="text-sm font-black text-rose-900">No se pudo leer el albarán</p>
                                 <p className="mt-1 text-sm font-medium text-rose-800">
-                                  {detail.ocr_error?.trim() || 'Docling no pudo procesar el documento. Puedes reintentar sin perder el original.'}
+                                  {detail.ocr_error?.trim() || 'No se pudo procesar el documento. Puedes reintentar sin perder el original.'}
                                 </p>
                               </div>
                             </div>

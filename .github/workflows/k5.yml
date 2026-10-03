@@ -7,6 +7,10 @@ on:
     paths:
       - 'src/lib/albaranes/k5/**'
       - 'src/lib/albaranes/supplier-profiles/**'
+      - 'src/lib/albaranes/extractors/**'
+      - 'src/lib/albaranes/pipeline/**'
+      - 'src/app/api/internal/albaranes/mistral-*/**'
+      - 'scripts/albaranes/**'
       - 'src/app/dashboard/albaranes/interpretation-actions.ts'
       - 'src/app/dashboard/albaranes/receipt-actions.ts'
       - 'src/app/dashboard/albaranes/actions.ts'
@@ -31,6 +35,10 @@ on:
     paths:
       - 'src/lib/albaranes/k5/**'
       - 'src/lib/albaranes/supplier-profiles/**'
+      - 'src/lib/albaranes/extractors/**'
+      - 'src/lib/albaranes/pipeline/**'
+      - 'src/app/api/internal/albaranes/mistral-*/**'
+      - 'scripts/albaranes/**'
       - 'src/app/dashboard/albaranes/interpretation-actions.ts'
       - 'src/app/dashboard/albaranes/receipt-actions.ts'
       - 'src/app/dashboard/albaranes/actions.ts'
@@ -78,6 +86,7 @@ jobs:
           src/lib/albaranes/k5/normalizer-ametller-bag.test.ts
           src/lib/albaranes/k5/case-discount-normalizer.test.ts
           src/lib/albaranes/k5/proposal-lineage.test.ts
+          src/lib/albaranes/k5/auto-apply-guard.test.ts
           src/lib/albaranes/k5/batch-review.test.ts
           src/lib/albaranes/k5/mapping-assistant.test.ts
           src/lib/ingredient-pack-pricing.test.ts
@@ -85,6 +94,10 @@ jobs:
         run: >-
           node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test
           src/lib/albaranes/supplier-profiles/supplier-profiles.test.ts
+      - name: Mistral canonical pipeline
+        run: >-
+          node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test
+          src/lib/albaranes/pipeline/*.test.ts
       - name: K5/K4 safety contract
         run: node --test scripts/k5/k5-interpretation-contract.test.cjs
       - name: K3 Docling worker and scanner contracts
@@ -106,6 +119,14 @@ jobs:
           src/lib/albaranes/k5/layout-evidence.test.ts
           src/lib/albaranes/k5/normalizer.ts
           src/lib/albaranes/k5/normalizer.test.ts
+          src/lib/albaranes/k5/auto-apply-guard.ts
+          src/lib/albaranes/k5/auto-apply-guard.test.ts
+          src/lib/albaranes/extractors/*.ts
+          src/lib/albaranes/pipeline/*.ts
+          src/app/api/internal/albaranes/mistral-process/route.ts
+          src/app/api/internal/albaranes/mistral-shadow/route.ts
+          src/app/api/internal/albaranes/k5/auto-apply/route.ts
+          scripts/albaranes/*.mjs
           src/app/dashboard/albaranes/interpretation-actions.ts
           src/app/dashboard/albaranes/k5/actions.ts
           src/app/dashboard/albaranes/k5/page.tsx

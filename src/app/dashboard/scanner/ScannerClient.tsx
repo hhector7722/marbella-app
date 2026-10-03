@@ -175,7 +175,8 @@ export function ScannerClient({
     setPreview(null)
     try {
       const first = pendingBatch.items[0]!
-      const res = await processScannerImage(first.dataUri, first.filename, pendingBatch.supplierId)
+      const res = await processScannerImage(first.dataUri, first.filename,
+        pendingBatch.supplierId, pendingBatch.items.length)
       if (!res.success) {
         setMessageTone('error')
         setMessage(res.message)

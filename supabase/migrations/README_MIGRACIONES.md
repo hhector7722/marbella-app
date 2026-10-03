@@ -116,3 +116,45 @@ Opciones:
   supabase db push
   ```
 - Cerrar VS Code / otros procesos que usen Node y volver a intentar, o ejecutar el terminal **como administrador** una vez para que npm pueda limpiar la caché.
+
+---
+
+## 20261003164640 · Evidencia Mistral en sombra
+
+`20261003164640_mistral_shadow_evidence.sql` añade únicamente
+`document_shadow_extractions`: versiones append-only de la respuesta OCR cruda,
+observación canónica y métricas para comparar albaranes reales sin modificar
+líneas, movimientos, precios ni confirmaciones. La tabla nace con RLS y sin
+permisos para `anon` o `authenticated`; solo `service_role` puede insertar y
+leer. Un trigger rechaza modificaciones y borrados. Se verifica con el esquema,
+los privilegios, el trigger y los recuentos económicos antes y después del
+benchmark. No se revierte eliminando la tabla una vez que contiene evidencia.
+
+## 20261003172325–20261003174839 · Cola y recepción Mistral
+
+`20261003172325_mistral_durable_queue.sql` separa leases Docling y Mistral, añade
+backoff y límite de tres intentos e indexa las propuestas versionadas. El
+estado operativo es mutable; los eventos y la evidencia siguen append-only.
+
+`20261003173324_mistral_processor_schedule.sql` despierta al procesador de
+Vercel cada dos minutos mediante `pg_cron` y un secreto de Vault provisionado
+fuera de Git. No concede ejecución a `anon` ni a `authenticated`.
+
+`20261003173751_mistral_k4_delegate.sql` añadió la procedencia Mistral al
+delegado de servicio K4; `20261003173850_mistral_k4_array_guard_fix.sql` corrigió
+el tipo real `text[]` de razones y advertencias. Son dos pasos históricos y se
+conservan ambos para reproducir la secuencia aplicada. La vista previa real
+descubrió la precisión de cuatro decimales de `purchase_invoice_lines.unit_price`;
+`20261003174058_mistral_k4_v2_precision.sql` admitió la propuesta ajustada y
+`20261003174839_mistral_k4_v3_aliases.sql` acotó el delegado a la versión con
+alias derivados y añadió su índice único por fila. Ninguna migración reescribe
+stock, precios, recepciones o extracciones previas. Tras cada paso se verificó
+la versión aplicada y la ausencia de permisos `anon`/`authenticated` sobre las
+funciones internas.
+
+`20261003180530_mistral_scanner_page_count.sql` añade `expected_pages` con
+valor histórico de una hoja y obliga a que la captura nueva declare el número
+antes de su primer job. `20261003180658_k4_attachment_evidence_hash.sql` permite
+la huella de un adjunto solo si está vinculada al mismo albarán; conserva las
+demás comprobaciones de K4. Se verificaron la columna real y la definición de
+la función aplicada. Ninguna de las dos migraciones toca el ledger.

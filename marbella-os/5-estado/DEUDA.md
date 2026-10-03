@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-27
+revisado: 2026-10-03
 caducidad: 3 meses
 supersede: —
 ---
@@ -459,6 +459,16 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 **Coste**: las fronteras de 2026 (27 jul–2 ago y 31 ago–6 sep) siguen mal para quien no trabaja los siete días, hasta guardar la distribución y recalcular la proyección desde esa semana.
 
 **Disparador de pago**: aplicar la migración, guardar las siete filas de cada persona en cada frontera y recalcular con el Writer desde el lunes de esa semana. La de julio, desde `2026-07-27`.
+
+---
+
+## D34 · Cobertura de presentaciones verificadas en albaranes
+
+**Prioridad: alta.** El benchmark Mistral del 2026-10-03 encontró 80 líneas entregadas y reconoció la identidad histórica de 73, pero solo 27 tenían una presentación reutilizable validada; 16 pasaron las comprobaciones previas de propuesta. La extracción documental ya no es el único cuello de botella. Los nombres OCR parecidos se detectan y se guardan como alias propuestos, pero K4 solo los confirma tras todas las validaciones.
+
+**Coste**: muchos productos conocidos siguen apareciendo como excepción por falta de presentación confiable. Inferir un tamaño de caja o una densidad para subir la autonomía corrompería stock.
+
+**Disparador de pago**: cada corrección humana debe confirmar una presentación versionada y reutilizarse en el siguiente albarán del mismo proveedor. Medir semanalmente la proporción de líneas recibidas sin intervención; ampliar la memoria con presentaciones verificadas hasta acercarse al objetivo de autonomía de [ADR-0021](../4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md).
 
 ---
 

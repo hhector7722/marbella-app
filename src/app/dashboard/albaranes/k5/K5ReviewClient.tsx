@@ -1,12 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowRight, CheckCircle2, CircleDot, Wrench } from 'lucide-react'
+import { Wrench } from 'lucide-react'
 import { toast } from 'sonner'
 import { InterpretationProposalPanel } from '@/components/albaranes/InterpretationProposalPanel'
 import { K5BatchReceiptReview } from '@/components/albaranes/K5BatchReceiptReview'
 import { K5MappingAssistant } from '@/components/albaranes/K5MappingAssistant'
 import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
+import { Surface } from '@/components/ui/Surface'
 import {
   getPurchaseInvoiceDetailAction,
   type PurchaseInvoiceDetail,
@@ -51,49 +52,12 @@ export default function K5ReviewClient({ initialInvoices, initialSelectedId }: P
 
   return (
     <div className="space-y-3">
-      <section className="rounded-2xl border border-[#b8cbd2] bg-[#f4f8f9] p-4">
-        <div className="text-base font-black text-zinc-900">Cómo revisar este albarán</div>
+      <Surface variant="block" instance="k5-exception-intro" className="p-4">
+        <div className="text-base font-black text-zinc-900">Solo las excepciones</div>
         <p className="mt-1 text-xs font-medium leading-relaxed text-zinc-600">
-          No necesitas usar el diagnóstico técnico. La revisión normal se hace en estos tres pasos.
+          Los productos reconocidos y validados pueden recibirse automáticamente cuando cumplen todas las comprobaciones. Aquí aparecen los datos que necesitan tu decisión.
         </p>
-        <div className="mt-3 grid gap-2 md:grid-cols-3">
-          <div className="rounded-xl border border-white bg-white p-3">
-            <div className="flex items-center gap-2 text-xs font-black text-zinc-900">
-              <CircleDot className="h-4 w-4 text-amber-600" />
-              1 · Resolver excepciones
-            </div>
-            <div className="mt-1 text-[11px] font-medium leading-relaxed text-zinc-600">
-              Si K5 no sabe qué producto es, pulsa <b>Mapear producto</b> y elige el ingrediente correcto.
-            </div>
-          </div>
-          <div className="rounded-xl border border-white bg-white p-3">
-            <div className="flex items-center gap-2 text-xs font-black text-zinc-900">
-              <ArrowRight className="h-4 w-4 text-[#36606F]" />
-              2 · Revisar reconocidos
-            </div>
-            <div className="mt-1 text-[11px] font-medium leading-relaxed text-zinc-600">
-              Las líneas seguras aparecen seleccionadas. Pulsa <b>Ver efecto</b> para comprobar cantidad y precio.
-            </div>
-          </div>
-          <div className="rounded-xl border border-white bg-white p-3">
-            <div className="flex items-center gap-2 text-xs font-black text-zinc-900">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              3 · Confirmar
-            </div>
-            <div className="mt-1 text-[11px] font-medium leading-relaxed text-zinc-600">
-              Si la vista previa es correcta, pulsa <b>Confirmar</b>. Ese es el paso que aplica K4.
-            </div>
-          </div>
-        </div>
-        <div className="mt-3 flex justify-end">
-          <a
-            href="#k5-review-actions"
-            className="inline-flex min-h-10 items-center rounded-xl bg-[#36606F] px-4 text-xs font-black text-white shadow-sm"
-          >
-            Empezar revisión
-          </a>
-        </div>
-      </section>
+      </Surface>
 
       <div id="k5-review-actions" className="scroll-mt-4 space-y-3">
         <K5MappingAssistant invoiceId={selected.id} onResolveLine={openMapping} />

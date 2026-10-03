@@ -48,3 +48,14 @@ test('una recalculación puede resolver la línea económica inmutable a través
 
   assert.deepEqual(proposalAncestryIds(rows, 'base-v3'), ['base-v3', 'human-confirmed', 'base-v2'])
 })
+
+test('un mismo set Mistral mantiene visibles las líneas de varias hojas', () => {
+  const rows = [
+    { id: 'hoja-1', proposal_set_id: 'mistral-doc', supersedes_proposal_id: null,
+      document_extraction_id: 'extraccion-1', provenance: { source: 'mistral_canonical' }, created_at: '2026-10-03T18:00:00Z' },
+    { id: 'hoja-2', proposal_set_id: 'mistral-doc', supersedes_proposal_id: null,
+      document_extraction_id: 'extraccion-2', provenance: { source: 'mistral_canonical' }, created_at: '2026-10-03T18:01:00Z' },
+  ]
+  assert.deepEqual(selectCurrentProposalLineage(rows).map((row) => row.id).sort(),
+    ['hoja-1', 'hoja-2'])
+})

@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-18
+revisado: 2026-10-03
 caducidad: 3 meses
 supersede: —
 ---
@@ -126,6 +126,22 @@ El recuento de inventario aplica el mismo criterio ([ADR-0019](../4-decisiones/A
 
 El worker Docling entra por una Edge Function con token de worker obligatorio, no por la Data API. La función usa la clave de servicio únicamente en el servidor para firmar una URL efímera y persistir evidencia mediante RPC. La URL no se guarda en errores nuevos.
 
+La evaluación Mistral en sombra se ejecuta en una ruta interna de servidor,
+protegida por `CRON_SECRET`. Usa la clave de servicio para leer el archivo
+privado y escribir evidencia append-only; la clave Mistral permanece como
+secreto del entorno de producción. `document_shadow_extractions` tiene RLS
+activada y no concede acceso a `anon` ni a `authenticated`.
+
+El procesador Mistral de producción usa `service_role` solo en la ruta interna
+de Vercel. Supabase `pg_cron` lo despierta con `CRON_SECRET` guardado en Vault;
+`anon` y `authenticated` no pueden ejecutar la función de despertar ni las
+funciones de lease. La clave Mistral no se expone al navegador, al worker local
+ni al repositorio. El delegado automático de K4 solo acepta propuestas con
+evidencia Mistral versionada o el origen Docling histórico, y exige un actor
+`manager` o `admin`. La ruta valida firma HMAC del lease, presentación confiable,
+matemáticas, pedidos pendientes y variación de precio antes de invocar K4.
+La decisión completa figura en [ADR-0021](../4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md).
+
 ### Lo que no está cubierto
 
 **Tres tablas sin políticas y con permiso total para quien no tiene sesión.** Creadas el 2026-04-08, nunca corregidas:
@@ -179,7 +195,7 @@ Trece contenedores de almacenamiento. Siete son públicos:
 
 **Todo lo que empieza por `NEXT_PUBLIC_` viaja al navegador.** Vale para la dirección del proyecto y la clave pública, que están diseñadas para ser públicas; **no vale para nada más**.
 
-Privadas: clave de servicio, secreto de webhook, secreto de tarea programada, clave de OpenAI, claves de notificación, credenciales del ERP, token del worker Docling y clave de su API local.
+Privadas: clave de servicio, secreto de webhook, secreto de tarea programada, claves de OpenAI y Mistral, claves de notificación, credenciales del ERP, token del worker Docling y clave de su API local.
 
 Reglas:
 

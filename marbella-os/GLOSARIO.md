@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-27
+revisado: 2026-10-03
 caducidad: 6 meses
 supersede: —
 ---
@@ -160,6 +160,10 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Albarán** | Documento de entrega de mercancía. Es el documento que se escanea. | `purchase_invoices` |
 | **Línea de albarán** | Artículo concreto de un albarán, con cantidad y precio. | — |
 | **Evidencia documental** | Extracción versionada de un documento: texto, tablas, filas, celdas y layout observados. No contiene una decisión económica. | `document_evidence_extractions`, `document_evidence_*` |
+| **Observación canónica** | JSON tipado que conserva lo leído en el albarán sin decidir todavía el ingrediente ni la recepción. | `document_extractions.raw_json_artifact.canonical` |
+| **Extracción en sombra** | Versión OCR comparativa que no alimenta propuestas ni efectos económicos. | `document_shadow_extractions` |
+| **Alias derivado** | Nombre observado distinto del histórico que reutiliza una presentación confiable y permanece propuesto hasta la validación económica K4. | `purchase_mapping_versions.idempotency_key` |
+| **Excepción de recepción** | Línea que no puede cruzar K4 sin decisión humana por identidad, presentación, importes, precio, pedido o evidencia. | `purchase_interpretation_proposals.review_reasons` |
 | **Perfil de proveedor** | Regla versionada y determinista que interpreta el formato documental de un proveedor a partir de evidencia. No es un mapeo ni evidencia. | `marbella-os/3-ingenieria/albaranes-proveedores/profiles/` |
 | **Mapeo** | Correspondencia aprendida entre el artículo de un proveedor y un ingrediente de Marbella. | `supplier_item_mappings` |
 | **Versión de mapeo** | Propuesta o confirmación inmutable del mapeo, con presentación y factor de conversión. | `purchase_mapping_versions` |

@@ -3,10 +3,13 @@
 import { createHash } from 'node:crypto'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { MISTRAL_EXTRACTOR_VERSION } from '@/lib/albaranes/extractors/mistral'
 
 // Versión declarada, no una regla de dominio. Una futura selección de evidence
 // siempre será explícita por `document_extractions.id`, nunca por esta cadena.
 const DOCLING_SCANNER_EXTRACTOR_VERSION = 'docling-serve-v1.21.0-k3.3-scanner'
+const PRIMARY_SCANNER_EXTRACTOR_VERSION = process.env.ALBARAN_PRIMARY_EXTRACTOR === 'mistral'
+  ? MISTRAL_EXTRACTOR_VERSION : DOCLING_SCANNER_EXTRACTOR_VERSION
 
 async function gateAuthenticated() {
   const supabase = await createClient()
@@ -59,7 +62,7 @@ async function enqueueDoclingEvidence(
     p_invoice_id: params.invoiceId,
     p_file_version_hash: params.fileVersionHash,
     p_storage_path: params.storagePath,
-    p_extractor_version: DOCLING_SCANNER_EXTRACTOR_VERSION,
+    p_extractor_version: PRIMARY_SCANNER_EXTRACTOR_VERSION,
     p_source_attachment_id: params.sourceAttachmentId ?? null,
   })
 
@@ -104,7 +107,7 @@ export async function listRecentInvoicesForSupplierAction(params: {
   }
 }
 
-/** Guarda una hoja adicional y crea inmediatamente su trabajo durable Docling. */
+/** Guarda una hoja adicional y crea su trabajo de extracción durable. */
 export async function appendScannerPageToInvoiceAction(params: {
   base64DataUri: string
   filename: string
@@ -180,6 +183,16 @@ export async function appendScannerPageToInvoiceAction(params: {
       return { success: false, message: attachmentError?.message ?? 'Error guardando la hoja adicional' }
     }
 
+    // El guardián de recepción consulta este total antes de aplicar K4.
+    const { error: pageCountError } = await supabase.from('purchase_invoices')
+      .update({ expected_pages: pageOrder })
+      .eq('id', invoiceId)
+      .lt('expected_pages', pageOrder)
+    if (pageCountError) {
+      return { success: false, invoiceId,
+        message: 'La hoja se conservó, pero no se pudo actualizar el total de hojas. Reintenta desde el albarán.' }
+    }
+
     const queued = await enqueueDoclingEvidence(supabase, {
       invoiceId,
       fileVersionHash: contentSha256,
@@ -203,11 +216,12 @@ export async function appendScannerPageToInvoiceAction(params: {
   }
 }
 
-/** Captura el original y encola Docling; no llama Gemini ni crea líneas de compra. */
+/** Captura el original y encola el extractor principal, sin crear efectos económicos. */
 export async function processScannerImage(
   base64DataUri: string,
   filename: string,
-  supplierId: number
+  supplierId: number,
+  expectedPages = 1
 ): Promise<ProcessScannerImageResult> {
   try {
     const gate = await gateAuthenticated()
@@ -215,6 +229,9 @@ export async function processScannerImage(
     const supabase = gate.supabase
     if (!Number.isFinite(supplierId) || supplierId <= 0) {
       return { success: false, message: 'Falta el proveedor. Selecciónalo antes de escanear.' }
+    }
+    if (!Number.isInteger(expectedPages) || expectedPages < 1 || expectedPages > 20) {
+      return { success: false, message: 'Número de hojas inválido.' }
     }
     const parsed = parseBase64DataUri(base64DataUri)
     if (!parsed) return { success: false, message: 'Formato de imagen inválido' }
@@ -250,6 +267,7 @@ export async function processScannerImage(
         status: 'processing',
         source: 'scanner',
         content_sha256: contentSha256,
+        expected_pages: expectedPages,
         ocr_error: null,
       })
       .select('id')
@@ -281,7 +299,7 @@ export async function processScannerImage(
   }
 }
 
-/** Reintenta solo un trabajo fallido sin evidence o recupera un pending sin duplicarlo. */
+/** Reintenta solo un trabajo fallido sin evidencia o recupera un pendiente sin duplicarlo. */
 export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessScannerImageResult> {
   try {
     const gate = await gateAuthenticated()
@@ -342,7 +360,7 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
     return { success: true, invoiceId: id }
   } catch (error) {
     console.error('retryOcrInvoiceAction:', error)
-    return { success: false, message: 'Error inesperado al reintentar Docling. Reintenta.' }
+    return { success: false, message: 'Error inesperado al reintentar la extracción. Reintenta.' }
   }
 }
 
