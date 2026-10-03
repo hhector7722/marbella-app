@@ -10,7 +10,7 @@ const presentation: PresentationMemory = { supplierId: 7, ingredientId: 'cola', 
 
 function document(line: Partial<CanonicalDocument['lines'][number]>): CanonicalDocument {
   return { supplier_name_raw: 'Proveedor', document_number_raw: '1', document_date_raw: null,
-    currency_raw: 'EUR', subtotal_raw: null, tax_raw: null, total_raw: null,
+    currency_raw: 'EUR', subtotal_raw: '14,40', tax_raw: null, total_raw: null,
     lines: [{ page_index: 0, supplier_product_code_raw: null, description_raw: 'GOCA COLA ZERO',
       quantity_raw: '24', billing_unit_raw: 'UD', package_count_raw: null,
       units_per_package_raw: null, content_per_unit_raw: null, content_unit_raw: null,

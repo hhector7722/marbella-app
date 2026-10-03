@@ -90,10 +90,11 @@ export function validateObservedDocument(document: CanonicalDocument): {
   const subtotal = parseObservedDecimal(document.subtotal_raw)
   const tax = parseObservedDecimal(document.tax_raw)
   const total = parseObservedDecimal(document.total_raw)
+  if (subtotal == null && total == null) reasons.push('total_documento_no_verificable')
   if (subtotal != null && tax != null && total != null && !near(subtotal + tax, total)) {
     reasons.push('subtotal_iva_total_no_reconcilian')
   }
-  if (lineSum != null && subtotal != null && tax != null && !near(lineSum, subtotal)) {
+  if (lineSum != null && subtotal != null && !near(lineSum, subtotal)) {
     reasons.push('lineas_subtotal_no_reconcilian')
   }
   if (lineSum != null && subtotal == null && tax == null && total != null && !near(lineSum, total)) {

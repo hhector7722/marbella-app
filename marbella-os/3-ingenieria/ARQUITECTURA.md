@@ -193,6 +193,8 @@ de líneas. La observación canónica no conoce ingredientes. El matcher consult
 memoria histórica por proveedor; la presentación y la aritmética determinan
 si la propuesta está lista o es excepción. Los alias nuevos se guardan como
 versiones propuestas derivadas de una presentación confiable.
+Si no hay subtotal ni total verificable, la propuesta queda en revisión: la
+aritmética de una línea aislada no descarta que falten otras líneas del papel.
 
 La recepción automática, cuando se habilita, pasa por la vista previa y el
 delegado de servicio de K4. Se bloquea ante duplicado, ambigüedad, conversión

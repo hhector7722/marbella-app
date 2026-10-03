@@ -50,3 +50,13 @@ test('reconcilia IVA de documento sin convertir importe bruto en subtotal', () =
   assert.deepEqual(validateObservedDocument(doc).reasons, [])
   assert.equal(validateObservedDocument({ ...doc, total_raw: '200,00' }).reasons[0], 'subtotal_iva_total_no_reconcilian')
 })
+
+test('impide recepción automática sin importe de control y compara subtotal aun sin IVA', () => {
+  const doc: CanonicalDocument = { supplier_name_raw: null, document_number_raw: null,
+    document_date_raw: null, currency_raw: null, subtotal_raw: null, tax_raw: null,
+    total_raw: null, lines: [row({ quantity_raw: '1', unit_price_raw: '5', line_total_raw: '5' })] }
+  assert.ok(validateObservedDocument(doc).reasons.includes('total_documento_no_verificable'))
+  assert.ok(validateObservedDocument({ ...doc, subtotal_raw: '6' }).reasons
+    .includes('lineas_subtotal_no_reconcilian'))
+  assert.deepEqual(validateObservedDocument({ ...doc, subtotal_raw: '5' }).reasons, [])
+})

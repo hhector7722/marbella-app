@@ -56,6 +56,7 @@ const reasonLabel: Record<string, string> = {
   subtotal_iva_total_no_reconcilian: 'Subtotal e IVA no suman el total del albarán.',
   lineas_subtotal_no_reconcilian: 'La suma de líneas no coincide con el subtotal.',
   lineas_total_no_reconcilian: 'La suma de líneas no coincide con el total.',
+  total_documento_no_verificable: 'Comprueba el total del documento: sin ese dato no podemos verificar si falta algún artículo.',
   contenido_de_caja_invalido: 'Comprueba el contenido de cada caja.',
   unidades_por_caja_invalidas: 'Comprueba cuántas unidades contiene cada caja.',
   conversion_de_presentacion_incompatible: 'La presentación guardada no permite convertir esta cantidad.',
