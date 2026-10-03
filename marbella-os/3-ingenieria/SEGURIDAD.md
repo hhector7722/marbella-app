@@ -138,9 +138,14 @@ de Vercel. Supabase `pg_cron` lo despierta con `CRON_SECRET` guardado en Vault;
 funciones de lease. La clave Mistral no se expone al navegador, al worker local
 ni al repositorio. El delegado automático de K4 solo acepta propuestas con
 evidencia Mistral versionada o el origen Docling histórico, y exige un actor
-`manager` o `admin`. La ruta valida firma HMAC del lease, presentación confiable,
+`manager` o `admin`; si quien capturó fue `supervisor`, utiliza la identidad
+técnica `manager` dedicada y registrada en el esquema privado. Nunca concede
+confirmación económica directa al supervisor ni acepta capturas de `staff` por
+esta excepción. La propuesta y el albarán deben señalar al mismo capturador;
+cada aplicación automática deja un registro privado con ambos actores y la
+confirmación. La ruta valida firma HMAC del lease, presentación confiable,
 matemáticas, pedidos pendientes y variación de precio antes de invocar K4.
-La decisión completa figura en [ADR-0021](../4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md).
+La decisión vigente figura en [ADR-0022](../4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md).
 
 ### Lo que no está cubierto
 

@@ -204,7 +204,7 @@ delegado de servicio de K4. Se bloquea ante duplicado, ambigüedad, conversión
 no verificada, contradicción matemática, pedido pendiente o precio anómalo.
 K4 conserva la única escritura de stock, confirmación y precio. La pantalla de
 revisión muestra primero las excepciones. El rollout y la decisión estructural
-están en [ADR-0021](../4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md).
+están en [ADR-0022](../4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md).
 
 El escáner declara `expected_pages` antes de encolar la primera hoja. Todas las
 hojas Mistral de un albarán comparten un conjunto de propuestas; la recepción

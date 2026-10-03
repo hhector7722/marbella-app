@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-25
+revisado: 2026-10-03
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -67,7 +67,7 @@ precio nuevo = precio unitario de la línea / factor de conversión del mapeo
 
 El resultado debe ser euros por unidad de compra del ingrediente. Si no lo es, el factor está mal.
 
-**Un albarán no cambia el precio de un ingrediente hasta que existen tres cosas: un mapeo versionado entre el nombre del proveedor y el ingrediente, un factor de conversión válido y una confirmación económica explícita de `manager` o `admin`.** Sin una de ellas no se actualiza nada.
+**Un albarán no cambia el precio de un ingrediente hasta que existen tres cosas: un mapeo versionado entre el nombre del proveedor y el ingrediente, un factor de conversión válido y una confirmación económica de `manager` o `admin`.** La confirmación puede ser humana o ejecutada por el actor técnico `manager` dedicado tras las comprobaciones automáticas de [ADR-0022](../../4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md). Sin una de ellas no se actualiza nada.
 
 Capturar una línea, extraerla con visión artificial o proponer un mapeo nunca actualiza el precio. `apply_receipt_line(...)` aplica la fórmula solo después de una vista previa y una confirmación autorizada; registra el histórico con actor, documento, línea, movimiento y versión de mapeo. Los disparadores heredados que cambiaban precio al insertar o mapear una línea están retirados de este flujo.
 
