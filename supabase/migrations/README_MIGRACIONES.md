@@ -151,3 +151,10 @@ alias derivados y añadió su índice único por fila. Ninguna migración reescr
 stock, precios, recepciones o extracciones previas. Tras cada paso se verificó
 la versión aplicada y la ausencia de permisos `anon`/`authenticated` sobre las
 funciones internas.
+
+`20261003180530_mistral_scanner_page_count.sql` añade `expected_pages` con
+valor histórico de una hoja y obliga a que la captura nueva declare el número
+antes de su primer job. `20261003180658_k4_attachment_evidence_hash.sql` permite
+la huella de un adjunto solo si está vinculada al mismo albarán; conserva las
+demás comprobaciones de K4. Se verificaron la columna real y la definición de
+la función aplicada. Ninguna de las dos migraciones toca el ledger.

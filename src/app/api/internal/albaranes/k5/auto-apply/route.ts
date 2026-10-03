@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { K2_RECONCILIATION_TRUST_START } from '@/lib/albaranes/k5/batch-review'
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
+import { documentPagesReady } from '@/lib/albaranes/pipeline/pages'
 import {
   isK5ReusableMappingVersion,
   isTrustedLegacyImportedMappingVersion,
@@ -86,15 +87,16 @@ function parsePayload(rawBody: string): AutoApplyRequest | null {
 
 async function autoApplyDeterministicReceipts(
   supabase: AdminClient,
-  payload: AutoApplyRequest
+  payload: AutoApplyRequest,
+  extractorVersion: string
 ): Promise<Record<string, unknown>> {
   const { data: invoiceData, error: invoiceError } = await supabase
     .from('purchase_invoices')
-    .select('id,supplier_id,status,duplicate_of_invoice_id')
+    .select('id,supplier_id,status,duplicate_of_invoice_id,expected_pages')
     .eq('id', payload.invoiceId)
     .maybeSingle()
   const invoice = invoiceData as { id?: string; supplier_id?: number | null; status?: string | null;
-    duplicate_of_invoice_id?: string | null } | null
+    duplicate_of_invoice_id?: string | null; expected_pages?: number | null } | null
   if (invoiceError || !invoice || invoice.supplier_id == null) {
     return { ok: true, applied: 0, blocked: [{ proposalId: '', lineId: null, reason: 'invoice_or_supplier_unavailable' }] }
   }
@@ -105,6 +107,23 @@ async function autoApplyDeterministicReceipts(
     return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_possible_duplicate' }
   }
 
+  const mistralJob = extractorVersion.startsWith('mistral-')
+  if (mistralJob) {
+    const expectedPages = Number(invoice.expected_pages ?? 1)
+    const [{ count: attachmentCount, error: attachmentError },
+      { data: documentJobs, error: documentJobsError }] = await Promise.all([
+      supabase.from('purchase_invoice_attachments').select('id', { count: 'exact', head: true })
+        .eq('invoice_id', payload.invoiceId),
+      supabase.from('document_processing_jobs').select('id,status')
+        .eq('invoice_id', payload.invoiceId).like('extractor_version', 'mistral-%'),
+    ])
+    if (attachmentError || documentJobsError) throw new Error('No se pudo verificar la integridad de las hojas.')
+    if (!documentPagesReady({ expectedPages, attachmentCount: attachmentCount ?? 0,
+      jobs: documentJobs ?? [], currentJobId: payload.jobId })) {
+      return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'document_pages_pending' }
+    }
+  }
+
   const { data: proposalRows, error: proposalError } = await supabase
     .from('purchase_interpretation_proposals')
     .select('*')
@@ -113,7 +132,10 @@ async function autoApplyDeterministicReceipts(
   if (proposalError) throw new Error('No se pudieron leer las propuestas K5 para autoaplicar K4.')
 
   const active = selectCurrentProposalLineage((proposalRows ?? []) as Array<Record<string, unknown>>)
-    .filter((proposal) => text(proposal.document_extraction_id) === payload.extractionId)
+    .filter((proposal) => mistralJob
+      ? text(proposal.normalizer_version) === 'mistral-pipeline-v3'
+        && text((proposal.provenance as Record<string, unknown> | null)?.source) === 'mistral_canonical'
+      : text(proposal.document_extraction_id) === payload.extractionId)
 
   if (active.length === 0) {
     return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'no_active_proposals_for_extraction' }
@@ -226,7 +248,7 @@ async function autoApplyDeterministicReceipts(
     const trustedMistralAlias = Boolean(mappingVersion && sourceVersion
       && text(mappingVersion.status) === 'proposed'
       && text(mappingVersion.idempotency_key) === aliasKey
-      && text(mappingVersion.source_document_extraction_id) === payload.extractionId
+      && text(mappingVersion.source_document_extraction_id) === text(proposal.document_extraction_id)
       && text(mappingVersion.supplier_item_name) === text(proposal.source_item_name)
       && text(mappingVersion.supplier_id) === supplierId
       && text(mappingVersion.ingredient_id) === ingredientId
@@ -377,7 +399,7 @@ export async function POST(request: Request) {
 
   const { data: leaseData, error: leaseError } = await supabase
     .from('document_processing_jobs')
-    .select('id,invoice_id,status,lease_token,lease_expires_at')
+    .select('id,invoice_id,status,lease_token,lease_expires_at,extractor_version')
     .eq('id', payload.jobId)
     .eq('invoice_id', payload.invoiceId)
     .eq('status', 'leased')
@@ -387,14 +409,15 @@ export async function POST(request: Request) {
     console.error('k5-auto-apply lease lookup', leaseError)
     return NextResponse.json({ ok: false, error: 'No se pudo validar el lease Docling.' }, { status: 500 })
   }
-  const lease = leaseData as { lease_expires_at?: string | null } | null
+  const lease = leaseData as { lease_expires_at?: string | null; extractor_version?: string | null } | null
   const leaseExpiresAt = Date.parse(text(lease?.lease_expires_at))
   if (!lease || !Number.isFinite(leaseExpiresAt) || leaseExpiresAt <= Date.now()) {
     return NextResponse.json({ ok: false, error: 'Lease Docling inválido o caducado.' }, { status: 401 })
   }
 
   try {
-    const result = await autoApplyDeterministicReceipts(supabase, payload)
+    const result = await autoApplyDeterministicReceipts(supabase, payload,
+      text(lease.extractor_version))
     return NextResponse.json(result, { status: 200 })
   } catch (error) {
     console.error('k5-auto-apply', error)

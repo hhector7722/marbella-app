@@ -46,7 +46,7 @@ export async function proposeMistralExtraction(params: {
   if (invoiceLinesError) throw new Error('mistral_existing_lines_unavailable')
   if (invoiceLines?.length) {
     const { data: ownProposals, error: ownError } = await db.from('purchase_interpretation_proposals')
-      .select('id').eq('document_extraction_id', params.extractionId)
+      .select('id').eq('purchase_invoice_id', params.invoiceId)
       .like('normalizer_version', 'mistral-pipeline-%')
     if (ownError) throw new Error('mistral_existing_proposals_unavailable')
     const ownIds = new Set((ownProposals ?? []).map((row) => row.id))
@@ -89,7 +89,12 @@ export async function proposeMistralExtraction(params: {
     .eq('normalizer_version', 'mistral-pipeline-v2')
   if (supersededError) throw new Error('mistral_prior_proposals_unavailable')
   const priorByRow = new Map((supersededRows ?? []).map((row) => [Number(row.source_row_index), String(row.id)]))
-  const proposalSetId = randomUUID()
+  const { data: sharedSet, error: sharedSetError } = await db.from('purchase_interpretation_proposals')
+    .select('proposal_set_id').eq('purchase_invoice_id', params.invoiceId)
+    .eq('normalizer_version', MISTRAL_PIPELINE_VERSION)
+    .order('created_at', { ascending: true }).limit(1).maybeSingle()
+  if (sharedSetError) throw new Error('mistral_proposal_set_unavailable')
+  const proposalSetId = sharedSet?.proposal_set_id ?? randomUUID()
   let created = 0
   let materialized = 0
   for (const assessmentLine of assessment.lines) {

@@ -201,6 +201,13 @@ K4 conserva la única escritura de stock, confirmación y precio. La pantalla de
 revisión muestra primero las excepciones. El rollout y la decisión estructural
 están en [ADR-0021](../4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md).
 
+El escáner declara `expected_pages` antes de encolar la primera hoja. Todas las
+hojas Mistral de un albarán comparten un conjunto de propuestas; la recepción
+automática espera a que existan y terminen los trabajos declarados. K4 admite
+la huella de una hoja adicional solo si está vinculada al mismo albarán en
+`purchase_invoice_attachments`. Una hoja fallida o ausente impide recibir solo
+una parte como si el documento estuviera completo.
+
 ---
 
 ## 7. Tareas programadas

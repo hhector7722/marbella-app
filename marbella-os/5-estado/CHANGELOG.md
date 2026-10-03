@@ -17,6 +17,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **Mistral OCR entra en el circuito de albaranes por fases.** La evidencia en sombra conserva respuesta y JSON canónico sin efectos económicos. El procesador duradero de Supabase y Vercel verifica el archivo, reutiliza OCR por hash y versión, genera propuestas K5 y conserva métricas y errores. La recepción automática pasa exclusivamente por vista previa y K4 cuando la configuración de servidor la habilita; Docling sigue disponible como contingencia. La revisión muestra primero las incidencias y sus motivos concretos. [ADR-0021](../4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md).
 
+- **Las hojas de un albarán se validan juntas.** El escáner declara el número esperado; la recepción automática espera las evidencias de todas las hojas y bloquea una hoja fallida. K4 reconoce el hash de un adjunto vinculado, manteniendo la comprobación de procedencia. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).
+
 ## 2026-10-02
 
 - **El recuento pendiente muestra lo contado, no la comparación con el stock teórico.** Al abrir un recuento pendiente, gerencia ve la cantidad de barra, la de cámara y el total que introdujo quien contó. El total físico y la cantidad teórica siguen guardándose para que la certificación calcule la diferencia. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).

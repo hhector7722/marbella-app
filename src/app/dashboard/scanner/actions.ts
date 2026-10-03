@@ -210,7 +210,8 @@ export async function appendScannerPageToInvoiceAction(params: {
 export async function processScannerImage(
   base64DataUri: string,
   filename: string,
-  supplierId: number
+  supplierId: number,
+  expectedPages = 1
 ): Promise<ProcessScannerImageResult> {
   try {
     const gate = await gateAuthenticated()
@@ -218,6 +219,9 @@ export async function processScannerImage(
     const supabase = gate.supabase
     if (!Number.isFinite(supplierId) || supplierId <= 0) {
       return { success: false, message: 'Falta el proveedor. Selecciónalo antes de escanear.' }
+    }
+    if (!Number.isInteger(expectedPages) || expectedPages < 1 || expectedPages > 20) {
+      return { success: false, message: 'Número de hojas inválido.' }
     }
     const parsed = parseBase64DataUri(base64DataUri)
     if (!parsed) return { success: false, message: 'Formato de imagen inválido' }
@@ -253,6 +257,7 @@ export async function processScannerImage(
         status: 'processing',
         source: 'scanner',
         content_sha256: contentSha256,
+        expected_pages: expectedPages,
         ocr_error: null,
       })
       .select('id')
