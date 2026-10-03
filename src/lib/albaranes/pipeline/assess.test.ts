@@ -30,6 +30,7 @@ test('alias conocido sin presentación conserva candidato pero bloquea recepció
   const result = assessDocument({ document: document({}), supplierId: 7,
     memory: [presentation], presentations: [] })
   assert.equal(result.lines[0]?.ingredientId, 'cola')
+  assert.equal(result.lines[0]?.mappingVersionId, 'm1')
   assert.ok(result.lines[0]?.reasons.includes('presentacion_sin_validar'))
 })
 

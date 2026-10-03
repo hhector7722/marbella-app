@@ -308,12 +308,39 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
     const id = String(invoiceId ?? '').trim()
     if (!id) return { success: false, message: 'ID inválido' }
 
-    const { data: retryResult, error: retryError } = await supabase.rpc('retry_docling_evidence_jobs', {
+    const { data: invoice, error: invoiceError } = await supabase
+      .from('purchase_invoices')
+      .select('id, file_path, content_sha256, expected_pages')
+      .eq('id', id)
+      .maybeSingle()
+    if (invoiceError) return { success: false, message: invoiceError.message }
+    if (!invoice?.file_path || !invoice.content_sha256) return { success: false, message: 'Sin documento original para reintentar.' }
+
+    const { data: attachments, error: attachmentsError } = await supabase
+      .from('purchase_invoice_attachments')
+      .select('id, file_path, content_sha256, page_order, ocr_status')
+      .eq('invoice_id', id)
+    if (attachmentsError) return { success: false, message: attachmentsError.message }
+    if (PRIMARY_SCANNER_EXTRACTOR_VERSION === MISTRAL_EXTRACTOR_VERSION) {
+      const declaredPages = Math.max(1, Number(invoice.expected_pages ?? 1),
+        (attachments?.length ?? 0) + 1,
+        ...(attachments ?? []).map((page) => Number(page.page_order) || 1))
+      if (declaredPages > Number(invoice.expected_pages ?? 1)) {
+        const { error: countError } = await supabase.from('purchase_invoices')
+          .update({ expected_pages: declaredPages }).eq('id', id)
+        if (countError) return { success: false, message: 'No se pudo declarar el total de hojas antes del reintento.' }
+      }
+    }
+
+    const retryProcedure = PRIMARY_SCANNER_EXTRACTOR_VERSION === MISTRAL_EXTRACTOR_VERSION
+      ? 'retry_mistral_evidence_jobs' : 'retry_docling_evidence_jobs'
+    const { data: retryResult, error: retryError } = await supabase.rpc(retryProcedure, {
       p_invoice_id: id,
     })
     if (retryError) return { success: false, message: retryError.message }
     const retry = retryResult as { requeued_count?: number; immutable_failure_count?: number } | null
-    if (Number(retry?.requeued_count ?? 0) > 0) {
+    if (Number(retry?.requeued_count ?? 0) > 0
+      && PRIMARY_SCANNER_EXTRACTOR_VERSION !== MISTRAL_EXTRACTOR_VERSION) {
       revalidateScannerPaths()
       return { success: true, invoiceId: id }
     }
@@ -324,14 +351,6 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
       }
     }
 
-    const { data: invoice, error: invoiceError } = await supabase
-      .from('purchase_invoices')
-      .select('id, file_path, content_sha256')
-      .eq('id', id)
-      .maybeSingle()
-    if (invoiceError) return { success: false, message: invoiceError.message }
-    if (!invoice?.file_path || !invoice.content_sha256) return { success: false, message: 'Sin documento original para reintentar.' }
-
     const mainJob = await enqueueDoclingEvidence(supabase, {
       invoiceId: id,
       fileVersionHash: invoice.content_sha256,
@@ -339,13 +358,9 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
     })
     if (!mainJob.ok) return { success: false, message: mainJob.message }
 
-    const { data: attachments, error: attachmentsError } = await supabase
-      .from('purchase_invoice_attachments')
-      .select('id, file_path, content_sha256')
-      .eq('invoice_id', id)
-      .in('ocr_status', ['pending', 'failed'])
-    if (attachmentsError) return { success: false, message: attachmentsError.message }
     for (const attachment of attachments ?? []) {
+      if (PRIMARY_SCANNER_EXTRACTOR_VERSION !== MISTRAL_EXTRACTOR_VERSION
+        && attachment.ocr_status !== 'pending' && attachment.ocr_status !== 'failed') continue
       if (!attachment.file_path || !attachment.content_sha256) continue
       const queued = await enqueueDoclingEvidence(supabase, {
         invoiceId: id,

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { CanonicalDocument } from '../extractors/canonical.ts'
 import { assessDocument } from './assess.ts'
 import { buildSupplierMemory, type IngredientUnitRow, type LegacyMappingRow, type VersionRow } from './memory.ts'
+import { proposalMappingPair } from './proposal-pair.ts'
 
 // El acceso a datos del proyecto aún no tiene tipos generados.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -133,6 +134,7 @@ export async function proposeMistralExtraction(params: {
           mappingVersionId = alias.id
         }
       }
+      const mappingPair = proposalMappingPair(assessmentLine.ingredientId, mappingVersionId)
       const payload = {
         proposal_set_id: proposalSetId,
         purchase_invoice_id: params.invoiceId,
@@ -148,12 +150,13 @@ export async function proposeMistralExtraction(params: {
         source_row_index: rowIndex,
         supersedes_proposal_id: priorByRow.get(rowIndex) ?? null,
         source_item_name: observed.description_raw,
-        mapping_version_id: mappingVersionId,
-        ingredient_id: assessmentLine.ingredientId,
+        mapping_version_id: mappingPair.mappingVersionId,
+        ingredient_id: mappingPair.ingredientId,
         status: assessmentLine.status,
         observed,
         interpreted: { match_source: assessmentLine.matchSource,
           match_score: assessmentLine.matchScore, reasons: assessmentLine.reasons,
+          candidate_ingredient_id: assessmentLine.ingredientId,
           alias_source_mapping_version_id: aliasEligible ? sourceVersion?.id : null },
         normalized: assessmentLine.normalized ?? {},
         pricing: { observed_unit_price_raw: observed.unit_price_raw,

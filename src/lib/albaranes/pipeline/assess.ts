@@ -105,7 +105,9 @@ export function assessDocument(params: {
     const status = !match.ingredientId ? 'needs_mapping'
       : distinct.length ? 'needs_review' : 'ready_for_review'
     return { rowIndex, status, ingredientId: match.ingredientId,
-      mappingVersionId: presentation?.mappingVersionId ?? null,
+      // Se conserva la versión candidata para revisión aunque su presentación
+      // no sea reutilizable. La propuesta seguirá bloqueada hasta validarla.
+      mappingVersionId: presentation?.mappingVersionId ?? match.mappingVersionId ?? null,
       matchSource: match.source, matchScore: match.score, normalized,
       observedQuantity: check.quantity, observedUnitPrice: check.unitPrice,
       observedLineTotal: check.lineTotal, economicQuantity, effectiveUnitPrice,

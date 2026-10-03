@@ -193,6 +193,9 @@ de líneas. La observación canónica no conoce ingredientes. El matcher consult
 memoria histórica por proveedor; la presentación y la aritmética determinan
 si la propuesta está lista o es excepción. Los alias nuevos se guardan como
 versiones propuestas derivadas de una presentación confiable.
+Si hay ingrediente candidato sin versión de presentación, K5 conserva el
+candidato en `interpreted` y deja vacía la pareja económica de ingrediente y
+versión; así la excepción se muestra sin violar la integridad de la propuesta.
 Si no hay subtotal ni total verificable, la propuesta queda en revisión: la
 aritmética de una línea aislada no descarta que falten otras líneas del papel.
 
@@ -213,6 +216,10 @@ Al terminar cada trabajo, la cola sincroniza el estado OCR de su hoja y solo
 deja el albarán pendiente de mapeo cuando han terminado todas las hojas
 declaradas. Un fallo transitorio conserva su reintento automático; el reintento
 explícito de un fallo sin evidencia reinicia el límite de intentos.
+Al reintentar un albarán antiguo con Mistral, el escáner declara primero el
+total de hojas existentes y encola también las que Docling ya había marcado
+como leídas. El reintento Mistral solo reactiva trabajos Mistral, sin despertar
+los fallos históricos de Docling.
 
 ---
 
