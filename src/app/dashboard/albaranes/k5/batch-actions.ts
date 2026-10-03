@@ -171,7 +171,11 @@ async function loadBatchState(
     if (identity) confirmedEvidence.add(identity)
   }
 
-  const ingredientIds = [...new Set(active.map((row) => text(row.ingredient_id)).filter(Boolean))]
+  const ingredientIds = [...new Set(active.flatMap((row) => {
+    const interpreted = row.interpreted && typeof row.interpreted === 'object'
+      ? row.interpreted as Record<string, unknown> : {}
+    return [text(row.ingredient_id), text(interpreted.candidate_ingredient_id)]
+  }).filter(Boolean))]
   const { data: ingredients, error: ingredientError } = ingredientIds.length
     ? await supabase.from('ingredients').select('id,name').in('id', ingredientIds)
     : { data: [] as Array<Record<string, unknown>>, error: null }
@@ -215,6 +219,9 @@ async function loadBatchState(
       const proposalId = text(proposal.id)
       const lineId = lineIdForProposal(proposalId)
       const ingredientId = text(proposal.ingredient_id) || null
+      const interpreted = proposal.interpreted && typeof proposal.interpreted === 'object'
+        ? proposal.interpreted as Record<string, unknown> : {}
+      const candidateIngredientId = text(interpreted.candidate_ingredient_id) || null
       const evidenceIdentity = k5EvidenceIdentity({
         documentExtractionId: proposal.document_extraction_id,
         sourceTableIndex: proposal.source_table_index,
@@ -241,7 +248,7 @@ async function loadBatchState(
         lineId,
         sourceItemName: text(proposal.source_item_name) || 'Fila sin producto',
         ingredientId,
-        ingredientName: ingredientId ? ingredientNameById.get(ingredientId) || null : null,
+        ingredientName: ingredientNameById.get(ingredientId ?? candidateIngredientId ?? '') || null,
         mappingVersionId,
         status,
         disposition,
