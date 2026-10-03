@@ -143,7 +143,9 @@ técnica `manager` dedicada y registrada en el esquema privado. Nunca concede
 confirmación económica directa al supervisor ni acepta capturas de `staff` por
 esta excepción. La propuesta y el albarán deben señalar al mismo capturador;
 cada aplicación automática deja un registro privado con ambos actores y la
-confirmación. La ruta valida firma HMAC del lease, presentación confiable,
+confirmación. Las dos tablas privadas tienen RLS sin políticas de lectura o
+escritura para sesiones: solo el delegado definidor puede usarlas. La ruta
+valida firma HMAC del lease, presentación confiable,
 matemáticas, pedidos pendientes y variación de precio antes de invocar K4.
 La decisión vigente figura en [ADR-0022](../4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md).
 
