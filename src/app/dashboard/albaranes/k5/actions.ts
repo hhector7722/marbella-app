@@ -19,6 +19,20 @@ export type K5InvoiceAvailability = {
   detail: string | null
 }
 
+export type MistralOpsMetrics = {
+  jobs: number
+  completed: number
+  failed: number
+  extractedLines: number
+  matchedLines: number
+  receivedLines: number
+  exceptionLines: number
+  pages: number
+  averageDurationSeconds: number | null
+  autoReceiptRate: number | null
+  mappingRate: number | null
+}
+
 type ManagerGate =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>> }
   | { ok: false; message: string }
@@ -45,6 +59,37 @@ async function requireManager(): Promise<ManagerGate> {
 
 function text(value: unknown): string {
   return String(value ?? '').trim()
+}
+
+export async function getMistralOpsMetricsAction(): Promise<MistralOpsMetrics | null> {
+  const gate = await requireManager()
+  if (!gate.ok) return null
+  const { data, error } = await gate.supabase.from('document_processing_jobs')
+    .select('status,attempt_count,extraction_metrics')
+    .like('extractor_version', 'mistral-%')
+    .order('created_at', { ascending: false }).limit(100)
+  if (error || !data) return null
+  const completed = data.filter((job) => job.status === 'completed')
+  const failed = data.filter((job) => job.status === 'failed').length
+  const metric = (key: string) => completed.reduce((sum, job) => {
+    const value = Number((job.extraction_metrics as Record<string, unknown> | null)?.[key] ?? 0)
+    return sum + (Number.isFinite(value) && value > 0 ? value : 0)
+  }, 0)
+  const extractedLines = metric('line_count')
+  const matchedLines = metric('mapped_line_count')
+  const receivedLines = metric('auto_applied_line_count')
+  const duration = metric('duration_ms')
+  const pages = completed.reduce((sum, job) => {
+    const metrics = job.extraction_metrics as Record<string, unknown> | null
+    const usage = metrics?.usage_info as Record<string, unknown> | null
+    const value = Number(usage?.pages_processed ?? metrics?.page_count ?? 0)
+    return sum + (Number.isFinite(value) && value > 0 ? value : 0)
+  }, 0)
+  return { jobs: data.length, completed: completed.length, failed, extractedLines,
+    matchedLines, receivedLines, exceptionLines: metric('exception_count'), pages,
+    averageDurationSeconds: completed.length ? duration / completed.length / 1000 : null,
+    autoReceiptRate: extractedLines ? receivedLines / extractedLines : null,
+    mappingRate: extractedLines ? matchedLines / extractedLines : null }
 }
 
 export async function getK5InvoiceAvailabilityAction(params: { invoiceId: string }): Promise<
@@ -87,7 +132,7 @@ export async function getK5InvoiceAvailabilityAction(params: { invoiceId: string
   ])
 
   if (extractionError || jobError) {
-    return { success: false, message: 'No se pudo comprobar la extracción Docling de este albarán.' }
+    return { success: false, message: 'No se pudo comprobar la extracción de este albarán.' }
   }
 
   const extractions = (extractionRows ?? []) as Array<Record<string, unknown>>
@@ -102,7 +147,7 @@ export async function getK5InvoiceAvailabilityAction(params: { invoiceId: string
       success: true,
       availability: {
         kind: 'processing',
-        detail: Number.isFinite(attemptCount) && attemptCount > 0 ? `Intento Docling ${attemptCount}.` : null,
+        detail: Number.isFinite(attemptCount) && attemptCount > 0 ? `Intento de extracción ${attemptCount}.` : null,
       },
     }
   }

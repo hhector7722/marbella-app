@@ -6,7 +6,7 @@ capa: decisiones
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-25
+revisado: 2026-10-03
 caducidad: 12 meses
 ---
 
@@ -18,7 +18,7 @@ Registro de decisiones de arquitectura y de producto. Responde a una sola pregun
 
 Una decisión, un archivo. Numeración secuencial de cuatro dígitos, sin reiniciar y sin huecos.
 
-**Una decisión no se edita nunca.** Si deja de ser válida, se escribe otra que la sustituya y la anterior pasa a estado `superseded` indicando quién la reemplaza. Se conserva porque el valor de un registro de decisiones está precisamente en poder leer lo que se pensaba entonces.
+**Una decisión no se edita nunca.** Si deja de ser válida, se escribe otra que la sustituya y la anterior pasa a estado `superado`; el ADR nuevo la nombra en `supersede`. Se conserva porque el valor de un registro de decisiones está precisamente en poder leer lo que se pensaba entonces.
 
 Esto separa dos cosas que antes se confundían: **el documento es inmutable, la decisión puede caducar.** El estado del documento dice si la decisión sigue en pie; el archivo nunca cambia.
 
@@ -49,7 +49,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0009](./ADR-0009-modal-subordinacion.md) | Subordinación visual del panel Modal cubierto | Vigente |
 | [0010](./ADR-0010-jerarquia-visual-canonica.md) | Jerarquía visual canónica: primitivas y plantillas de pantalla | Vigente |
 | [0011](./ADR-0011-proyeccion-diaria-hija-y-carry-out.md) | Proyección diaria hija y `carry_out` para lecturas SELECT | Vigente |
-| [0012](./ADR-0012-recepcion-trazable-y-evidencia-documental.md) | Recepción trazable y evidencia documental sin efectos automáticos | Vigente |
+| [0012](./ADR-0012-recepcion-trazable-y-evidencia-documental.md) | Recepción trazable y evidencia documental sin efectos automáticos | Superada por 0021 |
 | [0013](./ADR-0013-confirmacion-atomica-de-recepcion.md) | Confirmación atómica de recepción por línea | Vigente |
 | [0014](./ADR-0014-perfiles-versionados-interpretacion-albaranes.md) | Perfiles versionados para interpretación de albaranes | Vigente |
 | [0015](./ADR-0015-alta-laboral-por-token.md) | Alta laboral por token de un solo uso | Vigente |
@@ -58,6 +58,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0018](./ADR-0018-elaboraciones-intermedias.md) | Elaboraciones intermedias y subrecetas | Vigente |
 | [0019](./ADR-0019-inventario-captura-y-certificacion.md) | Recuento de inventario: captura libre y certificación por gerencia | Vigente |
 | [0020](./ADR-0020-borrador-compartido-de-inventario.md) | Borrador compartido del recuento de inventario | Vigente |
+| [0021](./ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md) | Extracción canónica y recepción automática de albaranes | Vigente |
 
 ## Decisiones tomadas sin registrar
 

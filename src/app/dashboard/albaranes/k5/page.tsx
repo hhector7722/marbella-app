@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import K5ReviewClient from './K5ReviewClient'
+import { Surface } from '@/components/ui/Surface'
 import {
+  getMistralOpsMetricsAction,
   getK5InvoiceAvailabilityAction,
   listK5InvoiceCandidatesAction,
   type K5InvoiceAvailability,
@@ -16,13 +18,23 @@ function formatDate(value: string | null): string {
   return match ? `${match[3]}/${match[2]}/${match[1]}` : value
 }
 
+function metricNumber(value: number): string {
+  return value > 0 ? new Intl.NumberFormat('es-ES').format(value) : '—'
+}
+
+function metricRate(value: number | null): string {
+  return value != null && value > 0
+    ? new Intl.NumberFormat('es-ES', { style: 'percent', maximumFractionDigits: 1 }).format(value)
+    : '—'
+}
+
 function unavailableCopy(
   availability: K5InvoiceAvailability | null,
   lookupError: string | null
 ): { title: string; body: string; detail: string | null; failed: boolean } {
   if (lookupError) {
     return {
-      title: 'No se pudo comprobar el estado Docling',
+      title: 'No se pudo comprobar el estado de extracción',
       body: lookupError,
       detail: null,
       failed: true,
@@ -32,21 +44,21 @@ function unavailableCopy(
   switch (availability?.kind) {
     case 'processing':
       return {
-        title: 'Docling todavía está procesando este albarán',
+        title: 'El albarán todavía se está procesando',
         body: 'La extracción sigue pendiente o con una lease activa. Vuelve a abrir la revisión cuando termine.',
         detail: availability.detail,
         failed: false,
       }
     case 'no_table':
       return {
-        title: 'Docling procesó el documento, pero no detectó una tabla estructurada',
+        title: 'No se detectó una tabla estructurada',
         body: 'La evidencia existe y K5 puede intentar reconstruir las líneas por posición. Si no aparecen en la cola, recarga para revalidar el fallback de layout.',
         detail: availability.detail,
         failed: false,
       }
     case 'failed':
       return {
-        title: 'Docling no pudo completar la extracción de este albarán',
+        title: 'No se pudo completar la extracción de este albarán',
         body: 'La extracción terminó con un error operativo. Puedes revisar el detalle y reintentar desde el albarán.',
         detail: availability.detail,
         failed: true,
@@ -67,7 +79,7 @@ function unavailableCopy(
       }
     case 'available':
       return {
-        title: 'La extracción Docling ya está disponible',
+        title: 'La extracción ya está disponible',
         body: 'La cola de revisión puede haber cambiado mientras abrías la página. Recarga para volver a construirla.',
         detail: null,
         failed: false,
@@ -75,8 +87,8 @@ function unavailableCopy(
     case 'missing':
     default:
       return {
-        title: 'Este albarán todavía no tiene una extracción Docling disponible',
-        body: 'No hay una extracción estructurada ni un trabajo Docling activo que K5 pueda revisar.',
+        title: 'Este albarán todavía no tiene una extracción disponible',
+        body: 'No hay una extracción estructurada ni un trabajo activo que se pueda revisar.',
         detail: null,
         failed: false,
       }
@@ -94,7 +106,9 @@ export default async function K5ReviewPage({
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const result = await listK5InvoiceCandidatesAction()
+  const [result, mistralMetrics] = await Promise.all([
+    listK5InvoiceCandidatesAction(), getMistralOpsMetricsAction(),
+  ])
   if (!result.success) {
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
@@ -129,7 +143,7 @@ export default async function K5ReviewPage({
         <div>
           <h1 className="text-lg font-black text-zinc-900">Revisar albaranes</h1>
           <p className="mt-1 text-xs font-medium text-zinc-600">
-            Resuelve solo las excepciones y confirma las líneas reconocidas. El detalle técnico queda oculto al final.
+            Resuelve las excepciones reales. Las líneas seguras pendientes pueden confirmarse juntas; el detalle técnico queda al final.
           </p>
         </div>
         <Link href="/dashboard/albaranes" className="text-xs font-black text-zinc-700 underline underline-offset-4">
@@ -137,9 +151,25 @@ export default async function K5ReviewPage({
         </Link>
       </div>
 
+      {mistralMetrics && mistralMetrics.jobs > 0 ? (
+        <Surface variant="block" instance="albaranes-mistral-metrics" className="mb-3 p-4">
+          <div className="text-sm font-black text-zinc-900">Procesamiento Mistral · últimos 100 trabajos</div>
+          <div className="mt-2 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+            <div><div className="font-semibold text-zinc-600">Documentos procesados</div><div className="text-lg font-black">{metricNumber(mistralMetrics.completed)}</div></div>
+            <div><div className="font-semibold text-zinc-600">Líneas reconocidas</div><div className="text-lg font-black">{metricNumber(mistralMetrics.matchedLines)} / {metricNumber(mistralMetrics.extractedLines)}</div></div>
+            <div><div className="font-semibold text-zinc-600">Mapeo automático</div><div className="text-lg font-black">{metricRate(mistralMetrics.mappingRate)}</div></div>
+            <div><div className="font-semibold text-zinc-600">Recibidas sin intervención</div><div className="text-lg font-black">{metricRate(mistralMetrics.autoReceiptRate)}</div></div>
+          </div>
+          <p className="mt-2 text-xs font-medium text-zinc-600">
+            {metricNumber(mistralMetrics.pages)} páginas · {metricNumber(mistralMetrics.exceptionLines)} líneas con excepción · {metricNumber(mistralMetrics.failed)} trabajos fallidos
+            {mistralMetrics.averageDurationSeconds != null ? ` · ${mistralMetrics.averageDurationSeconds.toFixed(1)} s de media` : ''}
+          </p>
+        </Surface>
+      ) : null}
+
       {result.invoices.length === 0 ? (
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm font-bold text-zinc-600">
-          No hay albaranes con evidencia Docling interpretable disponible para revisar.
+          No hay albaranes con evidencia disponible para revisar.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[18rem_minmax(0,1fr)]">

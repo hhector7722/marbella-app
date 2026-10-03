@@ -7,7 +7,7 @@ normativo: true
 precedencia: 80
 responsable: propiedad del producto
 decidido: 2026-09-14
-depende_de: ADR-0012
+depende_de: —
 supersede: —
 ---
 

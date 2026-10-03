@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { K2_RECONCILIATION_TRUST_START } from '@/lib/albaranes/k5/batch-review'
@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic'
 
 const MAX_PRICE_DELTA_RATIO = 0.25
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AdminClient = ReturnType<typeof createClient<any>>
 
 type AutoApplyRequest = {
@@ -20,6 +21,7 @@ type AutoApplyRequest = {
   leaseToken: string
   invoiceId: string
   extractionId: string
+  previewOnly: boolean
 }
 
 type AutoApplyBlocked = {
@@ -75,7 +77,8 @@ function parsePayload(rawBody: string): AutoApplyRequest | null {
     const invoiceId = text(parsed.invoiceId)
     const extractionId = text(parsed.extractionId)
     if (!jobId || !leaseToken || !invoiceId || !extractionId) return null
-    return { jobId, leaseToken, invoiceId, extractionId }
+    return { jobId, leaseToken, invoiceId, extractionId,
+      previewOnly: parsed.previewOnly === true }
   } catch {
     return null
   }
@@ -87,15 +90,19 @@ async function autoApplyDeterministicReceipts(
 ): Promise<Record<string, unknown>> {
   const { data: invoiceData, error: invoiceError } = await supabase
     .from('purchase_invoices')
-    .select('id,supplier_id,status')
+    .select('id,supplier_id,status,duplicate_of_invoice_id')
     .eq('id', payload.invoiceId)
     .maybeSingle()
-  const invoice = invoiceData as { id?: string; supplier_id?: number | null; status?: string | null } | null
+  const invoice = invoiceData as { id?: string; supplier_id?: number | null; status?: string | null;
+    duplicate_of_invoice_id?: string | null } | null
   if (invoiceError || !invoice || invoice.supplier_id == null) {
     return { ok: true, applied: 0, blocked: [{ proposalId: '', lineId: null, reason: 'invoice_or_supplier_unavailable' }] }
   }
   if (text(invoice.status) === 'discarded') {
     return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_discarded' }
+  }
+  if (invoice.duplicate_of_invoice_id) {
+    return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_possible_duplicate' }
   }
 
   const { data: proposalRows, error: proposalError } = await supabase
@@ -114,6 +121,12 @@ async function autoApplyDeterministicReceipts(
 
   const proposalIds = active.map((proposal) => text(proposal.id)).filter(Boolean)
   const mappingIds = [...new Set(active.map((proposal) => text(proposal.mapping_version_id)).filter(Boolean))]
+  const aliasSourceIds = [...new Set(active.map((proposal) => {
+    const interpreted = proposal.interpreted && typeof proposal.interpreted === 'object'
+      ? proposal.interpreted as Record<string, unknown> : {}
+    return text(interpreted.alias_source_mapping_version_id)
+  }).filter(Boolean))]
+  const allMappingIds = [...new Set([...mappingIds, ...aliasSourceIds])]
   const ingredientIds = [...new Set(active.map((proposal) => text(proposal.ingredient_id)).filter(Boolean))]
 
   const { data: lineRows, error: lineError } = await supabase
@@ -131,11 +144,11 @@ async function autoApplyDeterministicReceipts(
   }
   const lineIds = [...lineByProposal.values()]
 
-  const { data: mappingRows, error: mappingError } = mappingIds.length
+  const { data: mappingRows, error: mappingError } = allMappingIds.length
     ? await supabase
         .from('purchase_mapping_versions')
-        .select('id,status,legacy_mapping_id,idempotency_key')
-        .in('id', mappingIds)
+        .select('id,status,legacy_mapping_id,idempotency_key,supplier_id,supplier_item_name,ingredient_id,conversion_factor,line_billing_unit,line_content_qty,line_content_unit,source_document_extraction_id')
+        .in('id', allMappingIds)
     : { data: [] as Array<Record<string, unknown>>, error: null }
   if (mappingError) throw new Error('No se pudieron validar las versiones de mapeo K5.')
   const mappingById = new Map<string, Record<string, unknown>>(
@@ -144,11 +157,11 @@ async function autoApplyDeterministicReceipts(
       .filter(([id]) => Boolean(id))
   )
 
-  const { data: successorRows, error: successorError } = mappingIds.length
+  const { data: successorRows, error: successorError } = allMappingIds.length
     ? await supabase
         .from('purchase_mapping_versions')
         .select('supersedes_id')
-        .in('supersedes_id', mappingIds)
+        .in('supersedes_id', allMappingIds)
     : { data: [] as Array<Record<string, unknown>>, error: null }
   if (successorError) throw new Error('No se pudo comprobar la vigencia de los mapeos K5.')
   const supersededMappings = new Set(
@@ -203,19 +216,53 @@ async function autoApplyDeterministicReceipts(
     const ingredientId = text(proposal.ingredient_id)
     const mappingVersion = mappingById.get(mappingVersionId) ?? null
     const trustedLegacyImport = mappingVersion ? isTrustedLegacyImportedMappingVersion(mappingVersion) : false
+    const interpreted = proposal.interpreted && typeof proposal.interpreted === 'object'
+      ? proposal.interpreted as Record<string, unknown> : {}
+    const aliasSourceId = text(interpreted.alias_source_mapping_version_id)
+    const sourceVersion = mappingById.get(aliasSourceId) ?? null
+    const aliasKey = aliasSourceId
+      ? `mistral-alias-v1:${aliasSourceId}:${createHash('sha256').update(JSON.stringify(text(proposal.source_item_name))).digest('hex')}`
+      : ''
+    const trustedMistralAlias = Boolean(mappingVersion && sourceVersion
+      && text(mappingVersion.status) === 'proposed'
+      && text(mappingVersion.idempotency_key) === aliasKey
+      && text(mappingVersion.source_document_extraction_id) === payload.extractionId
+      && text(mappingVersion.supplier_item_name) === text(proposal.source_item_name)
+      && text(mappingVersion.supplier_id) === supplierId
+      && text(mappingVersion.ingredient_id) === ingredientId
+      && text(sourceVersion.supplier_id) === supplierId
+      && text(sourceVersion.ingredient_id) === ingredientId
+      && isK5ReusableMappingVersion(sourceVersion)
+      && !supersededMappings.has(aliasSourceId)
+      && ['conversion_factor', 'line_billing_unit', 'line_content_qty', 'line_content_unit']
+        .every((field) => text(mappingVersion[field]) === text(sourceVersion[field])))
     const provenance = proposal.provenance && typeof proposal.provenance === 'object'
       ? proposal.provenance as Record<string, unknown>
       : {}
 
     let blockReason: string | null = null
     if (text(proposal.status) !== 'ready_for_review') blockReason = 'proposal_not_ready'
-    else if (text(provenance.source) !== 'docling_evidence' || text(provenance.trigger) !== 'docling_completion' || Object.hasOwn(provenance, 'revision')) blockReason = 'proposal_not_pure_docling'
+    else if (Object.hasOwn(provenance, 'revision')) blockReason = 'manual_revision_requires_review'
+    else if (text(provenance.source) === 'mistral_canonical') {
+      const interpreted = proposal.interpreted && typeof proposal.interpreted === 'object'
+        ? proposal.interpreted as Record<string, unknown> : {}
+      const matchSource = text(interpreted.match_source)
+      const matchScore = numberOrNull(interpreted.match_score)
+      if (text(provenance.trigger) !== 'mistral_job_completion'
+        || text(provenance.schema_version) !== 'mistral-pipeline-v3'
+        || provenance.economic_effects !== false
+        || text(proposal.normalizer_version) !== 'mistral-pipeline-v3'
+        || !['code', 'exact_name', 'alias'].includes(matchSource)
+        || matchScore == null || matchScore < 0.95) blockReason = 'mistral_confidence_insufficient'
+    } else if (text(provenance.source) !== 'docling_evidence'
+      || text(provenance.trigger) !== 'docling_completion') blockReason = 'proposal_origin_untrusted'
     else if (stringArray(proposal.review_reasons).length > 0) blockReason = 'review_reasons_present'
     else if (stringArray(proposal.warnings).length > 0) blockReason = 'warnings_present'
     else if (!lineId || !mappingVersionId || !ingredientId) blockReason = 'line_mapping_or_ingredient_missing'
     else if (!positive(proposal.line_quantity) || !positive(proposal.observed_unit_price) || !positive(proposal.physical_quantity) || !positive(proposal.purchase_quantity) || !positive(proposal.normalized_unit_price)) blockReason = 'economic_magnitudes_incomplete'
     else if (!text(proposal.line_unit) || !text(proposal.base_unit) || !text(proposal.purchase_unit)) blockReason = 'canonical_units_incomplete'
-    else if (!mappingVersion || !isK5ReusableMappingVersion(mappingVersion) || supersededMappings.has(mappingVersionId)) blockReason = 'mapping_not_reusable_leaf'
+    else if (!mappingVersion || (!isK5ReusableMappingVersion(mappingVersion) && !trustedMistralAlias)
+      || supersededMappings.has(mappingVersionId)) blockReason = 'mapping_not_reusable_leaf'
     else if (confirmedLines.has(lineId)) blockReason = 'already_confirmed'
     else if (ingredientsWithPendingOrders.has(ingredientId)) blockReason = 'pending_order_requires_allocation'
 
@@ -248,7 +295,7 @@ async function autoApplyDeterministicReceipts(
       continue
     }
 
-    if (preview.mapping_will_be_confirmed === true && !trustedLegacyImport) {
+    if (preview.mapping_will_be_confirmed === true && !trustedLegacyImport && !trustedMistralAlias) {
       blocked.push({ proposalId, lineId, reason: 'mapping_requires_confirmation' })
       continue
     }
@@ -267,6 +314,8 @@ async function autoApplyDeterministicReceipts(
         continue
       }
     }
+
+    if (payload.previewOnly) continue
 
     const { data: applyData, error: applyError } = await supabase.rpc('apply_receipt_line_automated', {
       ...rpcParams,
@@ -296,6 +345,7 @@ async function autoApplyDeterministicReceipts(
     ok: true,
     eligible,
     applied: applied.length,
+    previewOnly: payload.previewOnly,
     blocked,
     appliedItems: applied,
     maxPriceDeltaRatio: MAX_PRICE_DELTA_RATIO,
@@ -320,6 +370,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'No autorizado.' }, { status: 401 })
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createClient<any>(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })

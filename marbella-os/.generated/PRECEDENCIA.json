@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "4567bcf0111fe735",
+  "_huella": "9dafc177b47222c9",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -170,20 +170,6 @@
       ]
     },
     {
-      "ruta": "marbella-os/4-decisiones/ADR-0012-recepcion-trazable-y-evidencia-documental.md",
-      "documento": "ADR-0012",
-      "clase": "inmutable",
-      "estado": "vigente",
-      "capa": "decisiones",
-      "normativo": true,
-      "citable": true,
-      "precedencia": 80,
-      "vence": null,
-      "depende_de": [
-        "ADR-0001"
-      ]
-    },
-    {
       "ruta": "marbella-os/4-decisiones/ADR-0013-confirmacion-atomica-de-recepcion.md",
       "documento": "ADR-0013",
       "clase": "inmutable",
@@ -193,9 +179,7 @@
       "citable": true,
       "precedencia": 80,
       "vence": null,
-      "depende_de": [
-        "ADR-0012"
-      ]
+      "depende_de": []
     },
     {
       "ruta": "marbella-os/4-decisiones/ADR-0014-perfiles-versionados-interpretacion-albaranes.md",
@@ -208,7 +192,6 @@
       "precedencia": 80,
       "vence": null,
       "depende_de": [
-        "ADR-0012",
         "ADR-0013"
       ]
     },
@@ -249,7 +232,7 @@
       "precedencia": 80,
       "vence": null,
       "depende_de": [
-        "ADR-0012"
+        "ADR-0021"
       ]
     },
     {
@@ -279,7 +262,7 @@
       "precedencia": 80,
       "vence": null,
       "depende_de": [
-        "ADR-0012",
+        "ADR-0021",
         "MODELO-DE-DATOS",
         "SEGURIDAD",
         "ACTORES-Y-ROLES"
@@ -297,6 +280,23 @@
       "vence": null,
       "depende_de": [
         "ADR-0019",
+        "MODELO-DE-DATOS",
+        "SEGURIDAD"
+      ]
+    },
+    {
+      "ruta": "marbella-os/4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md",
+      "documento": "ADR-0021",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0013",
+        "ADR-0014",
         "MODELO-DE-DATOS",
         "SEGURIDAD"
       ]
@@ -409,7 +409,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-12-27",
+      "vence": "2027-01-03",
       "depende_de": []
     },
     {
@@ -496,7 +496,7 @@
       "vence": "2027-03-15",
       "depende_de": [
         "DOMINIO-PRECIOS-Y-COMPRAS",
-        "ADR-0012",
+        "ADR-0021",
         "ADR-0013",
         "ADR-0014"
       ]
@@ -510,7 +510,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-26",
+      "vence": "2027-04-03",
       "depende_de": []
     },
     {
@@ -670,7 +670,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-27",
+      "vence": "2027-04-03",
       "depende_de": []
     },
     {
@@ -732,7 +732,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-12-18",
+      "vence": "2027-01-03",
       "depende_de": []
     },
     {
@@ -744,7 +744,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-09-25",
+      "vence": "2027-10-03",
       "depende_de": []
     },
     {
@@ -780,7 +780,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-12-27",
+      "vence": "2027-01-03",
       "depende_de": []
     },
     {
@@ -864,7 +864,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-27",
+      "vence": "2027-04-03",
       "depende_de": []
     },
     {
@@ -897,6 +897,20 @@
       "clase": "inmutable",
       "estado": "superado",
       "capa": "ingenieria",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "ADR-0001"
+      ]
+    },
+    {
+      "ruta": "marbella-os/4-decisiones/ADR-0012-recepcion-trazable-y-evidencia-documental.md",
+      "documento": "ADR-0012",
+      "clase": "inmutable",
+      "estado": "superado",
+      "capa": "decisiones",
       "normativo": false,
       "citable": false,
       "precedencia": 0,

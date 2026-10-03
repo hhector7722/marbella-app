@@ -41,6 +41,33 @@ const exceptionLabel: Record<string, string> = {
   unavailable: 'Faltan datos para una confirmación segura.',
 }
 
+const reasonLabel: Record<string, string> = {
+  producto_sin_mapping: 'Elige el ingrediente de este producto; la asociación se guardará.',
+  varios_ingredientes_posibles: 'Hay varios ingredientes posibles; elige el correcto.',
+  presentacion_sin_validar: 'Confirma cómo se convierte esta presentación a la unidad de compra.',
+  unidad_facturada_incompatible: 'La unidad facturada no coincide con la presentación guardada; comprueba el formato.',
+  cantidad_ausente_o_invalida: 'Comprueba la cantidad en la fotografía.',
+  precio_ausente_o_invalido: 'Comprueba el precio unitario en la fotografía.',
+  importe_ausente_o_invalido: 'Comprueba el importe de esta línea en la fotografía.',
+  cantidad_precio_importe_no_reconcilian: 'Cantidad por precio no coincide con el importe; corrige el dato leído.',
+  descuento_sin_porcentaje_verificado: 'Confirma cómo se aplica el descuento mostrado.',
+  precio_neto_contradictorio: 'El precio neto no coincide con el descuento; revisa ambos valores.',
+  cargo_adicional_sin_concepto: 'Hay un cargo sin concepto claro; comprueba el documento.',
+  subtotal_iva_total_no_reconcilian: 'Subtotal e IVA no suman el total del albarán.',
+  lineas_subtotal_no_reconcilian: 'La suma de líneas no coincide con el subtotal.',
+  lineas_total_no_reconcilian: 'La suma de líneas no coincide con el total.',
+  contenido_de_caja_invalido: 'Comprueba el contenido de cada caja.',
+  unidades_por_caja_invalidas: 'Comprueba cuántas unidades contiene cada caja.',
+  conversion_de_presentacion_incompatible: 'La presentación guardada no permite convertir esta cantidad.',
+  cantidad_supera_precision_k4: 'La cantidad requiere más decimales de los que admite la recepción.',
+  redondeo_economico_no_reconcilia: 'El redondeo del precio no reconcilia con el importe.',
+  sin_lineas: 'No se detectaron líneas de producto; revisa la imagen.',
+}
+
+function explainReason(reason: string): string {
+  return reasonLabel[reason] ?? `Revisa la incidencia de esta línea (${reason.replaceAll('_', ' ')}).`
+}
+
 export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
   const [context, setContext] = useState<Context | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -182,12 +209,12 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
   }
 
   return (
-    <Surface variant="block" instance="k5-batch-review" className="min-w-0 p-4">
+    <Surface variant="block" instance="k5-batch-review" className="flex min-w-0 flex-col p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-base font-black text-zinc-900">2 · Revisar y confirmar productos reconocidos</div>
+          <div className="text-base font-black text-zinc-900">Recepción del albarán</div>
           <p className="mt-1 max-w-2xl text-xs font-medium leading-relaxed text-zinc-600">
-            Estas líneas ya tienen producto y presentación resueltos. Revísalas juntas, mira el efecto real y confirma solo si todo cuadra.
+            Las líneas confirmadas ya están recibidas. Resuelve las excepciones y confirma las líneas seguras que queden pendientes.
           </p>
         </div>
         <Button
@@ -230,14 +257,14 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
       ) : null}
 
       {readyRows.length > 0 ? (
-        <div className="mt-4">
+        <div className="order-2 mt-4">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
-              Seleccionadas para confirmar
+              Reconocidas pendientes de confirmar
             </div>
             <button
               type="button"
-              className="text-[10px] font-black text-zinc-600 underline underline-offset-2"
+              className="min-h-12 text-[10px] font-black text-zinc-600 underline underline-offset-2"
               onClick={() => {
                 const allSelected = readyRows.every((row) => selected.has(row.proposalId))
                 setSelected(new Set(allSelected ? [] : readyRows.map((row) => row.proposalId)))
@@ -298,7 +325,7 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
           </div>
         </div>
       ) : (
-        <div className="mt-4">
+        <div className="order-2 mt-4">
           <Notice instance="k5-batch-none-ready" variant="info" title="No hay líneas nuevas listas para lote">
             Las líneas ya confirmadas quedan fuera. Los productos nuevos o ambiguos aparecen abajo como excepciones y solo hay que resolverlos cuando cambie su mapping o presentación.
           </Notice>
@@ -306,7 +333,7 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
       )}
 
       {preview.length > 0 ? (
-        <div className="mt-4 rounded-2xl border border-[#9bb5bf] bg-[#eef5f7] p-3">
+        <div className="order-3 mt-4 rounded-2xl border border-[#9bb5bf] bg-[#eef5f7] p-3">
           <div className="text-[10px] font-black uppercase tracking-wider text-[#365967]">Efecto a confirmar · {preview.length} líneas</div>
           <div className="mt-2 space-y-2">
             {preview.map((item) => (
@@ -348,11 +375,11 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
       ) : null}
 
       {exceptionRows.length > 0 ? (
-        <div className="mt-4 border-t border-zinc-200 pt-3">
+        <div className="order-1 mt-4 border-t border-zinc-200 pt-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700">
               <AlertTriangle className="h-4 w-4" />
-              Otras incidencias · {exceptionRows.length}
+              Necesitan atención · {exceptionRows.length}
             </div>
             <Link href={`/dashboard/albaranes?id=${encodeURIComponent(invoiceId)}`} className="text-[10px] font-black text-zinc-700 underline underline-offset-2">
               Abrir albarán para resolverlas
@@ -370,7 +397,7 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
                   ) : null}
                   <div className="mt-0.5 text-[10px] font-semibold leading-relaxed text-amber-900">
                     {exceptionLabel[row.disposition] || 'Requiere revisión.'}
-                    {row.reviewReasons.length ? ` ${row.reviewReasons.join(' · ')}` : ''}
+                    {row.reviewReasons.length ? ` ${row.reviewReasons.map(explainReason).join(' ')}` : ''}
                     {row.pendingOrderCount > 0 ? ` Pedidos pendientes: ${row.pendingOrderCount}.` : ''}
                   </div>
                 </div>

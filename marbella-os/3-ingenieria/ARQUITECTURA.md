@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-26
+revisado: 2026-10-03
 caducidad: 6 meses
 supersede: —
 ---
@@ -172,6 +172,34 @@ estructurada, reconoce la semántica documental y devuelve una propuesta o
 `needs_review`. No se ejecuta dentro del worker, no modifica la evidencia y no
 puede invocar ninguna escritura. El mapeo de un artículo concreto y la
 confirmación K4 siguen siendo fronteras distintas.
+
+### Mistral: evidencia, propuesta y recepción
+
+La ruta interna `api/internal/albaranes/mistral-shadow` lee el archivo privado de un
+albarán, comprueba su huella y llama a Mistral OCR desde el servidor. Conserva
+la respuesta original y la observación canónica en
+`document_shadow_extractions`, con versión de extractor, modelo, métricas y
+errores. El mismo archivo y versión reutilizan la evidencia ya obtenida. Esta
+ruta no crea propuestas K5, líneas económicas, recepciones, movimientos ni
+precios; permite comparar Mistral con la evidencia histórica.
+
+En el camino principal, el escáner guarda el documento y encola una intención
+`mistral-*` sin esperar el OCR. La cola separa los leases Docling y Mistral.
+`pg_cron` despierta al procesador de Vercel cada dos minutos mediante una
+credencial privada de Vault. El procesador verifica la huella, reutiliza
+extracción por archivo y versión, persiste `document_extractions`, construye
+propuestas versionadas y materializa líneas únicamente si no existe otra serie
+de líneas. La observación canónica no conoce ingredientes. El matcher consulta
+memoria histórica por proveedor; la presentación y la aritmética determinan
+si la propuesta está lista o es excepción. Los alias nuevos se guardan como
+versiones propuestas derivadas de una presentación confiable.
+
+La recepción automática, cuando se habilita, pasa por la vista previa y el
+delegado de servicio de K4. Se bloquea ante duplicado, ambigüedad, conversión
+no verificada, contradicción matemática, pedido pendiente o precio anómalo.
+K4 conserva la única escritura de stock, confirmación y precio. La pantalla de
+revisión muestra primero las excepciones. El rollout y la decisión estructural
+están en [ADR-0021](../4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md).
 
 ---
 

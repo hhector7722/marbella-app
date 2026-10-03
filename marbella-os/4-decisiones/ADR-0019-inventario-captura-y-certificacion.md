@@ -7,7 +7,7 @@ normativo: true
 precedencia: 80
 responsable: propiedad del producto
 decidido: 2026-09-30
-depende_de: ADR-0012, MODELO-DE-DATOS, SEGURIDAD, ACTORES-Y-ROLES
+depende_de: ADR-0021, MODELO-DE-DATOS, SEGURIDAD, ACTORES-Y-ROLES
 supersede: —
 ---
 

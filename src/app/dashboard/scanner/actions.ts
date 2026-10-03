@@ -3,10 +3,13 @@
 import { createHash } from 'node:crypto'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { MISTRAL_EXTRACTOR_VERSION } from '@/lib/albaranes/extractors/mistral'
 
 // Versión declarada, no una regla de dominio. Una futura selección de evidence
 // siempre será explícita por `document_extractions.id`, nunca por esta cadena.
 const DOCLING_SCANNER_EXTRACTOR_VERSION = 'docling-serve-v1.21.0-k3.3-scanner'
+const PRIMARY_SCANNER_EXTRACTOR_VERSION = process.env.ALBARAN_PRIMARY_EXTRACTOR === 'mistral'
+  ? MISTRAL_EXTRACTOR_VERSION : DOCLING_SCANNER_EXTRACTOR_VERSION
 
 async function gateAuthenticated() {
   const supabase = await createClient()
@@ -59,7 +62,7 @@ async function enqueueDoclingEvidence(
     p_invoice_id: params.invoiceId,
     p_file_version_hash: params.fileVersionHash,
     p_storage_path: params.storagePath,
-    p_extractor_version: DOCLING_SCANNER_EXTRACTOR_VERSION,
+    p_extractor_version: PRIMARY_SCANNER_EXTRACTOR_VERSION,
     p_source_attachment_id: params.sourceAttachmentId ?? null,
   })
 
