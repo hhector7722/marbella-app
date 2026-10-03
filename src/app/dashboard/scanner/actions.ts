@@ -107,7 +107,7 @@ export async function listRecentInvoicesForSupplierAction(params: {
   }
 }
 
-/** Guarda una hoja adicional y crea inmediatamente su trabajo durable Docling. */
+/** Guarda una hoja adicional y crea su trabajo de extracción durable. */
 export async function appendScannerPageToInvoiceAction(params: {
   base64DataUri: string
   filename: string
@@ -183,6 +183,16 @@ export async function appendScannerPageToInvoiceAction(params: {
       return { success: false, message: attachmentError?.message ?? 'Error guardando la hoja adicional' }
     }
 
+    // El guardián de recepción consulta este total antes de aplicar K4.
+    const { error: pageCountError } = await supabase.from('purchase_invoices')
+      .update({ expected_pages: pageOrder })
+      .eq('id', invoiceId)
+      .lt('expected_pages', pageOrder)
+    if (pageCountError) {
+      return { success: false, invoiceId,
+        message: 'La hoja se conservó, pero no se pudo actualizar el total de hojas. Reintenta desde el albarán.' }
+    }
+
     const queued = await enqueueDoclingEvidence(supabase, {
       invoiceId,
       fileVersionHash: contentSha256,
@@ -206,7 +216,7 @@ export async function appendScannerPageToInvoiceAction(params: {
   }
 }
 
-/** Captura el original y encola Docling; no llama Gemini ni crea líneas de compra. */
+/** Captura el original y encola el extractor principal, sin crear efectos económicos. */
 export async function processScannerImage(
   base64DataUri: string,
   filename: string,
@@ -289,7 +299,7 @@ export async function processScannerImage(
   }
 }
 
-/** Reintenta solo un trabajo fallido sin evidence o recupera un pending sin duplicarlo. */
+/** Reintenta solo un trabajo fallido sin evidencia o recupera un pendiente sin duplicarlo. */
 export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessScannerImageResult> {
   try {
     const gate = await gateAuthenticated()
@@ -350,7 +360,7 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
     return { success: true, invoiceId: id }
   } catch (error) {
     console.error('retryOcrInvoiceAction:', error)
-    return { success: false, message: 'Error inesperado al reintentar Docling. Reintenta.' }
+    return { success: false, message: 'Error inesperado al reintentar la extracción. Reintenta.' }
   }
 }
 

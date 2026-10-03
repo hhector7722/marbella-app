@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { K2_RECONCILIATION_TRUST_START } from '@/lib/albaranes/k5/batch-review'
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
 import { documentPagesReady } from '@/lib/albaranes/pipeline/pages'
+import { commonAutoApplyBlockReason } from '@/lib/albaranes/k5/auto-apply-guard'
 import {
   isK5ReusableMappingVersion,
   isTrustedLegacyImportedMappingVersion,
@@ -39,15 +40,6 @@ function numberOrNull(value: unknown): number | null {
   if (value == null || value === '') return null
   const valueNumber = Number(value)
   return Number.isFinite(valueNumber) ? valueNumber : null
-}
-
-function positive(value: unknown): boolean {
-  const valueNumber = numberOrNull(value)
-  return valueNumber != null && valueNumber > 0
-}
-
-function stringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.map(text).filter(Boolean) : []
 }
 
 function safeHexEqual(left: string, right: string): boolean {
@@ -278,15 +270,26 @@ async function autoApplyDeterministicReceipts(
         || matchScore == null || matchScore < 0.95) blockReason = 'mistral_confidence_insufficient'
     } else if (text(provenance.source) !== 'docling_evidence'
       || text(provenance.trigger) !== 'docling_completion') blockReason = 'proposal_origin_untrusted'
-    else if (stringArray(proposal.review_reasons).length > 0) blockReason = 'review_reasons_present'
-    else if (stringArray(proposal.warnings).length > 0) blockReason = 'warnings_present'
-    else if (!lineId || !mappingVersionId || !ingredientId) blockReason = 'line_mapping_or_ingredient_missing'
-    else if (!positive(proposal.line_quantity) || !positive(proposal.observed_unit_price) || !positive(proposal.physical_quantity) || !positive(proposal.purchase_quantity) || !positive(proposal.normalized_unit_price)) blockReason = 'economic_magnitudes_incomplete'
-    else if (!text(proposal.line_unit) || !text(proposal.base_unit) || !text(proposal.purchase_unit)) blockReason = 'canonical_units_incomplete'
-    else if (!mappingVersion || (!isK5ReusableMappingVersion(mappingVersion) && !trustedMistralAlias)
-      || supersededMappings.has(mappingVersionId)) blockReason = 'mapping_not_reusable_leaf'
-    else if (confirmedLines.has(lineId)) blockReason = 'already_confirmed'
-    else if (ingredientsWithPendingOrders.has(ingredientId)) blockReason = 'pending_order_requires_allocation'
+
+    // Estas condiciones son comunes a ambos extractores.
+    if (!blockReason) blockReason = commonAutoApplyBlockReason({
+      reviewReasons: proposal.review_reasons,
+      warnings: proposal.warnings,
+      lineId, mappingVersionId, ingredientId,
+      lineQuantity: proposal.line_quantity,
+      observedUnitPrice: proposal.observed_unit_price,
+      physicalQuantity: proposal.physical_quantity,
+      purchaseQuantity: proposal.purchase_quantity,
+      normalizedUnitPrice: proposal.normalized_unit_price,
+      lineUnit: text(proposal.line_unit),
+      baseUnit: text(proposal.base_unit),
+      purchaseUnit: text(proposal.purchase_unit),
+      mappingReusable: Boolean(mappingVersion
+        && (isK5ReusableMappingVersion(mappingVersion) || trustedMistralAlias)
+        && !supersededMappings.has(mappingVersionId)),
+      alreadyConfirmed: confirmedLines.has(lineId ?? ''),
+      pendingOrder: ingredientsWithPendingOrders.has(ingredientId),
+    })
 
     if (blockReason) {
       blocked.push({ proposalId, lineId, reason: blockReason })

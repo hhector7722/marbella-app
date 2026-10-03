@@ -207,6 +207,10 @@ automática espera a que existan y terminen los trabajos declarados. K4 admite
 la huella de una hoja adicional solo si está vinculada al mismo albarán en
 `purchase_invoice_attachments`. Una hoja fallida o ausente impide recibir solo
 una parte como si el documento estuviera completo.
+Al terminar cada trabajo, la cola sincroniza el estado OCR de su hoja y solo
+deja el albarán pendiente de mapeo cuando han terminado todas las hojas
+declaradas. Un fallo transitorio conserva su reintento automático; el reintento
+explícito de un fallo sin evidencia reinicia el límite de intentos.
 
 ---
 
