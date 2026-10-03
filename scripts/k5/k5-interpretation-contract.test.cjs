@@ -150,8 +150,8 @@ test('cola K5 distingue processing, no_table, failed y ausencia de extracción',
   assert.match(k5QueueActions, /kind: 'no_table'/)
   assert.match(k5QueueActions, /kind: 'failed'/)
   assert.match(k5QueueActions, /kind: 'missing'/)
-  assert.match(k5QueuePage, /Docling procesó el documento, pero no detectó una tabla estructurada/)
-  assert.match(k5QueuePage, /Docling no pudo completar la extracción de este albarán/)
+  assert.match(k5QueuePage, /No se detectó una tabla estructurada/)
+  assert.match(k5QueuePage, /No se pudo completar la extracción de este albarán/)
   assert.doesNotMatch(k5QueuePage, /no tiene una extracción Docling correcta disponible/)
 })
 
