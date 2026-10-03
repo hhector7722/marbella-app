@@ -74,6 +74,8 @@ export default function CameraLive({
   const scrollRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectingRef = useRef(false);
+  const unmountingRef = useRef(false);
   const scaleRef = useRef(ZOOM_MIN);
   const pinchRef = useRef<{
     startDistance: number;
@@ -152,12 +154,25 @@ export default function CameraLive({
     setIsPlaying(false);
   }, []);
 
+  const releaseVideo = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+  }, []);
+
   const refreshStream = useCallback(() => {
+    if (reconnectingRef.current || unmountingRef.current) return;
+
+    reconnectingRef.current = true;
     clearReconnectTimer();
     markUnavailable();
     resetZoom();
+    releaseVideo();
     setStreamVersion((version) => version + 1);
-  }, [clearReconnectTimer, markUnavailable, resetZoom]);
+  }, [clearReconnectTimer, markUnavailable, releaseVideo, resetZoom]);
 
   const ensurePlaying = useCallback(async () => {
     const video = videoRef.current;
@@ -188,6 +203,7 @@ export default function CameraLive({
     const video = videoRef.current;
     if (!video) return;
 
+    reconnectingRef.current = false;
     markUnavailable();
     video.load();
     void ensurePlaying();
@@ -200,6 +216,17 @@ export default function CameraLive({
 
     return () => clearTimeout(watchdog);
   }, [ensurePlaying, markUnavailable, refreshStream, streamVersion]);
+
+  useEffect(() => {
+    unmountingRef.current = false;
+
+    return () => {
+      unmountingRef.current = true;
+      reconnectingRef.current = true;
+      clearReconnectTimer();
+      releaseVideo();
+    };
+  }, [clearReconnectTimer, releaseVideo]);
 
   useEffect(() => {
     const resume = () => {
@@ -385,21 +412,25 @@ export default function CameraLive({
   }, [applyScaleAtClientPoint]);
 
   const handlePlaying = () => {
+    if (reconnectingRef.current || unmountingRef.current) return;
     clearReconnectTimer();
     setIsPlaying(true);
   };
 
   const handleWaiting = () => {
+    if (reconnectingRef.current || unmountingRef.current) return;
     markUnavailable();
     scheduleReconnect(WAITING_RECONNECT_DELAY_MS);
   };
 
   const handleStalled = () => {
+    if (reconnectingRef.current || unmountingRef.current) return;
     markUnavailable();
     scheduleReconnect();
   };
 
   const handlePause = () => {
+    if (reconnectingRef.current || unmountingRef.current) return;
     markUnavailable();
     if (document.visibilityState !== 'visible') return;
 
@@ -410,11 +441,13 @@ export default function CameraLive({
   };
 
   const handleError = () => {
+    if (reconnectingRef.current || unmountingRef.current) return;
     markUnavailable();
     scheduleReconnect(1000);
   };
 
   const handleEnded = () => {
+    if (reconnectingRef.current || unmountingRef.current) return;
     markUnavailable();
     scheduleReconnect(500);
   };
