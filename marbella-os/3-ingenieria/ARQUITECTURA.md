@@ -213,6 +213,10 @@ Al terminar cada trabajo, la cola sincroniza el estado OCR de su hoja y solo
 deja el albarán pendiente de mapeo cuando han terminado todas las hojas
 declaradas. Un fallo transitorio conserva su reintento automático; el reintento
 explícito de un fallo sin evidencia reinicia el límite de intentos.
+Al reintentar un albarán antiguo con Mistral, el escáner declara primero el
+total de hojas existentes y encola también las que Docling ya había marcado
+como leídas. El reintento Mistral solo reactiva trabajos Mistral, sin despertar
+los fallos históricos de Docling.
 
 ---
 
