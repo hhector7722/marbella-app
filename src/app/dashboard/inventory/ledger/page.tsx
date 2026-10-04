@@ -15,5 +15,21 @@ export default async function LedgerPage() {
 
   if (error) throw new Error('Fallo al cargar base de inventario')
 
-  return <LedgerClient ingredients={ingredients || []} />
+  const { data: inventoryMovements, error: inventoryError } = await supabase
+    .from('stock_movements')
+    .select('ingredient_id')
+    .eq('movement_type', 'INVENTORY_COUNT')
+
+  if (inventoryError) throw new Error('Fallo al cargar productos inventariados')
+
+  const inventoriedIds = new Set((inventoryMovements ?? []).map((row) => row.ingredient_id))
+
+  return (
+    <LedgerClient
+      ingredients={(ingredients || []).map((ingredient) => ({
+        ...ingredient,
+        has_inventory_count: inventoriedIds.has(ingredient.id),
+      }))}
+    />
+  )
 }
