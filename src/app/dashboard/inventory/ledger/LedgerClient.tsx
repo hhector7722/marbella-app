@@ -35,6 +35,7 @@ type Ingredient = {
   category: string
   image_url: string | null
   order_unit: string | null
+  has_inventory_count: boolean
 }
 
 type Movement = {
@@ -268,6 +269,7 @@ function LedgerIngredientCard({
 export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string | null>(null)
+  const [showAll, setShowAll] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedIng, setSelectedIng] = useState<Ingredient | null>(null)
   const [movements, setMovements] = useState<Movement[]>([])
@@ -297,18 +299,23 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
     }
   }, [filterOpen])
 
+  const visibleIngredients = useMemo(
+    () => (showAll ? ingredients : ingredients.filter((item) => item.has_inventory_count)),
+    [ingredients, showAll],
+  )
+
   const categories = useMemo(() => {
     const set = new Set<string>()
-    for (const i of ingredients) {
+    for (const i of visibleIngredients) {
       const c = (i.category ?? '').trim()
       if (c) set.add(c)
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
-  }, [ingredients])
+  }, [visibleIngredients])
 
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase()
-    const list = ingredients.filter((i) => {
+    const list = visibleIngredients.filter((i) => {
       const okText = !q || i.name.toLowerCase().includes(q)
       const okCat = !category || i.category === category
       return okText && okCat
@@ -320,7 +327,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
       },
       {} as Record<string, Ingredient[]>,
     )
-  }, [ingredients, search, category])
+  }, [visibleIngredients, search, category])
 
   const handleSelect = async (ing: Ingredient) => {
     setSelectedIng(ing)
@@ -380,6 +387,27 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               onChange={setSearch}
             />
           </div>
+          <button
+            type="button"
+            aria-pressed={showAll}
+            onClick={() => {
+              setShowAll((value) => !value)
+              setCategory(null)
+            }}
+            className={cn(
+              'shrink-0 h-8 px-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-colors',
+              showAll
+                ? 'bg-zinc-800 text-white'
+                : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200',
+            )}
+            title={
+              showAll
+                ? 'Mostrando todos los ingredientes'
+                : 'Mostrando solo ingredientes con al menos un inventario físico'
+            }
+          >
+            {showAll ? 'Solo inventariados' : 'Mostrar todos'}
+          </button>
           <div className="shrink-0 relative" data-ledger-filter-root="true">
             <PeriodFilterButton
               instance="ledger-filter-category"
@@ -402,7 +430,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                   )}
                 >
                   <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
-                  <span className="text-[10px] font-black text-zinc-400">{ingredients.length}</span>
+                  <span className="text-[10px] font-black text-zinc-400">{visibleIngredients.length}</span>
                 </button>
                 <div className="h-px bg-zinc-100" />
                 <div className="max-h-72 overflow-auto">
@@ -440,7 +468,11 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             <EmptyState
               instance="inventory-ledger-mismatch"
               variant="mismatch"
-              title="No hay ingredientes que coincidan."
+              title={
+                showAll
+                  ? 'No hay ingredientes que coincidan.'
+                  : 'No hay productos inventariados que coincidan.'
+              }
             />
           ) : (
             <div className="flex flex-col gap-6">
