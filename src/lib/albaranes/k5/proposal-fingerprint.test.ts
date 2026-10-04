@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { proposalInputFingerprint } from './normalizer.ts'
+import { proposalInputFingerprint } from './proposal-fingerprint.ts'
 
 const base = {
   invoice_id: 'invoice',

@@ -12,7 +12,7 @@ export const maxDuration = 120
 
 type Job = { job_id: string; invoice_id: string; storage_bucket: string;
   storage_path: string; file_version_hash: string; extractor_version: string;
-  correlation_id: string }
+  correlation_id: string; replay_mode: 'live' | 'historical' }
 
 function authorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET
@@ -138,8 +138,9 @@ export async function POST(request: Request) {
     if (!extractionId) throw new Error('extraction_missing')
     const proposals = await proposeMistralExtraction({ db, invoiceId: job.invoice_id,
       extractionId, sourceHash: hash, canonical, correlationId: job.correlation_id })
-    const auto = process.env.ALBARAN_AUTO_RECEIPT_MISTRAL === 'enabled'
-      && (proposals.skipped == null || proposals.skipped === 'already_received')
+    const auto = job.replay_mode === 'live'
+      && process.env.ALBARAN_AUTO_RECEIPT_MISTRAL === 'enabled'
+      && proposals.skipped == null
       ? await autoApplyFromJob(request, job, leaseToken, extractionId)
       : null
     metrics = { ...metrics, duration_ms: Date.now() - started,

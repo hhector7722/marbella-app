@@ -99,7 +99,22 @@ async function autoApplyDeterministicReceipts(
     return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_possible_duplicate' }
   }
 
+  if (text(invoice.status) === 'received') {
+    return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_already_received' }
+  }
+  const { count: priorReceipts, error: priorReceiptsError } = await supabase
+    .from('purchase_receipt_confirmations')
+    .select('id', { count: 'exact', head: true })
+    .eq('purchase_invoice_id', payload.invoiceId)
+  if (priorReceiptsError) throw new Error('No se pudo comprobar la recepción anterior.')
+  if (priorReceipts) {
+    return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_partially_received' }
+  }
+
   const mistralJob = extractorVersion.startsWith('mistral-')
+  if (!mistralJob) {
+    return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'extractor_retired' }
+  }
   if (mistralJob) {
     const expectedPages = Number(invoice.expected_pages ?? 1)
     const [{ count: attachmentCount, error: attachmentError },
@@ -124,10 +139,8 @@ async function autoApplyDeterministicReceipts(
   if (proposalError) throw new Error('No se pudieron leer las propuestas K5 para autoaplicar K4.')
 
   const active = selectCurrentProposalLineage((proposalRows ?? []) as Array<Record<string, unknown>>)
-    .filter((proposal) => mistralJob
-      ? text(proposal.normalizer_version) === 'mistral-pipeline-v3'
-        && text((proposal.provenance as Record<string, unknown> | null)?.source) === 'mistral_canonical'
-      : text(proposal.document_extraction_id) === payload.extractionId)
+    .filter((proposal) => text(proposal.normalizer_version) === 'mistral-pipeline-v3'
+      && text((proposal.provenance as Record<string, unknown> | null)?.source) === 'mistral_canonical')
 
   if (active.length === 0) {
     return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'no_active_proposals_for_extraction' }
@@ -268,8 +281,7 @@ async function autoApplyDeterministicReceipts(
         || text(proposal.normalizer_version) !== 'mistral-pipeline-v3'
         || !['code', 'exact_name', 'alias'].includes(matchSource)
         || matchScore == null || matchScore < 0.95) blockReason = 'mistral_confidence_insufficient'
-    } else if (text(provenance.source) !== 'docling_evidence'
-      || text(provenance.trigger) !== 'docling_completion') blockReason = 'proposal_origin_untrusted'
+    } else blockReason = 'proposal_origin_untrusted'
 
     // Estas condiciones son comunes a ambos extractores.
     if (!blockReason) blockReason = commonAutoApplyBlockReason({
@@ -402,7 +414,7 @@ export async function POST(request: Request) {
 
   const { data: leaseData, error: leaseError } = await supabase
     .from('document_processing_jobs')
-    .select('id,invoice_id,status,lease_token,lease_expires_at,extractor_version')
+    .select('id,invoice_id,status,lease_token,lease_expires_at,extractor_version,replay_mode')
     .eq('id', payload.jobId)
     .eq('invoice_id', payload.invoiceId)
     .eq('status', 'leased')
@@ -410,12 +422,15 @@ export async function POST(request: Request) {
     .maybeSingle()
   if (leaseError) {
     console.error('k5-auto-apply lease lookup', leaseError)
-    return NextResponse.json({ ok: false, error: 'No se pudo validar el lease Docling.' }, { status: 500 })
+    return NextResponse.json({ ok: false, error: 'No se pudo validar la ejecución.' }, { status: 500 })
   }
-  const lease = leaseData as { lease_expires_at?: string | null; extractor_version?: string | null } | null
+  const lease = leaseData as { lease_expires_at?: string | null; extractor_version?: string | null;
+    replay_mode?: string | null } | null
   const leaseExpiresAt = Date.parse(text(lease?.lease_expires_at))
-  if (!lease || !Number.isFinite(leaseExpiresAt) || leaseExpiresAt <= Date.now()) {
-    return NextResponse.json({ ok: false, error: 'Lease Docling inválido o caducado.' }, { status: 401 })
+  if (!lease || lease.replay_mode !== 'live'
+    || !text(lease.extractor_version).startsWith('mistral-')
+    || !Number.isFinite(leaseExpiresAt) || leaseExpiresAt <= Date.now()) {
+    return NextResponse.json({ ok: false, error: 'Ejecución inválida o caducada.' }, { status: 401 })
   }
 
   try {

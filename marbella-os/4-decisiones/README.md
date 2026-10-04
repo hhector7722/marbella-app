@@ -51,7 +51,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0011](./ADR-0011-proyeccion-diaria-hija-y-carry-out.md) | Proyección diaria hija y `carry_out` para lecturas SELECT | Vigente |
 | [0012](./ADR-0012-recepcion-trazable-y-evidencia-documental.md) | Recepción trazable y evidencia documental sin efectos automáticos | Superada por 0021 |
 | [0013](./ADR-0013-confirmacion-atomica-de-recepcion.md) | Confirmación atómica de recepción por línea | Vigente |
-| [0014](./ADR-0014-perfiles-versionados-interpretacion-albaranes.md) | Perfiles versionados para interpretación de albaranes | Vigente |
+| [0014](./ADR-0014-perfiles-versionados-interpretacion-albaranes.md) | Perfiles versionados para interpretación de albaranes | Superada por 0023 |
 | [0015](./ADR-0015-alta-laboral-por-token.md) | Alta laboral por token de un solo uso | Vigente |
 | [0016](./ADR-0016-precio-canonico-ingrediente.md) | Precio canónico único del ingrediente | Vigente |
 | [0017](./ADR-0017-archivado-de-ingredientes.md) | Archivado de ingredientes en lugar de borrado | Vigente |
@@ -59,7 +59,8 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0019](./ADR-0019-inventario-captura-y-certificacion.md) | Recuento de inventario: captura libre y certificación por gerencia | Vigente |
 | [0020](./ADR-0020-borrador-compartido-de-inventario.md) | Borrador compartido del recuento de inventario | Vigente |
 | [0021](./ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md) | Extracción canónica y recepción automática de albaranes | Superada por 0022 |
-| [0022](./ADR-0022-actor-tecnico-recepcion-automatica.md) | Actor técnico auditado para la recepción automática | Vigente |
+| [0022](./ADR-0022-actor-tecnico-recepcion-automatica.md) | Actor técnico auditado para la recepción automática | Superada por 0023 |
+| [0023](./ADR-0023-mistral-unico-y-relectura-historica.md) | Mistral único y relectura histórica segura | Vigente |
 
 ## Decisiones tomadas sin registrar
 

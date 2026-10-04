@@ -40,21 +40,25 @@ export async function proposeMistralExtraction(params: {
   if (confirmedError) throw new Error('mistral_confirmations_unavailable')
   if (confirmed?.length) return { created: 0, materialized: 0, ready: 0, exceptions: 0, skipped: 'already_received' }
 
-  // Un albarán que ya tiene líneas de otro extractor no puede ganar una
-  // segunda serie materializada por accidente durante el rollout.
   const { data: invoiceLines, error: invoiceLinesError } = await db.from('purchase_invoice_lines')
-    .select('id,interpretation_proposal_id').eq('invoice_id', params.invoiceId)
+    .select('id,interpretation_proposal_id,superseded_by_extraction_id').eq('invoice_id', params.invoiceId)
   if (invoiceLinesError) throw new Error('mistral_existing_lines_unavailable')
+  let oldLineIds: string[] = []
   if (invoiceLines?.length) {
     const { data: ownProposals, error: ownError } = await db.from('purchase_interpretation_proposals')
       .select('id').eq('purchase_invoice_id', params.invoiceId)
       .like('normalizer_version', 'mistral-pipeline-%')
     if (ownError) throw new Error('mistral_existing_proposals_unavailable')
     const ownIds = new Set((ownProposals ?? []).map((row) => row.id))
-    if (invoiceLines.some((line) => !ownIds.has(line.interpretation_proposal_id))) {
+    if (invoiceLines.some((line) => !line.interpretation_proposal_id
+      && !line.superseded_by_extraction_id)) {
       return { created: 0, materialized: 0, ready: 0, exceptions: 0,
-        skipped: 'other_extractor_lines_present' }
+        skipped: 'manual_lines_require_review' }
     }
+    // Las líneas antiguas siguen siendo evidencia histórica. Se retiran de la
+    // vista operativa solo después de materializar todas las líneas Mistral.
+    oldLineIds = invoiceLines.filter((line) => !line.superseded_by_extraction_id
+      && !ownIds.has(line.interpretation_proposal_id)).map((line) => line.id)
   }
 
   const supplierId = Number(invoice.supplier_id)
@@ -214,6 +218,12 @@ export async function proposeMistralExtraction(params: {
       if (createLineError) throw new Error('mistral_line_insert_failed')
       materialized++
     }
+  }
+  if (oldLineIds.length) {
+    const { error: retireError } = await db.from('purchase_invoice_lines')
+      .update({ superseded_by_extraction_id: params.extractionId })
+      .in('id', oldLineIds)
+    if (retireError) throw new Error('mistral_prior_lines_retire_failed')
   }
   return { created, materialized, ready: assessment.readyCount,
     exceptions: assessment.lines.length - assessment.readyCount }

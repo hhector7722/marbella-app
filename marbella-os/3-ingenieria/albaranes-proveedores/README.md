@@ -1,14 +1,14 @@
 ---
 documento: PERFILES-ALBARANES-PROVEEDORES
 clase: vivo
-estado: vigente
+estado: superado
 capa: ingenieria
-normativo: true
-precedencia: 20
+normativo: false
+precedencia: 0
 responsable: propiedad del producto
 revisado: 2026-09-15
 caducidad: 6 meses
-depende_de: DOMINIO-PRECIOS-Y-COMPRAS, ADR-0022, ADR-0013, ADR-0014
+depende_de: DOMINIO-PRECIOS-Y-COMPRAS, ADR-0013
 supersede: —
 ---
 
@@ -133,7 +133,7 @@ comercio se vuelve recurrente, se da de alta como proveedor real con su perfil.
 
 ## 6. Pruebas y fixtures
 
-[`src/lib/albaranes/supplier-profiles/fixtures/canonical-guides.v1.json`](../../../src/lib/albaranes/supplier-profiles/fixtures/canonical-guides.v1.json)
+Las guías de prueba de aquel normalizador se retiraron junto a su código operativo.
 modela evidencia tabular que podría producir Docling. No usa PNG como input,
 por lo que separa la calidad de extracción de la interpretación semántica.
 `npm run test:supplier-profiles` comprueba los 16 perfiles, su correspondencia,

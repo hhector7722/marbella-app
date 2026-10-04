@@ -251,6 +251,7 @@ async function enrichInvoicesWithProcessingState(
     .from('purchase_invoice_lines')
     .select('id, invoice_id, mapped_ingredient_id, status')
     .in('invoice_id', invoiceIds)
+    .is('superseded_by_extraction_id', null)
     .limit(5000)
   if (linesErr) {
     return baseItems.map((b) => ({ ...b, is_fully_processed: false }))
@@ -431,6 +432,7 @@ export async function getPurchaseInvoiceDetailAction(
         mapped_ingredient_id,
         line_unit,
         interpretation_proposal_id,
+        superseded_by_extraction_id,
         ingredients(name)
       )
     `
@@ -474,7 +476,9 @@ export async function getPurchaseInvoiceDetailAction(
     }
   }
 
-  const lines = ((data as any).purchase_invoice_lines ?? []).map((l: any) => ({
+  const lines = ((data as any).purchase_invoice_lines ?? [])
+    .filter((l: any) => l.superseded_by_extraction_id == null)
+    .map((l: any) => ({
     id: l.id,
     original_name: l.original_name ?? 'Sin nombre',
     quantity: l.quantity ?? null,

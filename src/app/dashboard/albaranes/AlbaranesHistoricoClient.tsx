@@ -48,17 +48,14 @@ import {
   type K5BatchReviewRow,
   type K5BatchReviewSummary,
 } from './k5/batch-actions'
-import {
-  generateInterpretationProposalsAction,
-  listInterpretationContextAction,
-} from './interpretation-actions'
 import type {
   PurchaseInvoiceDetail,
   PurchaseInvoiceLine,
   PurchaseInvoiceListItem,
   SupplierListItem,
 } from './actions'
-import { appendScannerPageToInvoiceAction, replaceScannerImageAction, retryOcrInvoiceAction } from '../scanner/actions'
+import { appendScannerPageToInvoiceAction, replaceScannerImageAction, retryOcrInvoiceAction,
+  reprocessMistralInvoiceAction } from '../scanner/actions'
 import { ScannerClient } from '../scanner/ScannerClient'
 import {
   PURCHASE_INVOICES_INITIAL_LIMIT,
@@ -595,29 +592,12 @@ export default function AlbaranesHistoricoClient({
     setOcrActionBusy(true)
     setInlineReviewError(null)
     try {
-      const context = await listInterpretationContextAction({ invoiceId: detail.id })
-      if (!context.success) {
-        toast.error(context.message)
+      const result = await reprocessMistralInvoiceAction(detail.id)
+      if (!result.success) {
+        toast.error(result.message)
         return
       }
-      const extraction = context.extractions.find(
-        (item) => item.status === 'success' || item.status === 'no_table'
-      )
-      if (!extraction) {
-        toast.error('Todavía no hay una extracción Docling reutilizable.')
-        return
-      }
-
-      const generated = await generateInterpretationProposalsAction({
-        invoiceId: detail.id,
-        extractionId: extraction.id,
-      })
-      if (!generated.success) {
-        toast.error(generated.message)
-        return
-      }
-
-      toast.success('Lectura actualizada con el intérprete más reciente.')
+      toast.success('Relectura Mistral en cola. El documento original se conserva.')
       await openDetail(detail.id)
       refresh()
     } catch (err: unknown) {
@@ -703,33 +683,7 @@ export default function AlbaranesHistoricoClient({
         return { linesChanged: false }
       }
 
-      // Los albaranes antiguos o una carrera puntual del worker pueden tener
-      // evidencia válida todavía sin propuestas. Abrir el albarán debe preparar
-      // la revisión automáticamente: la pantalla K5 no forma parte del flujo normal.
-      if (batch.summary.total === 0) {
-        const context = await listInterpretationContextAction({ invoiceId })
-        if (context.success && context.proposals.length === 0) {
-          const extraction = context.extractions.find(
-            (item) => item.status === 'success' || item.status === 'no_table'
-          )
-          if (extraction) {
-            const generated = await generateInterpretationProposalsAction({
-              invoiceId,
-              extractionId: extraction.id,
-            })
-            if (!generated.success) {
-              setInlineReviewError(generated.message)
-              return { linesChanged: false }
-            }
-            linesChanged = generated.created > 0
-            batch = await listK5BatchReviewAction({ invoiceId })
-            if (!batch.success) {
-              setInlineReviewError(batch.message)
-              return { linesChanged }
-            }
-          }
-        }
-      }
+      // La cola Mistral materializa las propuestas del documento.
 
       // Cualquier excepción que aún exista solo como propuesta se materializa
       // como línea editable SIN stock/precio. Así el usuario siempre ve la lista
@@ -1607,7 +1561,7 @@ export default function AlbaranesHistoricoClient({
                           <div className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4">
                             <Loader2 className="h-6 w-6 shrink-0 animate-spin text-sky-700" />
                             <p className="text-sm font-black text-sky-900 leading-snug">
-                              Docling está extrayendo evidencia documental en segundo plano. El documento original ya está conservado.
+                              Mistral está leyendo el documento en segundo plano. El original ya está conservado.
                             </p>
                           </div>
                         )
@@ -1756,7 +1710,7 @@ export default function AlbaranesHistoricoClient({
                           loadingLabel="Leyendo…"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
-                          Volver a leer
+                          Reprocesar con Mistral
                         </Button>
                       </div>
                     </div>
@@ -1781,7 +1735,7 @@ export default function AlbaranesHistoricoClient({
                       {detail.lines.length === 0 ? (
                         <div className="py-8 text-center text-sm font-bold text-zinc-500">
                           {String(detail.status ?? '').toLowerCase() === 'processing'
-                            ? 'Docling está extrayendo evidencia documental…'
+                            ? 'Mistral está leyendo el documento…'
                             : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
                               ? 'No hay líneas: la evidencia falló y el original se conserva para reintentar.'
                               : String(detail.status ?? '').toLowerCase() === 'pending_mapping'

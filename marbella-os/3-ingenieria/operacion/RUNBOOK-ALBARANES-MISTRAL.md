@@ -6,9 +6,9 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-03
+revisado: 2026-10-04
 caducidad: 3 meses
-depende_de: ADR-0022, SEGURIDAD
+depende_de: ADR-0023, SEGURIDAD
 ---
 
 # Operación · Mistral y actor técnico de recepción
@@ -46,10 +46,21 @@ ON CONFLICT (singleton) DO NOTHING;
    `anon`/`authenticated` no ejecutan `apply_receipt_line_automated` y que una
    vista previa K4 sobre una propuesta real segura devuelve
    `automation_actor_profile_id` y `captured_by_profile_id` distintos.
-5. Configurar en Vercel las claves del servidor y los flags
-   `ALBARAN_PRIMARY_EXTRACTOR=mistral` y
-   `ALBARAN_AUTO_RECEIPT_MISTRAL=enabled` solo después de comprobar la cola, las
-   propuestas y la vista previa. El cron de Supabase despierta el procesador.
+5. Configurar en Vercel las claves del servidor y
+   `ALBARAN_AUTO_RECEIPT_MISTRAL=enabled` solo después de comprobar la cola,
+   las propuestas y la vista previa. El cron de Supabase despierta el procesador.
+
+## Relectura histórica
+
+`node --env-file=.env.local scripts/albaranes/mistral-historical-replay.mjs`
+calcula el límite del periodo desde extracciones y trabajos reales y presenta
+un plan por archivo. Con `--enqueue` encola las hojas sin extracción Mistral
+correcta de la versión actual. Los trabajos son reanudables y están marcados
+como `historical`; no cambian stock, precios, confirmaciones ni el estado OCR
+heredado. Guardar los recuentos económicos antes y después del lote y revisar
+los errores explícitos. Una extracción correcta del mismo hash y versión se
+reutiliza sin llamada OCR. El botón «Reprocesar con Mistral» usa el mismo
+original y la misma protección para un albarán individual.
 
 ## Si falla
 

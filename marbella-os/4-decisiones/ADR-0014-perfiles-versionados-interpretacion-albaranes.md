@@ -1,10 +1,10 @@
 ---
 documento: ADR-0014
 clase: inmutable
-estado: vigente
+estado: superado
 capa: decisiones
-normativo: true
-precedencia: 80
+normativo: false
+precedencia: 0
 responsable: propiedad del producto
 decidido: 2026-09-15
 depende_de: ADR-0013

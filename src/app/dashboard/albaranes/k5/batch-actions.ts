@@ -8,7 +8,7 @@ import {
   k5EvidenceIdentity,
   type K5BatchDisposition,
 } from '@/lib/albaranes/k5/batch-review'
-import { proposalInputFingerprint } from '@/lib/albaranes/k5/normalizer'
+import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
 import {
   applyReceiptLineAction,
