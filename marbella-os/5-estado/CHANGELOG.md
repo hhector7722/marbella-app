@@ -15,6 +15,11 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-04
 
+- **La revisión separa el aviso del documento de las líneas que requieren una
+  acción.** Un total o subtotal pendiente se muestra una vez para el albarán;
+  los productos sin otra incidencia no piden una edición individual. La misma
+  comprobación sigue bloqueando una recepción automática.
+
 - **La revisión reconoce descuentos demostrados por el propio albarán.** Si
   una cabecera de porcentaje se pierde pero la ecuación coincide, se conserva
   como porcentaje; un descuento en euros requiere precio neto unitario
