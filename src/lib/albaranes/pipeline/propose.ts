@@ -11,8 +11,8 @@ type AdminClient = ReturnType<typeof createClient<any>>
 
 export const MISTRAL_PIPELINE_VERSION = 'mistral-pipeline-v3'
 const PROFILE_ID = 'mistral-canonical'
-const PROFILE_VERSION = '3'
-const PROFILE_HASH = createHash('sha256').update('mistral-canonical|3|schema-v2|math-v2|memory-v2').digest('hex')
+const PROFILE_VERSION = '4'
+const PROFILE_HASH = createHash('sha256').update('mistral-canonical|4|schema-v2|math-v3|memory-v2').digest('hex')
 
 function fingerprint(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex')

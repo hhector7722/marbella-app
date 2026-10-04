@@ -106,6 +106,13 @@ cantidad × precio y el precio con IVA calculado. La evidencia OCR se conserva
 literal y cualquier descuento o total documental aún contradictorio sigue en
 revisión. Una corrección de lectura no confirma K4 ni mueve stock.
 
+Si se pierde la cabecera de un descuento, el sistema solo lo interpreta como
+porcentaje cuando cantidad × precio × (1 − descuento) coincide con el importe
+impreso. Un descuento en euros exige además una cabecera de descuento y un
+precio neto unitario explícito que coincida tanto con precio − descuento como
+con el importe. Fuera de esas dos demostraciones, el descuento sigue en
+revisión.
+
 ---
 
 ## 4. Matriz de patrones de facturación

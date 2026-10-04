@@ -71,17 +71,37 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
   if (lineTotal == null || lineTotal < 0) reasons.push('importe_ausente_o_invalido')
 
   let discountPercent: number | null = null
+  let fixedDiscountPerUnit: number | null = null
   if (discount != null && discount > 0 && !(verifiedAmount != null
     && (line.discount_header_raw ?? '').trim().toLocaleLowerCase('es') === 'ibee')) {
     const header = (line.discount_header_raw ?? '').toLowerCase()
-    if (discount >= 100 || !/%|por\s*ciento|percent/.test(header)) {
-      reasons.push('descuento_sin_porcentaje_verificado')
-    } else discountPercent = discount
+    const declaresPercent = /%|por\s*ciento|percent/.test(header)
+    const declaresDiscount = /dto|discount|descuento/.test(header)
+    const percentMatchesAmount = quantity != null && quantity > 0
+      && unitPrice != null && unitPrice > 0 && lineTotal != null
+      && discount < 100 && near(quantity * unitPrice * (1 - discount / 100), lineTotal)
+    const fixedDiscountMatchesNetPrice = quantity != null && quantity > 0
+      && unitPrice != null && unitPrice > 0 && netUnitPrice != null && netUnitPrice > 0
+      && lineTotal != null && declaresDiscount
+      && near(unitPrice - discount, netUnitPrice)
+      && near(quantity * netUnitPrice, lineTotal)
+
+    if (declaresPercent && discount < 100) discountPercent = discount
+    // Algunos proveedores no preservan la cabecera "% DTO" en la lectura.
+    // Solo aceptamos el porcentaje si la ecuación impresa lo demuestra.
+    else if (!header.trim() && percentMatchesAmount) discountPercent = discount
+    // Un DTO en euros solo es verificable cuando el documento también declara
+    // el precio neto unitario y ambas igualdades coinciden.
+    else if (fixedDiscountMatchesNetPrice) fixedDiscountPerUnit = discount
+    else reasons.push('descuento_sin_porcentaje_verificado')
   }
 
   let priceBasis: LineCheck['priceBasis'] = null
   if (quantity != null && quantity > 0 && unitPrice != null && unitPrice > 0 && lineTotal != null) {
     const multiplier = discountPercent == null ? 1 : 1 - discountPercent / 100
+    const effectiveUnitPrice = fixedDiscountPerUnit == null
+      ? unitPrice * multiplier
+      : netUnitPrice!
     const candidates: Array<{ basis: NonNullable<LineCheck['priceBasis']>; factor: number }> = [
       { basis: 'billing_quantity', factor: 1 },
     ]
@@ -91,11 +111,13 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
     if (unitsPerPackage != null && unitsPerPackage > 0) {
       candidates.push({ basis: 'units_per_package', factor: unitsPerPackage })
     }
-    const match = candidates.find(({ factor }) => near(quantity * factor * unitPrice * multiplier, lineTotal))
+    const match = candidates.find(({ factor }) => near(quantity * factor * effectiveUnitPrice, lineTotal))
     if (match) priceBasis = match.basis
     else reasons.push('cantidad_precio_importe_no_reconcilian')
     if (netUnitPrice != null) {
-      const expectedNet = unitPrice * multiplier
+      const expectedNet = fixedDiscountPerUnit == null
+        ? unitPrice * multiplier
+        : unitPrice - fixedDiscountPerUnit
       if (netUnitPrice <= 0 || !near(netUnitPrice, expectedNet)) reasons.push('precio_neto_contradictorio')
     }
   }
