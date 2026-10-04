@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { deriveReceiptPresentationEconomics } from './ingredient-pack-pricing.ts'
+import {
+  billingMassVolumeNormForAuto,
+  buildAutomaticSameFamilyDimensional,
+  deriveReceiptPresentationEconomics,
+  sameMassVolumeFamilyBillingAndIngredient,
+} from './ingredient-pack-pricing.ts'
 
 test('1 caja de 125 g a 2,49 € normaliza a 19,92 €/kg', () => {
   const result = deriveReceiptPresentationEconomics({
@@ -39,4 +44,23 @@ test('rechaza familias incompatibles', () => {
     }),
     null
   )
+})
+
+test('QUILOS del albarán se convierte automáticamente a 1 kg sin contar piezas de la caja', () => {
+  const ingredient = { purchase_unit: 'kg', pack_units: 6 }
+  const billingUnit = billingMassVolumeNormForAuto('QUILOS', 'QUILOS')
+  assert.equal(billingUnit, 'kg')
+  assert.equal(sameMassVolumeFamilyBillingAndIngredient(billingUnit, ingredient), true)
+  const dimensional = buildAutomaticSameFamilyDimensional(billingUnit!, ingredient, 'QUILOS')
+  assert.deepEqual(dimensional, {
+    lineBillingUnit: 'QUILOS', lineContentQty: '1', lineContentUnit: 'kg', conversionFactor: 1,
+  })
+  const economics = deriveReceiptPresentationEconomics({
+    contentQty: Number(dimensional!.lineContentQty),
+    contentUnit: dimensional!.lineContentUnit,
+    purchaseUnit: ingredient.purchase_unit,
+    observedUnitPrice: 13.52,
+  })
+  assert.equal(economics?.normalizedUnitPrice, 13.52)
+  assert.equal(3.21 * dimensional!.conversionFactor, 3.21)
 })

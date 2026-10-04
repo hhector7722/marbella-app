@@ -13,7 +13,7 @@ function norm(u: string | null | undefined): string {
   if (s === 'lt' || s === 'l' || s === 'litro') return 'l'
   if (s === 'ml') return 'ml'
   if (s === 'cl') return 'cl'
-  if (s === 'kg' || s === 'kilo') return 'kg'
+  if (['kg', 'kilo', 'kilos', 'quilo', 'quilos'].includes(s)) return 'kg'
   if (s === 'g' || s === 'gr') return 'g'
   return s
 }
@@ -303,7 +303,8 @@ const BILLING_UNIT_UD_HINTS = new Set(['ud', 'u', 'un', 'unidad', 'pieza', 'piez
  */
 export function buildAutomaticSameFamilyDimensional(
   billingNorm: string,
-  row: IngredientDimensionalSource
+  row: IngredientDimensionalSource,
+  lineUnitFromInvoice?: string | null
 ): { lineBillingUnit: string; lineContentQty: string; lineContentUnit: string; conversionFactor: number } | null {
   const b = parseMassVolumeUnit(billingNorm)
   const purchaseNorm = ingredientPurchaseUnitNormForMapping(row)
@@ -314,7 +315,11 @@ export function buildAutomaticSameFamilyDimensional(
   if (factor == null || !Number.isFinite(factor) || factor <= 0) return null
 
   return {
-    lineBillingUnit: b,
+    // K4 exige que el texto de facturación coincida con la línea original.
+    // Se conserva «QUILOS» para esa comprobación y se usa kg para el cálculo.
+    lineBillingUnit: parseMassVolumeUnit(lineUnitFromInvoice) === b
+      ? String(lineUnitFromInvoice).trim()
+      : b,
     lineContentQty: String(factor),
     lineContentUnit: p,
     conversionFactor: factor,
