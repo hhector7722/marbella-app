@@ -75,3 +75,34 @@ original y la misma protección para un albarán individual.
 - Ante anomalía económica, desactivar `ALBARAN_AUTO_RECEIPT_MISTRAL`, conservar
   evidencia y trabajos, y revisar las confirmaciones y el registro privado de
   auditoría antes de volver a activar.
+
+## Retirada del antiguo servicio local
+
+**Estado 2026-10-04:** la función Edge, las RPC y el secreto Docling de
+Supabase ya están retirados. Remote Desktop Commander muestra el dispositivo
+«Crack» desconectado; la comprobación y retirada del CT 105 siguen pendientes
+hasta que vuelva a estar accesible. No cerrar la retirada de infraestructura
+sin la lectura final de servicios y procesos.
+
+El despliegue conocido estaba en Proxmox CT 105 `docling-worker` mediante
+`docling-serve.service` y `docling-worker.service`, sin Docker en ese CT. Al
+recuperar acceso al mini-PC, comprobar primero servicios y contenedores que
+usan Docker; no retirar Docker ni recursos de otras aplicaciones. Detener y
+deshabilitar los dos servicios Docling, retirar sus unidades de systemd y
+verificar que no se reinician. Retirar únicamente la instalación
+`/opt/marbella-docling/venv`, los modelos de
+`/var/lib/marbella-docling/models` y la configuración de
+`/etc/marbella-docling/` después de confirmar que no contienen otro servicio.
+Comprobar contenedores, imágenes y volúmenes Docling; eliminar solo los
+específicos de esa instalación. Cerrar la tarea con una lectura nueva del
+estado de procesos y arranque del CT.
+
+## Excepción de hojas repetidas del histórico
+
+El albarán `978715c5-c372-4543-b93f-4895936007a7` contiene dos pares de
+fotografías distintas con contenido OCR idéntico: un par de 32 líneas y otro
+de 4. Mistral conservó las cuatro lecturas como evidencia; ninguna de sus 72
+propuestas está lista para recepción. Antes de mapear o recibir ese albarán,
+reconciliar las hojas originales y seleccionar una sola copia de cada par.
+No borrar la evidencia repetida ni asumir que hashes de archivo distintos
+significan entregas distintas.

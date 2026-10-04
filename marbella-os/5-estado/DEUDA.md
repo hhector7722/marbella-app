@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-03
+revisado: 2026-10-04
 caducidad: 3 meses
 supersede: —
 ---
@@ -468,7 +468,7 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 **Coste**: muchos productos conocidos siguen apareciendo como excepción por falta de presentación confiable. Inferir un tamaño de caja o una densidad para subir la autonomía corrompería stock.
 
-**Disparador de pago**: cada corrección humana debe confirmar una presentación versionada y reutilizarse en el siguiente albarán del mismo proveedor. Medir semanalmente la proporción de líneas recibidas sin intervención; ampliar la memoria con presentaciones verificadas hasta acercarse al objetivo de autonomía de [ADR-0022](../4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md).
+**Disparador de pago**: cada corrección humana debe confirmar una presentación versionada y reutilizarse en el siguiente albarán del mismo proveedor. Medir semanalmente la proporción de líneas recibidas sin intervención; ampliar la memoria con presentaciones verificadas hasta acercarse al objetivo de autonomía de [ADR-0023](../4-decisiones/ADR-0023-mistral-unico-y-relectura-historica.md).
 
 ---
 

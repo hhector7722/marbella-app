@@ -60,7 +60,7 @@ function hasAmbiguousWhitespaceGrouping(token: string): boolean {
   const unsigned = trimmed.replace(/^[-+]/, '')
 
   // Los espacios internos solo son aceptables como agrupación de miles real:
-  // 1 234,56 / 12 345 / 1 234 567. Una secuencia Docling como
+  // 1 234,56 / 12 345 / 1 234 567. Una secuencia OCR como
   // `1 1 6 6 7 12 18 24` son múltiples celdas colapsadas, no un número.
   return !/^\d{1,3}(?: \d{3})+(?:[.,]\d+)?$/.test(unsigned)
 }
