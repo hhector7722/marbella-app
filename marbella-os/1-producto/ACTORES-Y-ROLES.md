@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-18
+revisado: 2026-10-03
 caducidad: 6 meses
 supersede: —
 ---
@@ -135,6 +135,11 @@ Desde `/staff/propinas`, cualquier rol con acceso a esa página (`staff`, `super
 - La extracción y el mapeo pueden quedar como propuesta, sin efectos económicos.
 - Solo `manager` y `admin` pueden confirmar una recepción: esa será la única acción que podrá crear entrada de stock o cambio de precio.
 - `chef`, `supervisor` y `staff` no pueden producir esos efectos, aunque puedan acceder a la captura según su superficie.
+- Si un `supervisor` capturó un albarán cuya propuesta automática Mistral supera
+  todas las comprobaciones, un actor técnico `manager` auditado puede ejecutar
+  K4. La recepción conserva al supervisor como capturador; la persona no obtiene
+  permiso para confirmar manualmente. `staff` no participa en esta excepción
+  ([ADR-0022](../4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md)).
 
 ---
 

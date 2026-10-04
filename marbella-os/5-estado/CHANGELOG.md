@@ -15,6 +15,12 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-03
 
+- **La recepción automática admite albaranes capturados por supervisores.** Un
+  actor técnico `manager` exclusivo ejecuta K4 después de todas las barreras
+  de seguridad; la propuesta conserva al capturador y cada confirmación nueva
+  registra en privado quién capturó y qué identidad económica actuó. El
+  supervisor no puede confirmar manualmente. [ADR-0022](../4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md).
+
 - **Mistral OCR entra en el circuito de albaranes por fases.** La evidencia en sombra conserva respuesta y JSON canónico sin efectos económicos. El procesador duradero de Supabase y Vercel verifica el archivo, reutiliza OCR por hash y versión, genera propuestas K5 y conserva métricas y errores. La recepción automática pasa exclusivamente por vista previa y K4 cuando la configuración de servidor la habilita; Docling sigue disponible como contingencia. La revisión muestra primero las incidencias y sus motivos concretos. [ADR-0021](../4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md).
 
 - **Las hojas de un albarán se validan juntas.** El escáner declara el número esperado; la recepción automática espera las evidencias de todas las hojas y bloquea una hoja fallida. K4 reconoce el hash de un adjunto vinculado, manteniendo la comprobación de procedencia. [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md).

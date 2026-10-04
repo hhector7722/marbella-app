@@ -1,5 +1,5 @@
-<!-- Generado desde 69 documentos de marbella-os/.
-     Huella del origen: 796ae92bf1cee17d
+<!-- Generado desde 70 documentos de marbella-os/.
+     Huella del origen: eee237735475178c
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -59,7 +59,7 @@ es `CANON §5`.
 | 80 | `marbella-os/4-decisiones/ADR-0018-elaboraciones-intermedias.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0019-inventario-captura-y-certificacion.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0020-borrador-compartido-de-inventario.md` |
-| 80 | `marbella-os/4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md` |
 | 60 | `marbella-os/1-producto/PRINCIPIOS.md` |
 | 60 | `marbella-os/1-producto/VISION.md` |
 | 60 | `marbella-os/2-diseno/EXPERIENCIA.md` |
@@ -85,6 +85,7 @@ es `CANON §5`.
 | 20 | `marbella-os/3-ingenieria/integraciones/BDP-TPV.md` |
 | 20 | `marbella-os/3-ingenieria/integraciones/NOMINAS.md` |
 | 20 | `marbella-os/3-ingenieria/MODELO-DE-DATOS.md` |
+| 20 | `marbella-os/3-ingenieria/operacion/RUNBOOK-ALBARANES-MISTRAL.md` |
 | 20 | `marbella-os/3-ingenieria/operacion/RUNBOOK-BDP-VENTAS.md` |
 | 20 | `marbella-os/3-ingenieria/PROTOCOLO-AGENTES.md` |
 | 20 | `marbella-os/3-ingenieria/SEGURIDAD.md` |
@@ -96,4 +97,4 @@ es `CANON §5`.
 | 20 | `marbella-os/GLOSARIO.md` |
 
 Todo lo que no aparece en esta tabla **no es normativo** y no autoriza ninguna
-decisión, empezando por los 50 documentos de `marbella-os/6-investigacion/`.
+decisión, empezando por los 51 documentos de `marbella-os/6-investigacion/`.

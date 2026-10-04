@@ -149,6 +149,11 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 - `purchase_invoice_lines` conserva la línea capturada del documento. Una línea puede repartirse entre varios pedidos; una línea de pedido puede acumular recepciones parciales mediante `purchase_order_item_receipt_allocations`.
 - `purchase_mapping_versions` guarda propuestas y confirmaciones de mapeo sin sobrescribir la versión anterior. La conciliación sólo suma asignaciones confirmadas y no sustituidas.
 - `purchase_receipt_confirmations` audita la confirmación económica única de una línea: actor, idempotencia, cantidades físicas, precio observado y normalizado, bloqueo, movimiento y versión de mapeo. No es un segundo ledger.
+- `private.purchase_receipt_automation_actor` designa el único perfil técnico
+  habilitado para la ruta automática de un capturador supervisor.
+  `private.purchase_receipt_automation_audit` enlaza cada confirmación
+  automática nueva con su propuesta, el actor económico y quien capturó el
+  documento; no produce ninguna magnitud económica.
 - `document_extractions` y sus tablas hijas son evidencia append-only. `document_processing_jobs` es estado operativo mutable de la cola; sus eventos son append-only.
 - `document_shadow_extractions` conserva cada ensayo Mistral como versión append-only: archivo y huella, extractor/modelo, respuesta cruda, observación canónica, métricas y error. Solo el servicio interno escribe; no alimenta stock, precio ni recepción. El índice por huella y versión permite evitar una llamada OCR repetida.
 - En producción, `document_processing_jobs` incorpora `next_attempt_at`; `claim_mistral_evidence_job` y `complete_mistral_evidence_job` gestionan leases y hasta tres intentos sin mezclar la cola Docling. Sus eventos registran el recorrido y `extraction_metrics` conserva duración, páginas, líneas, mapeos, recepciones y excepciones. `document_extractions` guarda la respuesta Mistral y el JSON canónico junto a su hash y versión. Las propuestas Mistral son versiones K5, con la fila de origen y las razones concretas de revisión. Un alias de nombre se guarda como `purchase_mapping_versions` propuesta y referencia en su clave de idempotencia la presentación histórica de la que deriva; K4 la confirma por copia si todas las condiciones pasan.

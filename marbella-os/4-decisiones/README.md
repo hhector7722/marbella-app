@@ -58,7 +58,8 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0018](./ADR-0018-elaboraciones-intermedias.md) | Elaboraciones intermedias y subrecetas | Vigente |
 | [0019](./ADR-0019-inventario-captura-y-certificacion.md) | Recuento de inventario: captura libre y certificación por gerencia | Vigente |
 | [0020](./ADR-0020-borrador-compartido-de-inventario.md) | Borrador compartido del recuento de inventario | Vigente |
-| [0021](./ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md) | Extracción canónica y recepción automática de albaranes | Vigente |
+| [0021](./ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md) | Extracción canónica y recepción automática de albaranes | Superada por 0022 |
+| [0022](./ADR-0022-actor-tecnico-recepcion-automatica.md) | Actor técnico auditado para la recepción automática | Vigente |
 
 ## Decisiones tomadas sin registrar
 

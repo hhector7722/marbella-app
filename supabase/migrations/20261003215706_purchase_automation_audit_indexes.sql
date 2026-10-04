@@ -1,0 +1,5 @@
+CREATE INDEX purchase_receipt_automation_audit_actor_idx
+  ON private.purchase_receipt_automation_audit (automation_actor_profile_id);
+
+CREATE INDEX purchase_receipt_automation_audit_capturer_idx
+  ON private.purchase_receipt_automation_audit (captured_by_profile_id);
