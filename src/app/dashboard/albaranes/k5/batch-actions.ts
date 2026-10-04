@@ -141,7 +141,7 @@ async function loadBatchState(
 
   // Se consultan TODAS las líneas del albarán, no solo la línea enlazada a la
   // propuesta activa. Durante la puesta en marcha hubo recalculaciones que
-  // crearon una segunda purchase_invoice_line para la misma fila Docling.
+  // crearon una segunda purchase_invoice_line para la misma fila documental.
   const allInvoiceLineIds = invoiceLines.map((row) => text(row.id)).filter(Boolean)
   const { data: confirmations, error: confirmationError } = allInvoiceLineIds.length
     ? await supabase
@@ -154,7 +154,7 @@ async function loadBatchState(
     ((confirmations ?? []) as Array<Record<string, unknown>>).map((row) => text(row.purchase_invoice_line_id)).filter(Boolean)
   )
 
-  // Una confirmación económica pertenece a la evidencia física de Docling,
+  // Una confirmación económica pertenece a la evidencia física del original,
   // no al registro accidental de purchase_invoice_lines. Si otra línea apunta
   // a la misma extracción/tabla/fila, se considera ya recibida y nunca puede
   // reaparecer en el lote.

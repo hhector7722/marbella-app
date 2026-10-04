@@ -15,6 +15,14 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-04
 
+- **La relectura histórica termina sin duplicar efectos económicos.** Las 53
+  hojas del periodo tienen extracción Mistral correcta; las 25 recepciones,
+  25 movimientos y 8 registros de precio conservan sus huellas. Se retiran
+  las RPC, función Edge y secreto exclusivos de Docling. La retirada del
+  servicio del mini-PC espera a que el dispositivo vuelva a estar conectado.
+  El versionado K5 de una revisión humana deja de chocar con la unicidad de
+  la fila extraída, desbloqueando el mapeo de SHERS.
+
 - **Mistral pasa a ser el único extractor de albaranes.** El escáner ya no
   selecciona Docling, «Reprocesar con Mistral» vuelve al original, y la
   relectura histórica recorre las hojas desde el primer albarán de la etapa

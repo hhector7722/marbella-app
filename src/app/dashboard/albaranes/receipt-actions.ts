@@ -186,7 +186,7 @@ async function supersedeK5ProposalWithMapping(params: {
   const previousReasons: string[] = Array.isArray(current.review_reasons)
     ? (current.review_reasons as unknown[]).map(text).filter(Boolean)
     : []
-  // La revisión humana puede completar datos que Docling dejó vacíos. Esos
+  // La revisión humana puede completar datos que el OCR dejó vacíos. Esos
   // valores quedan versionados en la propuesta sucesora; la evidencia original
   // no se modifica y K4 seguirá revalidando antes de cualquier efecto económico.
   const semanticReasons = previousReasons.filter((reason: string) => {

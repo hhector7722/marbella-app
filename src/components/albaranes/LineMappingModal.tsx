@@ -1009,7 +1009,7 @@ export function LineMappingModal({
                     </span>
                   </div>
                   <p className="px-1 text-[10px] leading-snug text-zinc-500">
-                    Es el precio que figura en el albarán. Si Docling lo leyó mal, corrígelo aquí.
+                    Es el precio que figura en el albarán. Si la lectura lo interpretó mal, corrígelo aquí.
                   </p>
                 </section>
               ) : null}

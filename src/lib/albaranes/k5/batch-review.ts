@@ -32,7 +32,7 @@ export type K5EvidenceIdentityInput = {
 /**
  * Identidad física de una fila extraída. Sirve para reconocer una recepción ya
  * confirmada aunque una recalculación posterior haya creado otra línea de
- * purchase_invoice_lines para la misma evidencia Docling.
+ * purchase_invoice_lines para la misma evidencia documental.
  */
 export function k5EvidenceIdentity(input: K5EvidenceIdentityInput): string | null {
   const extractionId = String(input.documentExtractionId ?? '').trim()

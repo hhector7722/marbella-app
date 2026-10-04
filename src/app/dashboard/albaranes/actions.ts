@@ -1441,7 +1441,7 @@ export async function unmapInvoiceLineAction(params: {
 //
 // K2/K3 mantienen el historial técnico append-only. Por eso una captura fallida
 // no se borra físicamente: se marca como discarded mediante una RPC atómica,
-// únicamente si nunca produjo líneas, Docling válido ni efectos económicos.
+// únicamente si nunca produjo líneas, evidencia válida ni efectos económicos.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function deletePurchaseInvoiceAction(params: {
