@@ -274,17 +274,6 @@ export async function sendClosingNotification(data: {
     const actionUrl = data.closingId
         ? cashClosingHistoryUrl(data.closingId)
         : '/dashboard/history';
-    const { error: inAppClosingErr } = await supabase.rpc('create_user_notifications_system', {
-        p_user_ids: managerIds,
-        p_type: 'cash_closing',
-        p_title: `Cierre ${data.dateStr}`,
-        p_body: closingBody,
-        p_action_url: actionUrl,
-    });
-    if (inAppClosingErr) {
-        console.error('In-app closing notifications:', inAppClosingErr);
-    }
-
     if (!subscriptions || subscriptions.length === 0) {
         return { success: true, sentCount: 0, message: 'Sin push activo; aviso en campana para managers' };
     }
