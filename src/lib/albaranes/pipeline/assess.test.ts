@@ -40,3 +40,17 @@ test('importe que no reconcilia impide propuesta lista', () => {
   assert.equal(result.readyCount, 0)
   assert.ok(result.lines[0]?.reasons.includes('cantidad_precio_importe_no_reconcilian'))
 })
+
+test('Videla: la propuesta usa 10 kg y 5,56 €/kg del bulto impreso', () => {
+  const chicken: PresentationMemory = { ...presentation, supplierId: 3,
+    ingredientId: 'pechuga', observedName: 'POLLO CONG PECHUGA', mappingVersionId: 'pollo-m1',
+    lineBillingUnit: 'kg', lineContentUnit: 'kg', purchaseUnit: 'kg', baseUnit: 'g' }
+  const source = document({ description_raw: 'POLLO CONG PECHUGA', quantity_raw: '1,00',
+    billing_unit_raw: 'BU 10,00 KG', unit_price_raw: '5,56', line_total_raw: '55,60' })
+  source.subtotal_raw = '55,60'
+  const result = assessDocument({ document: source, supplierId: 3,
+    memory: [chicken], presentations: [chicken] })
+  assert.equal(result.readyCount, 1)
+  assert.equal(result.lines[0]?.economicQuantity, '10.000')
+  assert.equal(result.lines[0]?.effectiveUnitPrice, '5.5600')
+})

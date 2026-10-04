@@ -72,3 +72,16 @@ test('un mapeo incompleto conserva los bloqueos de presentación y económicos',
   })
   assert.deepEqual(reasons, ['presentacion_sin_validar', 'conversion_de_presentacion_incompatible', 'precio_neto_contradictorio'])
 })
+
+test('solo una comprobación nueva de la evidencia resuelve el aviso aritmético previo', () => {
+  assert.deepEqual(resolveMappingReviewReasons({
+    previousReasons: ['cantidad_precio_importe_no_reconcilian', 'lineas_subtotal_no_reconcilian'],
+    hasResolvedName: true,
+    hasMappedSnapshot: true,
+    humanLineOverride: false,
+    quantity: 10,
+    unitPrice: 5.56,
+    lineTotal: 55.6,
+    verifiedObservedMath: true,
+  }), ['lineas_subtotal_no_reconcilian'])
+})

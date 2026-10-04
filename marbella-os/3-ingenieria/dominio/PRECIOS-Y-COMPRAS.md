@@ -96,6 +96,16 @@ perfil interpreta evidencia estructurada y entrega una propuesta o
 magnitud económica. La propuesta conserva la versión de perfil y solo puede
 seguir hacia un mapeo seguro, revisión humana y la confirmación K4.
 
+La validación económica usa las columnas observadas según su significado y
+comprueba cantidad × precio contra el importe de la línea. Si el documento
+imprime un único bulto con su peso en la unidad (por ejemplo, «1 BU 10 KG»),
+el peso facturado puede explicar el importe; con varios bultos el peso impreso
+no se supone por bulto. Cuando «Importe» y un precio unitario con IVA aparecen
+en columnas distintas, «Importe» solo sustituye al total de línea si coinciden
+cantidad × precio y el precio con IVA calculado. La evidencia OCR se conserva
+literal y cualquier descuento o total documental aún contradictorio sigue en
+revisión. Una corrección de lectura no confirma K4 ni mueve stock.
+
 ---
 
 ## 4. Matriz de patrones de facturación

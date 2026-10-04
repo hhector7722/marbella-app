@@ -36,6 +36,30 @@ test('reconcilia una caja de 10 kg con precio por kg', () => {
   assert.equal(check.priceBasis, 'package_content')
 })
 
+test('Videla: un bulto con 10 kg impresos en la unidad se factura por peso', () => {
+  const check = validateObservedLine(row({ quantity_raw: '1,00', billing_unit_raw: 'BU 10,00 KG',
+    unit_price_raw: '5,56', line_total_raw: '55,60' }))
+  assert.deepEqual(check.reasons, [])
+  assert.equal(check.packageContent, 10)
+  assert.equal(check.priceBasis, 'package_content')
+  assert.ok(validateObservedLine(row({ quantity_raw: '2', billing_unit_raw: 'BU 10,00 KG',
+    unit_price_raw: '5,56', line_total_raw: '111,20' })).reasons
+    .includes('cantidad_precio_importe_no_reconcilian'))
+})
+
+test('Santa Teresa: Importe es el total y Pre+Iva el precio de una unidad', () => {
+  const check = validateObservedLine(row({ quantity_raw: '600', unit_price_raw: '0.54',
+    tax_rate_raw: '21.0', line_total_raw: '0.65', other_charge_raw: '324.00',
+    other_charge_header_raw: 'Importe', discount_raw: '1.58', discount_header_raw: 'Ibee' }))
+  assert.deepEqual(check.reasons, [])
+  assert.equal(check.lineTotal, 324)
+  assert.equal(check.priceBasis, 'billing_quantity')
+  assert.ok(validateObservedLine(row({ quantity_raw: '600', unit_price_raw: '0.54',
+    tax_rate_raw: '21.0', line_total_raw: '0.65', other_charge_raw: '300.00',
+    other_charge_header_raw: 'Importe' })).reasons
+    .includes('cantidad_precio_importe_no_reconcilian'))
+})
+
 test('bloquea total inconsistente y precio neto que es un porcentaje', () => {
   const check = validateObservedLine(row({ quantity_raw: '2', unit_price_raw: '43,98',
     net_unit_price_raw: '25', line_total_raw: '65,97' }))

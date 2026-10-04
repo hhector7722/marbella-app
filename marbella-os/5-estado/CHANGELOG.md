@@ -15,6 +15,12 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-04
 
+- **La revisión de albaranes reconoce dos lecturas verificadas.** Un bulto
+  único con 10 kg impresos se valida por el peso facturado, y la columna
+  «Importe» de Santa Teresa se distingue del precio unitario «Pre+Iva» solo
+  cuando cantidad, precio e IVA concilian. La propuesta conserva la evidencia
+  original y mantiene las demás dudas económicas para revisión.
+
 - **Revisar/Mapear resuelve los avisos de identidad y presentación que el
   usuario acaba de corregir.** La propuesta sucesora K5 conserva los avisos
   de importes, descuentos y totales que siguen sin cuadrar; un mapeo por sí
