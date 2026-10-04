@@ -52,7 +52,7 @@ function unavailableCopy(
     case 'no_table':
       return {
         title: 'No se detectó una tabla estructurada',
-        body: 'La evidencia existe y K5 puede intentar reconstruir las líneas por posición. Si no aparecen en la cola, recarga para revalidar el fallback de layout.',
+        body: 'La lectura actual no produjo líneas fiables. Reprocesa el documento original con Mistral o revisa la excepción.',
         detail: availability.detail,
         failed: false,
       }

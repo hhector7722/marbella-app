@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
 import { compareExact, parseExactDecimal } from '@/lib/albaranes/k5/exact-decimal'
 import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
-import { K5_NORMALIZER_VERSION, proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
+import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
 
 export type ReceiptAllocationInput = {
@@ -122,6 +122,9 @@ async function supersedeK5ProposalWithMapping(params: {
     .eq('id', currentProposalId)
     .maybeSingle()
   if (currentError || !current) throw new Error('No se pudo leer la propuesta K5 vinculada a la línea.')
+  if (current.normalizer_version !== 'mistral-pipeline-v3') {
+    throw new Error('La propuesta histórica no admite nuevas revisiones; reprocesa el original con Mistral.')
+  }
 
   const { data: successor, error: successorError } = await params.supabase
     .from('purchase_interpretation_proposals')
@@ -267,7 +270,7 @@ async function supersedeK5ProposalWithMapping(params: {
       supplier_profile_id: current.supplier_profile_id,
       supplier_profile_version: current.supplier_profile_version,
       supplier_profile_hash: current.supplier_profile_hash,
-      normalizer_version: text(current.normalizer_version) || K5_NORMALIZER_VERSION,
+      normalizer_version: current.normalizer_version,
       source_file_hash: current.source_file_hash,
       input_fingerprint: fingerprint,
       source_table_index: current.source_table_index,
@@ -345,7 +348,7 @@ export async function saveReceiptMappingProposalAction(params: {
 
   const { data: line, error: lineError } = await gate.supabase
     .from('purchase_invoice_lines')
-    .select('id,invoice_id,original_name,quantity,unit_price,total_price,line_unit,interpretation_proposal_id')
+    .select('id,invoice_id,original_name,quantity,unit_price,total_price,line_unit,interpretation_proposal_id,superseded_by_extraction_id')
     .eq('id', lineId)
     .maybeSingle()
   if (lineError || !line || line.invoice_id !== invoiceId || !text(line.original_name)) {
@@ -353,6 +356,16 @@ export async function saveReceiptMappingProposalAction(params: {
   }
 
   const k5ProposalId = text(line.interpretation_proposal_id)
+  if (!k5ProposalId || line.superseded_by_extraction_id) {
+    return { success: false, message: 'Reprocesa el original con Mistral antes de revisar esta línea histórica.' }
+  }
+  const { data: sourceProposal, error: sourceProposalError } = await gate.supabase
+    .from('purchase_interpretation_proposals')
+    .select('normalizer_version')
+    .eq('id', k5ProposalId).maybeSingle()
+  if (sourceProposalError || sourceProposal?.normalizer_version !== 'mistral-pipeline-v3') {
+    return { success: false, message: 'La propuesta histórica no admite nuevos mapeos; reprocesa con Mistral.' }
+  }
   if (k5ProposalId && text(line.original_name) === 'Producto pendiente de identificar') {
     return { success: false, message: 'Completa primero el nombre real del producto.' }
   }

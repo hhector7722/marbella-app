@@ -101,6 +101,7 @@ async function loadBatchState(
     .from('purchase_interpretation_proposals')
     .select('id,proposal_set_id,supersedes_proposal_id,provenance,created_at,document_extraction_id,source_table_index,source_row_index,source_item_name,mapping_version_id,ingredient_id,status,review_reasons,warnings,line_quantity,line_unit,observed_unit_price,line_total')
     .eq('purchase_invoice_id', invoiceId)
+    .eq('normalizer_version', 'mistral-pipeline-v3')
     .order('created_at', { ascending: true })
   if (proposalError) throw new Error('No se pudieron leer las propuestas K5.')
 
