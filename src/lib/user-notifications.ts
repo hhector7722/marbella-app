@@ -18,6 +18,7 @@ export type UserNotificationRow = {
   entity_type: string | null
   entity_id: string | null
   read_at: string | null
+  expires_at: string | null
   created_at: string
 }
 
