@@ -44,6 +44,8 @@ const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Albaranes', instance: 'albaranes', action: 'albaranes', img: '/icons/scan.png' },
     { label: 'Altas', instance: 'altas', href: '/dashboard/altas', img: '/icons/staff-card.png' },
     { label: 'Vitrina', instance: 'vitrina', href: '/master/carta', img: '/icons/menu2.png' },
+    { label: 'Inventario', instance: 'inventario', href: '/dashboard/inventory', img: '/icons/inventory.png' },
+    { label: 'Stock', instance: 'stock', href: '/dashboard/inventory/ledger', img: '/icons/productes.png' },
 ];
 
 export function MasterMoreFunctionsModal({
