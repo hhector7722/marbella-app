@@ -110,6 +110,19 @@ test('si factura por kg, el tamaño del saco no multiplica otra vez la cantidad'
   assert.equal(suggestion.conversionFactor, 1)
 })
 
+test('QUILOS factura peso aunque el producto llegue en una caja de varias piezas', () => {
+  const result = buildMappingAssistantSuggestions({
+    supplierId: 1,
+    rows: [row('patata-quilos', 'Patata Agria Saco Entero 10 Kg', 'QUILOS')],
+    ingredients,
+    legacyMappings,
+  })
+  assert.equal(result.suggestions.length, 1)
+  assert.equal(result.suggestions[0]?.lineBillingUnit, 'QUILOS')
+  assert.equal(result.suggestions[0]?.lineContentQty, 1)
+  assert.equal(result.suggestions[0]?.conversionFactor, 1)
+})
+
 test('un ingrediente recién creado puede resolver nombres concatenados del proveedor', () => {
   const result = buildMappingAssistantSuggestions({
     supplierId: 1,

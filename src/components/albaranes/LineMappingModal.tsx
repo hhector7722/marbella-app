@@ -186,7 +186,9 @@ export function LineMappingModal({
         !opts?.forceAdvanced &&
         billingNorm != null &&
         sameMassVolumeFamilyBillingAndIngredient(billingNorm, ing)
-      const autoDim = autoFamily ? buildAutomaticSameFamilyDimensional(billingNorm, ing) : null
+      const autoDim = autoFamily
+        ? buildAutomaticSameFamilyDimensional(billingNorm, ing, opts?.lineUnitFromInvoice)
+        : null
 
       const simple =
         !autoFamily && isSimpleAlbaranUnitMapping(ing, nextDim, nextFactor)
@@ -392,6 +394,40 @@ export function LineMappingModal({
     [ingredientId, variableWeightKg, purchaseUnitForPresentation]
   )
 
+  const billingMassVolumeNorm = useMemo(
+    () => billingMassVolumeNormForAuto(dimensional.lineBillingUnit, line?.line_unit),
+    [dimensional.lineBillingUnit, line?.line_unit]
+  )
+
+  const purchaseMassVolumeNorm = useMemo(
+    () =>
+      ingredientPurchaseUnitNormForMapping(
+        selectedIngredientMeta ?? { purchase_unit: ingredientPurchaseUnit }
+      ),
+    [selectedIngredientMeta, ingredientPurchaseUnit]
+  )
+
+  const canConvertAutomatically = Boolean(
+    ingredientId
+    && selectedIngredientMeta
+    && billingMassVolumeNorm
+    && sameMassVolumeFamilyBillingAndIngredient(billingMassVolumeNorm, selectedIngredientMeta)
+  )
+  const isAutoSameFamilyMode = canConvertAutomatically && !showAdvancedCalibration
+  const automaticDimensional = useMemo(
+    () => isAutoSameFamilyMode && selectedIngredientMeta && billingMassVolumeNorm
+      ? buildAutomaticSameFamilyDimensional(billingMassVolumeNorm, selectedIngredientMeta, line?.line_unit)
+      : null,
+    [isAutoSameFamilyMode, selectedIngredientMeta, billingMassVolumeNorm, line?.line_unit]
+  )
+
+  const autoSameFamilyCaption = useMemo(
+    () => automaticDimensional && billingMassVolumeNorm
+      ? sameFamilyAutomaticConversionCaption(billingMassVolumeNorm, purchaseMassVolumeNorm)
+      : null,
+    [automaticDimensional, billingMassVolumeNorm, purchaseMassVolumeNorm]
+  )
+
   const presentationEconomics = useMemo(
     () => {
       if (isVariableWeightMode && observedUnitPrice != null) {
@@ -402,8 +438,10 @@ export function LineMappingModal({
         }
       }
       return deriveReceiptPresentationEconomics({
-        contentQty: dimensionalParsed.lineContentQty,
-        contentUnit: dimensionalParsed.lineContentUnit,
+        contentQty: automaticDimensional
+          ? Number(automaticDimensional.lineContentQty)
+          : dimensionalParsed.lineContentQty,
+        contentUnit: automaticDimensional?.lineContentUnit ?? dimensionalParsed.lineContentUnit,
         purchaseUnit: purchaseUnitForPresentation,
         observedUnitPrice,
       })
@@ -414,6 +452,7 @@ export function LineMappingModal({
       purchaseUnitForPresentation,
       observedUnitPrice,
       isVariableWeightMode,
+      automaticDimensional,
     ]
   )
 
@@ -421,6 +460,7 @@ export function LineMappingModal({
     if (!ingredientId) return 'Selecciona un ingrediente del catálogo.'
     if (observedUnitPrice == null) return 'Indica un precio facturado válido.'
     if (isVariableWeightMode) return null
+    if (automaticDimensional) return presentationEconomics ? null : 'No se pudo calcular la conversión automática.'
     if (dimensionalParsed.lineContentQty == null || dimensionalParsed.lineContentQty <= 0) {
       return 'Indica cuánta cantidad contiene una unidad facturada.'
     }
@@ -442,42 +482,8 @@ export function LineMappingModal({
     dimensionalParsed.lineContentUnit,
     purchaseUnitForPresentation,
     presentationEconomics,
+    automaticDimensional,
   ])
-
-  const billingMassVolumeNorm = useMemo(
-    () => billingMassVolumeNormForAuto(dimensional.lineBillingUnit, line?.line_unit),
-    [dimensional.lineBillingUnit, line?.line_unit]
-  )
-
-  const purchaseMassVolumeNorm = useMemo(
-    () =>
-      ingredientPurchaseUnitNormForMapping(
-        selectedIngredientMeta ?? { purchase_unit: ingredientPurchaseUnit }
-      ),
-    [selectedIngredientMeta, ingredientPurchaseUnit]
-  )
-
-  const isAutoSameFamilyMode = useMemo(() => {
-    if (!ingredientId || !selectedIngredientMeta || showAdvancedCalibration) return false
-    if (billingMassVolumeNorm == null) return false
-    return sameMassVolumeFamilyBillingAndIngredient(
-      billingMassVolumeNorm,
-      selectedIngredientMeta
-    )
-  }, [
-    ingredientId,
-    selectedIngredientMeta,
-    showAdvancedCalibration,
-    billingMassVolumeNorm,
-  ])
-
-  const autoSameFamilyCaption = useMemo(() => {
-    if (!isAutoSameFamilyMode || billingMassVolumeNorm == null) return null
-    return sameFamilyAutomaticConversionCaption(
-      billingMassVolumeNorm,
-      purchaseMassVolumeNorm
-    )
-  }, [isAutoSameFamilyMode, billingMassVolumeNorm, purchaseMassVolumeNorm])
 
   const isSimpleMode = useMemo(() => {
     if (!ingredientId || !selectedIngredientMeta || showAdvancedCalibration) return false
@@ -495,6 +501,9 @@ export function LineMappingModal({
   const canSave = useMemo(() => {
     if (!ingredientId || !invoiceId || supplierId == null || observedUnitPrice == null) return false
     if (isVariableWeightMode) return true
+    if (automaticDimensional) {
+      return presentationEconomics != null && Number(line?.quantity) > 0
+    }
     const { lineBillingUnit, lineContentQty, lineContentUnit } = dimensionalParsed
     if (!lineBillingUnit) return false
     if (lineContentQty == null || !Number.isFinite(lineContentQty) || lineContentQty <= 0) return false
@@ -508,6 +517,8 @@ export function LineMappingModal({
     dimensionalParsed,
     presentationEconomics,
     isVariableWeightMode,
+    automaticDimensional,
+    line?.quantity,
   ])
 
   const proposalFingerprint = useMemo(
@@ -518,11 +529,15 @@ export function LineMappingModal({
         observedUnitPrice,
         lineBillingUnit: isVariableWeightMode
           ? 'kg'
-          : String(line?.line_unit ?? dimensional.lineBillingUnit).trim().toLowerCase(),
-        lineContentQty: isVariableWeightMode ? '1' : dimensional.lineContentQty.trim().replace(',', '.'),
-        lineContentUnit: isVariableWeightMode ? 'kg' : dimensional.lineContentUnit.trim().toLowerCase(),
+          : automaticDimensional?.lineBillingUnit ?? String(line?.line_unit ?? dimensional.lineBillingUnit).trim().toLowerCase(),
+        lineContentQty: isVariableWeightMode
+          ? '1'
+          : automaticDimensional?.lineContentQty ?? dimensional.lineContentQty.trim().replace(',', '.'),
+        lineContentUnit: isVariableWeightMode
+          ? 'kg'
+          : automaticDimensional?.lineContentUnit ?? dimensional.lineContentUnit.trim().toLowerCase(),
       }),
-    [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor, isVariableWeightMode]
+    [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor, isVariableWeightMode, automaticDimensional]
   )
 
   useEffect(() => {
@@ -557,7 +572,8 @@ export function LineMappingModal({
     } else if (isAutoSameFamilyMode && selectedIngredientMeta && billingMassVolumeNorm) {
       const auto = buildAutomaticSameFamilyDimensional(
         billingMassVolumeNorm,
-        selectedIngredientMeta
+        selectedIngredientMeta,
+        line.line_unit
       )
       if (auto) {
         lineBillingUnit = auto.lineBillingUnit
@@ -1051,11 +1067,58 @@ export function LineMappingModal({
                         </div>
                       ) : null}
                     </>
+                  ) : automaticDimensional ? (
+                    <>
+                      <p className="px-1 text-xs font-semibold text-zinc-800">
+                        Se usará la cantidad del albarán
+                      </p>
+                      <p className="px-1 text-sm font-bold text-zinc-900 tabular-nums">
+                        {Number.isFinite(Number(line.quantity)) && Number(line.quantity) > 0
+                          ? `${Number(line.quantity).toLocaleString('es-ES', { maximumFractionDigits: 3 })} ${billingMassVolumeNorm}`
+                          : 'Cantidad pendiente'}
+                        {' · '}
+                        {presentationEconomics
+                          ? `${presentationEconomics.normalizedUnitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €/${purchaseUnitForPresentation}`
+                          : 'Precio pendiente'}
+                      </p>
+                      <p className="px-1 text-xs text-zinc-600">
+                        {autoSameFamilyCaption ? `${autoSameFamilyCaption}.` : ''}
+                        {billingMassVolumeNorm === 'kg' || billingMassVolumeNorm === 'g'
+                          ? ' Las cajas y las piezas no cambian el peso facturado.'
+                          : ''}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="tertiary"
+                        instance="albaran-line-mapping-correct-presentation"
+                        className="self-start"
+                        onClick={() => {
+                          setShowAdvancedCalibration(true)
+                          setReceiptPreview(null)
+                        }}
+                      >
+                        Corregir presentación
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
                         Contenido de cada unidad facturada
                       </p>
+                      {canConvertAutomatically ? (
+                        <Button
+                          type="button"
+                          variant="tertiary"
+                          instance="albaran-line-mapping-use-automatic-presentation"
+                          className="self-start"
+                          onClick={() => {
+                            setShowAdvancedCalibration(false)
+                            setReceiptPreview(null)
+                          }}
+                        >
+                          Usar conversión automática
+                        </Button>
+                      ) : null}
                       <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
                         Indica qué contiene una unidad del albarán. El precio final se calcula automáticamente.
                       </p>

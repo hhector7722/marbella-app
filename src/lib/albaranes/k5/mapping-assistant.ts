@@ -57,7 +57,7 @@ function unit(value: string | null | undefined): 'kg' | 'g' | 'l' | 'ml' | 'cl' 
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-  if (['kg', 'kilo', 'kilos'].includes(normalized)) return 'kg'
+  if (['kg', 'kilo', 'kilos', 'quilo', 'quilos'].includes(normalized)) return 'kg'
   if (['g', 'gr', 'grs', 'gramo', 'gramos'].includes(normalized)) return 'g'
   if (['l', 'lt', 'litro', 'litros'].includes(normalized)) return 'l'
   if (['ml', 'mililitro', 'mililitros'].includes(normalized)) return 'ml'
@@ -136,7 +136,7 @@ function deriveDimensional(
     const factor = convert(1, line, purchase)
     if (factor == null || !Number.isFinite(factor) || factor <= 0) return null
     return {
-      lineBillingUnit: line,
+      lineBillingUnit: String(row.lineUnit).trim(),
       lineContentQty: 1,
       lineContentUnit: line,
       conversionFactor: factor,

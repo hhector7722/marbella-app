@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-03
+revisado: 2026-10-04
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -114,6 +114,13 @@ Los patrones observados en albaranes reales de los proveedores habituales. Los e
 **Regla práctica:** el precio unitario dividido entre el factor tiene que dar euros por unidad de compra del ingrediente. Si el proveedor factura en kilos y el ingrediente está en kilos, la cantidad es kilos y el factor es 1, salvo que una unidad de línea represente varios kilos de catálogo.
 
 **El error más frecuente** es introducir piezas donde el proveedor factura peso. En una línea de peso variable, la cantidad es el peso, no el número de piezas.
+
+En la revisión de una línea facturada por masa o volumen, si la unidad del
+albarán y la unidad de compra del ingrediente pertenecen a la misma familia,
+la conversión se calcula sin pedir el contenido de una caja. «QUILOS» se
+interpreta como kg. La pantalla muestra la cantidad facturada y el precio normalizado y
+ofrece corregir la presentación cuando el documento o el catálogo estén mal.
+La caja y sus piezas no multiplican de nuevo el peso facturado.
 
 ---
 
