@@ -1,15 +1,18 @@
 #!/usr/bin/env node
-// Reevalúa solo dos lecturas comprobadas en albaranes pendientes. Por defecto
+// Reevalúa solo lecturas comprobadas en albaranes pendientes. Por defecto
 // informa; --apply versiona K5 y actualiza la línea operativa, nunca invoca K4.
 import { createHash, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { canonicalLineSchema } from '../../src/lib/albaranes/extractors/canonical.ts'
 import { validateObservedLine, parseObservedDecimal } from '../../src/lib/albaranes/pipeline/validate.ts'
 
-const TARGETS = [
-  'beed288e-2df8-4ebb-afc2-0100f7d2cb6a', // Videla 2026-10-02
-  '08c83aae-8e59-4775-9047-860cd74c820d', // Santa Teresa 2026-09-23
-]
+const TARGETS = {
+  videla: 'beed288e-2df8-4ebb-afc2-0100f7d2cb6a', // 2026-10-02
+  santaTeresa: '08c83aae-8e59-4775-9047-860cd74c820d', // 2026-09-23
+  panabad: '09840ee6-5f43-4d82-a0c5-5cfd66fbe6f2', // 2026-10-02
+  shers: '33e3e7f4-ca09-4067-a249-e6b37e920fce', // 2026-10-01
+}
+const TARGET_IDS = Object.values(TARGETS)
 const apply = process.argv.includes('--apply')
 const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -23,14 +26,14 @@ function same(left, right) {
 }
 
 const { data: invoices, error: invoiceError } = await db.from('purchase_invoices')
-  .select('id,status,duplicate_of_invoice_id').in('id', TARGETS)
-if (invoiceError || invoices?.length !== TARGETS.length) throw new Error('No se pudieron verificar los albaranes')
+  .select('id,status,duplicate_of_invoice_id').in('id', TARGET_IDS)
+if (invoiceError || invoices?.length !== TARGET_IDS.length) throw new Error('No se pudieron verificar los albaranes')
 const eligibleInvoices = new Set(invoices.filter((invoice) =>
   !['received', 'discarded'].includes(invoice.status) && !invoice.duplicate_of_invoice_id)
   .map((invoice) => invoice.id))
 const { data: lines, error: lineError } = await db.from('purchase_invoice_lines')
   .select('id,invoice_id,interpretation_proposal_id,original_name,quantity,line_unit,unit_price,total_price,status,mapped_ingredient_id,superseded_by_extraction_id')
-  .in('invoice_id', TARGETS).is('superseded_by_extraction_id', null)
+  .in('invoice_id', TARGET_IDS).is('superseded_by_extraction_id', null)
 if (lineError) throw new Error(`No se pudieron leer las líneas: ${lineError.message}`)
 const proposalIds = (lines ?? []).map((line) => line.interpretation_proposal_id).filter(Boolean)
 const lineIds = (lines ?? []).map((line) => line.id)
@@ -55,7 +58,7 @@ for (const line of lines ?? []) {
     || checked.quantity == null || checked.unitPrice == null || checked.lineTotal == null) continue
 
   let kind = null
-  if (line.invoice_id === TARGETS[0]
+  if (line.invoice_id === TARGETS.videla
     && /^\s*(?:BU|BULTOS?|CJ|CAJAS?)\s+\d+(?:[.,]\d+)?\s*(?:KG|KILOS?|QUILOS?)\s*$/i.test(observed.billing_unit_raw ?? '')
     && checked.quantity === 1 && checked.priceBasis === 'package_content'
     && checked.packageContent != null && line.line_unit?.toLowerCase() === 'kg'
@@ -70,17 +73,29 @@ for (const line of lines ?? []) {
       && mapping.line_billing_unit === 'kg' && mapping.line_content_unit === 'kg'
       && same(mapping.line_content_qty, 1) && same(mapping.conversion_factor, 1)) kind = 'un_bulto_kg'
   }
-  if (line.invoice_id === TARGETS[1] && checked.priceBasis === 'billing_quantity'
+  if (line.invoice_id === TARGETS.santaTeresa && checked.priceBasis === 'billing_quantity'
     && observed.other_charge_header_raw?.trim().toLocaleLowerCase('es') === 'importe'
     && observed.discount_header_raw?.trim().toLocaleLowerCase('es') === 'ibee'
     && same(checked.lineTotal, observed.other_charge_raw)
     && !same(checked.lineTotal, observed.line_total_raw)
     && same(line.quantity, checked.quantity) && same(line.unit_price, checked.unitPrice)
     && same(line.total_price, observed.line_total_raw)) kind = 'importe_vs_pre_iva'
+  if (line.invoice_id === TARGETS.panabad && checked.priceBasis === 'billing_quantity'
+    && checked.discountPercent != null && !observed.discount_header_raw?.trim()
+    && prior.review_reasons?.includes('descuento_sin_porcentaje_verificado')
+    && prior.review_reasons?.includes('cantidad_precio_importe_no_reconcilian')
+    && same(line.quantity, checked.quantity) && same(line.unit_price, checked.unitPrice)
+    && same(line.total_price, checked.lineTotal)) kind = 'descuento_porcentual_por_ecuacion'
+  if (line.invoice_id === TARGETS.shers && checked.priceBasis === 'billing_quantity'
+    && /^\s*dto\.?\s*$/i.test(observed.discount_header_raw ?? '')
+    && observed.net_unit_price_raw && checked.netUnitPrice != null
+    && checked.discountPercent == null && prior.review_reasons?.includes('descuento_sin_porcentaje_verificado')
+    && same(line.quantity, checked.quantity) && same(line.unit_price, checked.unitPrice)
+    && same(line.total_price, checked.lineTotal)) kind = 'descuento_euros_con_precio_neto'
   if (!kind) continue
 
   const reasons = prior.review_reasons.filter((reason) =>
-    !(['cantidad_precio_importe_no_reconcilian', 'descuento_sin_porcentaje_verificado'].includes(reason)
+    !(['cantidad_precio_importe_no_reconcilian', 'descuento_sin_porcentaje_verificado', 'precio_neto_contradictorio'].includes(reason)
       && !checked.reasons.includes(reason)))
   const status = reasons.length === 0 && prior.ingredient_id && prior.mapping_version_id
     && prior.normalized && Object.keys(prior.normalized).length > 0
@@ -90,7 +105,9 @@ for (const line of lines ?? []) {
 
 console.log(JSON.stringify({ mode: apply ? 'apply' : 'plan', eligible: planned.length,
   kinds: { un_bulto_kg: planned.filter((entry) => entry.kind === 'un_bulto_kg').length,
-    importe_vs_pre_iva: planned.filter((entry) => entry.kind === 'importe_vs_pre_iva').length },
+    importe_vs_pre_iva: planned.filter((entry) => entry.kind === 'importe_vs_pre_iva').length,
+    descuento_porcentual_por_ecuacion: planned.filter((entry) => entry.kind === 'descuento_porcentual_por_ecuacion').length,
+    descuento_euros_con_precio_neto: planned.filter((entry) => entry.kind === 'descuento_euros_con_precio_neto').length },
   lines: planned.map(({ line, prior, kind, checked, reasons, status }) => ({
     id: line.id, invoice_id: line.invoice_id, name: line.original_name, kind,
     proposal_before: prior.id, total_before: line.total_price, total_after: checked.lineTotal,

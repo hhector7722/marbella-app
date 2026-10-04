@@ -15,6 +15,12 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-04
 
+- **La revisión reconoce descuentos demostrados por el propio albarán.** Si
+  una cabecera de porcentaje se pierde pero la ecuación coincide, se conserva
+  como porcentaje; un descuento en euros requiere precio neto unitario
+  explícito y las dos igualdades verificadas. Los importes ambiguos continúan
+  en revisión y esta corrección no invoca K4.
+
 - **La revisión de albaranes reconoce dos lecturas verificadas.** Un bulto
   único con 10 kg impresos se valida por el peso facturado, y la columna
   «Importe» de Santa Teresa se distingue del precio unitario «Pre+Iva» solo

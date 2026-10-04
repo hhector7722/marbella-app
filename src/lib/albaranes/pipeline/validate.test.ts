@@ -18,6 +18,29 @@ test('reconcilia cantidad, precio y descuento porcentual de Panabad', () => {
   assert.equal(check.discountPercent, 38)
 })
 
+test('deduce el descuento porcentual de Panabad cuando falta su cabecera', () => {
+  const check = validateObservedLine(row({ quantity_raw: '12', unit_price_raw: '33,86',
+    discount_raw: '38,00', discount_header_raw: null, line_total_raw: '251,92' }))
+  assert.deepEqual(check.reasons, [])
+  assert.equal(check.discountPercent, 38)
+})
+
+test('reconcilia el descuento en euros de SHERS con su precio neto impreso', () => {
+  const check = validateObservedLine(row({ quantity_raw: '1', unit_price_raw: '8,58',
+    discount_raw: '3,38', discount_header_raw: 'DTO.', net_unit_price_raw: '5,20',
+    line_total_raw: '5,20' }))
+  assert.deepEqual(check.reasons, [])
+  assert.equal(check.discountPercent, null)
+  assert.equal(check.netUnitPrice, 5.2)
+})
+
+test('no supone un descuento en euros sin precio neto explícito', () => {
+  const check = validateObservedLine(row({ quantity_raw: '1', unit_price_raw: '8,58',
+    discount_raw: '3,38', discount_header_raw: 'DTO.', line_total_raw: '5,20' }))
+  assert.ok(check.reasons.includes('descuento_sin_porcentaje_verificado'))
+  assert.ok(check.reasons.includes('cantidad_precio_importe_no_reconcilian'))
+})
+
 test('no trata Ibee de Santa Teresa como descuento', () => {
   const check = validateObservedLine(row({ quantity_raw: '72', unit_price_raw: '1.15',
     other_charge_raw: '2.16', other_charge_header_raw: 'Ibee', line_total_raw: '82.80' }))
