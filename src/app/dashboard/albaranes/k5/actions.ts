@@ -122,11 +122,13 @@ export async function getK5InvoiceAvailabilityAction(params: { invoiceId: string
       .from('document_extractions')
       .select('status,extracted_at')
       .eq('invoice_id', invoiceId)
+      .eq('extractor_version', 'mistral-ocr-4-1-document-observation-v2')
       .order('extracted_at', { ascending: false }),
     gate.supabase
       .from('document_processing_jobs')
       .select('status,last_error,attempt_count,created_at,completed_at')
       .eq('invoice_id', invoiceId)
+      .eq('extractor_version', 'mistral-ocr-4-1-document-observation-v2')
       .order('created_at', { ascending: false })
       .limit(1),
   ])
@@ -141,7 +143,8 @@ export async function getK5InvoiceAvailabilityAction(params: { invoiceId: string
   const invoiceStatus = text(invoice.status)
   const jobStatus = text(latestJob?.status)
 
-  if (jobStatus === 'pending' || jobStatus === 'leased' || invoiceStatus === 'processing') {
+  if (jobStatus === 'pending' || jobStatus === 'leased'
+    || (invoiceStatus === 'processing' && latestJob != null)) {
     const attemptCount = Number(latestJob?.attempt_count)
     return {
       success: true,
@@ -163,7 +166,7 @@ export async function getK5InvoiceAvailabilityAction(params: { invoiceId: string
   if (
     jobStatus === 'failed'
     || text(latestExtraction?.status) === 'failed'
-    || invoiceStatus === 'ocr_failed'
+    || (invoiceStatus === 'ocr_failed' && latestJob != null)
   ) {
     return {
       success: true,
@@ -205,11 +208,13 @@ export async function listK5InvoiceCandidatesAction(): Promise<
       .from('document_extractions')
       .select('id,invoice_id,status')
       .in('invoice_id', invoiceIds)
+      .eq('extractor_version', 'mistral-ocr-4-1-document-observation-v2')
       .in('status', ['success', 'no_table']),
     gate.supabase
       .from('purchase_interpretation_proposals')
       .select('id,proposal_set_id,purchase_invoice_id,supersedes_proposal_id,provenance,created_at')
-      .in('purchase_invoice_id', invoiceIds),
+      .in('purchase_invoice_id', invoiceIds)
+      .eq('normalizer_version', 'mistral-pipeline-v3'),
   ])
 
   if (supplierError || extractionError || proposalError) {
