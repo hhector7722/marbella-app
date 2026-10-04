@@ -7,7 +7,7 @@ normativo: false
 precedencia: 0
 responsable: propiedad del producto
 decidido: 2026-10-03
-depende_de: ADR-0013, ADR-0014, MODELO-DE-DATOS, SEGURIDAD
+depende_de: ADR-0013, MODELO-DE-DATOS, SEGURIDAD
 supersede: ADR-0012
 ---
 

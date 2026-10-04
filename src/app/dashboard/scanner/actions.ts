@@ -3,13 +3,6 @@
 import { createHash } from 'node:crypto'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { MISTRAL_EXTRACTOR_VERSION } from '@/lib/albaranes/extractors/mistral'
-
-// Versión declarada, no una regla de dominio. Una futura selección de evidence
-// siempre será explícita por `document_extractions.id`, nunca por esta cadena.
-const DOCLING_SCANNER_EXTRACTOR_VERSION = 'docling-serve-v1.21.0-k3.3-scanner'
-const PRIMARY_SCANNER_EXTRACTOR_VERSION = process.env.ALBARAN_PRIMARY_EXTRACTOR === 'mistral'
-  ? MISTRAL_EXTRACTOR_VERSION : DOCLING_SCANNER_EXTRACTOR_VERSION
 
 async function gateAuthenticated() {
   const supabase = await createClient()
@@ -49,7 +42,7 @@ function revalidateScannerPaths() {
   revalidatePath('/dashboard/albaranes')
 }
 
-async function enqueueDoclingEvidence(
+async function enqueueMistralEvidence(
   supabase: Awaited<ReturnType<typeof createClient>>,
   params: {
     invoiceId: string
@@ -58,11 +51,10 @@ async function enqueueDoclingEvidence(
     sourceAttachmentId?: string | null
   }
 ): Promise<{ ok: true; jobId: string; inserted: boolean; status: string } | { ok: false; message: string }> {
-  const { data, error } = await supabase.rpc('enqueue_docling_evidence_job', {
+  const { data, error } = await supabase.rpc('enqueue_mistral_evidence_job', {
     p_invoice_id: params.invoiceId,
     p_file_version_hash: params.fileVersionHash,
     p_storage_path: params.storagePath,
-    p_extractor_version: PRIMARY_SCANNER_EXTRACTOR_VERSION,
     p_source_attachment_id: params.sourceAttachmentId ?? null,
   })
 
@@ -193,7 +185,7 @@ export async function appendScannerPageToInvoiceAction(params: {
         message: 'La hoja se conservó, pero no se pudo actualizar el total de hojas. Reintenta desde el albarán.' }
     }
 
-    const queued = await enqueueDoclingEvidence(supabase, {
+    const queued = await enqueueMistralEvidence(supabase, {
       invoiceId,
       fileVersionHash: contentSha256,
       storagePath: filePath,
@@ -277,7 +269,7 @@ export async function processScannerImage(
     }
 
     const invoiceId = String(invoice.id)
-    const queued = await enqueueDoclingEvidence(supabase, {
+    const queued = await enqueueMistralEvidence(supabase, {
       invoiceId,
       fileVersionHash: contentSha256,
       storagePath: filePath,
@@ -321,29 +313,20 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
       .select('id, file_path, content_sha256, page_order, ocr_status')
       .eq('invoice_id', id)
     if (attachmentsError) return { success: false, message: attachmentsError.message }
-    if (PRIMARY_SCANNER_EXTRACTOR_VERSION === MISTRAL_EXTRACTOR_VERSION) {
-      const declaredPages = Math.max(1, Number(invoice.expected_pages ?? 1),
-        (attachments?.length ?? 0) + 1,
-        ...(attachments ?? []).map((page) => Number(page.page_order) || 1))
-      if (declaredPages > Number(invoice.expected_pages ?? 1)) {
-        const { error: countError } = await supabase.from('purchase_invoices')
-          .update({ expected_pages: declaredPages }).eq('id', id)
-        if (countError) return { success: false, message: 'No se pudo declarar el total de hojas antes del reintento.' }
-      }
+    const declaredPages = Math.max(1, Number(invoice.expected_pages ?? 1),
+      (attachments?.length ?? 0) + 1,
+      ...(attachments ?? []).map((page) => Number(page.page_order) || 1))
+    if (declaredPages > Number(invoice.expected_pages ?? 1)) {
+      const { error: countError } = await supabase.from('purchase_invoices')
+        .update({ expected_pages: declaredPages }).eq('id', id)
+      if (countError) return { success: false, message: 'No se pudo declarar el total de hojas antes del reintento.' }
     }
 
-    const retryProcedure = PRIMARY_SCANNER_EXTRACTOR_VERSION === MISTRAL_EXTRACTOR_VERSION
-      ? 'retry_mistral_evidence_jobs' : 'retry_docling_evidence_jobs'
-    const { data: retryResult, error: retryError } = await supabase.rpc(retryProcedure, {
+    const { data: retryResult, error: retryError } = await supabase.rpc('retry_mistral_evidence_jobs', {
       p_invoice_id: id,
     })
     if (retryError) return { success: false, message: retryError.message }
     const retry = retryResult as { requeued_count?: number; immutable_failure_count?: number } | null
-    if (Number(retry?.requeued_count ?? 0) > 0
-      && PRIMARY_SCANNER_EXTRACTOR_VERSION !== MISTRAL_EXTRACTOR_VERSION) {
-      revalidateScannerPaths()
-      return { success: true, invoiceId: id }
-    }
     if (Number(retry?.immutable_failure_count ?? 0) > 0) {
       return {
         success: false,
@@ -351,7 +334,7 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
       }
     }
 
-    const mainJob = await enqueueDoclingEvidence(supabase, {
+    const mainJob = await enqueueMistralEvidence(supabase, {
       invoiceId: id,
       fileVersionHash: invoice.content_sha256,
       storagePath: invoice.file_path,
@@ -359,10 +342,8 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
     if (!mainJob.ok) return { success: false, message: mainJob.message }
 
     for (const attachment of attachments ?? []) {
-      if (PRIMARY_SCANNER_EXTRACTOR_VERSION !== MISTRAL_EXTRACTOR_VERSION
-        && attachment.ocr_status !== 'pending' && attachment.ocr_status !== 'failed') continue
       if (!attachment.file_path || !attachment.content_sha256) continue
-      const queued = await enqueueDoclingEvidence(supabase, {
+      const queued = await enqueueMistralEvidence(supabase, {
         invoiceId: id,
         fileVersionHash: attachment.content_sha256,
         storagePath: attachment.file_path,
@@ -377,6 +358,18 @@ export async function retryOcrInvoiceAction(invoiceId: string): Promise<ProcessS
     console.error('retryOcrInvoiceAction:', error)
     return { success: false, message: 'Error inesperado al reintentar la extracción. Reintenta.' }
   }
+}
+
+/** Relee cada original con Mistral en modo histórico, sin abrir K4. */
+export async function reprocessMistralInvoiceAction(invoiceId: string): Promise<ProcessScannerImageResult> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok || !gate.supabase) return { success: false, message: gate.message }
+  const { error } = await gate.supabase.rpc('reprocess_mistral_invoice', {
+    p_invoice_id: String(invoiceId ?? '').trim(),
+  })
+  if (error) return { success: false, message: error.message }
+  revalidateScannerPaths()
+  return { success: true, invoiceId }
 }
 
 /** Preserva original y evidence: no se sustituye un documento histórico. */

@@ -124,7 +124,9 @@ La función específica `is_purchase_manager_or_admin()` excluye deliberadamente
 
 El recuento de inventario aplica el mismo criterio ([ADR-0019](../4-decisiones/ADR-0019-inventario-captura-y-certificacion.md)). `inventory_counts` e `inventory_count_lines` solo conceden `SELECT` a `authenticated`; `anon` no tiene permiso. La captura pasa por `submit_inventory_count`, abierta a cualquier persona autenticada y sin efecto en el stock. La certificación y el rechazo pasan por `certify_inventory_count` y `reject_inventory_count`, reservadas a `manager` o `admin`; solo la certificación llama al comando canónico `record_inventory_count_movements`. Ni las tablas ni las funciones se exponen a `anon`, y el cliente no escribe las tablas directamente. El **borrador vivo** del recuento (`inventory_count_drafts`) es la excepción deliberada: como el borrador de pedidos, es compartido y lo lee y escribe cualquier persona autenticada (RLS `TO authenticated`, sin `anon`); no es un hecho de stock y se vacía al guardar o al pulsar «Nuevo» ([ADR-0020](../4-decisiones/ADR-0020-borrador-compartido-de-inventario.md)).
 
-El worker Docling entra por una Edge Function con token de worker obligatorio, no por la Data API. La función usa la clave de servicio únicamente en el servidor para firmar una URL efímera y persistir evidencia mediante RPC. La URL no se guarda en errores nuevos.
+No existe un worker de OCR local. El procesador Mistral de Vercel accede al
+original privado mediante la clave de servicio, verifica su hash y conserva
+la evidencia versionada. Una ejecución histórica no puede invocar K4.
 
 La evaluación Mistral en sombra se ejecuta en una ruta interna de servidor,
 protegida por `CRON_SECRET`. Usa la clave de servicio para leer el archivo
@@ -137,7 +139,7 @@ de Vercel. Supabase `pg_cron` lo despierta con `CRON_SECRET` guardado en Vault;
 `anon` y `authenticated` no pueden ejecutar la función de despertar ni las
 funciones de lease. La clave Mistral no se expone al navegador, al worker local
 ni al repositorio. El delegado automático de K4 solo acepta propuestas con
-evidencia Mistral versionada o el origen Docling histórico, y exige un actor
+evidencia Mistral versionada, y exige un actor
 `manager` o `admin`; si quien capturó fue `supervisor`, utiliza la identidad
 técnica `manager` dedicada y registrada en el esquema privado. Nunca concede
 confirmación económica directa al supervisor ni acepta capturas de `staff` por
@@ -147,7 +149,7 @@ confirmación. Las dos tablas privadas tienen RLS sin políticas de lectura o
 escritura para sesiones: solo el delegado definidor puede usarlas. La ruta
 valida firma HMAC del lease, presentación confiable,
 matemáticas, pedidos pendientes y variación de precio antes de invocar K4.
-La decisión vigente figura en [ADR-0022](../4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md).
+La decisión vigente figura en [ADR-0023](../4-decisiones/ADR-0023-mistral-unico-y-relectura-historica.md).
 
 ### Lo que no está cubierto
 
@@ -202,7 +204,7 @@ Trece contenedores de almacenamiento. Siete son públicos:
 
 **Todo lo que empieza por `NEXT_PUBLIC_` viaja al navegador.** Vale para la dirección del proyecto y la clave pública, que están diseñadas para ser públicas; **no vale para nada más**.
 
-Privadas: clave de servicio, secreto de webhook, secreto de tarea programada, claves de OpenAI y Mistral, claves de notificación, credenciales del ERP, token del worker Docling y clave de su API local.
+Privadas: clave de servicio, secreto de webhook, secreto de tarea programada, claves de OpenAI y Mistral, claves de notificación y credenciales del ERP.
 
 Reglas:
 

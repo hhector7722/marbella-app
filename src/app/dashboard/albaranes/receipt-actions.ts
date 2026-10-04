@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
 import { compareExact, parseExactDecimal } from '@/lib/albaranes/k5/exact-decimal'
 import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
-import { K5_NORMALIZER_VERSION, proposalInputFingerprint } from '@/lib/albaranes/k5/normalizer'
+import { K5_NORMALIZER_VERSION, proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
 
 export type ReceiptAllocationInput = {

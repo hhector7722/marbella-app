@@ -27,7 +27,7 @@ Vista de conjunto. Responde dónde vive cada cosa y en qué orden se toca. Las r
 | Pasarela | Receptor HTTP que escribe el estado de sala | `integrations/gateway/` |
 | Scripts de correo | Tres procesos de Google que leen adjuntos entrantes | `integrations/apps-script/` |
 | Servidor de voz | Proceso independiente y opcional para conversación en tiempo real | `voice-server/` |
-| Worker Docling | Conversión local de documentos a evidencia, sin acceso a la Data API | `integrations/docling-worker/` |
+| Procesador Mistral | Extracción privada y versionada de albaranes | `src/app/api/internal/albaranes/mistral-process/` |
 
 **El punto de venta es un sistema ajeno del que solo se lee.** Marbella nunca escribe en él. Ver [VISION](../1-producto/VISION.md).
 
@@ -155,23 +155,7 @@ albarán (papel o correo) → captura autenticada → evidencia versionada
    → propuesta de mapeo → confirmación manager/admin → precio y stock
 ```
 
-Capturar, extraer o proponer no cambia una magnitud económica. `apply_receipt_line(...)` es la confirmación atómica única para `manager` y `admin`: valida primero y crea el `PURCHASE`, la conciliación y, si procede, el histórico de precio en una sola transacción. Las rutas heredadas de efectos automáticos están retiradas; Docling no puede invocar esta confirmación.
-
-### Evidencia Docling (K3)
-
-```
-documento privado → cola durable → Edge Function con token de worker
-  → URL firmada efímera → Docling local → evidencia versionada + métricas
-  → perfil versionado de proveedor → mapeo de artículo → revisión humana → K4
-```
-
-El mini-PC ejecuta Docling en CPU dentro de Docker y el worker solo conoce la URL de la Edge Function y su token. La Edge Function reclama un trabajo con lease, firma el documento durante diez minutos y persiste el resultado mediante `persist_document_evidence`. No hay cliente de Supabase ni credenciales de base de datos en el worker. Una respuesta de Docling no puede atravesar la frontera hacia ingredientes, precios, stock, mapeos definitivos o escandallos.
-
-El perfil de proveedor es una etapa posterior, pura y versionada: toma evidencia
-estructurada, reconoce la semántica documental y devuelve una propuesta o
-`needs_review`. No se ejecuta dentro del worker, no modifica la evidencia y no
-puede invocar ninguna escritura. El mapeo de un artículo concreto y la
-confirmación K4 siguen siendo fronteras distintas.
+Capturar, extraer o proponer no cambia una magnitud económica. `apply_receipt_line(...)` es la confirmación atómica única para `manager` y `admin`: valida primero y crea el `PURCHASE`, la conciliación y, si procede, el histórico de precio en una sola transacción. Solo una propuesta Mistral vigente y respaldada por todas las hojas puede entrar en K4.
 
 ### Mistral: evidencia, propuesta y recepción
 
@@ -184,12 +168,13 @@ ruta no crea propuestas K5, líneas económicas, recepciones, movimientos ni
 precios; permite comparar Mistral con la evidencia histórica.
 
 En el camino principal, el escáner guarda el documento y encola una intención
-`mistral-*` sin esperar el OCR. La cola separa los leases Docling y Mistral.
+`mistral-*` sin esperar el OCR. No existe selección de otro extractor.
 `pg_cron` despierta al procesador de Vercel cada dos minutos mediante una
 credencial privada de Vault. El procesador verifica la huella, reutiliza
 extracción por archivo y versión, persiste `document_extractions`, construye
-propuestas versionadas y materializa líneas únicamente si no existe otra serie
-de líneas. La observación canónica no conoce ingredientes. El matcher consulta
+propuestas versionadas y materializa líneas Mistral. Las líneas antiguas sin
+recepción se conservan como historia y se apartan de la vista operativa; las
+recibidas permanecen intactas. La observación canónica no conoce ingredientes. El matcher consulta
 memoria histórica por proveedor; la presentación y la aritmética determinan
 si la propuesta está lista o es excepción. Los alias nuevos se guardan como
 versiones propuestas derivadas de una presentación confiable.
@@ -204,7 +189,7 @@ delegado de servicio de K4. Se bloquea ante duplicado, ambigüedad, conversión
 no verificada, contradicción matemática, pedido pendiente o precio anómalo.
 K4 conserva la única escritura de stock, confirmación y precio. La pantalla de
 revisión muestra primero las excepciones. El rollout y la decisión estructural
-están en [ADR-0022](../4-decisiones/ADR-0022-actor-tecnico-recepcion-automatica.md).
+están en [ADR-0023](../4-decisiones/ADR-0023-mistral-unico-y-relectura-historica.md).
 
 El escáner declara `expected_pages` antes de encolar la primera hoja. Todas las
 hojas Mistral de un albarán comparten un conjunto de propuestas; la recepción
@@ -216,10 +201,10 @@ Al terminar cada trabajo, la cola sincroniza el estado OCR de su hoja y solo
 deja el albarán pendiente de mapeo cuando han terminado todas las hojas
 declaradas. Un fallo transitorio conserva su reintento automático; el reintento
 explícito de un fallo sin evidencia reinicia el límite de intentos.
-Al reintentar un albarán antiguo con Mistral, el escáner declara primero el
-total de hojas existentes y encola también las que Docling ya había marcado
-como leídas. El reintento Mistral solo reactiva trabajos Mistral, sin despertar
-los fallos históricos de Docling.
+«Reprocesar con Mistral» vuelve a las hojas originales conservadas. La cola
+histórica verifica su hash, reutiliza una extracción correcta de la misma
+versión y no invoca K4 ni reescribe el estado previo. La relectura masiva usa
+el mismo modo histórico y puede reanudarse por archivo.
 
 ---
 

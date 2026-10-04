@@ -13,6 +13,15 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-10-04
+
+- **Mistral pasa a ser el único extractor de albaranes.** El escáner ya no
+  selecciona Docling, «Reprocesar con Mistral» vuelve al original, y la
+  relectura histórica recorre las hojas desde el primer albarán de la etapa
+  Docling sin una extracción Gemini correcta. Los trabajos históricos
+  reutilizan OCR por hash y versión y no ejecutan K4. Las líneas y evidencias
+  antiguas se conservan para auditoría. [ADR-0023](../4-decisiones/ADR-0023-mistral-unico-y-relectura-historica.md).
+
 ## 2026-10-03
 
 - **La recepción automática admite albaranes capturados por supervisores.** Un

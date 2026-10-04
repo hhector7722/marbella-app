@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
-import { proposalInputFingerprint } from '@/lib/albaranes/k5/normalizer'
+import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import {
   buildMappingAssistantSuggestions,
   type MappingAssistantIngredient,
