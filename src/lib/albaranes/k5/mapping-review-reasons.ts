@@ -6,6 +6,7 @@ type MappingReviewInput = {
   quantity: number | null
   unitPrice: number | null
   lineTotal: number | null
+  verifiedObservedMath?: boolean
 }
 
 /** Resolve only facts explicitly supplied by the reviewer; keep economic and
@@ -37,6 +38,7 @@ export function resolveMappingReviewReasons(input: MappingReviewInput): string[]
     if (['missing_quantity', 'cantidad_ausente_o_invalida'].includes(reason) && input.quantity != null && input.quantity > 0) return false
     if (['missing_unit_price', 'precio_ausente_o_invalido'].includes(reason) && input.unitPrice != null && input.unitPrice > 0) return false
     if (['missing_line_amount', 'importe_ausente_o_invalido'].includes(reason) && input.lineTotal != null && input.lineTotal > 0) return false
+    if (reason === 'cantidad_precio_importe_no_reconcilian' && input.verifiedObservedMath) return false
     if (input.hasMappedSnapshot && input.humanLineOverride && [
       'discount_not_interpretable',
       'discount_requires_review',

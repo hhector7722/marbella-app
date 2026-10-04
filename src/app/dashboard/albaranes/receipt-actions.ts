@@ -7,6 +7,8 @@ import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
 import { resolveMappingReviewReasons } from '@/lib/albaranes/k5/mapping-review-reasons'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
+import { canonicalLineSchema } from '@/lib/albaranes/extractors/canonical'
+import { validateObservedLine } from '@/lib/albaranes/pipeline/validate'
 
 export type ReceiptAllocationInput = {
   purchase_order_item_id: string
@@ -187,6 +189,25 @@ async function supersedeK5ProposalWithMapping(params: {
   const previousReasons: string[] = Array.isArray(current.review_reasons)
     ? (current.review_reasons as unknown[]).map(text).filter(Boolean)
     : []
+  const sourceLine = canonicalLineSchema.safeParse(current.observed)
+  const sourceCheck = sourceLine.success ? validateObservedLine(sourceLine.data) : null
+  const verifiedEmbeddedKgMath = Boolean(
+    sourceLine.success
+    && /^\s*(?:BU|BULTOS?|CJ|CAJAS?)\s+\d+(?:[.,]\d+)?\s*(?:KG|KILOS?|QUILOS?)\s*$/i
+      .test(sourceLine.data.billing_unit_raw ?? '')
+    && sourceCheck?.priceBasis === 'package_content'
+    && sourceCheck.quantity === 1
+    && sourceCheck.packageContent != null
+    && sourceCheck.unitPrice != null
+    && sourceCheck.lineTotal != null
+    && text(params.lineBillingUnit).toLowerCase() === 'kg'
+    && text(params.lineContentUnit).toLowerCase() === 'kg'
+    && sameExactDecimal(params.conversionFactor, 1)
+    && sameExactDecimal(params.lineContentQty, 1)
+    && sameExactDecimal(sourceCheck.packageContent, lineQuantity)
+    && sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
+    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+  )
   // La revisión humana puede completar datos que el OCR dejó vacíos. Esos
   // valores quedan versionados en la propuesta sucesora; la evidencia original
   // no se modifica y K4 seguirá revalidando antes de cualquier efecto económico.
@@ -198,6 +219,7 @@ async function supersedeK5ProposalWithMapping(params: {
     quantity: quantityNumber,
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
+    verifiedObservedMath: verifiedEmbeddedKgMath,
   })
   const reviewReasons: string[] = snapshot
     ? semanticReasons

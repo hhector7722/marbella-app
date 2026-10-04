@@ -72,8 +72,8 @@ export function assessDocument(params: {
     if (presentation && check.quantity && check.unitPrice && check.lineTotal != null && check.priceBasis) {
       let numericEconomicQuantity = check.quantity
       if (check.priceBasis === 'package_content') {
-        const packageContent = Number(String(line.content_per_unit_raw ?? '').replace(',', '.'))
-        if (!Number.isFinite(packageContent) || packageContent <= 0) reasons.push('contenido_de_caja_invalido')
+        const packageContent = check.packageContent
+        if (packageContent == null || packageContent <= 0) reasons.push('contenido_de_caja_invalido')
         else numericEconomicQuantity *= packageContent
       } else if (check.priceBasis === 'units_per_package') {
         const unitsPerPackage = Number(String(line.units_per_package_raw ?? '').replace(',', '.'))
