@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
 import { compareExact, parseExactDecimal } from '@/lib/albaranes/k5/exact-decimal'
 import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
+import { resolveMappingReviewReasons } from '@/lib/albaranes/k5/mapping-review-reasons'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
 
@@ -189,26 +190,14 @@ async function supersedeK5ProposalWithMapping(params: {
   // La revisión humana puede completar datos que el OCR dejó vacíos. Esos
   // valores quedan versionados en la propuesta sucesora; la evidencia original
   // no se modifica y K4 seguirá revalidando antes de cualquier efecto económico.
-  const semanticReasons = previousReasons.filter((reason: string) => {
-    if ([
-      'mapping_missing',
-      'mapping_presentation_incompatible',
-      'mapping_requires_human_review',
-      'legacy_identity_requires_presentation_validation',
-      'price_not_normalizable',
-      'unknown_quantity_unit',
-    ].includes(reason)) return false
-    if (['missing_product', 'product_missing'].includes(reason) && hasResolvedName) return false
-    if (reason === 'missing_quantity' && quantityNumber != null && quantityNumber > 0) return false
-    if (reason === 'missing_unit_price' && unitPriceNumber != null && unitPriceNumber > 0) return false
-    if (reason === 'missing_line_amount' && lineTotalNumber != null && lineTotalNumber > 0) return false
-    if (snapshot && ['mixed_measurement_requires_review', 'unsupported_presentation'].includes(reason)) return false
-    if (
-      snapshot
-      && humanLineOverride
-      && ['discount_not_interpretable', 'discount_requires_review', 'line_amount_mismatch'].includes(reason)
-    ) return false
-    return true
+  const semanticReasons = resolveMappingReviewReasons({
+    previousReasons,
+    hasResolvedName,
+    hasMappedSnapshot: Boolean(snapshot),
+    humanLineOverride,
+    quantity: quantityNumber,
+    unitPrice: unitPriceNumber,
+    lineTotal: lineTotalNumber,
   })
   const reviewReasons: string[] = snapshot
     ? semanticReasons
