@@ -8,6 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/Notice'
 import { Surface } from '@/components/ui/Surface'
 import {
+  collectDocumentReviewReasons,
+  isDocumentOnlyReview,
+} from '@/lib/albaranes/k5/document-review'
+import {
   applyK5BatchReceiptsAction,
   listK5BatchReviewAction,
   prepareK5ManualReviewLineAction,
@@ -108,11 +112,16 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
   const exceptionRows = useMemo(
     () => context?.rows.filter((row) => {
       if (!['needs_mapping', 'needs_review', 'order_review', 'unavailable'].includes(row.disposition)) return false
+      if (isDocumentOnlyReview(row)) return false
       const handledByMappingStep =
         !row.ingredientId
         && (row.disposition === 'needs_mapping' || row.reviewReasons.includes('mapping_missing'))
       return !handledByMappingStep
     }) ?? [],
+    [context]
+  )
+  const documentReviewReasons = useMemo(
+    () => collectDocumentReviewReasons(context?.rows ?? []),
     [context]
   )
 
@@ -241,7 +250,7 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
         </div>
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
           <div className="text-[9px] font-black uppercase tracking-wider text-amber-700">Excepciones</div>
-          <div className="mt-1 text-xl font-black tabular-nums text-amber-950">{context.summary.exceptions}</div>
+          <div className="mt-1 text-xl font-black tabular-nums text-amber-950">{exceptionRows.length}</div>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
           <div className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Excluidas</div>
@@ -253,6 +262,16 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
         <div className="mt-3">
           <Notice instance="k5-batch-inline-error" variant="negative" title="Revisión detenida">
             {error}
+          </Notice>
+        </div>
+      ) : null}
+
+      {documentReviewReasons.length > 0 ? (
+        <div className="mt-3">
+          <Notice instance="k5-batch-document-review" variant="warning" title="Revisión del documento">
+            {documentReviewReasons.length === 1
+              ? 'Hay una comprobación pendiente del albarán completo. No necesitas revisar cada producto que solo esté bloqueado por este aviso.'
+              : 'Hay comprobaciones pendientes del albarán completo. No necesitas revisar cada producto que solo esté bloqueado por estos avisos.'}
           </Notice>
         </div>
       ) : null}

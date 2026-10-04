@@ -62,6 +62,10 @@ import {
   PURCHASE_INVOICES_PAGE_SIZE,
 } from '@/lib/albaranes/purchase-invoices-list'
 import {
+  collectDocumentReviewReasons,
+  isDocumentOnlyReview,
+} from '@/lib/albaranes/k5/document-review'
+import {
   deletePurchaseInvoiceAction,
   excludeInvoiceLineFromMappingAction,
   markInvoiceLineExpenseOnlyAction,
@@ -129,6 +133,7 @@ function isImagePath(filePath: string | null) {
 function inlineReviewLabel(row: K5BatchReviewRow | null): string | null {
   if (!row) return null
   if (row.confirmed || row.disposition === 'confirmed') return 'Confirmado'
+  if (isDocumentOnlyReview(row)) return 'Documento'
   if (row.disposition === 'needs_mapping') return 'Mapear'
   if (row.disposition === 'ready') return 'Confirmar'
   if (row.disposition === 'order_review') return 'Revisar pedido'
@@ -371,7 +376,12 @@ export default function AlbaranesHistoricoClient({
       !row.confirmed
       && row.disposition !== 'confirmed'
       && row.disposition !== 'excluded'
+      && !isDocumentOnlyReview(row)
     ).length,
+    [inlineReviewRows]
+  )
+  const inlineDocumentReviewReasons = useMemo(
+    () => collectDocumentReviewReasons(inlineReviewRows),
     [inlineReviewRows]
   )
 
@@ -1679,7 +1689,11 @@ export default function AlbaranesHistoricoClient({
                           </div>
                         ) : inlineReviewPendingCount > 0 ? (
                           <div className="mt-0.5 text-xs font-black text-amber-700">
-                            Pendiente de revisión · {inlineReviewPendingCount} línea{inlineReviewPendingCount === 1 ? '' : 's'}
+                            Intervención necesaria · {inlineReviewPendingCount} línea{inlineReviewPendingCount === 1 ? '' : 's'}
+                          </div>
+                        ) : inlineDocumentReviewReasons.length > 0 ? (
+                          <div className="mt-0.5 text-xs font-black text-amber-700">
+                            Revisión del albarán · {inlineDocumentReviewReasons.length} aviso{inlineDocumentReviewReasons.length === 1 ? '' : 's'}
                           </div>
                         ) : inlineReviewSummary && inlineReviewSummary.total > 0 ? (
                           <div className="mt-0.5 text-xs font-black text-emerald-700">
@@ -1697,6 +1711,12 @@ export default function AlbaranesHistoricoClient({
                             Pulsa una línea para editarla.
                             <br />
                             Usa Revisar/Mapear para confirmarla.
+                          </div>
+                        ) : inlineDocumentReviewReasons.length > 0 ? (
+                          <div className="text-right text-[10px] font-semibold leading-snug text-zinc-500">
+                            El aviso afecta al documento completo.
+                            <br />
+                            No tienes que editar cada producto.
                           </div>
                         ) : null}
                         <Button
@@ -1719,6 +1739,14 @@ export default function AlbaranesHistoricoClient({
                   {inlineReviewError ? (
                     <Notice instance="albaran-inline-review-error" variant="negative" title="No se pudo preparar la revisión">
                       {inlineReviewError}
+                    </Notice>
+                  ) : null}
+
+                  {inlineDocumentReviewReasons.length > 0 ? (
+                    <Notice instance="albaran-inline-document-review" variant="warning" title="Revisión del documento">
+                      {inlineDocumentReviewReasons.length === 1
+                        ? 'Hay una comprobación pendiente del albarán completo. Revisa el original o reprocesa con Mistral; las líneas sin otra incidencia no requieren edición individual.'
+                        : 'Hay comprobaciones pendientes del albarán completo. Revisa el original o reprocesa con Mistral; las líneas sin otra incidencia no requieren edición individual.'}
                     </Notice>
                   ) : null}
 
@@ -1816,7 +1844,7 @@ export default function AlbaranesHistoricoClient({
                                         {backgroundPhase === 'review' ? 'Revisando…' : 'Confirmando…'}
                                       </span>
                                     ) : reviewLabel ? (
-                                      reviewRow?.confirmed || reviewRow?.disposition === 'confirmed' || reviewRow?.disposition === 'excluded' ? (
+                                      reviewRow?.confirmed || reviewRow?.disposition === 'confirmed' || reviewRow?.disposition === 'excluded' || Boolean(reviewRow && isDocumentOnlyReview(reviewRow)) ? (
                                         <span className={cn('ml-1 text-[9px] font-black uppercase tracking-wide', inlineReviewTone(reviewRow))}>
                                           {reviewLabel}
                                         </span>
