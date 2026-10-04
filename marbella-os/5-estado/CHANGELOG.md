@@ -15,6 +15,11 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-04
 
+- **Revisar/Mapear resuelve los avisos de identidad y presentación que el
+  usuario acaba de corregir.** La propuesta sucesora K5 conserva los avisos
+  de importes, descuentos y totales que siguen sin cuadrar; un mapeo por sí
+  solo no habilita una recepción insegura.
+
 - **La relectura histórica termina sin duplicar efectos económicos.** Las 53
   hojas del periodo tienen extracción Mistral correcta; las 25 recepciones,
   25 movimientos y 8 registros de precio conservan sus huellas. Se retiran
