@@ -39,6 +39,7 @@ export function useUnreadNotificationCount(options: Options = {}) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [items, setItems] = useState<UserNotificationRow[]>([])
   const [loading, setLoading] = useState(false)
+  const [nextExpiryAt, setNextExpiryAt] = useState<string | null>(null)
   const lastFetchErrorAtRef = useRef(0)
 
   const refresh = useCallback(
@@ -56,18 +57,27 @@ export function useUnreadNotificationCount(options: Options = {}) {
       setLoading(true)
       try {
         let query = supabase
-          .from('user_notifications')
+          .from('user_notifications_active')
           .select(withItems ? '*' : 'id', { count: 'exact', head: !withItems })
           .eq('user_id', userId)
-          .is('read_at', null)
           .order('created_at', { ascending: false })
+
+        let expiryQuery = supabase
+          .from('user_notifications_active')
+          .select('expires_at')
+          .eq('user_id', userId)
+          .not('expires_at', 'is', null)
+          .order('expires_at', { ascending: true })
+          .limit(1)
 
         if (includeTypes && includeTypes.length > 0) {
           query = query.in('type', [...includeTypes])
+          expiryQuery = expiryQuery.in('type', [...includeTypes])
         }
         if (excludeTypes && excludeTypes.length > 0) {
           for (const t of excludeTypes) {
             query = query.neq('type', t)
+            expiryQuery = expiryQuery.neq('type', t)
           }
         }
 
@@ -75,11 +85,21 @@ export function useUnreadNotificationCount(options: Options = {}) {
           query = query.limit(limit)
         }
 
-        const { data, error, count } = await query
+        const [notificationsResult, expiryResult] = await Promise.all([
+          query,
+          expiryQuery.maybeSingle(),
+        ])
+        const { data, error, count } = notificationsResult
 
         if (error) throw error
+        if (expiryResult.error) throw expiryResult.error
         lastFetchErrorAtRef.current = 0
         setUnreadCount(count ?? (withItems ? (data?.length ?? 0) : 0))
+        setNextExpiryAt(
+          typeof expiryResult.data?.expires_at === 'string'
+            ? expiryResult.data.expires_at
+            : null
+        )
         if (withItems) {
           setItems((data ?? []) as UserNotificationRow[])
         }
@@ -90,6 +110,7 @@ export function useUnreadNotificationCount(options: Options = {}) {
           'No se pudieron cargar las notificaciones'
         onFetchErrorRef.current?.(msg)
         setUnreadCount(0)
+        setNextExpiryAt(null)
         if (withItems) setItems([])
       } finally {
         setLoading(false)
@@ -114,6 +135,7 @@ export function useUnreadNotificationCount(options: Options = {}) {
     if (!userId) {
       setUnreadCount(0)
       setItems([])
+      setNextExpiryAt(null)
       lastFetchErrorAtRef.current = 0
       return
     }
@@ -164,6 +186,23 @@ export function useUnreadNotificationCount(options: Options = {}) {
     document.addEventListener('visibilitychange', onVis)
     return () => document.removeEventListener('visibilitychange', onVis)
   }, [userId])
+
+  useEffect(() => {
+    if (!userId || !nextExpiryAt) return
+    const expiryMs = Date.parse(nextExpiryAt)
+    if (!Number.isFinite(expiryMs)) return
+
+    const maxDelayMs = 2_147_000_000
+    const delayMs = Math.min(
+      maxDelayMs,
+      Math.max(0, expiryMs - Date.now() + 150)
+    )
+    const timeoutId = window.setTimeout(() => {
+      void refreshRef.current({ force: true })
+    }, delayMs)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [userId, nextExpiryAt])
 
   const refreshStable = useCallback(
     () => refreshRef.current({ force: true }),
