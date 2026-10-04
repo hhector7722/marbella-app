@@ -503,6 +503,16 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             'Albaranes sigue disponible en el modal Otros del Master'
         );
         assert.match(otros, /label: 'Altas'/);
+        assert.match(
+            otros,
+            /label: 'Inventario'[\s\S]*href: '\/dashboard\/inventory'[\s\S]*img: '\/icons\/inventory\.png'/,
+            'Inventario está disponible en Otros del Master con su icono'
+        );
+        assert.match(
+            otros,
+            /label: 'Stock'[\s\S]*href: '\/dashboard\/inventory\/ledger'[\s\S]*img: '\/icons\/productes\.png'/,
+            'Stock está disponible en Otros del Master con su icono'
+        );
         assert.match(ops, /layout="ops-admin"/);
         assert.match(ops, /size="wide" instance="dashboard-ventas"/);
         assert.match(ops, /size="icon" instance="caja-inicial"/);
