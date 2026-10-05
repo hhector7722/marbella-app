@@ -463,18 +463,37 @@ export async function saveReceiptMappingProposalAction(params: {
   // supersesión; si hay más de una hoja, la ambigüedad se detiene.
   const { data: versionRows, error: versionError } = await gate.supabase
     .from('purchase_mapping_versions')
-    .select('id,ingredient_id,conversion_factor,line_billing_unit,line_content_qty,line_content_unit,status,supersedes_id')
+    .select('id,ingredient_id,conversion_factor,line_billing_unit,line_content_qty,line_content_unit,status,supersedes_id,created_at')
     .eq('supplier_id', supplierId)
     .ilike('supplier_item_name', line.original_name)
   if (versionError) return { success: false, message: 'No se pudieron leer las versiones de mapeo.' }
 
   const versions = versionRows ?? []
   const superseded = new Set(versions.map((row) => text(row.supersedes_id)).filter(Boolean))
-  const active = versions.filter((row) => !superseded.has(text(row.id)))
-  if (active.length > 1) {
+  const active = versions.filter(
+    (row) => !superseded.has(text(row.id)) && row.status !== 'rejected'
+  )
+
+  // K5 puede haber dejado una versión de backfill y otra de alias Mistral
+  // activas para la misma presentación. Si el contenido es exactamente el
+  // mismo, no hay ambigüedad económica y se puede reutilizar la más reciente;
+  // las versiones siguen conservadas como historial append-only.
+  const mappingSignature = (row: (typeof active)[number]) =>
+    [
+      text(row.ingredient_id),
+      text(row.conversion_factor),
+      text(row.line_billing_unit).toLowerCase(),
+      text(row.line_content_qty),
+      text(row.line_content_unit).toLowerCase(),
+    ].join('|')
+  const equivalentActive = active.length > 0 && new Set(active.map(mappingSignature)).size === 1
+  if (active.length > 1 && !equivalentActive) {
     return { success: false, message: 'Hay más de una versión activa de mapeo. Requiere revisión antes de continuar.' }
   }
-  const current = active[0] ?? null
+  const current =
+    active
+      .slice()
+      .sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')))[0] ?? null
 
   const unchanged =
     current &&
