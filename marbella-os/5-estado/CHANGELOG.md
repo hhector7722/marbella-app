@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-04
 
+- **La cabecera incorpora búsqueda global.** Permite abrir funciones autorizadas y encontrar ingredientes, recetas, proveedores, plantilla, albaranes y reservas con acceso directo a la entidad. El recorte sigue al usuario efectivo de «Ver como». LIVE conserva su acción y visibilidad, con el PNG facilitado como icono compacto.
+
 - **La revisión separa el aviso del documento de las líneas que requieren una
   acción.** Un total o subtotal pendiente se muestra una vez para el albarán;
   los productos sin otra incidencia no piden una edición individual. La misma

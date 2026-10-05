@@ -301,14 +301,15 @@ function ProfileContent() {
             setCurrentUser(user);
             const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
             const isViewingAs = Boolean(identity?.isViewingAs);
-            const realManagerStatus = currentProfile?.role === 'manager';
-            const managerStatus = isViewingAs ? identity!.effectiveRole === 'manager' : realManagerStatus;
+            const realManagerStatus = currentProfile?.role === 'manager' || currentProfile?.role === 'admin'
+                || isMasterDashboardUser(user.email);
+            const managerStatus = isViewingAs ? ['manager', 'admin'].includes(identity!.effectiveRole) : realManagerStatus;
             setIsManager(managerStatus);
             setViewerRole(
                 isViewingAs ? identity!.effectiveRole : (currentProfile?.role ?? null),
             );
             const effectiveId = isViewingAs
-                ? identity!.effectiveUserId
+                ? (targetId && managerStatus ? targetId : identity!.effectiveUserId)
                 : (targetId && realManagerStatus ? targetId : user.id);
             const { data, error } = await supabase.from('profiles').select('*').eq('id', effectiveId).single();
             if (error) throw error;
@@ -356,6 +357,23 @@ function ProfileContent() {
             setPlantillaLoading(false);
         }
     }, [isManager, plantillaEmployees.length, supabase]);
+
+    useEffect(() => {
+        if (loading || !isManager) return;
+        const openPlantilla = () => { void openPlantillaFromProfile(); };
+        window.addEventListener('marbella:open-plantilla', openPlantilla);
+        const url = new URL(window.location.href);
+        let timer: number | undefined;
+        if (url.searchParams.get('open') === 'plantilla') {
+            url.searchParams.delete('open');
+            window.history.replaceState(window.history.state, '', url);
+            timer = window.setTimeout(openPlantilla, 0);
+        }
+        return () => {
+            window.removeEventListener('marbella:open-plantilla', openPlantilla);
+            if (timer !== undefined) window.clearTimeout(timer);
+        };
+    }, [loading, isManager, openPlantillaFromProfile]);
 
     const goHomeFromPlantilla = useCallback(() => {
         setPlantillaOpen(false);

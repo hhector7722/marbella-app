@@ -282,21 +282,21 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         {
             const navbar = readFileSync(join(SRC_ROOT, 'components/Navbar.tsx'), 'utf8');
             assert.match(navbar, /data-hidden=\{topHidden/, 'la cabecera superior se oculta al scrollear');
-            assert.match(navbar, /data-element="greeting"/, 'el saludo de la barra tiene identidad');
+            assert.match(navbar, /data-element="greeting"/, 'el nombre de la barra tiene identidad');
             assert.match(navbar, /data-element="logo"/, 'el logo de la barra tiene identidad');
+            assert.match(navbar, /<GlobalSearch /, 'el buscador global ocupa la fila de cabecera');
             assert.match(navbar, /<ReservationsBell \/>/, 'reservas van en la barra');
             assert.match(navbar, /<NotificationsBell \/>/, 'notificaciones van en la barra');
             assert.match(
                 navbar,
-                /ml-auto[\s\S]*<ReservationsBell \/>[\s\S]*<NotificationsBell \/>/,
+                /<ReservationsBell \/>[\s\S]*<NotificationsBell \/>/,
                 'reservas y notificaciones van a la derecha'
             );
             assert.doesNotMatch(navbar, /id="ia-button"|data-chrome="ia"|toggleChat/, 'la barra no lleva IA');
             assert.doesNotMatch(navbar, /aria-label="Herramientas internas"|pgMenuOpen|>\s*PG\s*</, 'la barra no lleva PG');
             assert.doesNotMatch(
                 navbar,
-                /Hola,[\s\S]{0,80}uppercase/,
-                'el saludo de la barra no se pinta en mayúsculas'
+                /Hola,/, 'la cabecera muestra solo el nombre'
             );
         }
         assert.match(

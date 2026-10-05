@@ -248,7 +248,31 @@ const AdminDashboardView = ({
     const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+    useEffect(() => {
+        const isActive = () => document.querySelector('.dashboard-mosaic-switcher')?.getAttribute('data-active-view') === 'admin';
+        const openClosing = () => { if (isActive()) setIsClosingModalOpen(true); };
+        const url = new URL(window.location.href);
+        if (isActive() && url.searchParams.get('open') === 'cierre') {
+            openClosing();
+            url.searchParams.delete('open');
+            window.history.replaceState(window.history.state, '', url);
+        }
+        window.addEventListener('marbella:open-closing', openClosing);
+        return () => window.removeEventListener('marbella:open-closing', openClosing);
+    }, []);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+    useEffect(() => {
+        const isActive = () => document.querySelector('.dashboard-mosaic-switcher')?.getAttribute('data-active-view') === 'admin';
+        const openOrders = () => { if (isActive()) setIsSupplierModalOpen(true); };
+        const url = new URL(window.location.href);
+        if (isActive() && url.searchParams.get('open') === 'pedidos') {
+            url.searchParams.delete('open');
+            window.history.replaceState(window.history.state, '', url);
+            window.setTimeout(openOrders, 0);
+        }
+        window.addEventListener('marbella:open-orders', openOrders);
+        return () => window.removeEventListener('marbella:open-orders', openOrders);
+    }, []);
     const [isAlbaranesModalOpen, setIsAlbaranesModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState<PlantillaEmployee[]>(initialData?.allEmployees || []);
     const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<PlantillaEmployee[] | null>(null);

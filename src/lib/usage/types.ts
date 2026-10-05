@@ -9,7 +9,9 @@ export type AppUsageActionKind =
   | 'clock_in'
   | 'clock_out'
   | 'consumption_saved'
-  | 'geofence_rejected';
+  | 'geofence_rejected'
+  | 'global_search'
+  | 'global_search_result';
 
 export type AppUsageMetadata = {
   action?: AppUsageActionKind;

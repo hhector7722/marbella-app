@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-03
+revisado: 2026-10-04
 caducidad: 3 meses
 supersede: —
 ---
@@ -23,6 +23,19 @@ Cómo leer el estado de una capacidad:
 - **Tolerada** — se mantiene sin invertir en ella; candidata a retirarse.
 
 La columna **Especificación** enlaza al documento de `capacidades/` cuando existe. Un hueco es honesto: [CANON §8](../CANON.md#8-ciclo-de-vida) prefiere un catálogo con huecos declarados a documentos vacíos. Las especificaciones se escriben cuando se va a intervenir en la capacidad.
+
+## Navegación transversal
+
+### Búsqueda global
+
+Encontrar funciones y datos operativos desde la cabecera sin abandonar la pantalla actual antes de elegir un resultado.
+
+- **Actores**: toda persona autenticada, según su identidad efectiva y sus permisos existentes.
+- **Superficies**: disparador compacto de cabecera y Modal de búsqueda.
+- **Alcance inicial**: funciones, ingredientes, recetas, proveedores, plantilla, albaranes y reservas. Los resultados de entidad abren su ficha; los de función abren la pantalla o modal existente.
+- **Reglas propias**: la búsqueda remota se limita antes de devolver resultados; el modo «Ver como» usa el usuario efectivo. La búsqueda no ejecuta operaciones de negocio. Un fallo de red deja disponibles los accesos locales permitidos.
+- **Estado**: en movimiento.
+- **Especificación**: pendiente.
 
 ---
 

@@ -577,7 +577,7 @@ export function Modal({
             notifyModalHistoryOpen(surfaceId);
         }
         const unlockScroll = lockScrollGlobal();
-        panelRef.current?.focus();
+        if (!panelRef.current?.contains(document.activeElement)) panelRef.current?.focus();
 
         return () => {
             registration.unregister();

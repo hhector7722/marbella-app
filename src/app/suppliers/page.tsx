@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import { Plus, Truck, Upload, ImageIcon, Star } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -128,6 +129,8 @@ const INITIAL_SUPPLIERS: Partial<Supplier>[] = INITIAL_SUPPLIER_SEED.map((seed) 
 }));
 
 export default function SuppliersPage() {
+    const searchParams = useSearchParams();
+    const targetId = searchParams.get('id');
     const [supabase] = useState(() => createClient());
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
@@ -401,7 +404,10 @@ export default function SuppliersPage() {
         }
     }
 
-    const [detailSupplier, setDetailSupplier] = useState<Supplier | null>(null);
+    const [selectedDetailSupplier, setDetailSupplier] = useState<Supplier | null>(null);
+    const [dismissedTargetId, setDismissedTargetId] = useState<string | null>(null);
+    const detailSupplier = selectedDetailSupplier ?? (!loading && targetId !== dismissedTargetId
+        ? suppliers.find((supplier) => supplier.id === targetId) ?? null : null);
     const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
     const [editNotes, setEditNotes] = useState<string>('');
     const [editEmailDomainsText, setEditEmailDomainsText] = useState<string>('');
@@ -873,7 +879,7 @@ export default function SuppliersPage() {
 
             <Modal
                 open={!!detailSupplier}
-                onClose={() => setDetailSupplier(null)}
+                onClose={() => { setDismissedTargetId(targetId); setDetailSupplier(null); }}
                 title={detailSupplier?.name ?? 'Proveedor'}
                 subtitle={detailSupplier?.category || 'Ficha de Proveedor'}
                 variant="amplify"
