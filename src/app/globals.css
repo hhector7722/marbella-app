@@ -6179,6 +6179,10 @@ html:has(.dashboard-mosaic-switcher) {
   width: 29px;
   height: 29px;
 }
+.marbella-fixed-topbar [data-element='global-search-host'] {
+  width: var(--buscador-global-ancho);
+  max-width: calc(100vw - (var(--espacio-2) * 2));
+}
 .marbella-fixed-topbar [data-component='GlobalSearchTrigger'] [data-element='pill'] {
   height: var(--espacio-8);
   border-color: color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
