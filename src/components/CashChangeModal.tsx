@@ -25,11 +25,11 @@ const ALL_DENOMS = [...BILLS, ...COINS];
 type PlanPoint = { x: number; y: number };
 
 const CASH_CHANGE_PLAN_POSITIONS: Record<string, PlanPoint> = {
-    tpv1: { x: 52.2, y: 66.0 },
-    tpv2: { x: 44.6, y: 39.0 },
-    cambio1: { x: 21.2, y: 32.0 },
-    cambio2: { x: 31.2, y: 28.5 },
-    inicial: { x: 30.7, y: 13.0 },
+    tpv1: { x: 83.0, y: 68.0 },
+    tpv2: { x: 63.7, y: 33.0 },
+    cambio1: { x: 7.0, y: 28.0 },
+    cambio2: { x: 32.0, y: 25.0 },
+    inicial: { x: 31.0, y: 6.5 },
 };
 
 function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITIONS | null {
@@ -50,6 +50,17 @@ function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITI
 function resolveCashChangePlanPosition(box: BoxOption): PlanPoint | null {
     const key = cashChangePlanKey(box);
     return key ? CASH_CHANGE_PLAN_POSITIONS[key] : null;
+}
+
+function cashChangePlanLabel(box: BoxOption): string {
+    switch (cashChangePlanKey(box)) {
+        case 'tpv1': return 'TPV 1';
+        case 'tpv2': return 'TPV 2';
+        case 'cambio1': return 'CAMBIO 1';
+        case 'cambio2': return 'CAMBIO 2';
+        case 'inicial': return 'INICIAL';
+        default: return box.name;
+    }
 }
 
 type PlanArrowGeometry = {
@@ -728,33 +739,37 @@ export const CashChangeModal = ({
                     </button>
                 ) : undefined}
                 footer={
-                    <Button
-                        type="button"
-                        variant="primary"
-                        instance="cash-change-confirm"
-                        onClick={() => void handleGuardarStep2()}
-                        disabled={!canConfirmExchange}
-                        loading={savingExchange}
-                        loadingLabel="Guardando"
-                    >
-                        Confirmar cambio
-                    </Button>
+                    totalStep1 > 0.005 && totalStep2 > 0.005 ? (
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="cash-change-confirm"
+                            onClick={() => void handleGuardarStep2()}
+                            disabled={!canConfirmExchange}
+                            loading={savingExchange}
+                            loadingLabel="Guardando"
+                        >
+                            Confirmar cambio
+                        </Button>
+                    ) : undefined
                 }
             >
-                <div className="flex min-h-0 flex-1 flex-col bg-white p-2">
-                    <div className="custom-scrollbar min-h-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-xl">
-                        <div className="relative aspect-[2048/535] min-w-[640px] overflow-hidden rounded-xl bg-zinc-100">
+                <div className="flex min-h-0 flex-1 items-center justify-center bg-white p-2">
+                    <div className="w-full overflow-hidden rounded-xl">
+                        <div className="relative aspect-[890/535] w-full overflow-hidden rounded-xl bg-zinc-100">
                             <Image
                                 src="/images/cash-change-plan.webp"
                                 alt="Plano de cajas"
                                 fill
                                 priority
-                                sizes="(max-width: 767px) 640px, 760px"
+                                sizes="(max-width: 767px) calc(100vw - 4rem), 760px"
                                 className="select-none object-cover"
                             />
 
                             {positionedOptions.map(({ option, position }) => {
-                                const selected = boxA?.id === option.id || boxB?.id === option.id;
+                                const isA = boxA?.id === option.id;
+                                const isB = boxB?.id === option.id;
+                                const selected = isA || isB;
                                 return (
                                     <button
                                         key={option.id}
@@ -769,24 +784,28 @@ export const CashChangeModal = ({
                                     >
                                         <span
                                             className={cn(
-                                                'flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white/95 shadow-md ring-2 transition-all',
-                                                selected ? 'ring-[#23a89a] ring-offset-2 ring-offset-white/70' : 'ring-white/80',
+                                                'flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white/95 shadow-md ring-2 transition-all',
+                                                isA
+                                                    ? 'ring-[#23a89a] ring-offset-1 ring-offset-white/70'
+                                                    : isB
+                                                        ? 'ring-rose-400 ring-offset-1 ring-offset-white/70'
+                                                        : 'ring-white/80',
                                             )}
                                         >
                                             {option.image_url ? (
                                                 <Image
                                                     src={option.image_url}
                                                     alt=""
-                                                    width={42}
-                                                    height={42}
+                                                    width={34}
+                                                    height={34}
                                                     className="h-full w-full object-contain"
                                                 />
                                             ) : (
                                                 <Wallet size={19} className="text-[#36606F]" strokeWidth={2.4} />
                                             )}
                                         </span>
-                                        <span className="max-w-[76px] truncate rounded-full bg-white/90 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-tight text-zinc-700 shadow-sm">
-                                            {option.name}
+                                        <span className="max-w-[64px] truncate rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-tight text-zinc-700 shadow-sm">
+                                            {cashChangePlanLabel(option)}
                                         </span>
                                     </button>
                                 );
