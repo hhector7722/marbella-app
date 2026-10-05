@@ -28,9 +28,13 @@ export function GlobalSearch({
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const requestSerial = useRef(0);
+  const invoiceRequestSerial = useRef(0);
   const [open, setOpenState] = useState(false);
   const [query, setQuery] = useState('');
   const [remote, setRemote] = useState<{ query: string; results: SearchResult[]; failed: boolean } | null>(null);
+  const [invoiceRemote, setInvoiceRemote] = useState<{ query: string; results: SearchResult[]; failed: boolean } | null>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceRequestedFor, setInvoiceRequestedFor] = useState<string | null>(null);
   const [showWaiting, setShowWaiting] = useState(false);
 
   const setOpen = useCallback((next: boolean) => {
@@ -41,16 +45,27 @@ export function GlobalSearch({
   const trimmed = query.trim();
   const local = useMemo(() => searchFunctions(query, identity), [query, identity]);
   const remoteCurrent = remote?.query === trimmed ? remote : null;
+  const invoiceCurrent = invoiceRemote?.query === trimmed ? invoiceRemote : null;
   const waiting = open && trimmed.length >= 2 && !remoteCurrent;
   const results = useMemo(() => [...local, ...(remoteCurrent?.results ?? [])]
     .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, 'es'))
     .slice(0, 10), [local, remoteCurrent]);
+  const invoiceResults = invoiceCurrent?.results ?? [];
   const groups = Array.from(new Set(results.map((row) => row.type)));
+  const invoiceRelated = trimmed.length >= 2 && Boolean(
+    local.some((row) => row.id === 'invoices')
+    || remoteCurrent?.results.some((row) => row.type === 'ingredient' || row.type === 'supplier')
+    || (remoteCurrent && remoteCurrent.results.length === 0 && local.length === 0)
+  );
 
   const closeExplicitly = useCallback(() => {
     setOpen(false);
     setQuery('');
     setRemote(null);
+    invoiceRequestSerial.current += 1;
+    setInvoiceRemote(null);
+    setInvoiceLoading(false);
+    setInvoiceRequestedFor(null);
     setShowWaiting(false);
     inputRef.current?.blur();
   }, [setOpen]);
@@ -102,6 +117,37 @@ export function GlobalSearch({
     };
   }, [open, trimmed, pathname]);
 
+  async function searchInvoices() {
+    if (trimmed.length < 2 || invoiceLoading) return;
+    const requestedQuery = trimmed;
+    const serial = ++invoiceRequestSerial.current;
+    setInvoiceRequestedFor(requestedQuery);
+    setInvoiceLoading(true);
+    setInvoiceRemote(null);
+    void sendUsageEvent({
+      eventType: 'action',
+      path: pathname,
+      label: 'Búsqueda en albaranes solicitada',
+      metadata: { action: 'global_search', resultType: 'invoice' },
+    });
+    try {
+      const response = await fetch(
+        '/api/global-search?q=' + encodeURIComponent(requestedQuery) + '&scope=invoices'
+      );
+      if (!response.ok) throw new Error('invoice search unavailable');
+      const payload = (await response.json()) as { results: SearchResult[] };
+      if (serial === invoiceRequestSerial.current) {
+        setInvoiceRemote({ query: requestedQuery, results: payload.results, failed: false });
+      }
+    } catch {
+      if (serial === invoiceRequestSerial.current) {
+        setInvoiceRemote({ query: requestedQuery, results: [], failed: true });
+      }
+    } finally {
+      if (serial === invoiceRequestSerial.current) setInvoiceLoading(false);
+    }
+  }
+
   function openResult(result: SearchResult) {
     void sendUsageEvent({
       eventType: 'action',
@@ -139,7 +185,15 @@ export function GlobalSearch({
       data-open={open ? 'true' : undefined}
       className="relative flex min-h-12 min-w-0 flex-1 items-center px-1"
     >
-      <div className="relative w-full min-w-0">
+      {open ? (
+        <button
+          type="button"
+          aria-label="Cerrar búsqueda"
+          onClick={closeExplicitly}
+          className="fixed inset-0 z-[120] cursor-default border-0 bg-black/5 p-0 backdrop-blur-[2px]"
+        />
+      ) : null}
+      <div className="relative z-[130] w-full min-w-0">
       <div
         data-element="pill"
         className={
@@ -166,6 +220,10 @@ export function GlobalSearch({
             }}
             onChange={(event) => {
               setQuery(event.target.value);
+              invoiceRequestSerial.current += 1;
+              setInvoiceRemote(null);
+              setInvoiceLoading(false);
+              setInvoiceRequestedFor(null);
               setShowWaiting(false);
               if (!open) setOpen(true);
             }}
@@ -243,6 +301,60 @@ export function GlobalSearch({
               </div>
             </section>
           ))}
+
+          {invoiceRequestedFor === trimmed && invoiceResults.length > 0 ? (
+            <section className="mt-2 border-t border-white/10 pt-2">
+              <h3 className="px-2 pb-1 text-[10px] font-semibold text-white/45">Albaranes</h3>
+              <div className="divide-y divide-white/10">
+                {invoiceResults.map((result) => (
+                  <button
+                    key={'invoice:' + result.id}
+                    type="button"
+                    onClick={() => openResult(result)}
+                    className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1 text-left hover:bg-white/5 active:bg-white/10"
+                  >
+                    {result.icon ? (
+                      <Image src={result.icon} alt="" width={22} height={22} className="size-[22px] shrink-0 object-contain" />
+                    ) : null}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[12px] font-medium text-white">{result.title}</span>
+                      <span className="block truncate text-[10px] text-white/50">{result.subtitle}</span>
+                    </span>
+                    <ChevronRight aria-hidden size={13} className="shrink-0 text-white/40" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {invoiceRequestedFor === trimmed && invoiceCurrent && invoiceResults.length === 0 && !invoiceCurrent.failed ? (
+            <p className="border-t border-white/10 px-2 py-3 text-[10px] text-white/50">
+              No hay coincidencias en albaranes.
+            </p>
+          ) : null}
+
+          {invoiceRelated && invoiceRequestedFor !== trimmed ? (
+            <button
+              type="button"
+              onClick={() => void searchInvoices()}
+              className="mt-2 flex min-h-9 w-full items-center justify-center gap-1.5 border-t border-white/10 px-2 pt-2 text-[11px] font-semibold text-white/70 hover:text-white active:opacity-70"
+            >
+              <Search aria-hidden size={11} strokeWidth={1.8} />
+              Buscar en albaranes
+            </button>
+          ) : null}
+
+          {invoiceRequestedFor === trimmed && invoiceLoading ? (
+            <div className="mt-2 border-t border-white/10 px-2 py-3 text-center text-[10px] text-white/50">
+              Buscando en albaranes…
+            </div>
+          ) : null}
+
+          {invoiceRequestedFor === trimmed && invoiceCurrent?.failed ? (
+            <p className="mt-2 border-t border-white/10 px-2 py-3 text-[10px] text-white/50">
+              No se pudieron consultar los albaranes.
+            </p>
+          ) : null}
 
           {waiting && showWaiting ? (
             <div aria-label="Buscando datos" className="space-y-1.5 p-1">

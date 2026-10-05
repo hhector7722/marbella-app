@@ -64,7 +64,7 @@ export default function Navbar() {
         isViewingAs: Boolean(identity?.isViewingAs) };
 
     return <nav data-component="AppNavbar" data-hidden={topHidden && !searchOpen ? 'true' : undefined} className={cn('marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden')}>
-        <div className="relative max-w-7xl lg:max-w-none mx-auto flex items-center gap-1 px-1 lg:px-4 w-full min-w-0">
+        <div className="relative max-w-7xl lg:max-w-none mx-auto flex items-center justify-between gap-1 px-1 lg:px-4 w-full min-w-0">
             <div className="flex min-w-0 shrink-0 items-center gap-1">
                 {!hideNavbarBack && <button onClick={() => { if (!navigateInsideSandbox(homePath)) router.push(homePath); }} className={cn('shrink-0 grid place-items-center','border-0 bg-transparent shadow-none rounded-none','active:opacity-70 transition-opacity')} data-element="chrome" aria-label="Ir a inicio"><ChevronLeft strokeWidth={2.5} aria-hidden /></button>}
                 <div className="flex min-w-0 items-center gap-1">
@@ -72,7 +72,13 @@ export default function Navbar() {
                     <div data-element="greeting-block">{isMaster ? <button type="button" data-element="greeting" onClick={openViewAsPicker} className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative" aria-label={identity?.isViewingAs ? `Viendo como ${identity.effectiveName}. Cambiar usuario` : 'Cambiar usuario de vista'}>{compactName}</button> : <span data-element="greeting">{compactName}</span>}</div>
                 </div>
             </div>
-            {sessionReady && searchIdentity.userId ? <GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} /> : null}
+            {sessionReady && searchIdentity.userId ? (
+                <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 w-[clamp(130px,34vw,168px)] -translate-x-1/2 -translate-y-1/2">
+                    <div className="pointer-events-auto">
+                        <GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} />
+                    </div>
+                </div>
+            ) : null}
             <div className="flex shrink-0 items-center -space-x-2">
                 {canSeeCamera ? <button type="button" data-element="chrome" aria-label="Abrir cámaras" title="Cámara" onClick={() => router.push('/camaras')} className="relative grid shrink-0 place-items-center border-0 bg-transparent p-0 transition-transform active:scale-95">
                     <span data-element="live-camera-icon" className="relative inline-flex size-[18px] shrink-0 items-center justify-center">

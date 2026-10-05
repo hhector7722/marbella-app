@@ -45,12 +45,14 @@ export async function GET(request: NextRequest) {
   const staffRecipeView = !(isMasterDashboardUser(user.email) && effectiveId === user.id)
     && (effectiveProfile?.role === 'staff' || effectiveProfile?.role === 'user');
 
-  const { data, error } = await supabase.rpc('global_search_records', {
+  const invoiceScope = request.nextUrl.searchParams.get('scope') === 'invoices';
+  const rpcName = invoiceScope ? 'global_search_invoice_records' : 'global_search_records';
+  const { data, error } = await supabase.rpc(rpcName, {
     p_query: query,
     p_effective_user_id: effectiveId,
   });
   if (error) {
-    console.error('global_search_records:', error.message);
+    console.error(rpcName + ':', error.message);
     return NextResponse.json({ error: 'No se pueden consultar datos en este momento.' }, { status: 503 });
   }
 
