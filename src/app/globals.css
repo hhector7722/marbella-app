@@ -6168,13 +6168,16 @@ html:has(.dashboard-mosaic-switcher) {
   max-width: calc(var(--espacio-8) * 2);
   flex: 0 1 auto;
 }
-.marbella-fixed-topbar [data-element='live-camera'],
-.marbella-fixed-topbar [data-element='live-camera'] img {
+.marbella-fixed-topbar [data-element='live-camera'] {
   width: var(--tactil-minimo);
   height: var(--tactil-minimo);
 }
+.marbella-fixed-topbar [data-element='live-camera'] img {
+  width: calc(var(--espacio-8) + var(--espacio-2));
+  height: calc(var(--espacio-8) + var(--espacio-2));
+}
 .marbella-fixed-topbar [data-component='GlobalSearchTrigger'] [data-element='pill'] {
-  height: calc(var(--espacio-8) + var(--espacio-1));
+  height: var(--espacio-8);
   border-color: color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
   background-color: color-mix(in srgb, var(--color-envolvente) 72%, var(--color-envolvente-alto));
 }
@@ -6214,9 +6217,9 @@ html:has(.dashboard-mosaic-switcher) {
 }
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'],
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input {
-  height: var(--tactil-minimo);
-  min-height: var(--tactil-minimo);
-  max-height: var(--tactil-minimo);
+  height: calc(var(--espacio-8) + var(--espacio-2));
+  min-height: calc(var(--espacio-8) + var(--espacio-2));
+  max-height: calc(var(--espacio-8) + var(--espacio-2));
 }
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input {
   border: 0;
