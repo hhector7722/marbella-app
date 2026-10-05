@@ -54,6 +54,8 @@
   --espacio-6: 24px;
   --espacio-8: 32px;
   --tactil-minimo: 48px;
+  --buscador-global-ancho: clamp(200px, 48vw, 520px);
+  --buscador-global-fondo: color-mix(in srgb, var(--color-envolvente) 72%, var(--color-envolvente-alto));
   /* Pista de la cápsula flotante (54 px). El aire y el home indicator van fuera. */
   --estructura-barra-inferior: 54px;
   /* Shell desktop: 0 en smartphone; en lg+ desplaza topbar/contenido. */
@@ -6180,7 +6182,7 @@ html:has(.dashboard-mosaic-switcher) {
 .marbella-fixed-topbar [data-component='GlobalSearchTrigger'] [data-element='pill'] {
   height: var(--espacio-8);
   border-color: color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
-  background-color: color-mix(in srgb, var(--color-envolvente) 72%, var(--color-envolvente-alto));
+  background-color: var(--buscador-global-fondo);
 }
 .marbella-fixed-topbar [data-component='GlobalSearchTrigger']:focus-visible [data-element='pill'] {
   outline: 2px solid var(--color-texto-invertido);
@@ -6201,7 +6203,7 @@ html:has(.dashboard-mosaic-switcher) {
   position: absolute;
   top: calc(env(safe-area-inset-top, 0px) + var(--espacio-1));
   left: 50%;
-  width: clamp(200px, 48vw, 520px);
+  width: var(--buscador-global-ancho);
   max-width: calc(100vw - (var(--espacio-2) * 2));
   height: auto;
   max-height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--espacio-4));
@@ -6236,7 +6238,7 @@ html:has(.dashboard-mosaic-switcher) {
   padding-inline-end: var(--espacio-3);
   border: 1px solid color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
   border-radius: 999px;
-  background-color: color-mix(in srgb, var(--color-envolvente) 72%, var(--color-envolvente-alto));
+  background-color: var(--buscador-global-fondo);
   color: var(--color-texto-invertido);
   font-size: 12px;
 }
@@ -6253,6 +6255,10 @@ html:has(.dashboard-mosaic-switcher) {
   outline: 0;
   border-color: color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
 }
+[data-component='Modal'][data-instance='global-search']:has([data-element='results']) [data-component='SearchField'] input {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
 [data-component='Modal'][data-instance='global-search'] [data-element='results'] {
   max-height: min(55dvh, 360px);
   margin-top: calc(-1 * var(--espacio-8));
@@ -6260,8 +6266,9 @@ html:has(.dashboard-mosaic-switcher) {
   overflow-x: hidden;
   overflow-y: auto;
   border: 1px solid color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
-  border-radius: var(--radio-superficie);
-  background-color: color-mix(in srgb, var(--color-envolvente-bajo) 92%, black);
+  border-top: 0;
+  border-radius: 0 0 var(--radio-superficie) var(--radio-superficie);
+  background-color: var(--buscador-global-fondo);
   box-shadow: var(--chrome-glass-shadow);
 }
 .marbella-fixed-topbar [data-element='greeting'] {
