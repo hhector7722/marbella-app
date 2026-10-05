@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, X } from 'lucide-react';
@@ -111,7 +111,6 @@ export type ModalProps = {
     className?: string;
     containerClassName?: string;
     wrapperClassName?: string;
-    wrapperStyle?: CSSProperties;
     panelHostClassName?: string;
     subtitle?: ReactNode;
     /**
@@ -393,7 +392,6 @@ export function Modal({
     className,
     containerClassName,
     wrapperClassName,
-    wrapperStyle,
     panelHostClassName,
     subtitle,
     headerVariant,
@@ -669,7 +667,6 @@ export function Modal({
                     layout.maxWidthClass,
                     wrapperClassName
                 )}
-                style={wrapperStyle}
             >
                 <div
                     ref={panelRef}
