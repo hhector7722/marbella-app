@@ -1384,7 +1384,10 @@ export default function AlbaranesHistoricoClient({
                   const supplier = it.supplier_name ? it.supplier_name : 'Proveedor pendiente'
                   const logo = getSupplierLogo(it.supplier_image_url, it.supplier_name)
                   const st = String(it.status ?? '').toLowerCase()
-                  const accountingReady = st === 'mapped' || st === 'completed'
+                  // `is_fully_processed` se calcula en el servidor con las
+                  // mismas líneas y movimientos que el detalle. Así el tick
+                  // no depende de una corrección temporal en memoria.
+                  const accountingReady = it.is_fully_processed || st === 'mapped' || st === 'completed'
                   return (
                     <button
                       key={it.id}

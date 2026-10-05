@@ -7449,6 +7449,13 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: undefined
       }
+      get_purchase_invoice_processing_states: {
+        Args: { p_invoice_ids: string[] }
+        Returns: {
+          invoice_id: string
+          is_fully_processed: boolean
+        }[]
+      }
       ticket_effective_reception_ts: {
         Args: { p_fecha: string; p_fecha_real: string; p_hora_cierre: string }
         Returns: string

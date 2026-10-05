@@ -5,8 +5,6 @@ import { suggestedAlbaranConversionFactorFromIngredient } from '@/lib/ingredient
 import {
   INVOICE_LINE_STATUS_EXCLUDED,
   INVOICE_LINE_STATUS_EXPENSE_ONLY,
-  invoiceLineRequiresStock,
-  isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -205,8 +203,9 @@ async function queryPurchaseInvoicesList(
   const rows = mapPurchaseInvoiceRows((data as unknown[]) ?? [])
   const hasMore = rows.length > limit
   const pageRows = hasMore ? rows.slice(0, limit) : rows
+  const enrichedItems = await enrichInvoicesWithProcessingState(gate.supabase, pageRows)
 
-  return { items: pageRows, hasMore, canViewAll }
+  return { items: enrichedItems, hasMore, canViewAll }
 }
 
 export async function listPurchaseInvoicesAction(params?: {
@@ -243,62 +242,48 @@ async function enrichInvoicesWithProcessingState(
   supabase: Extract<GateResult, { ok: true }>['supabase'],
   baseItems: Omit<PurchaseInvoiceListItem, 'is_fully_processed'>[]
 ): Promise<PurchaseInvoiceListItem[]> {
-  const invoiceIds = baseItems.map((x) => x.id)
-  if (invoiceIds.length === 0) return baseItems.map((b) => ({ ...b, is_fully_processed: false }))
-
-  // 1) Leer líneas por invoice (mínimo para decidir “todo matcheado”)
-  const { data: lines, error: linesErr } = await supabase
-    .from('purchase_invoice_lines')
-    .select('id, invoice_id, mapped_ingredient_id, status')
-    .in('invoice_id', invoiceIds)
-    .is('superseded_by_extraction_id', null)
-    .limit(5000)
-  if (linesErr) {
-    return baseItems.map((b) => ({ ...b, is_fully_processed: false }))
+  // Solo recalculamos los encabezados que aún aparecen pendientes. Los estados
+  // `mapped`/`completed` ya son afirmativos, mientras que `processing` y
+  // `ocr_failed` no pueden convertirse en un tick por leer sus líneas.
+  const candidateItems = baseItems.filter((item) => {
+    const status = String(item.status ?? '').toLowerCase()
+    return status !== 'mapped' && status !== 'completed' && status !== 'processing' && status !== 'ocr_failed'
+  })
+  const candidateIds = candidateItems.map((x) => x.id)
+  if (candidateIds.length === 0) {
+    return baseItems.map((b) => ({
+      ...b,
+      is_fully_processed: ['mapped', 'completed'].includes(String(b.status ?? '').toLowerCase()),
+    }))
   }
 
-  const byInv = new Map<string, Array<{ id: string; resolved: boolean; needsStock: boolean }>>()
-  for (const r of (lines as any[]) ?? []) {
-    const invId = String(r.invoice_id ?? '')
-    const id = String(r.id ?? '')
-    const resolved = isInvoiceLineResolved(r)
-    const needsStock = invoiceLineRequiresStock(r)
-    if (!invId || !id) continue
-    const arr = byInv.get(invId) ?? []
-    arr.push({ id, resolved, needsStock })
-    byInv.set(invId, arr)
+  // La función SQL hace el mismo cruce dentro de Postgres. Evita enviar una
+  // lista de referencias de stock en la URL de PostgREST y mantiene el SSR
+  // dentro de su presupuesto aun cuando la página contiene 200 albaranes.
+  const { data: states, error: statesErr } = await supabase.rpc(
+    'get_purchase_invoice_processing_states',
+    { p_invoice_ids: candidateIds }
+  )
+  if (statesErr) {
+    return baseItems.map((b) => ({
+      ...b,
+      is_fully_processed: ['mapped', 'completed'].includes(String(b.status ?? '').toLowerCase()),
+    }))
   }
 
-  // 2) Stock aplicado: existe movimiento PURCHASE con ref ALB-LINE-<lineId>
-  const allLineIds = Array.from(new Set(((lines as any[]) ?? []).map((r) => String(r.id ?? '')).filter(Boolean)))
-  const refs = allLineIds.map((id) => `ALB-LINE-${id}`)
-  let appliedSet = new Set<string>()
-  if (refs.length) {
-    const fetchApplied = () =>
-      supabase
-        .from('stock_movements')
-        .select('reference_doc')
-        .eq('movement_type', 'PURCHASE')
-        .in('reference_doc', refs)
-        .limit(5000)
-    let { data: moves, error: mvErr } = await fetchApplied()
-    if (mvErr && isMissingReferenceDocColumnError(mvErr.message)) {
-      const fix = await ensureStockMovementsReferenceDocColumn(supabase)
-      if (fix.ok) {
-        ;({ data: moves, error: mvErr } = await fetchApplied())
-      }
-    }
-    if (!mvErr) {
-      appliedSet = new Set(((moves as any[]) ?? []).map((m) => String(m.reference_doc ?? '')).filter(Boolean))
-    }
-  }
+  const stateByInvoiceId = new Map(
+    (states ?? []).map((state: { invoice_id: string; is_fully_processed: boolean }) => [
+      String(state.invoice_id),
+      state.is_fully_processed === true,
+    ])
+  )
 
   return baseItems.map((b) => {
-    const arr = byInv.get(b.id) ?? []
-    if (arr.length === 0) return { ...b, is_fully_processed: false }
-    const allResolved = arr.every((x) => x.resolved)
-    const allStockOk = arr.every((x) => !x.needsStock || appliedSet.has(`ALB-LINE-${x.id}`))
-    return { ...b, is_fully_processed: allResolved && allStockOk }
+    const status = String(b.status ?? '').toLowerCase()
+    if (!candidateIds.includes(b.id)) {
+      return { ...b, is_fully_processed: status === 'mapped' || status === 'completed' }
+    }
+    return { ...b, is_fully_processed: stateByInvoiceId.get(b.id) === true }
   })
 }
 
