@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Minus, Plus } from 'lucide-react';
 import { CURRENCY_IMAGES } from '@/lib/constants';
-import { Modal } from '@/components/ui/modal';
+import { Modal, type ModalLayer } from '@/components/ui/modal';
 
 /** Modal tipo "zoom" para editar un único valor de denominación (mismo patrón que OrderProductCard en /orders/new). */
 export interface DenominationZoomModalProps {
@@ -17,6 +17,8 @@ export interface DenominationZoomModalProps {
     availableStock?: number;
     /** Clase extra para el contenedor del modal */
     className?: string;
+    /** Capa del modal. Por defecto conserva el comportamiento histórico derived. */
+    layer?: ModalLayer;
 }
 
 export function DenominationZoomModal({
@@ -27,6 +29,7 @@ export function DenominationZoomModal({
     onValueChange,
     availableStock,
     className,
+    layer = 'derived',
 }: DenominationZoomModalProps) {
     const [inputVal, setInputVal] = useState(String(value));
 
@@ -59,7 +62,7 @@ export function DenominationZoomModal({
             onClose={onClose}
             title={denomLabel}
             variant="compact"
-            layer="derived"
+            layer={layer}
             instance="denomination-zoom"
             className={className}
             usageId="denomination-zoom"
