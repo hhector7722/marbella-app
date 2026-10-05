@@ -63,6 +63,19 @@ function cashChangePlanLabel(box: BoxOption): string {
     }
 }
 
+function cashChangePlanImage(box: BoxOption): string | null {
+    switch (cashChangePlanKey(box)) {
+        case 'cambio1': return '/images/cash-change/cambio1.webp';
+        case 'cambio2': return '/images/cash-change/cambio2.webp';
+        case 'inicial': return '/images/cash-change/inicial.webp';
+        case 'tpv1':
+        case 'tpv2':
+            return '/images/cash-change/tpv.webp';
+        default:
+            return box.image_url || null;
+    }
+}
+
 type PlanArrowGeometry = {
     forwardPath: string;
     reversePath: string;
@@ -770,6 +783,7 @@ export const CashChangeModal = ({
                                 const isA = boxA?.id === option.id;
                                 const isB = boxB?.id === option.id;
                                 const selected = isA || isB;
+                                const planImage = cashChangePlanImage(option);
                                 return (
                                     <button
                                         key={option.id}
@@ -784,7 +798,7 @@ export const CashChangeModal = ({
                                     >
                                         <span
                                             className={cn(
-                                                'flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white/95 shadow-md ring-2 transition-all',
+                                                'flex h-8 w-10 items-center justify-center rounded-lg bg-white/90 p-0.5 shadow-md ring-2 transition-all',
                                                 isA
                                                     ? 'ring-[#23a89a] ring-offset-1 ring-offset-white/70'
                                                     : isB
@@ -792,19 +806,19 @@ export const CashChangeModal = ({
                                                         : 'ring-white/80',
                                             )}
                                         >
-                                            {option.image_url ? (
+                                            {planImage ? (
                                                 <Image
-                                                    src={option.image_url}
+                                                    src={planImage}
                                                     alt=""
-                                                    width={34}
-                                                    height={34}
-                                                    className="h-full w-full object-contain"
+                                                    width={36}
+                                                    height={28}
+                                                    className="h-full w-full object-contain drop-shadow-sm"
                                                 />
                                             ) : (
-                                                <Wallet size={19} className="text-[#36606F]" strokeWidth={2.4} />
+                                                <Wallet size={16} className="text-[#36606F]" strokeWidth={2.4} />
                                             )}
                                         </span>
-                                        <span className="max-w-[64px] truncate rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-tight text-zinc-700 shadow-sm">
+                                        <span className="max-w-[58px] truncate rounded-full bg-white/90 px-1 py-0.5 text-[6px] font-black uppercase tracking-tight text-zinc-700 shadow-sm">
                                             {cashChangePlanLabel(option)}
                                         </span>
                                     </button>
@@ -939,11 +953,11 @@ export const CashChangeModal = ({
                         <div className="flex min-h-0 flex-1 flex-col bg-white">
                             <div className="flex shrink-0 items-center justify-center gap-3 border-b border-zinc-100 px-3 py-2">
                                 <div className="flex min-w-0 items-center gap-1.5">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-50">
-                                        {activeFromBox.image_url ? (
-                                            <Image src={activeFromBox.image_url} alt="" width={36} height={36} className="h-full w-full object-contain" />
+                                    <div className="flex h-8 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-50 p-0.5">
+                                        {cashChangePlanImage(activeFromBox) ? (
+                                            <Image src={cashChangePlanImage(activeFromBox)!} alt="" width={32} height={26} className="h-full w-full object-contain" />
                                         ) : (
-                                            <Wallet size={17} className="text-[#36606F]" />
+                                            <Wallet size={15} className="text-[#36606F]" />
                                         )}
                                     </div>
                                     <span className="max-w-20 truncate text-[9px] font-black uppercase text-zinc-700">{activeFromBox.name}</span>
@@ -952,11 +966,11 @@ export const CashChangeModal = ({
                                 <ArrowRight className={cn('h-7 w-7 shrink-0', isEditingStep1 ? 'text-[#23a89a]' : 'text-rose-400')} strokeWidth={2.5} />
 
                                 <div className="flex min-w-0 items-center gap-1.5">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-50">
-                                        {activeToBox.image_url ? (
-                                            <Image src={activeToBox.image_url} alt="" width={36} height={36} className="h-full w-full object-contain" />
+                                    <div className="flex h-8 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-50 p-0.5">
+                                        {cashChangePlanImage(activeToBox) ? (
+                                            <Image src={cashChangePlanImage(activeToBox)!} alt="" width={32} height={26} className="h-full w-full object-contain" />
                                         ) : (
-                                            <Wallet size={17} className="text-[#36606F]" />
+                                            <Wallet size={15} className="text-[#36606F]" />
                                         )}
                                     </div>
                                     <span className="max-w-20 truncate text-[9px] font-black uppercase text-zinc-700">{activeToBox.name}</span>
