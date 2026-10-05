@@ -6182,30 +6182,57 @@ html:has(.dashboard-mosaic-switcher) {
   outline: 2px solid var(--color-texto-invertido);
   outline-offset: 2px;
 }
-/* La búsqueda usa el backdrop base del Modal, pero no añade una tarjeta oscura
-   detrás del campo: la capa se percibe por el desenfoque de la pantalla. */
-[data-component='Modal'][data-instance='global-search'] [data-element='container'] {
-  border: 0;
-  border-radius: 0;
-  background-color: transparent;
-  box-shadow: none;
+/* El Modal conserva su backdrop contractual y ancla su única superficie a la
+   barra de cabecera: el campo no se desplaza y los resultados crecen debajo. */
+[data-component='Modal'][data-instance='global-search'] {
+  align-items: flex-start;
+  padding: 0 !important;
 }
-[data-component='Modal'][data-instance='global-search'] [data-element='header'] {
-  border-bottom: 0;
-  background-color: transparent;
+[data-component='Modal'][data-instance='global-search'] [data-element='frame'] {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + var(--espacio-1));
+  left: 50%;
+  width: clamp(200px, 48vw, 520px);
+  max-width: calc(100vw - (var(--espacio-2) * 2));
+  height: auto;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--espacio-4));
+  transform: translateX(-50%);
+  align-items: stretch;
+  justify-content: flex-start;
+}
+[data-component='Modal'][data-instance='global-search'] [role='dialog'] {
+  max-height: inherit;
+}
+[data-component='Modal'][data-instance='global-search'] [data-element='container'] {
+  border: 1px solid color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
+  border-radius: var(--radio-superficie);
+  background-color: color-mix(in srgb, var(--color-envolvente-bajo) 92%, black);
+  box-shadow: var(--chrome-glass-shadow);
+}
+[data-component='Modal'][data-instance='global-search'] [data-element='body'] {
+  padding-top: 0;
+}
+[data-component='Modal'][data-instance='global-search'] [data-component='SearchField'],
+[data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input {
+  height: var(--tactil-minimo);
+  min-height: var(--tactil-minimo);
+  max-height: var(--tactil-minimo);
 }
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input {
-  border-color: color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
-  background-color: color-mix(in srgb, var(--color-envolvente) 72%, var(--color-envolvente-alto));
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-texto-invertido) 12%, transparent);
+  border-radius: 0;
+  background-color: transparent;
   color: var(--color-texto-invertido);
+  font-size: 16px;
 }
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] [data-element='icon'],
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input::placeholder {
   color: color-mix(in srgb, var(--color-texto-invertido) 60%, transparent);
 }
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input:focus {
-  outline-color: color-mix(in srgb, var(--color-texto-invertido) 40%, transparent);
-  border-color: color-mix(in srgb, var(--color-texto-invertido) 48%, transparent);
+  outline: 0;
+  border-color: color-mix(in srgb, var(--color-texto-invertido) 24%, transparent);
 }
 .marbella-fixed-topbar [data-element='greeting'] {
   display: block;

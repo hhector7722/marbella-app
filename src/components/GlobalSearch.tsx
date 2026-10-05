@@ -104,14 +104,15 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
     }} className="relative flex min-h-12 min-w-0 w-full items-center px-0 text-left">
       <span data-element="pill" className="flex min-w-0 w-full items-center gap-2 rounded-full border px-3 text-white/60"><Search aria-hidden size={14} className="shrink-0" /><span className="truncate text-xs">Buscar…</span></span>
     </button>
-    <Modal open={open} onClose={closeExplicitly} title="Buscar" variant="work" scheme="dark" hideHeaderDivider instance="global-search" usageId="global-search" usageLabel="Búsqueda global">
+    <Modal open={open} onClose={closeExplicitly} title="Búsqueda global" variant="work" scheme="dark" hideHeader
+      hideCloseButton instance="global-search" usageId="global-search" usageLabel="Búsqueda global">
       <div className="min-w-0" onKeyDown={(event) => {
         if (event.key === 'Enter' && event.target instanceof HTMLInputElement && !event.nativeEvent.isComposing && results[0]) openResult(results[0]);
       }}>
         <SearchField instance="global-search-input" value={query} onChange={(value) => {
           setQuery(value); invoiceRequestSerial.current += 1; setInvoiceRemote(null); setInvoiceLoading(false); setInvoiceRequestedFor(null); setShowWaiting(false);
         }} placeholder="Buscar…" ariaLabel="Buscar funciones y datos" autoFocus />
-        {trimmed.length === 0 ? <p className="py-8 text-center text-xs text-white/50">Busca una función o un dato.</p> : results.length === 0 && !waiting && !remoteCurrent?.failed ? <p className="py-8 text-center text-xs text-white/50">Sin resultados.</p> : null}
+        {trimmed.length > 0 && results.length === 0 && !waiting && !remoteCurrent?.failed ? <p className="px-3 py-6 text-center text-xs text-white/50">Sin resultados.</p> : null}
         {groups.map((group) => <section key={group} className="mt-3"><h3 className="px-1 pb-1 text-xs font-semibold text-white/50">{GROUP_LABELS[group]}</h3><div className="divide-y divide-white/10">
           {results.filter((row) => row.type === group).map((result) => <button key={`${result.type}:${result.id}`} type="button" onClick={() => openResult(result)} className="flex min-h-12 w-full items-center gap-3 py-1 text-left hover:bg-white/5">
             {result.icon ? <Image src={result.icon} alt="" width={24} height={24} className="size-6 shrink-0 object-contain" /> : <Search aria-hidden size={14} className="shrink-0 text-white/45" />}
