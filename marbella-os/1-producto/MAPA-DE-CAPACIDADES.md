@@ -32,8 +32,8 @@ Encontrar funciones y datos operativos desde la cabecera sin abandonar la pantal
 
 - **Actores**: toda persona autenticada, según su identidad efectiva y sus permisos existentes.
 - **Superficies**: disparador compacto de cabecera y Modal de búsqueda.
-- **Alcance inicial**: funciones, ingredientes, recetas, proveedores, plantilla, albaranes y reservas. Los resultados de entidad abren su ficha; los de función abren la pantalla o modal existente.
-- **Reglas propias**: la búsqueda remota se limita antes de devolver resultados; el modo «Ver como» usa el usuario efectivo. La búsqueda no ejecuta operaciones de negocio. Un fallo de red deja disponibles los accesos locales permitidos.
+- **Alcance inicial**: funciones, ingredientes, recetas, proveedores, plantilla y albaranes. Los resultados de entidad abren su ficha; los de función abren la pantalla o modal existente.
+- **Reglas propias**: la búsqueda remota se limita antes de devolver resultados; los albaranes solo se consultan al solicitarlo. El modo «Ver como» usa el usuario efectivo. La búsqueda no ejecuta operaciones de negocio. Un fallo de red deja disponibles los accesos locales permitidos.
 - **Estado**: en movimiento.
 - **Especificación**: pendiente.
 

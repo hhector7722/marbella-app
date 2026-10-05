@@ -24,5 +24,7 @@ describe('catálogo de búsqueda global', () => {
     assert.equal(searchFunctions('proveedores', staff)[0]?.id, 'suppliers');
     assert.equal(searchFunctions('cierre', staff)[0]?.href, '/staff/dashboard?open=cierre');
     assert.equal(searchFunctions('pedidos', staff)[0]?.href, '/staff/dashboard?open=pedidos');
+    assert.deepEqual(searchFunctions('reservas', staff), []);
+    assert.equal(searchFunctions('ingredientes', staff)[0]?.id, 'ingredients');
   });
 });

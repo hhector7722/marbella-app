@@ -1,7 +1,7 @@
 import { isMasterDashboardUser } from '../staff/simulation-identity.ts';
 
 export type SearchIdentity = { userId: string; role: string | null; email: string | null; isViewingAs: boolean };
-export type SearchResult = { type: 'function' | 'ingredient' | 'recipe' | 'supplier' | 'employee' | 'invoice' | 'reservation'; id: string; title: string; subtitle: string; icon?: string; href: string; score: number };
+export type SearchResult = { type: 'function' | 'ingredient' | 'recipe' | 'supplier' | 'employee' | 'invoice'; id: string; title: string; subtitle: string; icon?: string; href: string; score: number };
 type CatalogItem = { id: string; label: string; aliases: string[]; description: string; icon: string; href: (identity: SearchIdentity) => string; access: 'all' | 'management' | 'master' };
 
 const CATALOG: CatalogItem[] = [
@@ -11,10 +11,9 @@ const CATALOG: CatalogItem[] = [
   { id: 'attendance', label: 'Asistencia', aliases: ['fichaje', 'fichajes', 'horas'], description: 'Historial de asistencia', icon: '/icons/calendar.png', href: () => '/staff/history', access: 'all' },
   { id: 'team', label: 'Plantilla', aliases: ['personal', 'empleados', 'trabajadores'], description: 'Equipo de trabajo', icon: '/icons/staff-card.png', href: () => '/profile?open=plantilla', access: 'management' },
   { id: 'recipes', label: 'Recetas', aliases: ['receta', 'elaboraciones'], description: 'Recetario', icon: '/icons/recipes.png', href: (i) => !canManageSearch(i) && (i.role === 'staff' || i.role === 'user') ? '/recipes?view=staff' : '/recipes', access: 'all' },
-  { id: 'ingredients', label: 'Ingredientes', aliases: ['ingrediente', 'materias primas'], description: 'Catálogo de ingredientes', icon: '/icons/productes.png', href: () => '/ingredients', access: 'management' },
+  { id: 'ingredients', label: 'Ingredientes', aliases: ['ingrediente', 'materias primas'], description: 'Catálogo de ingredientes', icon: '/icons/productes.png', href: () => '/ingredients', access: 'all' },
   { id: 'suppliers', label: 'Proveedores', aliases: ['proveedor'], description: 'Catálogo de proveedores', icon: '/icons/suplier.png', href: () => '/suppliers', access: 'all' },
   { id: 'invoices', label: 'Albaranes', aliases: ['factura proveedor', 'factura compra', 'albarán'], description: 'Compras recibidas', icon: '/icons/scan.png', href: () => '/dashboard/albaranes', access: 'all' },
-  { id: 'reservations', label: 'Reservas', aliases: ['reserva'], description: 'Reservas de clientes', icon: '/icons/reservas.png', href: () => '/staff/reservas', access: 'all' },
   { id: 'orders', label: 'Pedidos', aliases: ['pedido proveedor'], description: 'Pedidos a proveedores', icon: '/icons/shipment.png', href: (i) => canManageSearch(i) && !isMasterDashboardUser(i.email) ? '/dashboard?open=pedidos' : '/staff/dashboard?open=pedidos', access: 'all' },
   { id: 'menu', label: 'Carta', aliases: ['menú', 'menu'], description: 'Carta del restaurante', icon: '/icons/menu.png', href: () => '/staff/carta', access: 'all' },
   { id: 'closing', label: 'Cierre', aliases: ['cierre de caja', 'cerrar caja'], description: 'Cierre de caja', icon: '/icons/lock.png', href: (i) => isMasterDashboardUser(i.email) && !i.isViewingAs ? '/master/dashboard?open=cierre' : canManageSearch(i) ? '/dashboard?open=cierre' : '/staff/dashboard?open=cierre', access: 'all' },
