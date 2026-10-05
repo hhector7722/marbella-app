@@ -935,6 +935,7 @@ export const CashChangeModal = ({
                                             markerEnd="url(#cash-arrow-reverse)"
                                         />
 
+                                    </svg>
 
                                     <button
                                         type="button"
