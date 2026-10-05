@@ -6171,10 +6171,11 @@ html:has(.dashboard-mosaic-switcher) {
 .marbella-fixed-topbar [data-element='live-camera'] {
   width: var(--tactil-minimo);
   height: var(--tactil-minimo);
+  margin-right: calc(-1 * var(--espacio-1));
 }
 .marbella-fixed-topbar [data-element='live-camera'] img {
-  width: 18px;
-  height: 18px;
+  width: 29px;
+  height: 29px;
 }
 .marbella-fixed-topbar [data-component='GlobalSearchTrigger'] [data-element='pill'] {
   height: var(--espacio-8);
@@ -6190,6 +6191,11 @@ html:has(.dashboard-mosaic-switcher) {
 [data-component='Modal'][data-instance='global-search'] {
   align-items: flex-start;
   padding: 0 !important;
+}
+[data-component='Modal'][data-instance='global-search'] [data-modal-backdrop='base'] {
+  background: rgb(0 0 0 / 0.12);
+  -webkit-backdrop-filter: blur(2px) saturate(90%);
+  backdrop-filter: blur(2px) saturate(90%);
 }
 [data-component='Modal'][data-instance='global-search'] [data-element='frame'] {
   position: absolute;
@@ -6222,6 +6228,9 @@ html:has(.dashboard-mosaic-switcher) {
   min-height: var(--espacio-8);
   max-height: var(--espacio-8);
 }
+[data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] {
+  z-index: 1;
+}
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input {
   padding-inline-start: calc(var(--espacio-3) + 14px + var(--espacio-2));
   padding-inline-end: var(--espacio-3);
@@ -6246,12 +6255,12 @@ html:has(.dashboard-mosaic-switcher) {
 }
 [data-component='Modal'][data-instance='global-search'] [data-element='results'] {
   max-height: min(55dvh, 360px);
-  margin-top: calc(-1 * var(--espacio-1));
-  padding-top: calc(var(--espacio-1) + var(--espacio-2));
+  margin-top: calc(-1 * var(--espacio-8));
+  padding-top: calc(var(--espacio-8) + var(--espacio-2));
   overflow-x: hidden;
   overflow-y: auto;
   border: 1px solid color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
-  border-radius: 0 0 var(--radio-superficie) var(--radio-superficie);
+  border-radius: var(--radio-superficie);
   background-color: color-mix(in srgb, var(--color-envolvente-bajo) 92%, black);
   box-shadow: var(--chrome-glass-shadow);
 }
@@ -6283,6 +6292,12 @@ html[data-modal-open="true"] [data-component='PageScreen'] [data-element='toolba
   filter: blur(6px);
   opacity: 0.35;
   pointer-events: none;
+}
+html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-topbar,
+html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-bottombar,
+html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
+  filter: blur(1px);
+  opacity: 0.78;
 }
 
 /* --- CONFIGURACIÓN DE IMPRESIÓN --- */
