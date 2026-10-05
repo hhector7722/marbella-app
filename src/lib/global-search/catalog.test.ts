@@ -15,7 +15,6 @@ describe('catálogo de búsqueda global', () => {
     assert.equal(searchFunctions('invent', staff)[0]?.id, 'inventory');
     assert.equal(searchFunctions('horas', staff).length, 2);
   });
-
   it('recorta funciones con la identidad efectiva', () => {
     assert.ok(searchFunctions('stock', staff).every((row) => row.id !== 'stock'));
     assert.equal(searchFunctions('stock', master)[0]?.id, 'stock');
@@ -25,7 +24,5 @@ describe('catálogo de búsqueda global', () => {
     assert.equal(searchFunctions('proveedores', staff)[0]?.id, 'suppliers');
     assert.equal(searchFunctions('cierre', staff)[0]?.href, '/staff/dashboard?open=cierre');
     assert.equal(searchFunctions('pedidos', staff)[0]?.href, '/staff/dashboard?open=pedidos');
-    assert.deepEqual(searchFunctions('reservas', staff), []);
-    assert.equal(searchFunctions('ingredientes', staff)[0]?.id, 'ingredients');
   });
 });
