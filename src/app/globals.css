@@ -6173,8 +6173,8 @@ html:has(.dashboard-mosaic-switcher) {
   height: var(--tactil-minimo);
 }
 .marbella-fixed-topbar [data-element='live-camera'] img {
-  width: calc(var(--espacio-8) + var(--espacio-2));
-  height: calc(var(--espacio-8) + var(--espacio-2));
+  width: 18px;
+  height: 18px;
 }
 .marbella-fixed-topbar [data-component='GlobalSearchTrigger'] [data-element='pill'] {
   height: var(--espacio-8);
@@ -6207,35 +6207,53 @@ html:has(.dashboard-mosaic-switcher) {
   max-height: inherit;
 }
 [data-component='Modal'][data-instance='global-search'] [data-element='container'] {
-  border: 1px solid color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
-  border-radius: var(--radio-superficie);
-  background-color: color-mix(in srgb, var(--color-envolvente-bajo) 92%, black);
-  box-shadow: var(--chrome-glass-shadow);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
 }
 [data-component='Modal'][data-instance='global-search'] [data-element='body'] {
   padding-top: 0;
 }
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'],
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input {
-  height: calc(var(--espacio-8) + var(--espacio-2));
-  min-height: calc(var(--espacio-8) + var(--espacio-2));
-  max-height: calc(var(--espacio-8) + var(--espacio-2));
+  height: var(--espacio-8);
+  min-height: var(--espacio-8);
+  max-height: var(--espacio-8);
 }
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input {
-  border: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-texto-invertido) 12%, transparent);
-  border-radius: 0;
-  background-color: transparent;
+  padding-inline-start: calc(var(--espacio-3) + 14px + var(--espacio-2));
+  padding-inline-end: var(--espacio-3);
+  border: 1px solid color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--color-envolvente) 72%, var(--color-envolvente-alto));
   color: var(--color-texto-invertido);
-  font-size: 16px;
+  font-size: 12px;
 }
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] [data-element='icon'],
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input::placeholder {
   color: color-mix(in srgb, var(--color-texto-invertido) 60%, transparent);
 }
+[data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] [data-element='icon'] {
+  left: var(--espacio-3);
+  width: 14px;
+  height: 14px;
+}
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input:focus {
   outline: 0;
-  border-color: color-mix(in srgb, var(--color-texto-invertido) 24%, transparent);
+  border-color: color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
+}
+[data-component='Modal'][data-instance='global-search'] [data-element='results'] {
+  max-height: min(55dvh, 360px);
+  margin-top: calc(-1 * var(--espacio-1));
+  padding-top: calc(var(--espacio-1) + var(--espacio-2));
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
+  border-radius: 0 0 var(--radio-superficie) var(--radio-superficie);
+  background-color: color-mix(in srgb, var(--color-envolvente-bajo) 92%, black);
+  box-shadow: var(--chrome-glass-shadow);
 }
 .marbella-fixed-topbar [data-element='greeting'] {
   display: block;

@@ -112,9 +112,10 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
         <SearchField instance="global-search-input" value={query} onChange={(value) => {
           setQuery(value); invoiceRequestSerial.current += 1; setInvoiceRemote(null); setInvoiceLoading(false); setInvoiceRequestedFor(null); setShowWaiting(false);
         }} placeholder="Buscar…" ariaLabel="Buscar funciones y datos" autoFocus />
-        {trimmed.length > 0 && results.length === 0 && !waiting && !remoteCurrent?.failed ? <p className="px-3 py-6 text-center text-xs text-white/50">Sin resultados.</p> : null}
-        {groups.map((group) => <section key={group} className="mt-3"><h3 className="px-1 pb-1 text-xs font-semibold text-white/50">{GROUP_LABELS[group]}</h3><div className="divide-y divide-white/10">
-          {results.filter((row) => row.type === group).map((result) => <button key={`${result.type}:${result.id}`} type="button" onClick={() => openResult(result)} className="flex min-h-12 w-full items-center gap-3 py-1 text-left hover:bg-white/5">
+        {trimmed.length > 0 ? <div data-element="results">
+        {results.length === 0 && !waiting && !remoteCurrent?.failed ? <p className="px-3 py-6 text-center text-xs text-white/50">Sin resultados.</p> : null}
+        {groups.map((group) => <section key={group} className="mt-3"><h3 className="px-3 pb-1 text-xs font-semibold text-white/50">{GROUP_LABELS[group]}</h3><div className="divide-y divide-white/10">
+          {results.filter((row) => row.type === group).map((result) => <button key={`${result.type}:${result.id}`} type="button" onClick={() => openResult(result)} className="flex min-h-12 w-full items-center gap-3 px-3 py-1 text-left hover:bg-white/5">
             {result.icon ? <Image src={result.icon} alt="" width={24} height={24} className="size-6 shrink-0 object-contain" /> : <Search aria-hidden size={14} className="shrink-0 text-white/45" />}
             <span className="min-w-0 flex-1"><span className="block truncate text-sm text-white">{result.title}</span><span className="block truncate text-xs text-white/50">{result.subtitle}</span></span><ChevronRight aria-hidden size={16} className="shrink-0 text-white/45" />
           </button>)}</div></section>)}
@@ -128,6 +129,7 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
         {invoiceRequestedFor === trimmed && invoiceCurrent?.failed ? <p className="mt-3 border-t border-white/10 py-3 text-center text-xs text-white/50">No se pudieron consultar los albaranes.</p> : null}
         {waiting && showWaiting ? <div aria-label="Buscando datos" className="mt-3 space-y-2"><div className="h-12 animate-pulse rounded-ds-control bg-white/5" /><div className="h-12 animate-pulse rounded-ds-control bg-white/5" /></div> : null}
         {remoteCurrent?.failed ? <p className="py-3 text-xs text-white/50">No se pueden consultar datos en este momento.</p> : null}
+        </div> : null}
       </div>
     </Modal>
   </>;
