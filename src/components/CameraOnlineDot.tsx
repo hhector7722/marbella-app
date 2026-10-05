@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 
-export function CameraOnlineDot() {
+export function CameraOnlineDot({ className }: { className?: string }) {
   const [online, setOnline] = useState(false);
 
   useEffect(() => {
@@ -24,5 +25,9 @@ export function CameraOnlineDot() {
   }, []);
 
   if (!online) return null;
-  return <span aria-label="Conexión externa activa" title="Conexión externa activa" className="block h-2.5 w-2.5 shrink-0 rounded-full bg-green-400" />;
+  return <span
+    aria-label="Conexión externa activa"
+    title="Conexión externa activa"
+    className={cn('block h-2.5 w-2.5 shrink-0 rounded-full bg-green-400', className)}
+  />;
 }

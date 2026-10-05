@@ -7,6 +7,7 @@ import { ChevronLeft } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { ReservationsBell } from '@/components/ReservationsBell';
 import { GlobalSearch } from '@/components/GlobalSearch';
+import { CameraOnlineDot } from '@/components/CameraOnlineDot';
 import { createClient } from "@/utils/supabase/client";
 import { cn, firstGivenName } from '@/lib/utils';
 import { getHomeHrefForUser } from '@/lib/master-dashboard';
@@ -24,6 +25,7 @@ export default function Navbar() {
     const { topHidden } = useChromeScroll();
     const { identity, isMaster, sessionReady, openViewAsPicker } = useMasterViewAs();
     const [userData, setUserData] = useState<{ id: string; name: string; role: string; searchRole: string; email: string; authEmail: string; is_supervisor?: boolean } | null>(null);
+    const [searchOpen, setSearchOpen] = useState(false);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -61,7 +63,7 @@ export default function Navbar() {
         email: identity?.isViewingAs ? identity.effectiveEmail : userData?.authEmail ?? null,
         isViewingAs: Boolean(identity?.isViewingAs) };
 
-    return <nav data-component="AppNavbar" data-hidden={topHidden ? 'true' : undefined} className={cn('marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden')}>
+    return <nav data-component="AppNavbar" data-hidden={topHidden && !searchOpen ? 'true' : undefined} className={cn('marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden')}>
         <div className="relative max-w-7xl lg:max-w-none mx-auto flex items-center gap-1 px-1 lg:px-4 w-full min-w-0">
             <div className="flex min-w-0 shrink-0 items-center gap-1">
                 {!hideNavbarBack && <button onClick={() => { if (!navigateInsideSandbox(homePath)) router.push(homePath); }} className={cn('shrink-0 grid place-items-center','border-0 bg-transparent shadow-none rounded-none','active:opacity-70 transition-opacity')} data-element="chrome" aria-label="Ir a inicio"><ChevronLeft strokeWidth={2.5} aria-hidden /></button>}
@@ -70,11 +72,19 @@ export default function Navbar() {
                     <div data-element="greeting-block">{isMaster ? <button type="button" data-element="greeting" onClick={openViewAsPicker} className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative" aria-label={identity?.isViewingAs ? `Viendo como ${identity.effectiveName}. Cambiar usuario` : 'Cambiar usuario de vista'}>{compactName}</button> : <span data-element="greeting">{compactName}</span>}</div>
                 </div>
             </div>
-            {sessionReady && searchIdentity.userId ? <GlobalSearch key={searchIdentity.userId} identity={searchIdentity} /> : null}
-            {canSeeCamera ? <button type="button" data-element="live-camera" aria-label="Abrir cámaras" title="Cámara" onClick={() => router.push('/camaras')} className="flex shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70">
-                <Image src="/icons/live-camera.png" alt="" width={48} height={48} className="block shrink-0 object-contain" />
-            </button> : null}
-            <div className="flex shrink-0 items-center -space-x-2"><ReservationsBell /><NotificationsBell /></div>
+            {sessionReady && searchIdentity.userId ? <GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} /> : null}
+            <div className="flex shrink-0 items-center -space-x-2">
+                {canSeeCamera ? <button type="button" data-element="chrome" aria-label="Abrir cámaras" title="Cámara" onClick={() => router.push('/camaras')} className="relative grid shrink-0 place-items-center border-0 bg-transparent p-0 transition-transform active:scale-95">
+                    <span data-element="live-camera-icon" className="relative inline-flex size-[18px] shrink-0 items-center justify-center">
+                        <Image src="/icons/live-camera.png" alt="" width={18} height={18} className="block size-[18px] shrink-0 object-contain" />
+                        <span className="pointer-events-none absolute inset-0 grid place-items-center">
+                            <CameraOnlineDot className="h-[5px] w-[5px] ring-1 ring-white/90 shadow-[0_0_3px_rgba(34,197,94,0.9)]" />
+                        </span>
+                    </span>
+                </button> : null}
+                <ReservationsBell />
+                <NotificationsBell />
+            </div>
         </div>
     </nav>;
 }
