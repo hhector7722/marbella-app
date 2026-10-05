@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight, Wallet, Plus, Check, ArrowRight, ArrowRightLeft } from 'lucide-react';
 import Image from 'next/image';
 import { cn, firstGivenName } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -21,6 +21,91 @@ import { EmptyState } from '@/components/ui/EmptyState';
 const BILLS = [100, 50, 20, 10, 5];
 const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 const ALL_DENOMS = [...BILLS, ...COINS];
+
+type PlanPoint = { x: number; y: number };
+
+const CASH_CHANGE_PLAN_POSITIONS: Record<string, PlanPoint> = {
+    tpv1: { x: 83.0, y: 68.0 },
+    tpv2: { x: 63.7, y: 33.0 },
+    cambio1: { x: 7.0, y: 28.0 },
+    cambio2: { x: 32.0, y: 25.0 },
+    inicial: { x: 31.0, y: 6.5 },
+};
+
+function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITIONS | null {
+    const compact = (box.name || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '');
+
+    if (box.id === 'tpv1' || compact.includes('tpv1')) return 'tpv1';
+    if (box.id === 'tpv2' || compact.includes('tpv2')) return 'tpv2';
+    if (compact.includes('cambio1')) return 'cambio1';
+    if (compact.includes('cambio2')) return 'cambio2';
+    if (compact.includes('inicial') || compact.includes('efectivo') || compact.includes('mycafe')) return 'inicial';
+    return null;
+}
+
+function resolveCashChangePlanPosition(box: BoxOption): PlanPoint | null {
+    const key = cashChangePlanKey(box);
+    return key ? CASH_CHANGE_PLAN_POSITIONS[key] : null;
+}
+
+function cashChangePlanLabel(box: BoxOption): string {
+    switch (cashChangePlanKey(box)) {
+        case 'tpv1': return 'TPV 1';
+        case 'tpv2': return 'TPV 2';
+        case 'cambio1': return 'CAMBIO 1';
+        case 'cambio2': return 'CAMBIO 2';
+        case 'inicial': return 'INICIAL';
+        default: return box.name;
+    }
+}
+
+type PlanArrowGeometry = {
+    forwardPath: string;
+    reversePath: string;
+    forwardMid: PlanPoint;
+    reverseMid: PlanPoint;
+};
+
+function buildPlanArrowGeometry(a: PlanPoint, b: PlanPoint): PlanArrowGeometry {
+    const width = 1000;
+    const height = 261;
+    const ax = (a.x / 100) * width;
+    const ay = (a.y / 100) * height;
+    const bx = (b.x / 100) * width;
+    const by = (b.y / 100) * height;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const length = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / length;
+    const ny = dx / length;
+    const curve = 28;
+    const mx = (ax + bx) / 2;
+    const my = (ay + by) / 2;
+    const c1x = mx + nx * curve;
+    const c1y = my + ny * curve;
+    const c2x = mx - nx * curve;
+    const c2y = my - ny * curve;
+
+    const quadraticMid = (sx: number, sy: number, cx: number, cy: number, ex: number, ey: number): PlanPoint => ({
+        x: ((sx + (2 * cx) + ex) / 4 / width) * 100,
+        y: ((sy + (2 * cy) + ey) / 4 / height) * 100,
+    });
+
+    return {
+        forwardPath: 'M ' + ax + ' ' + ay + ' Q ' + c1x + ' ' + c1y + ' ' + bx + ' ' + by,
+        reversePath: 'M ' + bx + ' ' + by + ' Q ' + c2x + ' ' + c2y + ' ' + ax + ' ' + ay,
+        forwardMid: quadraticMid(ax, ay, c1x, c1y, bx, by),
+        reverseMid: quadraticMid(bx, by, c2x, c2y, ax, ay),
+    };
+}
+
+function formatExchangeAmount(amount: number): string {
+    return amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
 
 export type BoxOption = { id: string; name: string; hasInventory: boolean; image_url?: string };
 
@@ -123,6 +208,9 @@ export const CashChangeModal = ({
     const [step2Counts, setStep2Counts] = useState<Record<number, number>>({});
     const [stockA, setStockA] = useState<Record<number, number>>({});
     const [stockB, setStockB] = useState<Record<number, number>>({});
+    const [legDraftBeforeEdit, setLegDraftBeforeEdit] = useState<Record<number, number> | null>(null);
+    const [savingExchange, setSavingExchange] = useState(false);
+    const [exchangeComplete, setExchangeComplete] = useState(false);
     // Histórico de intercambios (solo manager)
     const [showExchangeHistoryModal, setShowExchangeHistoryModal] = useState(false);
     const [exchangeHistoryYearMonth, setExchangeHistoryYearMonth] = useState(() => {
@@ -334,19 +422,28 @@ export const CashChangeModal = ({
         onClose();
     };
 
-    const handleSiguiente = () => {
-        if (!boxA || !boxB || totalStep1 < 0.005 || hasStockIssueStep1) return;
-        setStep('step2');
-    };
-
     const handleGuardarStep2 = async () => {
-        if (!boxA || !boxB || totalStep2 < 0.005 || hasStockIssueStep2) return;
+        if (
+            !boxA ||
+            !boxB ||
+            totalStep1 < 0.005 ||
+            totalStep2 < 0.005 ||
+            hasStockIssueStep1 ||
+            hasStockIssueStep2 ||
+            savingExchange
+        ) return;
+
+        if (Math.abs(totalStep1 - totalStep2) >= 0.01) {
+            toast.error('Los dos movimientos deben sumar el mismo importe');
+            return;
+        }
 
         if (isTpvCashBox(boxA) && isTpvCashBox(boxB)) {
             toast.error('Selecciona al menos una caja con efectivo físico');
             return;
         }
 
+        setSavingExchange(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
             const exchangeGroupId = randomId();
@@ -420,11 +517,15 @@ export const CashChangeModal = ({
                 return;
             }
 
+            setExchangeComplete(true);
             toast.success('Cambio entre cajas guardado');
+            await new Promise((resolve) => window.setTimeout(resolve, 420));
             if (onSuccess) onSuccess();
             onClose();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Error al guardar');
+        } finally {
+            setSavingExchange(false);
         }
     };
 
@@ -451,22 +552,65 @@ export const CashChangeModal = ({
         </div>
     );
 
+    const resetExchangeLegs = () => {
+        setStep('select');
+        setStep1Counts({});
+        setStep2Counts({});
+        setStockA({});
+        setStockB({});
+        setZoomDenom(null);
+        setLegDraftBeforeEdit(null);
+        setExchangeComplete(false);
+    };
+
     const toggleBoxSelection = (opt: BoxOption) => {
         if (boxA?.id === opt.id) {
-            setBoxA(null);
+            setBoxA(boxB);
+            setBoxB(null);
+            resetExchangeLegs();
             return;
         }
         if (boxB?.id === opt.id) {
             setBoxB(null);
+            resetExchangeLegs();
             return;
         }
         if (!boxA) {
             setBoxA(opt);
+            resetExchangeLegs();
             return;
         }
-        if (!boxB && opt.id !== boxA.id) {
-            setBoxB(opt);
+
+        if (isTpvCashBox(boxA) && isTpvCashBox(opt)) {
+            toast.error('Selecciona al menos una caja con efectivo físico');
+            return;
         }
+
+        setBoxB(opt);
+        resetExchangeLegs();
+    };
+
+    const openLegEditor = (nextStep: 'step1' | 'step2') => {
+        if (!boxA || !boxB) return;
+        setLegDraftBeforeEdit({ ...(nextStep === 'step1' ? step1Counts : step2Counts) });
+        setZoomDenom(null);
+        setStep(nextStep);
+    };
+
+    const cancelLegEditor = () => {
+        if (legDraftBeforeEdit) {
+            if (step === 'step1') setStep1Counts(legDraftBeforeEdit);
+            if (step === 'step2') setStep2Counts(legDraftBeforeEdit);
+        }
+        setLegDraftBeforeEdit(null);
+        setZoomDenom(null);
+        setStep('select');
+    };
+
+    const confirmLegEditor = () => {
+        setLegDraftBeforeEdit(null);
+        setZoomDenom(null);
+        setStep('select');
     };
 
     // ——— Flujo legacy: una caja (SWAP) ———
@@ -539,24 +683,37 @@ export const CashChangeModal = ({
         );
     }
 
-    // ——— Flujo dos cajas: selector ———
-    if (step === 'select') {
-        const canContinue = boxA && boxB && boxA.id !== boxB.id;
-        
-        // Ensure specific order: TPV 1, TPV 2, Inicial, Cambio 1, Cambio 2
-        const orderWeight = (name: string) => {
-            const lower = name.toLowerCase();
-            if (lower.includes('tpv 1')) return 1;
-            if (lower.includes('tpv 2')) return 2;
-            if (lower.includes('inicial')) return 3;
-            if (lower.includes('cambio 1')) return 4;
-            if (lower.includes('cambio 2')) return 5;
-            return 99;
-        };
-        const sortedOptions = [...boxOptions].sort((a, b) => orderWeight(a.name) - orderWeight(b.name));
+    // ——— Flujo dos cajas: plano persistente + dos movimientos ———
+    const positionedOptions = boxOptions
+        .map((option) => ({ option, position: resolveCashChangePlanPosition(option) }))
+        .filter((item): item is { option: BoxOption; position: PlanPoint } => item.position !== null);
 
-        return (
-            <>
+    const pointA = boxA ? resolveCashChangePlanPosition(boxA) : null;
+    const pointB = boxB ? resolveCashChangePlanPosition(boxB) : null;
+    const arrowGeometry = pointA && pointB ? buildPlanArrowGeometry(pointA, pointB) : null;
+    const isBalancedTransfer = totalStep1 > 0.005 && totalStep2 > 0.005 && Math.abs(totalStep1 - totalStep2) < 0.01;
+    const canConfirmExchange = Boolean(
+        boxA &&
+        boxB &&
+        isBalancedTransfer &&
+        !hasStockIssueStep1 &&
+        !hasStockIssueStep2 &&
+        !savingExchange
+    );
+    const transferDifference = Math.abs(totalStep1 - totalStep2);
+
+    const isEditingStep1 = step === 'step1';
+    const activeFromBox = isEditingStep1 ? boxA : boxB;
+    const activeToBox = isEditingStep1 ? boxB : boxA;
+    const activeCounts = isEditingStep1 ? step1Counts : step2Counts;
+    const setActiveCounts = isEditingStep1 ? setStep1Counts : setStep2Counts;
+    const activeTotal = isEditingStep1 ? totalStep1 : totalStep2;
+    const activeStock = isEditingStep1 ? stockA : stockB;
+    const activeStockIssue = isEditingStep1 ? hasStockIssueStep1 : hasStockIssueStep2;
+    const oppositeTotal = isEditingStep1 ? totalStep2 : totalStep1;
+
+    return (
+        <>
             <Modal
                 open
                 onClose={onClose}
@@ -571,6 +728,7 @@ export const CashChangeModal = ({
                     <button
                         type="button"
                         onClick={() => {
+                            setStep('select');
                             setZoomDenom(null);
                             setShowExchangeHistoryModal(true);
                         }}
@@ -581,88 +739,268 @@ export const CashChangeModal = ({
                     </button>
                 ) : undefined}
                 footer={
-                    <Button
-                        type="button"
-                        variant="primary"
-                        instance="cash-change-select-next"
-                        onClick={() => canContinue && setStep('step1')}
-                        disabled={!canContinue}
-                    >
-                        Siguiente
-                    </Button>
+                    totalStep1 > 0.005 && totalStep2 > 0.005 ? (
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="cash-change-confirm"
+                            onClick={() => void handleGuardarStep2()}
+                            disabled={!canConfirmExchange}
+                            loading={savingExchange}
+                            loadingLabel="Guardando"
+                        >
+                            Confirmar cambio
+                        </Button>
+                    ) : undefined
                 }
             >
-                    <div className="flex-1 overflow-y-auto bg-white p-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-3">
-                                <h3 className="text-[12px] font-black uppercase text-center text-[#36606F]">Origen</h3>
-                                {sortedOptions.map((opt) => {
-                                    const isA = boxA?.id === opt.id;
-                                    return (
-                                        <button
-                                            key={`origen-${opt.id}`}
-                                            type="button"
-                                            onClick={() => setBoxA(isA ? null : opt)}
+                <div className="flex min-h-0 flex-1 items-center justify-center bg-white p-2">
+                    <div className="w-full overflow-hidden rounded-xl">
+                        <div className="relative aspect-[890/535] w-full overflow-hidden rounded-xl bg-zinc-100">
+                            <Image
+                                src="/images/cash-change-plan.webp"
+                                alt="Plano de cajas"
+                                fill
+                                priority
+                                sizes="(max-width: 767px) calc(100vw - 4rem), 760px"
+                                className="select-none object-cover"
+                            />
+
+                            {positionedOptions.map(({ option, position }) => {
+                                const isA = boxA?.id === option.id;
+                                const isB = boxB?.id === option.id;
+                                const selected = isA || isB;
+                                return (
+                                    <button
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => toggleBoxSelection(option)}
+                                        aria-label={option.name}
+                                        className={cn(
+                                            'absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 border-0 bg-transparent p-0 transition-transform active:scale-95',
+                                            selected ? 'opacity-100' : 'opacity-90 hover:opacity-100',
+                                        )}
+                                        style={{ left: position.x + '%', top: position.y + '%' }}
+                                    >
+                                        <span
                                             className={cn(
-                                                'flex w-full min-h-[72px] flex-col items-center justify-center gap-1.5 border-0 bg-transparent p-1 text-center font-black text-[10px] uppercase tracking-wide shadow-none transition-all active:scale-95',
-                                                isA ? 'text-[#36606F]' : 'text-zinc-500',
-                                                boxB?.id === opt.id && !isA ? 'opacity-30' : '',
+                                                'flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white/95 shadow-md ring-2 transition-all',
+                                                isA
+                                                    ? 'ring-[#23a89a] ring-offset-1 ring-offset-white/70'
+                                                    : isB
+                                                        ? 'ring-rose-400 ring-offset-1 ring-offset-white/70'
+                                                        : 'ring-white/80',
                                             )}
                                         >
-                                            <div
-                                                className={cn(
-                                                    'flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full transition-all',
-                                                    isA ? 'bg-[#b5cdd6] ring-2 ring-[#36606F]/25' : 'bg-[#dce8ec]',
-                                                )}
-                                            >
-                                                {opt.image_url ? (
-                                                    <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="h-full w-full object-contain" />
-                                                ) : (
-                                                    <Wallet size={20} className={cn('transition-colors', isA ? 'text-[#36606F]/85' : 'text-[#36606F]/45')} strokeWidth={2.5} />
-                                                )}
-                                            </div>
-                                            <span className="truncate w-full font-black text-[9px] tracking-tight">{opt.name}</span>
-                                        </button>
-                                    );
-                                })}
+                                            {option.image_url ? (
+                                                <Image
+                                                    src={option.image_url}
+                                                    alt=""
+                                                    width={34}
+                                                    height={34}
+                                                    className="h-full w-full object-contain"
+                                                />
+                                            ) : (
+                                                <Wallet size={19} className="text-[#36606F]" strokeWidth={2.4} />
+                                            )}
+                                        </span>
+                                        <span className="max-w-[64px] truncate rounded-full bg-white/90 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-tight text-zinc-700 shadow-sm">
+                                            {cashChangePlanLabel(option)}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+
+                            {arrowGeometry && boxA && boxB ? (
+                                <>
+                                    <svg
+                                        viewBox="0 0 1000 261"
+                                        preserveAspectRatio="none"
+                                        className={cn(
+                                            'pointer-events-none absolute inset-0 z-10 h-full w-full overflow-visible',
+                                            exchangeComplete && 'animate-pulse',
+                                        )}
+                                        aria-hidden
+                                    >
+                                        <defs>
+                                            <marker id="cash-arrow-forward" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                                                <path d="M0,0 L8,4 L0,8 z" fill="#23a89a" />
+                                            </marker>
+                                            <marker id="cash-arrow-reverse" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                                                <path d="M0,0 L8,4 L0,8 z" fill="#fb7185" />
+                                            </marker>
+                                        </defs>
+                                        <path
+                                            d={arrowGeometry.forwardPath}
+                                            fill="none"
+                                            stroke="#23a89a"
+                                            strokeWidth="4"
+                                            strokeLinecap="round"
+                                            markerEnd="url(#cash-arrow-forward)"
+                                            className="drop-shadow-sm"
+                                        />
+                                        <path
+                                            d={arrowGeometry.reversePath}
+                                            fill="none"
+                                            stroke="#fb7185"
+                                            strokeWidth="4"
+                                            strokeLinecap="round"
+                                            markerEnd="url(#cash-arrow-reverse)"
+                                            className="drop-shadow-sm"
+                                        />
+                                    </svg>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => openLegEditor('step1')}
+                                        aria-label={totalStep1 > 0.005 ? 'Editar primer movimiento' : 'Añadir primer movimiento'}
+                                        className={cn(
+                                            'absolute z-30 -translate-x-1/2 -translate-y-1/2 border-2 border-white bg-[#23a89a] font-black text-white shadow-lg transition-all active:scale-95',
+                                            totalStep1 > 0.005
+                                                ? 'h-8 min-w-[58px] rounded-full px-2 text-[10px] tabular-nums'
+                                                : 'flex h-10 w-10 items-center justify-center rounded-full',
+                                        )}
+                                        style={{ left: arrowGeometry.forwardMid.x + '%', top: arrowGeometry.forwardMid.y + '%' }}
+                                    >
+                                        {totalStep1 > 0.005 ? formatExchangeAmount(totalStep1) : <Plus size={19} strokeWidth={3} />}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => openLegEditor('step2')}
+                                        aria-label={totalStep2 > 0.005 ? 'Editar segundo movimiento' : 'Añadir segundo movimiento'}
+                                        className={cn(
+                                            'absolute z-30 -translate-x-1/2 -translate-y-1/2 border-2 border-white bg-rose-400 font-black text-white shadow-lg transition-all active:scale-95',
+                                            totalStep2 > 0.005
+                                                ? 'h-8 min-w-[58px] rounded-full px-2 text-[10px] tabular-nums'
+                                                : 'flex h-10 w-10 items-center justify-center rounded-full',
+                                        )}
+                                        style={{ left: arrowGeometry.reverseMid.x + '%', top: arrowGeometry.reverseMid.y + '%' }}
+                                    >
+                                        {totalStep2 > 0.005 ? formatExchangeAmount(totalStep2) : <Plus size={19} strokeWidth={3} />}
+                                    </button>
+                                </>
+                            ) : null}
+
+                            {exchangeComplete ? (
+                                <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-white/15">
+                                    <div className="flex h-14 min-w-28 items-center justify-center gap-2 rounded-full bg-white/95 px-5 shadow-xl ring-1 ring-emerald-200">
+                                        <ArrowRightLeft className="h-6 w-6 animate-pulse text-emerald-600" strokeWidth={2.4} />
+                                        <Check className="h-6 w-6 text-emerald-600" strokeWidth={3} />
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+                    </div>
+
+                    {boxA && boxB && totalStep1 > 0.005 && totalStep2 > 0.005 && !isBalancedTransfer ? (
+                        <div className="mt-2 flex justify-center">
+                            <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-black tabular-nums text-rose-500">
+                                Δ {formatExchangeAmount(transferDifference)}
+                            </span>
+                        </div>
+                    ) : null}
+                </div>
+            </Modal>
+
+            <Modal
+                open={step !== 'select' && Boolean(boxA && boxB)}
+                onClose={cancelLegEditor}
+                variant="amplify"
+                layer="derived"
+                instance="cash-change-leg"
+                parentInstance="cash-change-select"
+                usageId="cash-change-leg"
+                usageLabel="Desglose de cambio"
+                title="Cambio"
+                footer={
+                    <CashCountFooter
+                        total={activeTotal}
+                        instancePrefix="cash-change-leg"
+                        cancelLabel="Cancelar"
+                        saveLabel="Confirmar"
+                        onCancel={cancelLegEditor}
+                        onSave={confirmLegEditor}
+                        saveDisabled={Boolean(activeStockIssue)}
+                        extra={
+                            activeStockIssue ? (
+                                <span className="text-[10px] font-bold uppercase tracking-tight text-rose-500">
+                                    Stock insuficiente
+                                </span>
+                            ) : null
+                        }
+                    />
+                }
+            >
+                {activeFromBox && activeToBox ? (
+                    <>
+                        <QuickCashTools calculator breakdown />
+
+                        <div className="flex min-h-0 flex-1 flex-col bg-white">
+                            <div className="flex shrink-0 items-center justify-center gap-3 border-b border-zinc-100 px-3 py-2">
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-50">
+                                        {activeFromBox.image_url ? (
+                                            <Image src={activeFromBox.image_url} alt="" width={36} height={36} className="h-full w-full object-contain" />
+                                        ) : (
+                                            <Wallet size={17} className="text-[#36606F]" />
+                                        )}
+                                    </div>
+                                    <span className="max-w-20 truncate text-[9px] font-black uppercase text-zinc-700">{activeFromBox.name}</span>
+                                </div>
+
+                                <ArrowRight className={cn('h-7 w-7 shrink-0', isEditingStep1 ? 'text-[#23a89a]' : 'text-rose-400')} strokeWidth={2.5} />
+
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-50">
+                                        {activeToBox.image_url ? (
+                                            <Image src={activeToBox.image_url} alt="" width={36} height={36} className="h-full w-full object-contain" />
+                                        ) : (
+                                            <Wallet size={17} className="text-[#36606F]" />
+                                        )}
+                                    </div>
+                                    <span className="max-w-20 truncate text-[9px] font-black uppercase text-zinc-700">{activeToBox.name}</span>
+                                </div>
+
+                                {oppositeTotal > 0.005 ? (
+                                    <span
+                                        className={cn(
+                                            'ml-1 rounded-full px-2 py-1 text-[9px] font-black tabular-nums',
+                                            Math.abs(activeTotal - oppositeTotal) < 0.01
+                                                ? 'bg-emerald-50 text-emerald-600'
+                                                : 'bg-zinc-100 text-zinc-500',
+                                        )}
+                                    >
+                                        = {formatExchangeAmount(oppositeTotal)}
+                                    </span>
+                                ) : null}
                             </div>
-                            <div className="flex flex-col gap-3">
-                                <h3 className="text-[12px] font-black uppercase text-center text-[#36606F]">Destino</h3>
-                                {sortedOptions.map((opt) => {
-                                    const isB = boxB?.id === opt.id;
-                                    return (
-                                        <button
-                                            key={`destino-${opt.id}`}
-                                            type="button"
-                                            onClick={() => setBoxB(isB ? null : opt)}
-                                            className={cn(
-                                                'flex w-full min-h-[72px] flex-col items-center justify-center gap-1.5 border-0 bg-transparent p-1 text-center font-black text-[10px] uppercase tracking-wide shadow-none transition-all active:scale-95',
-                                                isB ? 'text-rose-700/90' : 'text-zinc-500',
-                                                boxA?.id === opt.id && !isB ? 'opacity-30' : '',
-                                            )}
-                                        >
-                                            <div
-                                                className={cn(
-                                                    'flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full transition-all',
-                                                    isB ? 'bg-rose-200 ring-2 ring-rose-300/50' : 'bg-rose-100',
-                                                )}
-                                            >
-                                                {opt.image_url ? (
-                                                    <Image src={opt.image_url} alt={opt.name} width={44} height={44} className="h-full w-full object-contain" />
-                                                ) : (
-                                                    <Wallet size={20} className={cn('transition-colors', isB ? 'text-rose-600/75' : 'text-rose-400/55')} strokeWidth={2.5} />
-                                                )}
-                                            </div>
-                                            <span className="truncate w-full font-black text-[9px] tracking-tight">{opt.name}</span>
-                                        </button>
-                                    );
-                                })}
+
+                            {zoomDenom !== null ? (
+                                <DenominationZoomModal
+                                    isOpen
+                                    onClose={() => setZoomDenom(null)}
+                                    denomination={zoomDenom}
+                                    value={activeCounts[zoomDenom] || 0}
+                                    onValueChange={(value) => setActiveCounts((prev) => ({ ...prev, [zoomDenom]: value }))}
+                                    availableStock={activeFromBox.hasInventory ? (activeStock[zoomDenom] || 0) : undefined}
+                                    layer="system"
+                                />
+                            ) : null}
+
+                            <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
+                                <DenominationCountGrid
+                                    counts={activeCounts}
+                                    onAdjust={(denom, delta) => handleAdjustTransfer(denom, activeCounts, setActiveCounts, delta)}
+                                    onChange={(denom, raw) => handleCountChangeTransfer(denom, raw, setActiveCounts)}
+                                    availableStock={activeFromBox.hasInventory ? activeStock : undefined}
+                                    onZoom={setZoomDenom}
+                                    showAvailable={Boolean(activeFromBox.hasInventory)}
+                                />
                             </div>
                         </div>
-                        {boxA && boxB && boxA.id === boxB.id && (
-                            <p className="text-rose-600 text-[10px] font-bold mt-4 text-center">Elige dos cajas distintas</p>
-                        )}
-                    </div>
+                    </>
+                ) : null}
             </Modal>
 
             <Modal
@@ -769,86 +1107,7 @@ export const CashChangeModal = ({
                     ) : null}
                 </div>
             </Modal>
-            </>
-        );
-    }
-
-    // ——— Flujo dos cajas: paso 1 (De A a B) o paso 2 (De B a A) ———
-    const isStep1 = step === 'step1';
-    const fromBox = isStep1 ? boxA! : boxB!;
-    const counts = isStep1 ? step1Counts : step2Counts;
-    const setCounts = isStep1 ? setStep1Counts : setStep2Counts;
-    const total = isStep1 ? totalStep1 : totalStep2;
-    const stock = isStep1 ? stockA : stockB;
-    const hasStockIssue = isStep1 ? hasStockIssueStep1 : hasStockIssueStep2;
-
-    const titleText = isStep1 ? `Dinero que sale de ${boxA?.name}` : `Dinero que entra en ${boxA?.name}`;
-
-    return (
-        <Modal
-            open
-            onClose={onClose}
-            variant="amplify"
-            layer="base"
-            instance="cash-change-count"
-            usageId="cash-change-count"
-            usageLabel="Cambio de caja"
-            headerTitleAlign="left"
-            title="Cambio"
-            footer={
-                <CashCountFooter
-                    total={total}
-                    instancePrefix="cash-change-count"
-                    cancelLabel={isStep1 ? 'Salir' : 'Atrás'}
-                    saveLabel={isStep1 ? 'Siguiente' : 'Guardar'}
-                    onCancel={isStep1 ? onClose : () => setStep('step1')}
-                    onSave={isStep1 ? handleSiguiente : handleGuardarStep2}
-                    saveDisabled={isStep1 ? (totalStep1 < 0.005 || hasStockIssueStep1) : (totalStep2 < 0.005 || hasStockIssueStep2)}
-                    extra={
-                        hasStockIssue ? (
-                            <span className="text-[10px] font-bold uppercase tracking-tight text-rose-500">
-                                Stock insuficiente
-                            </span>
-                        ) : null
-                    }
-                />
-            }
-        >
-                <QuickCashTools calculator breakdown />
-
-                <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2 flex flex-col">
-                    <div className="flex justify-center mb-3 mt-1 relative">
-                        <div className={cn("px-4 py-1.5 rounded-xl flex items-center", isStep1 ? "bg-rose-500" : "bg-emerald-500")}>
-                            <span className="text-[14px] md:text-base font-black text-white text-center leading-tight tracking-tight drop-shadow-sm">
-                                {titleText}
-                            </span>
-                        </div>
-                        {boxA?.image_url && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl overflow-hidden bg-white flex items-center justify-center">
-                                <Image src={boxA.image_url} alt={boxA.name} width={40} height={40} className="w-full h-full object-contain" />
-                            </div>
-                        )}
-                    </div>
-
-                    {zoomDenom !== null && (
-                        <DenominationZoomModal
-                            isOpen={true}
-                            onClose={() => setZoomDenom(null)}
-                            denomination={zoomDenom}
-                            value={counts[zoomDenom] || 0}
-                            onValueChange={(v) => setCounts(prev => ({ ...prev, [zoomDenom]: v }))}
-                            availableStock={fromBox?.hasInventory ? (stock[zoomDenom] || 0) : undefined}
-                        />
-                    )}
-                    <DenominationCountGrid
-                        counts={counts}
-                        onAdjust={(denom, delta) => handleAdjustTransfer(denom, {} as Record<number, number>, setCounts, delta)}
-                        onChange={(denom, raw) => handleCountChangeTransfer(denom, raw, setCounts)}
-                        availableStock={fromBox?.hasInventory ? stock : undefined}
-                        onZoom={setZoomDenom}
-                        showAvailable={Boolean(fromBox?.hasInventory)}
-                    />
-                </div>
-        </Modal>
+        </>
     );
+
 };
