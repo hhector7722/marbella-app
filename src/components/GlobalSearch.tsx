@@ -106,7 +106,7 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
     </button>
     <Modal open={open} onClose={closeExplicitly} title="Búsqueda global" variant="work" scheme="dark" hideHeader
       hideCloseButton instance="global-search" usageId="global-search" usageLabel="Búsqueda global">
-      <div className="min-w-0" onKeyDown={(event) => {
+      <div data-element="surface" data-has-results={trimmed.length > 0 ? 'true' : undefined} className="min-w-0" onKeyDown={(event) => {
         if (event.key === 'Enter' && event.target instanceof HTMLInputElement && !event.nativeEvent.isComposing && results[0]) openResult(results[0]);
       }}>
         <SearchField instance="global-search-input" value={query} onChange={(value) => {
