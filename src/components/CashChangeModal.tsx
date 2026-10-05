@@ -43,7 +43,13 @@ function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITI
     if (box.id === 'tpv2' || compact.includes('tpv2')) return 'tpv2';
     if (compact.includes('cambio1')) return 'cambio1';
     if (compact.includes('cambio2')) return 'cambio2';
-    if (compact.includes('inicial') || compact.includes('efectivo') || compact.includes('mycafe')) return 'inicial';
+    if (
+        compact.includes('inicial') ||
+        compact.includes('cajaoperativa') ||
+        compact.includes('operativa') ||
+        compact.includes('efectivo') ||
+        compact.includes('mycafe')
+    ) return 'inicial';
     return null;
 }
 
@@ -84,35 +90,80 @@ type PlanArrowGeometry = {
 };
 
 function buildPlanArrowGeometry(a: PlanPoint, b: PlanPoint): PlanArrowGeometry {
-    const width = 1000;
-    const height = 261;
+    // Coincide con aspect-[890/535] del plano para que las curvas mantengan
+    // su forma y separación real también en móvil.
+    const width = 890;
+    const height = 535;
     const ax = (a.x / 100) * width;
     const ay = (a.y / 100) * height;
     const bx = (b.x / 100) * width;
     const by = (b.y / 100) * height;
+
     const dx = bx - ax;
     const dy = by - ay;
     const length = Math.max(1, Math.hypot(dx, dy));
-    const nx = -dy / length;
-    const ny = dx / length;
-    const curve = 28;
-    const mx = (ax + bx) / 2;
-    const my = (ay + by) / 2;
-    const c1x = mx + nx * curve;
-    const c1y = my + ny * curve;
-    const c2x = mx - nx * curve;
-    const c2y = my - ny * curve;
+    const ux = dx / length;
+    const uy = dy / length;
+    const nx = -uy;
+    const ny = ux;
 
-    const quadraticMid = (sx: number, sy: number, cx: number, cy: number, ex: number, ey: number): PlanPoint => ({
-        x: ((sx + (2 * cx) + ex) / 4 / width) * 100,
-        y: ((sy + (2 * cy) + ey) / 4 / height) * 100,
-    });
+    // Evita que las puntas entren debajo de los iconos.
+    const endPadding = Math.min(28, length * 0.18);
+    const sx = ax + (ux * endPadding);
+    const sy = ay + (uy * endPadding);
+    const ex = bx - (ux * endPadding);
+    const ey = by - (uy * endPadding);
+
+    // Dos arcos claramente separados, incluso entre cajas cercanas.
+    const curve = Math.max(62, Math.min(96, length * 0.34));
+
+    const cubicPath = (
+        startX: number,
+        startY: number,
+        endX: number,
+        endY: number,
+        side: number,
+    ) => {
+        const localDx = endX - startX;
+        const localDy = endY - startY;
+        const c1x = startX + (localDx * 0.28) + (nx * curve * side);
+        const c1y = startY + (localDy * 0.28) + (ny * curve * side);
+        const c2x = startX + (localDx * 0.72) + (nx * curve * side);
+        const c2y = startY + (localDy * 0.72) + (ny * curve * side);
+
+        const t = 0.5;
+        const mt = 1 - t;
+        const midX =
+            (mt * mt * mt * startX) +
+            (3 * mt * mt * t * c1x) +
+            (3 * mt * t * t * c2x) +
+            (t * t * t * endX);
+        const midY =
+            (mt * mt * mt * startY) +
+            (3 * mt * mt * t * c1y) +
+            (3 * mt * t * t * c2y) +
+            (t * t * t * endY);
+
+        return {
+            path: 'M ' + startX + ' ' + startY +
+                ' C ' + c1x + ' ' + c1y +
+                ', ' + c2x + ' ' + c2y +
+                ', ' + endX + ' ' + endY,
+            mid: {
+                x: (midX / width) * 100,
+                y: (midY / height) * 100,
+            },
+        };
+    };
+
+    const forward = cubicPath(sx, sy, ex, ey, 1);
+    const reverse = cubicPath(ex, ey, sx, sy, -1);
 
     return {
-        forwardPath: 'M ' + ax + ' ' + ay + ' Q ' + c1x + ' ' + c1y + ' ' + bx + ' ' + by,
-        reversePath: 'M ' + bx + ' ' + by + ' Q ' + c2x + ' ' + c2y + ' ' + ax + ' ' + ay,
-        forwardMid: quadraticMid(ax, ay, c1x, c1y, bx, by),
-        reverseMid: quadraticMid(bx, by, c2x, c2y, ax, ay),
+        forwardPath: forward.path,
+        reversePath: reverse.path,
+        forwardMid: forward.mid,
+        reverseMid: reverse.mid,
     };
 }
 
@@ -776,7 +827,10 @@ export const CashChangeModal = ({
                                 fill
                                 priority
                                 sizes="(max-width: 767px) calc(100vw - 4rem), 760px"
-                                className="select-none object-cover"
+                                className={cn(
+                                    'select-none object-cover transition-opacity duration-200',
+                                    boxA && boxB ? 'opacity-[0.42]' : 'opacity-100',
+                                )}
                             />
 
                             {positionedOptions.map(({ option, position }) => {
@@ -791,19 +845,23 @@ export const CashChangeModal = ({
                                         onClick={() => toggleBoxSelection(option)}
                                         aria-label={option.name}
                                         className={cn(
-                                            'absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 border-0 bg-transparent p-0 transition-transform active:scale-95',
-                                            selected ? 'opacity-100' : 'opacity-90 hover:opacity-100',
+                                            'absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 border-0 bg-transparent p-0 transition-all duration-200 active:scale-95',
+                                            selected
+                                                ? 'scale-110 opacity-100'
+                                                : boxA && boxB
+                                                    ? 'opacity-[0.28]'
+                                                    : 'opacity-90 hover:opacity-100',
                                         )}
                                         style={{ left: position.x + '%', top: position.y + '%' }}
                                     >
                                         <span
                                             className={cn(
-                                                'flex h-8 w-10 items-center justify-center rounded-lg bg-white/90 p-0.5 shadow-md ring-2 transition-all',
+                                                'flex h-8 w-10 items-center justify-center transition-all duration-200',
                                                 isA
-                                                    ? 'ring-[#23a89a] ring-offset-1 ring-offset-white/70'
+                                                    ? 'drop-shadow-[0_0_5px_rgba(35,168,154,0.95)]'
                                                     : isB
-                                                        ? 'ring-rose-400 ring-offset-1 ring-offset-white/70'
-                                                        : 'ring-white/80',
+                                                        ? 'drop-shadow-[0_0_5px_rgba(251,113,133,0.95)]'
+                                                        : 'drop-shadow-sm',
                                             )}
                                         >
                                             {planImage ? (
@@ -812,7 +870,7 @@ export const CashChangeModal = ({
                                                     alt=""
                                                     width={36}
                                                     height={28}
-                                                    className="h-full w-full object-contain drop-shadow-sm"
+                                                    className="h-full w-full object-contain"
                                                 />
                                             ) : (
                                                 <Wallet size={16} className="text-[#36606F]" strokeWidth={2.4} />
@@ -828,7 +886,7 @@ export const CashChangeModal = ({
                             {arrowGeometry && boxA && boxB ? (
                                 <>
                                     <svg
-                                        viewBox="0 0 1000 261"
+                                        viewBox="0 0 890 535"
                                         preserveAspectRatio="none"
                                         className={cn(
                                             'pointer-events-none absolute inset-0 z-10 h-full w-full overflow-visible',
@@ -837,46 +895,60 @@ export const CashChangeModal = ({
                                         aria-hidden
                                     >
                                         <defs>
-                                            <marker id="cash-arrow-forward" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                                                <path d="M0,0 L8,4 L0,8 z" fill="#23a89a" />
+                                            <marker id="cash-arrow-forward" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto">
+                                                <path d="M0,0 L6,3 L0,6 Z" fill="#15998c" />
                                             </marker>
-                                            <marker id="cash-arrow-reverse" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                                                <path d="M0,0 L8,4 L0,8 z" fill="#fb7185" />
+                                            <marker id="cash-arrow-reverse" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto">
+                                                <path d="M0,0 L6,3 L0,6 Z" fill="#e85d75" />
                                             </marker>
                                         </defs>
+
                                         <path
                                             d={arrowGeometry.forwardPath}
                                             fill="none"
-                                            stroke="#23a89a"
-                                            strokeWidth="4"
+                                            stroke="rgba(255,255,255,0.92)"
+                                            strokeWidth="8"
+                                            strokeLinecap="round"
+                                        />
+                                        <path
+                                            d={arrowGeometry.forwardPath}
+                                            fill="none"
+                                            stroke="#15998c"
+                                            strokeWidth="3.5"
                                             strokeLinecap="round"
                                             markerEnd="url(#cash-arrow-forward)"
-                                            className="drop-shadow-sm"
+                                        />
+
+                                        <path
+                                            d={arrowGeometry.reversePath}
+                                            fill="none"
+                                            stroke="rgba(255,255,255,0.92)"
+                                            strokeWidth="8"
+                                            strokeLinecap="round"
                                         />
                                         <path
                                             d={arrowGeometry.reversePath}
                                             fill="none"
-                                            stroke="#fb7185"
-                                            strokeWidth="4"
+                                            stroke="#e85d75"
+                                            strokeWidth="3.5"
                                             strokeLinecap="round"
                                             markerEnd="url(#cash-arrow-reverse)"
-                                            className="drop-shadow-sm"
                                         />
-                                    </svg>
+
 
                                     <button
                                         type="button"
                                         onClick={() => openLegEditor('step1')}
                                         aria-label={totalStep1 > 0.005 ? 'Editar primer movimiento' : 'Añadir primer movimiento'}
                                         className={cn(
-                                            'absolute z-30 -translate-x-1/2 -translate-y-1/2 border-2 border-white bg-[#23a89a] font-black text-white shadow-lg transition-all active:scale-95',
+                                            'absolute z-30 -translate-x-1/2 -translate-y-1/2 border-[1.5px] border-white bg-[#15998c] font-black text-white shadow-lg transition-all active:scale-95',
                                             totalStep1 > 0.005
-                                                ? 'h-8 min-w-[58px] rounded-full px-2 text-[10px] tabular-nums'
-                                                : 'flex h-10 w-10 items-center justify-center rounded-full',
+                                                ? 'h-7 min-w-[54px] rounded-full px-2 text-[9px] tabular-nums'
+                                                : 'flex h-8 w-8 items-center justify-center rounded-full',
                                         )}
                                         style={{ left: arrowGeometry.forwardMid.x + '%', top: arrowGeometry.forwardMid.y + '%' }}
                                     >
-                                        {totalStep1 > 0.005 ? formatExchangeAmount(totalStep1) : <Plus size={19} strokeWidth={3} />}
+                                        {totalStep1 > 0.005 ? formatExchangeAmount(totalStep1) : <Plus size={16} strokeWidth={3} />}
                                     </button>
 
                                     <button
@@ -884,14 +956,14 @@ export const CashChangeModal = ({
                                         onClick={() => openLegEditor('step2')}
                                         aria-label={totalStep2 > 0.005 ? 'Editar segundo movimiento' : 'Añadir segundo movimiento'}
                                         className={cn(
-                                            'absolute z-30 -translate-x-1/2 -translate-y-1/2 border-2 border-white bg-rose-400 font-black text-white shadow-lg transition-all active:scale-95',
+                                            'absolute z-30 -translate-x-1/2 -translate-y-1/2 border-[1.5px] border-white bg-[#e85d75] font-black text-white shadow-lg transition-all active:scale-95',
                                             totalStep2 > 0.005
-                                                ? 'h-8 min-w-[58px] rounded-full px-2 text-[10px] tabular-nums'
-                                                : 'flex h-10 w-10 items-center justify-center rounded-full',
+                                                ? 'h-7 min-w-[54px] rounded-full px-2 text-[9px] tabular-nums'
+                                                : 'flex h-8 w-8 items-center justify-center rounded-full',
                                         )}
                                         style={{ left: arrowGeometry.reverseMid.x + '%', top: arrowGeometry.reverseMid.y + '%' }}
                                     >
-                                        {totalStep2 > 0.005 ? formatExchangeAmount(totalStep2) : <Plus size={19} strokeWidth={3} />}
+                                        {totalStep2 > 0.005 ? formatExchangeAmount(totalStep2) : <Plus size={16} strokeWidth={3} />}
                                     </button>
                                 </>
                             ) : null}
