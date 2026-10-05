@@ -16,13 +16,6 @@ const GROUP_LABELS: Record<SearchResult['type'], string> = {
   employee: 'Plantilla',
   invoice: 'Albaranes',
 };
-
-type PanelPosition = {
-  top: number;
-  left: number;
-  width: number;
-};
-
 export function GlobalSearch({
   identity,
   onOpenChange,
@@ -39,7 +32,6 @@ export function GlobalSearch({
   const [query, setQuery] = useState('');
   const [remote, setRemote] = useState<{ query: string; results: SearchResult[]; failed: boolean } | null>(null);
   const [showWaiting, setShowWaiting] = useState(false);
-  const [panelPosition, setPanelPosition] = useState<PanelPosition | null>(null);
 
   const setOpen = useCallback((next: boolean) => {
     setOpenState(next);
@@ -55,35 +47,13 @@ export function GlobalSearch({
     .slice(0, 10), [local, remoteCurrent]);
   const groups = Array.from(new Set(results.map((row) => row.type)));
 
-  const updatePanelPosition = useCallback(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const width = Math.min(Math.max(rect.width, 280), viewportWidth - 16);
-    const left = Math.max(8, Math.min(rect.left, viewportWidth - width - 8));
-    setPanelPosition({ top: rect.bottom + 4, left, width });
-  }, []);
-
   const closeExplicitly = useCallback(() => {
     setOpen(false);
     setQuery('');
     setRemote(null);
     setShowWaiting(false);
-    setPanelPosition(null);
     inputRef.current?.blur();
   }, [setOpen]);
-
-  useEffect(() => {
-    if (!open) return;
-    updatePanelPosition();
-    window.addEventListener('resize', updatePanelPosition);
-    window.addEventListener('scroll', updatePanelPosition, true);
-    return () => {
-      window.removeEventListener('resize', updatePanelPosition);
-      window.removeEventListener('scroll', updatePanelPosition, true);
-    };
-  }, [open, updatePanelPosition]);
 
   useEffect(() => {
     if (!open) return;
@@ -160,7 +130,7 @@ export function GlobalSearch({
     if (!navigateInsideSandbox(result.href)) router.push(result.href);
   }
 
-  const showPanel = Boolean(open && trimmed.length > 0 && panelPosition);
+  const showPanel = Boolean(open && trimmed.length > 0);
 
   return (
     <div
@@ -169,11 +139,16 @@ export function GlobalSearch({
       data-open={open ? 'true' : undefined}
       className="relative flex min-h-12 min-w-0 flex-1 items-center px-1"
     >
+      <div className="relative w-full min-w-0">
       <div
         data-element="pill"
-        className="flex h-[18px] min-w-0 w-full items-center gap-1 rounded-full border px-1.5 text-white/60"
+        className={
+          showPanel
+            ? "relative z-[131] flex h-[18px] min-w-0 w-full items-center gap-1 rounded-t-[10px] rounded-b-none border border-b-0 px-1.5 text-white/60"
+            : "flex h-[18px] min-w-0 w-full items-center gap-1 rounded-full border px-1.5 text-white/60"
+        }
       >
-        <Search aria-hidden size={10} strokeWidth={1.8} className="shrink-0" />
+        <Search aria-hidden size={8} strokeWidth={1.8} className="shrink-0" />
         <div className="flex h-full min-w-0 flex-1 items-center overflow-hidden">
           <input
             ref={inputRef}
@@ -215,9 +190,9 @@ export function GlobalSearch({
             style={{
               fontSize: '16px',
               lineHeight: 1,
-              transform: 'scale(0.68)',
+              transform: 'scale(0.56)',
               transformOrigin: 'left center',
-              width: '147%',
+              width: '179%',
             }}
           />
         </div>
@@ -236,8 +211,7 @@ export function GlobalSearch({
       {showPanel ? (
         <div
           data-element="results"
-          className="fixed z-[130] max-h-[min(55dvh,360px)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-white/15 bg-[#102b4f]/95 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl"
-          style={panelPosition ?? undefined}
+          className="absolute left-0 right-0 top-full z-[130] max-h-[min(55dvh,360px)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-b-2xl rounded-t-none border border-t-0 border-white/15 bg-[#102b4f]/95 p-2 pt-1 shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl"
         >
           {results.length === 0 && !waiting && !remoteCurrent?.failed ? (
             <p className="px-2 py-4 text-center text-[11px] text-white/50">Sin resultados.</p>
@@ -282,6 +256,7 @@ export function GlobalSearch({
           ) : null}
         </div>
       ) : null}
+      </div>
     </div>
   );
 }

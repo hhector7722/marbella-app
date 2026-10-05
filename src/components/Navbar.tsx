@@ -76,7 +76,7 @@ export default function Navbar() {
             <div className="flex shrink-0 items-center -space-x-2">
                 {canSeeCamera ? <button type="button" data-element="chrome" aria-label="Abrir cámaras" title="Cámara" onClick={() => router.push('/camaras')} className="relative grid shrink-0 place-items-center border-0 bg-transparent p-0 transition-transform active:scale-95">
                     <span data-element="live-camera-icon" className="relative inline-flex size-[18px] shrink-0 items-center justify-center">
-                        <Image src="/icons/live-camera.png" alt="" width={18} height={18} className="block size-[18px] shrink-0 object-contain" />
+                        <Image src="/icons/live-camera.png" alt="" width={29} height={29} className="block size-[29px] max-w-none shrink-0 object-contain" />
                         <span className="pointer-events-none absolute inset-0 grid place-items-center">
                             <CameraOnlineDot className="h-[5px] w-[5px] ring-1 ring-white/90 shadow-[0_0_3px_rgba(34,197,94,0.9)]" />
                         </span>
