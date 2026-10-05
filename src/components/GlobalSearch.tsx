@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronRight, Search } from 'lucide-react';
 import Image from 'next/image';
@@ -20,7 +20,9 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
   const pathname = usePathname();
   const requestSerial = useRef(0);
   const invoiceRequestSerial = useRef(0);
+  const triggerPillRef = useRef<HTMLSpanElement>(null);
   const [open, setOpenState] = useState(false);
+  const [searchAnchor, setSearchAnchor] = useState<{ left: number; top: number; width: number } | null>(null);
   const [query, setQuery] = useState('');
   const [remote, setRemote] = useState<{ query: string; results: SearchResult[]; failed: boolean } | null>(null);
   const [invoiceRemote, setInvoiceRemote] = useState<{ query: string; results: SearchResult[]; failed: boolean } | null>(null);
@@ -37,6 +39,12 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
     .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title, 'es')).slice(0, 10), [local, remoteCurrent]);
   const invoiceResults = invoiceCurrent?.results ?? [];
   const groups = Array.from(new Set(results.map((row) => row.type)));
+  const searchAnchorStyle = searchAnchor ? {
+    '--buscador-global-ancho-activo': `${searchAnchor.width}px`,
+    '--buscador-global-inicio-activo': `${searchAnchor.left}px`,
+    '--buscador-global-arriba-activo': `${searchAnchor.top}px`,
+    '--buscador-global-traslacion-activa': '0px',
+  } as CSSProperties : undefined;
   const invoiceRelated = trimmed.length >= 2 && Boolean(
     local.some((row) => row.id === 'invoices')
     || remoteCurrent?.results.some((row) => row.type === 'ingredient' || row.type === 'supplier')
@@ -99,13 +107,15 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
 
   return <>
     <button type="button" data-component="GlobalSearchTrigger" aria-label="Abrir búsqueda global" onClick={() => {
+      const bounds = triggerPillRef.current?.getBoundingClientRect();
+      if (bounds) setSearchAnchor({ left: bounds.left, top: bounds.top, width: bounds.width });
       setOpen(true);
       void sendUsageEvent({ eventType: 'action', path: pathname, label: 'Búsqueda global abierta', metadata: { action: 'global_search', resultType: 'open' } });
     }} className="relative flex min-h-12 min-w-0 w-full items-center px-0 text-left">
-      <span data-element="pill" className="flex min-w-0 w-full items-center gap-2 rounded-full border px-3 text-white/60"><Search aria-hidden size={14} className="shrink-0" /><span className="truncate text-xs">Buscar…</span></span>
+      <span ref={triggerPillRef} data-element="pill" className="flex min-w-0 w-full items-center gap-2 rounded-full border px-3 text-white/60"><Search aria-hidden size={14} className="shrink-0" /><span className="truncate text-xs">Buscar…</span></span>
     </button>
     <Modal open={open} onClose={closeExplicitly} title="Búsqueda global" variant="work" scheme="dark" hideHeader
-      hideCloseButton instance="global-search" usageId="global-search" usageLabel="Búsqueda global">
+      hideCloseButton instance="global-search" usageId="global-search" usageLabel="Búsqueda global" wrapperStyle={searchAnchorStyle}>
       <div data-element="surface" data-has-results={trimmed.length > 0 ? 'true' : undefined} className="min-w-0" onKeyDown={(event) => {
         if (event.key === 'Enter' && event.target instanceof HTMLInputElement && !event.nativeEvent.isComposing && results[0]) openResult(results[0]);
       }}>

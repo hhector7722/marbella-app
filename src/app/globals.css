@@ -6205,13 +6205,13 @@ html:has(.dashboard-mosaic-switcher) {
 }
 [data-component='Modal'][data-instance='global-search'] [data-element='frame'] {
   position: absolute;
-  top: calc(env(safe-area-inset-top, 0px) + var(--espacio-1));
-  left: 50%;
-  width: var(--buscador-global-ancho);
+  top: var(--buscador-global-arriba-activo, calc(env(safe-area-inset-top, 0px) + var(--espacio-1)));
+  left: var(--buscador-global-inicio-activo, 50%);
+  width: var(--buscador-global-ancho-activo, var(--buscador-global-ancho));
   max-width: calc(100vw - (var(--espacio-2) * 2));
   height: auto;
   max-height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--espacio-4));
-  transform: translateX(-50%);
+  transform: translateX(var(--buscador-global-traslacion-activa, -50%));
   align-items: stretch;
   justify-content: flex-start;
 }
