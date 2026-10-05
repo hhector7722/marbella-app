@@ -110,6 +110,18 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+    useEffect(() => {
+        const isActive = () => document.querySelector('.dashboard-mosaic-switcher')?.getAttribute('data-active-view') === 'master';
+        const openClosing = () => { if (isActive()) setIsClosingModalOpen(true); };
+        const url = new URL(window.location.href);
+        if (isActive() && url.searchParams.get('open') === 'cierre') {
+            openClosing();
+            url.searchParams.delete('open');
+            window.history.replaceState(window.history.state, '', url);
+        }
+        window.addEventListener('marbella:open-closing', openClosing);
+        return () => window.removeEventListener('marbella:open-closing', openClosing);
+    }, []);
     const [auditBox, setAuditBox] = useState<HomeTreasuryBox | null>(null);
     const [cashCountTotal, setCashCountTotal] = useState(0);
     const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);

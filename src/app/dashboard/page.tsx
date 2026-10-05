@@ -79,7 +79,7 @@ export default async function AdminDashboardPage() {
     viewAsProfile,
   });
 
-  if (effective.role !== 'manager') {
+  if (effective.role !== 'manager' && effective.role !== 'admin') {
     redirect('/staff/dashboard');
   }
 

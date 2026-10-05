@@ -117,7 +117,7 @@ export default function DashboardSwitcher({
     // margen inicial de cada ruta se pinta de forma estática durante la hidratación.
     const [canAnimateTrack, setCanAnimateTrack] = useState(false);
 
-    const isManager = resolvedRole === 'manager';
+    const isManager = resolvedRole === 'manager' || resolvedRole === 'admin';
     viewRef.current = view;
     isTripleRef.current = isTriple;
 
@@ -364,6 +364,7 @@ export default function DashboardSwitcher({
     return (
         <div
             ref={containerRef}
+            data-active-view={view}
             className={cn(
                 'dashboard-mosaic-switcher relative w-full max-w-full min-h-full overflow-x-clip overflow-y-auto overscroll-x-none',
                 isManager ? 'touch-pan-y' : ''

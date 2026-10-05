@@ -394,6 +394,25 @@ export default function StaffDashboardView({
     const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
     const searchParams = useSearchParams();
 
+    useEffect(() => {
+        const isActive = () => document.querySelector('.dashboard-mosaic-switcher')?.getAttribute('data-active-view') === 'staff';
+        const openClosing = () => { if (isActive()) setIsClosingModalOpen(true); };
+        const openOrders = () => { if (isActive()) setIsSupplierModalOpen(true); };
+        const url = new URL(window.location.href);
+        const requested = url.searchParams.get('open');
+        if (isActive() && (requested === 'cierre' || requested === 'pedidos')) {
+            url.searchParams.delete('open');
+            window.history.replaceState(window.history.state, '', url);
+            window.setTimeout(requested === 'cierre' ? openClosing : openOrders, 0);
+        }
+        window.addEventListener('marbella:open-closing', openClosing);
+        window.addEventListener('marbella:open-orders', openOrders);
+        return () => {
+            window.removeEventListener('marbella:open-closing', openClosing);
+            window.removeEventListener('marbella:open-orders', openOrders);
+        };
+    }, []);
+
     // NUEVOS ESTADOS PARA CAJA INICIAL ("COMPRA")
     const [operationalBox, setOperationalBox] = useState<CashBoxRow | null>(null);
     const [allBoxes, setAllBoxes] = useState<CashBoxRow[]>([]);

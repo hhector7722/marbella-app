@@ -220,6 +220,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 
 | Término | Significado |
 |---|---|
+| **Búsqueda global** | Acceso desde la cabecera para encontrar funciones autorizadas y datos operativos y abrir su destino concreto. |
 | **Capacidad** | Dominio funcional del producto, con actores, reglas y pantallas propias. Unidad de organización de `1-producto/`. |
 | **Recorrido** | Secuencia de acciones que una persona real completa para lograr un objetivo, normalmente cruzando varias capacidades. |
 | **Superficie** | Medio por el que el producto se manifiesta: aplicación instalada, navegador, documento impreso, pantalla de cocina. |

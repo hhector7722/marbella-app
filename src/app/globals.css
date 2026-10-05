@@ -6102,7 +6102,7 @@ html:has(.dashboard-mosaic-switcher) {
 .marbella-fixed-topbar {
   --app-navbar-scale: calc(var(--app-navbar-height) / var(--tactil-minimo));
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   background-color: transparent;
   transition:
     transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
@@ -6164,9 +6164,48 @@ html:has(.dashboard-mosaic-switcher) {
   max-height: 28px;
 }
 .marbella-fixed-topbar [data-element='greeting-block'] {
-  container-type: inline-size;
   min-width: 0;
-  flex: 1 1 auto;
+  max-width: calc(var(--espacio-8) * 2);
+  flex: 0 1 auto;
+}
+.marbella-fixed-topbar [data-element='live-camera'],
+.marbella-fixed-topbar [data-element='live-camera'] img {
+  width: var(--tactil-minimo);
+  height: var(--tactil-minimo);
+}
+.marbella-fixed-topbar [data-component='GlobalSearchTrigger'] [data-element='pill'] {
+  height: calc(var(--espacio-8) + var(--espacio-1));
+  border-color: color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
+  background-color: color-mix(in srgb, var(--color-envolvente) 72%, var(--color-envolvente-alto));
+}
+.marbella-fixed-topbar [data-component='GlobalSearchTrigger']:focus-visible [data-element='pill'] {
+  outline: 2px solid var(--color-texto-invertido);
+  outline-offset: 2px;
+}
+/* La búsqueda usa el backdrop base del Modal, pero no añade una tarjeta oscura
+   detrás del campo: la capa se percibe por el desenfoque de la pantalla. */
+[data-component='Modal'][data-instance='global-search'] [data-element='container'] {
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+[data-component='Modal'][data-instance='global-search'] [data-element='header'] {
+  border-bottom: 0;
+  background-color: transparent;
+}
+[data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input {
+  border-color: color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
+  background-color: color-mix(in srgb, var(--color-envolvente) 72%, var(--color-envolvente-alto));
+  color: var(--color-texto-invertido);
+}
+[data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] [data-element='icon'],
+[data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input::placeholder {
+  color: color-mix(in srgb, var(--color-texto-invertido) 60%, transparent);
+}
+[data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input:focus {
+  outline-color: color-mix(in srgb, var(--color-texto-invertido) 40%, transparent);
+  border-color: color-mix(in srgb, var(--color-texto-invertido) 48%, transparent);
 }
 .marbella-fixed-topbar [data-element='greeting'] {
   display: block;
@@ -6183,6 +6222,11 @@ html:has(.dashboard-mosaic-switcher) {
 }
 .marbella-fixed-topbar [data-element='greeting-block'] [data-element='greeting'] {
   font-size: clamp(10px, 13cqi, 11px);
+}
+@media (max-width: 375px) {
+  .marbella-fixed-topbar [data-element='greeting-block'] {
+    max-width: calc(var(--espacio-8) + var(--espacio-4));
+  }
 }
 
 html[data-modal-open="true"] .marbella-fixed-topbar,

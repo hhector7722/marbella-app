@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-04
 
+- **La cabecera incorpora búsqueda global.** Permite abrir funciones autorizadas y encontrar ingredientes, recetas, proveedores, plantilla, albaranes y reservas con acceso directo a la entidad. El recorte sigue al usuario efectivo de «Ver como». LIVE conserva su acción y visibilidad, con el PNG facilitado como icono compacto.
+
 - **Revisar/Mapear resuelve los avisos de identidad y presentación que el
   usuario acaba de corregir.** La propuesta sucesora K5 conserva los avisos
   de importes, descuentos y totales que siguen sin cuadrar; un mapeo por sí

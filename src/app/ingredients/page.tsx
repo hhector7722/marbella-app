@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Package, Plus } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
@@ -18,6 +19,8 @@ import { CatalogGrid, CatalogTileUnificado } from '@/components/catalog/CatalogT
 import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip'
 
 export default function IngredientsPage() {
+  const searchParams = useSearchParams()
+  const targetId = searchParams.get('id')
   const supabase = createClient()
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,6 +28,7 @@ export default function IngredientsPage() {
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
   const [showSupplierPopup, setShowSupplierPopup] = useState(false)
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null)
+  const [dismissedTargetId, setDismissedTargetId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([])
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -34,6 +38,11 @@ export default function IngredientsPage() {
     void fetchIngredients()
     void fetchSuppliers()
   }, [])
+
+  const deepLinkedIngredient = !loading && targetId !== dismissedTargetId
+    ? ingredients.find((ingredient) => ingredient.id === targetId) ?? null
+    : null
+  const activeIngredient = editingIngredient ?? deepLinkedIngredient
 
   async function fetchIngredients() {
     setLoading(true)
@@ -158,11 +167,11 @@ export default function IngredientsPage() {
         )}
       </DashboardDetailLayout>
 
-      {editingIngredient ? (
+      {activeIngredient ? (
         <IngredientCanonicalEditModal
-          key={editingIngredient.id}
-          ingredient={editingIngredient}
-          onClose={() => setEditingIngredient(null)}
+          key={activeIngredient.id}
+          ingredient={activeIngredient}
+          onClose={() => { setDismissedTargetId(targetId); setEditingIngredient(null) }}
           onSaved={() => void fetchIngredients()}
         />
       ) : null}
