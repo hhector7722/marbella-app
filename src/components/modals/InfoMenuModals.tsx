@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { Modal } from '@/components/ui/modal';
+import { RainChangesManualContent } from '@/components/modals/RainChangesManualContent';
 import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
@@ -31,7 +32,10 @@ const INFO_MENU = [
     { title: 'Manuales', imageSrc: '/icons/guide.png', kind: 'manuales' as const },
 ];
 
-type ManualMediaViewerState = { type: 'video' | 'image'; src: string; title: string } | null;
+type ManualMediaViewerState =
+    | { type: 'video' | 'image'; src: string; title: string }
+    | { type: 'rain'; title: string }
+    | null;
 
 function cleanPhone(phone: string) {
     return phone.replace(/[^\d+]/g, '');
@@ -127,7 +131,7 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
             case 'cambios-lluvia':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cambiosLluviaImage, title: 'Cambios por Lluvia' });
+                setManualMediaViewer({ type: 'rain', title: 'Cambios por Lluvia' });
                 break;
             case 'cuadro-electrico':
                 setIsTpvManualModalOpen(false);
@@ -288,10 +292,14 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                 instance={`${usagePrefix}-manual-media`}
                 parentInstance={`${usagePrefix}-manuales`}
                 title={manualMediaViewer?.title ?? ''}
-                wrapperClassName="max-w-3xl"
+                scheme={manualMediaViewer?.type === 'rain' ? 'dark' : 'work'}
+                wrapperClassName={manualMediaViewer?.type === 'rain' ? 'max-w-5xl' : 'max-w-3xl'}
             >
-                <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50">
-                    {manualMediaViewer?.type === 'video' ? (
+                {manualMediaViewer?.type === 'rain' ? (
+                    <RainChangesManualContent />
+                ) : (
+                    <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50">
+                        {manualMediaViewer?.type === 'video' ? (
                         <video
                             src={manualMediaViewer.src}
                             controls
@@ -310,8 +318,9 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                                 className="h-auto max-h-[75vh] w-auto max-w-full object-contain"
                             />
                         </div>
-                    ) : null}
-                </div>
+                        ) : null}
+                    </div>
+                )}
             </Modal>
         </>
     );
