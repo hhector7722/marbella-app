@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import type { ReactNode } from 'react';
 
 type ManualCrop = {
     left: number;
@@ -32,7 +33,7 @@ const CROPS = {
     },
     chairBad: {
         left: 0.06,
-        top: 0.49,
+        top: 0.50,
         width: 0.42,
         height: 0.21,
         aspectRatio: '3 / 2',
@@ -101,7 +102,7 @@ function StepCard({
 }: {
     number: number;
     title: string;
-    children: React.ReactNode;
+    children: ReactNode;
 }) {
     return (
         <section className="overflow-hidden rounded-2xl bg-white p-4 text-zinc-900 shadow-sm ring-1 ring-black/5 sm:p-5">
