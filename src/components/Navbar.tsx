@@ -109,14 +109,11 @@ export default function Navbar() {
           className="flex shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
         >
           <Image
-            src="/icons/live-camera.png"
+            src={cameraExternalOnline ? '/icons/live-camera-green.webp' : '/icons/live-camera.png'}
             alt=""
             width={48}
             height={48}
-            className="block shrink-0 object-contain transition-[filter] duration-200"
-            style={cameraExternalOnline
-              ? { filter: 'hue-rotate(102deg) saturate(1.35) brightness(1.04)' }
-              : undefined}
+            className="block shrink-0 object-contain"
           />
         </button> : null}
         <ReservationsBell /><NotificationsBell />
