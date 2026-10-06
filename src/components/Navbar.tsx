@@ -15,7 +15,9 @@ import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
-const CAMERA_ACCESS_EMAILS = new Set(['fogotorrat@gmail.com', 'hhector7722@gmail.com']);
+const HECTOR_CAMERA_EMAIL = 'hhector7722@gmail.com';
+const FOGO_CAMERA_EMAIL = 'fogotorrat@gmail.com';
+const CAMERA_ACCESS_EMAILS = new Set([FOGO_CAMERA_EMAIL, HECTOR_CAMERA_EMAIL]);
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -48,9 +50,12 @@ export default function Navbar() {
   const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
   const effectiveCameraEmail = (identity?.effectiveEmail ?? userData?.email)?.trim().toLowerCase();
   const canSeeCamera = Boolean(sessionReady && effectiveCameraEmail && CAMERA_ACCESS_EMAILS.has(effectiveCameraEmail));
+  const isHectorCameraUser = effectiveCameraEmail === HECTOR_CAMERA_EMAIL;
+  const liveCameraIsGreen = isHectorCameraUser && cameraExternalOnline;
 
   useEffect(() => {
-    if (!canSeeCamera) {
+    // Fogo siempre ve el icono rojo. Solo Héctor consulta el estado de terceros.
+    if (!canSeeCamera || !isHectorCameraUser) {
       setCameraExternalOnline(false);
       return;
     }
@@ -82,7 +87,7 @@ export default function Navbar() {
       window.clearInterval(timer);
       window.removeEventListener('focus', refreshOnFocus);
     };
-  }, [canSeeCamera]);
+  }, [canSeeCamera, isHectorCameraUser]);
 
   if (pathname === '/login' || isFullscreenCartaPath(pathname) || pathname.startsWith('/reporte') || pathname.startsWith('/alta') || pathname.startsWith('/playground') || pathname.startsWith('/design-system')) return null;
   const displayName = isMaster && identity ? identity.effectiveName : (userData?.name ?? '');
@@ -102,14 +107,14 @@ export default function Navbar() {
         {canSeeCamera ? <button
           type="button"
           data-element="live-camera"
-          data-online={cameraExternalOnline ? 'true' : 'false'}
-          aria-label={cameraExternalOnline ? 'Abrir cámaras. Hay otra persona conectada' : 'Abrir cámaras'}
-          title={cameraExternalOnline ? 'Cámara · conexión externa activa' : 'Cámara'}
+          data-online={liveCameraIsGreen ? 'true' : 'false'}
+          aria-label={liveCameraIsGreen ? 'Abrir cámaras. Hay otra persona conectada' : 'Abrir cámaras'}
+          title={liveCameraIsGreen ? 'Cámara · conexión externa activa' : 'Cámara'}
           onClick={() => router.push('/camaras')}
           className="flex shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
         >
           <Image
-            src={cameraExternalOnline ? '/icons/live-camera-green.webp' : '/icons/live-camera.png'}
+            src={liveCameraIsGreen ? '/icons/live-camera-green.webp' : '/icons/live-camera.png'}
             alt=""
             width={48}
             height={48}
