@@ -276,13 +276,15 @@ export function IngredientCanonicalEditModal({
       <Modal
         open
         onClose={onClose}
-        title={ingredient.name}
-        variant="compact"
+        title="Editar ingrediente"
+        subtitle={ingredient.name}
+        variant="amplify"
         layer={layer}
         parentInstance={parentInstance}
         instance="ingredient-canonical-price"
         usageId="ingredient-canonical-price"
-        usageLabel="Editar precio de ingrediente"
+        usageLabel="Editar ingrediente"
+        scrollContent
         footer={
           <div className="flex w-full min-w-0 justify-end gap-2">
             <Button
@@ -308,166 +310,181 @@ export function IngredientCanonicalEditModal({
           </div>
         }
       >
-      <div className="space-y-5">
-        <section aria-labelledby="ingredient-current-price" className="space-y-1">
-          <h2 id="ingredient-current-price" className="text-xs font-bold text-zinc-500">
-            Precio actual
-          </h2>
-          <p className="font-mono text-2xl font-black tabular-nums text-zinc-950">
-            {formatPrice(ingredient.current_price)} €/{unit}
-          </p>
-        </section>
+        <div className="grid gap-5 md:grid-cols-[12rem_minmax(0,1fr)]">
+          <aside className="space-y-3">
+            <section className="overflow-hidden rounded-ds-superficie border border-ds-borde bg-zinc-50">
+              <div className="flex aspect-square items-center justify-center overflow-hidden">
+                {displayImageSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- URL de Storage o blob local
+                  <img src={displayImageSrc} alt="" className="h-full w-full object-contain" />
+                ) : (
+                  <Camera className="h-12 w-12 text-zinc-200" aria-hidden />
+                )}
+              </div>
+            </section>
 
-        <Field
-          instance="ingredient-canonical-unit"
-          label="Unidad del precio"
-          htmlFor="ingredient-canonical-unit"
-        >
-          <select
-            id="ingredient-canonical-unit"
-            value={newUnit}
-            onChange={(event) => setNewUnit(event.target.value)}
-            className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
-          >
-            <option value="kg">kg</option>
-            <option value="g">g</option>
-            <option value="l">l</option>
-            <option value="ml">ml</option>
-            <option value="cl">cl</option>
-            <option value="ud">ud</option>
-          </select>
-        </Field>
-
-        <Field
-          instance="ingredient-canonical-recipe-unit"
-          label="Unidad en recetas"
-          htmlFor="ingredient-canonical-recipe-unit"
-        >
-          <select
-            id="ingredient-canonical-recipe-unit"
-            value={newRecipeUnit}
-            onChange={(event) => setNewRecipeUnit(event.target.value)}
-            disabled={configLoading}
-            className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
-          >
-            <option value="g">g</option>
-            <option value="kg">kg</option>
-            <option value="ml">ml</option>
-            <option value="cl">cl</option>
-            <option value="l">l</option>
-            <option value="ud">ud</option>
-          </select>
-        </Field>
-
-        <Field
-          instance="ingredient-canonical-density"
-          label="Densidad (opcional)"
-          htmlFor="ingredient-canonical-density"
-          error={!validDensity ? 'Introduce gramos por ml, por ejemplo 1,40.' : undefined}
-        >
-          <div className="space-y-1.5">
-            <div className="flex min-h-12 items-center gap-2">
-              <span className="shrink-0 text-sm font-semibold text-zinc-600">1 ml =</span>
-              <input
-                id="ingredient-canonical-density"
-                inputMode="decimal"
-                autoComplete="off"
-                value={densityInput}
-                disabled={configLoading}
-                onChange={(event) => setDensityInput(event.target.value)}
-                className="min-w-0 flex-1 font-mono tabular-nums"
-              />
-              <span className="shrink-0 text-sm font-bold text-zinc-600">g</span>
-            </div>
-            <p className="text-[11px] font-medium leading-snug text-zinc-500">
-              Solo hace falta si compras por peso y usas volumen en recetas, o al revés.
-              Es específica de este ingrediente; sin este dato no se inventa ninguna conversión g ↔ ml.
-            </p>
-          </div>
-        </Field>
-
-        <Field
-          instance="ingredient-canonical-new-price"
-          label="Nuevo precio"
-          htmlFor="ingredient-canonical-new-price"
-          error={newPrice !== '' && !validPrice ? 'Introduce un precio mayor que cero.' : undefined}
-        >
-          <div className="flex min-h-12 items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              instance="ingredient-canonical-photo"
+              disabled={saving}
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full"
+            >
+              {baselineImageUrl || selectedFile ? 'Cambiar imagen' : 'Añadir imagen'}
+            </Button>
             <input
-              id="ingredient-canonical-new-price"
-              inputMode="decimal"
-              autoComplete="off"
-              value={newPrice}
-              onChange={(event) => setNewPrice(event.target.value)}
-              aria-invalid={newPrice !== '' && !validPrice ? true : undefined}
-              className="min-w-0 flex-1 font-mono tabular-nums"
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={pickImage}
             />
-            <span className="shrink-0 text-sm font-bold text-zinc-600" aria-hidden>
-              €/{unit}
-            </span>
-          </div>
-        </Field>
 
-        <div className="rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2">
-          <p className="text-xs font-bold leading-snug text-zinc-800">
-            Los albaranes {ingredient.price_locked ? 'no pueden' : 'pueden'} actualizar este precio
-          </p>
+            <section className="rounded-ds-superficie border border-ds-borde bg-zinc-50/80 p-3">
+              <p className="text-[11px] font-bold text-zinc-500">Precio actual</p>
+              <p className="mt-1 font-mono text-xl font-black tabular-nums text-zinc-950">
+                {formatPrice(ingredient.current_price)} €/{unit}
+              </p>
+              <p className="mt-2 text-[11px] font-semibold leading-snug text-zinc-500">
+                Los albaranes {ingredient.price_locked ? 'no pueden' : 'pueden'} actualizar este precio.
+              </p>
+            </section>
+          </aside>
+
+          <div className="space-y-4">
+            <section className="overflow-hidden rounded-ds-superficie border border-ds-borde bg-ds-superficie">
+              <div className="border-b border-ds-borde bg-zinc-50/80 px-4 py-3">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-zinc-700">
+                  Compra
+                </h3>
+              </div>
+              <div className="grid gap-4 p-4 sm:grid-cols-2">
+                <Field
+                  instance="ingredient-canonical-unit"
+                  label="Unidad del precio"
+                  htmlFor="ingredient-canonical-unit"
+                >
+                  <select
+                    id="ingredient-canonical-unit"
+                    value={newUnit}
+                    onChange={(event) => setNewUnit(event.target.value)}
+                  >
+                    <option value="kg">kg</option>
+                    <option value="g">g</option>
+                    <option value="l">l</option>
+                    <option value="ml">ml</option>
+                    <option value="cl">cl</option>
+                    <option value="ud">ud</option>
+                  </select>
+                </Field>
+
+                <Field
+                  instance="ingredient-canonical-new-price"
+                  label="Precio"
+                  htmlFor="ingredient-canonical-new-price"
+                  error={newPrice !== '' && !validPrice ? 'Introduce un precio mayor que cero.' : undefined}
+                >
+                  <div className="flex min-h-12 items-center gap-2">
+                    <input
+                      id="ingredient-canonical-new-price"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      value={newPrice}
+                      onChange={(event) => setNewPrice(event.target.value)}
+                      aria-invalid={newPrice !== '' && !validPrice ? true : undefined}
+                      className="min-w-0 flex-1 font-mono tabular-nums"
+                    />
+                    <span className="shrink-0 text-sm font-bold text-zinc-500" aria-hidden>
+                      €/{unit}
+                    </span>
+                  </div>
+                </Field>
+              </div>
+            </section>
+
+            <section className="overflow-hidden rounded-ds-superficie border border-ds-borde bg-ds-superficie">
+              <div className="border-b border-ds-borde bg-zinc-50/80 px-4 py-3">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-zinc-700">
+                  Uso en recetas
+                </h3>
+              </div>
+              <div className="grid gap-4 p-4 sm:grid-cols-2">
+                <Field
+                  instance="ingredient-canonical-recipe-unit"
+                  label="Unidad en recetas"
+                  htmlFor="ingredient-canonical-recipe-unit"
+                >
+                  <select
+                    id="ingredient-canonical-recipe-unit"
+                    value={newRecipeUnit}
+                    onChange={(event) => setNewRecipeUnit(event.target.value)}
+                    disabled={configLoading}
+                  >
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="cl">cl</option>
+                    <option value="l">l</option>
+                    <option value="ud">ud</option>
+                  </select>
+                </Field>
+
+                <Field
+                  instance="ingredient-canonical-density"
+                  label="Densidad"
+                  htmlFor="ingredient-canonical-density"
+                  error={!validDensity ? 'Introduce gramos por ml, por ejemplo 1,40.' : undefined}
+                  hint="Solo hace falta para convertir entre peso y volumen. Sin este dato no se inventa ninguna conversión g ↔ ml."
+                >
+                  <div className="flex min-h-12 items-center gap-2">
+                    <span className="shrink-0 text-sm font-semibold text-zinc-500">1 ml =</span>
+                    <input
+                      id="ingredient-canonical-density"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      value={densityInput}
+                      disabled={configLoading}
+                      onChange={(event) => setDensityInput(event.target.value)}
+                      className="min-w-0 flex-1 font-mono tabular-nums"
+                    />
+                    <span className="shrink-0 text-sm font-bold text-zinc-500">g</span>
+                  </div>
+                </Field>
+              </div>
+            </section>
+
+            <section className="overflow-hidden rounded-ds-superficie border border-ds-borde bg-ds-superficie">
+              <div className="border-b border-ds-borde bg-zinc-50/80 px-4 py-3">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-zinc-700">
+                  Catálogo
+                </h3>
+              </div>
+              <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-zinc-900">
+                    {isArchived ? 'Ingrediente archivado' : 'Ingrediente activo'}
+                  </p>
+                  <p className="mt-1 text-xs font-medium leading-snug text-zinc-500">
+                    {isArchived
+                      ? 'Está fuera de catálogos, recetas, pedidos y mapeos, pero conserva todo su histórico.'
+                      : 'Archivar lo retira de catálogos, recetas, pedidos y mapeos sin borrar su histórico.'}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant={isArchived ? 'secondary' : 'destructive'}
+                  instance="ingredient-canonical-archive"
+                  disabled={archiving}
+                  onClick={() => setConfirmArchive(true)}
+                  className="shrink-0"
+                >
+                  {isArchived ? 'Reactivar' : 'Archivar'}
+                </Button>
+              </div>
+            </section>
+          </div>
         </div>
-
-        <section aria-labelledby="ingredient-image" className="space-y-2">
-          <h2 id="ingredient-image" className="text-xs font-bold text-zinc-500">
-            Imagen
-          </h2>
-          <div
-            className={cn(
-              'flex aspect-[4/5] h-40 w-auto items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50',
-            )}
-          >
-            {displayImageSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element -- URL de Storage o blob local
-              <img src={displayImageSrc} alt="" className="max-h-full max-w-full object-contain" />
-            ) : (
-              <Camera className="h-10 w-10 text-zinc-200" aria-hidden />
-            )}
-          </div>
-          <Button
-            type="button"
-            variant="secondary"
-            instance="ingredient-canonical-photo"
-            disabled={saving}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {baselineImageUrl || selectedFile ? 'Cambiar imagen' : 'Añadir imagen'}
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={pickImage}
-          />
-        </section>
-
-        <section aria-labelledby="ingredient-archive" className="space-y-2 border-t border-zinc-100 pt-4">
-          <h2 id="ingredient-archive" className="text-xs font-bold text-zinc-500">
-            Catálogo
-          </h2>
-          <p className="text-xs font-medium leading-snug text-zinc-500">
-            {isArchived
-              ? 'Este ingrediente está archivado: no se ofrece en catálogos, recetas, pedidos ni mapeos, pero su histórico se conserva.'
-              : 'Archivar lo retira de catálogos, recetas, pedidos y mapeos sin borrar su histórico.'}
-          </p>
-          <Button
-            type="button"
-            variant={isArchived ? 'secondary' : 'destructive'}
-            instance="ingredient-canonical-archive"
-            disabled={archiving}
-            onClick={() => setConfirmArchive(true)}
-          >
-            {isArchived ? 'Reactivar' : 'Archivar'}
-          </Button>
-        </section>
-      </div>
       </Modal>
 
       <ConfirmModal
