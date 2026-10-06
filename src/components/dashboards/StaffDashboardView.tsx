@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -398,12 +398,16 @@ export default function StaffDashboardView({
         const isActive = () => document.querySelector('.dashboard-mosaic-switcher')?.getAttribute('data-active-view') === 'staff';
         const openClosing = () => { if (isActive()) setIsClosingModalOpen(true); };
         const openOrders = () => { if (isActive()) setIsSupplierModalOpen(true); };
+        const openCashChange = () => { if (isActive()) setIsCashChangeModalOpen(true); };
         const url = new URL(window.location.href);
         const requested = url.searchParams.get('open');
-        if (isActive() && (requested === 'cierre' || requested === 'pedidos')) {
+        if (isActive() && (requested === 'cierre' || requested === 'pedidos' || requested === 'cambio')) {
             url.searchParams.delete('open');
             window.history.replaceState(window.history.state, '', url);
-            window.setTimeout(requested === 'cierre' ? openClosing : openOrders, 0);
+            window.setTimeout(
+                requested === 'cierre' ? openClosing : requested === 'pedidos' ? openOrders : openCashChange,
+                0,
+            );
         }
         window.addEventListener('marbella:open-closing', openClosing);
         window.addEventListener('marbella:open-orders', openOrders);
@@ -639,7 +643,7 @@ export default function StaffDashboardView({
         return list;
     };
 
-    const openPurchaseMultiSourceModal = async () => {
+    const openPurchaseMultiSourceModal = useCallback(async () => {
         const op = allBoxes.find((b) => b.type === 'operational');
         const changeBoxes = allBoxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         const boxesToLoad = [op, ...changeBoxes].filter((b): b is CashBoxRow => Boolean(b));
@@ -653,9 +657,9 @@ export default function StaffDashboardView({
         }
         setPurchaseInventoriesByBoxId(inv);
         setShowPurchaseMultiSourceModal(true);
-    };
+    }, [allBoxes, supabase]);
 
-    const handleOpenCompra = () => {
+    const handleOpenCompra = useCallback(() => {
         trackStaffShortcut('Compra');
         const cashBoxes = allBoxes.filter(
             (b) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv',
@@ -665,7 +669,17 @@ export default function StaffDashboardView({
             return;
         }
         void openPurchaseMultiSourceModal();
-    };
+    }, [allBoxes, openPurchaseMultiSourceModal, trackStaffShortcut]);
+
+    const requestedPurchase = searchParams.get('open') === 'compra';
+    useEffect(() => {
+        if (!requestedPurchase || allBoxes.length === 0) return;
+        const timer = window.setTimeout(() => {
+            handleOpenCompra();
+            router.replace('/staff/dashboard');
+        }, 0);
+        return () => window.clearTimeout(timer);
+    }, [allBoxes.length, handleOpenCompra, requestedPurchase, router]);
 
     const handlePurchaseMultiSourceSubmit = async (payload: PurchaseMultiSourcePayload) => {
         try {
@@ -889,11 +903,11 @@ export default function StaffDashboardView({
     };
 
     /** Misma UX que nóminas: visor PDF nativo del navegador en nueva pestaña (`NominasModal.openNomina`). */
-    const openStaffPdf = (url: string) => {
+    const openStaffPdf = useCallback((url: string) => {
         window.open(url, '_blank', 'noopener,noreferrer');
-    };
+    }, []);
 
-    const handleStaffManualItem = (id: StaffManualMenuId) => {
+    const handleStaffManualItem = useCallback((id: StaffManualMenuId) => {
         switch (id) {
             case 'check-list':
                 openStaffPdf(STAFF_MANUAL_ASSETS.checkListPdf);
@@ -929,7 +943,20 @@ export default function StaffDashboardView({
             default:
                 break;
         }
-    };
+    }, [openStaffPdf]);
+
+    const requestedManual = searchParams.get('manual');
+    useEffect(() => {
+        if (!requestedManual || !STAFF_MANUAL_MENU.some((item) => item.id === requestedManual)) return;
+        const timer = window.setTimeout(() => {
+            setActiveMenu(null);
+            setInfoSubMenu(null);
+            setIsManualsModalOpen(true);
+            handleStaffManualItem(requestedManual as StaffManualMenuId);
+            router.replace('/staff/dashboard');
+        }, 0);
+        return () => window.clearTimeout(timer);
+    }, [handleStaffManualItem, requestedManual, router]);
 
     return (
         <div className="home-mosaic-page">
