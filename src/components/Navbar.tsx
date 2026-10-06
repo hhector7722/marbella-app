@@ -25,6 +25,7 @@ export default function Navbar() {
   const { identity, isMaster, sessionReady, openViewAsPicker } = useMasterViewAs();
   const [userData, setUserData] = useState<{ id: string; name: string; role: string; searchRole: string; email: string; authEmail: string; is_supervisor?: boolean } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [cameraExternalOnline, setCameraExternalOnline] = useState(false);
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -44,10 +45,46 @@ export default function Navbar() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => { fetchUserData(); });
     return () => subscription.unsubscribe();
   }, [supabase]);
-  if (pathname === '/login' || isFullscreenCartaPath(pathname) || pathname.startsWith('/reporte') || pathname.startsWith('/alta') || pathname.startsWith('/playground') || pathname.startsWith('/design-system')) return null;
   const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
   const effectiveCameraEmail = (identity?.effectiveEmail ?? userData?.email)?.trim().toLowerCase();
   const canSeeCamera = Boolean(sessionReady && effectiveCameraEmail && CAMERA_ACCESS_EMAILS.has(effectiveCameraEmail));
+
+  useEffect(() => {
+    if (!canSeeCamera) {
+      setCameraExternalOnline(false);
+      return;
+    }
+
+    let active = true;
+    const loadCameraStatus = async () => {
+      try {
+        const response = await fetch('/api/cameras/status', { cache: 'no-store' });
+        if (!response.ok) {
+          if (active) setCameraExternalOnline(false);
+          return;
+        }
+        const data = await response.json() as { externalOnline?: boolean; checkedAt?: string | null };
+        const checkedAt = data.checkedAt ? new Date(data.checkedAt).getTime() : 0;
+        const fresh = checkedAt > 0 && Date.now() - checkedAt < 20_000;
+        if (active) setCameraExternalOnline(Boolean(data.externalOnline && fresh));
+      } catch {
+        if (active) setCameraExternalOnline(false);
+      }
+    };
+
+    void loadCameraStatus();
+    const timer = window.setInterval(() => void loadCameraStatus(), 5_000);
+    const refreshOnFocus = () => void loadCameraStatus();
+    window.addEventListener('focus', refreshOnFocus);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshOnFocus);
+    };
+  }, [canSeeCamera]);
+
+  if (pathname === '/login' || isFullscreenCartaPath(pathname) || pathname.startsWith('/reporte') || pathname.startsWith('/alta') || pathname.startsWith('/playground') || pathname.startsWith('/design-system')) return null;
   const displayName = isMaster && identity ? identity.effectiveName : (userData?.name ?? '');
   const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard' || pathname === '/master/dashboard';
   const homePath = isMaster && identity?.isViewingAs ? getHomeHrefForUser(identity.effectiveEmail, identity.effectiveRole) : getHomeHrefForUser(userData?.email, userData?.role);
@@ -62,7 +99,26 @@ export default function Navbar() {
       </div>
       {sessionReady && searchIdentity.userId ? <div data-element="global-search-host" className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"><div className="pointer-events-auto"><GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} /></div></div> : null}
       <div className="flex shrink-0 items-center -space-x-3">
-        {canSeeCamera ? <button type="button" data-element="live-camera" aria-label="Abrir cámaras" title="Cámara" onClick={() => router.push('/camaras')} className="flex shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"><Image src="/icons/live-camera.png" alt="" width={48} height={48} className="block shrink-0 object-contain" /></button> : null}
+        {canSeeCamera ? <button
+          type="button"
+          data-element="live-camera"
+          data-online={cameraExternalOnline ? 'true' : 'false'}
+          aria-label={cameraExternalOnline ? 'Abrir cámaras. Hay otra persona conectada' : 'Abrir cámaras'}
+          title={cameraExternalOnline ? 'Cámara · conexión externa activa' : 'Cámara'}
+          onClick={() => router.push('/camaras')}
+          className="flex shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
+        >
+          <Image
+            src="/icons/live-camera.png"
+            alt=""
+            width={48}
+            height={48}
+            className="block shrink-0 object-contain transition-[filter] duration-200"
+            style={cameraExternalOnline
+              ? { filter: 'hue-rotate(102deg) saturate(1.35) brightness(1.04)' }
+              : undefined}
+          />
+        </button> : null}
         <ReservationsBell /><NotificationsBell />
       </div>
     </div>
