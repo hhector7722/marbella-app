@@ -42,6 +42,7 @@ import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekS
 import WorkTimer, { StaffElapsedDigits, formatStaffElapsedHms } from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
+import { RainChangesManualContent } from '@/components/modals/RainChangesManualContent';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { StaffClockCameraFovNotice } from '@/components/dashboards/StaffClockCameraFovNotice';
@@ -85,7 +86,10 @@ const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
 
 type WorkStatus = 'idle' | 'working' | 'finished';
 
-type ManualMediaViewerState = { type: 'video' | 'image'; src: string; title: string } | null;
+type ManualMediaViewerState =
+    | { type: 'video' | 'image'; src: string; title: string }
+    | { type: 'rain'; title: string }
+    | null;
 
 type CashBoxRow = Tables<'cash_boxes'>;
 type CashBoxInventoryRow = Tables<'cash_box_inventory'>;
@@ -933,7 +937,7 @@ export default function StaffDashboardView({
             case 'cambios-lluvia':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cambiosLluviaImage, title: 'Cambios por Lluvia' });
+                setManualMediaViewer({ type: 'rain', title: 'Cambios por Lluvia' });
                 break;
             case 'cuadro-electrico':
                 setIsTpvManualModalOpen(false);
@@ -1354,10 +1358,14 @@ export default function StaffDashboardView({
                 instance="staff-manual-media"
                 parentInstance="staff-manuales"
                 title={manualMediaViewer?.title ?? ''}
-                wrapperClassName="max-w-3xl"
+                scheme={manualMediaViewer?.type === 'rain' ? 'dark' : 'work'}
+                wrapperClassName={manualMediaViewer?.type === 'rain' ? 'max-w-5xl' : 'max-w-3xl'}
             >
-                <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50">
-                    {manualMediaViewer?.type === 'video' ? (
+                {manualMediaViewer?.type === 'rain' ? (
+                    <RainChangesManualContent />
+                ) : (
+                    <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50">
+                        {manualMediaViewer?.type === 'video' ? (
                         <video
                             src={manualMediaViewer.src}
                             controls
@@ -1376,8 +1384,9 @@ export default function StaffDashboardView({
                                 className="h-auto max-h-[75vh] w-auto max-w-full object-contain"
                             />
                         </div>
-                    ) : null}
-                </div>
+                        ) : null}
+                    </div>
+                )}
             </Modal>
 
             <Modal
