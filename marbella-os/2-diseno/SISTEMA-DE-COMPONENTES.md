@@ -187,7 +187,7 @@ host (role=radiogroup)
 
 **Contrato**:
 - Identidad: `data-component="PetroleumSegmented"`, `data-instance`, `data-density`.
-- Selected: fondo `color.superficie.inactiva` + `color.texto.fuerte`. Reposo: `color.superficie` + `color.texto`. Hover: superficie inactiva. Sin `color.marca`. En el precio de receta (`recipe-price-location`, `recipe-price-size`) el papel es blanco y esa pareja no se distingue: la opción activa usa `color.texto` y `color.texto.invertido`.
+- Selected: fondo `color.superficie.inactiva` + `color.texto.fuerte`. Reposo: `color.superficie` + `color.texto`. Hover: superficie inactiva. Sin `color.marca`. En el precio de receta (`recipe-price-location`, `recipe-price-size`) hay una excepción visual local: la opción no seleccionada usa texto gris visible y la activa conserva fondo blanco, con contorno, tinta y relieve en el mismo tono que la cabecera de la card (`--recipe-panel-chrome-fill`); nunca usa relleno negro.
 - Radio del host: `espacio.2` (8 px; el shell legacy usaba `rounded-lg`, no `radio.control`).
 - Tipografía de opción: 10 px, peso 500, caja oración.
 - Semántica: selección exclusiva vía `value` / `onChange`. Si el consumidor navega (p. ej. Ventas → sala), lo hace en el callback; el componente no conoce el router.
