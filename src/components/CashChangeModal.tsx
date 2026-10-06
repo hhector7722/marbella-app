@@ -25,11 +25,12 @@ const ALL_DENOMS = [...BILLS, ...COINS];
 type PlanPoint = { x: number; y: number };
 
 const CASH_CHANGE_PLAN_POSITIONS: Record<string, PlanPoint> = {
-    tpv1: { x: 83.0, y: 68.0 },
-    tpv2: { x: 63.7, y: 33.0 },
-    cambio1: { x: 7.0, y: 28.0 },
-    cambio2: { x: 32.0, y: 25.0 },
-    inicial: { x: 31.0, y: 6.5 },
+    // Posiciones calibradas sobre el plano real según la referencia visual.
+    tpv1: { x: 75.6, y: 74.2 },
+    tpv2: { x: 75.0, y: 39.6 },
+    cambio1: { x: 17.0, y: 24.0 },
+    cambio2: { x: 44.6, y: 30.8 },
+    inicial: { x: 42.9, y: 16.9 },
 };
 
 function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITIONS | null {
@@ -107,8 +108,9 @@ function buildPlanArrowGeometry(a: PlanPoint, b: PlanPoint): PlanArrowGeometry {
     const nx = -uy;
     const ny = ux;
 
-    // Evita que las puntas entren debajo de los iconos.
-    const endPadding = Math.min(28, length * 0.18);
+    // Deja la cabeza de la flecha claramente fuera del icono seleccionado.
+    // La punta queda visible incluso entre dos cajas cercanas.
+    const endPadding = Math.min(46, Math.max(34, length * 0.16));
     const sx = ax + (ux * endPadding);
     const sy = ay + (uy * endPadding);
     const ex = bx - (ux * endPadding);
@@ -895,11 +897,39 @@ export const CashChangeModal = ({
                                         aria-hidden
                                     >
                                         <defs>
-                                            <marker id="cash-arrow-forward" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto">
-                                                <path d="M0,0 L6,3 L0,6 Z" fill="#15998c" />
+                                            <marker
+                                                id="cash-arrow-forward"
+                                                markerWidth="12"
+                                                markerHeight="12"
+                                                refX="10.5"
+                                                refY="6"
+                                                orient="auto"
+                                                markerUnits="userSpaceOnUse"
+                                            >
+                                                <path
+                                                    d="M1,1 L11,6 L1,11 Z"
+                                                    fill="#15998c"
+                                                    stroke="white"
+                                                    strokeWidth="1.6"
+                                                    strokeLinejoin="round"
+                                                />
                                             </marker>
-                                            <marker id="cash-arrow-reverse" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto">
-                                                <path d="M0,0 L6,3 L0,6 Z" fill="#e85d75" />
+                                            <marker
+                                                id="cash-arrow-reverse"
+                                                markerWidth="12"
+                                                markerHeight="12"
+                                                refX="10.5"
+                                                refY="6"
+                                                orient="auto"
+                                                markerUnits="userSpaceOnUse"
+                                            >
+                                                <path
+                                                    d="M1,1 L11,6 L1,11 Z"
+                                                    fill="#e85d75"
+                                                    stroke="white"
+                                                    strokeWidth="1.6"
+                                                    strokeLinejoin="round"
+                                                />
                                             </marker>
                                         </defs>
 
@@ -909,6 +939,7 @@ export const CashChangeModal = ({
                                             stroke="rgba(255,255,255,0.92)"
                                             strokeWidth="8"
                                             strokeLinecap="round"
+                                            strokeLinejoin="round"
                                         />
                                         <path
                                             d={arrowGeometry.forwardPath}
@@ -925,6 +956,7 @@ export const CashChangeModal = ({
                                             stroke="rgba(255,255,255,0.92)"
                                             strokeWidth="8"
                                             strokeLinecap="round"
+                                            strokeLinejoin="round"
                                         />
                                         <path
                                             d={arrowGeometry.reversePath}
