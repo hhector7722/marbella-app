@@ -92,8 +92,18 @@ describe('PetroleumSegmented contract', () => {
         );
         assert.match(
             css,
-            /\[data-instance='recipe-price-location'\] \[data-element='option'\]\[aria-checked='true'\][\s\S]*?--color-texto-invertido/,
-            'en el precio de receta la opción activa invierte tinta'
+            /\[data-instance='recipe-price-location'\] \[data-element='option'\]\[aria-checked='true'\][\s\S]*?border-color:\s*var\(--recipe-panel-chrome-fill/,
+            'en el precio de receta la opción activa usa el contorno de la cabecera'
+        );
+        assert.match(
+            css,
+            /\[data-instance='recipe-price-location'\] \[data-element='option'\]\[aria-checked='true'\][\s\S]*?color:\s*var\(--recipe-panel-chrome-fill/,
+            'en el precio de receta la opción activa usa la tinta de la cabecera'
+        );
+        assert.doesNotMatch(
+            css,
+            /\[data-instance='recipe-price-location'\] \[data-element='option'\]\[aria-checked='true'\][\s\S]*?background-color:\s*var\(--color-texto\)/,
+            'en el precio de receta la opción activa no vuelve al relleno negro'
         );
     });
 
