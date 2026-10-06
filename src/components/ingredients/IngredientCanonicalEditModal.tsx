@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Field } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/modal'
-import { cn } from '@/lib/utils'
 import {
   getIngredientCanonicalConfigAction,
   setIngredientArchivedAction,
