@@ -7,7 +7,8 @@ import { canAccessCameras } from '@/lib/cameras/access';
 
 export const dynamic = 'force-dynamic';
 const CAMERA_ID = 'reolink-duo-3';
-const APP_VIEWER_STALE_MS = 20_000;
+// Los temporizadores de Safari/PWA pueden pausarse durante bastante más de 20 s aunque la vista siga abierta.
+const APP_VIEWER_STALE_MS = 5 * 60_000;
 
 export async function GET() {
   const supabase = await createClient();
