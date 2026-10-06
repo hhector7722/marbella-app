@@ -6233,7 +6233,8 @@ html:has(.dashboard-mosaic-switcher) {
   border: 1px solid color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
   border-radius: var(--radio-superficie);
   background-color: var(--buscador-global-fondo);
-  box-shadow: var(--chrome-glass-shadow);
+  background-clip: padding-box;
+  box-shadow: none;
 }
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'],
 [data-component='Modal'][data-instance='global-search'] [data-component='SearchField'] input {
