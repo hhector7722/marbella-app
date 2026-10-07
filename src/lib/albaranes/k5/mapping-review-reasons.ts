@@ -1,5 +1,12 @@
 type MappingReviewInput = {
   previousReasons: string[]
+  /**
+   * Avisos que pertenecen al documento completo (no a una línea concreta). Un
+   * aviso documental no se resuelve editando la línea, así que no debe bloquear
+   * su confirmación: se conserva en `warnings` y se muestra como aviso del
+   * albarán. Ver `document-review.ts`.
+   */
+  documentReasons?: string[]
   hasResolvedName: boolean
   hasMappedSnapshot: boolean
   humanLineOverride: boolean
@@ -12,7 +19,9 @@ type MappingReviewInput = {
 /** Resolve only facts explicitly supplied by the reviewer; keep economic and
  * document reconciliation failures until their own evidence is corrected. */
 export function resolveMappingReviewReasons(input: MappingReviewInput): string[] {
+  const documentReasons = new Set(input.documentReasons ?? [])
   return input.previousReasons.filter((reason) => {
+    if (documentReasons.has(reason)) return false
     if ([
       'mapping_missing',
       'mapping_requires_human_review',

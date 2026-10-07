@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Eye, ChevronLeft, ChevronRight, Wallet, Plus, Check, ArrowRight, ArrowRightLeft } from 'lucide-react';
 import Image from 'next/image';
 import { cn, firstGivenName } from '@/lib/utils';
@@ -290,11 +290,34 @@ export const CashChangeModal = ({
     const [planZoom, setPlanZoom] = useState(1);
     const [canViewExchangeHistory, setCanViewExchangeHistory] = useState(false);
 
+    const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+
     const clampPlanZoom = (value: number) =>
         Math.min(2.4, Math.max(1, Math.round(value * 100) / 100));
 
     const changePlanZoom = (delta: number) => {
         setPlanZoom((current) => clampPlanZoom(current + delta));
+    };
+
+    const touchDistance = (touches: React.TouchList): number =>
+        Math.hypot(
+            touches[0].clientX - touches[1].clientX,
+            touches[0].clientY - touches[1].clientY,
+        );
+
+    const handlePlanTouchStart = (event: React.TouchEvent) => {
+        if (event.touches.length !== 2) return;
+        pinchRef.current = { distance: touchDistance(event.touches), zoom: planZoom };
+    };
+
+    const handlePlanTouchMove = (event: React.TouchEvent) => {
+        if (event.touches.length !== 2 || !pinchRef.current || pinchRef.current.distance <= 0) return;
+        const ratio = touchDistance(event.touches) / pinchRef.current.distance;
+        setPlanZoom(clampPlanZoom(pinchRef.current.zoom * ratio));
+    };
+
+    const handlePlanTouchEnd = (event: React.TouchEvent) => {
+        if (event.touches.length < 2) pinchRef.current = null;
     };
 
     useEffect(() => {
@@ -797,6 +820,7 @@ export const CashChangeModal = ({
                 usageId="cash-change-select"
                 usageLabel="Cambio de caja"
                 title="Cambio"
+                scheme="dark"
                 headerTrailing={canViewExchangeHistory ? (
                     <button
                         type="button"
@@ -805,7 +829,7 @@ export const CashChangeModal = ({
                             setZoomDenom(null);
                             setShowExchangeHistoryModal(true);
                         }}
-                        className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 shadow-none outline-none transition-opacity hover:opacity-80"
+                        className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/70 shadow-none outline-none transition-opacity hover:opacity-100"
                         aria-label="Histórico de intercambios"
                     >
                         <Eye size={20} strokeWidth={2.4} className="stroke-current fill-none" />
@@ -875,41 +899,16 @@ export const CashChangeModal = ({
                     </div>
 
                     <div
-                        className="relative aspect-[1298/663] w-full overflow-hidden bg-zinc-100"
+                        className="relative aspect-[1298/663] w-full touch-none overflow-hidden bg-zinc-100"
                         onWheel={(event) => {
                             event.preventDefault();
                             changePlanZoom(event.deltaY < 0 ? 0.1 : -0.1);
                         }}
+                        onTouchStart={handlePlanTouchStart}
+                        onTouchMove={handlePlanTouchMove}
+                        onTouchEnd={handlePlanTouchEnd}
+                        onTouchCancel={handlePlanTouchEnd}
                     >
-                        <div className="absolute right-2 top-2 z-50 flex items-center gap-1 rounded-full border border-white/70 bg-[#0b213c]/85 p-1 shadow-lg backdrop-blur-sm">
-                            <button
-                                type="button"
-                                onClick={() => changePlanZoom(-0.15)}
-                                disabled={planZoom <= 1}
-                                className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-35"
-                                aria-label="Alejar plano"
-                            >
-                                −
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setPlanZoom(1)}
-                                className="flex h-7 min-w-[48px] items-center justify-center rounded-full px-2 text-[9px] font-black tabular-nums text-white transition hover:bg-white/15"
-                                aria-label="Restablecer zoom"
-                            >
-                                {Math.round(planZoom * 100)}%
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => changePlanZoom(0.15)}
-                                disabled={planZoom >= 2.4}
-                                className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-35"
-                                aria-label="Acercar plano"
-                            >
-                                +
-                            </button>
-                        </div>
-
                         <div
                             className="absolute inset-0 origin-center transition-transform duration-200 ease-out"
                             style={{ transform: `scale(${planZoom})` }}
@@ -919,7 +918,7 @@ export const CashChangeModal = ({
                                 alt="Plano de cajas"
                                 fill
                                 priority
-                                sizes="(max-width: 767px) calc(100vw - 4rem), 760px"
+                                sizes="(max-width: 1200px) calc(100vw - 2rem), 1152px"
                                 className={cn(
                                     'select-none object-cover transition-opacity duration-200',
                                     boxA && boxB ? 'opacity-[0.42]' : 'opacity-100',

@@ -24,6 +24,19 @@ test('un mapeo humano válido resuelve las dudas de identidad y presentación Mi
   ])
 })
 
+test('un aviso del documento no bloquea la confirmación de la línea', () => {
+  assert.deepEqual(resolveMappingReviewReasons({
+    previousReasons: ['presentacion_sin_validar', 'lineas_subtotal_no_reconcilian'],
+    documentReasons: ['lineas_subtotal_no_reconcilian'],
+    hasResolvedName: true,
+    hasMappedSnapshot: true,
+    humanLineOverride: false,
+    quantity: 1,
+    unitPrice: 12,
+    lineTotal: 12,
+  }), [])
+})
+
 test('una presentación elegida por el usuario deja la línea sin ese bloqueo', () => {
   assert.deepEqual(resolveMappingReviewReasons({
     previousReasons: ['presentacion_sin_validar'],

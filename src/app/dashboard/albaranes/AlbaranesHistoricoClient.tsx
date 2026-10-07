@@ -134,9 +134,9 @@ function isImagePath(filePath: string | null) {
 function inlineReviewLabel(row: K5BatchReviewRow | null): string | null {
   if (!row) return null
   if (row.confirmed || row.disposition === 'confirmed') return 'Confirmado'
+  if (row.disposition === 'ready') return 'Confirmar'
   if (isDocumentOnlyReview(row)) return 'Documento'
   if (row.disposition === 'needs_mapping') return 'Mapear'
-  if (row.disposition === 'ready') return 'Confirmar'
   if (row.disposition === 'order_review') return 'Revisar pedido'
   if (row.disposition === 'needs_review' || row.disposition === 'unavailable') return 'Revisar'
   if (row.disposition === 'excluded') return 'Excluida'
@@ -1759,8 +1759,8 @@ export default function AlbaranesHistoricoClient({
                   {inlineDocumentReviewReasons.length > 0 ? (
                     <Notice instance="albaran-inline-document-review" variant="warning" title="Revisión del documento">
                       {inlineDocumentReviewReasons.length === 1
-                        ? 'Hay una comprobación pendiente del albarán completo. Revisa el original o reprocesa con Mistral; las líneas sin otra incidencia no requieren edición individual.'
-                        : 'Hay comprobaciones pendientes del albarán completo. Revisa el original o reprocesa con Mistral; las líneas sin otra incidencia no requieren edición individual.'}
+                        ? 'Hay una comprobación pendiente del albarán completo. No bloquea las líneas que por lo demás están correctas: puedes confirmarlas sin editar cada producto. Si el aviso persiste, revisa el original o reprocesa con Mistral.'
+                        : 'Hay comprobaciones pendientes del albarán completo. No bloquean las líneas que por lo demás están correctas: puedes confirmarlas sin editar cada producto. Si los avisos persisten, revisa el original o reprocesa con Mistral.'}
                     </Notice>
                   ) : null}
 
@@ -1812,13 +1812,20 @@ export default function AlbaranesHistoricoClient({
                             const reviewLabel = inlineReviewLabel(reviewRow)
                             const backgroundPhase = backgroundLineActions[l.id] ?? null
                             const needsRepair = lineNeedsStockRepair(l)
+                            const reviewLabelDocumentOnly = Boolean(
+                              reviewRow && isDocumentOnlyReview(reviewRow)
+                            )
+                            // Etiquetas pasivas (sin acción): ya confirmada,
+                            // excluida o bloqueada solo por el documento. Una
+                            // línea lista se confirma aunque el documento tenga
+                            // avisos, así que sigue siendo accionable.
+                            const reviewLabelPassive =
+                              Boolean(reviewRow?.confirmed) ||
+                              reviewRow?.disposition === 'confirmed' ||
+                              reviewRow?.disposition === 'excluded' ||
+                              (reviewLabelDocumentOnly && reviewRow?.disposition !== 'ready')
                             const reviewLabelTextVisible =
-                              Boolean(reviewRow) &&
-                              (Boolean(reviewRow?.confirmed) ||
-                                reviewRow?.disposition === 'confirmed' ||
-                                reviewRow?.disposition === 'excluded' ||
-                                Boolean(reviewRow && isDocumentOnlyReview(reviewRow)) ||
-                                isManager)
+                              Boolean(reviewLabel) && (reviewLabelPassive || isManager)
                             // Lápiz de edición: aparece cuando la línea ya está
                             // resuelta (tick de stock) o cuando tiene la cruz roja
                             // sola, sin etiqueta de estado detrás.
@@ -1864,7 +1871,7 @@ export default function AlbaranesHistoricoClient({
                                         {backgroundPhase === 'review' ? 'Revisando…' : 'Confirmando…'}
                                       </span>
                                     ) : reviewLabel ? (
-                                      reviewRow?.confirmed || reviewRow?.disposition === 'confirmed' || reviewRow?.disposition === 'excluded' || Boolean(reviewRow && isDocumentOnlyReview(reviewRow)) ? (
+                                      reviewLabelPassive ? (
                                         <span className={cn('ml-1 text-[9px] font-black uppercase tracking-wide', inlineReviewTone(reviewRow))}>
                                           {reviewLabel}
                                         </span>

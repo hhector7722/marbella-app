@@ -101,6 +101,7 @@ async function interpretationProposalIdForLine(
 type K5MappingRevision = {
   id: string
   status: 'ready_for_review' | 'needs_review'
+  reviewReasons: string[]
 }
 
 async function supersedeK5ProposalWithMapping(params: {
@@ -131,7 +132,7 @@ async function supersedeK5ProposalWithMapping(params: {
 
   const { data: successor, error: successorError } = await params.supabase
     .from('purchase_interpretation_proposals')
-    .select('id,mapping_version_id,status')
+    .select('id,mapping_version_id,status,review_reasons')
     .eq('supersedes_proposal_id', currentProposalId)
     .limit(1)
     .maybeSingle()
@@ -144,7 +145,13 @@ async function supersedeK5ProposalWithMapping(params: {
     if (successorStatus !== 'ready_for_review' && successorStatus !== 'needs_review') {
       throw new Error('La revisión K5 existente no tiene un estado confirmable de mapeo.')
     }
-    return { id: text(successor.id), status: successorStatus }
+    return {
+      id: text(successor.id),
+      status: successorStatus,
+      reviewReasons: Array.isArray(successor.review_reasons)
+        ? (successor.review_reasons as unknown[]).map(text).filter(Boolean)
+        : [],
+    }
   }
 
   const { data: ingredient, error: ingredientError } = await params.supabase
@@ -189,6 +196,9 @@ async function supersedeK5ProposalWithMapping(params: {
   const previousReasons: string[] = Array.isArray(current.review_reasons)
     ? (current.review_reasons as unknown[]).map(text).filter(Boolean)
     : []
+  const documentReasons: string[] = Array.isArray(current.warnings)
+    ? (current.warnings as unknown[]).map(text).filter(Boolean)
+    : []
   const sourceLine = canonicalLineSchema.safeParse(current.observed)
   const sourceCheck = sourceLine.success ? validateObservedLine(sourceLine.data) : null
   const verifiedEmbeddedKgMath = Boolean(
@@ -213,6 +223,7 @@ async function supersedeK5ProposalWithMapping(params: {
   // no se modifica y K4 seguirá revalidando antes de cualquier efecto económico.
   const semanticReasons = resolveMappingReviewReasons({
     previousReasons,
+    documentReasons,
     hasResolvedName,
     hasMappedSnapshot: Boolean(snapshot),
     humanLineOverride,
@@ -259,7 +270,7 @@ async function supersedeK5ProposalWithMapping(params: {
 
   const { data: existing, error: existingError } = await params.supabase
     .from('purchase_interpretation_proposals')
-    .select('id,status')
+    .select('id,status,review_reasons')
     .eq('input_fingerprint', fingerprint)
     .maybeSingle()
   if (existingError) throw new Error('No se pudo comprobar la revisión K5 del mapeo.')
@@ -268,7 +279,13 @@ async function supersedeK5ProposalWithMapping(params: {
     if (existingStatus !== 'ready_for_review' && existingStatus !== 'needs_review') {
       throw new Error('La revisión K5 idempotente tiene un estado inesperado.')
     }
-    return { id: text(existing.id), status: existingStatus }
+    return {
+      id: text(existing.id),
+      status: existingStatus,
+      reviewReasons: Array.isArray(existing.review_reasons)
+        ? (existing.review_reasons as unknown[]).map(text).filter(Boolean)
+        : [],
+    }
   }
 
   const { data: inserted, error: insertError } = await params.supabase
@@ -324,7 +341,7 @@ async function supersedeK5ProposalWithMapping(params: {
     .select('id,status')
     .maybeSingle()
   if (insertError || !inserted?.id) throw new Error('No se pudo versionar la propuesta K5 con el mapeo revisado.')
-  return { id: text(inserted.id), status }
+  return { id: text(inserted.id), status, reviewReasons }
 }
 
 /**
@@ -339,7 +356,15 @@ export async function saveReceiptMappingProposalAction(params: {
   lineBillingUnit: string
   lineContentQty: number
   lineContentUnit: string
-}): Promise<{ success: true; mappingVersionId: string } | { success: false; message: string }> {
+}): Promise<
+  | {
+      success: true
+      mappingVersionId: string
+      status?: 'ready_for_review' | 'needs_review'
+      reviewReasons?: string[]
+    }
+  | { success: false; message: string }
+> {
   const gate = await requirePurchaseManager()
   if (!gate.ok) return { success: false, message: gate.message }
 
@@ -567,7 +592,13 @@ export async function saveReceiptMappingProposalAction(params: {
   if (updateError) return { success: false, message: 'La propuesta se guardó, pero no se pudo vincular a la línea.' }
 
   revalidatePath('/dashboard/albaranes')
-  return { success: true, mappingVersionId }
+  return {
+    success: true,
+    mappingVersionId,
+    ...(revisedProposal
+      ? { status: revisedProposal.status, reviewReasons: revisedProposal.reviewReasons }
+      : {}),
+  }
 }
 
 export async function listReceiptOrderAllocationOptionsAction(params: {

@@ -36,6 +36,7 @@ import {
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
+import { explainReviewReason } from '@/lib/albaranes/k5/review-reason-labels'
 import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal'
 type LineDimensionalDraft = {
   lineBillingUnit: string
@@ -636,6 +637,20 @@ export function LineMappingModal({
 
       if (!res.success) {
         toast.error(res.message)
+        return
+      }
+
+      // El documento puede tener avisos que no bloquean la línea. Pero si la
+      // línea aún conserva bloqueos propios, no se previsualiza: se explica el
+      // motivo real en lugar del mensaje genérico de K4.
+      if (res.status === 'needs_review') {
+        const reasons = (res.reviewReasons ?? []).filter(Boolean)
+        toast.error(
+          reasons.length
+            ? reasons.map(explainReviewReason).join(' ')
+            : 'La línea todavía tiene una incidencia de datos pendiente.'
+        )
+        await onSuccess()
         return
       }
 
