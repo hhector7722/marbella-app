@@ -107,7 +107,7 @@ Recibir mercancía, saber lo que cuesta y detectar cuándo sube.
 
 - **Actores**: responsable de operación, persona en turno con responsabilidad de recepción.
 - **Superficies**: escáner de albarán, revisión de excepciones, histórico de albaranes, precios de albarán, pedido a proveedor, proveedores.
-- **Reglas propias**: el albarán es el documento de referencia; el artículo del proveedor se aprende una vez y se recuerda; una línea segura puede recibirse automáticamente a través de K4 y las demás se muestran como excepciones; el precio de un ingrediente se puede bloquear frente a actualizaciones; una subida relevante se avisa; un pedido a proveedor ya tramitado ese día se avisa sin bloquear; una línea resuelta o sin coincidencia se corrige con el editor de línea.
+- **Reglas propias**: el albarán es el documento de referencia; el artículo del proveedor se aprende una vez y se recuerda; una línea segura puede recibirse automáticamente a través de K4 y las demás se muestran como excepciones; el precio de un ingrediente se puede bloquear frente a actualizaciones; una subida relevante se avisa; un pedido a proveedor ya tramitado ese día se avisa sin bloquear; una línea resuelta o sin coincidencia se revisa con la revisión de compra.
 - **Estado**: consolidada.
 - **Gobernada por**: [dominio de precios y compras](../3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md).
 - **Especificación**: pendiente.

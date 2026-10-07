@@ -1889,11 +1889,11 @@ export default function AlbaranesHistoricoClient({
                                         type="button"
                                         onClick={(event) => {
                                           event.stopPropagation()
-                                          openLineForEdit(l)
+                                          openLineMappingModal(l)
                                         }}
                                         className="relative ml-1 inline-flex h-8 w-8 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 shadow-none outline-none transition-colors hover:bg-zinc-100 hover:text-zinc-700 active:opacity-70 before:absolute before:inset-0 before:-m-2 before:min-h-12 before:min-w-12 before:content-['']"
-                                        aria-label="Editar línea"
-                                        title="Editar línea"
+                                        aria-label="Revisar compra"
+                                        title="Revisar compra"
                                       >
                                         <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
                                       </button>
