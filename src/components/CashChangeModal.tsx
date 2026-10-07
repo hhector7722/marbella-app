@@ -25,12 +25,12 @@ const ALL_DENOMS = [...BILLS, ...COINS];
 type PlanPoint = { x: number; y: number };
 
 const CASH_CHANGE_PLAN_POSITIONS: Record<string, PlanPoint> = {
-    // Posiciones calibradas sobre el plano real según la referencia visual.
-    tpv1: { x: 75.6, y: 74.2 },
-    tpv2: { x: 75.0, y: 39.6 },
-    cambio1: { x: 17.0, y: 24.0 },
-    cambio2: { x: 44.6, y: 30.8 },
-    inicial: { x: 42.9, y: 16.9 },
+    // Posiciones tomadas de la maqueta aprobada sobre el nuevo plano realista.
+    tpv1: { x: 67.4, y: 76.8 },
+    tpv2: { x: 57.4, y: 38.4 },
+    cambio1: { x: 10.8, y: 26.2 },
+    cambio2: { x: 31.8, y: 16.2 },
+    inicial: { x: 25.8, y: 16.2 },
 };
 
 function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITIONS | null {
@@ -795,8 +795,8 @@ export const CashChangeModal = ({
                 scrollContent={false}
             >
                 <div className="relative flex min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border-[3px] border-white bg-[#0b213c] shadow-2xl">
-                    <div className="grid min-h-[72px] shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2 bg-[#0b213c] px-3 py-2 sm:min-h-[92px] sm:gap-4 sm:px-5">
-                        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+                    <div className="relative min-h-[92px] shrink-0 bg-[#0b213c] px-3 py-2 sm:min-h-[108px] sm:px-5">
+                        <div className="absolute inset-y-0 left-3 flex items-center gap-1.5 sm:left-5 sm:gap-2">
                             <span className="text-[11px] font-medium uppercase tracking-wide text-white sm:text-sm">Cambio</span>
                             {canViewExchangeHistory ? (
                                 <button
@@ -814,62 +814,46 @@ export const CashChangeModal = ({
                             ) : null}
                         </div>
 
-                        <div className="flex min-w-0 items-center justify-center gap-1.5 sm:gap-3">
-                            <div className="flex min-w-0 flex-col items-center gap-1">
-                                <div className="flex h-10 w-11 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm sm:h-12 sm:w-14">
-                                    {boxA && cashChangePlanImage(boxA) ? (
-                                        <Image
-                                            src={cashChangePlanImage(boxA)!}
-                                            alt=""
-                                            width={48}
-                                            height={40}
-                                            className="h-full w-full object-contain"
-                                        />
-                                    ) : (
-                                        <span className="h-full w-full rounded-lg bg-zinc-50" />
-                                    )}
-                                </div>
-                                <span className="max-w-16 truncate text-[6px] font-black uppercase tracking-tight text-white/70 sm:max-w-24 sm:text-[8px]">
-                                    {boxA ? cashChangePlanLabel(boxA) : 'Origen'}
-                                </span>
-                            </div>
-
-                            <div className="flex min-w-[74px] flex-col items-center gap-0.5 sm:min-w-[118px] sm:gap-1">
-                                <div className="flex items-center gap-1 text-[#43d3c2]">
-                                    <ArrowRight className="h-3.5 w-6 sm:h-4 sm:w-8" strokeWidth={2.8} />
-                                    <span className="text-[7px] font-black tabular-nums sm:text-[10px]">
-                                        {totalStep1 > 0.005 ? formatExchangeAmount(totalStep1) : '—'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1 text-[#ff6f86]">
-                                    <ArrowRight className="h-3.5 w-6 rotate-180 sm:h-4 sm:w-8" strokeWidth={2.8} />
-                                    <span className="text-[7px] font-black tabular-nums sm:text-[10px]">
-                                        {totalStep2 > 0.005 ? formatExchangeAmount(totalStep2) : '—'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="flex min-w-0 flex-col items-center gap-1">
-                                <div className="flex h-10 w-11 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm sm:h-12 sm:w-14">
-                                    {boxB && cashChangePlanImage(boxB) ? (
-                                        <Image
-                                            src={cashChangePlanImage(boxB)!}
-                                            alt=""
-                                            width={48}
-                                            height={40}
-                                            className="h-full w-full object-contain"
-                                        />
-                                    ) : (
-                                        <span className="h-full w-full rounded-lg bg-zinc-50" />
-                                    )}
-                                </div>
-                                <span className="max-w-16 truncate text-[6px] font-black uppercase tracking-tight text-white/70 sm:max-w-24 sm:text-[8px]">
-                                    {boxB ? cashChangePlanLabel(boxB) : 'Destino'}
-                                </span>
+                        <div className="absolute left-[39%] top-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm sm:h-16 sm:w-16 sm:rounded-2xl sm:p-2">
+                                {boxA && cashChangePlanImage(boxA) ? (
+                                    <Image
+                                        src={cashChangePlanImage(boxA)!}
+                                        alt=""
+                                        width={58}
+                                        height={52}
+                                        className="h-full w-full object-contain"
+                                    />
+                                ) : null}
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-end gap-1 sm:gap-2">
+                        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 text-[#ef3f3f] sm:gap-1">
+                            <ArrowRight
+                                className="h-4 w-10 rotate-180 drop-shadow-[0_0_1px_rgba(255,255,255,1)] sm:h-5 sm:w-14"
+                                strokeWidth={3}
+                            />
+                            <ArrowRight
+                                className="h-4 w-10 drop-shadow-[0_0_1px_rgba(255,255,255,1)] sm:h-5 sm:w-14"
+                                strokeWidth={3}
+                            />
+                        </div>
+
+                        <div className="absolute left-[65%] top-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm sm:h-16 sm:w-16 sm:rounded-2xl sm:p-2">
+                                {boxB && cashChangePlanImage(boxB) ? (
+                                    <Image
+                                        src={cashChangePlanImage(boxB)!}
+                                        alt=""
+                                        width={58}
+                                        height={52}
+                                        className="h-full w-full object-contain"
+                                    />
+                                ) : null}
+                            </div>
+                        </div>
+
+                        <div className="absolute inset-y-0 right-3 flex items-center gap-1 sm:right-5 sm:gap-2">
                             {totalStep1 > 0.005 && totalStep2 > 0.005 ? (
                                 <Button
                                     type="button"
@@ -949,9 +933,7 @@ export const CashChangeModal = ({
                                                 <Wallet size={16} className="text-[#36606F]" strokeWidth={2.4} />
                                             )}
                                         </span>
-                                        <span className="max-w-[58px] truncate rounded-full bg-white/90 px-1 py-0.5 text-[6px] font-black uppercase tracking-tight text-zinc-700 shadow-sm">
-                                            {cashChangePlanLabel(option)}
-                                        </span>
+
                                     </button>
                                 );
                             })}
