@@ -15,7 +15,7 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-07
 
-- **Cambio entre cajas integra cabecera y plano real en una sola superficie.** El modal usa el nuevo plano realista de sala con contorno blanco y una cabecera oscura integrada en el mismo bloque. Arriba se muestran las dos cajas seleccionadas y los importes de ambos sentidos del intercambio; cierre, histórico y confirmación quedan dentro de esa misma cabecera.
+- **Cambio entre cajas integra cabecera y plano real en una sola superficie.** El modal usa el nuevo plano realista de sala con contorno blanco y una cabecera oscura integrada en el mismo bloque. Las dos cajas seleccionadas ocupan los dos huecos blancos centrales de la cabecera, con las flechas entre ambas, y los iconos del plano se sitúan exactamente como en la maqueta aprobada, sin etiquetas superpuestas.
 
 ## 2026-10-04
 
