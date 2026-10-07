@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Eye, ChevronLeft, ChevronRight, Wallet, Check, ArrowRight, ArrowRightLeft } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight, Wallet, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { cn, firstGivenName } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -44,13 +44,29 @@ function zoomPlanAt(view: PlanView, zoom: number, point: PlanPoint, width: numbe
     }, width, height);
 }
 
-const CASH_CHANGE_PLAN_POSITIONS: Record<string, PlanPoint> = {
-    // Centros de las cajas y TPV ya dibujados en el plano de 3857 × 1999.
-    tpv1: { x: 57.3, y: 35.2 },
-    tpv2: { x: 57.3, y: 71.2 },
-    cambio1: { x: 8.8, y: 25.8 },
-    cambio2: { x: 33.7, y: 16.8 },
-    inicial: { x: 20.4, y: 16.2 },
+const CASH_CHANGE_PLAN_POSITIONS = {
+    // Coordenadas aprobadas sobre el plano limpio 2048 × 1084.
+    tpv1: { x: 58.5, y: 36.5 },
+    tpv2: { x: 58.5, y: 71.7 },
+    cambio1: { x: 10.4, y: 24.1 },
+    cambio2: { x: 32.8, y: 15.4 },
+    inicial: { x: 23.8, y: 15.4 },
+} satisfies Record<string, PlanPoint>;
+
+const CASH_CHANGE_PLAN_WIDTHS: Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, number> = {
+    tpv1: 8.8,
+    tpv2: 8.8,
+    cambio1: 6.5,
+    cambio2: 8,
+    inicial: 5.8,
+};
+
+const CASH_CHANGE_PLAN_ASSET_SIZES: Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, { width: number; height: number }> = {
+    tpv1: { width: 591, height: 600 },
+    tpv2: { width: 591, height: 600 },
+    cambio1: { width: 550, height: 492 },
+    cambio2: { width: 535, height: 550 },
+    inicial: { width: 550, height: 529 },
 };
 
 function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITIONS | null {
@@ -81,12 +97,12 @@ function resolveCashChangePlanPosition(box: BoxOption): PlanPoint | null {
 
 function cashChangePlanImage(box: BoxOption): string | null {
     switch (cashChangePlanKey(box)) {
-        case 'cambio1': return '/images/cash-change/cambio1.webp';
-        case 'cambio2': return '/images/cash-change/cambio2.webp';
-        case 'inicial': return '/images/cash-change/inicial.webp';
+        case 'cambio1': return '/images/cash-change/cambio1.avif';
+        case 'cambio2': return '/images/cash-change/cambio2.avif';
+        case 'inicial': return '/images/cash-change/inicial.avif';
         case 'tpv1':
         case 'tpv2':
-            return '/images/cash-change/tpv.webp';
+            return '/images/cash-change/tpv.avif';
         default:
             return box.image_url || null;
     }
@@ -199,7 +215,6 @@ export const CashChangeModal = ({
     const [stockB, setStockB] = useState<Record<number, number>>({});
     const [legDraftBeforeEdit, setLegDraftBeforeEdit] = useState<Record<number, number> | null>(null);
     const [savingExchange, setSavingExchange] = useState(false);
-    const [exchangeComplete, setExchangeComplete] = useState(false);
     // Histórico de intercambios (solo manager)
     const [showExchangeHistoryModal, setShowExchangeHistoryModal] = useState(false);
     const [exchangeHistoryYearMonth, setExchangeHistoryYearMonth] = useState(() => {
@@ -590,9 +605,7 @@ export const CashChangeModal = ({
                 return;
             }
 
-            setExchangeComplete(true);
             toast.success('Cambio entre cajas guardado');
-            await new Promise((resolve) => window.setTimeout(resolve, 420));
             if (onSuccess) onSuccess();
             onClose();
         } catch (error) {
@@ -633,7 +646,6 @@ export const CashChangeModal = ({
         setStockB({});
         setZoomDenom(null);
         setLegDraftBeforeEdit(null);
-        setExchangeComplete(false);
     };
 
     const toggleBoxSelection = (opt: BoxOption) => {
@@ -810,96 +822,127 @@ export const CashChangeModal = ({
                 ) : undefined}
                 scrollContent={false}
                 fullBleedBody
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="cash-change-cancel"
+                            onClick={onClose}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="cash-change-save"
+                            onClick={() => void handleGuardarStep2()}
+                            disabled={!canConfirmExchange}
+                            loading={savingExchange}
+                        >
+                            Guardar
+                        </Button>
+                    </>
+                }
             >
-                <div data-design-exception="modal-root-padding:cambio-plano-con-margen-de-8px" className="relative flex min-h-0 w-full flex-col px-ds-2 pb-ds-2">
-                    <div data-element="cash-change-summary" className="mx-auto flex w-full max-w-[420px] shrink-0 items-start justify-center gap-1 pb-1 sm:gap-3">
-                        <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                            <div className="flex h-12 w-12 items-center justify-center overflow-hidden sm:h-14 sm:w-14">
+                <div
+                    data-design-exception="modal-root-padding:cambio-plano-con-margen-de-8px"
+                    className="relative flex h-full min-h-0 w-full flex-col px-ds-2 pb-ds-2"
+                >
+                    <div
+                        data-element="cash-change-summary"
+                        className="mx-auto flex h-[7.75rem] w-full max-w-[460px] shrink-0 items-stretch justify-center gap-2 pb-2 sm:h-[8.25rem] sm:gap-4"
+                    >
+                        <div className="grid min-w-0 flex-1 grid-rows-[3.5rem_1.25rem_2.5rem] place-items-center gap-1">
+                            <div className="flex h-14 w-14 items-center justify-center overflow-hidden">
                                 {boxA && cashChangePlanImage(boxA) ? (
                                     <Image
                                         src={cashChangePlanImage(boxA)!}
                                         alt={boxA.name}
                                         width={64}
-                                        height={60}
+                                        height={64}
+                                        unoptimized
                                         className="h-full w-full object-contain"
                                     />
                                 ) : boxA ? (
                                     <Wallet size={22} className="text-zinc-300" strokeWidth={2} />
                                 ) : null}
                             </div>
-                            {boxA && boxB ? (
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    instance="cash-change-add-first-amount"
-                                    aria-label={`Añadir cantidad de ${boxA.name} a ${boxB.name}`}
-                                    onClick={() => openLegEditor('step1')}
-                                >
-                                    Añadir cantidad
-                                </Button>
-                            ) : null}
-                            {totalStep1 > 0.005 ? (
-                                <span className="text-[10px] font-bold tabular-nums text-white">{formatExchangeAmount(totalStep1)}</span>
-                            ) : null}
+                            <div className="flex h-5 items-center justify-center">
+                                {totalStep1 > 0.005 ? (
+                                    <span className="text-[12px] font-bold tabular-nums text-white">
+                                        {formatExchangeAmount(totalStep1)}
+                                    </span>
+                                ) : null}
+                            </div>
+                            <div className="flex h-10 items-center justify-center">
+                                {boxA && boxB ? (
+                                    <Button
+                                        type="button"
+                                        variant="primary"
+                                        instance="cash-change-add-first-amount"
+                                        aria-label={`Añadir cantidad de ${boxA.name} a ${boxB.name}`}
+                                        onClick={() => openLegEditor('step1')}
+                                    >
+                                        Añadir cantidad
+                                    </Button>
+                                ) : null}
+                            </div>
                         </div>
 
-                        <div className="flex w-12 shrink-0 flex-col items-center sm:w-20">
-                            {boxA && boxB ? (
-                                <svg viewBox="0 0 96 58" className="h-12 w-full overflow-visible sm:h-14" aria-hidden>
-                                    <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M20 15 C39 7 58 7 76 14" stroke="#15998c" strokeWidth="3.6" />
-                                        <path d="M67 5 L79 14 L67 23" stroke="#15998c" strokeWidth="3.6" />
-                                        <path d="M77 43 C58 51 39 51 20 44" stroke="#e85d75" strokeWidth="3.6" />
-                                        <path d="M29 35 L17 44 L29 53" stroke="#e85d75" strokeWidth="3.6" />
-                                        <circle cx="48" cy="10" r="8" fill="#15998c" stroke="white" strokeWidth="1.2" />
-                                        <path d="M48 6 V14 M44 10 H52" stroke="white" strokeWidth="1.8" />
-                                        <circle cx="48" cy="48" r="8" fill="#e85d75" stroke="white" strokeWidth="1.2" />
-                                        <path d="M48 44 V52 M44 48 H52" stroke="white" strokeWidth="1.8" />
-                                    </g>
-                                </svg>
-                            ) : null}
-                            {totalStep1 > 0.005 && totalStep2 > 0.005 ? (
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    instance="cash-change-confirm"
-                                    icon={<Check size={16} strokeWidth={3} />}
-                                    aria-label="Confirmar cambio"
-                                    onClick={() => void handleGuardarStep2()}
-                                    disabled={!canConfirmExchange}
-                                    loading={savingExchange}
-                                />
-                            ) : null}
+                        <div className="flex w-20 shrink-0 items-start justify-center pt-1 sm:w-28">
+                            <svg
+                                viewBox="0 0 128 58"
+                                className={cn(
+                                    'h-14 w-full overflow-visible transition-opacity duration-200',
+                                    boxA && boxB ? 'opacity-100' : 'opacity-0',
+                                )}
+                                aria-hidden
+                            >
+                                <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 16 C38 5 88 5 117 15" stroke="#15998c" strokeWidth="4.2" />
+                                    <path d="M106 5 L121 15 L107 26" stroke="#15998c" strokeWidth="4.2" />
+                                    <path d="M119 42 C89 53 40 53 10 43" stroke="#e85d75" strokeWidth="4.2" />
+                                    <path d="M22 33 L7 43 L21 54" stroke="#e85d75" strokeWidth="4.2" />
+                                </g>
+                            </svg>
                         </div>
 
-                        <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                            <div className="flex h-12 w-12 items-center justify-center overflow-hidden sm:h-14 sm:w-14">
+                        <div className="grid min-w-0 flex-1 grid-rows-[3.5rem_1.25rem_2.5rem] place-items-center gap-1">
+                            <div className="flex h-14 w-14 items-center justify-center overflow-hidden">
                                 {boxB && cashChangePlanImage(boxB) ? (
                                     <Image
                                         src={cashChangePlanImage(boxB)!}
                                         alt={boxB.name}
                                         width={64}
-                                        height={60}
+                                        height={64}
+                                        unoptimized
                                         className="h-full w-full object-contain"
                                     />
                                 ) : boxB ? (
                                     <Wallet size={22} className="text-zinc-300" strokeWidth={2} />
                                 ) : null}
                             </div>
-                            {boxA && boxB ? (
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    instance="cash-change-add-second-amount"
-                                    aria-label={`Añadir cantidad de ${boxB.name} a ${boxA.name}`}
-                                    onClick={() => openLegEditor('step2')}
-                                >
-                                    Añadir cantidad
-                                </Button>
-                            ) : null}
-                            {totalStep2 > 0.005 ? (
-                                <span className="text-[10px] font-bold tabular-nums text-white">{formatExchangeAmount(totalStep2)}</span>
-                            ) : null}
+                            <div className="flex h-5 items-center justify-center">
+                                {totalStep2 > 0.005 ? (
+                                    <span className="text-[12px] font-bold tabular-nums text-white">
+                                        {formatExchangeAmount(totalStep2)}
+                                    </span>
+                                ) : null}
+                            </div>
+                            <div className="flex h-10 items-center justify-center">
+                                {boxA && boxB ? (
+                                    <Button
+                                        type="button"
+                                        variant="primary"
+                                        instance="cash-change-add-second-amount"
+                                        aria-label={`Añadir cantidad de ${boxB.name} a ${boxA.name}`}
+                                        onClick={() => openLegEditor('step2')}
+                                    >
+                                        Añadir cantidad
+                                    </Button>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
 
@@ -907,7 +950,7 @@ export const CashChangeModal = ({
                         ref={planViewportRef}
                         data-element="cash-change-plan"
                         data-design-exception="cash-change-plan-radius:radio-control"
-                        className="relative mx-auto aspect-[3857/1999] w-full max-w-[min(100%,calc(193dvh-26.1rem))] touch-none overflow-hidden rounded-ds-control bg-zinc-100"
+                        className="relative mx-auto aspect-[2048/1084] w-full max-w-[1136px] shrink-0 touch-none overflow-hidden rounded-ds-control bg-zinc-100"
                         tabIndex={0}
                         role="region"
                         aria-label="Plano de cajas: usa la rueda o pellizca para ampliar y arrastra para desplazarte"
@@ -948,14 +991,54 @@ export const CashChangeModal = ({
                             style={{ transform: `translate(${planView.x}px, ${planView.y}px) scale(${planView.zoom})` }}
                         >
                             <Image
-                                src="/images/cash-change-plan.png"
+                                src="/images/cash-change-plan.avif"
                                 alt="Plano de cajas"
                                 fill
                                 priority
                                 unoptimized
                                 sizes="(max-width: 1200px) calc(100vw - 1rem), 1136px"
-                                className="select-none object-cover"
+                                className={cn(
+                                    'select-none object-cover transition-opacity duration-200',
+                                    boxA && boxB ? 'opacity-40' : 'opacity-100',
+                                )}
                             />
+
+                            {positionedOptions.map(({ option, position }) => {
+                                const key = cashChangePlanKey(option);
+                                const image = cashChangePlanImage(option);
+                                if (!key || !image) return null;
+                                const isA = boxA?.id === option.id;
+                                const isB = boxB?.id === option.id;
+                                const isSelected = isA || isB;
+                                const shouldDim = Boolean(boxA && boxB && !isSelected);
+                                const size = CASH_CHANGE_PLAN_ASSET_SIZES[key];
+
+                                return (
+                                    <div
+                                        key={`${option.id}-asset`}
+                                        aria-hidden
+                                        className={cn(
+                                            'pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 origin-center transition-[opacity,transform] duration-200',
+                                            isSelected ? 'scale-[1.06]' : 'scale-100',
+                                            shouldDim ? 'opacity-25' : 'opacity-100',
+                                        )}
+                                        style={{
+                                            left: position.x + '%',
+                                            top: position.y + '%',
+                                            width: CASH_CHANGE_PLAN_WIDTHS[key] + '%',
+                                        }}
+                                    >
+                                        <Image
+                                            src={image}
+                                            alt=""
+                                            width={size.width}
+                                            height={size.height}
+                                            unoptimized
+                                            className="h-auto w-full select-none object-contain"
+                                        />
+                                    </div>
+                                );
+                            })}
 
                             {positionedOptions.map(({ option, position }) => {
                                 const isA = boxA?.id === option.id;
@@ -973,25 +1056,16 @@ export const CashChangeModal = ({
                                     />
                                 );
                             })}
-
-                            {exchangeComplete ? (
-                                <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-white/15">
-                                    <div className="flex h-14 min-w-28 items-center justify-center gap-2 rounded-full bg-white/95 px-5 shadow-xl ring-1 ring-emerald-200">
-                                        <ArrowRightLeft className="h-6 w-6 animate-pulse text-emerald-600" strokeWidth={2.4} />
-                                        <Check className="h-6 w-6 text-emerald-600" strokeWidth={3} />
-                                    </div>
-                                </div>
-                            ) : null}
                         </div>
                     </div>
 
-                    {boxA && boxB && totalStep1 > 0.005 && totalStep2 > 0.005 && !isBalancedTransfer ? (
-                        <div className="pointer-events-none absolute bottom-2 left-1/2 z-40 -translate-x-1/2 sm:bottom-3">
+                    <div className="flex h-6 shrink-0 items-center justify-center pt-1">
+                        {boxA && boxB && totalStep1 > 0.005 && totalStep2 > 0.005 && !isBalancedTransfer ? (
                             <span className="rounded-full border border-white/70 bg-[#0b213c]/90 px-2.5 py-1 text-[9px] font-black tabular-nums text-white shadow-lg backdrop-blur-sm sm:text-[10px]">
                                 Δ {formatExchangeAmount(transferDifference)}
                             </span>
-                        </div>
-                    ) : null}
+                        ) : null}
+                    </div>
                 </div>
             </Modal>
 

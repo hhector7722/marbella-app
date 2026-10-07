@@ -1603,15 +1603,27 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(selectBlock, /data-element="cash-change-summary"/, 'las direcciones viven sobre el plano');
         assert.match(selectBlock, /instance="cash-change-add-first-amount"[\s\S]*?openLegEditor\('step1'\)/, 'el primer botón abre su desglose');
         assert.match(selectBlock, /instance="cash-change-add-second-amount"[\s\S]*?openLegEditor\('step2'\)/, 'el segundo botón abre su desglose');
+        assert.match(selectBlock, /instance="cash-change-save"/, 'guardar vive en el footer del modal');
+        assert.match(selectBlock, /instance="cash-change-cancel"/, 'cancelar vive en el footer del modal');
+        assert.doesNotMatch(selectBlock, /instance="cash-change-confirm"/, 'no existe un tick central para guardar');
         assert.match(selectBlock, /data-element="cash-change-plan"[\s\S]*?rounded-ds-control/, 'el plano tiene todas las esquinas redondeadas');
-        assert.doesNotMatch(selectBlock, /cash-arrow-forward|cash-arrow-reverse|buildPlanArrowGeometry/, 'el plano no dibuja flechas ni botones de cantidad');
-        const planBlock = selectBlock.split('data-element="cash-change-plan"')[1]?.split('{exchangeComplete ?')[0] ?? '';
-        assert.doesNotMatch(planBlock, /openLegEditor|<Plus/, 'sobre el plano no hay controles de cantidad');
-        assert.match(planBlock, /unoptimized/, 'el plano conserva la resolución original durante el zoom');
-        assert.match(planBlock, /aria-pressed=\{isA \|\| isB\}/, 'las cajas incrustadas conservan su selección accesible');
-        assert.doesNotMatch(planBlock, /cashChangePlanImage|cashChangePlanDisplayLabel/, 'el plano no duplica los iconos ni los rótulos incrustados');
-        const planImage = readFileSync(join(REPO_ROOT, 'public/images/cash-change-plan.png'));
-        assert.ok(planImage.readUInt32BE(16) >= 3000 && planImage.readUInt32BE(20) >= 1900, 'el plano tiene resolución suficiente para ampliar');
+        assert.doesNotMatch(selectBlock, /cash-arrow-forward|cash-arrow-reverse|buildPlanArrowGeometry|<Plus/, 'las flechas no incorporan controles de cantidad');
+        const planBlock = selectBlock.split('data-element="cash-change-plan"')[1] ?? '';
+        assert.doesNotMatch(planBlock, /openLegEditor/, 'sobre el plano no hay controles de cantidad');
+        assert.match(planBlock, /unoptimized/, 'plano y overlays conservan sus assets originales durante el zoom');
+        assert.match(planBlock, /aria-pressed=\{isA \|\| isB\}/, 'las zonas de caja conservan su selección accesible');
+        assert.match(planBlock, /cashChangePlanImage/, 'el plano monta los iconos de caja como overlays independientes');
+        assert.match(planBlock, /opacity-40/, 'el fondo del plano se atenúa cuando hay dos cajas seleccionadas');
+        const planImage = readFileSync(join(REPO_ROOT, 'public/images/cash-change-plan.avif'));
+        assert.ok(planImage.length > 40_000, 'el plano limpio conserva detalle suficiente para ampliar');
+        for (const rel of [
+            'public/images/cash-change/cambio1.avif',
+            'public/images/cash-change/cambio2.avif',
+            'public/images/cash-change/inicial.avif',
+            'public/images/cash-change/tpv.avif',
+        ]) {
+            assert.ok(readFileSync(join(REPO_ROOT, rel)).length > 8_000, `${rel} contiene un overlay de alta resolución`);
+        }
 
         const denomination = readFileSync(join(SRC_ROOT, 'components/CashDenominationForm.tsx'), 'utf8');
         assert.doesNotMatch(
