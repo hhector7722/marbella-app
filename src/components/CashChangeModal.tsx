@@ -784,7 +784,7 @@ export const CashChangeModal = ({
                 scrollContent={false}
             >
                 <div className="relative flex min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border-[3px] border-white bg-[#0b213c] shadow-2xl">
-                    <div className="relative min-h-[92px] shrink-0 bg-[#0b213c] px-3 py-2 sm:min-h-[108px] sm:px-5">
+                    <div className="relative min-h-[72px] shrink-0 bg-[#0b213c] px-3 py-2 sm:min-h-[92px] sm:px-5">
                         <div className="absolute inset-y-0 left-3 flex items-center gap-1.5 sm:left-5 sm:gap-2">
                             <span className="text-[11px] font-medium uppercase tracking-wide text-white sm:text-sm">Cambio</span>
                             {canViewExchangeHistory ? (
@@ -803,7 +803,7 @@ export const CashChangeModal = ({
                             ) : null}
                         </div>
 
-                        <div className="absolute left-[39%] top-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <div className="absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2">
                             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm sm:h-16 sm:w-16 sm:rounded-2xl sm:p-2">
                                 {boxA && cashChangePlanImage(boxA) ? (
                                     <Image
@@ -817,7 +817,7 @@ export const CashChangeModal = ({
                             </div>
                         </div>
 
-                        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 text-[#ef3f3f] sm:gap-1">
+                        <div className="absolute left-[49.25%] top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 text-[#ef3f3f] sm:gap-1">
                             <ArrowRight
                                 className="h-4 w-10 rotate-180 drop-shadow-[0_0_1px_rgba(255,255,255,1)] sm:h-5 sm:w-14"
                                 strokeWidth={3}
@@ -828,7 +828,7 @@ export const CashChangeModal = ({
                             />
                         </div>
 
-                        <div className="absolute left-[65%] top-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <div className="absolute left-[62.5%] top-1/2 -translate-x-1/2 -translate-y-1/2">
                             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm sm:h-16 sm:w-16 sm:rounded-2xl sm:p-2">
                                 {boxB && cashChangePlanImage(boxB) ? (
                                     <Image
