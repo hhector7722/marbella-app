@@ -1600,6 +1600,13 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.notEqual(legBlock, '', 'existe el desglose del movimiento');
         assert.doesNotMatch(selectBlock, /QuickCashTools/, 'el selector de cajas no monta calculadora ni desglose');
         assert.match(legBlock, /<QuickCashTools calculator breakdown \/>/, 'el desglose monta calculadora y desglose');
+        assert.match(selectBlock, /data-element="cash-change-summary"/, 'las direcciones viven sobre el plano');
+        assert.match(selectBlock, /instance="cash-change-add-first-amount"[\s\S]*?openLegEditor\('step1'\)/, 'el primer botón abre su desglose');
+        assert.match(selectBlock, /instance="cash-change-add-second-amount"[\s\S]*?openLegEditor\('step2'\)/, 'el segundo botón abre su desglose');
+        assert.match(selectBlock, /data-element="cash-change-plan"[\s\S]*?rounded-ds-control/, 'el plano tiene todas las esquinas redondeadas');
+        assert.doesNotMatch(selectBlock, /cash-arrow-forward|cash-arrow-reverse|buildPlanArrowGeometry/, 'el plano no dibuja flechas ni botones de cantidad');
+        const planBlock = selectBlock.split('data-element="cash-change-plan"')[1]?.split('{exchangeComplete ?')[0] ?? '';
+        assert.doesNotMatch(planBlock, /openLegEditor|<Plus/, 'sobre el plano no hay controles de cantidad');
 
         const denomination = readFileSync(join(SRC_ROOT, 'components/CashDenominationForm.tsx'), 'utf8');
         assert.doesNotMatch(
