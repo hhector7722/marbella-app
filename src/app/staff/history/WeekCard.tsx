@@ -285,6 +285,7 @@ export function WeekCard({
 
             <div
                 data-week-footer="true"
+                data-design-exception="week-footer-height:compact-20px"
                 data-overrides={overridesEnabled ? 'true' : undefined}
                 className={cn(
                     'relative z-10 flex w-full items-stretch overflow-visible border-t border-gray-100 bg-white',
@@ -315,7 +316,7 @@ export function WeekCard({
                 </div>
                 {/* Métricas: concepto y valor en la misma fila que Semana */}
                 <div className="flex min-h-0 min-w-0 flex-1 items-center self-stretch">
-                    <div className="grid w-full min-w-0 grid-cols-4 gap-x-0.5">
+                    <div data-design-exception="week-footer-value-size:compact-9px" className="grid w-full min-w-0 grid-cols-4 gap-x-0.5">
                         <div data-week-metric="horas" className="flex min-w-0 items-center justify-center gap-1.5">
                             <span data-week-metric-label className="shrink-0 text-[8px] font-medium leading-none text-zinc-400">
                                 Horas
@@ -383,6 +384,7 @@ export function WeekCard({
                         <img
                             src="/sello/pagado.png"
                             alt="PAGADO"
+                            data-design-exception="paid-stamp-width:compact-32-40px"
                             className="pointer-events-none h-auto w-[32px] md:w-[40px]"
                         />
                     </div>

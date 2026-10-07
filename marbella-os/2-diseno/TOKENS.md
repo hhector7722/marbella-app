@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-02
+revisado: 2026-10-07
 caducidad: 6 meses
 supersede: —
 ---
@@ -159,11 +159,13 @@ Prohibido mezclar radios dentro de un mismo bloque, según [LENGUAJE-VISUAL §5]
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `tactil.minimo` | 48 px | Alto mínimo de todo objetivo pulsable. **No negociable** | adoptado (piloto `DashboardShortcut` vía `--tactil-minimo`) |
-| `tactil.reducido` | 44 px | Únicamente elementos secundarios en escritorio. Es un compromiso | declarado |
+| `tactil.minimo` | 48 px | Alto por defecto de todo objetivo pulsable; excepción local expresa según ADR-0024 | adoptado (piloto `DashboardShortcut` vía `--tactil-minimo`) |
+| `tactil.reducido` | 44 px | Reducción prevista para elementos secundarios en escritorio; otras medidas requieren excepción local | declarado |
 | `tactil.separacion` | 8 px | Separación mínima entre objetivos pulsables adyacentes | declarado |
 
 Norma en [EXPERIENCIA §1](EXPERIENCIA.md#1-táctil).
+
+El pie compacto de la semana en el historial Staff declara una excepción local de 20 px de alto y cifras de 9 px; su sello «Pagado» mide 32 px (40 px en escritorio). No son tokens generales ni reducen el objetivo táctil de los controles de edición de esa fila ([ADR-0024](../4-decisiones/ADR-0024-excepciones-visuales-locales.md)).
 
 ## 12. Estructura de la aplicación
 

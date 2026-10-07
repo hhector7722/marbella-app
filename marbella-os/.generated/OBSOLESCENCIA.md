@@ -1,5 +1,5 @@
 <!-- Generado desde 46 documentos de marbella-os/.
-     Huella del origen: 359fe5b87d52c5f6
+     Huella del origen: ff499fdd8f17fda8
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -32,21 +32,21 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-01-29 | `marbella-os/3-ingenieria/integraciones/BDP-TPV.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/3-ingenieria/integraciones/NOMINAS.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-02-25 | `marbella-os/3-ingenieria/FRONTEND.md` | 2026-08-25 | 6 meses | propiedad del producto |
-| 2027-03-02 | `marbella-os/2-diseno/TOKENS.md` | 2026-09-02 | 6 meses | propiedad del producto |
 | 2027-03-13 | `marbella-os/3-ingenieria/dominio/COSTE-LABORAL.md` | 2026-09-13 | 6 meses | propiedad del producto |
 | 2027-03-15 | `marbella-os/3-ingenieria/albaranes-proveedores/README.md` | 2026-09-15 | 6 meses | propiedad del producto |
 | 2027-03-17 | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 2026-09-17 | 6 meses | propiedad del producto |
 | 2027-03-17 | `marbella-os/3-ingenieria/operacion/RUNBOOK-BDP-VENTAS.md` | 2026-09-17 | 6 meses | propiedad del producto |
 | 2027-03-18 | `marbella-os/2-diseno/CONTENIDO-Y-TONO.md` | 2026-09-18 | 6 meses | propiedad del producto |
-| 2027-03-18 | `marbella-os/2-diseno/PATRONES.md` | 2026-09-18 | 6 meses | propiedad del producto |
 | 2027-03-27 | `marbella-os/3-ingenieria/dominio/HORAS.md` | 2026-09-27 | 6 meses | propiedad del producto |
 | 2027-04-03 | `marbella-os/1-producto/ACTORES-Y-ROLES.md` | 2026-10-03 | 6 meses | propiedad del producto |
 | 2027-04-03 | `marbella-os/3-ingenieria/MODELO-DE-DATOS.md` | 2026-10-03 | 6 meses | propiedad del producto |
 | 2027-04-03 | `marbella-os/3-ingenieria/operacion/README.md` | 2026-10-03 | 6 meses | propiedad del producto |
-| 2027-04-03 | `marbella-os/GLOSARIO.md` | 2026-10-03 | 6 meses | propiedad del producto |
+| 2027-04-07 | `marbella-os/2-diseno/PATRONES.md` | 2026-10-07 | 6 meses | propiedad del producto |
 | 2027-04-07 | `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` | 2026-10-07 | 6 meses | propiedad del producto |
+| 2027-04-07 | `marbella-os/2-diseno/TOKENS.md` | 2026-10-07 | 6 meses | propiedad del producto |
 | 2027-04-07 | `marbella-os/3-ingenieria/ARQUITECTURA.md` | 2026-10-07 | 6 meses | propiedad del producto |
 | 2027-04-07 | `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` | 2026-10-07 | 6 meses | propiedad del producto |
+| 2027-04-07 | `marbella-os/GLOSARIO.md` | 2026-10-07 | 6 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/PRINCIPIOS.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/VISION.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/2-diseno/LENGUAJE-VISUAL.md` | 2026-07-29 | 12 meses | propiedad del producto |
@@ -56,13 +56,13 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-07-29 | `marbella-os/6-investigacion/README.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/6-investigacion/rfc/README.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/6-investigacion/spikes/README.md` | 2026-07-29 | 12 meses | propiedad del producto |
-| 2027-08-16 | `marbella-os/2-diseno/EXPERIENCIA.md` | 2026-08-16 | 12 meses | propiedad del producto |
 | 2027-08-16 | `marbella-os/3-ingenieria/PROTOCOLO-AGENTES.md` | 2026-08-16 | 12 meses | propiedad del producto |
 | 2027-09-13 | `marbella-os/3-ingenieria/contratos/README.md` | 2026-09-13 | 12 meses | propiedad del producto |
 | 2027-09-17 | `marbella-os/3-ingenieria/dominio/README.md` | 2026-09-17 | 12 meses | propiedad del producto |
 | 2027-09-18 | `marbella-os/2-diseno/DOCUMENTOS-IMPRESOS.md` | 2026-09-18 | 12 meses | propiedad del producto |
 | 2027-09-29 | `marbella-os/1-producto/FICHAS-COCINA.md` | 2026-09-29 | 12 meses | propiedad del producto |
-| 2027-10-03 | `marbella-os/4-decisiones/README.md` | 2026-10-03 | 12 meses | propiedad del producto |
+| 2027-10-07 | `marbella-os/2-diseno/EXPERIENCIA.md` | 2026-10-07 | 12 meses | propiedad del producto |
+| 2027-10-07 | `marbella-os/4-decisiones/README.md` | 2026-10-07 | 12 meses | propiedad del producto |
 | 2028-08-16 | `marbella-os/CANON.md` | 2026-08-16 | 24 meses | propiedad del producto |
 
 Los 47 documentos con `caducidad: no aplica` no aparecen aquí: son

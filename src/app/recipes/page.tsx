@@ -343,6 +343,7 @@ function RecipesContent() {
                 toolbarSlot={
                 <div className="flex flex-row items-center gap-2">
                     <button
+                        data-design-exception="native-business-button:toolbar-create-icon"
                         type="button"
                         onClick={() => setShowCreateModal(true)}
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:shadow transition-all"

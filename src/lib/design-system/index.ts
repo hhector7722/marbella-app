@@ -15,6 +15,7 @@ export {
     pickButtonLayoutClassName,
     resolveButtonAccessibleName,
     type ButtonLayout,
+    type ButtonComposition,
     type ButtonNameResolution,
     type ButtonVariant,
 } from './button-contract';

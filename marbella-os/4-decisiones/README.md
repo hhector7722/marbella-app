@@ -6,7 +6,7 @@ capa: decisiones
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-03
+revisado: 2026-10-07
 caducidad: 12 meses
 ---
 
@@ -47,7 +47,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0007](./ADR-0007-modal-superficie-derivada.md) | Nesting de Modal: máximo una superficie derivada | Vigente |
 | [0008](./ADR-0008-modal-backdrop-capas.md) | Backdrop y jerarquía visual de capas Modal | Vigente |
 | [0009](./ADR-0009-modal-subordinacion.md) | Subordinación visual del panel Modal cubierto | Vigente |
-| [0010](./ADR-0010-jerarquia-visual-canonica.md) | Jerarquía visual canónica: primitivas y plantillas de pantalla | Vigente |
+| [0010](./ADR-0010-jerarquia-visual-canonica.md) | Jerarquía visual canónica: primitivas y plantillas de pantalla | Vigente (excepciones locales en 0024) |
 | [0011](./ADR-0011-proyeccion-diaria-hija-y-carry-out.md) | Proyección diaria hija y `carry_out` para lecturas SELECT | Vigente |
 | [0012](./ADR-0012-recepcion-trazable-y-evidencia-documental.md) | Recepción trazable y evidencia documental sin efectos automáticos | Superada por 0021 |
 | [0013](./ADR-0013-confirmacion-atomica-de-recepcion.md) | Confirmación atómica de recepción por línea | Vigente |
@@ -61,6 +61,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0021](./ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md) | Extracción canónica y recepción automática de albaranes | Superada por 0022 |
 | [0022](./ADR-0022-actor-tecnico-recepcion-automatica.md) | Actor técnico auditado para la recepción automática | Superada por 0023 |
 | [0023](./ADR-0023-mistral-unico-y-relectura-historica.md) | Mistral único y relectura histórica segura | Vigente |
+| [0024](./ADR-0024-excepciones-visuales-locales.md) | Excepciones visuales locales y explícitas | Vigente |
 
 ## Decisiones tomadas sin registrar
 

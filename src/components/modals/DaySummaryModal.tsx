@@ -221,6 +221,8 @@ export function DaySummaryModal({
                                 type="button"
                                 variant="primary"
                                 instance="attendance-day-summary-create"
+                                composition="icon-and-text"
+                                exceptionReason="La acción principal de nuevo fichaje conserva su icono de suma"
                                 onClick={openCreateFichaje}
                                 disabled={loadingRoster}
                                 loading={loadingRoster}

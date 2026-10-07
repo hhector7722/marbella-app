@@ -19,11 +19,13 @@ Un componente que exista en el código y no esté aquí es una pieza local, no d
 
 Las tres capas del inventario tienen contratos de rigor distinto:
 
-- **Base** — los ladrillos. Contrato estricto y sin variantes improvisadas.
+- **Base** — los ladrillos. Contrato estricto por defecto; las excepciones locales se declaran expresamente.
 - **Sistema** — piezas transversales con comportamiento propio. Contrato estricto.
 - **Dominio** — piezas de una capacidad concreta. Su contrato lo fija la capacidad; aquí solo se declara la frontera.
 
 ---
+
+**Excepciones visuales locales ([ADR-0024](../4-decisiones/ADR-0024-excepciones-visuales-locales.md)).** Espaciados, tamaños, colores, forma y composición mantienen el valor del sistema por defecto. Un elemento con diseño concreto distinto puede declararlo junto a su uso mediante una prop de composición o `data-design-exception="regla:motivo"`. La excepción se limita a ese elemento y esa propiedad; no requiere aprobación adicional ni cambia el contrato de los demás. Una clase local por sí sola no declara una excepción. Las comprobaciones deben aceptar el resultado de estilos compartidos y las excepciones expresas, y seguir señalando desviaciones sin declarar.
 
 ## 1. Componentes base
 
@@ -33,14 +35,15 @@ Los que sostienen toda pantalla. **Button, Surface, Field, SearchField, EmptySta
 
 **Propósito**: ejecutar una acción.
 
-**Anatomía**: un único `<button>`. Texto XOR icono. Un Button con texto visible no lleva icono. Un Button icon-only no lleva texto. No existe la combinación icono + texto. Icon-only (48×48) sin etiqueta, con `aria-label` obligatorio. La prop `icon` existe para el caso icon-only.
+**Anatomía por defecto**: un único `<button>`. Texto XOR icono. Icon-only (48×48) sin etiqueta, con `aria-label` obligatorio. La composición icono + texto es excepción local explícita: `composition="icon-and-text"` junto con `exceptionReason` no vacío.
 
-**Enforcement**: `assertButtonAnatomy` lanza en desarrollo/test ante anatomía inválida (texto+icono, icon-only sin `aria-label`, vacío sin nombre). En producción el render aplica fallback seguro (prioriza texto; no inventa UI nueva). El aspecto lo bloquea CSS `[data-component='Button']`; `className` solo admite composición externa. El chrome close/back de Modal **no** es este componente.
+**Enforcement**: `assertButtonAnatomy` lanza en desarrollo/test ante anatomía inválida (texto+icono sin excepción declarada, icon-only sin `aria-label`, vacío sin nombre). En producción el render aplica fallback seguro (prioriza texto; no inventa UI nueva). El aspecto lo bloquea CSS `[data-component='Button']`; `className` solo admite composición externa. El chrome close/back de Modal **no** es este componente.
 
 ```text
 Button
  ├── label     (texto; sin icono)
  └── icon      (icon-only; sin texto; aria-label)
+ Excepción local: icon + label (composition="icon-and-text" + exceptionReason)
 ```
 
 **Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger`, `confirmar` ni quinta variante. El fill lo fija el contrato, no el consumidor:
@@ -52,7 +55,7 @@ Button
 | `tertiary` | `color.marca` | Menor jerarquía. El petróleo no pinta `primary` |
 | `destructive` | `color.negativo` | Eliminar, destruir, acción irreversible |
 
-Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El relleno visual abraza el texto o el icono: 12 px de tipo + `espacio.1` arriba y abajo = 20 px. Padding horizontal compacto: `espacio.1`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (10 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva toque 48×48; el relleno visual abraza el icono. El Footer de Modal usa Button de texto, sin iconos, hug. `primary` y `destructive` se reconocen por el color, sin doble aro. `secondary` y `tertiary` llevan un hilo negro suave. El relleno tiene un volumen apenas perceptible; al pulsar, se oscurece lo justo. Entrada y Salida del mosaico Staff no son este Button.
+Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px) por defecto: área de toque transparente; no obliga al fondo visual. El relleno visual abraza el texto o el icono: 12 px de tipo + `espacio.1` arriba y abajo = 20 px. Padding horizontal compacto: `espacio.1`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (10 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva toque 48×48 por defecto; el relleno visual abraza el icono. El Footer de Modal usa Button de texto, sin iconos, hug por defecto. `primary` y `destructive` se reconocen por el color, sin doble aro. `secondary` y `tertiary` llevan un hilo negro suave. El relleno tiene un volumen apenas perceptible; al pulsar, se oscurece lo justo. Entrada y Salida del mosaico Staff no son este Button.
 
 **Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)` y un oscurecido apenas perceptible del relleno), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
 
@@ -61,21 +64,21 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 **Reglas**:
 - En curso, deshabilita su propia pulsación. Nunca dos efectos por dos toques.
 - La variante destructiva no comparte aspecto con la principal ni se coloca junto a ella.
-- Un Button con texto visible no lleva icono. Un Button icon-only no lleva texto. No existe la combinación icono + texto.
+- Un Button con texto visible no lleva icono por defecto. Icono + texto exige `composition="icon-and-text"` y un motivo local; icon-only sigue sin texto.
 - Un botón sin etiqueta necesita nombre accesible.
 - El icono no va a la derecha.
 - No se usa para navegar. Navegar es un enlace, aunque parezca un botón.
 - El chrome close/back de Modal y Navbar no es este componente. Chrome ≠ Button. `TimeFilterButton`, `DashboardShortcut` y `TabBar` no son Button.
 - **Los botones que conviven en un pie de acciones se igualan al ancho del mayor.** El grupo de acciones del pie (`footer-actions`) usa grid `1fr`: todos los `<Button>` del pie miden lo mismo, el del texto más ancho, sean 2 o N. El consumidor no declara nada; es la regla del contenedor del pie.
 - El Footer de Modal no convierte los botones en `fill`; el consumidor decide. Igualar al mayor no es `fill`: el grupo se encoge al contenido, no ocupa el pie entero.
-- El Footer de Modal usa Button con texto, sin iconos, hug. Icon-only sigue permitido fuera de ese pie.
+- El Footer de Modal usa Button con texto, sin iconos, hug por defecto. Un icono en ese pie necesita la misma excepción local expresa.
 - El radio contractual es 8 px (`espacio.2`). No píldora: el radio es menor que la mitad del alto visual. Distinto de `radio.superficie` del Modal. El consumidor no puede sobrescribirlo.
 - `primary` pinta con `color.positivo`. El petróleo no es el fill de Guardar / Confirmar / Crear. No se inventa variante `confirmar` ni color local en el consumidor.
 - La etiqueta va en caja oración. Las mayúsculas no son énfasis de Button; solo van en cabeceras ([LENGUAJE-VISUAL](LENGUAJE-VISUAL.md), [CONTENIDO-Y-TONO](CONTENIDO-Y-TONO.md)).
 
 **Código**: `src/components/ui/button.tsx`, `src/lib/design-system/button-contract.ts`.
 
-**Estado**: existe. Anatomía XOR e `aria-label` icon-only enforced en runtime (dev/test). Piloto footer Modal en Albaranes y Caja/Tesorería; gate global anti-`<button>` en footers con allowlist temporal. `fill` retenido solo donde hay jerarquía explícita de pie (avance de cierre de caja; canje single-box). El resto de la aplicación sigue con `<button>` nativo (bypass). `ActionButton` se retiró.
+**Estado**: existe. Anatomía XOR por defecto, excepción icono + texto explícita y `aria-label` icon-only enforced en runtime (dev/test). Piloto footer Modal en Albaranes y Caja/Tesorería; gate global anti-`<button>` en footers con allowlist temporal. `fill` retenido solo donde hay jerarquía explícita de pie (avance de cierre de caja; canje single-box). Un `<button>` nativo con diseño de acción propio se identifica con `data-design-exception="native-business-button:motivo"`; sin declaración, el gate sigue señalándolo. `ActionButton` se retiró.
 
 ### Campo de entrada
 
@@ -244,9 +247,9 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - **Separación Header → Body:** exactamente 12 px (`espacio.3` / `estructura.modal-cuerpo-inicio`) como `padding-top` del Body. No es padding completo del Body. El consumidor no decide ni elimina esa distancia (`pt-0` en hijos no la anula).
 - Radio único del panel: `radio.superficie` (16 px). El consumidor no puede sobrescribirlo con `className`.
 - **`className` del panel** solo admite composición externa (flex, overflow, tipografía de tono…). `pickModalPanelClassName` descarta max-width/max-height, padding, margin, radio, sombra, fondo y z-index. Ancho y alto los fija la variante / tokens del shell. Deuda de consumidores que aún pasan tokens de shell: allowlist `LEGACY_MODAL_PANEL_CLASSNAME_ALLOWLIST` (el runtime ya filtra).
-- **Inset del Body:** el shell aplica `padding-inline` + `padding-top` contractuales. Un hijo raíz con `p-4`/`px-6`/… (≥ `espacio.4`) **duplica** el inset. Gate de regresión: `findModalRootPaddingClassNames` + allowlist `LEGACY_MODAL_ROOT_PADDING_ALLOWLIST`. No se compensa con CSS inverso.
+- **Inset del Body:** el shell aplica `padding-inline` + `padding-top` por defecto. Un hijo raíz con padding superior o lateral de `espacio.4` o más puede duplicarlo; el padding solo inferior no. Una composición que necesite expresamente otro inset lo declara en el hijo con `data-design-exception="modal-root-padding:motivo"`. El gate `findModalRootPaddingClassNames` acepta esa excepción local y sigue señalando los casos no declarados. No se compensa con CSS inverso.
 - **Contenido visual a sangre:** `fullBleedBody` elimina solo el inset horizontal del Body para medios que deben compartir los bordes laterales e inferior del panel (por ejemplo, el plano de Cambio). La separación vertical Header → Body y el inset de la cabecera permanecen contractuales; los controles dentro del Body resuelven su propia separación.
-- **Footer:** acciones con `<Button>` oficial (texto, sin iconos). Los botones del pie se igualan al ancho del mayor: el shell envuelve el contenido en `footer-actions` (grid `1fr`, sin JS). Un único `<Button>` no cambia. Un componente de pie con layout propio (`CashCountFooter`, total a la izquierda) no se iguala por el shell; iguala sus propios botones. Gate: ningún `<button>` nativo nuevo en `footer=`; deuda en `LEGACY_MODAL_FOOTER_NATIVE_BUTTON_ALLOWLIST` (7 rutas).
+- **Footer:** acciones con `<Button>` oficial (texto, sin iconos por defecto; excepción icono + texto declarada en Button). Los botones del pie se igualan al ancho del mayor: el shell envuelve el contenido en `footer-actions` (grid `1fr`, sin JS). Un único `<Button>` no cambia. Un componente de pie con layout propio (`CashCountFooter`, total a la izquierda) no se iguala por el shell; iguala sus propios botones. Gate: ningún `<button>` nativo nuevo en `footer=`; deuda en `LEGACY_MODAL_FOOTER_NATIVE_BUTTON_ALLOWLIST`.
 - **`zIndexClass`:** deprecated; allowlist vacía — uso nuevo falla test. Preferir `layer`.
 - **`backdropClassName`:** deprecated salvo excepciones documentadas (`LEGACY_MODAL_BACKDROP_CLASSNAME_ALLOWLIST`: lightbox de carta). El backdrop lo posee la capa ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
 - **Nesting:** máximo una superficie derivada sobre el modal base ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Backdrop por capa sin blur acumulado ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).

@@ -429,6 +429,7 @@ const FloatingShiftEditor = ({
                 {/* Botones de acción */}
                 <div className="px-4 pb-4 flex items-center justify-between">
                     <button
+                        data-design-exception="native-business-button:schedule-editor-action"
                         type="button"
                         onClick={onDelete}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm font-medium transition-colors"
@@ -437,6 +438,7 @@ const FloatingShiftEditor = ({
                         <span>Eliminar trabajador</span>
                     </button>
                     <button
+                        data-design-exception="native-business-button:schedule-editor-action"
                         type="button"
                         onClick={onClose}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 text-sm font-medium transition-colors"
@@ -1536,6 +1538,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
                         {/* Última fila: añadir trabajador */}
                         <button
+                            data-design-exception="native-business-button:schedule-add-row"
                             type="button"
                             onClick={() => setShowAddEmployeeModal(true)}
                             className="flex w-full min-h-[var(--tactil-minimo)] h-11 items-center gap-0.5 border-b border-gray-100 px-2 bg-white transition-colors hover:bg-gray-50 active:bg-gray-100"

@@ -1286,7 +1286,7 @@ function RecipeDetailContent() {
                                 </colgroup>
                                 <thead>
                                     <tr>
-                                        <th scope="col">Componentes</th>
+                                        <th scope="col">Ingredientes</th>
                                         <th className="text-center">Cant</th>
                                         <th className="text-center">Ud</th>
                                         {!isRestricted && <th className="text-right">Coste</th>}

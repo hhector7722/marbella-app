@@ -53,6 +53,7 @@ export function findClearBusinessNativeButtons(source: string): NativeBusinessHi
     while ((m = re.exec(source)) !== null) {
         const info = extractButton(source, m.index);
         if (!info) continue;
+        if (/\bdata-design-exception="native-business-button:[^"]+"/.test(info.openTag)) continue;
         const blob = info.openTag + info.body + info.label;
         if (STRUCTURAL_EXCLUSION_RE.test(blob)) continue;
         if (!info.hasText && !info.aria) continue;

@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 60
 responsable: propiedad del producto
-revisado: 2026-08-16
+revisado: 2026-10-07
 caducidad: 12 meses
 supersede: .cursor/rules/BAR-LA-MARBELLA-AI-OPERATING-PROTOCOL.mdc (reglas táctiles y de seguridad de layout), .cursor/rules/modals.mdc (como origen de norma)
 ---
@@ -21,9 +21,9 @@ Derivan de [PRINCIPIOS](../1-producto/PRINCIPIOS.md). Los valores concretos que 
 
 ## 1. Táctil
 
-**El objetivo mínimo de pulsación es de 48 píxeles de alto.** Sin excepciones en elementos que se usan durante el servicio.
+**El objetivo mínimo de pulsación por defecto es de 48 píxeles de alto.** Una medida distinta en un elemento concreto se acepta cuando su diseño y motivo se declaran expresamente; no cambia el valor por defecto para los demás ([ADR-0024](../4-decisiones/ADR-0024-excepciones-visuales-locales.md)).
 
-- 44 píxeles se acepta solo en elementos secundarios de pantallas de escritorio, y es un compromiso, no una alternativa.
+- 44 píxeles es la reducción prevista para elementos secundarios de escritorio. Otras medidas necesitan una excepción local expresa.
 - La separación entre dos objetivos pulsables adyacentes nunca es cero. Dos acciones contiguas con consecuencias distintas necesitan separación visible.
 - Un objetivo pulsable pequeño rodeado de área inactiva es un error: el área pulsable se extiende hasta el borde de su contenedor.
 - El texto de un campo de entrada tiene un tamaño que no provoque zoom automático en el móvil.

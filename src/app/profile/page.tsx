@@ -546,6 +546,7 @@ function ProfileContent() {
                                         {canManageLaborConditions && !isEditingLabor ? (
                                             <div className="flex shrink-0 items-center gap-2">
                                                 <button
+                                                    data-design-exception="native-business-button:labor-conditions-header-icon"
                                                     type="button"
                                                     onClick={() => setNewLaborTermSignal((n) => n + 1)}
                                                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 active:scale-[0.98]"
@@ -555,6 +556,7 @@ function ProfileContent() {
                                                     <Plus size={18} strokeWidth={2} />
                                                 </button>
                                                 <button
+                                                    data-design-exception="native-business-button:labor-conditions-header-icon"
                                                     type="button"
                                                     onClick={() => setEditContractSignal((n) => n + 1)}
                                                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 active:scale-[0.98]"

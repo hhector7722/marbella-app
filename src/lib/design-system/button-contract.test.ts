@@ -176,7 +176,7 @@ describe('Button accesibilidad e icon-only', () => {
         if (ok.ok) assert.equal(ok.iconOnly, true);
     });
 
-    it('texto + icono es inválido', () => {
+    it('texto + icono exige una excepción concreta', () => {
         assert.equal(isButtonAnatomyValid({ hasLabel: true, hasIcon: true }), false);
         const both = resolveButtonAccessibleName({
             hasLabel: true,
@@ -184,6 +184,16 @@ describe('Button accesibilidad e icon-only', () => {
         });
         assert.equal(both.ok, false);
         if (!both.ok) assert.equal(both.reason, 'label-and-icon-forbidden');
+        const exception = {
+            hasLabel: true,
+            hasIcon: true,
+            composition: 'icon-and-text' as const,
+            exceptionReason: 'Acción con símbolo propio',
+        };
+        assert.equal(isButtonAnatomyValid(exception), true);
+        assert.deepEqual(resolveButtonAccessibleName(exception), { ok: true, iconOnly: false });
+        assert.equal(isButtonAnatomyValid({ ...exception, exceptionReason: ' ' }), false);
+        assert.equal(isButtonAnatomyValid({ ...exception, hasIcon: false }), false);
     });
 
     it('vacío sin nombre es error', () => {
@@ -455,6 +465,11 @@ function extractJsxOpenTag(source: string, start: number): string {
     return source.slice(start);
 }
 
+function hasDeclaredIconTextException(tag: string): boolean {
+    return /\bcomposition="icon-and-text"/.test(tag)
+        && /\bexceptionReason="[^"]+"/.test(tag);
+}
+
 function assertFooterButtonsHaveNoIcon(rel: string, chunk: string): void {
     let searchFrom = 0;
     let found = 0;
@@ -464,7 +479,7 @@ function assertFooterButtonsHaveNoIcon(rel: string, chunk: string): void {
         found += 1;
         const tag = extractJsxOpenTag(chunk, idx);
         assert.equal(
-            /\bicon\s*=/.test(tag),
+            /\bicon\s*=/.test(tag) && !hasDeclaredIconTextException(tag),
             false,
             `${rel} footer Button lleva icon\n${tag.slice(0, 400)}`
         );
@@ -521,7 +536,7 @@ describe('Piloto Button en footers oficiales', () => {
                     const buttonIdx = chunk.indexOf('<Button', buttonFrom);
                     if (buttonIdx < 0) break;
                     const tag = extractJsxOpenTag(chunk, buttonIdx);
-                    if (/\bicon\s*=/.test(tag)) {
+                    if (/\bicon\s*=/.test(tag) && !hasDeclaredIconTextException(tag)) {
                         offenders.push(`${rel}: ${tag.replace(/\s+/g, ' ').slice(0, 160)}`);
                     }
                     buttonFrom = buttonIdx + 7;
@@ -581,6 +596,7 @@ function isSelfClosingJsxTag(tag: string): boolean {
 function buttonHasIconAndChildren(source: string, start: number): boolean {
     const tag = extractJsxOpenTag(source, start);
     if (!/\bicon\s*=/.test(tag)) return false;
+    if (hasDeclaredIconTextException(tag)) return false;
     if (isSelfClosingJsxTag(tag)) return false;
     const innerStart = start + tag.length;
     const close = source.indexOf('</Button>', innerStart);
@@ -589,10 +605,11 @@ function buttonHasIconAndChildren(source: string, start: number): boolean {
 }
 
 describe('Button anatomía: no icono + texto', () => {
-    it('el contrato declara hasLabel+hasIcon como error explícito', () => {
+    it('el contrato exige declarar la excepción para icono + texto', () => {
         const source = readFileSync(join(SRC_ROOT, 'lib/design-system/button-contract.ts'), 'utf8');
         assert.match(source, /label-and-icon-forbidden/);
         assert.match(source, /if \(args\.hasLabel && args\.hasIcon\)/);
+        assert.match(source, /args\.composition === 'icon-and-text' && args\.exceptionReason\?\.trim\(\)/);
         assert.match(source, /return \{ ok: false, reason: 'label-and-icon-forbidden' \}/);
     });
 
@@ -625,6 +642,8 @@ describe('Button consumers: CTAs de negocio nativos', () => {
         assert.equal(isClearBusinessNativeButtonLabel('Cancelar'), true);
         assert.equal(isClearBusinessNativeButtonLabel('Añadir una unidad de X'), false);
         assert.equal(isClearBusinessNativeButtonLabel('', 'Ver foto ampliada'), false);
+        assert.equal(findClearBusinessNativeButtons('<button>Guardar</button>').length, 1);
+        assert.equal(findClearBusinessNativeButtons('<button data-design-exception="native-business-button:control-de-calendario">Guardar</button>').length, 0);
     });
 
     it('no quedan CTAs de negocio claros como <button> nativo', () => {
