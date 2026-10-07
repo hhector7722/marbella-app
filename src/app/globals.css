@@ -264,6 +264,18 @@
     0 0 0 1px rgba(24, 24, 27, 0.35),
     0 1px 2px rgb(0 0 0 / 0.35);
 }
+
+/* Cambio: «Añadir cantidad» conserva la receta de Calculadora rápida,
+   pero compacta ligeramente el texto para compensar su etiqueta más larga. */
+[data-element='cash-change-add-action'] [data-component='Button'] {
+  font-size: 11px;
+}
+[data-element='cash-change-add-action'] [data-component='Button']::before {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    0 0 0 1px rgba(24, 24, 27, 0.35),
+    0 1px 2px rgb(0 0 0 / 0.35);
+}
 html[data-quick-tool='open'] [data-component='Modal'] {
   align-items: flex-end;
 }

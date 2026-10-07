@@ -1603,6 +1603,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(selectBlock, /data-element="cash-change-summary"/, 'las direcciones viven sobre el plano');
         assert.match(selectBlock, /instance="cash-change-add-first-amount"[\s\S]*?openLegEditor\('step1'\)/, 'el primer botón abre su desglose');
         assert.match(selectBlock, /instance="cash-change-add-second-amount"[\s\S]*?openLegEditor\('step2'\)/, 'el segundo botón abre su desglose');
+        assert.match(selectBlock, /data-element="cash-change-forward-amount"[\s\S]*?formatExchangeAmount\(totalStep1\)/, 'el importe de ida vive sobre la flecha verde');
+        assert.match(selectBlock, /data-element="cash-change-reverse-amount"[\s\S]*?formatExchangeAmount\(totalStep2\)/, 'el importe de vuelta vive bajo la flecha roja');
+        assert.match(selectBlock, /data-element="cash-change-arrows"/, 'las dos flechas tienen una zona central reservada');
         assert.match(selectBlock, /instance="cash-change-save"/, 'guardar vive en el footer del modal');
         assert.match(selectBlock, /instance="cash-change-cancel"/, 'cancelar vive en el footer del modal');
         assert.doesNotMatch(selectBlock, /instance="cash-change-confirm"/, 'no existe un tick central para guardar');
@@ -1613,6 +1616,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(planBlock, /unoptimized/, 'plano y overlays conservan sus assets originales durante el zoom');
         assert.match(planBlock, /aria-pressed=\{isA \|\| isB\}/, 'las zonas de caja conservan su selección accesible');
         assert.match(planBlock, /cashChangePlanImage/, 'el plano monta los iconos de caja como overlays independientes');
+        assert.match(planBlock, /data-element="cash-change-plan-label"/, 'cada overlay recupera su etiqueta roja');
+        assert.match(planBlock, /cashChangePlanDisplayLabel\(option\)/, 'las etiquetas usan el nombre corto del plano');
         assert.match(planBlock, /opacity-40/, 'el fondo del plano se atenúa cuando hay dos cajas seleccionadas');
         const planImage = readFileSync(join(REPO_ROOT, 'public/images/cash-change-plan.avif'));
         assert.ok(planImage.length > 40_000, 'el plano limpio conserva detalle suficiente para ampliar');

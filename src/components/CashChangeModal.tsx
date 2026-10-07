@@ -108,6 +108,17 @@ function cashChangePlanImage(box: BoxOption): string | null {
     }
 }
 
+function cashChangePlanDisplayLabel(box: BoxOption): string {
+    switch (cashChangePlanKey(box)) {
+        case 'cambio1': return 'Cambio 1';
+        case 'cambio2': return 'Cambio 2';
+        case 'inicial': return 'Inicial';
+        case 'tpv1': return 'TPV 1';
+        case 'tpv2': return 'TPV 2';
+        default: return box.name;
+    }
+}
+
 function formatExchangeAmount(amount: number): string {
     return amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 }
@@ -851,9 +862,9 @@ export const CashChangeModal = ({
                 >
                     <div
                         data-element="cash-change-summary"
-                        className="mx-auto flex h-[7.75rem] w-full max-w-[460px] shrink-0 items-stretch justify-center gap-2 pb-2 sm:h-[8.25rem] sm:gap-4"
+                        className="mx-auto flex h-[8.75rem] w-full max-w-[480px] shrink-0 items-start justify-center gap-2 pb-2 sm:gap-4"
                     >
-                        <div className="grid min-w-0 flex-1 grid-rows-[3.5rem_1.25rem_2.5rem] place-items-center gap-1">
+                        <div className="grid min-w-0 flex-1 grid-rows-[3.5rem_3rem] place-items-center gap-0.5">
                             <div className="flex h-14 w-14 items-center justify-center overflow-hidden">
                                 {boxA && cashChangePlanImage(boxA) ? (
                                     <Image
@@ -868,14 +879,7 @@ export const CashChangeModal = ({
                                     <Wallet size={22} className="text-zinc-300" strokeWidth={2} />
                                 ) : null}
                             </div>
-                            <div className="flex h-5 items-center justify-center">
-                                {totalStep1 > 0.005 ? (
-                                    <span className="text-[12px] font-bold tabular-nums text-white">
-                                        {formatExchangeAmount(totalStep1)}
-                                    </span>
-                                ) : null}
-                            </div>
-                            <div className="flex h-10 items-center justify-center">
+                            <div data-element="cash-change-add-action" className="flex h-12 items-center justify-center">
                                 {boxA && boxB ? (
                                     <Button
                                         type="button"
@@ -890,25 +894,47 @@ export const CashChangeModal = ({
                             </div>
                         </div>
 
-                        <div className="flex w-20 shrink-0 items-start justify-center pt-1 sm:w-28">
-                            <svg
-                                viewBox="0 0 128 58"
-                                className={cn(
-                                    'h-14 w-full overflow-visible transition-opacity duration-200',
-                                    boxA && boxB ? 'opacity-100' : 'opacity-0',
-                                )}
-                                aria-hidden
-                            >
+                        <div
+                            data-element="cash-change-arrows"
+                            className={cn(
+                                'grid w-24 shrink-0 grid-rows-[1.25rem_1.75rem_1.25rem_1.75rem_1.25rem] place-items-center sm:w-32',
+                                boxA && boxB ? 'opacity-100' : 'opacity-0',
+                            )}
+                        >
+                            <div data-element="cash-change-forward-amount" className="flex h-5 items-center justify-center">
+                                {totalStep1 > 0.005 ? (
+                                    <span className="text-[11px] font-bold tabular-nums text-white">
+                                        {formatExchangeAmount(totalStep1)}
+                                    </span>
+                                ) : null}
+                            </div>
+
+                            <svg viewBox="0 0 128 28" className="h-7 w-full overflow-visible" aria-hidden>
                                 <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M9 16 C38 5 88 5 117 15" stroke="#15998c" strokeWidth="4.2" />
-                                    <path d="M106 5 L121 15 L107 26" stroke="#15998c" strokeWidth="4.2" />
-                                    <path d="M119 42 C89 53 40 53 10 43" stroke="#e85d75" strokeWidth="4.2" />
-                                    <path d="M22 33 L7 43 L21 54" stroke="#e85d75" strokeWidth="4.2" />
+                                    <path d="M8 18 C39 5 88 5 118 16" stroke="#15998c" strokeWidth="4.2" />
+                                    <path d="M106 5 L122 16 L107 27" stroke="#15998c" strokeWidth="4.2" />
                                 </g>
                             </svg>
+
+                            <div aria-hidden />
+
+                            <svg viewBox="0 0 128 28" className="h-7 w-full overflow-visible" aria-hidden>
+                                <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M120 10 C89 23 40 23 10 12" stroke="#e85d75" strokeWidth="4.2" />
+                                    <path d="M22 1 L6 12 L21 23" stroke="#e85d75" strokeWidth="4.2" />
+                                </g>
+                            </svg>
+
+                            <div data-element="cash-change-reverse-amount" className="flex h-5 items-center justify-center">
+                                {totalStep2 > 0.005 ? (
+                                    <span className="text-[11px] font-bold tabular-nums text-white">
+                                        {formatExchangeAmount(totalStep2)}
+                                    </span>
+                                ) : null}
+                            </div>
                         </div>
 
-                        <div className="grid min-w-0 flex-1 grid-rows-[3.5rem_1.25rem_2.5rem] place-items-center gap-1">
+                        <div className="grid min-w-0 flex-1 grid-rows-[3.5rem_3rem] place-items-center gap-0.5">
                             <div className="flex h-14 w-14 items-center justify-center overflow-hidden">
                                 {boxB && cashChangePlanImage(boxB) ? (
                                     <Image
@@ -923,14 +949,7 @@ export const CashChangeModal = ({
                                     <Wallet size={22} className="text-zinc-300" strokeWidth={2} />
                                 ) : null}
                             </div>
-                            <div className="flex h-5 items-center justify-center">
-                                {totalStep2 > 0.005 ? (
-                                    <span className="text-[12px] font-bold tabular-nums text-white">
-                                        {formatExchangeAmount(totalStep2)}
-                                    </span>
-                                ) : null}
-                            </div>
-                            <div className="flex h-10 items-center justify-center">
+                            <div data-element="cash-change-add-action" className="flex h-12 items-center justify-center">
                                 {boxA && boxB ? (
                                     <Button
                                         type="button"
@@ -1036,6 +1055,12 @@ export const CashChangeModal = ({
                                             unoptimized
                                             className="h-auto w-full select-none object-contain"
                                         />
+                                        <span
+                                            data-element="cash-change-plan-label"
+                                            className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-white shadow-sm"
+                                        >
+                                            {cashChangePlanDisplayLabel(option)}
+                                        </span>
                                     </div>
                                 );
                             })}
