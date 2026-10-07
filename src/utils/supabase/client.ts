@@ -6,6 +6,7 @@ const READ_ONLY_RPCS = new Set([
   'get_daily_sales_stats',
   'get_financial_statement',
   'get_hourly_sales',
+  'get_ingredient_activity',
   'get_operational_box_status',
   'get_period_card_payments',
   'get_product_margin_ranking',
