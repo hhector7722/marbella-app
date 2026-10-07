@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-18
+revisado: 2026-10-07
 caducidad: 6 meses
 supersede: —
 ---
@@ -245,6 +245,7 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - Radio único del panel: `radio.superficie` (16 px). El consumidor no puede sobrescribirlo con `className`.
 - **`className` del panel** solo admite composición externa (flex, overflow, tipografía de tono…). `pickModalPanelClassName` descarta max-width/max-height, padding, margin, radio, sombra, fondo y z-index. Ancho y alto los fija la variante / tokens del shell. Deuda de consumidores que aún pasan tokens de shell: allowlist `LEGACY_MODAL_PANEL_CLASSNAME_ALLOWLIST` (el runtime ya filtra).
 - **Inset del Body:** el shell aplica `padding-inline` + `padding-top` contractuales. Un hijo raíz con `p-4`/`px-6`/… (≥ `espacio.4`) **duplica** el inset. Gate de regresión: `findModalRootPaddingClassNames` + allowlist `LEGACY_MODAL_ROOT_PADDING_ALLOWLIST`. No se compensa con CSS inverso.
+- **Contenido visual a sangre:** `fullBleedBody` elimina solo el inset horizontal del Body para medios que deben compartir los bordes laterales e inferior del panel (por ejemplo, el plano de Cambio). La separación vertical Header → Body y el inset de la cabecera permanecen contractuales; los controles dentro del Body resuelven su propia separación.
 - **Footer:** acciones con `<Button>` oficial (texto, sin iconos). Los botones del pie se igualan al ancho del mayor: el shell envuelve el contenido en `footer-actions` (grid `1fr`, sin JS). Un único `<Button>` no cambia. Un componente de pie con layout propio (`CashCountFooter`, total a la izquierda) no se iguala por el shell; iguala sus propios botones. Gate: ningún `<button>` nativo nuevo en `footer=`; deuda en `LEGACY_MODAL_FOOTER_NATIVE_BUTTON_ALLOWLIST` (7 rutas).
 - **`zIndexClass`:** deprecated; allowlist vacía — uso nuevo falla test. Preferir `layer`.
 - **`backdropClassName`:** deprecated salvo excepciones documentadas (`LEGACY_MODAL_BACKDROP_CLASSNAME_ALLOWLIST`: lightbox de carta). El backdrop lo posee la capa ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
