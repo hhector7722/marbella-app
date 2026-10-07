@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye, ChevronLeft, ChevronRight, Wallet, Plus, Check, ArrowRight, ArrowRightLeft } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight, Wallet, Plus, Check, ArrowRight, ArrowRightLeft, X } from 'lucide-react';
 import Image from 'next/image';
 import { cn, firstGivenName } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -91,10 +91,10 @@ type PlanArrowGeometry = {
 };
 
 function buildPlanArrowGeometry(a: PlanPoint, b: PlanPoint): PlanArrowGeometry {
-    // Coincide con aspect-[890/535] del plano para que las curvas mantengan
+    // Coincide con el nuevo plano 1298×663 para que las curvas mantengan
     // su forma y separación real también en móvil.
-    const width = 890;
-    const height = 535;
+    const width = 1298;
+    const height = 663;
     const ax = (a.x / 100) * width;
     const ay = (a.y / 100) * height;
     const bx = (b.x / 100) * width;
@@ -783,48 +783,119 @@ export const CashChangeModal = ({
             <Modal
                 open
                 onClose={onClose}
-                variant="standard"
+                variant="work"
                 layer="base"
                 instance="cash-change-select"
                 usageId="cash-change-select"
                 usageLabel="Cambio de caja"
-                headerTitleAlign="left"
                 title="Cambio"
-                headerTrailing={canViewExchangeHistory ? (
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setStep('select');
-                            setZoomDenom(null);
-                            setShowExchangeHistoryModal(true);
-                        }}
-                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 opacity-90 shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                        aria-label="Histórico de intercambios"
-                    >
-                        <Eye size={22} strokeWidth={2.5} className="stroke-current fill-none" />
-                    </button>
-                ) : undefined}
-                footer={
-                    totalStep1 > 0.005 && totalStep2 > 0.005 ? (
-                        <Button
-                            type="button"
-                            variant="primary"
-                            instance="cash-change-confirm"
-                            onClick={() => void handleGuardarStep2()}
-                            disabled={!canConfirmExchange}
-                            loading={savingExchange}
-                            loadingLabel="Guardando"
-                        >
-                            Confirmar cambio
-                        </Button>
-                    ) : undefined
-                }
+                scheme="dark"
+                hideHeader
+                hideCloseButton
+                scrollContent={false}
             >
-                <div className="flex min-h-0 flex-1 items-center justify-center bg-white p-2">
-                    <div className="w-full overflow-hidden rounded-xl">
-                        <div className="relative aspect-[890/535] w-full overflow-hidden rounded-xl bg-zinc-100">
+                <div className="relative flex min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border-[3px] border-white bg-[#0b213c] shadow-2xl">
+                    <div className="grid min-h-[72px] shrink-0 grid-cols-[auto_1fr_auto] items-center gap-2 bg-[#0b213c] px-3 py-2 sm:min-h-[92px] sm:gap-4 sm:px-5">
+                        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+                            <span className="text-[11px] font-medium uppercase tracking-wide text-white sm:text-sm">Cambio</span>
+                            {canViewExchangeHistory ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setStep('select');
+                                        setZoomDenom(null);
+                                        setShowExchangeHistoryModal(true);
+                                    }}
+                                    className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                                    aria-label="Histórico de intercambios"
+                                >
+                                    <Eye size={17} strokeWidth={2.2} />
+                                </button>
+                            ) : null}
+                        </div>
+
+                        <div className="flex min-w-0 items-center justify-center gap-1.5 sm:gap-3">
+                            <div className="flex min-w-0 flex-col items-center gap-1">
+                                <div className="flex h-10 w-11 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm sm:h-12 sm:w-14">
+                                    {boxA && cashChangePlanImage(boxA) ? (
+                                        <Image
+                                            src={cashChangePlanImage(boxA)!}
+                                            alt=""
+                                            width={48}
+                                            height={40}
+                                            className="h-full w-full object-contain"
+                                        />
+                                    ) : (
+                                        <span className="h-full w-full rounded-lg bg-zinc-50" />
+                                    )}
+                                </div>
+                                <span className="max-w-16 truncate text-[6px] font-black uppercase tracking-tight text-white/70 sm:max-w-24 sm:text-[8px]">
+                                    {boxA ? cashChangePlanLabel(boxA) : 'Origen'}
+                                </span>
+                            </div>
+
+                            <div className="flex min-w-[74px] flex-col items-center gap-0.5 sm:min-w-[118px] sm:gap-1">
+                                <div className="flex items-center gap-1 text-[#43d3c2]">
+                                    <ArrowRight className="h-3.5 w-6 sm:h-4 sm:w-8" strokeWidth={2.8} />
+                                    <span className="text-[7px] font-black tabular-nums sm:text-[10px]">
+                                        {totalStep1 > 0.005 ? formatExchangeAmount(totalStep1) : '—'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1 text-[#ff6f86]">
+                                    <ArrowRight className="h-3.5 w-6 rotate-180 sm:h-4 sm:w-8" strokeWidth={2.8} />
+                                    <span className="text-[7px] font-black tabular-nums sm:text-[10px]">
+                                        {totalStep2 > 0.005 ? formatExchangeAmount(totalStep2) : '—'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex min-w-0 flex-col items-center gap-1">
+                                <div className="flex h-10 w-11 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm sm:h-12 sm:w-14">
+                                    {boxB && cashChangePlanImage(boxB) ? (
+                                        <Image
+                                            src={cashChangePlanImage(boxB)!}
+                                            alt=""
+                                            width={48}
+                                            height={40}
+                                            className="h-full w-full object-contain"
+                                        />
+                                    ) : (
+                                        <span className="h-full w-full rounded-lg bg-zinc-50" />
+                                    )}
+                                </div>
+                                <span className="max-w-16 truncate text-[6px] font-black uppercase tracking-tight text-white/70 sm:max-w-24 sm:text-[8px]">
+                                    {boxB ? cashChangePlanLabel(boxB) : 'Destino'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-1 sm:gap-2">
+                            {totalStep1 > 0.005 && totalStep2 > 0.005 ? (
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    instance="cash-change-confirm"
+                                    icon={<Check size={16} strokeWidth={3} />}
+                                    aria-label="Confirmar cambio"
+                                    onClick={() => void handleGuardarStep2()}
+                                    disabled={!canConfirmExchange}
+                                    loading={savingExchange}
+                                />
+                            ) : null}
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/10 hover:text-white"
+                                aria-label="Cerrar cambio"
+                            >
+                                <X size={18} strokeWidth={2.4} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="relative aspect-[1298/663] w-full overflow-hidden bg-zinc-100">
                             <Image
-                                src="/images/cash-change-plan.webp"
+                                src="/images/cash-change-plan.png"
                                 alt="Plano de cajas"
                                 fill
                                 priority
@@ -888,7 +959,7 @@ export const CashChangeModal = ({
                             {arrowGeometry && boxA && boxB ? (
                                 <>
                                     <svg
-                                        viewBox="0 0 890 535"
+                                        viewBox="0 0 1298 663"
                                         preserveAspectRatio="none"
                                         className={cn(
                                             'pointer-events-none absolute inset-0 z-10 h-full w-full overflow-visible',
@@ -1010,11 +1081,10 @@ export const CashChangeModal = ({
                                 </div>
                             ) : null}
                         </div>
-                    </div>
 
                     {boxA && boxB && totalStep1 > 0.005 && totalStep2 > 0.005 && !isBalancedTransfer ? (
-                        <div className="mt-2 flex justify-center">
-                            <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-black tabular-nums text-rose-500">
+                        <div className="pointer-events-none absolute bottom-2 left-1/2 z-40 -translate-x-1/2 sm:bottom-3">
+                            <span className="rounded-full border border-white/70 bg-[#0b213c]/90 px-2.5 py-1 text-[9px] font-black tabular-nums text-white shadow-lg backdrop-blur-sm sm:text-[10px]">
                                 Δ {formatExchangeAmount(transferDifference)}
                             </span>
                         </div>
