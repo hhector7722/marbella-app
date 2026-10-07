@@ -174,7 +174,27 @@ El hecho se guarda en `purchase_orders.dispatched_at`. Lo produce `mark_purchase
 
 ---
 
-## 7. Invariantes
+## 7. Resumen de actividad de un ingrediente
+
+La ficha de un ingrediente muestra una card **ACTIVIDAD** con el resumen de los últimos 30 días. No lista movimientos: agrega las recepciones económicas confirmadas por K4 (`purchase_receipt_confirmations`), que son la fuente de la cantidad y del precio normalizados a la unidad de compra.
+
+| Magnitud | Cómo se obtiene |
+|---|---|
+| Compras | Número de recepciones confirmadas con fecha en el periodo |
+| Cantidad comprada | Suma de `purchase_quantity`, en la unidad de compra del ingrediente |
+| Precio medio | Media de `normalized_unit_price` ponderada por `purchase_quantity` |
+| Variación | `(current_price − precio_medio_del_periodo_anterior) / precio_medio_del_periodo_anterior` |
+| Última compra | Fecha, proveedor y precio normalizado de la recepción más reciente |
+
+El periodo anterior es la ventana de la misma duración inmediatamente anterior. Solo se agregan recepciones en la unidad de compra vigente: mezclar unidades produciría una media falsa. Si no hay compras en el periodo, la card muestra el estado vacío y no inventa cifras.
+
+Lo produce `get_ingredient_activity`, una lectura agregada. La pantalla no recalcula el resumen ni descarga el histórico completo: el histórico detallado se consulta solo cuando la persona pulsa **Ver historial**.
+
+**Una subida o bajada es relevante a partir del 5 %.** Por debajo de ese umbral la card no muestra aviso; a partir de él, avisa con el porcentaje y el recorrido del precio anterior al actual.
+
+---
+
+## 8. Invariantes
 
 1. El precio de un ingrediente siempre está expresado en euros por su unidad de compra.
 2. Una presentación o equivalencia física nunca escribe el precio actual.

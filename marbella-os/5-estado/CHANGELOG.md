@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-07
 
+- **La ficha de ingrediente cambia el HISTÓRICO por ACTIVIDAD.** Muestra el resumen de los últimos 30 días (número de compras, cantidad, precio medio ponderado, variación y última compra) con una micrográfica de precio y un aviso cuando la variación supera el 5 %. El histórico detallado ya no se carga al abrir la ficha: se consulta al pulsar «Ver historial». El resumen lo produce una única lectura agregada en base de datos.
+
 - **Cambio: flechas del plano más legibles y zoom del plano.** Las dos curvas de intercambio aumentan grosor y separación, las puntas crecen y terminan antes de la caja destino para no solaparse con el icono. El plano permite zoom de 100% a 240% mediante controles − / porcentaje / + y rueda del ratón.
 
 - **Cambio: iconos del plano recalibrados y etiquetados según la referencia visual.** Cambio 1, Inicial, Cambio 2, TPV 2 y TPV 1 se recolocan sobre los elementos físicos indicados del plano, cada uno incorpora una etiqueta roja compacta y las flechas de la cabecera pasan a una composición curva roja con contorno blanco.

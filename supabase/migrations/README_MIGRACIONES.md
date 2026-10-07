@@ -158,3 +158,14 @@ antes de su primer job. `20261003180658_k4_attachment_evidence_hash.sql` permite
 la huella de un adjunto solo si está vinculada al mismo albarán; conserva las
 demás comprobaciones de K4. Se verificaron la columna real y la definición de
 la función aplicada. Ninguna de las dos migraciones toca el ledger.
+
+## 20261007130000 · Resumen de actividad de un ingrediente
+
+`20261007130000_ingredient_activity_summary.sql` añade
+`public.get_ingredient_activity(uuid, integer)`, una lectura agregada que resume
+los últimos N días de compras de un ingrediente (número, cantidad, precio medio
+ponderado, variación frente al periodo anterior, última compra y puntos de
+precio) a partir de `purchase_receipt_confirmations`. Es `SECURITY INVOKER`, no
+concede nada a `anon` y solo la ejecutan `authenticated` y `service_role`. La
+migración también crea un índice por `(ingredient_id, confirmed_at DESC)`. No
+escribe precios, stock ni confirmaciones.
