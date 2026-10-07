@@ -782,9 +782,10 @@ export const CashChangeModal = ({
                 hideHeader
                 hideCloseButton
                 scrollContent={false}
+                panelHostClassName="[&>[data-element=container]]:border [&>[data-element=container]]:border-white/85 [&>[data-element=container]]:shadow-xl"
             >
-                <div className="relative flex min-h-0 w-full flex-col overflow-hidden rounded-[1.75rem] border-[3px] border-white bg-[#0b213c] shadow-2xl">
-                    <div className="relative min-h-[72px] shrink-0 bg-[#0b213c] px-3 py-2 sm:min-h-[92px] sm:px-5">
+                <div className="relative flex min-h-0 w-full flex-col overflow-hidden bg-[#0b213c]">
+                    <div className="relative min-h-[64px] shrink-0 bg-[#0b213c] px-3 py-1.5 sm:min-h-[78px] sm:px-4">
                         <div className="absolute inset-y-0 left-3 flex items-center gap-1.5 sm:left-5 sm:gap-2">
                             <span className="text-[11px] font-medium uppercase tracking-wide text-white sm:text-sm">Cambio</span>
                             {canViewExchangeHistory ? (
@@ -804,7 +805,7 @@ export const CashChangeModal = ({
                         </div>
 
                         <div className="absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2">
-                            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm sm:h-16 sm:w-16 sm:rounded-2xl sm:p-2">
+                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white p-1 shadow-sm sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
                                 {boxA && cashChangePlanImage(boxA) ? (
                                     <Image
                                         src={cashChangePlanImage(boxA)!}
@@ -819,17 +820,17 @@ export const CashChangeModal = ({
 
                         <div className="absolute left-[49.25%] top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 text-[#ef3f3f] sm:gap-1">
                             <ArrowRight
-                                className="h-4 w-10 rotate-180 drop-shadow-[0_0_1px_rgba(255,255,255,1)] sm:h-5 sm:w-14"
+                                className="h-3.5 w-8 rotate-180 drop-shadow-[0_0_1px_rgba(255,255,255,1)] sm:h-4 sm:w-10"
                                 strokeWidth={3}
                             />
                             <ArrowRight
-                                className="h-4 w-10 drop-shadow-[0_0_1px_rgba(255,255,255,1)] sm:h-5 sm:w-14"
+                                className="h-3.5 w-8 drop-shadow-[0_0_1px_rgba(255,255,255,1)] sm:h-4 sm:w-10"
                                 strokeWidth={3}
                             />
                         </div>
 
                         <div className="absolute left-[62.5%] top-1/2 -translate-x-1/2 -translate-y-1/2">
-                            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm sm:h-16 sm:w-16 sm:rounded-2xl sm:p-2">
+                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white p-1 shadow-sm sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
                                 {boxB && cashChangePlanImage(boxB) ? (
                                     <Image
                                         src={cashChangePlanImage(boxB)!}
@@ -893,7 +894,7 @@ export const CashChangeModal = ({
                                         className={cn(
                                             'absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 border-0 bg-transparent p-0 transition-all duration-200 active:scale-95',
                                             selected
-                                                ? 'scale-110 opacity-100'
+                                                ? 'scale-[1.03] opacity-100'
                                                 : boxA && boxB
                                                     ? 'opacity-[0.28]'
                                                     : 'opacity-90 hover:opacity-100',
@@ -902,7 +903,7 @@ export const CashChangeModal = ({
                                     >
                                         <span
                                             className={cn(
-                                                'flex h-8 w-10 items-center justify-center transition-all duration-200',
+                                                'flex h-6 w-8 items-center justify-center transition-all duration-200',
                                                 isA
                                                     ? 'drop-shadow-[0_0_5px_rgba(35,168,154,0.95)]'
                                                     : isB
@@ -914,8 +915,8 @@ export const CashChangeModal = ({
                                                 <Image
                                                     src={planImage}
                                                     alt=""
-                                                    width={36}
-                                                    height={28}
+                                                    width={26}
+                                                    height={20}
                                                     className="h-full w-full object-contain"
                                                 />
                                             ) : (
