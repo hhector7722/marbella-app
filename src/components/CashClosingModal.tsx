@@ -20,6 +20,7 @@ import {
 } from '@/lib/cash-closing-balance';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { Notice } from '@/components/ui/Notice';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { randomId } from '@/lib/random-id';
@@ -113,6 +114,13 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     // 2. STATE: COUNT
     const [counts, setCounts] = useState<Record<string, number>>({});
+
+    // Dinero de Tpv 2 retirado ese día para compras de urgencia. Si aún no hay
+    // cierre ese día, se suma al Efectivo con su mismo desglose de billetes/monedas.
+    const [tpv2Auto, setTpv2Auto] = useState<{ total: number; breakdown: Record<string, number> }>({
+        total: 0,
+        breakdown: {},
+    });
 
     // 3. STATE: OPENING CASH
     const [openingCash, setOpeningCash] = useState(0);
@@ -276,6 +284,53 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 if (magnitudes.ventas === 0 && magnitudes.tarjeta === 0 && magnitudes.tickets === 0) {
                     toast.message('Sin tickets BDP para esta fecha en Supabase');
                 }
+
+                // Tpv 2 → Efectivo: dinero retirado de esa caja para compras de urgencia.
+                // Solo si no hay un cierre ya hecho ese día (evita contarlo dos veces).
+                const { data: existingClosings } = await supabase
+                    .from('cash_closings')
+                    .select('id')
+                    .eq('closing_date', dateStr)
+                    .limit(1);
+
+                if ((existingClosings?.length ?? 0) > 0) {
+                    setTpv2Auto({ total: 0, breakdown: {} });
+                } else {
+                    const { data: tpvBoxes } = await supabase
+                        .from('cash_boxes')
+                        .select('id, name')
+                        .eq('type', 'tpv');
+                    const tpv2Ids = ((tpvBoxes ?? []) as { id: string; name: string | null }[])
+                        .filter((b) => /tpv\s*2/i.test(b.name ?? ''))
+                        .map((b) => b.id);
+
+                    if (tpv2Ids.length === 0) {
+                        setTpv2Auto({ total: 0, breakdown: {} });
+                    } else {
+                        const dayStart = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 0, 0, 0);
+                        const dayEnd = new Date(dayStart);
+                        dayEnd.setDate(dayEnd.getDate() + 1);
+
+                        const { data: movements } = await supabase
+                            .from('treasury_log')
+                            .select('amount, breakdown')
+                            .in('box_id', tpv2Ids)
+                            .eq('type', 'OUT')
+                            .gte('created_at', dayStart.toISOString())
+                            .lt('created_at', dayEnd.toISOString());
+
+                        const breakdown: Record<string, number> = {};
+                        let total = 0;
+                        ((movements ?? []) as { amount: number | null; breakdown: Record<string, number> | null }[])
+                            .forEach((row) => {
+                                total += Number(row.amount ?? 0);
+                                Object.entries(row.breakdown ?? {}).forEach(([denom, qty]) => {
+                                    breakdown[denom] = (breakdown[denom] ?? 0) + Number(qty ?? 0);
+                                });
+                            });
+                        setTpv2Auto({ total, breakdown });
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching closing breakdown:', error);
                 toast.error('Error al sincronizar datos de cierre desde BDP');
@@ -287,7 +342,8 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     // --- CALCULATIONS ---
     const totalSalesGross = tpvData.totalSales;
-    const totalCounted = Object.entries(counts).reduce((sum, [val, qty]) => sum + (parseFloat(val) * qty), 0);
+    const userCounted = Object.entries(counts).reduce((sum, [val, qty]) => sum + (parseFloat(val) * qty), 0);
+    const totalCounted = userCounted + tpv2Auto.total;
     const { esperado: expectedCash, descuadre: difference } = computeCashClosingBalance({
         ventas: tpvData.totalSales,
         pendiente: tpvData.pendingSales,
@@ -427,11 +483,17 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             // Calculate Net Sales (Excluding 10% IVA as expected by Dashboard)
             const netSalesCalculated = totalSalesGross / 1.10;
 
-            // Prepare breakdown for the new unified treasury logic
+            // Prepare breakdown for the new unified treasury logic.
+            // Incluye el desglose de Tpv 2 retirado para compras de urgencia.
             const breakdownJson: Record<string, number> = {};
             Object.entries(counts).forEach(([denomination, count]) => {
                 if (count > 0) {
                     breakdownJson[denomination] = count;
+                }
+            });
+            Object.entries(tpv2Auto.breakdown).forEach(([denomination, count]) => {
+                if (count > 0) {
+                    breakdownJson[denomination] = (breakdownJson[denomination] ?? 0) + count;
                 }
             });
 
@@ -689,12 +751,26 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
                     {/* STEP 2: COUNT */}
                     {step === 'count' && (
-                        <DenominationCountGrid
-                            counts={counts}
-                            onAdjust={handleAdjustCount}
-                            onChange={updateCount}
-                            denominations={CLOSING_DENOMS}
-                        />
+                        <div className="space-y-3">
+                            {tpv2Auto.total > 0.005 ? (
+                                <Notice
+                                    instance="cash-closing-tpv2-auto"
+                                    variant="info"
+                                    title="Tpv 2 · compras de urgencia"
+                                >
+                                    <p className="text-xs font-semibold">
+                                        {tpv2Auto.total.toFixed(2)}€ retirados de Tpv 2 se suman al Efectivo,
+                                        con el mismo desglose de billetes y monedas.
+                                    </p>
+                                </Notice>
+                            ) : null}
+                            <DenominationCountGrid
+                                counts={counts}
+                                onAdjust={handleAdjustCount}
+                                onChange={updateCount}
+                                denominations={CLOSING_DENOMS}
+                            />
+                        </div>
                     )}
 
                     {/* STEP 3: SUMMARY */}

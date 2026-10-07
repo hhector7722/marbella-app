@@ -634,15 +634,15 @@ export default function StaffDashboardView({
         const changeBoxes = allBoxes.filter(b => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         const tpvBoxes = allBoxes.filter(b => b.type === 'tpv').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-        if (op) list.push({ id: op.id, name: 'Inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url ?? undefined });
-        changeBoxes.forEach((b, i) => list.push({ id: b.id, name: `Cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url ?? undefined }));
+        if (op) list.push({ id: op.id, name: 'Inicial', shortLabel: 'Inicial', hasInventory: true, kind: 'cash', image_url: op.image_url ?? undefined });
+        changeBoxes.forEach((b, i) => list.push({ id: b.id, name: `Cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, kind: 'cash', image_url: b.image_url ?? undefined }));
 
         // Add TPVs from DB if they exist, otherwise fallback for migration period
         if (tpvBoxes.length > 0) {
-            tpvBoxes.forEach(b => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url ?? undefined }));
+            tpvBoxes.forEach(b => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, kind: 'tpv', image_url: b.image_url ?? undefined }));
         } else {
-            list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
-            list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
+            list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false, kind: 'tpv' });
+            list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false, kind: 'tpv' });
         }
         return list;
     };
@@ -696,10 +696,8 @@ export default function StaffDashboardView({
             const customDate = payload.customDate;
 
             for (const entry of payload.sources) {
-                // EXCLUDE TPVs from database inserts (they don't record inventory movements)
-                const isTpvByHardcodedId = entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2';
-                const isTpvByDb = allBoxes.some(b => b.id === entry.sourceId && b.type === 'tpv');
-                if (isTpvByHardcodedId || isTpvByDb) continue;
+                // TPV sin caja real en BD: su importe no se puede persistir como movimiento.
+                if (entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2') continue;
 
                 if (entry.amount < 0.005) continue;
                 const breakdownForDb: Record<string, number> = {};
@@ -1394,6 +1392,7 @@ export default function StaffDashboardView({
                 onClose={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
                 variant="amplify"
                 layer="base"
+                scheme="dark"
                 instance="staff-purchase-multi-source"
                 usageId="staff-purchase-multi-source"
                 usageLabel="Compra multiorigen"
@@ -1403,6 +1402,7 @@ export default function StaffDashboardView({
             >
                 <PurchaseMultiSourceForm
                     embedded
+                    parentInstance="staff-purchase-multi-source"
                     paymentSources={buildPaymentSources()}
                     inventoriesByBoxId={purchaseInventoriesByBoxId}
                     selectedDate={purchaseDate}

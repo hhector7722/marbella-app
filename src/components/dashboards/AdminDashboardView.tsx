@@ -489,13 +489,13 @@ const AdminDashboardView = ({
         const op = boxes.find((b) => b.type === 'operational');
         const changeBoxes = boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         const tpvBoxes = boxes.filter((b) => b.type === 'tpv').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url ?? undefined });
-        changeBoxes.forEach((b, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url ?? undefined }));
+        if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true, kind: 'cash', image_url: op.image_url ?? undefined });
+        changeBoxes.forEach((b, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, kind: 'cash', image_url: b.image_url ?? undefined }));
         if (tpvBoxes.length > 0) {
-            tpvBoxes.forEach((b) => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url ?? undefined }));
+            tpvBoxes.forEach((b) => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, kind: 'tpv', image_url: b.image_url ?? undefined }));
         } else {
-            list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
-            list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
+            list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false, kind: 'tpv' });
+            list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false, kind: 'tpv' });
         }
         return list;
     };
@@ -518,6 +518,7 @@ const AdminDashboardView = ({
     const handlePurchaseMultiSourceSubmit = async (payload: PurchaseMultiSourcePayload) => {
         try {
             const baseNotes = payload.notes || 'Compra';
+            // TPV sin caja real en BD: su importe no se puede persistir como movimiento.
             const tpvParts = payload.sources
                 .filter(s => s.sourceId === 'tpv1' || s.sourceId === 'tpv2')
                 .filter(s => s.amount > 0.005)
@@ -816,6 +817,7 @@ const AdminDashboardView = ({
                     onClose={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
                     variant="amplify"
                     layer="base"
+                    scheme="dark"
                     instance="admin-purchase-multi-source"
                     usageId="admin-purchase-multi-source"
                     usageLabel="Compra multiorigen"
@@ -825,6 +827,7 @@ const AdminDashboardView = ({
                 >
                     <PurchaseMultiSourceForm
                         embedded
+                        parentInstance="admin-purchase-multi-source"
                         paymentSources={buildPaymentSources()}
                         inventoriesByBoxId={purchaseInventoriesByBoxId}
                         selectedDate={purchaseDate}

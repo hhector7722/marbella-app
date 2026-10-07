@@ -15,6 +15,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-07
 
+- **Compra pasa a una sola pantalla sobre el modal azul.** Concepto y Precio en dos filas de dos columnas —etiqueta blanca a la izquierda, campo de texto blanco a la derecha—, una fila «Caja» con los iconos de Caja inicial, Cambio 1, Cambio 2, TPV 1 y TPV 2 y su nombre debajo, y un botón verde «Escanear albarán» que muestra la miniatura del documento con su cruz roja para quitarlo. Pulsar una caja abre su desglose derivado con Guardar/Cancelar; al guardar se añade el valor de esa caja. El cambio (vuelto) y su caja destino viven en la misma pantalla, y el pie mantiene Cancelar/Guardar.
+
+- **El efectivo de Tpv 2 gastado en compras de urgencia se suma al Efectivo del cierre.** Si ese día aún no hay cierre, el importe —con el mismo tipo y cantidad de billetes y monedas— entra automáticamente en la línea Efectivo del cierre. El movimiento que retira ese dinero de la caja Tpv 2 es un `OUT` de esa caja; no es tarjeta ni pendiente.
+
 - **Cambio muestra el nuevo plano de alta resolución.** La imagen facilitada incorpora las cajas, los TPV y sus rótulos con mayor nitidez. Las zonas de selección se recalibran sobre esos elementos y dejan de pintar copias encima; el zoom muestra el archivo original y el plano permanece legible aunque ambas cajas estén seleccionadas.
 
 - **Cambio separa el resumen y el plano.** El plano deja un margen discreto en los laterales y abajo y redondea las cuatro esquinas. Las flechas y los signos «+» aparecen solo en el resumen superior. Las cajas seleccionadas crecen ligeramente, pierden el contorno blanco y cada una muestra debajo un botón verde «Añadir cantidad» que abre el desglose de su dirección.

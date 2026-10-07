@@ -144,6 +144,8 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Pendiente** | Ventas facturadas hoy que no se pagan hoy. Van en ventas. | — |
 | **Cobros** | Ingresos de hoy que liquidan pendiente de otra fecha. No van en ventas. | — |
 | **Caja de cambio** | Cajón con efectivo destinado a dar cambio. | `cash_boxes` |
+| **Caja TPV** | Cajón de efectivo asociado a un terminal de venta (Tpv 1, Tpv 2). No es tarjeta: su efectivo se cuenta como efectivo. | `cash_boxes`, tipo `tpv` |
+| **Compra de urgencia** | Compra pagada con el efectivo de una caja TPV, normalmente Tpv 2. Retira efectivo de esa caja y, sin cierre previo ese día, se suma al Efectivo del cierre con su mismo desglose. | `treasury_log`, tipo `OUT` |
 | **Arqueo** | Recuento del efectivo de una caja. | — |
 | **Cambio** | Traslado de efectivo entre dos cajas. Genera dos apuntes cruzados. | `treasury_log`, tipo `EXCHANGE` |
 | **Tesorería** | Registro de todos los movimientos de efectivo. | `treasury_log` |
