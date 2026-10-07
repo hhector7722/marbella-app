@@ -13,6 +13,16 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-10-07
+
+- **Cambio: flechas del plano más legibles y zoom del plano.** Las dos curvas de intercambio aumentan grosor y separación, las puntas crecen y terminan antes de la caja destino para no solaparse con el icono. El plano permite zoom de 100% a 240% mediante controles − / porcentaje / + y rueda del ratón.
+
+- **Cambio: iconos del plano recalibrados y etiquetados según la referencia visual.** Cambio 1, Inicial, Cambio 2, TPV 2 y TPV 1 se recolocan sobre los elementos físicos indicados del plano, cada uno incorpora una etiqueta roja compacta y las flechas de la cabecera pasan a una composición curva roja con contorno blanco.
+
+- **El modal de Cambio pasa a una sola superficie visual y reduce el peso de sus iconos.** El contorno blanco se aplica al shell real del modal con grosor fino de sistema, desaparece el efecto de «imagen dentro de otro modal», la cabecera se compacta y se reducen tanto las cajas superiores como los iconos flotantes del plano.
+
+- **Cambio entre cajas integra cabecera y plano real en una sola superficie.** El modal usa el nuevo plano realista de sala con contorno blanco y una cabecera oscura integrada en el mismo bloque. Las dos cajas seleccionadas ocupan los dos huecos blancos centrales de la cabecera, con las flechas entre ambas, y los iconos del plano se sitúan exactamente como en la maqueta aprobada, sin etiquetas superpuestas.
+
 ## 2026-10-04
 
 - **La cabecera incorpora búsqueda global.** Permite abrir funciones autorizadas y encontrar ingredientes, recetas, proveedores y plantilla con acceso directo a la entidad; los albaranes se consultan al pedirlo. El recorte sigue al usuario efectivo de «Ver como». LIVE conserva su acción y visibilidad, con el PNG facilitado como icono compacto.

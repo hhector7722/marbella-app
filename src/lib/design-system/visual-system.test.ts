@@ -1857,6 +1857,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             recipeCss,
+            /\[data-component='PageScreen'\]\[data-work='catalog'\] \[data-element='recipe-panel'\] \{[\s\S]*?background-color:\s*var\(--color-superficie\)/,
+            'el cuerpo completo de las fichas de Recetas e Ingredientes permanece blanco aunque sobre espacio'
+        );
+        assert.match(
+            recipeCss,
             /\[data-element='recipe-panel'\][\s\S]*?text-transform:\s*uppercase[\s\S]*?font-weight:\s*500/,
             'las cabeceras de tarjeta comparten versales y peso 500'
         );

@@ -13,7 +13,6 @@ export default function CameraViewerPresence() {
     let timer: ReturnType<typeof setInterval> | null = null;
 
     const heartbeat = () => {
-      if (document.visibilityState !== 'visible') return;
       void fetch('/api/cameras/presence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,17 +33,21 @@ export default function CameraViewerPresence() {
     };
 
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        heartbeat();
-      }
+      if (document.visibilityState === 'visible') heartbeat();
     };
+    const handleFocus = () => heartbeat();
+    const handlePageShow = () => heartbeat();
 
     heartbeat();
     timer = setInterval(heartbeat, HEARTBEAT_MS);
     document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('pageshow', handlePageShow);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handlePageShow);
       stop();
     };
   }, []);

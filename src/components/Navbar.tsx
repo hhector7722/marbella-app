@@ -15,7 +15,9 @@ import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
-const CAMERA_ACCESS_EMAILS = new Set(['fogotorrat@gmail.com', 'hhector7722@gmail.com']);
+const HECTOR_CAMERA_EMAIL = 'hhector7722@gmail.com';
+const FOGO_CAMERA_EMAIL = 'fogotorrat@gmail.com';
+const CAMERA_ACCESS_EMAILS = new Set([FOGO_CAMERA_EMAIL, HECTOR_CAMERA_EMAIL]);
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -25,6 +27,7 @@ export default function Navbar() {
   const { identity, isMaster, sessionReady, openViewAsPicker } = useMasterViewAs();
   const [userData, setUserData] = useState<{ id: string; name: string; role: string; searchRole: string; email: string; authEmail: string; is_supervisor?: boolean } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [cameraExternalOnline, setCameraExternalOnline] = useState(false);
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -44,10 +47,49 @@ export default function Navbar() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => { fetchUserData(); });
     return () => subscription.unsubscribe();
   }, [supabase]);
-  if (pathname === '/login' || isFullscreenCartaPath(pathname) || pathname.startsWith('/reporte') || pathname.startsWith('/alta') || pathname.startsWith('/playground') || pathname.startsWith('/design-system')) return null;
   const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
   const effectiveCameraEmail = (identity?.effectiveEmail ?? userData?.email)?.trim().toLowerCase();
   const canSeeCamera = Boolean(sessionReady && effectiveCameraEmail && CAMERA_ACCESS_EMAILS.has(effectiveCameraEmail));
+  const isHectorCameraUser = effectiveCameraEmail === HECTOR_CAMERA_EMAIL;
+  const liveCameraIsGreen = isHectorCameraUser && cameraExternalOnline;
+
+  useEffect(() => {
+    // Fogo siempre ve el icono rojo. Solo Héctor consulta el estado de terceros.
+    if (!canSeeCamera || !isHectorCameraUser) {
+      setCameraExternalOnline(false);
+      return;
+    }
+
+    let active = true;
+    const loadCameraStatus = async () => {
+      try {
+        const response = await fetch('/api/cameras/status', { cache: 'no-store' });
+        if (!response.ok) {
+          if (active) setCameraExternalOnline(false);
+          return;
+        }
+        const data = await response.json() as { externalOnline?: boolean; checkedAt?: string | null };
+        const checkedAt = data.checkedAt ? new Date(data.checkedAt).getTime() : 0;
+        const fresh = checkedAt > 0 && Date.now() - checkedAt < 20_000;
+        if (active) setCameraExternalOnline(Boolean(data.externalOnline && fresh));
+      } catch {
+        if (active) setCameraExternalOnline(false);
+      }
+    };
+
+    void loadCameraStatus();
+    const timer = window.setInterval(() => void loadCameraStatus(), 5_000);
+    const refreshOnFocus = () => void loadCameraStatus();
+    window.addEventListener('focus', refreshOnFocus);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshOnFocus);
+    };
+  }, [canSeeCamera, isHectorCameraUser]);
+
+  if (pathname === '/login' || isFullscreenCartaPath(pathname) || pathname.startsWith('/reporte') || pathname.startsWith('/alta') || pathname.startsWith('/playground') || pathname.startsWith('/design-system')) return null;
   const displayName = isMaster && identity ? identity.effectiveName : (userData?.name ?? '');
   const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard' || pathname === '/master/dashboard';
   const homePath = isMaster && identity?.isViewingAs ? getHomeHrefForUser(identity.effectiveEmail, identity.effectiveRole) : getHomeHrefForUser(userData?.email, userData?.role);
@@ -58,11 +100,27 @@ export default function Navbar() {
     <div className="relative max-w-7xl lg:max-w-none mx-auto flex items-center justify-between gap-1 px-1 lg:px-4 w-full min-w-0">
       <div className="flex min-w-0 shrink-0 items-center gap-1">
         {!hideNavbarBack && <button onClick={() => { if (!navigateInsideSandbox(homePath)) router.push(homePath); }} className={cn('shrink-0 grid place-items-center', 'border-0 bg-transparent shadow-none rounded-none', 'active:opacity-70 transition-opacity')} data-element="chrome" aria-label="Ir a inicio"><ChevronLeft strokeWidth={2.5} aria-hidden /></button>}
-        <div className="flex min-w-0 items-center gap-1"><div data-element="logo" className="relative shrink-0"><Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority /></div><div data-element="greeting-block">{isMaster ? <button type="button" data-element="greeting" onClick={openViewAsPicker} className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative" aria-label={identity?.isViewingAs ? `Viendo como ${identity.effectiveName}. Cambiar usuario` : 'Cambiar usuario de vista'}>{compactName}</button> : <span data-element="greeting">{compactName}</span>}</div></div>
+        <div className="flex min-w-0 items-center gap-1"><div data-element="logo" className="relative shrink-0"><Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority /></div>{hideNavbarBack ? <div data-element="greeting-block">{isMaster ? <button type="button" data-element="greeting" onClick={openViewAsPicker} className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative" aria-label={identity?.isViewingAs ? `Viendo como ${identity.effectiveName}. Cambiar usuario` : 'Cambiar usuario de vista'}>{compactName}</button> : <span data-element="greeting">{compactName}</span>}</div> : null}</div>
       </div>
       {sessionReady && searchIdentity.userId ? <div data-element="global-search-host" className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"><div className="pointer-events-auto"><GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} /></div></div> : null}
       <div className="flex shrink-0 items-center -space-x-3">
-        {canSeeCamera ? <button type="button" data-element="live-camera" aria-label="Abrir cámaras" title="Cámara" onClick={() => router.push('/camaras')} className="flex shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"><Image src="/icons/live-camera.png" alt="" width={48} height={48} className="block shrink-0 object-contain" /></button> : null}
+        {canSeeCamera ? <button
+          type="button"
+          data-element="live-camera"
+          data-online={liveCameraIsGreen ? 'true' : 'false'}
+          aria-label={liveCameraIsGreen ? 'Abrir cámaras. Hay otra persona conectada' : 'Abrir cámaras'}
+          title={liveCameraIsGreen ? 'Cámara · conexión externa activa' : 'Cámara'}
+          onClick={() => router.push('/camaras')}
+          className="flex shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
+        >
+          <Image
+            src={liveCameraIsGreen ? '/icons/live-camera-green.webp' : '/icons/live-camera.png'}
+            alt=""
+            width={48}
+            height={48}
+            className="block shrink-0 object-contain"
+          />
+        </button> : null}
         <ReservationsBell /><NotificationsBell />
       </div>
     </div>

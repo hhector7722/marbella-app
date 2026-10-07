@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye, ChevronLeft, ChevronRight, Wallet, Plus, Check, ArrowRight, ArrowRightLeft } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight, Wallet, Plus, Check, ArrowRight, ArrowRightLeft, X } from 'lucide-react';
 import Image from 'next/image';
 import { cn, firstGivenName } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -25,11 +25,12 @@ const ALL_DENOMS = [...BILLS, ...COINS];
 type PlanPoint = { x: number; y: number };
 
 const CASH_CHANGE_PLAN_POSITIONS: Record<string, PlanPoint> = {
-    tpv1: { x: 83.0, y: 68.0 },
-    tpv2: { x: 63.7, y: 33.0 },
-    cambio1: { x: 7.0, y: 28.0 },
-    cambio2: { x: 32.0, y: 25.0 },
-    inicial: { x: 31.0, y: 6.5 },
+    // Centros calibrados sobre la referencia visual del plano realista.
+    tpv1: { x: 67.7, y: 78.1 },
+    tpv2: { x: 58.1, y: 39.1 },
+    cambio1: { x: 10.1, y: 23.0 },
+    cambio2: { x: 34.6, y: 26.2 },
+    inicial: { x: 25.2, y: 17.0 },
 };
 
 function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITIONS | null {
@@ -58,17 +59,6 @@ function resolveCashChangePlanPosition(box: BoxOption): PlanPoint | null {
     return key ? CASH_CHANGE_PLAN_POSITIONS[key] : null;
 }
 
-function cashChangePlanLabel(box: BoxOption): string {
-    switch (cashChangePlanKey(box)) {
-        case 'tpv1': return 'TPV 1';
-        case 'tpv2': return 'TPV 2';
-        case 'cambio1': return 'CAMBIO 1';
-        case 'cambio2': return 'CAMBIO 2';
-        case 'inicial': return 'INICIAL';
-        default: return box.name;
-    }
-}
-
 function cashChangePlanImage(box: BoxOption): string | null {
     switch (cashChangePlanKey(box)) {
         case 'cambio1': return '/images/cash-change/cambio1.webp';
@@ -82,6 +72,17 @@ function cashChangePlanImage(box: BoxOption): string | null {
     }
 }
 
+function cashChangePlanDisplayLabel(box: BoxOption): string {
+    switch (cashChangePlanKey(box)) {
+        case 'cambio1': return 'Cambio 1';
+        case 'cambio2': return 'Cambio 2';
+        case 'inicial': return 'Inicial';
+        case 'tpv1': return 'TPV 1';
+        case 'tpv2': return 'TPV 2';
+        default: return box.name;
+    }
+}
+
 type PlanArrowGeometry = {
     forwardPath: string;
     reversePath: string;
@@ -90,10 +91,10 @@ type PlanArrowGeometry = {
 };
 
 function buildPlanArrowGeometry(a: PlanPoint, b: PlanPoint): PlanArrowGeometry {
-    // Coincide con aspect-[890/535] del plano para que las curvas mantengan
+    // Coincide con el nuevo plano 1298×663 para que las curvas mantengan
     // su forma y separación real también en móvil.
-    const width = 890;
-    const height = 535;
+    const width = 1298;
+    const height = 663;
     const ax = (a.x / 100) * width;
     const ay = (a.y / 100) * height;
     const bx = (b.x / 100) * width;
@@ -107,15 +108,16 @@ function buildPlanArrowGeometry(a: PlanPoint, b: PlanPoint): PlanArrowGeometry {
     const nx = -uy;
     const ny = ux;
 
-    // Evita que las puntas entren debajo de los iconos.
-    const endPadding = Math.min(28, length * 0.18);
+    // Deja la cabeza de la flecha claramente fuera del icono seleccionado.
+    // La punta queda visible incluso entre dos cajas cercanas.
+    const endPadding = Math.min(78, Math.max(48, length * 0.22), length * 0.34);
     const sx = ax + (ux * endPadding);
     const sy = ay + (uy * endPadding);
     const ex = bx - (ux * endPadding);
     const ey = by - (uy * endPadding);
 
     // Dos arcos claramente separados, incluso entre cajas cercanas.
-    const curve = Math.max(62, Math.min(96, length * 0.34));
+    const curve = Math.max(84, Math.min(132, length * 0.46));
 
     const cubicPath = (
         startX: number,
@@ -285,7 +287,15 @@ export const CashChangeModal = ({
     const [exchangeHistoryLoading, setExchangeHistoryLoading] = useState(false);
     const [selectedExchangeDetail, setSelectedExchangeDetail] = useState<ExchangeHistoryItem | null>(null);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
+    const [planZoom, setPlanZoom] = useState(1);
     const [canViewExchangeHistory, setCanViewExchangeHistory] = useState(false);
+
+    const clampPlanZoom = (value: number) =>
+        Math.min(2.4, Math.max(1, Math.round(value * 100) / 100));
+
+    const changePlanZoom = (delta: number) => {
+        setPlanZoom((current) => clampPlanZoom(current + delta));
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -781,48 +791,152 @@ export const CashChangeModal = ({
             <Modal
                 open
                 onClose={onClose}
-                variant="standard"
+                variant="work"
                 layer="base"
                 instance="cash-change-select"
                 usageId="cash-change-select"
                 usageLabel="Cambio de caja"
-                headerTitleAlign="left"
                 title="Cambio"
-                headerTrailing={canViewExchangeHistory ? (
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setStep('select');
-                            setZoomDenom(null);
-                            setShowExchangeHistoryModal(true);
-                        }}
-                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 opacity-90 shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                        aria-label="Histórico de intercambios"
-                    >
-                        <Eye size={22} strokeWidth={2.5} className="stroke-current fill-none" />
-                    </button>
-                ) : undefined}
-                footer={
-                    totalStep1 > 0.005 && totalStep2 > 0.005 ? (
-                        <Button
-                            type="button"
-                            variant="primary"
-                            instance="cash-change-confirm"
-                            onClick={() => void handleGuardarStep2()}
-                            disabled={!canConfirmExchange}
-                            loading={savingExchange}
-                            loadingLabel="Guardando"
-                        >
-                            Confirmar cambio
-                        </Button>
-                    ) : undefined
-                }
+                scheme="dark"
+                hideHeader
+                hideCloseButton
+                scrollContent={false}
+                panelHostClassName="[&>[data-element=container]]:border [&>[data-element=container]]:border-white/85 [&>[data-element=container]]:shadow-xl"
             >
-                <div className="flex min-h-0 flex-1 items-center justify-center bg-white p-2">
-                    <div className="w-full overflow-hidden rounded-xl">
-                        <div className="relative aspect-[890/535] w-full overflow-hidden rounded-xl bg-zinc-100">
+                <div className="relative flex min-h-0 w-full flex-col overflow-hidden bg-[#0b213c]">
+                    <div className="relative min-h-[64px] shrink-0 bg-[#0b213c] px-3 py-1.5 sm:min-h-[78px] sm:px-4">
+                        <div className="absolute inset-y-0 left-3 flex items-center gap-1.5 sm:left-5 sm:gap-2">
+                            <span className="text-[11px] font-medium uppercase tracking-wide text-white sm:text-sm">Cambio</span>
+                            {canViewExchangeHistory ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setStep('select');
+                                        setZoomDenom(null);
+                                        setShowExchangeHistoryModal(true);
+                                    }}
+                                    className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                                    aria-label="Histórico de intercambios"
+                                >
+                                    <Eye size={17} strokeWidth={2.2} />
+                                </button>
+                            ) : null}
+                        </div>
+
+                        <div className="absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white p-1 shadow-sm sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
+                                {boxA && cashChangePlanImage(boxA) ? (
+                                    <Image
+                                        src={cashChangePlanImage(boxA)!}
+                                        alt=""
+                                        width={58}
+                                        height={52}
+                                        className="h-full w-full object-contain"
+                                    />
+                                ) : null}
+                            </div>
+                        </div>
+
+                        <div className="absolute left-[49.25%] top-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <svg
+                                viewBox="0 0 96 58"
+                                className="h-10 w-[72px] overflow-visible sm:h-12 sm:w-[92px]"
+                                aria-hidden
+                            >
+                                <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M76 15 C58 7 39 7 20 14" stroke="white" strokeWidth="7" />
+                                    <path d="M29 5 L17 14 L29 23" stroke="white" strokeWidth="7" />
+                                    <path d="M76 15 C58 7 39 7 20 14" stroke="#ef2f24" strokeWidth="3.6" />
+                                    <path d="M29 5 L17 14 L29 23" stroke="#ef2f24" strokeWidth="3.6" />
+
+                                    <path d="M20 43 C39 51 58 51 77 44" stroke="white" strokeWidth="7" />
+                                    <path d="M68 35 L80 44 L68 53" stroke="white" strokeWidth="7" />
+                                    <path d="M20 43 C39 51 58 51 77 44" stroke="#ef2f24" strokeWidth="3.6" />
+                                    <path d="M68 35 L80 44 L68 53" stroke="#ef2f24" strokeWidth="3.6" />
+                                </g>
+                            </svg>
+                        </div>
+
+                        <div className="absolute left-[62.5%] top-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white p-1 shadow-sm sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
+                                {boxB && cashChangePlanImage(boxB) ? (
+                                    <Image
+                                        src={cashChangePlanImage(boxB)!}
+                                        alt=""
+                                        width={58}
+                                        height={52}
+                                        className="h-full w-full object-contain"
+                                    />
+                                ) : null}
+                            </div>
+                        </div>
+
+                        <div className="absolute inset-y-0 right-3 flex items-center gap-1 sm:right-5 sm:gap-2">
+                            {totalStep1 > 0.005 && totalStep2 > 0.005 ? (
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    instance="cash-change-confirm"
+                                    icon={<Check size={16} strokeWidth={3} />}
+                                    aria-label="Confirmar cambio"
+                                    onClick={() => void handleGuardarStep2()}
+                                    disabled={!canConfirmExchange}
+                                    loading={savingExchange}
+                                />
+                            ) : null}
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/10 hover:text-white"
+                                aria-label="Cerrar cambio"
+                            >
+                                <X size={18} strokeWidth={2.4} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div
+                        className="relative aspect-[1298/663] w-full overflow-hidden bg-zinc-100"
+                        onWheel={(event) => {
+                            event.preventDefault();
+                            changePlanZoom(event.deltaY < 0 ? 0.1 : -0.1);
+                        }}
+                    >
+                        <div className="absolute right-2 top-2 z-50 flex items-center gap-1 rounded-full border border-white/70 bg-[#0b213c]/85 p-1 shadow-lg backdrop-blur-sm">
+                            <button
+                                type="button"
+                                onClick={() => changePlanZoom(-0.15)}
+                                disabled={planZoom <= 1}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-35"
+                                aria-label="Alejar plano"
+                            >
+                                −
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPlanZoom(1)}
+                                className="flex h-7 min-w-[48px] items-center justify-center rounded-full px-2 text-[9px] font-black tabular-nums text-white transition hover:bg-white/15"
+                                aria-label="Restablecer zoom"
+                            >
+                                {Math.round(planZoom * 100)}%
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => changePlanZoom(0.15)}
+                                disabled={planZoom >= 2.4}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-35"
+                                aria-label="Acercar plano"
+                            >
+                                +
+                            </button>
+                        </div>
+
+                        <div
+                            className="absolute inset-0 origin-center transition-transform duration-200 ease-out"
+                            style={{ transform: `scale(${planZoom})` }}
+                        >
                             <Image
-                                src="/images/cash-change-plan.webp"
+                                src="/images/cash-change-plan.png"
                                 alt="Plano de cajas"
                                 fill
                                 priority
@@ -845,9 +959,9 @@ export const CashChangeModal = ({
                                         onClick={() => toggleBoxSelection(option)}
                                         aria-label={option.name}
                                         className={cn(
-                                            'absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 border-0 bg-transparent p-0 transition-all duration-200 active:scale-95',
+                                            'absolute z-20 h-6 w-8 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 transition-all duration-200 active:scale-95',
                                             selected
-                                                ? 'scale-110 opacity-100'
+                                                ? 'scale-[1.03] opacity-100'
                                                 : boxA && boxB
                                                     ? 'opacity-[0.28]'
                                                     : 'opacity-90 hover:opacity-100',
@@ -856,7 +970,7 @@ export const CashChangeModal = ({
                                     >
                                         <span
                                             className={cn(
-                                                'flex h-8 w-10 items-center justify-center transition-all duration-200',
+                                                'flex h-full w-full items-center justify-center transition-all duration-200',
                                                 isA
                                                     ? 'drop-shadow-[0_0_5px_rgba(35,168,154,0.95)]'
                                                     : isB
@@ -868,16 +982,16 @@ export const CashChangeModal = ({
                                                 <Image
                                                     src={planImage}
                                                     alt=""
-                                                    width={36}
-                                                    height={28}
+                                                    width={26}
+                                                    height={20}
                                                     className="h-full w-full object-contain"
                                                 />
                                             ) : (
                                                 <Wallet size={16} className="text-[#36606F]" strokeWidth={2.4} />
                                             )}
                                         </span>
-                                        <span className="max-w-[58px] truncate rounded-full bg-white/90 px-1 py-0.5 text-[6px] font-black uppercase tracking-tight text-zinc-700 shadow-sm">
-                                            {cashChangePlanLabel(option)}
+                                        <span className="pointer-events-none absolute left-1/2 top-[calc(100%+3px)] -translate-x-1/2 whitespace-nowrap rounded-md bg-[#ef2f2f] px-1.5 py-0.5 text-[7px] font-semibold leading-none text-white shadow-sm sm:px-2 sm:py-1 sm:text-[9px]">
+                                            {cashChangePlanDisplayLabel(option)}
                                         </span>
                                     </button>
                                 );
@@ -886,7 +1000,7 @@ export const CashChangeModal = ({
                             {arrowGeometry && boxA && boxB ? (
                                 <>
                                     <svg
-                                        viewBox="0 0 890 535"
+                                        viewBox="0 0 1298 663"
                                         preserveAspectRatio="none"
                                         className={cn(
                                             'pointer-events-none absolute inset-0 z-10 h-full w-full overflow-visible',
@@ -895,11 +1009,39 @@ export const CashChangeModal = ({
                                         aria-hidden
                                     >
                                         <defs>
-                                            <marker id="cash-arrow-forward" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto">
-                                                <path d="M0,0 L6,3 L0,6 Z" fill="#15998c" />
+                                            <marker
+                                                id="cash-arrow-forward"
+                                                markerWidth="20"
+                                                markerHeight="20"
+                                                refX="17.5"
+                                                refY="10"
+                                                orient="auto"
+                                                markerUnits="userSpaceOnUse"
+                                            >
+                                                <path
+                                                    d="M1,1 L19,10 L1,19 Z"
+                                                    fill="#15998c"
+                                                    stroke="white"
+                                                    strokeWidth="2.2"
+                                                    strokeLinejoin="round"
+                                                />
                                             </marker>
-                                            <marker id="cash-arrow-reverse" markerWidth="6" markerHeight="6" refX="5.2" refY="3" orient="auto">
-                                                <path d="M0,0 L6,3 L0,6 Z" fill="#e85d75" />
+                                            <marker
+                                                id="cash-arrow-reverse"
+                                                markerWidth="20"
+                                                markerHeight="20"
+                                                refX="17.5"
+                                                refY="10"
+                                                orient="auto"
+                                                markerUnits="userSpaceOnUse"
+                                            >
+                                                <path
+                                                    d="M1,1 L19,10 L1,19 Z"
+                                                    fill="#e85d75"
+                                                    stroke="white"
+                                                    strokeWidth="2.2"
+                                                    strokeLinejoin="round"
+                                                />
                                             </marker>
                                         </defs>
 
@@ -907,14 +1049,15 @@ export const CashChangeModal = ({
                                             d={arrowGeometry.forwardPath}
                                             fill="none"
                                             stroke="rgba(255,255,255,0.92)"
-                                            strokeWidth="8"
+                                            strokeWidth="10"
                                             strokeLinecap="round"
+                                            strokeLinejoin="round"
                                         />
                                         <path
                                             d={arrowGeometry.forwardPath}
                                             fill="none"
                                             stroke="#15998c"
-                                            strokeWidth="3.5"
+                                            strokeWidth="5"
                                             strokeLinecap="round"
                                             markerEnd="url(#cash-arrow-forward)"
                                         />
@@ -923,14 +1066,15 @@ export const CashChangeModal = ({
                                             d={arrowGeometry.reversePath}
                                             fill="none"
                                             stroke="rgba(255,255,255,0.92)"
-                                            strokeWidth="8"
+                                            strokeWidth="10"
                                             strokeLinecap="round"
+                                            strokeLinejoin="round"
                                         />
                                         <path
                                             d={arrowGeometry.reversePath}
                                             fill="none"
                                             stroke="#e85d75"
-                                            strokeWidth="3.5"
+                                            strokeWidth="5"
                                             strokeLinecap="round"
                                             markerEnd="url(#cash-arrow-reverse)"
                                         />
@@ -981,8 +1125,8 @@ export const CashChangeModal = ({
                     </div>
 
                     {boxA && boxB && totalStep1 > 0.005 && totalStep2 > 0.005 && !isBalancedTransfer ? (
-                        <div className="mt-2 flex justify-center">
-                            <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-black tabular-nums text-rose-500">
+                        <div className="pointer-events-none absolute bottom-2 left-1/2 z-40 -translate-x-1/2 sm:bottom-3">
+                            <span className="rounded-full border border-white/70 bg-[#0b213c]/90 px-2.5 py-1 text-[9px] font-black tabular-nums text-white shadow-lg backdrop-blur-sm sm:text-[10px]">
                                 Δ {formatExchangeAmount(transferDifference)}
                             </span>
                         </div>

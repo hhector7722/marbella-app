@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     const id = encodeURIComponent(row.entity_id);
     let href: string;
     switch (row.kind) {
-      case 'ingredient': href = `/ingredients?id=${id}`; break;
+      case 'ingredient': href = `/ingredients/${id}`; break;
       case 'recipe': href = `/recipes/${id}${staffRecipeView ? '?view=staff' : ''}`; break;
       case 'supplier': href = `/suppliers?id=${id}`; break;
       case 'employee': href = `/profile?id=${id}`; break;

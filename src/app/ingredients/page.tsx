@@ -1,15 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Package, Plus } from 'lucide-react'
 import { toast, Toaster } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
 import { IngredientCreateForm } from '@/components/ingredients/IngredientCreateForm'
-import {
-  IngredientCanonicalEditModal,
-  type Ingredient,
-} from '@/components/ingredients/IngredientCanonicalEditModal'
+import type { Ingredient } from '@/components/ingredients/IngredientCanonicalEditModal'
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed'
 import { Modal } from '@/components/ui/modal'
 import { SearchField } from '@/components/ui/SearchField'
@@ -20,6 +17,7 @@ import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip'
 
 export default function IngredientsPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const targetId = searchParams.get('id')
   const supabase = createClient()
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -27,8 +25,6 @@ export default function IngredientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
   const [showSupplierPopup, setShowSupplierPopup] = useState(false)
-  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null)
-  const [dismissedTargetId, setDismissedTargetId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([])
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -39,10 +35,10 @@ export default function IngredientsPage() {
     void fetchSuppliers()
   }, [])
 
-  const deepLinkedIngredient = !loading && targetId !== dismissedTargetId
-    ? ingredients.find((ingredient) => ingredient.id === targetId) ?? null
-    : null
-  const activeIngredient = editingIngredient ?? deepLinkedIngredient
+  useEffect(() => {
+    if (!targetId) return
+    router.replace(`/ingredients/${encodeURIComponent(targetId)}`)
+  }, [router, targetId])
 
   async function fetchIngredients() {
     setLoading(true)
@@ -159,22 +155,13 @@ export default function IngredientsPage() {
                   fallback={<Package className="h-8 w-8 md:h-10 md:w-10" />}
                   price={ingredient.current_price ?? undefined}
                   priceLocked={ingredient.price_locked ?? false}
-                  onClick={() => setEditingIngredient(ingredient)}
+                  onClick={() => router.push(`/ingredients/${encodeURIComponent(ingredient.id)}`)}
                 />
               ))}
             </CatalogGrid>
           </div>
         )}
       </DashboardDetailLayout>
-
-      {activeIngredient ? (
-        <IngredientCanonicalEditModal
-          key={activeIngredient.id}
-          ingredient={activeIngredient}
-          onClose={() => { setDismissedTargetId(targetId); setEditingIngredient(null) }}
-          onSaved={() => void fetchIngredients()}
-        />
-      ) : null}
 
       <Modal
         open={showCreateModal}
