@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye, ChevronLeft, ChevronRight, Wallet, Plus, Check, ArrowRight, ArrowRightLeft, X } from 'lucide-react';
+import { Eye, ChevronLeft, ChevronRight, Wallet, Plus, Check, ArrowRight, ArrowRightLeft } from 'lucide-react';
 import Image from 'next/image';
 import { cn, firstGivenName } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -797,34 +797,26 @@ export const CashChangeModal = ({
                 usageId="cash-change-select"
                 usageLabel="Cambio de caja"
                 title="Cambio"
-                scheme="dark"
-                hideHeader
-                hideCloseButton
+                headerTrailing={canViewExchangeHistory ? (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setStep('select');
+                            setZoomDenom(null);
+                            setShowExchangeHistoryModal(true);
+                        }}
+                        className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 shadow-none outline-none transition-opacity hover:opacity-80"
+                        aria-label="Histórico de intercambios"
+                    >
+                        <Eye size={20} strokeWidth={2.4} className="stroke-current fill-none" />
+                    </button>
+                ) : undefined}
                 scrollContent={false}
-                panelHostClassName="[&>[data-element=container]]:border [&>[data-element=container]]:border-white/85 [&>[data-element=container]]:shadow-xl"
             >
-                <div className="relative flex min-h-0 w-full flex-col overflow-hidden bg-[#0b213c]">
-                    <div className="relative min-h-[64px] shrink-0 bg-[#0b213c] px-3 py-1.5 sm:min-h-[78px] sm:px-4">
-                        <div className="absolute inset-y-0 left-3 flex items-center gap-1.5 sm:left-5 sm:gap-2">
-                            <span className="text-[11px] font-medium uppercase tracking-wide text-white sm:text-sm">Cambio</span>
-                            {canViewExchangeHistory ? (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setStep('select');
-                                        setZoomDenom(null);
-                                        setShowExchangeHistoryModal(true);
-                                    }}
-                                    className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-                                    aria-label="Histórico de intercambios"
-                                >
-                                    <Eye size={17} strokeWidth={2.2} />
-                                </button>
-                            ) : null}
-                        </div>
-
-                        <div className="absolute left-[36%] top-1/2 -translate-x-1/2 -translate-y-1/2">
-                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white p-1 shadow-sm sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
+                <div className="relative flex min-h-0 w-full flex-col">
+                    <div className="relative flex min-h-[64px] shrink-0 items-center justify-center px-3 py-1.5 sm:min-h-[78px] sm:px-4">
+                        <div className="flex items-center justify-center gap-2 sm:gap-4">
+                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white p-1 sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
                                 {boxA && cashChangePlanImage(boxA) ? (
                                     <Image
                                         src={cashChangePlanImage(boxA)!}
@@ -833,32 +825,25 @@ export const CashChangeModal = ({
                                         height={52}
                                         className="h-full w-full object-contain"
                                     />
-                                ) : null}
+                                ) : (
+                                    <Wallet size={18} className="text-zinc-300" strokeWidth={2} />
+                                )}
                             </div>
-                        </div>
 
-                        <div className="absolute left-[49.25%] top-1/2 -translate-x-1/2 -translate-y-1/2">
                             <svg
                                 viewBox="0 0 96 58"
-                                className="h-10 w-[72px] overflow-visible sm:h-12 sm:w-[92px]"
+                                className="h-8 w-[60px] overflow-visible sm:h-10 sm:w-[76px]"
                                 aria-hidden
                             >
                                 <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M76 15 C58 7 39 7 20 14" stroke="white" strokeWidth="7" />
-                                    <path d="M29 5 L17 14 L29 23" stroke="white" strokeWidth="7" />
-                                    <path d="M76 15 C58 7 39 7 20 14" stroke="#ef2f24" strokeWidth="3.6" />
-                                    <path d="M29 5 L17 14 L29 23" stroke="#ef2f24" strokeWidth="3.6" />
-
-                                    <path d="M20 43 C39 51 58 51 77 44" stroke="white" strokeWidth="7" />
-                                    <path d="M68 35 L80 44 L68 53" stroke="white" strokeWidth="7" />
-                                    <path d="M20 43 C39 51 58 51 77 44" stroke="#ef2f24" strokeWidth="3.6" />
-                                    <path d="M68 35 L80 44 L68 53" stroke="#ef2f24" strokeWidth="3.6" />
+                                    <path d="M76 15 C58 7 39 7 20 14" stroke="#15998c" strokeWidth="3.6" />
+                                    <path d="M29 5 L17 14 L29 23" stroke="#15998c" strokeWidth="3.6" />
+                                    <path d="M20 43 C39 51 58 51 77 44" stroke="#e85d75" strokeWidth="3.6" />
+                                    <path d="M68 35 L80 44 L68 53" stroke="#e85d75" strokeWidth="3.6" />
                                 </g>
                             </svg>
-                        </div>
 
-                        <div className="absolute left-[62.5%] top-1/2 -translate-x-1/2 -translate-y-1/2">
-                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-white p-1 shadow-sm sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
+                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white p-1 sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
                                 {boxB && cashChangePlanImage(boxB) ? (
                                     <Image
                                         src={cashChangePlanImage(boxB)!}
@@ -867,12 +852,14 @@ export const CashChangeModal = ({
                                         height={52}
                                         className="h-full w-full object-contain"
                                     />
-                                ) : null}
+                                ) : (
+                                    <Wallet size={18} className="text-zinc-300" strokeWidth={2} />
+                                )}
                             </div>
                         </div>
 
-                        <div className="absolute inset-y-0 right-3 flex items-center gap-1 sm:right-5 sm:gap-2">
-                            {totalStep1 > 0.005 && totalStep2 > 0.005 ? (
+                        {totalStep1 > 0.005 && totalStep2 > 0.005 ? (
+                            <div className="absolute inset-y-0 right-3 flex items-center sm:right-4">
                                 <Button
                                     type="button"
                                     variant="primary"
@@ -883,16 +870,8 @@ export const CashChangeModal = ({
                                     disabled={!canConfirmExchange}
                                     loading={savingExchange}
                                 />
-                            ) : null}
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="flex h-8 w-8 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/10 hover:text-white"
-                                aria-label="Cerrar cambio"
-                            >
-                                <X size={18} strokeWidth={2.4} />
-                            </button>
-                        </div>
+                            </div>
+                        ) : null}
                     </div>
 
                     <div
@@ -990,7 +969,7 @@ export const CashChangeModal = ({
                                                 <Wallet size={16} className="text-[#36606F]" strokeWidth={2.4} />
                                             )}
                                         </span>
-                                        <span className="pointer-events-none absolute left-1/2 top-[calc(100%+3px)] -translate-x-1/2 whitespace-nowrap rounded-md bg-[#ef2f2f] px-1.5 py-0.5 text-[7px] font-semibold leading-none text-white shadow-sm sm:px-2 sm:py-1 sm:text-[9px]">
+                                        <span className="absolute left-1/2 top-[calc(100%+3px)] -translate-x-1/2 whitespace-nowrap rounded-md bg-[#ef2f2f] px-1.5 py-0.5 text-[7px] font-semibold leading-none text-white shadow-sm sm:px-2 sm:py-1 sm:text-[9px]">
                                             {cashChangePlanDisplayLabel(option)}
                                         </span>
                                     </button>
