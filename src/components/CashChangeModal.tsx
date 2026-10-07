@@ -110,14 +110,14 @@ function buildPlanArrowGeometry(a: PlanPoint, b: PlanPoint): PlanArrowGeometry {
 
     // Deja la cabeza de la flecha claramente fuera del icono seleccionado.
     // La punta queda visible incluso entre dos cajas cercanas.
-    const endPadding = Math.min(46, Math.max(34, length * 0.16));
+    const endPadding = Math.min(78, Math.max(48, length * 0.22), length * 0.34);
     const sx = ax + (ux * endPadding);
     const sy = ay + (uy * endPadding);
     const ex = bx - (ux * endPadding);
     const ey = by - (uy * endPadding);
 
     // Dos arcos claramente separados, incluso entre cajas cercanas.
-    const curve = Math.max(62, Math.min(96, length * 0.34));
+    const curve = Math.max(84, Math.min(132, length * 0.46));
 
     const cubicPath = (
         startX: number,
@@ -287,7 +287,15 @@ export const CashChangeModal = ({
     const [exchangeHistoryLoading, setExchangeHistoryLoading] = useState(false);
     const [selectedExchangeDetail, setSelectedExchangeDetail] = useState<ExchangeHistoryItem | null>(null);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
+    const [planZoom, setPlanZoom] = useState(1);
     const [canViewExchangeHistory, setCanViewExchangeHistory] = useState(false);
+
+    const clampPlanZoom = (value: number) =>
+        Math.min(2.4, Math.max(1, Math.round(value * 100) / 100));
+
+    const changePlanZoom = (delta: number) => {
+        setPlanZoom((current) => clampPlanZoom(current + delta));
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -887,7 +895,46 @@ export const CashChangeModal = ({
                         </div>
                     </div>
 
-                    <div className="relative aspect-[1298/663] w-full overflow-hidden bg-zinc-100">
+                    <div
+                        className="relative aspect-[1298/663] w-full overflow-hidden bg-zinc-100"
+                        onWheel={(event) => {
+                            event.preventDefault();
+                            changePlanZoom(event.deltaY < 0 ? 0.1 : -0.1);
+                        }}
+                    >
+                        <div className="absolute right-2 top-2 z-50 flex items-center gap-1 rounded-full border border-white/70 bg-[#0b213c]/85 p-1 shadow-lg backdrop-blur-sm">
+                            <button
+                                type="button"
+                                onClick={() => changePlanZoom(-0.15)}
+                                disabled={planZoom <= 1}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-35"
+                                aria-label="Alejar plano"
+                            >
+                                −
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPlanZoom(1)}
+                                className="flex h-7 min-w-[48px] items-center justify-center rounded-full px-2 text-[9px] font-black tabular-nums text-white transition hover:bg-white/15"
+                                aria-label="Restablecer zoom"
+                            >
+                                {Math.round(planZoom * 100)}%
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => changePlanZoom(0.15)}
+                                disabled={planZoom >= 2.4}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-35"
+                                aria-label="Acercar plano"
+                            >
+                                +
+                            </button>
+                        </div>
+
+                        <div
+                            className="absolute inset-0 origin-center transition-transform duration-200 ease-out"
+                            style={{ transform: `scale(${planZoom})` }}
+                        >
                             <Image
                                 src="/images/cash-change-plan.png"
                                 alt="Plano de cajas"
@@ -964,35 +1011,35 @@ export const CashChangeModal = ({
                                         <defs>
                                             <marker
                                                 id="cash-arrow-forward"
-                                                markerWidth="12"
-                                                markerHeight="12"
-                                                refX="10.5"
-                                                refY="6"
+                                                markerWidth="20"
+                                                markerHeight="20"
+                                                refX="17.5"
+                                                refY="10"
                                                 orient="auto"
                                                 markerUnits="userSpaceOnUse"
                                             >
                                                 <path
-                                                    d="M1,1 L11,6 L1,11 Z"
+                                                    d="M1,1 L19,10 L1,19 Z"
                                                     fill="#15998c"
                                                     stroke="white"
-                                                    strokeWidth="1.6"
+                                                    strokeWidth="2.2"
                                                     strokeLinejoin="round"
                                                 />
                                             </marker>
                                             <marker
                                                 id="cash-arrow-reverse"
-                                                markerWidth="12"
-                                                markerHeight="12"
-                                                refX="10.5"
-                                                refY="6"
+                                                markerWidth="20"
+                                                markerHeight="20"
+                                                refX="17.5"
+                                                refY="10"
                                                 orient="auto"
                                                 markerUnits="userSpaceOnUse"
                                             >
                                                 <path
-                                                    d="M1,1 L11,6 L1,11 Z"
+                                                    d="M1,1 L19,10 L1,19 Z"
                                                     fill="#e85d75"
                                                     stroke="white"
-                                                    strokeWidth="1.6"
+                                                    strokeWidth="2.2"
                                                     strokeLinejoin="round"
                                                 />
                                             </marker>
@@ -1002,7 +1049,7 @@ export const CashChangeModal = ({
                                             d={arrowGeometry.forwardPath}
                                             fill="none"
                                             stroke="rgba(255,255,255,0.92)"
-                                            strokeWidth="8"
+                                            strokeWidth="10"
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                         />
@@ -1010,7 +1057,7 @@ export const CashChangeModal = ({
                                             d={arrowGeometry.forwardPath}
                                             fill="none"
                                             stroke="#15998c"
-                                            strokeWidth="3.5"
+                                            strokeWidth="5"
                                             strokeLinecap="round"
                                             markerEnd="url(#cash-arrow-forward)"
                                         />
@@ -1019,7 +1066,7 @@ export const CashChangeModal = ({
                                             d={arrowGeometry.reversePath}
                                             fill="none"
                                             stroke="rgba(255,255,255,0.92)"
-                                            strokeWidth="8"
+                                            strokeWidth="10"
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                         />
@@ -1027,7 +1074,7 @@ export const CashChangeModal = ({
                                             d={arrowGeometry.reversePath}
                                             fill="none"
                                             stroke="#e85d75"
-                                            strokeWidth="3.5"
+                                            strokeWidth="5"
                                             strokeLinecap="round"
                                             markerEnd="url(#cash-arrow-reverse)"
                                         />
@@ -1075,6 +1122,7 @@ export const CashChangeModal = ({
                                 </div>
                             ) : null}
                         </div>
+                    </div>
 
                     {boxA && boxB && totalStep1 > 0.005 && totalStep2 > 0.005 && !isBalancedTransfer ? (
                         <div className="pointer-events-none absolute bottom-2 left-1/2 z-40 -translate-x-1/2 sm:bottom-3">
