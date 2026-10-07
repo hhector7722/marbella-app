@@ -1603,9 +1603,12 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
 
         const change = readFileSync(join(SRC_ROOT, 'components/CashChangeModal.tsx'), 'utf8');
-        const selectBlock = change.split('instance="cash-change-select"')[1]?.split('instance="cash-change-count"')[0] ?? '';
+        const selectBlock = change.split('instance="cash-change-select"')[1]?.split('</Modal>')[0] ?? '';
+        const legBlock = change.split('instance="cash-change-leg"')[1]?.split('</Modal>')[0] ?? '';
+        assert.notEqual(selectBlock, '', 'existe el selector de cajas');
+        assert.notEqual(legBlock, '', 'existe el desglose del movimiento');
         assert.doesNotMatch(selectBlock, /QuickCashTools/, 'el selector de cajas no monta calculadora ni desglose');
-        assert.match(change, /<QuickCashTools calculator breakdown \/>/);
+        assert.match(legBlock, /<QuickCashTools calculator breakdown \/>/, 'el desglose monta calculadora y desglose');
 
         const denomination = readFileSync(join(SRC_ROOT, 'components/CashDenominationForm.tsx'), 'utf8');
         assert.doesNotMatch(
