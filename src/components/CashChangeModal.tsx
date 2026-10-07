@@ -25,12 +25,12 @@ const ALL_DENOMS = [...BILLS, ...COINS];
 type PlanPoint = { x: number; y: number };
 
 const CASH_CHANGE_PLAN_POSITIONS: Record<string, PlanPoint> = {
-    // Posiciones tomadas de la maqueta aprobada sobre el nuevo plano realista.
-    tpv1: { x: 67.4, y: 76.8 },
-    tpv2: { x: 57.4, y: 38.4 },
-    cambio1: { x: 10.8, y: 26.2 },
-    cambio2: { x: 31.8, y: 16.2 },
-    inicial: { x: 25.8, y: 16.2 },
+    // Centros calibrados sobre la referencia visual del plano realista.
+    tpv1: { x: 67.7, y: 78.1 },
+    tpv2: { x: 58.1, y: 39.1 },
+    cambio1: { x: 10.1, y: 23.0 },
+    cambio2: { x: 34.6, y: 26.2 },
+    inicial: { x: 25.2, y: 17.0 },
 };
 
 function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITIONS | null {
@@ -69,6 +69,17 @@ function cashChangePlanImage(box: BoxOption): string | null {
             return '/images/cash-change/tpv.webp';
         default:
             return box.image_url || null;
+    }
+}
+
+function cashChangePlanDisplayLabel(box: BoxOption): string {
+    switch (cashChangePlanKey(box)) {
+        case 'cambio1': return 'Cambio 1';
+        case 'cambio2': return 'Cambio 2';
+        case 'inicial': return 'Inicial';
+        case 'tpv1': return 'TPV 1';
+        case 'tpv2': return 'TPV 2';
+        default: return box.name;
     }
 }
 
@@ -818,15 +829,24 @@ export const CashChangeModal = ({
                             </div>
                         </div>
 
-                        <div className="absolute left-[49.25%] top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 text-[#ef3f3f] sm:gap-1">
-                            <ArrowRight
-                                className="h-3.5 w-8 rotate-180 drop-shadow-[0_0_1px_rgba(255,255,255,1)] sm:h-4 sm:w-10"
-                                strokeWidth={3}
-                            />
-                            <ArrowRight
-                                className="h-3.5 w-8 drop-shadow-[0_0_1px_rgba(255,255,255,1)] sm:h-4 sm:w-10"
-                                strokeWidth={3}
-                            />
+                        <div className="absolute left-[49.25%] top-1/2 -translate-x-1/2 -translate-y-1/2">
+                            <svg
+                                viewBox="0 0 96 58"
+                                className="h-10 w-[72px] overflow-visible sm:h-12 sm:w-[92px]"
+                                aria-hidden
+                            >
+                                <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M76 15 C58 7 39 7 20 14" stroke="white" strokeWidth="7" />
+                                    <path d="M29 5 L17 14 L29 23" stroke="white" strokeWidth="7" />
+                                    <path d="M76 15 C58 7 39 7 20 14" stroke="#ef2f24" strokeWidth="3.6" />
+                                    <path d="M29 5 L17 14 L29 23" stroke="#ef2f24" strokeWidth="3.6" />
+
+                                    <path d="M20 43 C39 51 58 51 77 44" stroke="white" strokeWidth="7" />
+                                    <path d="M68 35 L80 44 L68 53" stroke="white" strokeWidth="7" />
+                                    <path d="M20 43 C39 51 58 51 77 44" stroke="#ef2f24" strokeWidth="3.6" />
+                                    <path d="M68 35 L80 44 L68 53" stroke="#ef2f24" strokeWidth="3.6" />
+                                </g>
+                            </svg>
                         </div>
 
                         <div className="absolute left-[62.5%] top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -892,7 +912,7 @@ export const CashChangeModal = ({
                                         onClick={() => toggleBoxSelection(option)}
                                         aria-label={option.name}
                                         className={cn(
-                                            'absolute z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 border-0 bg-transparent p-0 transition-all duration-200 active:scale-95',
+                                            'absolute z-20 h-6 w-8 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 transition-all duration-200 active:scale-95',
                                             selected
                                                 ? 'scale-[1.03] opacity-100'
                                                 : boxA && boxB
@@ -903,7 +923,7 @@ export const CashChangeModal = ({
                                     >
                                         <span
                                             className={cn(
-                                                'flex h-6 w-8 items-center justify-center transition-all duration-200',
+                                                'flex h-full w-full items-center justify-center transition-all duration-200',
                                                 isA
                                                     ? 'drop-shadow-[0_0_5px_rgba(35,168,154,0.95)]'
                                                     : isB
@@ -923,7 +943,9 @@ export const CashChangeModal = ({
                                                 <Wallet size={16} className="text-[#36606F]" strokeWidth={2.4} />
                                             )}
                                         </span>
-
+                                        <span className="pointer-events-none absolute left-1/2 top-[calc(100%+3px)] -translate-x-1/2 whitespace-nowrap rounded-md bg-[#ef2f2f] px-1.5 py-0.5 text-[7px] font-semibold leading-none text-white shadow-sm sm:px-2 sm:py-1 sm:text-[9px]">
+                                            {cashChangePlanDisplayLabel(option)}
+                                        </span>
                                     </button>
                                 );
                             })}
