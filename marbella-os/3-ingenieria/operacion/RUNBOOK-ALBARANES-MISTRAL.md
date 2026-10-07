@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-04
+revisado: 2026-10-07
 caducidad: 3 meses
 depende_de: ADR-0023, SEGURIDAD
 ---
@@ -59,7 +59,7 @@ correcta de la versión actual. Los trabajos son reanudables y están marcados
 como `historical`; no cambian stock, precios, confirmaciones ni el estado OCR
 heredado. Guardar los recuentos económicos antes y después del lote y revisar
 los errores explícitos. Una extracción correcta del mismo hash y versión se
-reutiliza sin llamada OCR. El botón «Reprocesar con Mistral» usa el mismo
+reutiliza sin llamada OCR. El botón «Reprocesar» usa el mismo
 original y la misma protección para un albarán individual.
 
 ## Si falla

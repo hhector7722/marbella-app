@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Loader2,
   MinusCircle,
+  Pencil,
   RefreshCw,
   RotateCcw,
   Trash2,
@@ -1075,6 +1076,16 @@ export default function AlbaranesHistoricoClient({
     setLineForMappingModal(line)
   }
 
+  function openLineForEdit(line: PurchaseInvoiceLine) {
+    setLineForMappingModal(null)
+    setLineForEvidenceModal(null)
+    setSupplierPickerOpen(false)
+    setInvoiceImageViewerOpen(false)
+    setIngredientCreateOpen(false)
+    evidenceContextLineIdRef.current = null
+    setLineForEditModal(line)
+  }
+
   function openCreateIngredientForLine(
     line: PurchaseInvoiceLine,
     initialName: string | null
@@ -1733,7 +1744,7 @@ export default function AlbaranesHistoricoClient({
                           loadingLabel="Leyendo…"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
-                          Reprocesar con Mistral
+                          Reprocesar
                         </Button>
                       </div>
                     </div>
@@ -1801,6 +1812,18 @@ export default function AlbaranesHistoricoClient({
                             const reviewLabel = inlineReviewLabel(reviewRow)
                             const backgroundPhase = backgroundLineActions[l.id] ?? null
                             const needsRepair = lineNeedsStockRepair(l)
+                            const reviewLabelTextVisible =
+                              Boolean(reviewRow) &&
+                              (Boolean(reviewRow?.confirmed) ||
+                                reviewRow?.disposition === 'confirmed' ||
+                                reviewRow?.disposition === 'excluded' ||
+                                Boolean(reviewRow && isDocumentOnlyReview(reviewRow)) ||
+                                isManager)
+                            // Lápiz de edición: aparece cuando la línea ya está
+                            // resuelta (tick de stock) o cuando tiene la cruz roja
+                            // sola, sin etiqueta de estado detrás.
+                            const showEditPencil =
+                              !backgroundPhase && (stockApplied || (noMatch && !reviewLabelTextVisible))
                             const displayName = l.ingredient_name
                               ? l.ingredient_name
                               : l.original_name || 'Sin nombre'
@@ -1810,13 +1833,7 @@ export default function AlbaranesHistoricoClient({
                                 key={l.id}
                                 onClick={() => {
                                   if (backgroundPhase) return
-                                  setLineForMappingModal(null)
-                                  setLineForEvidenceModal(null)
-                                  setSupplierPickerOpen(false)
-                                  setInvoiceImageViewerOpen(false)
-                                  setIngredientCreateOpen(false)
-                                  evidenceContextLineIdRef.current = null
-                                  setLineForEditModal(l)
+                                  openLineForEdit(l)
                                 }}
                                 className="group flex flex-row items-center gap-1.5 sm:gap-3 px-1 py-1.5 min-h-12 hover:bg-zinc-50 rounded-lg transition-colors cursor-pointer"
                                 title="Editar línea"
@@ -1866,6 +1883,20 @@ export default function AlbaranesHistoricoClient({
                                           {reviewLabel}
                                         </button>
                                       ) : null
+                                    ) : null}
+                                    {showEditPencil ? (
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation()
+                                          openLineForEdit(l)
+                                        }}
+                                        className="relative ml-1 inline-flex h-8 w-8 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 shadow-none outline-none transition-colors hover:bg-zinc-100 hover:text-zinc-700 active:opacity-70 before:absolute before:inset-0 before:-m-2 before:min-h-12 before:min-w-12 before:content-['']"
+                                        aria-label="Editar línea"
+                                        title="Editar línea"
+                                      >
+                                        <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
+                                      </button>
                                     ) : null}
                                   </div>
                                 </div>

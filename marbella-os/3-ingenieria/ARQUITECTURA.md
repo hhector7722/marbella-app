@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-03
+revisado: 2026-10-07
 caducidad: 6 meses
 supersede: —
 ---
@@ -201,7 +201,7 @@ Al terminar cada trabajo, la cola sincroniza el estado OCR de su hoja y solo
 deja el albarán pendiente de mapeo cuando han terminado todas las hojas
 declaradas. Un fallo transitorio conserva su reintento automático; el reintento
 explícito de un fallo sin evidencia reinicia el límite de intentos.
-«Reprocesar con Mistral» vuelve a las hojas originales conservadas. La cola
+«Reprocesar» vuelve a las hojas originales conservadas. La cola
 histórica verifica su hash, reutiliza una extracción correcta de la misma
 versión y no invoca K4 ni reescribe el estado previo. La relectura masiva usa
 el mismo modo histórico y puede reanudarse por archivo.

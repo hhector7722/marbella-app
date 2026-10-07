@@ -1,5 +1,5 @@
 <!-- Generado desde 46 documentos de marbella-os/.
-     Huella del origen: 2a4f8adc0b8ba8de
+     Huella del origen: dfb33bb37a46188b
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -22,9 +22,9 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2026-10-29 | `marbella-os/5-estado/ROADMAP.md` | 2026-07-29 | 3 meses | propiedad del producto |
 | 2026-11-25 | `marbella-os/README.md` | 2026-08-25 | 3 meses | propiedad del producto |
 | 2027-01-03 | `marbella-os/3-ingenieria/SEGURIDAD.md` | 2026-10-03 | 3 meses | propiedad del producto |
-| 2027-01-04 | `marbella-os/1-producto/MAPA-DE-CAPACIDADES.md` | 2026-10-04 | 3 meses | propiedad del producto |
-| 2027-01-04 | `marbella-os/3-ingenieria/operacion/RUNBOOK-ALBARANES-MISTRAL.md` | 2026-10-04 | 3 meses | propiedad del producto |
 | 2027-01-04 | `marbella-os/5-estado/DEUDA.md` | 2026-10-04 | 3 meses | propiedad del producto |
+| 2027-01-07 | `marbella-os/1-producto/MAPA-DE-CAPACIDADES.md` | 2026-10-07 | 3 meses | propiedad del producto |
+| 2027-01-07 | `marbella-os/3-ingenieria/operacion/RUNBOOK-ALBARANES-MISTRAL.md` | 2026-10-07 | 3 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/1-producto/capacidades/README.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/1-producto/RECORRIDOS.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/3-ingenieria/CALIDAD.md` | 2026-07-29 | 6 meses | propiedad del producto |
@@ -42,11 +42,11 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-03-18 | `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` | 2026-09-18 | 6 meses | propiedad del producto |
 | 2027-03-27 | `marbella-os/3-ingenieria/dominio/HORAS.md` | 2026-09-27 | 6 meses | propiedad del producto |
 | 2027-04-03 | `marbella-os/1-producto/ACTORES-Y-ROLES.md` | 2026-10-03 | 6 meses | propiedad del producto |
-| 2027-04-03 | `marbella-os/3-ingenieria/ARQUITECTURA.md` | 2026-10-03 | 6 meses | propiedad del producto |
 | 2027-04-03 | `marbella-os/3-ingenieria/MODELO-DE-DATOS.md` | 2026-10-03 | 6 meses | propiedad del producto |
 | 2027-04-03 | `marbella-os/3-ingenieria/operacion/README.md` | 2026-10-03 | 6 meses | propiedad del producto |
 | 2027-04-03 | `marbella-os/GLOSARIO.md` | 2026-10-03 | 6 meses | propiedad del producto |
 | 2027-04-04 | `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` | 2026-10-04 | 6 meses | propiedad del producto |
+| 2027-04-07 | `marbella-os/3-ingenieria/ARQUITECTURA.md` | 2026-10-07 | 6 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/PRINCIPIOS.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/VISION.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/2-diseno/LENGUAJE-VISUAL.md` | 2026-07-29 | 12 meses | propiedad del producto |

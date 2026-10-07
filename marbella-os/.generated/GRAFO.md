@@ -1,5 +1,5 @@
 <!-- Generado desde 256 documentos de marbella-os/.
-     Huella del origen: 5d856e367d6dae34
+     Huella del origen: 4967f7a18097b69f
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
