@@ -45,12 +45,12 @@ function zoomPlanAt(view: PlanView, zoom: number, point: PlanPoint, width: numbe
 }
 
 const CASH_CHANGE_PLAN_POSITIONS: Record<string, PlanPoint> = {
-    // Centros calibrados sobre la referencia visual del plano realista.
-    tpv1: { x: 67.7, y: 78.1 },
-    tpv2: { x: 58.1, y: 39.1 },
-    cambio1: { x: 10.1, y: 23.0 },
-    cambio2: { x: 34.6, y: 26.2 },
-    inicial: { x: 25.2, y: 17.0 },
+    // Centros de las cajas y TPV ya dibujados en el plano de 3857 × 1999.
+    tpv1: { x: 57.3, y: 35.2 },
+    tpv2: { x: 57.3, y: 71.2 },
+    cambio1: { x: 8.8, y: 25.8 },
+    cambio2: { x: 33.7, y: 16.8 },
+    inicial: { x: 20.4, y: 16.2 },
 };
 
 function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITIONS | null {
@@ -89,17 +89,6 @@ function cashChangePlanImage(box: BoxOption): string | null {
             return '/images/cash-change/tpv.webp';
         default:
             return box.image_url || null;
-    }
-}
-
-function cashChangePlanDisplayLabel(box: BoxOption): string {
-    switch (cashChangePlanKey(box)) {
-        case 'cambio1': return 'Cambio 1';
-        case 'cambio2': return 'Cambio 2';
-        case 'inicial': return 'Inicial';
-        case 'tpv1': return 'TPV 1';
-        case 'tpv2': return 'TPV 2';
-        default: return box.name;
     }
 }
 
@@ -918,7 +907,7 @@ export const CashChangeModal = ({
                         ref={planViewportRef}
                         data-element="cash-change-plan"
                         data-design-exception="cash-change-plan-radius:radio-control"
-                        className="relative mx-auto aspect-[1298/663] w-full max-w-[min(100%,calc(196dvh-26.5rem))] touch-none overflow-hidden rounded-ds-control bg-zinc-100"
+                        className="relative mx-auto aspect-[3857/1999] w-full max-w-[min(100%,calc(193dvh-26.1rem))] touch-none overflow-hidden rounded-ds-control bg-zinc-100"
                         tabIndex={0}
                         role="region"
                         aria-label="Plano de cajas: usa la rueda o pellizca para ampliar y arrastra para desplazarte"
@@ -963,60 +952,25 @@ export const CashChangeModal = ({
                                 alt="Plano de cajas"
                                 fill
                                 priority
+                                unoptimized
                                 sizes="(max-width: 1200px) calc(100vw - 1rem), 1136px"
-                                className={cn(
-                                    'select-none object-cover transition-opacity duration-200',
-                                    boxA && boxB ? 'opacity-[0.42]' : 'opacity-100',
-                                )}
+                                className="select-none object-cover"
                             />
 
                             {positionedOptions.map(({ option, position }) => {
                                 const isA = boxA?.id === option.id;
                                 const isB = boxB?.id === option.id;
-                                const selected = isA || isB;
-                                const planImage = cashChangePlanImage(option);
                                 return (
                                     <button
                                         key={option.id}
                                         type="button"
                                         onClick={() => toggleBoxSelection(option)}
                                         aria-label={option.name}
-                                        className={cn(
-                                            'absolute z-20 h-6 w-8 -translate-x-1/2 -translate-y-1/2 border-0 bg-transparent p-0 transition-all duration-200 active:scale-95',
-                                            selected
-                                                ? 'scale-[1.03] opacity-100'
-                                                : boxA && boxB
-                                                    ? 'opacity-[0.28]'
-                                                    : 'opacity-90 hover:opacity-100',
-                                        )}
+                                        aria-pressed={isA || isB}
+                                        data-plan-box={cashChangePlanKey(option) ?? undefined}
+                                        className="absolute z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-xl border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:h-20 sm:w-24"
                                         style={{ left: position.x + '%', top: position.y + '%' }}
-                                    >
-                                        <span
-                                            className={cn(
-                                                'flex h-full w-full items-center justify-center transition-all duration-200',
-                                                isA
-                                                    ? 'drop-shadow-[0_0_5px_rgba(35,168,154,0.95)]'
-                                                    : isB
-                                                        ? 'drop-shadow-[0_0_5px_rgba(251,113,133,0.95)]'
-                                                        : 'drop-shadow-sm',
-                                            )}
-                                        >
-                                            {planImage ? (
-                                                <Image
-                                                    src={planImage}
-                                                    alt=""
-                                                    width={26}
-                                                    height={20}
-                                                    className="h-full w-full object-contain"
-                                                />
-                                            ) : (
-                                                <Wallet size={16} className="text-[#36606F]" strokeWidth={2.4} />
-                                            )}
-                                        </span>
-                                        <span className="absolute left-1/2 top-[calc(100%+3px)] -translate-x-1/2 whitespace-nowrap rounded-md bg-[#ef2f2f] px-1.5 py-0.5 text-[7px] font-semibold leading-none text-white shadow-sm sm:px-2 sm:py-1 sm:text-[9px]">
-                                            {cashChangePlanDisplayLabel(option)}
-                                        </span>
-                                    </button>
+                                    />
                                 );
                             })}
 

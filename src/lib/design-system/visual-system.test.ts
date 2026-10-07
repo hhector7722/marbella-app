@@ -1607,6 +1607,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(selectBlock, /cash-arrow-forward|cash-arrow-reverse|buildPlanArrowGeometry/, 'el plano no dibuja flechas ni botones de cantidad');
         const planBlock = selectBlock.split('data-element="cash-change-plan"')[1]?.split('{exchangeComplete ?')[0] ?? '';
         assert.doesNotMatch(planBlock, /openLegEditor|<Plus/, 'sobre el plano no hay controles de cantidad');
+        assert.match(planBlock, /unoptimized/, 'el plano conserva la resolución original durante el zoom');
+        assert.match(planBlock, /aria-pressed=\{isA \|\| isB\}/, 'las cajas incrustadas conservan su selección accesible');
+        assert.doesNotMatch(planBlock, /cashChangePlanImage|cashChangePlanDisplayLabel/, 'el plano no duplica los iconos ni los rótulos incrustados');
+        const planImage = readFileSync(join(REPO_ROOT, 'public/images/cash-change-plan.png'));
+        assert.ok(planImage.readUInt32BE(16) >= 3000 && planImage.readUInt32BE(20) >= 1900, 'el plano tiene resolución suficiente para ampliar');
 
         const denomination = readFileSync(join(SRC_ROOT, 'components/CashDenominationForm.tsx'), 'utf8');
         assert.doesNotMatch(
