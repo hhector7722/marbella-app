@@ -59,17 +59,6 @@ function resolveCashChangePlanPosition(box: BoxOption): PlanPoint | null {
     return key ? CASH_CHANGE_PLAN_POSITIONS[key] : null;
 }
 
-function cashChangePlanLabel(box: BoxOption): string {
-    switch (cashChangePlanKey(box)) {
-        case 'tpv1': return 'TPV 1';
-        case 'tpv2': return 'TPV 2';
-        case 'cambio1': return 'CAMBIO 1';
-        case 'cambio2': return 'CAMBIO 2';
-        case 'inicial': return 'INICIAL';
-        default: return box.name;
-    }
-}
-
 function cashChangePlanImage(box: BoxOption): string | null {
     switch (cashChangePlanKey(box)) {
         case 'cambio1': return '/images/cash-change/cambio1.webp';
