@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-07
 
+- **Cambio muestra el nuevo plano de alta resolución.** La imagen facilitada incorpora las cajas, los TPV y sus rótulos con mayor nitidez. Las zonas de selección se recalibran sobre esos elementos y dejan de pintar copias encima; el zoom muestra el archivo original y el plano permanece legible aunque ambas cajas estén seleccionadas.
+
 - **Cambio separa el resumen y el plano.** El plano deja un margen discreto en los laterales y abajo y redondea las cuatro esquinas. Las flechas y los signos «+» aparecen solo en el resumen superior. Las cajas seleccionadas crecen ligeramente, pierden el contorno blanco y cada una muestra debajo un botón verde «Añadir cantidad» que abre el desglose de su dirección.
 
 - **Excepciones visuales locales.** Las reglas de espaciado, tamaño y composición siguen siendo el valor por defecto; un elemento con diseño concreto puede declarar su excepción y motivo sin alterar el resto. Las comprobaciones aceptan estilos compartidos y excepciones expresas. La primera columna de la tabla de receta vuelve a llamarse «Ingredientes».
