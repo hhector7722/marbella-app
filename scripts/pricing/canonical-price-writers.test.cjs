@@ -16,6 +16,7 @@ const canonicalEditor = fs.readFileSync(
   'utf8',
 )
 const ingredientsPage = fs.readFileSync(path.join(root, 'src/app/ingredients/page.tsx'), 'utf8')
+const ingredientDetail = fs.readFileSync(path.join(root, 'src/app/ingredients/[id]/page.tsx'), 'utf8')
 const ingredientCreate = fs.readFileSync(
   path.join(root, 'src/components/ingredients/IngredientCreateForm.tsx'),
   'utf8',
@@ -80,10 +81,11 @@ test('la edición manual usa una acción de servidor y la RPC canónica', () => 
   assert.match(manualAction, /\['manager', 'admin'\]/)
   assert.match(manualAction, /rpc\('set_ingredient_current_price'/)
   assert.match(canonicalEditor, /Precio actual/)
-  assert.match(canonicalEditor, /Nuevo precio/)
+  assert.match(canonicalEditor, /instance="ingredient-canonical-new-price"\s+label="Precio"/)
   assert.match(canonicalEditor, /Unidad del precio/)
   assert.match(canonicalEditor, /Unidad en recetas/)
-  assert.match(canonicalEditor, /Densidad \(opcional\)/)
+  assert.match(canonicalEditor, /instance="ingredient-canonical-density"\s+label="Densidad"/)
+  assert.match(canonicalEditor, /Solo hace falta para convertir entre peso y volumen/)
   assert.match(canonicalEditor, /1 ml =/)
   assert.match(canonicalEditor, /getIngredientCanonicalConfigAction/)
   assert.match(canonicalEditor, /setIngredientPriceAndUnitAction/)
@@ -100,8 +102,9 @@ test('el alta usa un único formulario y el mismo writer manual canónico', () =
   assert.match(albaranesPage, /<IngredientCreateForm/)
 })
 
-test('ingredientes y recetas comparten exactamente el mismo editor manual de precio', () => {
-  assert.match(ingredientsPage, /<IngredientCanonicalEditModal/)
+test('la ficha de ingredientes y recetas comparten exactamente el mismo editor manual de precio', () => {
+  assert.match(ingredientsPage, /router\.push\(`\/ingredients\/\$\{encodeURIComponent\(ingredient\.id\)\}`\)/)
+  assert.match(ingredientDetail, /<IngredientCanonicalEditModal/)
   assert.match(recipePage, /<IngredientCanonicalEditModal/)
   assert.doesNotMatch(ingredientsPage, /Modo experto|Asistente|IngredientWizard|createMode/)
   assert.doesNotMatch(recipePage, /IngredientWizard/)
