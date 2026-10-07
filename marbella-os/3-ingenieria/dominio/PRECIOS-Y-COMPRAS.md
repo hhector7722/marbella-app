@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-04
+revisado: 2026-10-07
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -112,6 +112,17 @@ impreso. Un descuento en euros exige además una cabecera de descuento y un
 precio neto unitario explícito que coincida tanto con precio − descuento como
 con el importe. Fuera de esas dos demostraciones, el descuento sigue en
 revisión.
+
+### Bloqueos de línea y avisos de documento
+
+Las comprobaciones del **documento completo** —subtotal, IVA, total y suma de
+líneas— se muestran como avisos del albarán y no como incidencia de un producto.
+No impiden confirmar las líneas cuyos propios datos están completos: una línea
+cuya identidad, presentación, cantidad, precio y descuento se han revisado se
+puede confirmar aunque el documento mantenga un aviso de totales. Solo los
+bloqueos de la línea impiden su confirmación, y se explican uno a uno. Un aviso
+de documento no se resuelve editando cada producto: se atiende revisando el
+original o reprocesando con Mistral.
 
 ---
 
