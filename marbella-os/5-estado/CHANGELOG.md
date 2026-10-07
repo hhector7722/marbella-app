@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-10-07
+
+- **Cambio entre cajas integra cabecera y plano real en una sola superficie.** El modal usa el nuevo plano realista de sala con contorno blanco y una cabecera oscura integrada en el mismo bloque. Arriba se muestran las dos cajas seleccionadas y los importes de ambos sentidos del intercambio; cierre, histórico y confirmación quedan dentro de esa misma cabecera.
+
 ## 2026-10-04
 
 - **La cabecera incorpora búsqueda global.** Permite abrir funciones autorizadas y encontrar ingredientes, recetas, proveedores y plantilla con acceso directo a la entidad; los albaranes se consultan al pedirlo. El recorte sigue al usuario efectivo de «Ver como». LIVE conserva su acción y visibilidad, con el PNG facilitado como icono compacto.
