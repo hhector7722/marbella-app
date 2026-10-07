@@ -193,6 +193,7 @@ export function PavilionDayModal({
           ) : null}
           {isHector ? (
             <button
+              data-design-exception="native-business-button:modal-header-navigation-icon"
               type="button"
               onClick={() => {
                 const params = new URLSearchParams({ date: date! });

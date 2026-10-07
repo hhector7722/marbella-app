@@ -23,6 +23,26 @@ const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
 const ALL_DENOMS = [...BILLS, ...COINS];
 
 type PlanPoint = { x: number; y: number };
+type PlanView = { zoom: number; x: number; y: number };
+
+function clampPlanView(view: PlanView, width: number, height: number): PlanView {
+    const zoom = Math.min(3, Math.max(1, view.zoom));
+    return {
+        zoom,
+        x: Math.min(0, Math.max(width * (1 - zoom), view.x)),
+        y: Math.min(0, Math.max(height * (1 - zoom), view.y)),
+    };
+}
+
+function zoomPlanAt(view: PlanView, zoom: number, point: PlanPoint, width: number, height: number): PlanView {
+    const nextZoom = Math.min(3, Math.max(1, zoom));
+    const ratio = nextZoom / view.zoom;
+    return clampPlanView({
+        zoom: nextZoom,
+        x: point.x - (point.x - view.x) * ratio,
+        y: point.y - (point.y - view.y) * ratio,
+    }, width, height);
+}
 
 const CASH_CHANGE_PLAN_POSITIONS: Record<string, PlanPoint> = {
     // Centros calibrados sobre la referencia visual del plano realista.
@@ -287,37 +307,90 @@ export const CashChangeModal = ({
     const [exchangeHistoryLoading, setExchangeHistoryLoading] = useState(false);
     const [selectedExchangeDetail, setSelectedExchangeDetail] = useState<ExchangeHistoryItem | null>(null);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
-    const [planZoom, setPlanZoom] = useState(1);
+    const [planView, setPlanView] = useState<PlanView>({ zoom: 1, x: 0, y: 0 });
     const [canViewExchangeHistory, setCanViewExchangeHistory] = useState(false);
+    const planViewportRef = useRef<HTMLDivElement>(null);
+    const planViewRef = useRef(planView);
+    const planPointersRef = useRef(new Map<number, PlanPoint>());
+    const planPointerStartsRef = useRef(new Map<number, PlanPoint>());
+    const planDraggedRef = useRef(false);
 
-    const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
-
-    const clampPlanZoom = (value: number) =>
-        Math.min(2.4, Math.max(1, Math.round(value * 100) / 100));
-
-    const changePlanZoom = (delta: number) => {
-        setPlanZoom((current) => clampPlanZoom(current + delta));
+    const updatePlanView = (view: PlanView) => {
+        planViewRef.current = view;
+        setPlanView(view);
     };
 
-    const touchDistance = (touches: React.TouchList): number =>
-        Math.hypot(
-            touches[0].clientX - touches[1].clientX,
-            touches[0].clientY - touches[1].clientY,
-        );
+    useEffect(() => {
+        const viewport = planViewportRef.current;
+        if (!viewport) return;
+        const onWheel = (event: WheelEvent) => {
+            event.preventDefault();
+            const rect = viewport.getBoundingClientRect();
+            const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+            updatePlanView(zoomPlanAt(
+                planViewRef.current,
+                planViewRef.current.zoom * Math.exp(-event.deltaY * 0.0015),
+                point,
+                rect.width,
+                rect.height,
+            ));
+        };
+        viewport.addEventListener('wheel', onWheel, { passive: false });
+        return () => viewport.removeEventListener('wheel', onWheel);
+    }, []);
 
-    const handlePlanTouchStart = (event: React.TouchEvent) => {
-        if (event.touches.length !== 2) return;
-        pinchRef.current = { distance: touchDistance(event.touches), zoom: planZoom };
+    const handlePlanPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+        planDraggedRef.current = false;
+        const point = { x: event.clientX, y: event.clientY };
+        planPointersRef.current.set(event.pointerId, point);
+        planPointerStartsRef.current.set(event.pointerId, point);
+        if (planPointersRef.current.size === 2) {
+            event.currentTarget.setPointerCapture(event.pointerId);
+        }
     };
 
-    const handlePlanTouchMove = (event: React.TouchEvent) => {
-        if (event.touches.length !== 2 || !pinchRef.current || pinchRef.current.distance <= 0) return;
-        const ratio = touchDistance(event.touches) / pinchRef.current.distance;
-        setPlanZoom(clampPlanZoom(pinchRef.current.zoom * ratio));
+    const handlePlanPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+        const pointers = planPointersRef.current;
+        const previous = pointers.get(event.pointerId);
+        if (!previous) return;
+        const current = { x: event.clientX, y: event.clientY };
+        pointers.set(event.pointerId, current);
+        const viewport = event.currentTarget;
+        const rect = viewport.getBoundingClientRect();
+
+        if (pointers.size === 2) {
+            const other = [...pointers.entries()].find(([id]) => id !== event.pointerId)?.[1];
+            if (!other) return;
+            const oldDistance = Math.hypot(previous.x - other.x, previous.y - other.y);
+            const newDistance = Math.hypot(current.x - other.x, current.y - other.y);
+            if (oldDistance < 1) return;
+            const oldMid = { x: (previous.x + other.x) / 2 - rect.left, y: (previous.y + other.y) / 2 - rect.top };
+            const newMid = { x: (current.x + other.x) / 2 - rect.left, y: (current.y + other.y) / 2 - rect.top };
+            const view = zoomPlanAt(planViewRef.current, planViewRef.current.zoom * newDistance / oldDistance, oldMid, rect.width, rect.height);
+            updatePlanView(clampPlanView({ ...view, x: view.x + newMid.x - oldMid.x, y: view.y + newMid.y - oldMid.y }, rect.width, rect.height));
+            planDraggedRef.current = true;
+            return;
+        }
+
+        if (planViewRef.current.zoom <= 1) return;
+        const dx = current.x - previous.x;
+        const dy = current.y - previous.y;
+        if (dx === 0 && dy === 0) return;
+        const start = planPointerStartsRef.current.get(event.pointerId);
+        if (!planDraggedRef.current && start && Math.hypot(current.x - start.x, current.y - start.y) < 4) return;
+        planDraggedRef.current = true;
+        if (!viewport.hasPointerCapture(event.pointerId)) viewport.setPointerCapture(event.pointerId);
+        updatePlanView(clampPlanView({
+            ...planViewRef.current,
+            x: planViewRef.current.x + dx,
+            y: planViewRef.current.y + dy,
+        }, rect.width, rect.height));
     };
 
-    const handlePlanTouchEnd = (event: React.TouchEvent) => {
-        if (event.touches.length < 2) pinchRef.current = null;
+    const handlePlanPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+        planPointersRef.current.delete(event.pointerId);
+        planPointerStartsRef.current.delete(event.pointerId);
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     };
 
     useEffect(() => {
@@ -836,11 +909,15 @@ export const CashChangeModal = ({
                     </button>
                 ) : undefined}
                 scrollContent={false}
+                fullBleedBody
             >
                 <div className="relative flex min-h-0 w-full flex-col">
                     <div className="relative flex min-h-[64px] shrink-0 items-center justify-center px-3 py-1.5 sm:min-h-[78px] sm:px-4">
                         <div className="flex items-center justify-center gap-2 sm:gap-4">
-                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white p-1 sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
+                            <div className={cn(
+                                'flex h-9 w-9 items-center justify-center overflow-hidden sm:h-11 sm:w-11',
+                                boxA && 'rounded-lg border border-zinc-200 bg-white p-1 sm:rounded-xl sm:p-1.5',
+                            )}>
                                 {boxA && cashChangePlanImage(boxA) ? (
                                     <Image
                                         src={cashChangePlanImage(boxA)!}
@@ -849,9 +926,9 @@ export const CashChangeModal = ({
                                         height={52}
                                         className="h-full w-full object-contain"
                                     />
-                                ) : (
+                                ) : boxA ? (
                                     <Wallet size={18} className="text-zinc-300" strokeWidth={2} />
-                                )}
+                                ) : null}
                             </div>
 
                             <svg
@@ -867,7 +944,10 @@ export const CashChangeModal = ({
                                 </g>
                             </svg>
 
-                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white p-1 sm:h-11 sm:w-11 sm:rounded-xl sm:p-1.5">
+                            <div className={cn(
+                                'flex h-9 w-9 items-center justify-center overflow-hidden sm:h-11 sm:w-11',
+                                boxB && 'rounded-lg border border-zinc-200 bg-white p-1 sm:rounded-xl sm:p-1.5',
+                            )}>
                                 {boxB && cashChangePlanImage(boxB) ? (
                                     <Image
                                         src={cashChangePlanImage(boxB)!}
@@ -876,9 +956,9 @@ export const CashChangeModal = ({
                                         height={52}
                                         className="h-full w-full object-contain"
                                     />
-                                ) : (
+                                ) : boxB ? (
                                     <Wallet size={18} className="text-zinc-300" strokeWidth={2} />
-                                )}
+                                ) : null}
                             </div>
                         </div>
 
@@ -899,19 +979,46 @@ export const CashChangeModal = ({
                     </div>
 
                     <div
+                        ref={planViewportRef}
                         className="relative aspect-[1298/663] w-full touch-none overflow-hidden bg-zinc-100"
-                        onWheel={(event) => {
-                            event.preventDefault();
-                            changePlanZoom(event.deltaY < 0 ? 0.1 : -0.1);
+                        tabIndex={0}
+                        role="region"
+                        aria-label="Plano de cajas: usa la rueda o pellizca para ampliar y arrastra para desplazarte"
+                        onKeyDown={(event) => {
+                            if (event.target !== event.currentTarget) return;
+                            const rect = event.currentTarget.getBoundingClientRect();
+                            const center = { x: rect.width / 2, y: rect.height / 2 };
+                            if (event.key === '+' || event.key === '=') {
+                                event.preventDefault();
+                                updatePlanView(zoomPlanAt(planViewRef.current, planViewRef.current.zoom * 1.2, center, rect.width, rect.height));
+                            } else if (event.key === '-') {
+                                event.preventDefault();
+                                updatePlanView(zoomPlanAt(planViewRef.current, planViewRef.current.zoom / 1.2, center, rect.width, rect.height));
+                            } else if (event.key.startsWith('Arrow') && planViewRef.current.zoom > 1) {
+                                event.preventDefault();
+                                const delta = 48;
+                                updatePlanView(clampPlanView({
+                                    ...planViewRef.current,
+                                    x: planViewRef.current.x + (event.key === 'ArrowLeft' ? delta : event.key === 'ArrowRight' ? -delta : 0),
+                                    y: planViewRef.current.y + (event.key === 'ArrowUp' ? delta : event.key === 'ArrowDown' ? -delta : 0),
+                                }, rect.width, rect.height));
+                            }
                         }}
-                        onTouchStart={handlePlanTouchStart}
-                        onTouchMove={handlePlanTouchMove}
-                        onTouchEnd={handlePlanTouchEnd}
-                        onTouchCancel={handlePlanTouchEnd}
+                        onPointerDown={handlePlanPointerDown}
+                        onPointerMove={handlePlanPointerMove}
+                        onPointerUp={handlePlanPointerEnd}
+                        onPointerCancel={handlePlanPointerEnd}
+                        onClickCapture={(event) => {
+                            if (planDraggedRef.current) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                planDraggedRef.current = false;
+                            }
+                        }}
                     >
                         <div
-                            className="absolute inset-0 origin-center transition-transform duration-200 ease-out"
-                            style={{ transform: `scale(${planZoom})` }}
+                            className="absolute inset-0 origin-top-left"
+                            style={{ transform: `translate(${planView.x}px, ${planView.y}px) scale(${planView.zoom})` }}
                         >
                             <Image
                                 src="/images/cash-change-plan.png"

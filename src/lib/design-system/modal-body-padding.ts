@@ -6,9 +6,9 @@
  * No corrige consumidores: solo clasifica classNames y fuentes.
  */
 
-/** Padding de escala ≥4 (16px) o arbitrario grande: choca con inset contractual. */
+/** Padding superior o lateral ≥4: puede duplicar el inset del shell. El inferior no. */
 const ROOT_PADDING_TOKEN_RE =
-    /^(?:sm:|md:|lg:|xl:|2xl:)?(?:p|px|py|pt|pb|pl|pr|ps|pe)-(?:[4-9]|[1-9]\d|\[(?!0(?:px|rem|em)?\]).+\])$/;
+    /^(?:sm:|md:|lg:|xl:|2xl:)?(?:p|px|py|pt|pl|pr|ps|pe)-(?:[4-9]|[1-9]\d|\[(?!0(?:px|rem|em)?\]).+\])$/;
 
 export function hasForbiddenModalRootPaddingToken(token: string): boolean {
     return ROOT_PADDING_TOKEN_RE.test(token);
@@ -38,6 +38,7 @@ export function findModalRootPaddingClassNames(source: string): string[] {
             /^\s*<(?:div|section|form|main|article)\b([^>]*)>/
         );
         if (!child) continue;
+        if (/\bdata-design-exception="modal-root-padding:[^"]+"/.test(child[1] ?? '')) continue;
         const cls = extractClassNameLiterals(child[1] ?? '');
         if (cls && hasForbiddenModalRootPaddingClassName(cls)) {
             found.push(cls);

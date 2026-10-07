@@ -3,8 +3,8 @@
  * Variantes, layout, identidad y receta. El aspecto lo bloquea CSS
  * (`[data-component='Button']`); este módulo no acepta props visuales.
  *
- * Anatomía binaria: texto XOR icono.
- * `hasLabel` + `hasIcon` es inválido. La prop `icon` existe para icon-only.
+ * Anatomía por defecto: texto XOR icono. Una composición icono + texto
+ * requiere una excepción explícita con motivo en el consumidor.
  */
 
 export const BUTTON_COMPONENT_ID = 'Button' as const;
@@ -21,6 +21,7 @@ export type ButtonVariant = (typeof BUTTON_VARIANTS)[number];
 export const BUTTON_LAYOUTS = ['hug', 'fill'] as const;
 
 export type ButtonLayout = (typeof BUTTON_LAYOUTS)[number];
+export type ButtonComposition = 'exclusive' | 'icon-and-text';
 
 /** Variantes rechazadas de forma explícita. No existen en el contrato. */
 export const BUTTON_FORBIDDEN_VARIANTS = [
@@ -71,18 +72,23 @@ export type ButtonNameResolution =
           ok: false;
           reason:
               | 'label-and-icon-forbidden'
+              | 'icon-and-text-requires-both'
               | 'icon-only-requires-aria-label'
               | 'empty-requires-name';
       };
 
 /**
- * Anatomía binaria: exactamente uno de `hasLabel` o `hasIcon`.
- * Texto solo → válido. Icon-only → válido. Ambos o ninguno → inválido.
+ * La excepción icono + texto es local y debe indicar su motivo.
  */
 export function isButtonAnatomyValid(args: {
     hasLabel: boolean;
     hasIcon: boolean;
+    composition?: ButtonComposition;
+    exceptionReason?: string;
 }): boolean {
+    if (args.composition === 'icon-and-text') {
+        return args.hasLabel && args.hasIcon && Boolean(args.exceptionReason?.trim());
+    }
     return args.hasLabel !== args.hasIcon;
 }
 
@@ -90,10 +96,18 @@ export function resolveButtonAccessibleName(args: {
     hasLabel: boolean;
     hasIcon: boolean;
     ariaLabel?: string | undefined;
+    composition?: ButtonComposition;
+    exceptionReason?: string;
 }): ButtonNameResolution {
     const named = typeof args.ariaLabel === 'string' && args.ariaLabel.trim().length > 0;
     if (args.hasLabel && args.hasIcon) {
+        if (args.composition === 'icon-and-text' && args.exceptionReason?.trim()) {
+            return { ok: true, iconOnly: false };
+        }
         return { ok: false, reason: 'label-and-icon-forbidden' };
+    }
+    if (args.composition === 'icon-and-text') {
+        return { ok: false, reason: 'icon-and-text-requires-both' };
     }
     if (args.hasLabel) {
         return { ok: true, iconOnly: false };
@@ -112,7 +126,9 @@ export function buttonAnatomyErrorMessage(
 ): string {
     switch (reason) {
         case 'label-and-icon-forbidden':
-            return `[Button] Anatomía inválida: texto XOR icono. instance="${instance}"`;
+            return `[Button] Anatomía inválida: texto XOR icono; para combinarlos declara composición y motivo de excepción. instance="${instance}"`;
+        case 'icon-and-text-requires-both':
+            return `[Button] La excepción icono + texto exige ambos elementos. instance="${instance}"`;
         case 'icon-only-requires-aria-label':
             return `[Button] Icon-only exige aria-label. instance="${instance}"`;
         case 'empty-requires-name':
@@ -135,6 +151,8 @@ export function assertButtonAnatomy(args: {
     hasIcon: boolean;
     ariaLabel?: string | undefined;
     instance: string;
+    composition?: ButtonComposition;
+    exceptionReason?: string;
 }): ButtonNameResolution {
     const naming = resolveButtonAccessibleName(args);
     if (!naming.ok && isButtonAnatomyEnforced()) {

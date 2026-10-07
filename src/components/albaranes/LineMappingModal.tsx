@@ -957,6 +957,8 @@ export function LineMappingModal({
                         type="button"
                         variant="tertiary"
                         instance="albaran-line-mapping-edit-ingredient"
+                        composition="icon-and-text"
+                        exceptionReason="El lápiz distingue editar del botón contiguo para cambiar ingrediente"
                         className="shrink-0"
                         icon={<Pencil className="h-3.5 w-3.5" />}
                         onClick={() => setIngredientEditOpen(true)}

@@ -370,6 +370,10 @@ html[data-quick-fab='open'] main {
   padding-inline-end: var(--modal-content-inset-end);
 }
 
+[data-component='Modal'] [data-element='body'][data-full-bleed='true'] {
+  padding-inline: 0;
+}
+
 [data-component='Modal'] [data-element='footer'] {
   display: flex;
   flex-wrap: nowrap;

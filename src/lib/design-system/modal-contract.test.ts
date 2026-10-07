@@ -773,6 +773,7 @@ describe('Modal body: padding raíz que duplica inset', () => {
     it('detector unitario', () => {
         assert.equal(hasForbiddenModalRootPaddingClassName('p-4 pb-4'), true);
         assert.equal(hasForbiddenModalRootPaddingClassName('px-6 py-4'), true);
+        assert.equal(hasForbiddenModalRootPaddingClassName('pb-12'), false);
         assert.equal(hasForbiddenModalRootPaddingClassName('flex flex-col gap-2'), false);
         assert.equal(hasForbiddenModalRootPaddingClassName('p-2'), false);
         const hits = findModalRootPaddingClassNames(
@@ -780,6 +781,10 @@ describe('Modal body: padding raíz que duplica inset', () => {
             <Modal open onClose={() => {}} title="T"><div className="p-4">x</div></Modal>`
         );
         assert.equal(hits.length, 1);
+        assert.equal(findModalRootPaddingClassNames(
+            `import { Modal } from '@/components/ui/modal';
+            <Modal open onClose={() => {}} title="T"><div data-design-exception="modal-root-padding:contenido-especial" className="p-4">x</div></Modal>`
+        ).length, 0);
     });
 
     it('hijos raíz con padding ≥4 solo en allowlist', () => {

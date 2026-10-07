@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-18
+revisado: 2026-10-07
 caducidad: 6 meses
 supersede: docs/PLAN_ASISTENCIA_UNIFICADA.md
 ---
@@ -20,6 +20,8 @@ Los componentes que los materializan están en [SISTEMA-DE-COMPONENTES](SISTEMA-
 **Regla transversal de todos los patrones: una tarea, una estética.** Cambiar de filtro, de modo o de nivel de detalle dentro de la misma tarea no cambia el aspecto. La persona debe percibir que sigue en el mismo sitio. Esta regla se fijó al unificar la vista de asistencia y se generaliza aquí.
 
 **Equivalencia de gesto.** Donde el smartphone cambia de panel o de periodo deslizando, el escritorio hace lo mismo con el desplazamiento horizontal (trackpad o rueda). Ese desplazamiento se consume en la página: no debe convertirse en atrás o adelante del navegador. El control visible sigue existiendo; el gesto no es la única vía ([EXPERIENCIA §1](EXPERIENCIA.md#1-táctil)).
+
+**Excepción local.** Las medidas y composiciones de cada patrón son el valor por defecto. Una especificación concreta de un elemento puede apartarse de ellas si declara su alcance y motivo ([ADR-0024](../4-decisiones/ADR-0024-excepciones-visuales-locales.md)); no modifica el patrón de los demás elementos.
 
 ---
 

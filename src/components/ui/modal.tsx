@@ -154,6 +154,8 @@ export type ModalProps = {
     headerTitleAlign?: 'left' | 'default';
     headerCompact?: boolean;
     scrollContent?: boolean;
+    /** El contenido visual ocupa todo el ancho del panel (p. ej., un plano). */
+    fullBleedBody?: boolean;
     /**
      * @deprecated Preferir `layer="system"`.
      * Conservado por compatibilidad (antes z-[110]).
@@ -209,6 +211,7 @@ function ModalPanelShell({
     headerTitleAlign: _headerTitleAlign = 'default',
     headerCompact = false,
     scrollContent = true,
+    fullBleedBody = false,
     preferTall = false,
     className,
     children,
@@ -234,6 +237,7 @@ function ModalPanelShell({
     headerTitleAlign?: 'left' | 'default';
     headerCompact?: boolean;
     scrollContent?: boolean;
+    fullBleedBody?: boolean;
     preferTall?: boolean;
     className?: string;
     children: ReactNode;
@@ -350,6 +354,7 @@ function ModalPanelShell({
             <div
                 ref={bodyRef}
                 data-element="body"
+                data-full-bleed={fullBleedBody ? 'true' : undefined}
                 className={cn(
                     'custom-scrollbar relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden',
                     scrollContent ? 'overflow-y-auto overscroll-contain' : 'overflow-y-hidden'
@@ -410,6 +415,7 @@ export function Modal({
     headerTitleAlign = 'default',
     headerCompact = false,
     scrollContent = true,
+    fullBleedBody = false,
     stackElevated = false,
     hideCloseButton = false,
     usageId,
@@ -705,6 +711,7 @@ export function Modal({
                         headerTitleAlign={headerTitleAlign}
                         headerCompact={headerCompact}
                         scrollContent={scrollContent}
+                        fullBleedBody={fullBleedBody}
                         preferTall={layout.preferTall}
                         className={className}
                         loading={loading}

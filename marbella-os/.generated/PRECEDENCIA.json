@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "40556f318eb9c9d9",
+  "_huella": "34903ab168a8c0e3",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -287,6 +287,23 @@
       ]
     },
     {
+      "ruta": "marbella-os/4-decisiones/ADR-0024-excepciones-visuales-locales.md",
+      "documento": "ADR-0024",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0010",
+        "EXPERIENCIA",
+        "TOKENS",
+        "SISTEMA-DE-COMPONENTES"
+      ]
+    },
+    {
       "ruta": "marbella-os/1-producto/PRINCIPIOS.md",
       "documento": "PRINCIPIOS",
       "clase": "constitucional",
@@ -319,7 +336,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 60,
-      "vence": "2027-08-16",
+      "vence": "2027-10-07",
       "depende_de": []
     },
     {
@@ -442,7 +459,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-18",
+      "vence": "2027-04-07",
       "depende_de": []
     },
     {
@@ -454,7 +471,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-18",
+      "vence": "2027-04-07",
       "depende_de": []
     },
     {
@@ -466,7 +483,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-02",
+      "vence": "2027-04-07",
       "depende_de": []
     },
     {
@@ -727,7 +744,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-10-03",
+      "vence": "2027-10-07",
       "depende_de": []
     },
     {
@@ -847,7 +864,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-04-03",
+      "vence": "2027-04-07",
       "depende_de": []
     },
     {

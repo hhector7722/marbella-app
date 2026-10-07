@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-03
+revisado: 2026-10-07
 caducidad: 6 meses
 supersede: —
 ---
@@ -225,6 +225,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Recorrido** | Secuencia de acciones que una persona real completa para lograr un objetivo, normalmente cruzando varias capacidades. |
 | **Superficie** | Medio por el que el producto se manifiesta: aplicación instalada, navegador, documento impreso, pantalla de cocina. |
 | **Token de diseño** | Valor visual con nombre semántico, definido en `2-diseno/TOKENS.md`. El único origen legítimo de un color, un radio, una sombra o un espaciado. |
+| **Excepción visual local** | Diseño concreto que se aparta de un valor por defecto solo para un elemento identificado, con propiedad y motivo expresos. No altera la norma del resto. [ADR-0024](4-decisiones/ADR-0024-excepciones-visuales-locales.md). |
 | **Modal** | Superficie de trabajo o de confirmación sobre la pantalla actual. Una sola pieza de sistema: `src/components/ui/modal.tsx`. Contrato en `2-diseno/SISTEMA-DE-COMPONENTES.md`; leyes en `2-diseno/EXPERIENCIA.md` §8; variantes en `2-diseno/PATRONES.md` P2. |
 | **DocumentListRow** | Fila canónica de documento en listas de perfil (abrir nómina / comunicado / contrato). No es ListRow genérico. Pieza: `src/components/ui/DocumentListRow.tsx`. Contrato en `2-diseno/SISTEMA-DE-COMPONENTES.md`. |
 | **PetroleumSegmented** | Control segmentado de borde petróleo (`color.marca`). Densidades `comfortable` / `compact`. No es Tab ni Chip ni segmented zinc. Pieza: `src/components/ui/PetroleumSegmented.tsx`. Contrato en `2-diseno/SISTEMA-DE-COMPONENTES.md`. |

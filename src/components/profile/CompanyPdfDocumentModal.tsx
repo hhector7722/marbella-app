@@ -45,6 +45,7 @@ export default function CompanyPdfDocumentModal({ isOpen, onClose, documentKind 
         >
             <div className="flex flex-col items-center gap-4">
                 <button
+                    data-design-exception="native-business-button:document-preview-thumbnail"
                     type="button"
                     onClick={() => window.open(doc.path, '_blank', 'noopener,noreferrer')}
                     className="relative block w-full max-w-[220px] overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-opacity hover:opacity-90"

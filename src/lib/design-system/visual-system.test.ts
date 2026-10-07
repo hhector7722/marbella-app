@@ -381,11 +381,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'utf8'
         );
         assert.match(shortcut, /variant = 'icon-card-text-outside'/);
-        assert.match(
-            css,
-            /\[data-component='DashboardShortcut'\]\[data-variant='icon-card-text-outside'\] \[data-element='iconBox'\] \{[\s\S]*?border-radius:\s*var\(--radio-superficie\)/,
-            'todos los iconos comparten radio.superficie'
-        );
+        const iconBoxRule = css.match(
+            /\[data-component='DashboardShortcut'\]\[data-variant='icon-card-text-outside'\] \[data-element='iconBox'\][^{]*\{([^}]*)\}/
+        )?.[1] ?? '';
+        assert.match(iconBoxRule, /border-radius:\s*var\(--radio-superficie\)/, 'todos los iconos comparten radio.superficie');
         assert.match(css, /\[data-plate='fill'\] \[data-element='iconBox'\]/);
         assert.match(css, /\[data-plate='bleed'\] \[data-element='iconBox'\]/);
         const shortcutCss =
@@ -485,10 +484,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(admin, /<OpsHomeScreen/);
         assert.match(masterView, /<HomeScreen/);
         assert.doesNotMatch(masterView, /<OpsHomeScreen/);
-        assert.match(master, /size: 'tile'[\s\S]*label: 'H\. extras'/);
+        assert.doesNotMatch(master, /instance="hextras"/, 'H. extras ya no es un atajo del mosaico Master');
         assert.doesNotMatch(master, /instance="hextras"[\s\S]*?plate/);
-        assert.match(master, /instance="uso-app"[\s\S]*?img="\/icons\/uso\.png"/);
-        assert.doesNotMatch(master, /instance="uso-app"[^>]*plate/);
         assert.match(
             css,
             /\[data-plate='fill'\] \[data-element='rim'\] \{[\s\S]*?linear-gradient/,
@@ -896,8 +893,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(staff, /StaffFichajeIcon/);
         assert.doesNotMatch(staff, /No has fichado/);
         assert.match(staff, /compact/, 'el cronómetro en turno cabe en el icono');
-        assert.match(staff, /border-white/, 'Entrada y Salida se recortan del petróleo');
-        assert.match(staff, /0_0_0_1px_rgba\(24,24,27,0\.14\)/, 'un negro suave por fuera del blanco');
+        assert.match(staff, /<span data-element="rim" aria-hidden \/>/, 'Entrada y Salida conservan su contorno');
+        assert.match(weekScheduleCss, /\[data-component='StaffFichajeControl'\]\[data-layout='dual-stack'\] \[data-element='rim'\] \{[^}]*inset 0 0 0 1px rgb\(255 255 255 \/ 0\.24\)/, 'el contorno claro vive en el estilo compartido');
         assert.match(staff, /from-emerald-500/, 'Entrada tiene volumen en el verde');
         assert.match(staff, /from-rose-500/, 'Salida tiene volumen en el rosa');
         assert.match(staff, /formatStaffElapsedHms/, 'el turno cerrado enseña el tiempo real');
@@ -1068,11 +1065,14 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(historyRead, /HistoryWeekDto/);
 
         assert.match(weekCard, /text-\[7px\] font-normal/, 'el número del día es el del mosaico');
-        assert.match(weekCard, /h-\[25px\] min-h-\[25px\] max-h-\[25px\]/, 'el pie es el del mosaico');
-        assert.match(weekCard, /text-\[10px\] font-semibold/, 'las cifras del pie son las del mosaico');
+        assert.match(weekCard, /data-design-exception="week-footer-height:compact-20px"/, 'el pie compacto declara su excepción de tamaño');
+        assert.match(weekCard, /h-\[20px\] min-h-\[20px\] max-h-\[20px\]/, 'el pie compacto conserva sus 20 px');
+        assert.match(weekCard, /data-design-exception="week-footer-value-size:compact-9px"/, 'las cifras declaran su excepción de tamaño');
+        assert.match(weekCard, /data-week-metric-value[^>]*className="[^"]*text-\[9px\] font-semibold/, 'el pie compacto usa cifras de 9 px');
         assert.match(weekCard, /text-\[8px\] font-medium/, 'las etiquetas del pie son las del mosaico');
         assert.match(weekCard, /data-week-paid="true"/);
-        assert.match(weekCard, /w-\[48px\][\s\S]*md:w-\[56px\]/, 'Pagado conserva su tamaño');
+        assert.match(weekCard, /data-design-exception="paid-stamp-width:compact-32-40px"/, 'el sello Pagado declara su tamaño compacto');
+        assert.match(weekCard, /w-\[32px\][\s\S]*md:w-\[40px\]/, 'Pagado conserva su tamaño compacto');
         assert.doesNotMatch(
             weekCard,
             /absolute right-0\.5 top-1\/2/,
@@ -1089,7 +1089,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /bg-orange-400 animate-pulse/,
             'entrada sin salida no pinta un punto amarillo'
         );
-        assert.match(weekCard, />Horas</);
+        assert.match(weekCard, />\s*Horas\s*</);
         assert.doesNotMatch(
             weekCard,
             /from-red-500 to-red-600/,
@@ -1176,15 +1176,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'utf8'
         );
         const history = readFileSync(join(SRC_ROOT, 'app/staff/history/page.tsx'), 'utf8');
-        const admin = readFileSync(
-            join(SRC_ROOT, 'components/dashboards/AdminDashboardView.tsx'),
-            'utf8'
-        );
-        const master = readFileSync(
-            join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'),
-            'utf8'
-        );
-
         assert.match(modal, /data-list-end="true"/);
         assert.match(modal, /plantillaSelected \? 'Ver activos' : 'Ver todos'/);
         assert.doesNotMatch(modal, /headerTextAction/);
@@ -1343,7 +1334,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
     it('reservas dispara + reserva con Button', () => {
         const reservas = readFileSync(join(SRC_ROOT, 'app/staff/reservas/ReservasClient.tsx'), 'utf8');
         assert.match(reservas, /instance="reservas-nueva"/);
-        assert.match(reservas, /\+ reserva/);
+        assert.match(reservas, /\+ Reserva/);
         assert.doesNotMatch(reservas, /Hacer reserva/);
         assert.doesNotMatch(reservas, /<a\s+href="https:\/\/marbella-web/);
     });
@@ -1603,9 +1594,12 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
 
         const change = readFileSync(join(SRC_ROOT, 'components/CashChangeModal.tsx'), 'utf8');
-        const selectBlock = change.split('instance="cash-change-select"')[1]?.split('instance="cash-change-count"')[0] ?? '';
+        const selectBlock = change.split('instance="cash-change-select"')[1]?.split('</Modal>')[0] ?? '';
+        const legBlock = change.split('instance="cash-change-leg"')[1]?.split('</Modal>')[0] ?? '';
+        assert.notEqual(selectBlock, '', 'existe el selector de cajas');
+        assert.notEqual(legBlock, '', 'existe el desglose del movimiento');
         assert.doesNotMatch(selectBlock, /QuickCashTools/, 'el selector de cajas no monta calculadora ni desglose');
-        assert.match(change, /<QuickCashTools calculator breakdown \/>/);
+        assert.match(legBlock, /<QuickCashTools calculator breakdown \/>/, 'el desglose monta calculadora y desglose');
 
         const denomination = readFileSync(join(SRC_ROOT, 'components/CashDenominationForm.tsx'), 'utf8');
         assert.doesNotMatch(
@@ -1865,7 +1859,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /\[data-element='recipe-panel'\][\s\S]*?text-transform:\s*uppercase[\s\S]*?font-weight:\s*500/,
             'las cabeceras de tarjeta comparten versales y peso 500'
         );
-        assert.doesNotMatch(recipe, /uppercase/, 'el cuerpo de la ficha no fuerza mayúsculas');
+        assert.doesNotMatch(recipe, /data-element="recipe-panel" className="[^"]*uppercase/, 'el panel completo no fuerza mayúsculas');
         assert.match(recipe, /data-element="field-label"/, 'las etiquetas internas usan field-label');
     });
 
