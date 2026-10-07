@@ -41,6 +41,8 @@ type PinchZoomViewportProps = {
   initialPan?: { x: number; y: number }
   /** Al cambiar (p. ej. hoja del carrusel), reinicia zoom y desplazamiento. */
   resetKey?: string | number
+  /** Captura el gesto desde escala 1 para que el pinch no lo absorba el navegador. */
+  captureGestures?: boolean
 }
 
 export function PinchZoomViewport({
@@ -52,6 +54,7 @@ export function PinchZoomViewport({
   initialScale = DEFAULT_INITIAL_SCALE,
   initialPan = { x: 0, y: 0 },
   resetKey,
+  captureGestures = false,
 }: PinchZoomViewportProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -221,7 +224,7 @@ export function PinchZoomViewport({
       ref={scrollRef}
       className={cn('min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain', className)}
       style={{
-        touchAction: useGestureCapture ? 'none' : 'pan-x pan-y',
+        touchAction: captureGestures || useGestureCapture ? 'none' : 'pan-x pan-y',
         WebkitOverflowScrolling: 'touch',
         ...style,
       }}

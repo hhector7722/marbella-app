@@ -28,6 +28,8 @@ type ImageLightboxProps = {
   instance?: string
   /** Padre de navegación cuando se abre sobre otro Modal. */
   parentInstance?: string
+  /** Activa pinch-to-zoom libre y desplazamiento táctil sin mostrar controles de zoom. */
+  zoomable?: boolean
 }
 
 const SWIPE_THRESHOLD_PX = 48
@@ -45,6 +47,7 @@ export function ImageLightbox({
   scheme = 'work',
   instance = 'image-lightbox',
   parentInstance,
+  zoomable = false,
 }: ImageLightboxProps) {
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const [internalIndex, setInternalIndex] = useState(activeIndex)
@@ -145,13 +148,33 @@ export function ImageLightbox({
 
         {currentSlide ? (
           dark ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={currentSlide.src}
-              alt={currentSlide.alt}
-              className="max-h-[min(72dvh,calc(100svh-11rem))] w-auto max-w-full rounded-ds-superficie border border-[var(--color-texto-invertido)] object-contain sm:max-h-[min(78vh,calc(100vh-11rem))]"
-              draggable={false}
-            />
+            zoomable ? (
+              <PinchZoomViewport
+                resetKey={currentSlide.src}
+                minScale={0.5}
+                maxScale={5}
+                captureGestures
+                className="flex-1 overflow-hidden"
+              >
+                <div className="flex min-h-[min(72dvh,calc(100svh-11rem))] w-full items-center justify-center sm:min-h-[min(78vh,calc(100vh-11rem))]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentSlide.src}
+                    alt={currentSlide.alt}
+                    className="max-h-[min(72dvh,calc(100svh-11rem))] w-auto max-w-full rounded-ds-superficie border border-[var(--color-texto-invertido)] object-contain sm:max-h-[min(78vh,calc(100vh-11rem))]"
+                    draggable={false}
+                  />
+                </div>
+              </PinchZoomViewport>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={currentSlide.src}
+                alt={currentSlide.alt}
+                className="max-h-[min(72dvh,calc(100svh-11rem))] w-auto max-w-full rounded-ds-superficie border border-[var(--color-texto-invertido)] object-contain sm:max-h-[min(78vh,calc(100vh-11rem))]"
+                draggable={false}
+              />
+            )
           ) : (
             <PinchZoomViewport
               resetKey={currentSlide.src}

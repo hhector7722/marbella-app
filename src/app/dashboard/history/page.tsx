@@ -2562,6 +2562,7 @@ export default function HistoryPage() {
                 onClose={() => setLightboxIndex(null)}
                 scheme="dark"
                 variant="standard"
+                zoomable
                 instance="history-closing-photo"
                 parentInstance="history-closing-detail"
             />

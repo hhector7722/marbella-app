@@ -213,6 +213,7 @@ describe('Modal identidad y variantes', () => {
         assert.match(history, /instance="history-closing-photo"/);
         assert.match(history, /scheme="dark"/);
         assert.match(history, /variant="standard"/);
+        assert.match(history, /zoomable/, 'las fotos de cierre activan pinch-to-zoom libre');
         assert.match(history, /parentInstance="history-closing-detail"/);
         assert.doesNotMatch(
             history,
@@ -220,6 +221,9 @@ describe('Modal identidad y variantes', () => {
             'la foto del cierre no abre el carrusel: solo la imagen pulsada'
         );
         assert.match(lightbox, /scheme = 'work'/);
+        assert.match(lightbox, /zoomable = false/);
+        assert.match(lightbox, /captureGestures/, 'el lightbox zoomable captura el pinch desde escala 1');
+        assert.doesNotMatch(lightbox, /ZoomIn|ZoomOut|zoomPercent/, 'el lightbox no muestra indicadores ni controles de zoom');
         assert.match(
             lightbox,
             /rounded-ds-superficie border border-\[var\(--color-texto-invertido\)\]/,
