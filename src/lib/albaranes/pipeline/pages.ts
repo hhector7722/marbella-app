@@ -44,6 +44,7 @@ export function documentPageEvidenceBlockReason(input: {
     || pages.length !== expectedPages) return 'document_page_count_mismatch'
 
   const pageIds = new Set<string>()
+  let currentMatched = false
   for (const page of pages) {
     const key = page.attachmentId ?? 'main'
     if (pageIds.has(key) || !/^[a-f0-9]{64}$/i.test(page.fileHash)) {
@@ -57,6 +58,7 @@ export function documentPageEvidenceBlockReason(input: {
     if (matches.length !== 1) return 'document_page_jobs_missing_or_ambiguous'
     const job = matches[0]!
     const isCurrent = job.id === currentJobId
+    if (isCurrent) currentMatched = true
     if (isCurrent ? job.status !== 'leased' : job.status !== 'completed') {
       return 'document_page_job_not_completed'
     }
@@ -66,6 +68,6 @@ export function documentPageEvidenceBlockReason(input: {
       && extraction.file_version_hash === page.fileHash
       && extraction.status === 'success')) return 'document_page_extraction_missing'
   }
-  if (!jobs.some((job) => job.id === currentJobId)) return 'document_current_job_missing'
+  if (!currentMatched) return 'document_current_job_missing'
   return null
 }
