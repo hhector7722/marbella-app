@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-08
 
+- **Compra limpia los iconos y fija la fila Cambio.** Inicial y Cambio 1 usan imágenes sin marco; el importe sustituye al anillo de selección en la fila Caja. Las cajas empiezan más cerca del concepto y sus nombres se muestran en una sola línea con letra menor. La fila Cambio y su botón naranja permanecen visibles, atenuados mientras no haya vuelto; Escanear albarán queda centrado en el mismo eje.
+
 - **Cambios por lluvia muestra el manual completo en una imagen.** El contenido reconstruido con tarjetas y textos se sustituye por la lámina proporcionada, con las cuatro esquinas redondeadas y desplazamiento vertical en móvil.
 
 - **Cambio precisa la indicación del plano y acerca sus rótulos.** La frase bajo la imagen pasa a «Selecciona las dos cajas que intervienen en el cambio.» con letra ligeramente menor. Inicial y Cambio 2 suben un poco; el nombre de Inicial se mueve a la derecha y el de Cambio 2 a la izquierda, conservando un límite de ancho para evitar solapes.
