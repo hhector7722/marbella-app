@@ -15,6 +15,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-08
 
+- **Reservas permite al equipo registrar cualquier fecha y media hora.** «+ Reserva» abre un formulario dentro de Marbella App y admite cualquier día válido a las horas en punto o y media; la web pública conserva sus restricciones.
+
+- **El cliente puede indicar detalles en «Ver pedido».** El resumen de `/pedido` muestra nombre, nota, cantidad y precio en una fila compacta, con nombres en caja oración y cantidades de hasta tres cifras legibles. Permite una nota por producto e indicaciones generales, las recupera al reabrir el pedido y confirma antes de quitar con «−» la última unidad.
+
 - **Compra muestra el desglose del cambio como el de una caja.** «Añadir cambio» abre la superficie derivada blanca de recuento, con destino cuando corresponde y con Guardar/Cancelar; el formulario principal permanece detrás. El icono de Inicial se reduce ligeramente sin reducir su zona pulsable.
 
 - **Albaranes reconcilia varias bases de IVA y separa los bloqueos reales.** Si todas las líneas más el IVA cuadran con el total, una base parcial leída como subtotal deja de generar un aviso falso. Los avisos del documento no bloquean líneas correctas; las propuestas históricas afectadas se versionan sin efecto económico. El alta de ingredientes fija la unidad base de stock coherente con la compra y se reparan los ingredientes sin movimientos que la tenían incorrecta. La revisión de una presentación incompatible muestra un único motivo claro.

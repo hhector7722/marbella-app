@@ -13,6 +13,7 @@ import {
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
 import { DEFAULT_CARTA_LANG, getCartaDisplayName } from '@/lib/carta-menu-i18n'
 import { eventOrderProductId, eventOrderCartKey, parseEventOrderCartKey, qtyByIdToSubmitItems } from '@/lib/event-order-carta'
+import type { EventOrderStartingPackItem } from '@/lib/event-order-carta'
 import type { EventEncargoEditControl, EventOrderCartaControl, EventOrderPortion } from '@/lib/event-order-carta'
 import {
   enabledSetFromStored,
@@ -40,8 +41,6 @@ export type EncargoCartaEvent = {
   event_date: string
   event_time: string
 }
-
-type PackItem = { product_id: string; quantity: number }
 
 function sumItems(qtyById: Record<string, number>): number {
   let n = 0
@@ -82,6 +81,7 @@ export default function EventEncargoCartaClient({
   categoryCoverById,
   categoryCoverScaleById,
   startingPackItems,
+  initialOrderNotes = '',
   initialEnabledProductIds,
   initialCategoryLimits,
   canManage = false,
@@ -96,7 +96,8 @@ export default function EventEncargoCartaClient({
   menuCategories: MenuCategoryCatalogEntry[]
   categoryCoverById: Record<string, string | null>
   categoryCoverScaleById: Record<string, CartaPhotoScale>
-  startingPackItems: PackItem[]
+  startingPackItems: EventOrderStartingPackItem[]
+  initialOrderNotes?: string
   initialEnabledProductIds: string[] | null
   initialCategoryLimits: EventCategoryLimits
   canManage?: boolean
@@ -131,6 +132,16 @@ export default function EventEncargoCartaClient({
     }
     return out
   })
+  const [lineNotesById, setLineNotesById] = useState<Record<string, string>>(() => {
+    const out: Record<string, string> = {}
+    for (const item of startingPackItems) {
+      const key = String(item.product_id ?? '').trim()
+      const note = String(item.notes ?? '').trim()
+      if (key && note) out[key] = note
+    }
+    return out
+  })
+  const [orderNotes, setOrderNotes] = useState(initialOrderNotes)
 
   const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [responsibleName, setResponsibleName] = useState('')
@@ -213,11 +224,12 @@ export default function EventEncargoCartaClient({
         quantity,
         unitPrice: cartLineUnitPrice(row, portion),
         portion,
+        notes: lineNotesById[key] ?? '',
       })
     }
     lines.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
     return lines
-  }, [clientMenuItems, qtyById])
+  }, [clientMenuItems, qtyById, lineNotesById])
 
   const addOneToCart = useCallback((articuloId: number, portion: EventOrderPortion = 'entero') => {
     const pid = eventOrderCartKey(articuloId, portion)
@@ -237,7 +249,13 @@ export default function EventEncargoCartaClient({
       }
       return { ...curr, [pid]: nextQty }
     })
-  }, [])
+    if ((qtyById[pid] ?? 0) <= 1) {
+      setLineNotesById((curr) => {
+        const { [pid]: _removed, ...rest } = curr
+        return rest
+      })
+    }
+  }, [qtyById])
 
   const toggleProductIds = useCallback((ids: string[], enable: boolean) => {
     setEnabledSet((prev) => {
@@ -369,7 +387,7 @@ export default function EventEncargoCartaClient({
           toast.error('Revisa los límites del pedido antes de guardar.')
           return
         }
-        const items = qtyByIdToSubmitItems(qtyById)
+        const items = qtyByIdToSubmitItems(qtyById, lineNotesById)
         if (items.length === 0) {
           toast.error('Añade al menos un producto.')
           return
@@ -377,6 +395,7 @@ export default function EventEncargoCartaClient({
         const res = await saveClientEventOrderByTokenAction({
           token: clientEditToken,
           items,
+          notes: orderNotes.trim() || null,
         })
         if (!res.success) {
           toast.error(res.message)
@@ -392,6 +411,8 @@ export default function EventEncargoCartaClient({
     setSaveModalOpen(true)
   }, [
     qtyById,
+    lineNotesById,
+    orderNotes,
     clientMenuItems,
     categoryLimits,
     enabledIdsForClient,
@@ -510,6 +531,10 @@ export default function EventEncargoCartaClient({
       confirmTitle="Enviar pedido"
       confirmBody="¿Seguro que quieres enviar el pedido? Después no podrás modificarlo desde este enlace."
       confirmActionLabel="Sí, enviar"
+      clientOrderMode={isClientToken}
+      orderNotes={orderNotes}
+      onOrderNotesChange={setOrderNotes}
+      onLineNotesChange={(key, note) => setLineNotesById((current) => ({ ...current, [key]: note }))}
     />
   )
 

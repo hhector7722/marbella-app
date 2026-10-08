@@ -167,7 +167,7 @@ La carta, los formularios públicos y los documentos impresos hablan al cliente,
 
 - Se usa el tratamiento de cortesía y un tono más neutro.
 - Cero terminología interna: nada de escandallos, ni raciones de coste, ni identificadores.
-- Los nombres de plato se muestran exactamente como se han escrito para el cliente, sin normalizar mayúsculas.
+- Los nombres de plato se muestran exactamente como se han escrito para el cliente. En el resumen «Ver pedido» de `/pedido`, si el nombre completo llega en mayúsculas, se presenta en caja oración; el nombre almacenado no cambia.
 - Un error en una superficie pública nunca menciona el sistema; ofrece un contacto.
 
 ---

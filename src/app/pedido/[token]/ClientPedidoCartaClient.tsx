@@ -9,6 +9,7 @@ import type { PublicMenuRow } from '@/components/public/PublicCarta'
 import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
 import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 import type { EventCategoryLimits } from '@/lib/event-encargo-config'
+import type { EventOrderStartingPackItem } from '@/lib/event-order-carta'
 import { PedidoBienvenidaView } from './PedidoBienvenidaView'
 
 export default function ClientPedidoCartaClient({
@@ -21,6 +22,7 @@ export default function ClientPedidoCartaClient({
   categoryCoverById,
   categoryCoverScaleById,
   startingPackItems,
+  initialOrderNotes,
   initialEnabledProductIds,
   initialCategoryLimits,
   contactWhatsAppPhone = null,
@@ -33,7 +35,8 @@ export default function ClientPedidoCartaClient({
   menuCategories: MenuCategoryCatalogEntry[]
   categoryCoverById: Record<string, string | null>
   categoryCoverScaleById: Record<string, CartaPhotoScale>
-  startingPackItems: Array<{ product_id: string; quantity: number }>
+  startingPackItems: EventOrderStartingPackItem[]
+  initialOrderNotes: string
   initialEnabledProductIds: string[] | null
   initialCategoryLimits: EventCategoryLimits
   contactWhatsAppPhone?: string | null
@@ -62,6 +65,7 @@ export default function ClientPedidoCartaClient({
       categoryCoverById={categoryCoverById}
       categoryCoverScaleById={categoryCoverScaleById}
       startingPackItems={startingPackItems}
+      initialOrderNotes={initialOrderNotes}
       initialEnabledProductIds={initialEnabledProductIds}
       initialCategoryLimits={initialCategoryLimits}
       canManage={false}

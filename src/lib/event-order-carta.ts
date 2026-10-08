@@ -76,17 +76,21 @@ export type EventOrderSubmitItem = {
   notes?: string | null
 }
 
-export function qtyByIdToSubmitItems(qtyById: Record<string, number>): EventOrderSubmitItem[] {
+export function qtyByIdToSubmitItems(
+  qtyById: Record<string, number>,
+  notesById: Record<string, string> = {}
+): EventOrderSubmitItem[] {
   const out: EventOrderSubmitItem[] = []
   for (const [key, quantityRaw] of Object.entries(qtyById)) {
     const quantity = Math.max(0, Math.min(999, Number(quantityRaw) || 0))
     if (quantity <= 0) continue
+    const notes = notesById[key]?.trim()
     const parsed = parseEventOrderCartKey(key)
     if (!parsed) {
       // Clave numérica de un segundo artículo TPV (par entero/medio legacy).
       const pid = String(key).trim()
       if (!pid) continue
-      out.push({ product_id: pid, quantity })
+      out.push({ product_id: pid, quantity, ...(notes ? { notes } : {}) })
       continue
     }
     if (parsed.portion === 'medio') {
@@ -94,11 +98,13 @@ export function qtyByIdToSubmitItems(qtyById: Record<string, number>): EventOrde
         product_id: eventOrderProductId(parsed.articuloId),
         quantity,
         is_half: true,
+        ...(notes ? { notes } : {}),
       })
     } else {
       out.push({
         product_id: eventOrderProductId(parsed.articuloId),
         quantity,
+        ...(notes ? { notes } : {}),
       })
     }
   }
@@ -108,6 +114,7 @@ export function qtyByIdToSubmitItems(qtyById: Record<string, number>): EventOrde
 export type EventOrderStartingPackItem = {
   product_id: string
   quantity: number
+  notes?: string | null
 }
 
 function lineLooksHalf(row: {
@@ -130,7 +137,7 @@ export function eventOrderItemsToStartingPack(
   items: unknown
 ): EventOrderStartingPackItem[] {
   if (!Array.isArray(items)) return []
-  const merged = new Map<string, number>()
+  const merged = new Map<string, EventOrderStartingPackItem>()
   for (const raw of items) {
     const row = raw as {
       product_id?: string
@@ -150,10 +157,14 @@ export function eventOrderItemsToStartingPack(
         lineLooksHalf(row) ? 'medio' : 'entero'
       )
     }
-    merged.set(key, (merged.get(key) ?? 0) + qty)
+    const note = String(row.notes ?? '').trim()
+    const clientNote = /^(1\/2|½|medio|mitad|half)$/i.test(note) ? null : note || null
+    const existing = merged.get(key)
+    merged.set(key, {
+      product_id: key,
+      quantity: Math.min(999, (existing?.quantity ?? 0) + qty),
+      notes: existing?.notes || clientNote,
+    })
   }
-  return [...merged.entries()].map(([product_id, quantity]) => ({
-    product_id,
-    quantity,
-  }))
+  return [...merged.values()]
 }

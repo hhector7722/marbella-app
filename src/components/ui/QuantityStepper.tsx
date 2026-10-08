@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 export function QuantityStepper({
     value,
     onChange,
+    onDecrement,
     raw,
     onRawChange,
     onBlur,
@@ -22,6 +23,7 @@ export function QuantityStepper({
 }: {
     value: number;
     onChange: (n: number) => void;
+    onDecrement?: () => void;
     raw?: string;
     onRawChange?: (s: string) => void;
     onBlur?: () => void;
@@ -41,7 +43,7 @@ export function QuantityStepper({
      */
     variant?: 'boxed' | 'bar';
 }) {
-    const display = raw !== undefined ? raw : value ? String(value) : '';
+    const display = raw !== undefined ? raw : String(value);
     const mode = inputMode ?? (step < 1 ? 'decimal' : 'numeric');
 
     const clamp = (n: number) => {
@@ -81,7 +83,7 @@ export function QuantityStepper({
             >
                 <button
                     type="button"
-                    onClick={() => adjust(-step)}
+                    onClick={() => onDecrement ? onDecrement() : adjust(-step)}
                     disabled={disabled || value <= min}
                     aria-label={`Menos ${ariaLabel}`}
                     className="flex shrink-0 items-center justify-center px-1 py-1 transition-colors hover:bg-white/10 active:bg-white/15 disabled:opacity-40"
@@ -123,10 +125,10 @@ export function QuantityStepper({
         >
             <button
                 type="button"
-                onClick={() => adjust(-step)}
+                onClick={() => onDecrement ? onDecrement() : adjust(-step)}
                 disabled={disabled || value <= min}
                 aria-label={`Menos ${ariaLabel}`}
-                className="flex w-10 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 disabled:opacity-30"
+                className="flex w-12 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 disabled:opacity-30"
             >
                 <Minus size={16} strokeWidth={3} />
             </button>
@@ -140,7 +142,7 @@ export function QuantityStepper({
                     onBlur={onBlur}
                     aria-label={ariaLabel}
                     className={cn(
-                        'w-full min-w-0 bg-transparent p-0 text-center text-sm font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20',
+                        'w-full min-w-0 bg-transparent p-0 text-center text-xs font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20',
                         bottomText ? 'mt-1' : 'h-full',
                     )}
                 />
@@ -155,7 +157,7 @@ export function QuantityStepper({
                 onClick={() => adjust(step)}
                 disabled={disabled || (max != null && value >= max)}
                 aria-label={`Más ${ariaLabel}`}
-                className="flex w-10 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 disabled:opacity-30"
+                className="flex w-12 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 disabled:opacity-30"
             >
                 <Plus size={16} strokeWidth={3} />
             </button>

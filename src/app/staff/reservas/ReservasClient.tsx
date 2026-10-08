@@ -33,6 +33,7 @@ import {
 } from '@/components/reservas/DayAgendaModal'
 import { EncargoOrderViewModal } from '@/components/reservas/EncargoOrderViewModal'
 import { EncargoProductEditor } from '@/components/reservas/EncargoProductEditor'
+import { CreateStaffReservationModal } from '@/components/reservas/CreateStaffReservationModal'
 import {
   ClientPedidoShareModal,
   PedidoEditorChoiceModal,
@@ -498,6 +499,7 @@ export default function ReservasClient() {
   const [userRole, setUserRole] = useState<string | null>(null)
 
   const [listModalDay, setListModalDay] = useState<string | null>(null)
+  const [createReservationOpen, setCreateReservationOpen] = useState(false)
   const [createEncargoDay, setCreateEncargoDay] = useState<string | null>(null)
   const [viewEncargoId, setViewEncargoId] = useState<string | null>(null)
   const [editEncargoId, setEditEncargoId] = useState<string | null>(null)
@@ -1146,13 +1148,7 @@ export default function ReservasClient() {
               variant="primary"
               instance="reservas-nueva"
               className="shrink-0"
-              onClick={() => {
-                window.open(
-                  'https://marbella-web.vercel.app/reservas-interno',
-                  '_blank',
-                  'noopener,noreferrer'
-                )
-              }}
+              onClick={() => setCreateReservationOpen(true)}
             >
               + Reserva
             </Button>
@@ -1242,6 +1238,22 @@ export default function ReservasClient() {
             {!loading && !rpcError ? <div className="shrink-0"><ReservasCalendarLegend /></div> : null}
           </div>
     </DashboardDetailLayout>
+
+      {createReservationOpen && (
+        <CreateStaffReservationModal
+          onClose={() => setCreateReservationOpen(false)}
+          onCreated={(reservationDate) => {
+            setCreateReservationOpen(false)
+            toast.success('Reserva guardada')
+            if (reservationDate.slice(0, 7) === monthStart.slice(0, 7)) {
+              void fetchMonthData()
+            } else {
+              const [year, month] = reservationDate.split('-').map(Number)
+              setViewMonth(new Date(year, month - 1, 1))
+            }
+          }}
+        />
+      )}
 
       {listModalDay && (
         <DayAgendaModal

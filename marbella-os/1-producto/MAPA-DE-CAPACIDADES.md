@@ -151,8 +151,8 @@ Publicar la oferta al cliente y consultarla en sala.
 Concertar servicios con fecha y recoger lo que el cliente quiere.
 
 - **Actores**: cliente, persona en turno, responsable de operación.
-- **Superficies**: eventos, encargos, formulario público por evento, encargo por enlace con token, documento de encargo impreso.
-- **Reglas propias**: el cliente completa su encargo sin sesión; el enlace con token es la credencial; el encargo se imprime como documento formal y como comanda de cocina, esta última sin precios ni datos fiscales.
+- **Superficies**: calendario de reservas del equipo, alta interna de reserva, eventos, encargos, formulario público por evento, encargo por enlace con token, documento de encargo impreso.
+- **Reglas propias**: «+ Reserva» registra una reserva desde la sesión del equipo con cualquier fecha válida y cualquier hora del día, en punto o y media. Las restricciones de disponibilidad del formulario público no se aplican a esta alta interna. En `/pedido`, «Ver pedido» permite añadir una nota a cada producto e indicaciones generales, pide confirmación al quitar la última unidad con «−» y conserva las notas al reabrir un encargo. El cliente completa su encargo sin sesión; el enlace con token es la credencial; el encargo se imprime como documento formal y como comanda de cocina, esta última sin precios ni datos fiscales.
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 

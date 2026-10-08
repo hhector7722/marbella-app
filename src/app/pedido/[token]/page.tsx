@@ -7,6 +7,7 @@ import {
   parseEventCategoryLimits,
 } from '@/lib/event-encargo-config'
 import { eventOrderProductId, eventOrderItemsToStartingPack } from '@/lib/event-order-carta'
+import type { EventOrderStartingPackItem } from '@/lib/event-order-carta'
 import { expandEnabledIdsWithMedioPartners } from '@/lib/carta-medio-merge'
 import { loadPedidoContactWhatsAppPhone } from '@/lib/load-pedido-contact-phone'
 import ClientPedidoCartaClient from './ClientPedidoCartaClient'
@@ -128,7 +129,7 @@ export default async function ClientPedidoPage(props: { params: Promise<{ token:
   }
 
   // Pedido ya enviado (p. ej. tras reabrir): hidratar carrito con esas líneas.
-  let startingPackItems: Array<{ product_id: string; quantity: number }> = []
+  let startingPackItems: EventOrderStartingPackItem[] = []
   const { data: cartPayload, error: cartErr } = await supabase.rpc(
     'get_client_event_order_items_by_token',
     { p_token: token }
@@ -136,7 +137,7 @@ export default async function ClientPedidoPage(props: { params: Promise<{ token:
   if (cartErr) {
     return <ErrorView message={`Error cargando el pedido: ${cartErr.message}`} />
   }
-  const cartJson = cartPayload as { ok?: boolean; items?: unknown; error?: string } | null
+  const cartJson = cartPayload as { ok?: boolean; items?: unknown; notes?: unknown; error?: string } | null
   if (cartJson?.ok === false && cartJson.error) {
     return <ErrorView message="No se pudo cargar el pedido anterior." />
   }
@@ -159,6 +160,7 @@ export default async function ClientPedidoPage(props: { params: Promise<{ token:
       categoryCoverById={cartaFull.data.categoryCoverById}
       categoryCoverScaleById={cartaFull.data.categoryCoverScaleById}
       startingPackItems={startingPackItems}
+      initialOrderNotes={typeof cartJson?.notes === 'string' ? cartJson.notes : ''}
       initialEnabledProductIds={enabledIds}
       initialCategoryLimits={categoryLimits}
       contactWhatsAppPhone={contactWhatsAppPhone}
