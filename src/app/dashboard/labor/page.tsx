@@ -631,9 +631,6 @@ export default function LaborHistoryPage() {
                                         const isFutureDay = key > todayStr;
                                         const cell = summary?.byDate[key];
                                         const dayOrdinaryUnknown = missingPayrollMonthSet.has(key.slice(0, 7));
-                                        const cellAmount = dayOrdinaryUnknown
-                                            ? (cell?.overtime ?? 0)
-                                            : (cell?.total ?? 0);
                                         const isViewMonthDay = isSameMonth(day, viewMonth);
                                         const inPeriod = dayInPeriod(key, periodStart, periodEnd);
                                         const showData =
@@ -673,15 +670,19 @@ export default function LaborHistoryPage() {
                                                 >
                                                     {format(day, 'd')}
                                                 </span>
-                                                <div className="flex-1 flex flex-col justify-center items-center min-h-0 pt-4">
-                                                    <span
-                                                        className={cn(
-                                                            'text-[9px] min-[370px]:text-[11px] md:text-lg font-black tabular-nums leading-none',
-                                                            showData ? 'text-zinc-900' : 'text-zinc-400',
-                                                        )}
-                                                    >
-                                                        {showData ? formatEuroRead(cellAmount) : ' '}
-                                                    </span>
+                                                <div className="flex w-full min-w-0 flex-1 flex-col justify-center gap-0.5 pt-4 text-[8px] font-normal leading-tight tabular-nums min-[370px]:text-[9px] sm:px-1 sm:text-[10px]">
+                                                    {([
+                                                        { label: 'Fijo', value: dayOrdinaryUnknown ? '—' : formatEuroRead(cell?.fixed ?? 0).trim() || '0 €', color: 'text-zinc-700' },
+                                                        { label: 'Extra', value: formatEuroRead(cell?.overtime ?? 0).trim() || '0 €', color: 'text-amber-600' },
+                                                        { label: 'Total', value: dayOrdinaryUnknown ? '—' : formatEuroRead(cell?.total ?? 0).trim() || '0 €', color: 'text-zinc-900' },
+                                                    ] as const).map(({ label, value, color }) => (
+                                                        <div key={label} className="flex min-w-0 flex-col items-center sm:flex-row sm:justify-between sm:gap-1">
+                                                            <span className="font-normal text-zinc-500">{showData ? label : ''}</span>
+                                                            <span className={cn('max-w-full whitespace-nowrap font-normal tracking-tighter', color)}>
+                                                                {showData ? value : ''}
+                                                            </span>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </button>
                                         );
