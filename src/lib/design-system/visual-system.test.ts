@@ -1547,6 +1547,14 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
     });
 
+    it('la compra mantiene visible Cambio y no marca cajas con importe', () => {
+        const form = readFileSync(join(SRC_ROOT, 'components/PurchaseMultiSourceForm.tsx'), 'utf8');
+        assert.match(form, /<PurchaseFieldRow title="Caja">[\s\S]*?<PurchaseFieldRow title="Cambio">/, 'Cambio es la cuarta fila fija');
+        assert.match(form, /disabled=\{priceNum <= 0 \|\| changeAmount < 0\.01\}/, 'el botón se desactiva si no hay cambio');
+        assert.match(form, /!showAmount && selected && 'ring-2 ring-white\/80 rounded-lg'/, 'el aro solo se usa para elegir destino');
+        assert.match(form, /whitespace-normal break-words/, 'los nombres de caja no se truncan');
+    });
+
     it('calculadora y desglose se declaran por superficie', () => {
         const both = [
             'components/CashDenominationForm.tsx',
