@@ -184,12 +184,17 @@ async function autoApplyDeterministicReceipts(
   const { data: successorRows, error: successorError } = allMappingIds.length
     ? await supabase
         .from('purchase_mapping_versions')
-        .select('supersedes_id')
+        .select('supersedes_id,status,legacy_mapping_id,idempotency_key')
         .in('supersedes_id', allMappingIds)
     : { data: [] as Array<Record<string, unknown>>, error: null }
   if (successorError) throw new Error('No se pudo comprobar la vigencia de los mapeos K5.')
+  // Un borrador no invalida la última presentación confirmada.
+  // Debe coincidir con buildSupplierMemory, que solo retira versiones
+  // cuando su sucesora también es reutilizable por K4.
   const supersededMappings = new Set(
-    ((successorRows ?? []) as Array<Record<string, unknown>>).map((row) => text(row.supersedes_id)).filter(Boolean)
+    ((successorRows ?? []) as Array<Record<string, unknown>>)
+      .filter((row) => isK5ReusableMappingVersion(row))
+      .map((row) => text(row.supersedes_id)).filter(Boolean)
   )
 
   const { data: confirmationRows, error: confirmationError } = lineIds.length
