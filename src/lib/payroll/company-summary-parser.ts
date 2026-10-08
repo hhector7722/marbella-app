@@ -446,6 +446,13 @@ function loadPdf2jsonData(
 }
 
 async function loadPdfJsAsPdf2jsonData(pdfBuffer: Buffer): Promise<unknown> {
+  // pdfjs-dist 5 necesita DOMMatrix incluso para extraer únicamente texto en Node.
+  // Cargar el polyfill nativo ANTES de evaluar su módulo legacy evita que un PDF
+  // que no pueda leer pdf2json se quede sin ningún lector alternativo.
+  const { DOMMatrix } = await import('@napi-rs/canvas');
+  if (typeof globalThis.DOMMatrix === 'undefined') {
+    globalThis.DOMMatrix = DOMMatrix as typeof globalThis.DOMMatrix;
+  }
   const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const doc = await getDocument({
     data: Uint8Array.from(pdfBuffer),
