@@ -864,19 +864,26 @@ export const CashChangeModal = ({
                         data-element="cash-change-summary"
                         className="mx-auto flex h-[8.75rem] w-full max-w-[480px] shrink-0 items-start justify-center gap-2 pb-2 sm:gap-4"
                     >
-                        <div className="grid min-w-0 flex-1 grid-rows-[3.5rem_3rem] place-items-center gap-0.5">
-                            <div className="flex h-14 w-14 items-center justify-center overflow-hidden">
-                                {boxA && cashChangePlanImage(boxA) ? (
-                                    <Image
-                                        src={cashChangePlanImage(boxA)!}
-                                        alt={boxA.name}
-                                        width={64}
-                                        height={64}
-                                        unoptimized
-                                        className="h-full w-full object-contain"
-                                    />
-                                ) : boxA ? (
-                                    <Wallet size={22} className="text-zinc-300" strokeWidth={2} />
+                        <div className="grid min-w-0 flex-1 grid-rows-[4.75rem_3rem] place-items-center gap-0.5">
+                            <div className="flex min-w-0 max-w-full flex-col items-center">
+                                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-ds-control">
+                                    {boxA && cashChangePlanImage(boxA) ? (
+                                        <Image
+                                            src={cashChangePlanImage(boxA)!}
+                                            alt=""
+                                            width={64}
+                                            height={64}
+                                            unoptimized
+                                            className="h-full w-full rounded-ds-control object-contain"
+                                        />
+                                    ) : boxA ? (
+                                        <Wallet size={22} className="text-zinc-300" strokeWidth={2} />
+                                    ) : null}
+                                </div>
+                                {boxA ? (
+                                    <span className="max-w-full truncate px-1 text-center text-[11px] leading-4 text-white">
+                                        {cashChangePlanDisplayLabel(boxA)}
+                                    </span>
                                 ) : null}
                             </div>
                             <div data-element="cash-change-add-action" className="flex h-12 items-center justify-center">
@@ -934,19 +941,26 @@ export const CashChangeModal = ({
                             </div>
                         </div>
 
-                        <div className="grid min-w-0 flex-1 grid-rows-[3.5rem_3rem] place-items-center gap-0.5">
-                            <div className="flex h-14 w-14 items-center justify-center overflow-hidden">
-                                {boxB && cashChangePlanImage(boxB) ? (
-                                    <Image
-                                        src={cashChangePlanImage(boxB)!}
-                                        alt={boxB.name}
-                                        width={64}
-                                        height={64}
-                                        unoptimized
-                                        className="h-full w-full object-contain"
-                                    />
-                                ) : boxB ? (
-                                    <Wallet size={22} className="text-zinc-300" strokeWidth={2} />
+                        <div className="grid min-w-0 flex-1 grid-rows-[4.75rem_3rem] place-items-center gap-0.5">
+                            <div className="flex min-w-0 max-w-full flex-col items-center">
+                                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-ds-control">
+                                    {boxB && cashChangePlanImage(boxB) ? (
+                                        <Image
+                                            src={cashChangePlanImage(boxB)!}
+                                            alt=""
+                                            width={64}
+                                            height={64}
+                                            unoptimized
+                                            className="h-full w-full rounded-ds-control object-contain"
+                                        />
+                                    ) : boxB ? (
+                                        <Wallet size={22} className="text-zinc-300" strokeWidth={2} />
+                                    ) : null}
+                                </div>
+                                {boxB ? (
+                                    <span className="max-w-full truncate px-1 text-center text-[11px] leading-4 text-white">
+                                        {cashChangePlanDisplayLabel(boxB)}
+                                    </span>
                                 ) : null}
                             </div>
                             <div data-element="cash-change-add-action" className="flex h-12 items-center justify-center">
@@ -1017,8 +1031,8 @@ export const CashChangeModal = ({
                                 unoptimized
                                 sizes="(max-width: 1200px) calc(100vw - 1rem), 1136px"
                                 className={cn(
-                                    'select-none object-cover transition-opacity duration-200',
-                                    boxA && boxB ? 'opacity-40' : 'opacity-100',
+                                    'select-none rounded-ds-control object-cover transition-opacity duration-200',
+                                    boxA ? 'opacity-40' : 'opacity-90',
                                 )}
                             />
 
@@ -1057,7 +1071,10 @@ export const CashChangeModal = ({
                                         />
                                         <span
                                             data-element="cash-change-plan-label"
-                                            className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-white shadow-sm"
+                                            className={cn(
+                                                'absolute left-1/2 top-full -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm',
+                                                key === 'cambio2' ? 'mt-6' : 'mt-1',
+                                            )}
                                         >
                                             {cashChangePlanDisplayLabel(option)}
                                         </span>
