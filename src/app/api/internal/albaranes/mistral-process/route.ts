@@ -147,6 +147,7 @@ export async function POST(request: Request) {
       line_count: canonical.lines.length, mapped_line_count: proposals.ready,
       auto_applied_line_count: Number(auto?.applied ?? 0),
       exception_count: Array.isArray(auto?.blocked) ? auto.blocked.length : proposals.exceptions,
+      auto_block_reason: typeof auto?.reason === 'string' ? auto.reason : null,
       proposal_count: proposals.created, skipped: proposals.skipped ?? null }
     const { error: completeError } = await db.rpc('complete_mistral_evidence_job', {
       p_job_id: job.job_id, p_lease_token: leaseToken,
