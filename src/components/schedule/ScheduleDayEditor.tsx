@@ -620,6 +620,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             if (uniqueShifts.length > 0) {
                 // Keep the first one as day-level fallback/defaults
                 const first = uniqueShifts[0];
+                setActivity(first.draft_activity || first.activity || '');
                 const fActivity2 = first.draft_activity_2 || first.activity_2 || '';
                 const fNotes = first.draft_notes || first.notes || '{}';
 

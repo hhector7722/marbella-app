@@ -137,10 +137,7 @@ interface Props {
     userRole?: 'staff' | 'manager' | 'supervisor' | 'admin';
     /** yyyy-MM-dd desde notificación: abre el detalle de ese día al abrir el modal */
     initialFocusDate?: string | null;
-    /**
-     * Actividades ya conocidas (p. ej. cache del widget). `undefined` = sin semilla;
-     * array (también vacío) = no hace falta volver a pedir el pabellón.
-     */
+    /** Actividades del widget para pintar el día mientras se consulta el dato actual. */
     initialActivities?: BarActivity[];
     userEmail?: string;
 }
@@ -170,6 +167,7 @@ export const StaffScheduleModal = ({
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const lastFocusedDateRef = useRef<string | null>(null);
+    const dayRequestRef = useRef(0);
     const scheduleEditorRef = useRef<ScheduleDayEditorHandle>(null);
     const [editModeForDate, setEditModeForDate] = useState<string | null>(null);
     const [dayShifts, setDayShifts] = useState<DayShiftRow[]>([]);
@@ -188,6 +186,7 @@ export const StaffScheduleModal = ({
     const [loadingDay, setLoadingDay] = useState(false);
     /** Resumen del evento listo (semilla o fetch); permite pintar sin esperar turnos. */
     const [dayShellReady, setDayShellReady] = useState(false);
+    const [dayLoadError, setDayLoadError] = useState<string | null>(null);
 
     const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);
 
@@ -232,24 +231,6 @@ export const StaffScheduleModal = ({
         return true;
     };
 
-    const applyShiftActivityFallback = (displayShifts: any[]) => {
-        if (displayShifts.length > 0) {
-            const firstShift = displayShifts[0];
-            setDayActivity(firstShift?.activity || '');
-            setDayCategory(firstShift?.categoria || '');
-            setDayActivity2(firstShift?.activity_2 || '');
-            setDayCategory2(firstShift?.categoria_2 || '');
-            setEventStart(firstShift?.event_start_time || '');
-            setEventEnd(firstShift?.event_end_time || '');
-            setEventParticipants(firstShift?.event_participants || '');
-            setEventStart2(firstShift?.event_start_time_2 || '');
-            setEventEnd2(firstShift?.event_end_time_2 || '');
-            setEventParticipants2(firstShift?.event_participants_2 || '');
-        } else {
-            clearActivityFields();
-        }
-    };
-
     const navigateMonth = (d: 1 | -1) =>
         setCurrentDate(d === 1 ? addMonths(currentDate, 1) : subMonths(currentDate, 1));
 
@@ -264,19 +245,18 @@ export const StaffScheduleModal = ({
     };
 
     const handleDayClick = async (day: Date, seededActivities?: BarActivity[]) => {
+        const requestId = ++dayRequestRef.current;
         trackScheduleDay(formatYmdShort(format(day, 'yyyy-MM-dd')));
         setSelectedDate(day);
         setDayShifts([]);
         setLoadingDay(true);
         setDayShellReady(false);
+        setDayLoadError(null);
 
         const dayYmd = format(day, 'yyyy-MM-dd');
-        const hasSeed = seededActivities !== undefined;
-        let hasRealActivities = false;
-
-        if (hasSeed) {
-            hasRealActivities = applyBarActivities(seededActivities);
-            if (!hasRealActivities) clearActivityFields();
+        clearActivityFields();
+        if (seededActivities?.length) {
+            applyBarActivities(seededActivities);
             setDayShellReady(true);
         }
 
@@ -291,14 +271,10 @@ export const StaffScheduleModal = ({
                 .lte('start_time', localEnd.toISOString())
                 .order('start_time', { ascending: true });
 
-            const finishDayLoad = async (rawShifts: any[], pavilionOk: boolean) => {
+            const finishDayLoad = async (rawShifts: any[]) => {
                 const isManagerView = userEmail === 'hhector7722@gmail.com';
                 const publishedShifts = rawShifts.filter((s: any) => s.is_published);
                 const displayShifts = isManagerView ? rawShifts : publishedShifts;
-
-                if (!pavilionOk) {
-                    applyShiftActivityFallback(displayShifts);
-                }
 
                 if (displayShifts.length === 0) {
                     setDayShifts([]);
@@ -310,6 +286,7 @@ export const StaffScheduleModal = ({
                     .from('profiles')
                     .select('id, first_name, avatar_url')
                     .in('id', ids);
+                if (requestId !== dayRequestRef.current) return;
                 const nameMap: Record<string, string> = {};
                 const avatarMap: Record<string, string | null> = {};
                 (profiles || []).forEach((p: any) => {
@@ -335,35 +312,32 @@ export const StaffScheduleModal = ({
                 );
             };
 
-            if (hasSeed) {
-                const { data: rawShifts, error } = await shiftsPromise;
-                if (error) throw error;
-                await finishDayLoad(rawShifts ?? [], hasRealActivities);
+            const [activitiesResult, shiftsResult] = await Promise.all([
+                fetchBarActivitiesForRangeClient(supabase, dayYmd, dayYmd),
+                shiftsPromise,
+            ]);
+            if (requestId !== dayRequestRef.current) return;
+            if (shiftsResult.error) throw shiftsResult.error;
+
+            if (activitiesResult.success) {
+                const dayActivities = activitiesResult.byDate[dayYmd]?.barActivities ?? [];
+                if (!applyBarActivities(dayActivities)) clearActivityFields();
             } else {
-                const [activitiesResult, shiftsResult] = await Promise.all([
-                    fetchBarActivitiesForRangeClient(supabase, dayYmd, dayYmd),
-                    shiftsPromise,
-                ]);
-
-                if (shiftsResult.error) throw shiftsResult.error;
-
-                const dayActivities = activitiesResult.success
-                    ? activitiesResult.byDate[dayYmd]?.barActivities ?? []
-                    : [];
-                hasRealActivities = applyBarActivities(dayActivities);
-                if (!hasRealActivities) clearActivityFields();
-                setDayShellReady(true);
-
-                await finishDayLoad(shiftsResult.data ?? [], hasRealActivities);
+                clearActivityFields();
+                setDayLoadError('No se pudieron cargar las actividades de este día');
             }
+            setDayShellReady(true);
+            await finishDayLoad(shiftsResult.data ?? []);
         } catch (err: any) {
+            if (requestId !== dayRequestRef.current) return;
             console.error('handleDayClick full error:', err);
             toast.error(err?.message || 'Error al cargar el día');
             setDayShifts([]);
             clearActivityFields();
+            setDayLoadError('No se pudo cargar este día');
             setDayShellReady(true);
         } finally {
-            setLoadingDay(false);
+            if (requestId === dayRequestRef.current) setLoadingDay(false);
         }
     };
 
@@ -382,7 +356,10 @@ export const StaffScheduleModal = ({
     }, [isOpen, initialFocusDate, initialActivities]);
 
     useEffect(() => {
-        if (!isOpen) lastFocusedDateRef.current = null;
+        if (!isOpen) {
+            lastFocusedDateRef.current = null;
+            dayRequestRef.current += 1;
+        }
     }, [isOpen]);
 
     useEffect(() => {
@@ -398,11 +375,12 @@ export const StaffScheduleModal = ({
         return () => window.clearTimeout(timeout);
     }, [navigatingToActividades]);
 
-    const handleBack = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); setDayShellReady(false); };
+    const handleBack = () => { dayRequestRef.current += 1; setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); setDayShellReady(false); };
     const handleClose = async () => {
         // Coordina con la persistencia en curso; si falla, el editor ya avisa,
         // pero el cierre no queda atrapado.
         await scheduleEditorRef.current?.flushSave();
+        dayRequestRef.current += 1;
         setSelectedDate(null);
         setDayShifts([]);
         setEditModeForDate(null);
@@ -704,7 +682,11 @@ export const StaffScheduleModal = ({
                                 {/* Resumen del evento — visible en cuanto hay semilla o fetch */}
                                 <div data-element="schedule-event-summary" className="p-2 w-full shrink-0">
                                     <div className="flex w-full max-w-2xl mx-auto flex-col gap-1 rounded-[var(--radio-control)] bg-white/10 p-1.5">
-                                        {!hasAct1 && !hasAct2 ? (
+                                        {dayLoadError ? (
+                                            <p role="alert" className="py-3 text-center text-[10px] font-semibold text-white">
+                                                {dayLoadError}
+                                            </p>
+                                        ) : !hasAct1 && !hasAct2 ? (
                                             <div className="text-center text-white/50 text-[10px] font-black tracking-widest py-3">Sin actividad</div>
                                         ) : (
                                             <>

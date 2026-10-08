@@ -162,7 +162,7 @@ Conocer y revisar la programación de la instalación deportiva.
 
 - **Actores**: persona en turno, responsable de operación.
 - **Superficies**: actividades, gestión, revisión de lo importado, formulario público de reporte, calendario mensual.
-- **Reglas propias**: la programación llega como documento externo y se interpreta automáticamente; toda interpretación automática pasa por revisión humana antes de ser operativa.
+- **Reglas propias**: la programación llega como documento externo y se interpreta automáticamente; toda interpretación automática pasa por revisión humana antes de ser operativa. El detalle de actividad abierto desde el widget de horarios consulta la programación del día seleccionado; una actividad copiada en un turno no sustituye esa fuente, y una consulta fallida se avisa.
 - **Estado**: en movimiento.
 - **Especificación**: pendiente.
 
