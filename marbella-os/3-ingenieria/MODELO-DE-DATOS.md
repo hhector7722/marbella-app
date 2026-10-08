@@ -148,7 +148,7 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 - `purchase_orders` registra el pedido a proveedor. `dispatched_at` es el instante en que se tramitó (Descargar, Enviar o Proveedor); generar el PDF no basta. El aviso del día en curso lo produce `supplier_has_dispatched_order_today`, que incluye el `first_name` de quien lo hizo.
 - `purchase_invoices` y sus adjuntos identifican el documento recibido; no constituyen por sí mismos una recepción económica.
 - `purchase_invoice_lines` conserva la línea capturada del documento. `superseded_by_extraction_id` aparta una línea antigua de la vista operativa sin borrarla; una línea con recepción no se sustituye. Una línea puede repartirse entre varios pedidos; una línea de pedido puede acumular recepciones parciales mediante `purchase_order_item_receipt_allocations`.
-- `purchase_mapping_versions` guarda propuestas y confirmaciones de mapeo sin sobrescribir la versión anterior. La conciliación sólo suma asignaciones confirmadas y no sustituidas.
+- `purchase_mapping_versions` guarda propuestas y confirmaciones de mapeo sin sobrescribir la versión anterior. Una propuesta no desplaza la presentación confirmada en la memoria económica hasta cruzar K4; un código de artículo se aprende de la evidencia de una recepción confirmada. La conciliación sólo suma asignaciones confirmadas y no sustituidas.
 - `purchase_receipt_confirmations` audita la confirmación económica única de una línea: actor, idempotencia, cantidades físicas, precio observado y normalizado, bloqueo, movimiento y versión de mapeo. No es un segundo ledger.
 - `private.purchase_receipt_automation_actor` designa el único perfil técnico
   habilitado para la ruta automática de un capturador supervisor.

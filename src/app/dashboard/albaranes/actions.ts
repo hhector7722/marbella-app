@@ -242,34 +242,17 @@ async function enrichInvoicesWithProcessingState(
   supabase: Extract<GateResult, { ok: true }>['supabase'],
   baseItems: Omit<PurchaseInvoiceListItem, 'is_fully_processed'>[]
 ): Promise<PurchaseInvoiceListItem[]> {
-  // Solo recalculamos los encabezados que aún aparecen pendientes. Los estados
-  // `mapped`/`completed` ya son afirmativos, mientras que `processing` y
-  // `ocr_failed` no pueden convertirse en un tick por leer sus líneas.
-  const candidateItems = baseItems.filter((item) => {
-    const status = String(item.status ?? '').toLowerCase()
-    return status !== 'mapped' && status !== 'completed' && status !== 'processing' && status !== 'ocr_failed'
-  })
-  const candidateIds = candidateItems.map((x) => x.id)
-  if (candidateIds.length === 0) {
-    return baseItems.map((b) => ({
-      ...b,
-      is_fully_processed: ['mapped', 'completed'].includes(String(b.status ?? '').toLowerCase()),
-    }))
-  }
+  const invoiceIds = baseItems.map((item) => item.id)
+  if (invoiceIds.length === 0) return []
 
   // La función SQL hace el mismo cruce dentro de Postgres. Evita enviar una
   // lista de referencias de stock en la URL de PostgREST y mantiene el SSR
   // dentro de su presupuesto aun cuando la página contiene 200 albaranes.
   const { data: states, error: statesErr } = await supabase.rpc(
     'get_purchase_invoice_processing_states',
-    { p_invoice_ids: candidateIds }
+    { p_invoice_ids: invoiceIds }
   )
-  if (statesErr) {
-    return baseItems.map((b) => ({
-      ...b,
-      is_fully_processed: ['mapped', 'completed'].includes(String(b.status ?? '').toLowerCase()),
-    }))
-  }
+  if (statesErr) throw statesErr
 
   const stateByInvoiceId = new Map(
     (states ?? []).map((state: { invoice_id: string; is_fully_processed: boolean }) => [
@@ -278,13 +261,7 @@ async function enrichInvoicesWithProcessingState(
     ])
   )
 
-  return baseItems.map((b) => {
-    const status = String(b.status ?? '').toLowerCase()
-    if (!candidateIds.includes(b.id)) {
-      return { ...b, is_fully_processed: status === 'mapped' || status === 'completed' }
-    }
-    return { ...b, is_fully_processed: stateByInvoiceId.get(b.id) === true }
-  })
+  return baseItems.map((item) => ({ ...item, is_fully_processed: stateByInvoiceId.get(item.id) === true }))
 }
 
 /** Listado inicial del histórico: más recientes primero, sin tope de fechas. */

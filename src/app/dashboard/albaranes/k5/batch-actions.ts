@@ -543,3 +543,66 @@ export async function applyK5BatchReceiptsAction(params: {
   revalidatePath('/dashboard/inventory/ledger')
   return { success: true, applied }
 }
+
+/** Una sola acción visible; K4 conserva la vista previa y la revalidación. */
+export async function applyK5ReadyReceiptsAction(params: {
+  invoiceId: string
+  proposalIds: string[]
+  idempotencyKey: string
+}): Promise<
+  | { success: true; applied: number }
+  | { success: false; message: string; applied: number }
+> {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false, message: gate.message, applied: 0 }
+  const invoiceId = text(params?.invoiceId)
+  const batchKey = text(params?.idempotencyKey)
+  const proposalIds = (params?.proposalIds ?? []).map(text).filter(Boolean)
+  if (!invoiceId || !batchKey || proposalIds.length === 0 || proposalIds.length > 80
+    || new Set(proposalIds).size !== proposalIds.length) {
+    return { success: false, message: 'El lote de recepción no es válido.', applied: 0 }
+  }
+
+  let state: Awaited<ReturnType<typeof loadBatchState>>
+  try {
+    state = await loadBatchState(gate.supabase, invoiceId)
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo validar el lote.', applied: 0 }
+  }
+  const byId = new Map(state.rows.map((row) => [row.proposalId, row]))
+  const selected = proposalIds.map((id) => byId.get(id))
+  if (selected.some((row) => !row || row.disposition !== 'ready' || !row.lineId || !row.mappingVersionId)) {
+    return { success: false, message: 'Alguna línea ya no está lista. Actualiza la revisión.', applied: 0 }
+  }
+
+  // Validar todo el lote antes del primer efecto. K4 vuelve a verificar cada
+  // línea dentro de la transacción económica y conserva la idempotencia.
+  const ready = selected as K5BatchReviewRow[]
+  for (const row of ready) {
+    const preview = await previewReceiptLineAction({
+      lineId: row.lineId!, mappingVersionId: row.mappingVersionId!, allocations: [],
+    })
+    if (!preview.success) {
+      return { success: false, message: `${row.sourceItemName}: ${preview.message}`, applied: 0 }
+    }
+  }
+
+  let applied = 0
+  for (const row of ready) {
+    const result = await applyReceiptLineAction({
+      lineId: row.lineId!, mappingVersionId: row.mappingVersionId!, allocations: [],
+      idempotencyKey: `receipt-batch:${batchKey}:${row.proposalId}`,
+    })
+    if (!result.success) {
+      revalidatePath('/dashboard/albaranes')
+      revalidatePath('/dashboard/albaranes/k5')
+      return { success: false, message: `${row.sourceItemName}: ${result.message} ${applied} línea(s) anteriores quedaron confirmadas.`, applied }
+    }
+    applied += 1
+  }
+  revalidatePath('/dashboard/albaranes')
+  revalidatePath('/dashboard/albaranes/k5')
+  revalidatePath('/dashboard/inventory')
+  revalidatePath('/dashboard/inventory/ledger')
+  return { success: true, applied }
+}

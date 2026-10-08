@@ -7,7 +7,7 @@ normativo: true
 precedencia: 80
 responsable: propiedad del producto
 decidido: 2026-10-04
-depende_de: ADR-0013, MODELO-DE-DATOS, SEGURIDAD
+depende_de: MODELO-DE-DATOS, SEGURIDAD
 supersede: ADR-0014, ADR-0022, PERFILES-ALBARANES-PROVEEDORES
 ---
 

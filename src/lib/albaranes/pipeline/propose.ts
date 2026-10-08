@@ -2,8 +2,10 @@ import { createHash, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { CanonicalDocument } from '../extractors/canonical.ts'
 import { assessDocument } from './assess.ts'
-import { buildSupplierMemory, type IngredientUnitRow, type LegacyMappingRow, type VersionRow } from './memory.ts'
+import { buildSupplierMemory, type IngredientUnitRow, type LegacyMappingRow,
+  type ObservedCodeRow, type VersionRow } from './memory.ts'
 import { proposalMappingPair } from './proposal-pair.ts'
+import { selectReplayProposals } from './proposal-replay.ts'
 
 // El acceso a datos del proyecto aún no tiene tipos generados.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,8 +13,8 @@ type AdminClient = ReturnType<typeof createClient<any>>
 
 export const MISTRAL_PIPELINE_VERSION = 'mistral-pipeline-v3'
 const PROFILE_ID = 'mistral-canonical'
-const PROFILE_VERSION = '4'
-const PROFILE_HASH = createHash('sha256').update('mistral-canonical|4|schema-v2|math-v3|memory-v2').digest('hex')
+const PROFILE_VERSION = '5'
+const PROFILE_HASH = createHash('sha256').update('mistral-canonical|5|schema-v2|math-v3|confirmed-code-memory-v3').digest('hex')
 
 function fingerprint(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex')
@@ -62,14 +64,16 @@ export async function proposeMistralExtraction(params: {
   }
 
   const supplierId = Number(invoice.supplier_id)
-  const [legacyResult, versionsResult] = await Promise.all([
+  const [legacyResult, versionsResult, receiptsResult] = await Promise.all([
     db.from('supplier_item_mappings').select('id,supplier_id,supplier_item_name,ingredient_id')
       .eq('supplier_id', supplierId),
     db.from('purchase_mapping_versions')
       .select('id,legacy_mapping_id,supplier_id,supplier_item_name,ingredient_id,conversion_factor,line_billing_unit,line_content_qty,line_content_unit,status,supersedes_id,idempotency_key')
       .eq('supplier_id', supplierId),
+    db.from('purchase_receipt_confirmations')
+      .select('mapping_version_id,purchase_invoice_line_id').eq('supplier_id', supplierId),
   ])
-  if (legacyResult.error || versionsResult.error) throw new Error('mistral_mapping_memory_unavailable')
+  if (legacyResult.error || versionsResult.error || receiptsResult.error) throw new Error('mistral_mapping_memory_unavailable')
   const versions = (versionsResult.data ?? []) as VersionRow[]
   const ingredientIds = [...new Set([
     ...(legacyResult.data ?? []).map((row) => row.ingredient_id),
@@ -79,21 +83,53 @@ export async function proposeMistralExtraction(params: {
     ? await db.from('ingredients').select('id,purchase_unit,base_unit').in('id', ingredientIds)
     : { data: [] as IngredientUnitRow[], error: null }
   if (ingredientResult.error) throw new Error('mistral_ingredient_units_unavailable')
+  const receiptLineIds = [...new Set((receiptsResult.data ?? [])
+    .map((row) => row.purchase_invoice_line_id).filter(Boolean))]
+  const receiptLines = receiptLineIds.length
+    ? await db.from('purchase_invoice_lines').select('id,interpretation_proposal_id').in('id', receiptLineIds)
+    : { data: [], error: null }
+  if (receiptLines.error) throw new Error('mistral_confirmed_codes_unavailable')
+  const proposalIdByLine = new Map((receiptLines.data ?? [])
+    .map((row) => [row.id, row.interpretation_proposal_id]))
+  const confirmedProposalIds = [...new Set([...proposalIdByLine.values()].filter(Boolean))]
+  const codeProposals = confirmedProposalIds.length
+    ? await db.from('purchase_interpretation_proposals').select('id,observed')
+      .in('id', confirmedProposalIds)
+    : { data: [], error: null }
+  if (codeProposals.error) throw new Error('mistral_confirmed_codes_unavailable')
+  const observedByProposal = new Map((codeProposals.data ?? []).map((row) => [row.id, row.observed]))
+  const observedCodes: ObservedCodeRow[] = (receiptsResult.data ?? []).map((receipt) => ({
+    mapping_version_id: receipt.mapping_version_id,
+    observed: observedByProposal.get(proposalIdByLine.get(receipt.purchase_invoice_line_id)) ?? null,
+  }))
   const memory = buildSupplierMemory({ legacy: (legacyResult.data ?? []) as LegacyMappingRow[],
-    versions, ingredients: (ingredientResult.data ?? []) as IngredientUnitRow[] })
+    versions, ingredients: (ingredientResult.data ?? []) as IngredientUnitRow[],
+    observedCodes })
   const assessment = assessDocument({ document: params.canonical, supplierId,
     memory: memory.identities, presentations: memory.presentations })
 
   const { data: existing, error: existingError } = await db.from('purchase_interpretation_proposals')
-    .select('id,source_row_index').eq('document_extraction_id', params.extractionId)
+    .select('id,source_row_index,supplier_profile_hash,created_at,provenance').eq('document_extraction_id', params.extractionId)
     .eq('normalizer_version', MISTRAL_PIPELINE_VERSION)
+    .order('created_at', { ascending: true })
   if (existingError) throw new Error('mistral_proposals_unavailable')
-  const byRow = new Map((existing ?? []).map((row) => [Number(row.source_row_index), String(row.id)]))
+  const possiblePreviousIds = (existing ?? []).map((row) => String(row.id))
+  const previousIds = [...new Set(possiblePreviousIds)]
+  const successors = previousIds.length
+    ? await db.from('purchase_interpretation_proposals')
+      .select('supersedes_proposal_id').in('supersedes_proposal_id', previousIds)
+    : { data: [], error: null }
+  if (successors.error) throw new Error('mistral_prior_revision_lookup_failed')
+  const alreadyRevised = new Set((successors.data ?? []).map((row) => row.supersedes_proposal_id))
+  const { currentByRow: byRow, previousByRow: previousVersionByRow } = selectReplayProposals(
+    (existing ?? []) as Array<{ id: string; source_row_index: number | null;
+      supplier_profile_hash: string | null; provenance: unknown }>, PROFILE_HASH, alreadyRevised)
   const { data: supersededRows, error: supersededError } = await db.from('purchase_interpretation_proposals')
     .select('id,source_row_index').eq('document_extraction_id', params.extractionId)
     .eq('normalizer_version', 'mistral-pipeline-v2')
   if (supersededError) throw new Error('mistral_prior_proposals_unavailable')
   const priorByRow = new Map((supersededRows ?? []).map((row) => [Number(row.source_row_index), String(row.id)]))
+  for (const [rowIndex, id] of previousVersionByRow) priorByRow.set(rowIndex, id)
   const { data: sharedSet, error: sharedSetError } = await db.from('purchase_interpretation_proposals')
     .select('proposal_set_id').eq('purchase_invoice_id', params.invoiceId)
     .eq('normalizer_version', MISTRAL_PIPELINE_VERSION)

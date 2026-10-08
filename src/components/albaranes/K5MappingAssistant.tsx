@@ -43,7 +43,7 @@ export function K5MappingAssistant({ invoiceId, onResolveLine }: Props) {
   }, [invoiceId])
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load)
   }, [load])
 
   const allSelected = useMemo(
@@ -73,13 +73,20 @@ export function K5MappingAssistant({ invoiceId, onResolveLine }: Props) {
         fingerprints: [...selected],
       })
       if (!result.success) {
-        setError(result.message)
         toast.error(result.message)
         await load()
+        setError(result.message)
         return
       }
-      toast.success(`${result.applied} mapping(s) guardados. No se ha aplicado stock ni precio.`)
-      window.location.reload()
+      toast.success(`${result.applied} mapeo(s) guardados; ${result.received} recepción(es) aplicada(s).`)
+      if (result.pending.length) {
+        const message = result.pending.join(' ')
+        toast.error(message)
+        await load()
+        setError(message)
+      } else {
+        window.location.reload()
+      }
     } finally {
       setSaving(false)
     }
@@ -191,7 +198,7 @@ export function K5MappingAssistant({ invoiceId, onResolveLine }: Props) {
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <div className="text-[10px] font-semibold text-zinc-500">
-              Después de guardarlos, las líneas compatibles pasarán a la revisión económica por lote.
+              Se validarán y recibirán en esta misma acción las líneas que ya sean verificables.
             </div>
             <Button
               type="button"
@@ -202,7 +209,7 @@ export function K5MappingAssistant({ invoiceId, onResolveLine }: Props) {
               loading={saving}
               loadingLabel="Guardando…"
             >
-              Aceptar {selected.size} coincidencia{selected.size === 1 ? '' : 's'}
+              Guardar y aplicar {selected.size} coincidencia{selected.size === 1 ? '' : 's'}
             </Button>
           </div>
         </div>

@@ -30,14 +30,43 @@ export type IngredientUnitRow = {
   base_unit: string | null
 }
 
+export type ObservedCodeRow = {
+  mapping_version_id: string | null
+  observed: { supplier_product_code_raw?: string | null } | null
+}
+
 export function buildSupplierMemory(input: {
   legacy: LegacyMappingRow[]
   versions: VersionRow[]
   ingredients: IngredientUnitRow[]
+  observedCodes?: ObservedCodeRow[]
 }): { identities: SupplierProductMemory[]; presentations: PresentationMemory[] } {
-  const superseded = new Set(input.versions.map((row) => row.supersedes_id).filter(Boolean))
+  // Una propuesta nueva todavía no invalida la última decisión confirmada.
+  const superseded = new Set(input.versions
+    .filter((row) => isK5ReusableMappingVersion(row as unknown as Record<string, unknown>))
+    .map((row) => row.supersedes_id).filter(Boolean))
   const leaves = input.versions.filter((row) => !superseded.has(row.id))
   const ingredientById = new Map(input.ingredients.map((row) => [row.id, row]))
+  const codesByVersion = new Map<string, Set<string>>()
+  for (const row of input.observedCodes ?? []) {
+    const code = row.observed?.supplier_product_code_raw?.trim()
+    if (!row.mapping_version_id || !code) continue
+    if (!codesByVersion.has(row.mapping_version_id)) codesByVersion.set(row.mapping_version_id, new Set())
+    codesByVersion.get(row.mapping_version_id)!.add(code)
+  }
+  const versionById = new Map(input.versions.map((row) => [row.id, row]))
+  function codeFor(version: VersionRow): string | null {
+    const seen = new Set<string>()
+    let cursor: VersionRow | undefined = version
+    while (cursor && !seen.has(cursor.id)) {
+      seen.add(cursor.id)
+      const codes = codesByVersion.get(cursor.id)
+      if (codes?.size === 1) return [...codes][0]!
+      if (codes && codes.size > 1) return null
+      cursor = cursor.supersedes_id ? versionById.get(cursor.supersedes_id) : undefined
+    }
+    return null
+  }
   const presentations: PresentationMemory[] = []
   for (const version of leaves) {
     if (!version.ingredient_id || !isK5ReusableMappingVersion(version as unknown as Record<string, unknown>)) continue
@@ -45,9 +74,12 @@ export function buildSupplierMemory(input: {
     if (!ingredient?.purchase_unit || !ingredient.base_unit ||
         !version.line_billing_unit || !version.line_content_unit ||
         version.line_content_qty == null || version.conversion_factor == null) continue
+    const signature = [version.conversion_factor, version.line_billing_unit,
+      version.line_content_qty, version.line_content_unit].map(String).join('|')
     presentations.push({ supplierId: version.supplier_id, ingredientId: version.ingredient_id,
-      supplierProductCode: null, observedName: version.supplier_item_name,
+      supplierProductCode: codeFor(version), observedName: version.supplier_item_name,
       mappingVersionId: version.id, trustedPresentation: true,
+      presentationSignature: signature,
       status: version.status === 'confirmed' ? 'confirmed'
         : isTrustedLegacyImportedMappingVersion(version as unknown as Record<string, unknown>)
           ? 'trusted_legacy' : 'unverified',
@@ -69,9 +101,10 @@ export function buildSupplierMemory(input: {
     .map((row) => {
       const presentation = presentationByLegacy.get(row.id)
       return { supplierId: row.supplier_id, ingredientId: row.ingredient_id!,
-        supplierProductCode: null, observedName: row.supplier_item_name,
+        supplierProductCode: presentation?.supplierProductCode ?? null, observedName: row.supplier_item_name,
         mappingVersionId: presentation?.mappingVersionId ?? null,
-        trustedPresentation: Boolean(presentation) }
+        trustedPresentation: Boolean(presentation),
+        presentationSignature: presentation?.presentationSignature ?? null }
     })
   // Las correcciones versionadas sin fila legacy también son memoria verificable.
   for (const presentation of presentations) {

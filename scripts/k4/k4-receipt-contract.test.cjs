@@ -79,12 +79,12 @@ test('el mapeo de albarán pide precio observado y contenido, no factor manual',
   assert.doesNotMatch(mappingModal, /onOpenWizardPrice/)
 })
 
-test('la pantalla usa propuesta, vista previa y confirmación canónica, sin reparaciones legacy', () => {
+test('la pantalla guarda y aplica en una acción con vista previa técnica K4', () => {
   assert.match(receiptActions, /rpc\('apply_receipt_line'/)
   assert.match(mappingModal, /saveReceiptMappingProposalAction/)
   assert.match(mappingModal, /previewReceiptLineAction/)
   assert.match(mappingModal, /applyReceiptLineAction/)
-  assert.match(mappingModal, /Confirmar recepción/)
+  assert.match(mappingModal, /Guardar y aplicar/)
   assert.match(mappingModal, /Conciliación con pedidos \(opcional\)/)
   assert.doesNotMatch(mappingModal, /Aplicar stock pendiente/)
   assert.doesNotMatch(mappingModal, /Rectificar stock/)

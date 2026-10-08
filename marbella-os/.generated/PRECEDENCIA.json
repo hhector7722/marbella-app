@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "56f76670828de512",
+  "_huella": "4d4a415a56928870",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -170,18 +170,6 @@
       ]
     },
     {
-      "ruta": "marbella-os/4-decisiones/ADR-0013-confirmacion-atomica-de-recepcion.md",
-      "documento": "ADR-0013",
-      "clase": "inmutable",
-      "estado": "vigente",
-      "capa": "decisiones",
-      "normativo": true,
-      "citable": true,
-      "precedencia": 80,
-      "vence": null,
-      "depende_de": []
-    },
-    {
       "ruta": "marbella-os/4-decisiones/ADR-0015-alta-laboral-por-token.md",
       "documento": "ADR-0015",
       "clase": "inmutable",
@@ -204,7 +192,7 @@
       "precedencia": 80,
       "vence": null,
       "depende_de": [
-        "ADR-0013"
+        "MODELO-DE-DATOS"
       ]
     },
     {
@@ -281,7 +269,6 @@
       "precedencia": 80,
       "vence": null,
       "depende_de": [
-        "ADR-0013",
         "MODELO-DE-DATOS",
         "SEGURIDAD"
       ]
@@ -301,6 +288,22 @@
         "EXPERIENCIA",
         "TOKENS",
         "SISTEMA-DE-COMPONENTES"
+      ]
+    },
+    {
+      "ruta": "marbella-os/4-decisiones/ADR-0025-recepcion-autonoma-y-una-accion-humana.md",
+      "documento": "ADR-0025",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0023",
+        "MODELO-DE-DATOS",
+        "SEGURIDAD"
       ]
     },
     {
@@ -902,8 +905,7 @@
       "precedencia": 0,
       "vence": "2027-03-15",
       "depende_de": [
-        "DOMINIO-PRECIOS-Y-COMPRAS",
-        "ADR-0013"
+        "DOMINIO-PRECIOS-Y-COMPRAS"
       ]
     },
     {
@@ -935,6 +937,18 @@
       ]
     },
     {
+      "ruta": "marbella-os/4-decisiones/ADR-0013-confirmacion-atomica-de-recepcion.md",
+      "documento": "ADR-0013",
+      "clase": "inmutable",
+      "estado": "superado",
+      "capa": "decisiones",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": []
+    },
+    {
       "ruta": "marbella-os/4-decisiones/ADR-0014-perfiles-versionados-interpretacion-albaranes.md",
       "documento": "ADR-0014",
       "clase": "inmutable",
@@ -944,9 +958,7 @@
       "citable": false,
       "precedencia": 0,
       "vence": null,
-      "depende_de": [
-        "ADR-0013"
-      ]
+      "depende_de": []
     },
     {
       "ruta": "marbella-os/4-decisiones/ADR-0021-extraccion-canonica-y-recepcion-automatica-albaranes.md",
@@ -959,7 +971,6 @@
       "precedencia": 0,
       "vence": null,
       "depende_de": [
-        "ADR-0013",
         "MODELO-DE-DATOS",
         "SEGURIDAD"
       ]
@@ -975,7 +986,6 @@
       "precedencia": 0,
       "vence": null,
       "depende_de": [
-        "ADR-0013",
         "MODELO-DE-DATOS",
         "SEGURIDAD"
       ]

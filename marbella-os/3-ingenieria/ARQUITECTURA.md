@@ -152,7 +152,7 @@ fichaje → registro de tiempo → motor de horas → motor de coste
 
 ```
 albarán (papel o correo) → captura autenticada → evidencia versionada
-   → propuesta de mapeo → confirmación manager/admin → precio y stock
+   → propuesta de mapeo → K4 automático o decisión humana única → precio y stock
 ```
 
 Capturar, extraer o proponer no cambia una magnitud económica. `apply_receipt_line(...)` es la confirmación atómica única para `manager` y `admin`: valida primero y crea el `PURCHASE`, la conciliación y, si procede, el histórico de precio en una sola transacción. Solo una propuesta Mistral vigente y respaldada por todas las hojas puede entrar en K4.
@@ -178,6 +178,9 @@ recibidas permanecen intactas. La observación canónica no conoce ingredientes.
 memoria histórica por proveedor; la presentación y la aritmética determinan
 si la propuesta está lista o es excepción. Los alias nuevos se guardan como
 versiones propuestas derivadas de una presentación confiable.
+La revisión del perfil Mistral genera una propuesta sucesora al releer una
+extracción persistida, conserva la evidencia OCR y respeta las revisiones
+humanas ya existentes.
 Si hay ingrediente candidato sin versión de presentación, K5 conserva el
 candidato en `interpreted` y deja vacía la pareja económica de ingrediente y
 versión; así la excepción se muestra sin violar la integridad de la propuesta.
@@ -188,8 +191,16 @@ La recepción automática, cuando se habilita, pasa por la vista previa y el
 delegado de servicio de K4. Se bloquea ante duplicado, ambigüedad, conversión
 no verificada, contradicción matemática, pedido pendiente o precio anómalo.
 K4 conserva la única escritura de stock, confirmación y precio. La pantalla de
-revisión muestra primero las excepciones. El rollout y la decisión estructural
-están en [ADR-0023](../4-decisiones/ADR-0023-mistral-unico-y-relectura-historica.md).
+revisión muestra primero las excepciones. Una persona que resuelve un mapeo
+puede guardarlo y aplicar la recepción en una sola acción; la vista previa
+técnica y la revalidación permanecen en el servidor. El reintento de un
+documento parcialmente recibido omite las líneas confirmadas y comprueba que
+pertenecen a la misma materialización. El rollout y las decisiones están en
+[ADR-0023](../4-decisiones/ADR-0023-mistral-unico-y-relectura-historica.md)
+y [ADR-0025](../4-decisiones/ADR-0025-recepcion-autonoma-y-una-accion-humana.md).
+El listado obtiene «completado» de `get_purchase_invoice_processing_states`,
+que verifica las líneas activas contra el ledger; `mapped` por sí solo no
+demuestra recepción económica.
 
 El escáner declara `expected_pages` antes de encolar la primera hoja. Todas las
 hojas Mistral de un albarán comparten un conjunto de propuestas; la recepción

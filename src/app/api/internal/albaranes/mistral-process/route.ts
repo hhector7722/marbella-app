@@ -140,7 +140,7 @@ export async function POST(request: Request) {
       extractionId, sourceHash: hash, canonical, correlationId: job.correlation_id })
     const auto = job.replay_mode === 'live'
       && process.env.ALBARAN_AUTO_RECEIPT_MISTRAL === 'enabled'
-      && proposals.skipped == null
+      && (proposals.skipped == null || proposals.skipped === 'already_received')
       ? await autoApplyFromJob(request, job, leaseToken, extractionId)
       : null
     metrics = { ...metrics, duration_ms: Date.now() - started,

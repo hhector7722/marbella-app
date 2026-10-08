@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-08
 
+- **Albaranes permite resolver y recibir en una acción.** Un mapeo revisado y las líneas preparadas pasan por la vista previa técnica y la confirmación K4 sin exigir una segunda pantalla. La memoria automática solo aprende códigos y presentaciones de recepciones confirmadas, deja las similitudes dudosas en revisión y admite reintentos seguros de documentos parcialmente recibidos. Los rechazos quedan visibles para continuar la corrección. El listado distingue procesamiento, recepción completa, necesidad de atención y error técnico usando la comprobación de movimientos; `mapped` ya no equivale a recibido.
+
 - **El modal de horarios deja de mostrar la actividad de otro día.** Al abrir un día desde el widget, consulta de nuevo las actividades del pabellón para esa fecha y usa la copia del widget solo mientras llegan. Los campos de actividad guardados en turnos no se emplean como respaldo; si la consulta falla, se avisa. Las lecturas antiguas ya no pueden sobrescribir un día al navegar deprisa. El editor reinicia el nombre de la actividad al cambiar de fecha. Se retiraron los datos de VOLEY del sábado copiados en seis turnos publicados del domingo 11 de octubre, sin modificar sus horas ni el personal asignado.
 
 - **El pedido interno de reservas facilita la lectura de productos y cantidades.** El selector, el carrito y el detalle muestran los nombres sin negrita y convierten a caja oración los nombres que llegan íntegramente en mayúsculas. La rejilla y el carrito reservan espacio para cantidades de hasta tres cifras sin recortarlas.

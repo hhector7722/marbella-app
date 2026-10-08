@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
@@ -31,7 +31,6 @@ import {
   previewReceiptLineAction,
   saveReceiptMappingProposalAction,
   type ReceiptAllocationInput,
-  type ReceiptPreview,
 } from '@/app/dashboard/albaranes/receipt-actions'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
@@ -131,21 +130,41 @@ export function LineMappingModal({
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<IngredientMappingSearchItem[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
-  const [mappingVersionId, setMappingVersionId] = useState<string | null>(null)
-  const [savedProposalFingerprint, setSavedProposalFingerprint] = useState<string | null>(null)
   const [orderOptions, setOrderOptions] = useState<ReceiptOrderOption[]>([])
   const [allocationDraft, setAllocationDraft] = useState<ReceiptAllocationDraft>({})
-  const [receiptPreview, setReceiptPreview] = useState<ReceiptPreview | null>(null)
-  const [previewing, setPreviewing] = useState(false)
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [ordersLoadedFor, setOrdersLoadedFor] = useState<string | null>(null)
+  const [orderError, setOrderError] = useState<string | null>(null)
+  const [applyError, setApplyError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
-  const [confirmationKey, setConfirmationKey] = useState<string | null>(null)
   const [ingredientEditOpen, setIngredientEditOpen] = useState(false)
-  const preparedReviewByLineRef = useRef(new Map<string, {
-    mappingVersionId: string
-    receiptPreview: ReceiptPreview
-    confirmationKey: string
-    fingerprint: string
-  }>())
+
+  useEffect(() => {
+    let cancelled = false
+    void Promise.resolve().then(() => {
+      if (cancelled) return
+      setOrderOptions([])
+      setAllocationDraft({})
+      setOrderError(null)
+      setOrdersLoadedFor(null)
+      if (!open || !ingredientId) {
+        setOrdersLoading(false)
+        return
+      }
+      setOrdersLoading(true)
+      void listReceiptOrderAllocationOptionsAction({ ingredientId }).then((result) => {
+        if (cancelled) return
+        if (result.success) {
+          setOrderOptions(result.items)
+          setOrdersLoadedFor(ingredientId)
+        }
+        else setOrderError(result.message)
+      }).catch((error: unknown) => {
+        if (!cancelled) setOrderError(error instanceof Error ? error.message : 'No se pudieron comprobar los pedidos pendientes.')
+      }).finally(() => { if (!cancelled) setOrdersLoading(false) })
+    })
+    return () => { cancelled = true }
+  }, [open, ingredientId])
 
   const applySuggestion = useCallback(
     (
@@ -522,42 +541,14 @@ export function LineMappingModal({
     line?.quantity,
   ])
 
-  const proposalFingerprint = useMemo(
-    () =>
-      JSON.stringify({
-        ingredientId,
-        factor: presentationEconomics?.conversionFactor ?? factor,
-        observedUnitPrice,
-        lineBillingUnit: isVariableWeightMode
-          ? 'kg'
-          : automaticDimensional?.lineBillingUnit ?? String(line?.line_unit ?? dimensional.lineBillingUnit).trim().toLowerCase(),
-        lineContentQty: isVariableWeightMode
-          ? '1'
-          : automaticDimensional?.lineContentQty ?? dimensional.lineContentQty.trim().replace(',', '.'),
-        lineContentUnit: isVariableWeightMode
-          ? 'kg'
-          : automaticDimensional?.lineContentUnit ?? dimensional.lineContentUnit.trim().toLowerCase(),
-      }),
-    [ingredientId, factor, dimensional, line?.line_unit, observedUnitPrice, presentationEconomics?.conversionFactor, isVariableWeightMode, automaticDimensional]
-  )
-
-  useEffect(() => {
-    if (!open || !line || loading) return
-    const prepared = preparedReviewByLineRef.current.get(line.id)
-    if (!prepared || prepared.fingerprint !== proposalFingerprint) return
-    setMappingVersionId(prepared.mappingVersionId)
-    setSavedProposalFingerprint(proposalFingerprint)
-    setReceiptPreview(prepared.receiptPreview)
-    setConfirmationKey(prepared.confirmationKey)
-  }, [open, line, loading, proposalFingerprint])
-
-  async function handleSaveMapping(options?: { refresh?: boolean; hydrate?: boolean }) {
+  async function handleSaveMapping(options?: { refresh?: boolean }) {
+    const reject = (message: string) => { setApplyError(message); toast.error(message) }
     if (!line || !invoiceId || !ingredientId) {
-      toast.error('Selecciona un ingrediente del catálogo.')
+      reject('Selecciona un ingrediente del catálogo.')
       return
     }
     if (supplierId == null) {
-      toast.error('Este albarán no tiene proveedor asignado.')
+      reject('Este albarán no tiene proveedor asignado.')
       return
     }
 
@@ -590,24 +581,24 @@ export function LineMappingModal({
     }
 
     if (!Number.isFinite(factorNum) || factorNum <= 0) {
-      toast.error('El contenido indicado no se puede convertir a la unidad de compra.')
+      reject('El contenido indicado no se puede convertir a la unidad de compra.')
       return
     }
 
     if (!lineBillingUnit) {
-      toast.error('Indica la unidad de facturación (ej. garrafa, caja).')
+      reject('Indica la unidad de facturación (ej. garrafa, caja).')
       return
     }
     if (lineContentQty == null || !Number.isFinite(lineContentQty) || lineContentQty <= 0) {
-      toast.error('Indica la cantidad por unidad (ej. 5 litros → 5).')
+      reject('Indica la cantidad por unidad (ej. 5 litros → 5).')
       return
     }
     if (!lineContentUnit) {
-      toast.error('Selecciona la unidad de contenido.')
+      reject('Selecciona la unidad de contenido.')
       return
     }
     if (observedUnitPrice == null) {
-      toast.error('Indica un precio facturado válido.')
+      reject('Indica un precio facturado válido.')
       return
     }
 
@@ -620,7 +611,7 @@ export function LineMappingModal({
           patch: { unit_price: observedUnitPrice },
         })
         if (!priceUpdate.success) {
-          toast.error(priceUpdate.message)
+          reject(priceUpdate.message)
           return
         }
       }
@@ -636,7 +627,7 @@ export function LineMappingModal({
       })
 
       if (!res.success) {
-        toast.error(res.message)
+        reject(res.message)
         return
       }
 
@@ -645,23 +636,13 @@ export function LineMappingModal({
       // motivo real en lugar del mensaje genérico de K4.
       if (res.status === 'needs_review') {
         const reasons = [...new Set((res.reviewReasons ?? []).filter(Boolean))]
-        toast.error(
+        reject(
           reasons.length
             ? reasons.map(explainReviewReason).join(' ')
             : 'La línea todavía tiene una incidencia de datos pendiente.'
         )
         await onSuccess()
         return
-      }
-
-      if (options?.hydrate !== false) {
-        setMappingVersionId(res.mappingVersionId)
-        setSavedProposalFingerprint(proposalFingerprint)
-        setReceiptPreview(null)
-        setConfirmationKey(null)
-        const orderRes = await listReceiptOrderAllocationOptionsAction({ ingredientId })
-        if (orderRes.success) setOrderOptions(orderRes.items)
-        else toast.error(orderRes.message)
       }
 
       const lineLabel = line.original_name?.trim() || line.id
@@ -700,133 +681,56 @@ export function LineMappingModal({
     return allocations
   }
 
-  async function handlePreview(mappingIdOverride?: string, skipFingerprintCheck = false) {
-    const effectiveMappingVersionId = mappingIdOverride ?? mappingVersionId
-    if (!line || !effectiveMappingVersionId) {
-      toast.error('No se pudo preparar la revisión.')
-      return
-    }
-    if (!skipFingerprintCheck && savedProposalFingerprint !== proposalFingerprint) {
-      toast.error('Has cambiado algún dato. Revisa de nuevo antes de confirmar.')
-      return
-    }
-    const allocations = buildAllocations()
-    if (!allocations) return
-    setPreviewing(true)
-    try {
-      const res = await previewReceiptLineAction({ lineId: line.id, mappingVersionId: effectiveMappingVersionId, allocations })
-      if (!res.success) {
-        toast.error(res.message)
-        return
-      }
-      setReceiptPreview(res.preview)
-      setConfirmationKey(crypto.randomUUID())
-      toast.success('Vista previa lista para confirmar.')
-    } finally {
-      setPreviewing(false)
-    }
-  }
-
   async function handleReview() {
     if (!line) return
     const currentLineId = line.id
-    const currentFingerprint = proposalFingerprint
-    const existingPrepared = preparedReviewByLineRef.current.get(currentLineId)
-    if (
-      existingPrepared
-      && mappingVersionId === existingPrepared.mappingVersionId
-      && savedProposalFingerprint === currentFingerprint
-    ) {
-      setReceiptPreview(existingPrepared.receiptPreview)
-      setConfirmationKey(existingPrepared.confirmationKey)
-      return
-    }
-
+    setApplyError(null)
     onBackgroundStateChange?.(currentLineId, 'review')
-    toast.message('Revisión iniciada en segundo plano. Puedes seguir con otra línea.')
-
-    const run = async () => {
-      const savedMappingId = await handleSaveMapping({ refresh: false, hydrate: false })
+    setConfirming(true)
+    try {
+      const allocations = buildAllocations()
+      if (!allocations) return
+      const savedMappingId = await handleSaveMapping({ refresh: false })
       if (!savedMappingId) return
 
       const previewResult = await previewReceiptLineAction({
         lineId: currentLineId,
         mappingVersionId: savedMappingId,
-        allocations: [],
+        allocations,
       })
       if (!previewResult.success) {
+        setApplyError(previewResult.message)
         toast.error(previewResult.message)
         return
       }
-
-      const prepared = {
-        mappingVersionId: savedMappingId,
-        receiptPreview: previewResult.preview,
-        confirmationKey: crypto.randomUUID(),
-        fingerprint: currentFingerprint,
-      }
-      preparedReviewByLineRef.current.set(currentLineId, prepared)
-      toast.success('Revisión preparada. Ya puedes confirmar la recepción cuando quieras.')
-      await onSuccess()
-    }
-
-    handleClose()
-    void run()
-      .catch((error: unknown) => {
-        toast.error(error instanceof Error ? error.message : 'No se pudo completar la revisión.')
-      })
-      .finally(() => {
-        onBackgroundStateChange?.(currentLineId, null)
-      })
-  }
-
-  function handleConfirm() {
-    if (!line || !mappingVersionId || !receiptPreview || !confirmationKey) {
-      toast.error('Prepara y revisa la vista previa antes de confirmar.')
-      return
-    }
-    const allocations = buildAllocations()
-    if (!allocations) return
-
-    const currentLineId = line.id
-    const currentMappingVersionId = mappingVersionId
-    const currentConfirmationKey = confirmationKey
-    onBackgroundStateChange?.(currentLineId, 'confirm')
-    toast.message('Confirmación iniciada en segundo plano. Puedes seguir trabajando.')
-
-    const run = async () => {
-      const res = await applyReceiptLineAction({
+      const result = await applyReceiptLineAction({
         lineId: currentLineId,
-        mappingVersionId: currentMappingVersionId,
+        mappingVersionId: savedMappingId,
         allocations,
-        idempotencyKey: currentConfirmationKey,
+        idempotencyKey: `receipt-manual:${currentLineId}:${savedMappingId}`,
       })
-      if (!res.success) {
-        toast.error(res.message)
+      if (!result.success) {
+        setApplyError(result.message)
+        toast.error(result.message)
         return
       }
-      preparedReviewByLineRef.current.delete(currentLineId)
-      toast.success('Recepción confirmada.')
+      toast.success('Mapeo guardado y recepción aplicada.')
+      handleClose()
       await onSuccess()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo aplicar la recepción.'
+      setApplyError(message)
+      toast.error(message)
+    } finally {
+      setConfirming(false)
+      onBackgroundStateChange?.(currentLineId, null)
     }
-
-    handleClose()
-    void run()
-      .catch((error: unknown) => {
-        toast.error(error instanceof Error ? error.message : 'No se pudo confirmar la recepción.')
-      })
-      .finally(() => {
-        onBackgroundStateChange?.(currentLineId, null)
-      })
   }
 
   function handleClose() {
-    setMappingVersionId(null)
-    setSavedProposalFingerprint(null)
     setOrderOptions([])
     setAllocationDraft({})
-    setReceiptPreview(null)
-    setConfirmationKey(null)
+    setApplyError(null)
     onClose()
   }
 
@@ -856,53 +760,30 @@ export function LineMappingModal({
             variant="tertiary"
             instance="albaran-line-mapping-cancel"
             onClick={handleClose}
-            disabled={saving || previewing || confirming || busy}
+            disabled={saving || confirming || ordersLoading || busy}
           >
             Cancelar
           </Button>
 
-          {!stockApplied && receiptPreview ? (
-            <>
-              <Button
-                type="button"
-                variant="secondary"
-                instance="albaran-line-mapping-preview-receipt"
-                onClick={() => void handlePreview()}
-                disabled={saving || previewing || confirming || busy}
-                loading={previewing}
-                loadingLabel="Recalculando…"
-              >
-                Recalcular
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                instance="albaran-line-mapping-confirm-receipt"
-                onClick={() => void handleConfirm()}
-                disabled={saving || previewing || confirming || busy}
-                loading={confirming}
-                loadingLabel="Confirmando…"
-              >
-                Confirmar recepción
-              </Button>
-            </>
-          ) : !stockApplied ? (
+          {!stockApplied ? (
             <Button
               type="button"
               variant="primary"
               instance="albaran-line-mapping-review"
               onClick={() => void handleReview()}
-              disabled={!canSave || loading || saving || previewing || confirming || busy}
-              loading={saving || previewing}
-              loadingLabel="Revisando…"
+              disabled={!canSave || loading || saving || confirming || ordersLoading || ordersLoadedFor !== ingredientId || Boolean(orderError) || busy}
+              loading={saving || confirming}
+              loadingLabel="Guardando y aplicando…"
             >
-              Revisar
+              Guardar y aplicar
             </Button>
           ) : null}
         </>
       }
     >
       <div className="flex flex-col gap-1.5 min-w-0 max-w-full bg-zinc-50">
+        {orderError ? <p role="alert" className="text-sm text-red-700">{orderError}</p> : null}
+        {applyError ? <p role="alert" className="text-sm text-red-700">{applyError}</p> : null}
         {loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-xs font-medium text-zinc-600">
               <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
@@ -1032,8 +913,7 @@ export function LineMappingModal({
                       value={observedUnitPriceDraft}
                       onChange={(e) => {
                         setObservedUnitPriceDraft(e.target.value)
-                        setReceiptPreview(null)
-                      }}
+                                          }}
                       aria-label="Precio facturado por unidad de línea"
                       className="min-h-12 w-28 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
@@ -1111,8 +991,7 @@ export function LineMappingModal({
                         className="self-start"
                         onClick={() => {
                           setShowAdvancedCalibration(true)
-                          setReceiptPreview(null)
-                        }}
+                                              }}
                       >
                         Corregir presentación
                       </Button>
@@ -1130,8 +1009,7 @@ export function LineMappingModal({
                           className="self-start"
                           onClick={() => {
                             setShowAdvancedCalibration(false)
-                            setReceiptPreview(null)
-                          }}
+                                                  }}
                         >
                           Usar conversión automática
                         </Button>
@@ -1154,8 +1032,7 @@ export function LineMappingModal({
                               lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
                               lineContentQty: e.target.value,
                             }))
-                            setReceiptPreview(null)
-                          }}
+                                                  }}
                           placeholder="125"
                           aria-label="Cantidad contenida en una unidad facturada"
                           className="min-h-12 w-24 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-900 tabular-nums outline-none focus:border-[#36606F]/50"
@@ -1169,8 +1046,7 @@ export function LineMappingModal({
                               lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
                               lineContentUnit: e.target.value,
                             }))
-                            setReceiptPreview(null)
-                          }}
+                                                  }}
                           aria-label="Unidad del contenido"
                           className="min-h-12 min-w-[5.5rem] shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
                         >
@@ -1215,7 +1091,7 @@ export function LineMappingModal({
                 </p>
               ) : null}
 
-              {mappingVersionId ? (
+              {ingredientId ? (
                 <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-2">
                   <div className="px-1">
                     <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
@@ -1225,7 +1101,9 @@ export function LineMappingModal({
                       Deja todo vacío si este albarán no procede de un pedido. Una línea puede repartirse entre varios pedidos.
                     </p>
                   </div>
-                  {orderOptions.length === 0 ? (
+                  {ordersLoading ? (
+                    <p className="px-1 text-[10px] text-zinc-500">Comprobando pedidos…</p>
+                  ) : orderOptions.length === 0 ? (
                     <p className="px-1 text-[10px] text-zinc-500">No hay líneas de pedido pendientes para este ingrediente.</p>
                   ) : (
                     <div className="flex flex-col gap-1.5">
@@ -1247,7 +1125,6 @@ export function LineMappingModal({
                                       ...current,
                                       [option.purchaseOrderItemId]: { ...draft, orderQuantity: event.target.value },
                                     }))
-                                    setReceiptPreview(null)
                                   }}
                                   className="mt-0.5 min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-2 text-xs font-medium tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
                                 />
@@ -1262,7 +1139,6 @@ export function LineMappingModal({
                                       ...current,
                                       [option.purchaseOrderItemId]: { ...draft, lineQuantity: event.target.value },
                                     }))
-                                    setReceiptPreview(null)
                                   }}
                                   className="mt-0.5 min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-2 text-xs font-medium tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
                                 />
@@ -1273,44 +1149,6 @@ export function LineMappingModal({
                       })}
                     </div>
                   )}
-                </section>
-              ) : null}
-
-              {receiptPreview ? (
-                <section className="rounded-lg border border-[#36606F]/30 bg-[#eef5f7] p-2">
-                  <p className="px-1 text-[9px] font-black uppercase tracking-wider text-[#36606F]">Efecto a confirmar</p>
-                  <dl className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 px-1 text-[10px] text-zinc-700">
-                    <div>
-                      <dt className="text-zinc-500">Entrada de stock</dt>
-                      <dd className="font-semibold">{receiptPreview.physical_quantity} {receiptPreview.base_unit}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-zinc-500">Precio del albarán</dt>
-                      <dd className="font-semibold">{receiptPreview.observed_unit_price} €/{receiptPreview.line_billing_unit}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-zinc-500">Precio actual</dt>
-                      <dd className="font-semibold">{receiptPreview.price_before} €/{receiptPreview.purchase_unit}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-zinc-500">Precio nuevo</dt>
-                      <dd className="font-semibold">{receiptPreview.price_after} €/{receiptPreview.purchase_unit}</dd>
-                    </div>
-                    {receiptPreview.allocation_count > 0 ? (
-                      <div>
-                        <dt className="text-zinc-500">Pedidos vinculados</dt>
-                        <dd className="font-semibold">{receiptPreview.allocation_count}</dd>
-                      </div>
-                    ) : null}
-                  </dl>
-                  <p className="mt-1 rounded-md bg-white/80 px-2 py-1 text-[10px] font-medium text-zinc-700">
-                    {receiptPreview.price_locked
-                      ? 'Precio bloqueado: se registrará la recepción, sin cambiar el precio.'
-                      : receiptPreview.price_changed
-                        ? 'Se creará un único PURCHASE y se actualizará el precio con esta procedencia.'
-                        : 'Se creará un único PURCHASE; el precio ya coincide.'}
-                    {receiptPreview.mapping_will_be_confirmed ? ' La propuesta de mapeo quedará versionada y confirmada.' : ''}
-                  </p>
                 </section>
               ) : null}
             </>
@@ -1337,11 +1175,7 @@ export function LineMappingModal({
               ...current,
               purchase_unit: updated.purchaseUnit,
             } : current)
-            setReceiptPreview(null)
-            setMappingVersionId(null)
-            setSavedProposalFingerprint(null)
-            preparedReviewByLineRef.current.delete(line.id)
-          }
+                                  }
         }}
       />
     ) : null}

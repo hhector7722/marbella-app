@@ -1395,10 +1395,8 @@ export default function AlbaranesHistoricoClient({
                   const supplier = it.supplier_name ? it.supplier_name : 'Proveedor pendiente'
                   const logo = getSupplierLogo(it.supplier_image_url, it.supplier_name)
                   const st = String(it.status ?? '').toLowerCase()
-                  // `is_fully_processed` se calcula en el servidor con las
-                  // mismas líneas y movimientos que el detalle. Así el tick
-                  // no depende de una corrección temporal en memoria.
-                  const accountingReady = it.is_fully_processed || st === 'mapped' || st === 'completed'
+                  // El estado de cabecera no demuestra que K4 haya escrito stock.
+                  const accountingReady = it.is_fully_processed
                   return (
                     <button
                       key={it.id}
@@ -1435,36 +1433,37 @@ export default function AlbaranesHistoricoClient({
                           {st === 'processing' ? (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-sky-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-800"
-                              aria-label="Procesando OCR"
-                              title="Leyendo albarán en segundo plano"
+                              aria-label="Procesando"
+                              title="Procesando el albarán en segundo plano"
                             >
                               <Loader2 className="h-3 w-3 animate-spin" />
-                              Leyendo
+                              Procesando
                             </span>
                           ) : st === 'ocr_failed' ? (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-rose-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rose-800"
-                              aria-label="Error de lectura"
+                              aria-label="Error técnico"
                               title={it.ocr_error ?? 'No se pudo leer el albarán'}
                             >
                               <AlertCircle className="h-3 w-3" />
-                              Error
+                              Error técnico
                             </span>
                           ) : accountingReady ? (
                             <span
-                              className="inline-flex text-emerald-600"
-                              aria-label="Albarán contabilizado"
-                              title="Albarán contabilizado (entra en PyG)"
+                              className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-800"
+                              aria-label="Completado"
+                              title="Todas las líneas están resueltas y recibidas"
                             >
                               <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                              Completado
                             </span>
                           ) : (
                             <span
                               className="inline-flex items-center rounded-md bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800"
-                              aria-label="Pendiente de revisión"
+                              aria-label="Necesita atención"
                               title="Abre el albarán para revisar sus líneas"
                             >
-                              Revisar
+                              Necesita atención
                             </span>
                           )}
                         </div>

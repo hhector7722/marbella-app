@@ -6,6 +6,7 @@ export type SupplierProductMemory = {
   observedName: string
   mappingVersionId: string | null
   trustedPresentation: boolean
+  presentationSignature?: string | null
 }
 
 export type ProductMatch = {
@@ -29,6 +30,14 @@ function nameKey(value: string): string {
   // Conservarlo en evidencia, pero comparar también el nombre sin ese prefijo.
   return normalized.replace(/^[A-Z0-9]{8,}\s+(?=[A-Z])/, (prefix) =>
     /\d/.test(prefix) ? '' : prefix)
+}
+
+function numericTokens(value: string): string {
+  return nameKey(value).split(' ').filter((part) => /^\d/.test(part)).join('|')
+}
+
+function compatiblePresentationName(observed: string, remembered: string): boolean {
+  return numericTokens(observed) === numericTokens(remembered)
 }
 
 function distance(left: string, right: string): number {
@@ -75,11 +84,15 @@ export function matchSupplierProduct(input: {
   const rows = input.memory.filter((row) => row.supplierId === input.supplierId && row.ingredientId)
 
   const codeRows = code ? rows.filter((row) =>
-    normalizeSupplierText(row.supplierProductCode ?? '').replace(/ /g, '') === code) : []
+    normalizeSupplierText(row.supplierProductCode ?? '').replace(/ /g, '') === code
+    && compatiblePresentationName(input.description, row.observedName)) : []
   const codeIngredients = new Set(codeRows.map((row) => row.ingredientId))
   if (codeIngredients.size > 1) return unresolved('ambiguous', codeRows.map((row) =>
     ({ ingredientId: row.ingredientId, score: 1, name: row.observedName })))
-  if (codeIngredients.size === 1) return resolved(codeRows, 'code', 1)
+  if (codeIngredients.size === 1) {
+    const exactCodeRows = codeRows.filter((row) => nameKey(row.observedName) === name)
+    return resolved(exactCodeRows.length ? exactCodeRows : codeRows, 'code', 1)
+  }
 
   const exact = name ? rows.filter((row) => nameKey(row.observedName) === name) : []
   const exactIngredients = new Set(exact.map((row) => row.ingredientId))
@@ -89,7 +102,8 @@ export function matchSupplierProduct(input: {
 
   const byIngredient = new Map<string, { row: SupplierProductMemory; score: number }>()
   for (const row of rows) {
-    const score = similarity(name, nameKey(row.observedName))
+    const score = compatiblePresentationName(input.description, row.observedName)
+      ? similarity(name, nameKey(row.observedName)) : 0
     const previous = byIngredient.get(row.ingredientId)
     if (!previous || score > previous.score ||
         (score === previous.score && row.trustedPresentation && !previous.row.trustedPresentation)) {
@@ -102,11 +116,18 @@ export function matchSupplierProduct(input: {
   const best = ranked[0]
   if (!best || best.score < 0.88) return unresolved('unmatched', alternatives)
   if (ranked[1] && best.score - ranked[1].score < 0.08) return unresolved('ambiguous', alternatives)
-  return resolved([best.row], best.score >= 0.95 ? 'alias' : 'fuzzy', best.score, alternatives)
+  // Una semejanza textual solo propone identidad. Nunca autoriza por sí sola
+  // una recepción económica; los alias confiables entran como memoria exacta.
+  return resolved([best.row], 'fuzzy', best.score, alternatives)
 }
 
 function resolved(rows: SupplierProductMemory[], source: ProductMatch['source'], score: number,
   alternatives: ProductMatch['alternatives'] = []): ProductMatch {
+  const signatures = new Set(rows.filter((row) => row.trustedPresentation)
+    .map((row) => row.presentationSignature ?? row.mappingVersionId).filter(Boolean))
+  if (signatures.size > 1) return unresolved('ambiguous', rows.map((row) => ({
+    ingredientId: row.ingredientId, score, name: row.observedName,
+  })))
   const preferred = rows.find((row) => row.trustedPresentation && row.mappingVersionId) ?? rows[0]!
   return { ingredientId: preferred.ingredientId, mappingVersionId: preferred.mappingVersionId,
     source, score, alternatives, trustedPresentation: preferred.trustedPresentation }

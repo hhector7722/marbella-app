@@ -107,10 +107,6 @@ async function autoApplyDeterministicReceipts(
     .select('id', { count: 'exact', head: true })
     .eq('purchase_invoice_id', payload.invoiceId)
   if (priorReceiptsError) throw new Error('No se pudo comprobar la recepción anterior.')
-  if (priorReceipts) {
-    return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_partially_received' }
-  }
-
   const mistralJob = extractorVersion.startsWith('mistral-')
   if (!mistralJob) {
     return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'extractor_retired' }
@@ -138,7 +134,8 @@ async function autoApplyDeterministicReceipts(
     .order('created_at', { ascending: true })
   if (proposalError) throw new Error('No se pudieron leer las propuestas K5 para autoaplicar K4.')
 
-  const active = selectCurrentProposalLineage((proposalRows ?? []) as Array<Record<string, unknown>>)
+  const activeLineage = selectCurrentProposalLineage((proposalRows ?? []) as Array<Record<string, unknown>>)
+  const active = activeLineage
     .filter((proposal) => text(proposal.normalizer_version) === 'mistral-pipeline-v3'
       && text((proposal.provenance as Record<string, unknown> | null)?.source) === 'mistral_canonical')
 
@@ -146,7 +143,7 @@ async function autoApplyDeterministicReceipts(
     return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'no_active_proposals_for_extraction' }
   }
 
-  const proposalIds = active.map((proposal) => text(proposal.id)).filter(Boolean)
+  const proposalIds = activeLineage.map((proposal) => text(proposal.id)).filter(Boolean)
   const mappingIds = [...new Set(active.map((proposal) => text(proposal.mapping_version_id)).filter(Boolean))]
   const aliasSourceIds = [...new Set(active.map((proposal) => {
     const interpreted = proposal.interpreted && typeof proposal.interpreted === 'object'
@@ -207,6 +204,13 @@ async function autoApplyDeterministicReceipts(
       .map((row) => text(row.purchase_invoice_line_id))
       .filter(Boolean)
   )
+  // Un reintento puede llegar después de que K4 haya confirmado algunas
+  // líneas. Solo continuamos si todas esas recepciones pertenecen al linaje
+  // operativo actual; una recepción histórica ajena bloquea el documento.
+  if ((priorReceipts ?? 0) !== confirmedLines.size) {
+    return { ok: true, applied: 0, eligible: 0, blocked: [],
+      reason: 'invoice_receipts_outside_current_proposals' }
+  }
 
   const supplierId = text(invoice.supplier_id)
   const { data: trustedOrderRows, error: trustedOrderError } = ingredientIds.length

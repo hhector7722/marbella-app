@@ -8,7 +8,7 @@ precedencia: 0
 responsable: propiedad del producto
 revisado: 2026-09-15
 caducidad: 6 meses
-depende_de: DOMINIO-PRECIOS-Y-COMPRAS, ADR-0013
+depende_de: DOMINIO-PRECIOS-Y-COMPRAS
 supersede: —
 ---
 

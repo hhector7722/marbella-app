@@ -18,6 +18,23 @@ test('recupera alias con un carácter OCR errado y conserva la presentación val
   const match = matchSupplierProduct({ supplierId: 7, productCode: null, description: 'GOCA COLA ZERO', memory })
   assert.equal(match.ingredientId, 'cola')
   assert.equal(match.mappingVersionId, 'm1')
+  assert.equal(match.source, 'fuzzy')
+})
+
+test('el mismo código no reutiliza una presentación con otra cantidad', () => {
+  const match = matchSupplierProduct({ supplierId: 7, productCode: 'C12',
+    description: 'COCA COLA ZERO CAJA 12',
+    memory: [{ ...memory[0]!, observedName: 'COCA COLA ZERO CAJA 6' }] })
+  assert.equal(match.ingredientId, null)
+})
+
+test('dos presentaciones verificadas con el mismo nombre quedan ambiguas', () => {
+  const match = matchSupplierProduct({ supplierId: 7, productCode: 'C12',
+    description: 'COCA COLA ZERO', memory: [
+      { ...memory[0]!, presentationSignature: '6|caja|6|ud' },
+      { ...memory[0]!, mappingVersionId: 'm4', presentationSignature: '12|caja|12|ud' },
+    ] })
+  assert.equal(match.source, 'ambiguous')
 })
 
 test('normaliza cero y letra O en códigos de presentación', () => {

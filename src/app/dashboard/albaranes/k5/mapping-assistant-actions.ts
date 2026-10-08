@@ -10,7 +10,8 @@ import {
   type MappingAssistantSuggestion,
   type MappingAssistantUnresolved,
 } from '@/lib/albaranes/k5/mapping-assistant'
-import { saveReceiptMappingProposalAction } from '../receipt-actions'
+import { applyReceiptLineAction, previewReceiptLineAction,
+  saveReceiptMappingProposalAction } from '../receipt-actions'
 import { listK5BatchReviewAction } from './batch-actions'
 
 export type K5MappingAssistantSuggestion = MappingAssistantSuggestion & {
@@ -135,30 +136,32 @@ export async function applyK5MappingAssistantAction(params: {
   invoiceId: string
   fingerprints: string[]
 }): Promise<
-  | { success: true; applied: number }
-  | { success: false; message: string; applied: number }
+  | { success: true; applied: number; received: number; pending: string[] }
+  | { success: false; message: string; applied: number; received: number }
 > {
   const invoiceId = text(params?.invoiceId)
   const fingerprints = [...new Set((params?.fingerprints ?? []).map(text).filter(Boolean))]
   if (!invoiceId || fingerprints.length === 0) {
-    return { success: false, message: 'Selecciona al menos un mapping sugerido.', applied: 0 }
+    return { success: false, message: 'Selecciona al menos un mapping sugerido.', applied: 0, received: 0 }
   }
-  if (fingerprints.length > 80) return { success: false, message: 'El lote de mappings es demasiado grande.', applied: 0 }
+  if (fingerprints.length > 80) return { success: false, message: 'El lote de mappings es demasiado grande.', applied: 0, received: 0 }
 
   let state: K5MappingAssistantState
   try {
     state = await prepareAssistant(invoiceId)
   } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : 'No se pudo revalidar el asistente.', applied: 0 }
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo revalidar el asistente.', applied: 0, received: 0 }
   }
 
   const byFingerprint = new Map(state.suggestions.map((suggestion) => [suggestion.fingerprint, suggestion]))
   const selected = fingerprints.map((fingerprint) => byFingerprint.get(fingerprint)).filter((item): item is K5MappingAssistantSuggestion => Boolean(item))
   if (selected.length !== fingerprints.length) {
-    return { success: false, message: 'Alguna sugerencia cambió desde que abriste la pantalla. Actualiza antes de guardar.', applied: 0 }
+    return { success: false, message: 'Alguna sugerencia cambió desde que abriste la pantalla. Actualiza antes de guardar.', applied: 0, received: 0 }
   }
 
   let applied = 0
+  let received = 0
+  const pending: string[] = []
   for (const suggestion of selected) {
     const result = await saveReceiptMappingProposalAction({
       invoiceId,
@@ -175,15 +178,36 @@ export async function applyK5MappingAssistantAction(params: {
       return {
         success: false,
         message: applied > 0
-          ? `${suggestion.sourceItemName}: ${result.message} ${applied} mapping(s) anteriores sí quedaron guardados; no hubo efectos económicos.`
+          ? `${suggestion.sourceItemName}: ${result.message} ${applied} mapeo(s) anteriores quedaron guardados y ${received} línea(s) recibidas.`
           : `${suggestion.sourceItemName}: ${result.message}`,
-        applied,
+        applied, received,
       }
     }
     applied += 1
+    if (result.status !== 'ready_for_review') {
+      pending.push(`${suggestion.sourceItemName}: ${result.reviewReasons?.join(', ') || 'faltan datos verificables'}`)
+      continue
+    }
+    const preview = await previewReceiptLineAction({
+      lineId: suggestion.lineId,
+      mappingVersionId: result.mappingVersionId,
+      allocations: [],
+    })
+    if (!preview.success) {
+      pending.push(`${suggestion.sourceItemName}: ${preview.message}`)
+      continue
+    }
+    const receipt = await applyReceiptLineAction({
+      lineId: suggestion.lineId,
+      mappingVersionId: result.mappingVersionId,
+      allocations: [],
+      idempotencyKey: `receipt-assistant:${suggestion.lineId}:${result.mappingVersionId}`,
+    })
+    if (receipt.success) received += 1
+    else pending.push(`${suggestion.sourceItemName}: ${receipt.message}`)
   }
 
   revalidatePath('/dashboard/albaranes')
   revalidatePath('/dashboard/albaranes/k5')
-  return { success: true, applied }
+  return { success: true, applied, received, pending }
 }
