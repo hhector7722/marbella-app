@@ -13,6 +13,11 @@ const db = createClient(PROJECT_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 const enqueue = process.argv.includes('--enqueue')
+const invoiceIndex = process.argv.indexOf('--invoice')
+const targetInvoiceId = invoiceIndex >= 0 ? process.argv[invoiceIndex + 1] : null
+if (invoiceIndex >= 0 && !/^[0-9a-f-]{36}$/i.test(targetInvoiceId ?? '')) {
+  throw new Error('Indica un UUID válido después de --invoice')
+}
 const outputIndex = process.argv.indexOf('--output')
 const outputPath = outputIndex >= 0 ? process.argv[outputIndex + 1] : null
 
@@ -33,7 +38,7 @@ const [invoices, extractions, jobs, attachments, confirmations, proposals] = awa
   allRows('document_processing_jobs', 'id,invoice_id,file_version_hash,extractor_version,status,evidence_extraction_id,replay_mode'),
   allRows('purchase_invoice_attachments', 'id,invoice_id,file_path,content_sha256,page_order'),
   allRows('purchase_receipt_confirmations', 'id,purchase_invoice_id'),
-  allRows('purchase_interpretation_proposals', 'id,purchase_invoice_id,document_extraction_id,normalizer_version'),
+  allRows('purchase_interpretation_proposals', 'id,purchase_invoice_id,document_extraction_id,normalizer_version,supplier_profile_version'),
 ])
 invoices.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
 const extractionsByInvoice = Map.groupBy(extractions, (row) => row.invoice_id)
@@ -52,7 +57,9 @@ const first = invoices.find((invoice) => {
 })
 if (!first) throw new Error('No Docling-era boundary found')
 
-const period = invoices.filter((invoice) => invoice.created_at >= first.created_at)
+const period = invoices.filter((invoice) => invoice.created_at >= first.created_at
+  && (!targetInvoiceId || invoice.id === targetInvoiceId))
+if (targetInvoiceId && period.length === 0) throw new Error('El albarán solicitado no pertenece al periodo histórico.')
 const report = {
   generatedAt: new Date().toISOString(),
   mode: enqueue ? 'enqueue' : 'plan',
@@ -89,8 +96,10 @@ for (const invoice of period) {
       && extraction.extractor_version === VERSION && extraction.status === 'success')
     const needsMaterialization = cached && !hasReceipt
       && invoice.status !== 'discarded' && invoice.status !== 'received'
+      && !invoice.duplicate_of_invoice_id
       && !(proposalsByExtraction.get(cached.id) ?? [])
-        .some((proposal) => proposal.normalizer_version === 'mistral-pipeline-v3')
+        .some((proposal) => proposal.normalizer_version === 'mistral-pipeline-v3'
+          && proposal.supplier_profile_version === '5')
     if (cached) report.totals.reused++
     if (cached && !needsMaterialization) { row.result = 'reused'; continue }
     if (needsMaterialization) report.totals.reusedToMaterialize++

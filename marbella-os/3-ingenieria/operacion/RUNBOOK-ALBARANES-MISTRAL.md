@@ -61,6 +61,9 @@ heredado. Guardar los recuentos económicos antes y después del lote y revisar
 los errores explícitos. Una extracción correcta del mismo hash y versión se
 reutiliza sin llamada OCR. El botón «Reprocesar» usa el mismo
 original y la misma protección para un albarán individual.
+`--invoice <uuid>` limita plan y encolado a un albarán. Al cambiar el perfil
+de memoria, una extracción válida se reutiliza para crear propuestas
+sucesoras; se omiten los documentos con recepción, descartados o duplicados.
 
 ## Si falla
 
