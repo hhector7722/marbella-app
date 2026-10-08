@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-10-08
+
+- **Cambio separa visualmente las etiquetas y destaca las cajas.** Inicial y Cambio 2 dejan de compartir la misma línea de rótulos en el plano. Las cajas seleccionadas muestran su nombre blanco bajo la imagen redondeada del resumen. El fondo del plano queda ligeramente atenuado al abrirse y se atenúa más desde la primera selección; los iconos conservan su opacidad hasta elegir la segunda caja y entonces solo se atenúan los no seleccionados.
+
 ## 2026-10-07
 
 - **Compra pasa a una sola pantalla sobre el modal azul.** Concepto y Precio en dos filas de dos columnas —etiqueta blanca a la izquierda, campo de texto blanco a la derecha—, una fila «Caja» con los iconos de Caja inicial, Cambio 1, Cambio 2, TPV 1 y TPV 2 y su nombre debajo, y un botón verde «Escanear albarán» que muestra la miniatura del documento con su cruz roja para quitarlo. Pulsar una caja abre su desglose derivado con Guardar/Cancelar; al guardar se añade el valor de esa caja. El cambio (vuelto) y su caja destino viven en la misma pantalla, y el pie mantiene Cancelar/Guardar.

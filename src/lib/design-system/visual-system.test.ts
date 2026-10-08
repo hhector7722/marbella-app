@@ -1601,6 +1601,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(selectBlock, /QuickCashTools/, 'el selector de cajas no monta calculadora ni desglose');
         assert.match(legBlock, /<QuickCashTools calculator breakdown \/>/, 'el desglose monta calculadora y desglose');
         assert.match(selectBlock, /data-element="cash-change-summary"/, 'las direcciones viven sobre el plano');
+        assert.match(selectBlock, /cashChangePlanDisplayLabel\(boxA\)/, 'la primera caja seleccionada muestra su nombre bajo la imagen');
+        assert.match(selectBlock, /cashChangePlanDisplayLabel\(boxB\)/, 'la segunda caja seleccionada muestra su nombre bajo la imagen');
+        assert.match(selectBlock, /max-w-full truncate px-1 text-center text-\[11px\] leading-4 text-white/, 'los nombres superiores no invaden otras columnas');
         assert.match(selectBlock, /instance="cash-change-add-first-amount"[\s\S]*?openLegEditor\('step1'\)/, 'el primer botón abre su desglose');
         assert.match(selectBlock, /instance="cash-change-add-second-amount"[\s\S]*?openLegEditor\('step2'\)/, 'el segundo botón abre su desglose');
         assert.match(selectBlock, /data-element="cash-change-forward-amount"[\s\S]*?formatExchangeAmount\(totalStep1\)/, 'el importe de ida vive sobre la flecha verde');
@@ -1618,7 +1621,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(planBlock, /cashChangePlanImage/, 'el plano monta los iconos de caja como overlays independientes');
         assert.match(planBlock, /data-element="cash-change-plan-label"/, 'cada overlay recupera su etiqueta roja');
         assert.match(planBlock, /cashChangePlanDisplayLabel\(option\)/, 'las etiquetas usan el nombre corto del plano');
-        assert.match(planBlock, /opacity-40/, 'el fondo del plano se atenúa cuando hay dos cajas seleccionadas');
+        assert.match(planBlock, /boxA \? 'opacity-40' : 'opacity-90'/, 'el plano empieza ligeramente atenuado y se atenúa más desde la primera selección');
+        assert.match(planBlock, /boxA && boxB && !isSelected/, 'los iconos no seleccionados solo se atenúan al elegir la segunda caja');
+        assert.match(planBlock, /key === 'cambio2' \? 'mt-6' : 'mt-1'/, 'Inicial y Cambio 2 ocupan líneas distintas incluso en un plano estrecho');
         const planImage = readFileSync(join(REPO_ROOT, 'public/images/cash-change-plan.avif'));
         assert.ok(planImage.length > 40_000, 'el plano limpio conserva detalle suficiente para ampliar');
         for (const rel of [
