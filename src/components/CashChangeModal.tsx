@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { Fragment, useState, useEffect, useRef } from 'react';
 import { Eye, ChevronLeft, ChevronRight, Wallet, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { cn, firstGivenName } from '@/lib/utils';
@@ -49,9 +49,14 @@ const CASH_CHANGE_PLAN_POSITIONS = {
     tpv1: { x: 58.5, y: 36.5 },
     tpv2: { x: 58.5, y: 71.7 },
     cambio1: { x: 10.4, y: 24.1 },
-    cambio2: { x: 32.8, y: 15.4 },
-    inicial: { x: 23.8, y: 15.4 },
+    cambio2: { x: 36, y: 15.4 },
+    inicial: { x: 21, y: 15.4 },
 } satisfies Record<string, PlanPoint>;
+
+const CASH_CHANGE_PLAN_TOP_LABELS = {
+    inicial: { x: 18, y: 25 },
+    cambio2: { x: 39, y: 25 },
+} satisfies Partial<Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, PlanPoint>>;
 
 const CASH_CHANGE_PLAN_WIDTHS: Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, number> = {
     tpv1: 8.8,
@@ -982,8 +987,8 @@ export const CashChangeModal = ({
                     <div
                         ref={planViewportRef}
                         data-element="cash-change-plan"
-                        data-design-exception="cash-change-plan-radius:radio-control"
-                        className="relative mx-auto aspect-[2048/1084] w-full max-w-[1136px] shrink-0 touch-none overflow-hidden rounded-ds-control bg-zinc-100"
+                        data-design-exception="cash-change-plan-radius:igual-al-contorno-del-modal"
+                        className="relative mx-auto aspect-[2048/1084] w-full max-w-[1136px] shrink-0 touch-none overflow-hidden rounded-ds-superficie border border-white/70 bg-zinc-100"
                         tabIndex={0}
                         role="region"
                         aria-label="Plano de cajas: usa la rueda o pellizca para ampliar y arrastra para desplazarte"
@@ -1031,7 +1036,7 @@ export const CashChangeModal = ({
                                 unoptimized
                                 sizes="(max-width: 1200px) calc(100vw - 1rem), 1136px"
                                 className={cn(
-                                    'select-none rounded-ds-control object-cover transition-opacity duration-200',
+                                    'select-none object-cover transition-opacity duration-200',
                                     boxA ? 'opacity-40' : 'opacity-90',
                                 )}
                             />
@@ -1045,40 +1050,57 @@ export const CashChangeModal = ({
                                 const isSelected = isA || isB;
                                 const shouldDim = Boolean(boxA && boxB && !isSelected);
                                 const size = CASH_CHANGE_PLAN_ASSET_SIZES[key];
+                                const topLabel = key === 'inicial' || key === 'cambio2'
+                                    ? CASH_CHANGE_PLAN_TOP_LABELS[key]
+                                    : null;
 
                                 return (
-                                    <div
-                                        key={`${option.id}-asset`}
-                                        aria-hidden
-                                        className={cn(
-                                            'pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 origin-center transition-[opacity,transform] duration-200',
-                                            isSelected ? 'scale-[1.06]' : 'scale-100',
-                                            shouldDim ? 'opacity-25' : 'opacity-100',
-                                        )}
-                                        style={{
-                                            left: position.x + '%',
-                                            top: position.y + '%',
-                                            width: CASH_CHANGE_PLAN_WIDTHS[key] + '%',
-                                        }}
-                                    >
-                                        <Image
-                                            src={image}
-                                            alt=""
-                                            width={size.width}
-                                            height={size.height}
-                                            unoptimized
-                                            className="h-auto w-full select-none object-contain"
-                                        />
-                                        <span
-                                            data-element="cash-change-plan-label"
+                                    <Fragment key={`${option.id}-asset`}>
+                                        <div
+                                            aria-hidden
                                             className={cn(
-                                                'absolute left-1/2 top-full -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm',
-                                                key === 'cambio2' ? 'mt-6' : 'mt-1',
+                                                'pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 origin-center transition-[opacity,transform] duration-200',
+                                                isSelected ? 'scale-[1.06]' : 'scale-100',
+                                                shouldDim ? 'opacity-25' : 'opacity-100',
                                             )}
+                                            style={{
+                                                left: position.x + '%',
+                                                top: position.y + '%',
+                                                width: CASH_CHANGE_PLAN_WIDTHS[key] + '%',
+                                            }}
                                         >
-                                            {cashChangePlanDisplayLabel(option)}
-                                        </span>
-                                    </div>
+                                            <Image
+                                                src={image}
+                                                alt=""
+                                                width={size.width}
+                                                height={size.height}
+                                                unoptimized
+                                                className="h-auto w-full select-none object-contain"
+                                            />
+                                            {!topLabel ? (
+                                                <span
+                                                    data-element="cash-change-plan-label"
+                                                    className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+                                                >
+                                                    {cashChangePlanDisplayLabel(option)}
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                        {topLabel ? (
+                                            <span
+                                                data-element="cash-change-plan-label"
+                                                aria-hidden
+                                                className={cn(
+                                                    'pointer-events-none absolute z-10 -translate-x-1/2 truncate rounded-md bg-red-500 px-0.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white shadow-sm transition-[opacity,transform] duration-200',
+                                                    isSelected ? 'scale-[1.06]' : 'scale-100',
+                                                    shouldDim ? 'opacity-25' : 'opacity-100',
+                                                )}
+                                                style={{ left: topLabel.x + '%', top: topLabel.y + '%', maxWidth: 'calc(21% - 4px)' }}
+                                            >
+                                                {cashChangePlanDisplayLabel(option)}
+                                            </span>
+                                        ) : null}
+                                    </Fragment>
                                 );
                             })}
 
