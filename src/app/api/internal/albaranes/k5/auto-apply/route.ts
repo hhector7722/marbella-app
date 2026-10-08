@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { K2_RECONCILIATION_TRUST_START } from '@/lib/albaranes/k5/batch-review'
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
-import { documentPagesReady } from '@/lib/albaranes/pipeline/pages'
+import { documentPageEvidenceBlockReason } from '@/lib/albaranes/pipeline/pages'
+import { duplicatedPageEvidence } from '@/lib/albaranes/pipeline/duplicate-page-evidence'
 import { commonAutoApplyBlockReason } from '@/lib/albaranes/k5/auto-apply-guard'
 import {
   isK5ReusableMappingVersion,
@@ -84,11 +85,12 @@ async function autoApplyDeterministicReceipts(
 ): Promise<Record<string, unknown>> {
   const { data: invoiceData, error: invoiceError } = await supabase
     .from('purchase_invoices')
-    .select('id,supplier_id,status,duplicate_of_invoice_id,expected_pages')
+    .select('id,supplier_id,status,duplicate_of_invoice_id,expected_pages,content_sha256')
     .eq('id', payload.invoiceId)
     .maybeSingle()
   const invoice = invoiceData as { id?: string; supplier_id?: number | null; status?: string | null;
-    duplicate_of_invoice_id?: string | null; expected_pages?: number | null } | null
+    duplicate_of_invoice_id?: string | null; expected_pages?: number | null;
+    content_sha256?: string | null } | null
   if (invoiceError || !invoice || invoice.supplier_id == null) {
     return { ok: true, applied: 0, blocked: [{ proposalId: '', lineId: null, reason: 'invoice_or_supplier_unavailable' }] }
   }
@@ -113,17 +115,71 @@ async function autoApplyDeterministicReceipts(
   }
   if (mistralJob) {
     const expectedPages = Number(invoice.expected_pages ?? 1)
-    const [{ count: attachmentCount, error: attachmentError },
+    const [{ data: attachments, error: attachmentError },
       { data: documentJobs, error: documentJobsError }] = await Promise.all([
-      supabase.from('purchase_invoice_attachments').select('id', { count: 'exact', head: true })
-        .eq('invoice_id', payload.invoiceId),
-      supabase.from('document_processing_jobs').select('id,status')
-        .eq('invoice_id', payload.invoiceId).like('extractor_version', 'mistral-%'),
+      supabase.from('purchase_invoice_attachments')
+        .select('id,content_sha256').eq('invoice_id', payload.invoiceId),
+      supabase.from('document_processing_jobs')
+        .select('id,status,source_attachment_id,file_version_hash,extractor_version,replay_mode,evidence_extraction_id')
+        .eq('invoice_id', payload.invoiceId).eq('extractor_version', extractorVersion)
+        .eq('replay_mode', 'live'),
     ])
     if (attachmentError || documentJobsError) throw new Error('No se pudo verificar la integridad de las hojas.')
-    if (!documentPagesReady({ expectedPages, attachmentCount: attachmentCount ?? 0,
-      jobs: documentJobs ?? [], currentJobId: payload.jobId })) {
-      return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'document_pages_pending' }
+
+    const pages = [
+      { attachmentId: null as string | null, fileHash: text(invoice.content_sha256) },
+      ...(attachments ?? []).map((item) => ({
+        attachmentId: text(item.id) || null,
+        fileHash: text(item.content_sha256),
+      })),
+    ]
+    // Comprobar la identidad de TODAS las hojas, no únicamente contar jobs.
+    // Los jobs historical nunca sirven para autorizar una recepción live.
+    const hashes = [...new Set(pages.map((page) => page.fileHash).filter(Boolean))]
+    const { data: extractionRows, error: extractionError } = hashes.length
+      ? await supabase.from('document_extractions')
+          .select('id,file_version_hash,status,raw_json_artifact')
+          .eq('invoice_id', payload.invoiceId).eq('extractor_version', extractorVersion)
+          .in('file_version_hash', hashes)
+      : { data: [], error: null }
+    if (extractionError) throw new Error('No se pudo verificar la extracción de cada hoja.')
+    const blockReason = documentPageEvidenceBlockReason({
+      expectedPages, pages, jobs: documentJobs ?? [],
+      extractions: extractionRows ?? [], currentJobId: payload.jobId,
+      currentExtractionId: payload.extractionId, extractorVersion,
+    })
+    if (blockReason) {
+      return { ok: true, applied: 0, eligible: 0,
+        blocked: [{ proposalId: '', lineId: null, reason: blockReason }], reason: blockReason }
+    }
+
+    // Dos fotos de la misma hoja pueden tener hashes distintos. No se debe
+    // recibir ninguna automáticamente si la evidencia económica se repite.
+    // Se conserva íntegra para que la persona concilie las páginas originales.
+    const observedPages = pages.map((page) => {
+      const job = (documentJobs ?? []).find((item) =>
+        (item.source_attachment_id ?? null) === page.attachmentId
+        && item.file_version_hash === page.fileHash)
+      const extractionId = job?.id === payload.jobId
+        ? payload.extractionId : job?.evidence_extraction_id
+      const extraction = (extractionRows ?? []).find((item) => item.id === extractionId)
+      const artifact = extraction?.raw_json_artifact as Record<string, unknown> | null
+      const canonical = artifact?.canonical as Record<string, unknown> | undefined
+      const lines = canonical?.lines
+      return { pageKey: page.attachmentId ?? 'main',
+        lines: Array.isArray(lines) ? lines : null }
+    })
+    if (observedPages.some((page) => page.lines === null)) {
+      return { ok: true, applied: 0, eligible: 0, reason: 'document_page_content_unavailable',
+        blocked: [{ proposalId: '', lineId: null, reason: 'document_page_content_unavailable' }] }
+    }
+    const duplicatePages = duplicatedPageEvidence(observedPages.map((page) => ({
+      pageKey: page.pageKey, lines: page.lines ?? [],
+    })))
+    if (duplicatePages.length) {
+      return { ok: true, applied: 0, eligible: 0, reason: 'document_repeated_page_evidence',
+        duplicatePages,
+        blocked: [{ proposalId: '', lineId: null, reason: 'document_repeated_page_evidence' }] }
     }
   }
 
@@ -184,12 +240,17 @@ async function autoApplyDeterministicReceipts(
   const { data: successorRows, error: successorError } = allMappingIds.length
     ? await supabase
         .from('purchase_mapping_versions')
-        .select('supersedes_id')
+        .select('supersedes_id,status,legacy_mapping_id,idempotency_key')
         .in('supersedes_id', allMappingIds)
     : { data: [] as Array<Record<string, unknown>>, error: null }
   if (successorError) throw new Error('No se pudo comprobar la vigencia de los mapeos K5.')
+  // Un borrador no invalida la última presentación confirmada.
+  // Debe coincidir con buildSupplierMemory, que solo retira versiones
+  // cuando su sucesora también es reutilizable por K4.
   const supersededMappings = new Set(
-    ((successorRows ?? []) as Array<Record<string, unknown>>).map((row) => text(row.supersedes_id)).filter(Boolean)
+    ((successorRows ?? []) as Array<Record<string, unknown>>)
+      .filter((row) => isK5ReusableMappingVersion(row))
+      .map((row) => text(row.supersedes_id)).filter(Boolean)
   )
 
   const { data: confirmationRows, error: confirmationError } = lineIds.length
