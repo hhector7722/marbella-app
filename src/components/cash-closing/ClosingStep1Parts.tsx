@@ -222,8 +222,8 @@ export function ClosingWeatherPicker({
             aria-label={option.label}
             aria-pressed={selected}
             className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0 transition-transform active:scale-95 sm:h-11 sm:w-11',
-              selected && 'ring-2 ring-[#36606F] ring-offset-1',
+              'flex h-10 w-10 shrink-0 items-center justify-center p-0 transition-[opacity,transform] active:scale-95 sm:h-11 sm:w-11',
+              selectedId !== null && !selected && 'opacity-35',
             )}
           >
             <Image
