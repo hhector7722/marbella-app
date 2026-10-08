@@ -139,11 +139,19 @@ export function validateObservedDocument(document: CanonicalDocument): {
   const subtotal = parseObservedDecimal(document.subtotal_raw)
   const tax = parseObservedDecimal(document.tax_raw)
   const total = parseObservedDecimal(document.total_raw)
+  // Algunos albaranes imprimen varias bases de IVA y el OCR devuelve una
+  // sola en subtotal_raw. Si todas las líneas leídas más el IVA cuadran con
+  // el total, la conciliación documental está demostrada sin esa base parcial.
+  const linesAndTaxMatchTotal = lineSum != null && subtotal != null && subtotal > 0
+    && subtotal < lineSum && tax != null && total != null
+    && near(lineSum + tax, total)
   if (subtotal == null && total == null) reasons.push('total_documento_no_verificable')
-  if (subtotal != null && tax != null && total != null && !near(subtotal + tax, total)) {
+  if (subtotal != null && tax != null && total != null && !linesAndTaxMatchTotal
+    && !near(subtotal + tax, total)) {
     reasons.push('subtotal_iva_total_no_reconcilian')
   }
-  if (lineSum != null && subtotal != null && !near(lineSum, subtotal)) {
+  if (lineSum != null && subtotal != null && !linesAndTaxMatchTotal
+    && !near(lineSum, subtotal)) {
     reasons.push('lineas_subtotal_no_reconcilian')
   }
   if (lineSum != null && subtotal == null && tax == null && total != null && !near(lineSum, total)) {

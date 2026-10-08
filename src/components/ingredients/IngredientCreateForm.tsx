@@ -6,6 +6,7 @@ import { setIngredientCurrentPriceAction } from '@/app/ingredients/actions'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/Field'
 import { createClient } from '@/utils/supabase/client'
+import { canonicalBaseUnitForPurchaseUnit } from '@/lib/ingredient-units'
 
 export type IngredientCreateContext = {
   lineLabel?: string | null
@@ -65,6 +66,11 @@ export function IngredientCreateForm({
 
     setSaving(true)
     try {
+      const baseUnit = canonicalBaseUnitForPurchaseUnit(purchaseUnit)
+      if (!baseUnit) {
+        toast.error('Selecciona una unidad de compra válida.')
+        return
+      }
       const { data, error } = await supabase
         .from('ingredients')
         .insert({
@@ -72,6 +78,8 @@ export function IngredientCreateForm({
           category,
           purchase_unit: purchaseUnit,
           unit_type: purchaseUnit,
+          base_unit: baseUnit,
+          unit: baseUnit,
           current_price: 0,
         })
         .select('id')

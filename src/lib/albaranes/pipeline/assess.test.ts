@@ -11,7 +11,7 @@ const presentation: PresentationMemory = { supplierId: 7, ingredientId: 'cola', 
 function document(line: Partial<CanonicalDocument['lines'][number]>): CanonicalDocument {
   return { supplier_name_raw: 'Proveedor', document_number_raw: '1', document_date_raw: null,
     currency_raw: 'EUR', subtotal_raw: '14,40', tax_raw: null, total_raw: null,
-    lines: [{ page_index: 0, supplier_product_code_raw: null, description_raw: 'GOCA COLA ZERO',
+    lines: [{ page_index: 0, supplier_product_code_raw: null, description_raw: 'COCA COLA ZERO',
       quantity_raw: '24', billing_unit_raw: 'UD', package_count_raw: null,
       units_per_package_raw: null, content_per_unit_raw: null, content_unit_raw: null,
       unit_price_raw: '0,60', discount_raw: null, discount_header_raw: null,
@@ -26,12 +26,30 @@ test('identidad probable, mapping confirmado y cuentas coherentes producen propu
   assert.equal(result.lines[0]?.normalized?.purchaseQuantity, '24')
 })
 
+test('un aviso de totales del documento no bloquea una línea correcta', () => {
+  const source = document({})
+  source.subtotal_raw = '10,00'
+  const result = assessDocument({ document: source, supplierId: 7,
+    memory: [presentation], presentations: [presentation] })
+  assert.deepEqual(result.documentReasons, ['lineas_subtotal_no_reconcilian'])
+  assert.equal(result.lines[0]?.status, 'ready_for_review')
+  assert.deepEqual(result.lines[0]?.reasons, [])
+})
+
 test('alias conocido sin presentación conserva candidato pero bloquea recepción', () => {
   const result = assessDocument({ document: document({}), supplierId: 7,
     memory: [presentation], presentations: [] })
   assert.equal(result.lines[0]?.ingredientId, 'cola')
   assert.equal(result.lines[0]?.mappingVersionId, 'm1')
   assert.ok(result.lines[0]?.reasons.includes('presentacion_sin_validar'))
+})
+
+test('una coincidencia solo parecida pide confirmar la identidad antes de K4', () => {
+  const source = document({ description_raw: 'COCA COLA ZEROO' })
+  const result = assessDocument({ document: source, supplierId: 7,
+    memory: [presentation], presentations: [presentation] })
+  assert.equal(result.lines[0]?.status, 'needs_review')
+  assert.ok(result.lines[0]?.reasons.includes('mapping_requires_human_review'))
 })
 
 test('importe que no reconcilia impide propuesta lista', () => {

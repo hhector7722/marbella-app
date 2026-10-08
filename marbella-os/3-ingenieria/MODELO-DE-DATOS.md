@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-03
+revisado: 2026-10-08
 caducidad: 6 meses
 supersede: —
 ---
@@ -131,6 +131,7 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 `recipes`, `recipe_ingredients`, `recipe_subrecipes`, `ingredients`, `ingredient_price_history`, `categories`, `stock_movements`, `map_tpv_receta`, `digital_menu_overrides`, `menu_category_overrides`, `carta_editors`, `carta_ui_labels`, `inventory_counts`, `inventory_count_lines`, `inventory_count_drafts`.
 
 - `ingredients.current_price` es el precio vigente; `ingredient_price_history`, su histórico. Ambos solo cambian desde una confirmación económica autorizada; la captura y evidencia no son ese hecho.
+- `ingredients.purchase_unit` y `ingredients.base_unit` conservan una pareja física coherente para K4: kg/g → g, l/ml/cl → ml y ud → ud. `ingredients.unit` refleja esa misma unidad base de stock. Una propuesta de albarán no corrige estas unidades al confirmar.
 - `ingredients.archived_at` retira un ingrediente obsoleto del catálogo operativo sin borrarlo ([ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md)). `NULL` = activo. Un ingrediente archivado no se ofrece en selecciones nuevas, pero sus referencias históricas siguen siendo legibles. No es `inventory_visible`, que solo afecta al recuento de inventario.
 - `stock_movements` es el **único ledger canónico de stock**. Es append-only: las correcciones son nuevos movimientos reversores. Cada hecho nuevo lleva referencia tipada, idempotencia, origen, actor y procedencia. `stock_current` es su proyección regenerable.
 - `inventory_counts` e `inventory_count_lines` guardan el recuento **capturado y pendiente de certificar**: autor, estado (`pending`/`certified`/`rejected`), correlación y, por ingrediente, el desglose contado (barra y cámara), el total físico y la teórica. No son un segundo ledger: la certificación escribe `stock_movements` con `record_inventory_count_movements` ([ADR-0019](../4-decisiones/ADR-0019-inventario-captura-y-certificacion.md)). Cada persona mantiene como máximo un recuento pendiente.

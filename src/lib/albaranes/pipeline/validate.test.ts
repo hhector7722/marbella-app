@@ -98,6 +98,18 @@ test('reconcilia IVA de documento sin convertir importe bruto en subtotal', () =
   assert.equal(validateObservedDocument({ ...doc, total_raw: '200,00' }).reasons[0], 'subtotal_iva_total_no_reconcilian')
 })
 
+test('varias bases de IVA no generan aviso si todas las líneas más el IVA cuadran con el total', () => {
+  const doc: CanonicalDocument = { supplier_name_raw: null, document_number_raw: null,
+    document_date_raw: null, currency_raw: null, subtotal_raw: '56,91', tax_raw: '3,18',
+    total_raw: '69,17', lines: [
+      row({ quantity_raw: '1', unit_price_raw: '56,91', line_total_raw: '56,91' }),
+      row({ quantity_raw: '1', unit_price_raw: '9,08', line_total_raw: '9,08' }),
+    ] }
+  assert.deepEqual(validateObservedDocument(doc).reasons, [])
+  assert.ok(validateObservedDocument({ ...doc, lines: doc.lines.slice(0, 1) }).reasons
+    .includes('subtotal_iva_total_no_reconcilian'))
+})
+
 test('impide recepción automática sin importe de control y compara subtotal aun sin IVA', () => {
   const doc: CanonicalDocument = { supplier_name_raw: null, document_number_raw: null,
     document_date_raw: null, currency_raw: null, subtotal_raw: null, tax_raw: null,
