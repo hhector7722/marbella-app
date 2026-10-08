@@ -1612,7 +1612,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(selectBlock, /instance="cash-change-save"/, 'guardar vive en el footer del modal');
         assert.match(selectBlock, /instance="cash-change-cancel"/, 'cancelar vive en el footer del modal');
         assert.doesNotMatch(selectBlock, /instance="cash-change-confirm"/, 'no existe un tick central para guardar');
-        assert.match(selectBlock, /data-element="cash-change-plan"[\s\S]*?rounded-ds-control/, 'el plano tiene todas las esquinas redondeadas');
+        assert.match(selectBlock, /data-element="cash-change-plan"[\s\S]*?rounded-ds-superficie border border-white\/70/, 'imagen y contorno comparten el radio del modal');
         assert.doesNotMatch(selectBlock, /cash-arrow-forward|cash-arrow-reverse|buildPlanArrowGeometry|<Plus/, 'las flechas no incorporan controles de cantidad');
         const planBlock = selectBlock.split('data-element="cash-change-plan"')[1] ?? '';
         assert.doesNotMatch(planBlock, /openLegEditor/, 'sobre el plano no hay controles de cantidad');
@@ -1623,7 +1623,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(planBlock, /cashChangePlanDisplayLabel\(option\)/, 'las etiquetas usan el nombre corto del plano');
         assert.match(planBlock, /boxA \? 'opacity-40' : 'opacity-90'/, 'el plano empieza ligeramente atenuado y se atenúa más desde la primera selección');
         assert.match(planBlock, /boxA && boxB && !isSelected/, 'los iconos no seleccionados solo se atenúan al elegir la segunda caja');
-        assert.match(planBlock, /key === 'cambio2' \? 'mt-6' : 'mt-1'/, 'Inicial y Cambio 2 ocupan líneas distintas incluso en un plano estrecho');
+        assert.match(change, /cambio2: \{ x: 36, y: 15\.4 \},\s*inicial: \{ x: 21, y: 15\.4 \}/, 'las dos cajas se separan lateralmente sin cambiar de altura');
+        assert.match(change, /inicial: \{ x: 18, y: 25 \},\s*cambio2: \{ x: 39, y: 25 \}/, 'Inicial y Cambio 2 comparten la altura y separan sus rótulos');
+        assert.match(planBlock, /maxWidth: 'calc\(21% - 4px\)'/, 'los rótulos no se pisan en planos estrechos');
         const planImage = readFileSync(join(REPO_ROOT, 'public/images/cash-change-plan.avif'));
         assert.ok(planImage.length > 40_000, 'el plano limpio conserva detalle suficiente para ampliar');
         for (const rel of [
