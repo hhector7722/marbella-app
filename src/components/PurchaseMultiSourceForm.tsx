@@ -71,13 +71,14 @@ const nowStr = () => formatCashCountDateInput();
 const calculateTotal = (c: Record<number, number>) =>
     DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
 
-/** Imagen de la caja: la configurada; si no, el asset por defecto de su tipo. */
+/** Inicial y Cambio 1 usan los recortes limpios; el resto conserva su imagen configurada. */
 function resolveBoxImage(source: PaymentSourceOption): string {
+    const label = `${source.name} ${source.shortLabel}`.toLowerCase();
+    if (label.includes('cambio 1') || label.includes('cambio1')) return '/icons/cambio-1.png';
+    if (label.includes('inicial')) return '/icons/inicial.png';
     if (source.image_url) return source.image_url;
     if (source.kind === 'tpv') return '/icons/tpv.png';
-    const label = `${source.name} ${source.shortLabel}`.toLowerCase();
     if (label.includes('cambio 2') || label.includes('cambio2')) return '/icons/cambio-2.png';
-    if (label.includes('cambio 1') || label.includes('cambio1')) return '/icons/cambio-1.png';
     return '/icons/inicial.png';
 }
 
@@ -85,10 +86,21 @@ function resolveBoxImage(source: PaymentSourceOption): string {
  * Fila de dos columnas del formulario de compra: concepto a la izquierda
  * (tinta blanca sobre el modal) y caja de texto blanca a la derecha.
  */
-function PurchaseFieldRow({ title, children }: { title: string; children: React.ReactNode }) {
+function PurchaseFieldRow({
+    title,
+    children,
+    compactLabel = false,
+}: {
+    title?: string;
+    children: React.ReactNode;
+    compactLabel?: boolean;
+}) {
     return (
-        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-1.5">
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/85">{title}</span>
+        <div className={cn(
+            'grid items-center',
+            compactLabel ? 'grid-cols-[2.5rem_minmax(0,1fr)] gap-x-1' : 'grid-cols-[6rem_minmax(0,1fr)] gap-x-3'
+        )}>
+            <span aria-hidden={!title} className="text-[10px] font-black uppercase tracking-widest text-white/85">{title}</span>
             <div className="flex min-w-0 items-center justify-center">{children}</div>
         </div>
     );
@@ -101,12 +113,14 @@ function BoxCard({
     selected,
     onClick,
     showAmount = true,
+    showSelectionRing = false,
 }: {
     source: PaymentSourceOption;
     amount: number;
     selected: boolean;
     onClick: () => void;
     showAmount?: boolean;
+    showSelectionRing?: boolean;
 }) {
     const hasAmount = amount > 0.005;
     return (
@@ -116,11 +130,9 @@ function BoxCard({
             onClick={onClick}
             aria-pressed={selected}
             aria-label={`${showAmount ? 'Desglosar' : 'Seleccionar'} ${source.shortLabel}`}
-            className={cn(
-                'flex min-h-ds-tactil min-w-0 flex-col items-center justify-start gap-0.5 bg-transparent px-0.5 py-1 text-white transition-transform hover:scale-105'
-            )}
+            className="flex min-h-ds-tactil min-w-0 flex-col items-center justify-start gap-0.5 bg-transparent px-0.5 py-1 text-white transition-transform hover:scale-105"
         >
-            <span className={cn('flex h-9 w-9 items-center justify-center', !showAmount && selected && 'ring-2 ring-white/80 rounded-lg')}>
+            <span className={cn('flex h-9 w-9 items-center justify-center', showSelectionRing && selected && 'rounded-lg ring-2 ring-white/80')}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={resolveBoxImage(source)}
@@ -128,7 +140,7 @@ function BoxCard({
                     className="h-full w-full object-contain"
                 />
             </span>
-            <span className="w-full whitespace-normal break-words text-center text-[10px] font-normal normal-case leading-tight text-white">
+            <span className="w-full whitespace-nowrap text-center text-[9px] font-normal normal-case tracking-tight leading-tight text-white sm:text-[10px]">
                 {source.shortLabel}
             </span>
             {showAmount && hasAmount ? (
@@ -182,6 +194,7 @@ export function PurchaseMultiSourceForm({
     const totalFromSources = paymentSources.reduce((sum, src) => sum + getDisplayAmount(src), 0);
     const priceNum = price === '' ? 0 : price;
     const changeAmount = Math.max(0, totalFromSources - priceNum);
+    const changeNeeded = Number.isFinite(priceNum) && priceNum > 0 && changeAmount >= 0.01;
     const changeTotal = calculateTotal(changeBreakdown);
     const changeOk = changeAmount < 0.01 || Math.abs(changeTotal - changeAmount) < 0.01;
     const eligibleChangeSources = eligiblePurchaseChangeSources(
@@ -353,6 +366,7 @@ export function PurchaseMultiSourceForm({
                                             selected={draftChangeDestinationId === source.id}
                                             onClick={() => setChangeDestinationDraftId(source.id)}
                                             showAmount={false}
+                                            showSelectionRing
                                         />
                                     ))}
                                 </div>
@@ -420,8 +434,8 @@ export function PurchaseMultiSourceForm({
                     </PurchaseFieldRow>
                 </div>
 
-                <PurchaseFieldRow title="Caja">
-                    <div className="grid w-full grid-cols-5 gap-x-0.5">
+                <PurchaseFieldRow title="Caja" compactLabel>
+                    <div className="grid w-full grid-cols-5 gap-1">
                         {paymentSources.map(src => (
                             <BoxCard
                                 key={src.id}
@@ -442,26 +456,28 @@ export function PurchaseMultiSourceForm({
                             instance="purchase-add-change"
                             layout="hug"
                             onClick={openChangeEditor}
-                            disabled={priceNum <= 0 || changeAmount < 0.01}
+                            disabled={!changeNeeded}
                         >
                             Añadir cambio
                         </Button>
-                        {priceNum > 0 && changeAmount >= 0.01 && changeOk && effectiveChangeDestinationId ? (
+                        {changeNeeded && changeOk && effectiveChangeDestinationId ? (
                             <p className="text-xs text-white/70">{changeAmount.toFixed(2)}€ · {changeDestinationLabel}</p>
                         ) : null}
                     </div>
                 </PurchaseFieldRow>
 
-                <div data-element="purchase-scan-action" className="flex flex-col items-center">
-                    <ScannerClient
-                        ref={scannerRef}
-                        embedded
-                        compactTrigger
-                        triggerLabel="Escanear albarán"
-                        hideBatchActions
-                        onBatchChange={setHasPendingBatch}
-                    />
-                </div>
+                <PurchaseFieldRow>
+                    <div data-element="purchase-scan-action" className="flex w-full flex-col items-center">
+                        <ScannerClient
+                            ref={scannerRef}
+                            embedded
+                            compactTrigger
+                            triggerLabel="Escanear albarán"
+                            hideBatchActions
+                            onBatchChange={setHasPendingBatch}
+                        />
+                    </div>
+                </PurchaseFieldRow>
             </div>
 
             <div className="shrink-0 border-t border-white/12 pt-3">
@@ -475,7 +491,7 @@ export function PurchaseMultiSourceForm({
                     saveDisabled={!canSubmit || saving}
                     saveLoading={saving}
                     extra={
-                        changeAmount >= 0.01 ? (
+                        changeNeeded ? (
                             <div className="flex items-center gap-1.5">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-white/55">A devolver</span>
                                 <span className="text-sm font-bold tabular-nums text-white/70">{changeAmount.toFixed(2)}€</span>
