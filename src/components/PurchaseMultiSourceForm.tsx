@@ -114,6 +114,7 @@ function BoxCard({
     onClick,
     showAmount = true,
     showSelectionRing = false,
+    tone = 'dark',
 }: {
     source: PaymentSourceOption;
     amount: number;
@@ -121,8 +122,10 @@ function BoxCard({
     onClick: () => void;
     showAmount?: boolean;
     showSelectionRing?: boolean;
+    tone?: 'dark' | 'light';
 }) {
     const hasAmount = amount > 0.005;
+    const isInitial = `${source.name} ${source.shortLabel}`.toLowerCase().includes('inicial');
     return (
         <button
             type="button"
@@ -130,21 +133,35 @@ function BoxCard({
             onClick={onClick}
             aria-pressed={selected}
             aria-label={`${showAmount ? 'Desglosar' : 'Seleccionar'} ${source.shortLabel}`}
-            className="flex min-h-ds-tactil min-w-0 flex-col items-center justify-start gap-0.5 bg-transparent px-0.5 py-1 text-white transition-transform hover:scale-105"
+            className={cn(
+                'flex min-h-ds-tactil min-w-0 flex-col items-center justify-start gap-0.5 bg-transparent px-0.5 py-1 transition-transform hover:scale-105',
+                tone === 'light' ? 'text-ds-texto-fuerte' : 'text-white'
+            )}
         >
-            <span className={cn('flex h-9 w-9 items-center justify-center', showSelectionRing && selected && 'rounded-lg ring-2 ring-white/80')}>
+            <span className={cn(
+                'flex h-9 w-9 items-center justify-center',
+                showSelectionRing && selected && 'rounded-lg ring-2 ring-white/80',
+                tone === 'light' && showSelectionRing && selected && 'ring-ds-marca'
+            )}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={resolveBoxImage(source)}
                     alt=""
-                    className="h-full w-full object-contain"
+                    className={cn(
+                        'object-contain',
+                        isInitial ? 'h-[88%] w-[88%]' : 'h-full w-full',
+                        tone === 'light' && 'drop-shadow-md'
+                    )}
                 />
             </span>
-            <span className="w-full whitespace-nowrap text-center text-[9px] font-normal normal-case tracking-tight leading-tight text-white sm:text-[10px]">
+            <span className="w-full whitespace-nowrap text-center text-[9px] font-normal normal-case tracking-tight leading-tight sm:text-[10px]">
                 {source.shortLabel}
             </span>
             {showAmount && hasAmount ? (
-                <span className="w-full truncate text-center text-[10px] font-semibold tabular-nums leading-tight text-emerald-300">
+                <span className={cn(
+                    'w-full truncate text-center text-[10px] font-semibold tabular-nums leading-tight',
+                    tone === 'light' ? 'text-ds-marca' : 'text-emerald-300'
+                )}>
                     {amount.toFixed(2)}€
                 </span>
             ) : null}
@@ -336,13 +353,12 @@ export function PurchaseMultiSourceForm({
                     open
                     onClose={() => setChangeEditorOpen(false)}
                     variant="amplify"
-                    scheme="dark"
                     layer="derived"
                     parentInstance={parentInstance}
                     instance="purchase-change-breakdown"
                     usageId="purchase-change-breakdown"
-                    usageLabel="Añadir cambio de compra"
-                    title="Añadir cambio"
+                    usageLabel="Desglose del cambio de compra"
+                    title="Desglose · Cambio"
                     footer={
                         <CashCountFooter
                             total={calculateTotal(changeBreakdownDraft)}
@@ -356,7 +372,7 @@ export function PurchaseMultiSourceForm({
                     <div className="space-y-4">
                         {eligibleChangeSources.length > 1 ? (
                             <div>
-                                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/85">Destino del cambio</p>
+                                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-ds-texto-fuerte">Destino del cambio</p>
                                 <div className="grid grid-cols-5 gap-1">
                                     {eligibleChangeSources.map(source => (
                                         <BoxCard
@@ -367,15 +383,16 @@ export function PurchaseMultiSourceForm({
                                             onClick={() => setChangeDestinationDraftId(source.id)}
                                             showAmount={false}
                                             showSelectionRing
+                                            tone="light"
                                         />
                                     ))}
                                 </div>
                             </div>
                         ) : null}
                         {eligibleChangeSources.length === 0 ? (
-                            <p className="text-sm text-rose-200">Para añadir el cambio, debe aportar dinero una caja disponible.</p>
+                            <p className="text-sm text-ds-negativo">Para añadir el cambio, debe aportar dinero una caja disponible.</p>
                         ) : null}
-                        <p className="text-sm text-white/85">Desglosa {changeAmount.toFixed(2)}€ de cambio.</p>
+                        <p className="text-sm text-ds-texto-fuerte">Desglosa {changeAmount.toFixed(2)}€ de cambio.</p>
                         <DenominationCountGrid
                             counts={changeBreakdownDraft}
                             onAdjust={(denom, delta) => setChangeBreakdownDraft(prev => {
@@ -393,7 +410,7 @@ export function PurchaseMultiSourceForm({
                             }}
                         />
                         {!draftChangeOk ? (
-                            <p className="text-xs text-rose-200">El desglose debe sumar {changeAmount.toFixed(2)}€.</p>
+                            <p className="text-xs text-ds-negativo">El desglose debe sumar {changeAmount.toFixed(2)}€.</p>
                         ) : null}
                     </div>
                 </Modal>
