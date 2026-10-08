@@ -28,6 +28,7 @@ export function ScannerClient({
   onInvoiceSaved,
   embedded = false,
   compactTrigger = false,
+  triggerLabel,
   renderTrigger,
   hideBatchActions = false,
   onBatchChange,
@@ -41,6 +42,8 @@ export function ScannerClient({
   embedded?: boolean
   /** Botón «Escanear» compacto (listado histórico). */
   compactTrigger?: boolean
+  /** Conserva la etiqueta completa en superficies que necesitan el botón compacto. */
+  triggerLabel?: string
   /** Coloca el disparador (p. ej. a la derecha del buscador). El borrador sigue debajo. */
   renderTrigger?: (trigger: ReactNode) => ReactNode
   /** Oculta las acciones del borrador («Añadir hoja» / «Guardar») para que vivan en un pie externo. */
@@ -105,7 +108,6 @@ export function ScannerClient({
   useEffect(() => {
     if (!pendingBatch) {
       prevBatchLenRef.current = 0
-      setCarouselIndex(0)
       return
     }
     const n = pendingBatch.items.length
@@ -203,6 +205,7 @@ export function ScannerClient({
             `Se guardó la hoja 1, pero falló la hoja ${i + 2}: ${ar.message}. Revisa el albarán y añade las hojas que falten desde el detalle.`
           )
           setPendingBatch(null)
+          setCarouselIndex(0)
           setSelectedSupplierId(null)
           onSuccess?.()
           return false
@@ -215,6 +218,7 @@ export function ScannerClient({
           : 'Albarán recibido. Se está leyendo en segundo plano.'
       )
       setPendingBatch(null)
+      setCarouselIndex(0)
       setSelectedSupplierId(null)
       onInvoiceSaved?.(invoiceId)
       onSuccess?.()
@@ -310,7 +314,7 @@ export function ScannerClient({
       layout={hugTrigger ? 'hug' : 'fill'}
       className={hugTrigger ? 'shrink-0' : 'w-full'}
     >
-      {hugTrigger ? 'Escanear' : 'Escanear albarán'}
+      {triggerLabel ?? (hugTrigger ? 'Escanear' : 'Escanear albarán')}
     </Button>
   ) : null
 

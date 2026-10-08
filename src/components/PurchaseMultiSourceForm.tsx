@@ -9,6 +9,8 @@ import { ScannerClient, type ScannerClientHandle } from '@/app/dashboard/scanner
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
+import { Button } from '@/components/ui/button';
+import { eligiblePurchaseChangeSources, resolvePurchaseChangeDestination } from '@/lib/purchase-change';
 
 export interface PaymentSourceOption {
     id: string;
@@ -92,17 +94,19 @@ function PurchaseFieldRow({ title, children }: { title: string; children: React.
     );
 }
 
-/** Tarjeta de caja: icono con su nombre debajo. Pulsarla abre su desglose. */
+/** Caja sobre el fondo del modal: icono y nombre, sin tarjeta de relleno. */
 function BoxCard({
     source,
     amount,
     selected,
     onClick,
+    showAmount = true,
 }: {
     source: PaymentSourceOption;
     amount: number;
     selected: boolean;
     onClick: () => void;
+    showAmount?: boolean;
 }) {
     const hasAmount = amount > 0.005;
     return (
@@ -111,17 +115,12 @@ function BoxCard({
             data-design-exception="native-business-button:seleccion-de-caja-compra"
             onClick={onClick}
             aria-pressed={selected}
+            aria-label={`${showAmount ? 'Desglosar' : 'Seleccionar'} ${source.shortLabel}`}
             className={cn(
-                'relative flex min-h-ds-tactil flex-col items-center justify-start gap-1 rounded-xl p-1.5 transition-all',
-                selected ? 'bg-white/20 ring-2 ring-white/80' : 'bg-white/5 hover:bg-white/10'
+                'flex min-h-ds-tactil min-w-0 flex-col items-center justify-start gap-0.5 bg-transparent px-0.5 py-1 text-white transition-transform hover:scale-105'
             )}
         >
-            {hasAmount ? (
-                <span className="absolute -right-1 -top-1 z-10 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-black tabular-nums leading-none text-white shadow">
-                    {amount.toFixed(2)}€
-                </span>
-            ) : null}
-            <span className="flex h-11 w-11 items-center justify-center">
+            <span className={cn('flex h-9 w-9 items-center justify-center rounded-lg', selected && 'ring-2 ring-white/80')}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={resolveBoxImage(source)}
@@ -129,9 +128,14 @@ function BoxCard({
                     className="h-full w-full rounded-lg object-contain"
                 />
             </span>
-            <span className="w-full truncate text-center text-[10px] font-black uppercase tracking-tight leading-none text-white">
+            <span className="w-full truncate text-center text-[11px] font-normal normal-case leading-tight text-white">
                 {source.shortLabel}
             </span>
+            {showAmount && hasAmount ? (
+                <span className="w-full truncate text-center text-[10px] font-semibold tabular-nums leading-tight text-emerald-300">
+                    {amount.toFixed(2)}€
+                </span>
+            ) : null}
         </button>
     );
 }
@@ -153,13 +157,14 @@ export function PurchaseMultiSourceForm({
     const [breakdownEditorSourceId, setBreakdownEditorSourceId] = useState<string | null>(null);
     const [breakdownDraft, setBreakdownDraft] = useState<Record<number, number>>({});
     const [changeDestinationBoxId, setChangeDestinationBoxId] = useState<string | null>(null);
-    const [changeDestinationTouched, setChangeDestinationTouched] = useState(false);
     const [changeBreakdown, setChangeBreakdown] = useState<Record<number, number>>({});
+    const [changeEditorOpen, setChangeEditorOpen] = useState(false);
+    const [changeBreakdownDraft, setChangeBreakdownDraft] = useState<Record<number, number>>({});
+    const [changeDestinationDraftId, setChangeDestinationDraftId] = useState<string | null>(null);
     const [hasPendingBatch, setHasPendingBatch] = useState(false);
     const [saving, setSaving] = useState(false);
     const scannerRef = useRef<ScannerClientHandle>(null);
 
-    const cashSources = paymentSources.filter(s => s.hasInventory);
     const breakdownEditorSource = breakdownEditorSourceId
         ? paymentSources.find(s => s.id === breakdownEditorSourceId) ?? null
         : null;
@@ -179,6 +184,12 @@ export function PurchaseMultiSourceForm({
     const changeAmount = Math.max(0, totalFromSources - priceNum);
     const changeTotal = calculateTotal(changeBreakdown);
     const changeOk = changeAmount < 0.01 || Math.abs(changeTotal - changeAmount) < 0.01;
+    const eligibleChangeSources = eligiblePurchaseChangeSources(
+        paymentSources.map(source => ({ ...source, amount: getDisplayAmount(source) }))
+    );
+    const effectiveChangeDestinationId = resolvePurchaseChangeDestination(eligibleChangeSources, changeDestinationBoxId);
+    const draftChangeDestinationId = resolvePurchaseChangeDestination(eligibleChangeSources, changeDestinationDraftId);
+    const draftChangeOk = Math.abs(calculateTotal(changeBreakdownDraft) - changeAmount) < 0.01;
 
     const setSourceBreakdown = (sourceId: string, breakdown: Record<number, number>) => {
         setSources(prev => {
@@ -187,18 +198,6 @@ export function PurchaseMultiSourceForm({
             return [...prev, { sourceId, amount: 0, breakdown }];
         });
     };
-
-    const activeCash = cashSources
-        .map(s => ({ id: s.id, amount: getDisplayAmount(s) }))
-        .filter(s => s.amount >= 0.005);
-    const defaultChangeDestination = activeCash.length === 0
-        ? null
-        : activeCash.length === 1
-            ? activeCash[0]!.id
-            : activeCash.reduce((best, cur) => (cur.amount > best.amount ? cur : best)).id;
-    const effectiveChangeDestinationId = changeDestinationTouched
-        ? changeDestinationBoxId
-        : (changeDestinationBoxId ?? defaultChangeDestination);
 
     const canSubmit =
         priceNum > 0 &&
@@ -220,6 +219,23 @@ export function PurchaseMultiSourceForm({
         });
         setSourceBreakdown(breakdownEditorSourceId, clean);
         closeBreakdown();
+    };
+
+    const openChangeEditor = () => {
+        setChangeBreakdownDraft({ ...changeBreakdown });
+        setChangeDestinationDraftId(effectiveChangeDestinationId);
+        setChangeEditorOpen(true);
+    };
+
+    const saveChange = () => {
+        if (!draftChangeDestinationId || !draftChangeOk) return;
+        const clean: Record<number, number> = {};
+        Object.entries(changeBreakdownDraft).forEach(([key, count]) => {
+            if (count > 0) clean[Number(key)] = count;
+        });
+        setChangeBreakdown(clean);
+        setChangeDestinationBoxId(draftChangeDestinationId);
+        setChangeEditorOpen(false);
     };
 
     const buildSourcesForPayload = (): SourceEntry[] =>
@@ -302,6 +318,73 @@ export function PurchaseMultiSourceForm({
                 </Modal>
             ) : null}
 
+            {changeEditorOpen ? (
+                <Modal
+                    open
+                    onClose={() => setChangeEditorOpen(false)}
+                    variant="amplify"
+                    scheme="dark"
+                    layer="derived"
+                    parentInstance={parentInstance}
+                    instance="purchase-change-breakdown"
+                    usageId="purchase-change-breakdown"
+                    usageLabel="Añadir cambio de compra"
+                    title="Añadir cambio"
+                    footer={
+                        <CashCountFooter
+                            total={calculateTotal(changeBreakdownDraft)}
+                            instancePrefix="purchase-change-breakdown"
+                            onCancel={() => setChangeEditorOpen(false)}
+                            onSave={saveChange}
+                            saveDisabled={!draftChangeDestinationId || !draftChangeOk}
+                        />
+                    }
+                >
+                    <div className="space-y-4">
+                        {eligibleChangeSources.length > 1 ? (
+                            <div>
+                                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/85">Destino del cambio</p>
+                                <div className="grid grid-cols-5 gap-1">
+                                    {eligibleChangeSources.map(source => (
+                                        <BoxCard
+                                            key={source.id}
+                                            source={source}
+                                            amount={source.amount}
+                                            selected={draftChangeDestinationId === source.id}
+                                            onClick={() => setChangeDestinationDraftId(source.id)}
+                                            showAmount={false}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
+                        {eligibleChangeSources.length === 0 ? (
+                            <p className="text-sm text-rose-200">Para añadir el cambio, debe aportar dinero una caja disponible.</p>
+                        ) : null}
+                        <p className="text-sm text-white/85">Desglosa {changeAmount.toFixed(2)}€ de cambio.</p>
+                        <DenominationCountGrid
+                            counts={changeBreakdownDraft}
+                            onAdjust={(denom, delta) => setChangeBreakdownDraft(prev => {
+                                const next = { ...prev, [denom]: Math.max(0, (prev[denom] ?? 0) + delta) };
+                                if (next[denom] === 0) delete next[denom];
+                                return next;
+                            })}
+                            onChange={(denom, raw) => {
+                                const count = parseInt(raw, 10) || 0;
+                                setChangeBreakdownDraft(prev => {
+                                    const next = { ...prev, [denom]: count };
+                                    if (count === 0) delete next[denom];
+                                    return next;
+                                });
+                            }}
+                        />
+                        {!draftChangeOk ? (
+                            <p className="text-xs text-rose-200">El desglose debe sumar {changeAmount.toFixed(2)}€.</p>
+                        ) : null}
+                    </div>
+                </Modal>
+            ) : null}
+
             <div className="flex-1 overflow-y-auto pb-4 space-y-5">
                 <div className="space-y-4">
                     <PurchaseFieldRow title="Concepto">
@@ -337,75 +420,37 @@ export function PurchaseMultiSourceForm({
                     </PurchaseFieldRow>
                 </div>
 
-                <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white/85">Caja</span>
-                    <div className="mt-2 grid grid-cols-5 gap-2">
+                <PurchaseFieldRow title="Caja">
+                    <div className="grid w-full grid-cols-5 gap-1">
                         {paymentSources.map(src => (
                             <BoxCard
                                 key={src.id}
                                 source={src}
                                 amount={getDisplayAmount(src)}
-                                selected={breakdownEditorSourceId === src.id}
+                                selected={getDisplayAmount(src) > 0.005}
                                 onClick={() => openBreakdown(src.id)}
                             />
                         ))}
                     </div>
-                </div>
+                </PurchaseFieldRow>
 
-                {changeAmount >= 0.01 ? (
-                    <div className="space-y-3">
-                        <div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/85">Destino del cambio</span>
-                            <div className="mt-2 grid grid-cols-5 gap-2">
-                                {cashSources.map(src => (
-                                    <BoxCard
-                                        key={src.id}
-                                        source={src}
-                                        amount={0}
-                                        selected={effectiveChangeDestinationId === src.id}
-                                        onClick={() => {
-                                            setChangeDestinationTouched(true);
-                                            setChangeDestinationBoxId(src.id);
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                            {!effectiveChangeDestinationId ? (
-                                <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-rose-300">Falta destino</p>
-                            ) : null}
-                        </div>
-
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-white/85">Desglose del cambio</p>
-                            <DenominationCountGrid
-                                counts={changeBreakdown}
-                                onAdjust={(denom, delta) => setChangeBreakdown(prev => {
-                                    const next = { ...prev, [denom]: Math.max(0, (prev[denom] ?? 0) + delta) };
-                                    if (next[denom] === 0) delete next[denom];
-                                    return next;
-                                })}
-                                onChange={(denom, raw) => {
-                                    const v = parseInt(raw, 10) || 0;
-                                    setChangeBreakdown(prev => {
-                                        const next = { ...prev, [denom]: v };
-                                        if (v === 0) delete next[denom];
-                                        return next;
-                                    });
-                                }}
-                            />
-                            {!changeOk ? (
-                                <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-rose-300">
-                                    El desglose debe sumar {changeAmount.toFixed(2)}€
-                                </p>
-                            ) : null}
-                        </div>
+                {priceNum > 0 && changeAmount >= 0.01 ? (
+                    <div data-element="purchase-change-action" className="flex flex-col items-center gap-1">
+                        <Button type="button" variant="primary" instance="purchase-add-change" layout="hug" onClick={openChangeEditor}>
+                            Añadir cambio
+                        </Button>
+                        {changeOk && effectiveChangeDestinationId ? (
+                            <p className="text-xs text-white/70">{changeAmount.toFixed(2)}€ · {changeDestinationLabel}</p>
+                        ) : null}
                     </div>
                 ) : null}
 
-                <div>
+                <div data-element="purchase-scan-action" className="flex flex-col items-center">
                     <ScannerClient
                         ref={scannerRef}
                         embedded
+                        compactTrigger
+                        triggerLabel="Escanear albarán"
                         hideBatchActions
                         onBatchChange={setHasPendingBatch}
                     />

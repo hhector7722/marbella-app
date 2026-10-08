@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-08
 
+- **Compra simplifica la selección de cajas y del vuelto.** Los iconos de caja comparten línea con «Caja», flotan sin tarjeta y muestran el nombre con peso normal. «Escanear albarán» se ajusta al texto y adopta el volumen de «Calculadora». El vuelto se añade desde un botón naranja que abre un desglose con Guardar/Cancelar; solo puede volver a una caja real que aportó dinero, y el destino se fija automáticamente cuando solo hay una.
+
 - **Cambio aclara cómo usar el plano.** Una descripción pequeña en gris bajo la imagen indica «Selecciona en que cajas se hace el cambio.» y convive con el aviso de diferencia de importes.
 
 - **Cambio ajusta la posición de dos rótulos del plano.** Los nombres de Inicial y Cambio 2 suben ligeramente; Inicial se mueve un poco a la derecha sin invadir el espacio del otro rótulo.
