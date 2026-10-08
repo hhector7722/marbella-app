@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-08
 
+- **Cambio aclara cómo usar el plano.** Una descripción pequeña en gris bajo la imagen indica «Selecciona en que cajas se hace el cambio.» y convive con el aviso de diferencia de importes.
+
 - **Cambio ajusta la posición de dos rótulos del plano.** Los nombres de Inicial y Cambio 2 suben ligeramente; Inicial se mueve un poco a la derecha sin invadir el espacio del otro rótulo.
 
 - **Cambio alinea los rótulos y el contorno del plano.** Inicial y Cambio 2 se separan ligeramente hacia los lados, mientras sus nombres vuelven a la misma altura con ancho limitado para que no se pisen. La imagen y su contorno comparten el mismo redondeo del modal.

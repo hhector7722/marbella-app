@@ -1123,7 +1123,10 @@ export const CashChangeModal = ({
                         </div>
                     </div>
 
-                    <div className="flex h-6 shrink-0 items-center justify-center pt-1">
+                    <div className="flex min-h-6 shrink-0 flex-col items-center justify-center gap-1 pt-1">
+                        <p data-element="cash-change-plan-hint" className="m-0 text-center text-[11px] leading-4 text-zinc-400">
+                            Selecciona en que cajas se hace el cambio.
+                        </p>
                         {boxA && boxB && totalStep1 > 0.005 && totalStep2 > 0.005 && !isBalancedTransfer ? (
                             <span className="rounded-full border border-white/70 bg-[#0b213c]/90 px-2.5 py-1 text-[9px] font-black tabular-nums text-white shadow-lg backdrop-blur-sm sm:text-[10px]">
                                 Δ {formatExchangeAmount(transferDifference)}
