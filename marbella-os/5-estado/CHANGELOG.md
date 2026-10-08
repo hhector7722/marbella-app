@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-08
 
+- **El pedido interno de reservas facilita la lectura de productos y cantidades.** El selector, el carrito y el detalle muestran los nombres sin negrita y convierten a caja oración los nombres que llegan íntegramente en mayúsculas. La rejilla y el carrito reservan espacio para cantidades de hasta tres cifras sin recortarlas.
+
 - **Reservas permite al equipo registrar cualquier fecha y media hora.** «+ Reserva» abre un formulario dentro de Marbella App y admite cualquier día válido a las horas en punto o y media; la web pública conserva sus restricciones.
 
 - **El cliente puede indicar detalles en «Ver pedido».** El resumen de `/pedido` muestra nombre, nota, cantidad y precio en una fila compacta, con nombres en caja oración y cantidades de hasta tres cifras legibles. Permite una nota por producto e indicaciones generales, las recupera al reabrir el pedido y confirma antes de quitar con «−» la última unidad.

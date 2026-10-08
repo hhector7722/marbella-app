@@ -47,6 +47,7 @@ Ejemplos de la diferencia:
 - Se usa el término del [GLOSARIO](../GLOSARIO.md), no un sinónimo. Si el término oficial suena mal en la interfaz, el problema es del término y se corrige en el glosario.
 - Las etiquetas de columna son sustantivos, cortos y sin artículo.
 - Las mayúsculas solo van en **cabeceras** (título de pantalla, de modal o de tarjeta), de una o dos palabras. El resto va en caja oración. Las siglas se mantienen.
+- En el pedido interno abierto desde reservas, los nombres de producto del selector, del carrito y del detalle se presentan con peso normal. Si el nombre completo llega en mayúsculas, se muestra en caja oración sin modificar el dato guardado.
 - Los días de la semana se abrevian a tres letras con acento cuando corresponde: LUN, MAR, MIÉ, JUE, VIE, SÁB, DOM.
 
 ---

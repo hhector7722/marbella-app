@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Field } from '@/components/ui/Field'
 import { formatCartaPrice } from '@/lib/carta-price-display'
+import { formatCartaOrderProductName } from '@/lib/carta-menu-i18n'
 import { cn } from '@/lib/utils'
 
 export type EventEncargoCartLine = {
@@ -19,13 +20,6 @@ export type EventEncargoCartLine = {
   unitPrice: number
   portion?: 'entero' | 'medio'
   notes?: string
-}
-
-function cartDisplayName(name: string): string {
-  const letters = name.match(/\p{L}/gu)
-  if (!letters?.length || letters.some((letter) => letter !== letter.toLocaleUpperCase('es'))) return name
-  const lower = name.toLocaleLowerCase('es')
-  return lower.replace(/\p{L}/u, (letter) => letter.toLocaleUpperCase('es'))
 }
 
 /** Badge rojo estilo campana de notificaciones. */
@@ -215,7 +209,7 @@ export function EventEncargoCartFooter({
                   >
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 break-words text-xs font-semibold text-zinc-900" title={line.name}>
-                        {clientOrderMode ? cartDisplayName(line.name) : line.name}
+                        {clientOrderMode ? formatCartaOrderProductName(line.name) : line.name}
                       </p>
                     </div>
                     {clientOrderMode ? (
@@ -322,7 +316,7 @@ export function EventEncargoCartFooter({
           setRemovalKey(null)
         }}
       >
-        {removalLine ? `Se eliminará ${cartDisplayName(removalLine.name)} del pedido. ¿Quieres continuar?` : ''}
+        {removalLine ? `Se eliminará ${formatCartaOrderProductName(removalLine.name)} del pedido. ¿Quieres continuar?` : ''}
       </ConfirmModal>
 
       <ConfirmModal

@@ -344,7 +344,7 @@ export function getCartaSubcategoryPickerLabel(
   const ca = row.category_child_name_ca?.trim()
   const en = row.category_child_name_en?.trim()
 
-  let localized =
+  const localized =
     lang === 'es' ? es || base : lang === 'ca' ? ca || es || base : en || es || base
 
   let pick = stripLeadingParentFromChildLabel(parentTitleRaw, localized)
@@ -372,4 +372,14 @@ export function getCartaDisplayName(row: CartaNameRow, lang: CartaLang) {
   if (lang === 'en')
     return row.carta_nombre_en?.trim() || row.carta_nombre_es?.trim() || row.carta_nombre?.trim()
   return row.carta_nombre_es?.trim() || row.carta_nombre?.trim()
+}
+
+/** En resúmenes de pedido, suaviza solo nombres importados íntegramente en mayúsculas. */
+export function formatCartaOrderProductName(name: string): string {
+  const letters = name.match(/\p{L}/gu)
+  if (!letters?.length || letters.some((letter) => letter !== letter.toLocaleUpperCase('es'))) {
+    return name
+  }
+  const lower = name.toLocaleLowerCase('es')
+  return lower.replace(/\p{L}/u, (letter) => letter.toLocaleUpperCase('es'))
 }

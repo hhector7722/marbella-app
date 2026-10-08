@@ -1,14 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
-import { createPortal } from 'react-dom'
 import {
   ChevronLeft,
   ChevronRight,
   Loader2,
   ShoppingBag,
   Trash2,
-  X,
 } from 'lucide-react'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { toast } from 'sonner'
@@ -19,6 +17,7 @@ import {
   updateStaffEventOrderAction,
 } from '@/app/dashboard/eventos/actions'
 import { eventOrderProductId } from '@/lib/event-order-carta'
+import { formatCartaOrderProductName } from '@/lib/carta-menu-i18n'
 import type { StaffEncargoLineItem } from '@/lib/encargo-staff-helpers'
 import {
   formatEncargoProductLabel,
@@ -71,12 +70,6 @@ const EDITOR_MODAL_CLASS = cn(
   'bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden',
   'w-[min(36rem,calc(100vw-2rem))]',
   'h-[min(40rem,calc(100dvh-2rem))]'
-)
-
-const CART_MODAL_CLASS = cn(
-  'bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden',
-  'w-[min(26rem,calc(100vw-3rem))]',
-  'h-[min(28rem,calc(100dvh-4rem))]'
 )
 
 function newLineKey() {
@@ -289,8 +282,8 @@ function ProductPickTile({
 }) {
   return (
     <div className="flex w-full flex-col items-center gap-1">
-      <span className="block w-full text-center text-[10px] font-black leading-snug text-zinc-800 line-clamp-2 min-h-[2.4em]">
-        {product.name}
+      <span className="block w-full text-center text-[11px] font-normal leading-snug text-zinc-800 line-clamp-2 min-h-[2.4em]" title={product.name}>
+        {formatCartaOrderProductName(product.name)}
       </span>
       {showCategory && product.category ? (
         <span className="block w-full truncate text-center text-[8px] font-semibold text-zinc-400">
@@ -324,7 +317,10 @@ function ProductPickGrid({
   showCategory?: boolean
 }) {
   return (
-    <div className="grid grid-cols-3 gap-x-1.5 gap-y-3 sm:grid-cols-4">
+    <div
+      className="grid gap-x-[var(--espacio-2)] gap-y-[var(--espacio-3)]"
+      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, calc(var(--tactil-minimo) * 2 + var(--espacio-8))), 1fr))' }}
+    >
       {products.map((p) => (
         <ProductPickTile
           key={p.product_id}
@@ -380,16 +376,16 @@ function EncargoCartModal({
                 const productLabel = formatEncargoProductLabel(line.name ?? line.product_id, line.notes)
                 const note = formatEncargoProductNote(line.name ?? '', line.notes)
                 return (
-                  <div key={line.lineKey} className="py-1.5 px-1 flex items-center gap-1.5 min-h-10">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-bold text-zinc-900 truncate leading-tight">
-                        {productLabel}
+                  <div key={line.lineKey} className="flex min-h-12 flex-wrap items-center gap-[var(--espacio-2)] border-b border-zinc-100 py-[var(--espacio-2)] last:border-b-0">
+                    <div className="min-w-24 flex-1">
+                      <p className="line-clamp-2 break-words text-[11px] font-normal leading-tight text-zinc-900" title={productLabel}>
+                        {formatCartaOrderProductName(productLabel)}
                       </p>
                       {note ? (
                         <p className="text-[9px] font-medium text-zinc-500 lowercase truncate">{note}</p>
                       ) : null}
                     </div>
-                    <div className="w-[5.5rem] shrink-0">
+                    <div className="w-[calc(var(--tactil-minimo)*2+var(--espacio-8))] shrink-0">
                       <EncargoQtyStepper
                         quantity={line.quantity}
                         onQuantityChange={(qty) => {
@@ -409,12 +405,12 @@ function EncargoCartModal({
                       value={line.notes}
                       onChange={(e) => onUpdateLine(line.lineKey, { notes: e.target.value })}
                       placeholder="Notas"
-                      className="w-16 min-h-8 rounded border border-zinc-200 px-1.5 text-[10px] font-medium bg-zinc-50 shrink-0"
+                      className="min-h-12 min-w-24 flex-1 rounded border border-zinc-200 bg-zinc-50 px-[var(--espacio-2)] text-base font-normal"
                     />
                     <button
                       type="button"
                       onClick={() => onRemoveLine(line.lineKey)}
-                      className="shrink-0 min-h-8 min-w-8 flex items-center justify-center text-rose-600 hover:bg-rose-50 rounded"
+                      className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded text-rose-600 hover:bg-rose-50"
                       aria-label="Quitar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

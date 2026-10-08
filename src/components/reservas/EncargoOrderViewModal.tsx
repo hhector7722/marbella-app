@@ -15,6 +15,7 @@ import {
   formatWhatsAppPhone,
 } from '@/lib/client-pedido-link'
 import { isClientOrderSubmitted } from '@/lib/reservas-encargos-calendar'
+import { formatCartaOrderProductName } from '@/lib/carta-menu-i18n'
 import {
   formatEncargoProductLabel,
   formatEncargoProductNote,
@@ -477,8 +478,8 @@ export function EncargoOrderViewModal({
                     const note = formatEncargoProductNote(it.name, it.notes)
                     return (
                       <tr key={`${it.product_id}-${index}`} className="border-t border-zinc-100">
-                        <td className="px-3 py-2.5 font-bold text-zinc-800 align-middle whitespace-nowrap">
-                          {productLabel}
+                        <td className="px-3 py-2.5 font-normal text-zinc-800 align-middle whitespace-nowrap">
+                          {formatCartaOrderProductName(productLabel)}
                         </td>
                         <td className="px-3 py-2.5 text-left align-middle text-[14px] font-semibold text-zinc-600 lowercase whitespace-nowrap">
                           {note || ' '}
