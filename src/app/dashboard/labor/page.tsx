@@ -662,7 +662,7 @@ export default function LaborHistoryPage() {
                                             >
                                                 <span
                                                     className={cn(
-                                                        'absolute top-1 right-1 text-[9px] font-bold',
+                                                        'absolute top-1 right-1 text-[9px] font-normal',
                                                         todayCell && isViewMonthDay
                                                             ? 'text-blue-600'
                                                             : 'text-gray-400',
