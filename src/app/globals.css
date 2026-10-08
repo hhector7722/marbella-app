@@ -258,7 +258,8 @@
    desglose, el aro y la sombra dan el volumen del botón del pie. */
 [data-component='QuickCashToolsFabs'] [data-component='Button'][data-variant='secondary']::before,
 [data-component='QuickCashToolsFabs'] [data-component='Button'][data-variant='primary']::before,
-[data-component='QuickCashToolsPanel'] [data-component='Button'][data-instance='quick-breakdown-new']::before {
+[data-component='QuickCashToolsPanel'] [data-component='Button'][data-instance='quick-breakdown-new']::before,
+[data-element='purchase-scan-action'] [data-component='Button'][data-instance='scanner-escanear']::before {
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.4),
     0 0 0 1px rgba(24, 24, 27, 0.35),
@@ -2466,6 +2467,23 @@ html[data-quick-fab='open'] main {
   box-shadow: none;
 }
 [data-component='Button'][data-instance='inventory-pending-counts-open']:hover:not(:disabled)::before {
+  background-color: color-mix(in srgb, var(--color-naranja) 85%, black);
+  background-image: none;
+}
+/* Compra: el acceso al desglose del vuelto reclama atención en naranja. */
+[data-component='Button'][data-instance='purchase-add-change']::before {
+  background-color: var(--color-naranja);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-naranja) 88%, white),
+    var(--color-naranja)
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    0 0 0 1px rgba(24, 24, 27, 0.35),
+    0 1px 2px rgb(0 0 0 / 0.35);
+}
+[data-component='Button'][data-instance='purchase-add-change']:hover:not(:disabled)::before {
   background-color: color-mix(in srgb, var(--color-naranja) 85%, black);
   background-image: none;
 }

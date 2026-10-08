@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-17
+revisado: 2026-10-08
 caducidad: 6 meses
 depende_de: PRINCIPIOS, GLOSARIO, RECORRIDOS
 supersede: —
@@ -59,6 +59,7 @@ El productor de ventas, tarjeta, pendiente y cobros es `get_closing_sales_breakd
 - `COMPROBANTE` no es venta ni pendiente.
 - Una **compra de urgencia** pagada con dinero de **Tpv 2** retira ese efectivo de la caja Tpv 2 (movimiento `OUT` con su desglose). Si ese día aún **no existe un cierre**, ese importe —con el mismo tipo y cantidad de billetes y monedas— se suma automáticamente al **Efectivo** del cierre. Si ya hay un cierre ese día, no se suma: contar dos veces el mismo efectivo es un defecto.
 - Los TPV no son tarjeta: el efectivo que entra y sale de una caja Tpv es efectivo contado, nunca `Tarjeta` ni `Pendiente`.
+- En una compra con vuelto, el destino del cambio debe ser una caja real que haya aportado dinero a esa misma compra. Si solo una caja real ha aportado dinero, esa caja es el destino automático. Si varias lo han aportado, se elige entre ellas al guardar el desglose del cambio. Los identificadores TPV temporales sin caja real no pueden recibir un movimiento de entrada.
 
 ---
 
@@ -82,3 +83,4 @@ El productor de ventas, tarjeta, pendiente y cobros es `get_closing_sales_breakd
 | INV-T06 | El esperado no se clampa a cero |
 | INV-T07 | Un cobro de deuda no tiene tope de antigüedad: entra el día en que se cobra |
 | INV-T08 | Sin cierre previo ese día, el dinero de Tpv 2 gastado en compras se suma al Efectivo del cierre con el mismo desglose |
+| INV-T09 | El vuelto de una compra solo entra en una caja real que aportó dinero a esa compra; con una sola caja elegible, el destino es automático |
