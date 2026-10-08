@@ -1624,8 +1624,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(planBlock, /boxA \? 'opacity-40' : 'opacity-90'/, 'el plano empieza ligeramente atenuado y se atenúa más desde la primera selección');
         assert.match(planBlock, /boxA && boxB && !isSelected/, 'los iconos no seleccionados solo se atenúan al elegir la segunda caja');
         assert.match(change, /cambio2: \{ x: 36, y: 15\.4 \},\s*inicial: \{ x: 21, y: 15\.4 \}/, 'las dos cajas se separan lateralmente sin cambiar de altura');
-        assert.match(change, /inicial: \{ x: 18, y: 25 \},\s*cambio2: \{ x: 39, y: 25 \}/, 'Inicial y Cambio 2 comparten la altura y separan sus rótulos');
-        assert.match(planBlock, /maxWidth: 'calc\(21% - 4px\)'/, 'los rótulos no se pisan en planos estrechos');
+        assert.match(change, /inicial: \{ x: 19, y: 24 \},\s*cambio2: \{ x: 39, y: 24 \}/, 'los dos rótulos suben juntos e Inicial se desplaza a la derecha');
+        assert.match(planBlock, /maxWidth: 'calc\(20% - 4px\)'/, 'los rótulos no se pisan en planos estrechos');
         const planImage = readFileSync(join(REPO_ROOT, 'public/images/cash-change-plan.avif'));
         assert.ok(planImage.length > 40_000, 'el plano limpio conserva detalle suficiente para ampliar');
         for (const rel of [
