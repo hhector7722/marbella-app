@@ -622,17 +622,18 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 step === 'count' ? (
                     <CashCountFooter
                         total={totalCounted}
+                        compactAmounts
                         instancePrefix="cash-closing-count"
                         cancelLabel="Atrás"
-                        saveLabel="Ver Resumen"
+                        saveLabel="Resumen"
                         onCancel={() => setStep('tpv_data')}
                         onSave={handleAdvanceStep}
                         saveDisabled={loading}
                         saveLoading={loading}
                         extra={
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Esperado</span>
-                                <span className="text-sm font-bold tabular-nums text-zinc-500">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Esperado</span>
+                                <span className="text-xs font-bold tabular-nums text-zinc-500">
                                     {`${expectedCash.toFixed(2)}€`}
                                 </span>
                             </div>
