@@ -54,8 +54,8 @@ const CASH_CHANGE_PLAN_POSITIONS = {
 } satisfies Record<string, PlanPoint>;
 
 const CASH_CHANGE_PLAN_TOP_LABELS = {
-    inicial: { x: 19, y: 24 },
-    cambio2: { x: 39, y: 24 },
+    inicial: { x: 19.7, y: 23.3 },
+    cambio2: { x: 38.3, y: 23.3 },
 } satisfies Partial<Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, PlanPoint>>;
 
 const CASH_CHANGE_PLAN_WIDTHS: Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, number> = {
@@ -1095,7 +1095,7 @@ export const CashChangeModal = ({
                                                     isSelected ? 'scale-[1.06]' : 'scale-100',
                                                     shouldDim ? 'opacity-25' : 'opacity-100',
                                                 )}
-                                                style={{ left: topLabel.x + '%', top: topLabel.y + '%', maxWidth: 'calc(20% - 4px)' }}
+                                                style={{ left: topLabel.x + '%', top: topLabel.y + '%', maxWidth: 'calc(18% - 4px)' }}
                                             >
                                                 {cashChangePlanDisplayLabel(option)}
                                             </span>
@@ -1124,8 +1124,8 @@ export const CashChangeModal = ({
                     </div>
 
                     <div className="flex min-h-6 shrink-0 flex-col items-center justify-center gap-1 pt-1">
-                        <p data-element="cash-change-plan-hint" className="m-0 text-center text-[11px] leading-4 text-zinc-400">
-                            Selecciona en que cajas se hace el cambio.
+                        <p data-element="cash-change-plan-hint" className="m-0 text-center text-[10px] leading-[14px] text-zinc-400">
+                            Selecciona las dos cajas que intervienen en el cambio.
                         </p>
                         {boxA && boxB && totalStep1 > 0.005 && totalStep2 > 0.005 && !isBalancedTransfer ? (
                             <span className="rounded-full border border-white/70 bg-[#0b213c]/90 px-2.5 py-1 text-[9px] font-black tabular-nums text-white shadow-lg backdrop-blur-sm sm:text-[10px]">
