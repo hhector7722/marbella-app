@@ -10,6 +10,8 @@ import {
 } from '@/lib/albaranes/k5/batch-review'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
+import { currentDocumentWarnings } from '@/lib/albaranes/k5/document-review'
+import { canonicalDocumentSchema, type CanonicalDocument } from '@/lib/albaranes/extractors/canonical'
 import {
   applyReceiptLineAction,
   previewReceiptLineAction,
@@ -108,6 +110,18 @@ async function loadBatchState(
   const allProposals = (proposalRows ?? []) as Array<Record<string, unknown>>
   const active = selectCurrentProposalLineage(allProposals)
   const proposalById = new Map(allProposals.map((row) => [text(row.id), row]))
+
+  const extractionIds = [...new Set(active.map((row) => text(row.document_extraction_id)).filter(Boolean))]
+  const { data: extractionRows, error: extractionError } = extractionIds.length
+    ? await supabase.from('document_extractions').select('id,raw_json_artifact').in('id', extractionIds)
+    : { data: [] as Array<Record<string, unknown>>, error: null }
+  if (extractionError) throw new Error('No se pudo comprobar la conciliación del documento.')
+  const canonicalByExtraction = new Map<string, CanonicalDocument>()
+  for (const extraction of (extractionRows ?? []) as Array<Record<string, unknown>>) {
+    const artifact = extraction.raw_json_artifact as Record<string, unknown> | null
+    const parsed = canonicalDocumentSchema.safeParse(artifact?.canonical)
+    if (parsed.success) canonicalByExtraction.set(text(extraction.id), parsed.data)
+  }
 
   // Una línea económica ya confirmada no puede cambiar su proposal_id por una
   // recalculación posterior. Por eso resolvemos la línea recorriendo también
@@ -235,6 +249,21 @@ async function loadBatchState(
       const pending = ingredientId ? pendingOrderCount.get(ingredientId) ?? 0 : 0
       const status = text(proposal.status)
       const mappingVersionId = text(proposal.mapping_version_id) || null
+      const storedWarnings = Array.isArray(proposal.warnings)
+        ? proposal.warnings.map(text).filter(Boolean) : []
+      const warnings = currentDocumentWarnings(
+        storedWarnings,
+        canonicalByExtraction.get(text(proposal.document_extraction_id)) ?? null
+      )
+      const staleDocumentReasons = new Set(storedWarnings.filter((reason) => !warnings.includes(reason)))
+      const reviewReasons = [...new Set(
+        (Array.isArray(proposal.review_reasons) ? proposal.review_reasons.map(text).filter(Boolean) : [])
+          .filter((reason) => !staleDocumentReasons.has(reason))
+      )]
+      if (status === 'needs_review' && text(interpreted.match_source) === 'fuzzy'
+        && !reviewReasons.includes('mapping_requires_human_review')) {
+        reviewReasons.push('mapping_requires_human_review')
+      }
       const disposition = classifyK5BatchCandidate({
         status,
         mappingVersionId,
@@ -253,8 +282,8 @@ async function loadBatchState(
         mappingVersionId,
         status,
         disposition,
-        reviewReasons: Array.isArray(proposal.review_reasons) ? proposal.review_reasons.map(text).filter(Boolean) : [],
-        warnings: Array.isArray(proposal.warnings) ? proposal.warnings.map(text).filter(Boolean) : [],
+        reviewReasons,
+        warnings,
         confirmed,
         pendingOrderCount: pending,
         lineQuantity: numberOrNull(proposal.line_quantity),

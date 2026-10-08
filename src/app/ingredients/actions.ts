@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { normalizeProductPhotoFile } from '@/lib/server/normalize-product-photo'
+import { canonicalBaseUnitForPurchaseUnit } from '@/lib/ingredient-units'
 
 export type ManualPriceResult =
   | { ok: true; changed: boolean; currentPrice: number; purchaseUnit: string }
@@ -65,14 +66,6 @@ function photoFailureMessage(error: unknown): string {
 }
 
 const INGREDIENT_PHYSICAL_UNITS = new Set(['kg', 'g', 'l', 'ml', 'cl', 'ud'])
-
-function canonicalBaseUnitForPurchaseUnit(unit: string): 'g' | 'ml' | 'ud' | null {
-  const normalized = String(unit ?? '').trim().toLowerCase()
-  if (normalized === 'kg' || normalized === 'g') return 'g'
-  if (normalized === 'l' || normalized === 'ml' || normalized === 'cl') return 'ml'
-  if (normalized === 'ud') return 'ud'
-  return null
-}
 
 async function requireIngredientManager() {
   const supabase = await createClient()

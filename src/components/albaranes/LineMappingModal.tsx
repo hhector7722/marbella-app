@@ -644,7 +644,7 @@ export function LineMappingModal({
       // línea aún conserva bloqueos propios, no se previsualiza: se explica el
       // motivo real en lugar del mensaje genérico de K4.
       if (res.status === 'needs_review') {
-        const reasons = (res.reviewReasons ?? []).filter(Boolean)
+        const reasons = [...new Set((res.reviewReasons ?? []).filter(Boolean))]
         toast.error(
           reasons.length
             ? reasons.map(explainReviewReason).join(' ')

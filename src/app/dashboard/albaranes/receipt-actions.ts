@@ -232,9 +232,9 @@ async function supersedeK5ProposalWithMapping(params: {
     lineTotal: lineTotalNumber,
     verifiedObservedMath: verifiedEmbeddedKgMath,
   })
-  const reviewReasons: string[] = snapshot
+  const reviewReasons: string[] = [...new Set(snapshot
     ? semanticReasons
-    : [...semanticReasons, 'mapping_presentation_incompatible']
+    : [...semanticReasons, 'mapping_presentation_incompatible'])]
   const status: K5MappingRevision['status'] = snapshot && reviewReasons.length === 0
     ? 'ready_for_review'
     : 'needs_review'
@@ -437,15 +437,16 @@ export async function saveReceiptMappingProposalAction(params: {
         .eq('id', ingredientId)
         .maybeSingle(),
     ])
-    const rawCells = Array.isArray((proposalForWeight as any)?.observed?.raw_cells)
-      ? (proposalForWeight as any).observed.raw_cells
+    const observedForWeight = proposalForWeight?.observed as Record<string, unknown> | null
+    const rawCells = Array.isArray(observedForWeight?.raw_cells)
+      ? observedForWeight.raw_cells
       : []
     const variable = deriveVariableWeightEvidence({
       rawCells,
-      unitPrice: (proposalForWeight as any)?.observed_unit_price ?? line.unit_price,
-      lineTotal: (proposalForWeight as any)?.line_total ?? line.total_price,
+      unitPrice: proposalForWeight?.observed_unit_price ?? line.unit_price,
+      lineTotal: proposalForWeight?.line_total ?? line.total_price,
     })
-    if (variable && text((ingredientForWeight as any)?.purchase_unit).toLowerCase() === 'kg') {
+    if (variable && text(ingredientForWeight?.purchase_unit).toLowerCase() === 'kg') {
       variableWeightKg = variable.weightKg
       variablePieceCount = variable.pieceCount
       effectiveConversionFactor = 1

@@ -53,6 +53,7 @@ export function assessDocument(params: {
       productCode: line.supplier_product_code_raw, description: line.description_raw, memory: params.memory })
     const reasons = [...check.reasons]
     if (!match.ingredientId) reasons.push(match.source === 'ambiguous' ? 'varios_ingredientes_posibles' : 'producto_sin_mapping')
+    if (match.ingredientId && match.source === 'fuzzy') reasons.push('mapping_requires_human_review')
 
     const presentation = params.presentations.find((candidate) =>
       candidate.mappingVersionId === match.mappingVersionId
@@ -100,7 +101,6 @@ export function assessDocument(params: {
       if (!normalized) reasons.push('conversion_de_presentacion_incompatible')
     }
 
-    if (validation.reasons.length) reasons.push(...validation.reasons)
     const distinct = unique(reasons)
     const status = !match.ingredientId ? 'needs_mapping'
       : distinct.length ? 'needs_review' : 'ready_for_review'

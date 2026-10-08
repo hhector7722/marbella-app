@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-07
+revisado: 2026-10-08
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -113,6 +113,13 @@ precio neto unitario explícito que coincida tanto con precio − descuento como
 con el importe. Fuera de esas dos demostraciones, el descuento sigue en
 revisión.
 
+Cuando un documento imprime varias bases de IVA y la lectura conserva solo
+una como subtotal, la conciliación usa la suma completa de los importes de
+línea más el IVA observado contra el total impreso. Solo se acepta si todas
+las líneas tienen importe y la diferencia no supera la tolerancia documental.
+Una base parcial no convierte por sí sola un documento cuadrado en una
+incidencia. Si esa suma tampoco cuadra, el aviso del documento permanece.
+
 ### Bloqueos de línea y avisos de documento
 
 Las comprobaciones del **documento completo** —subtotal, IVA, total y suma de
@@ -123,6 +130,15 @@ puede confirmar aunque el documento mantenga un aviso de totales. Solo los
 bloqueos de la línea impiden su confirmación, y se explican uno a uno. Un aviso
 de documento no se resuelve editando cada producto: se atiende revisando el
 original o reprocesando con Mistral.
+
+La unidad base de stock debe corresponder a la unidad de compra: kg/g → g,
+litros/ml/cl → ml y unidades → ud. El alta de un ingrediente establece ambas
+en pareja; una presentación del proveedor no puede salvar una ficha cuya
+unidad base contradice su unidad de compra. Las propuestas antiguas bloqueadas
+solo por avisos documentales se versionan para permitir su confirmación humana,
+sin registrar stock ni precio durante esa preparación.
+Una identidad encontrada solo por parecido de nombre sigue pidiendo elección
+humana; la similitud por sí sola no crea un alias confirmable.
 
 ---
 
