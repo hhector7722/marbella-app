@@ -87,7 +87,7 @@ function resolveBoxImage(source: PaymentSourceOption): string {
  */
 function PurchaseFieldRow({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <div className="grid grid-cols-[6rem_1fr] items-center gap-x-3">
+        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-1.5">
             <span className="text-[10px] font-black uppercase tracking-widest text-white/85">{title}</span>
             <div className="flex min-w-0 items-center justify-center">{children}</div>
         </div>
@@ -120,15 +120,15 @@ function BoxCard({
                 'flex min-h-ds-tactil min-w-0 flex-col items-center justify-start gap-0.5 bg-transparent px-0.5 py-1 text-white transition-transform hover:scale-105'
             )}
         >
-            <span className={cn('flex h-9 w-9 items-center justify-center rounded-lg', selected && 'ring-2 ring-white/80')}>
+            <span className={cn('flex h-9 w-9 items-center justify-center', !showAmount && selected && 'ring-2 ring-white/80 rounded-lg')}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={resolveBoxImage(source)}
                     alt=""
-                    className="h-full w-full rounded-lg object-contain"
+                    className="h-full w-full object-contain"
                 />
             </span>
-            <span className="w-full truncate text-center text-[11px] font-normal normal-case leading-tight text-white">
+            <span className="w-full whitespace-normal break-words text-center text-[10px] font-normal normal-case leading-tight text-white">
                 {source.shortLabel}
             </span>
             {showAmount && hasAmount ? (
@@ -421,7 +421,7 @@ export function PurchaseMultiSourceForm({
                 </div>
 
                 <PurchaseFieldRow title="Caja">
-                    <div className="grid w-full grid-cols-5 gap-1">
+                    <div className="grid w-full grid-cols-5 gap-x-0.5">
                         {paymentSources.map(src => (
                             <BoxCard
                                 key={src.id}
@@ -434,16 +434,23 @@ export function PurchaseMultiSourceForm({
                     </div>
                 </PurchaseFieldRow>
 
-                {priceNum > 0 && changeAmount >= 0.01 ? (
-                    <div data-element="purchase-change-action" className="flex flex-col items-center gap-1">
-                        <Button type="button" variant="primary" instance="purchase-add-change" layout="hug" onClick={openChangeEditor}>
+                <PurchaseFieldRow title="Cambio">
+                    <div data-element="purchase-change-action" className="flex w-full flex-col items-center gap-1">
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="purchase-add-change"
+                            layout="hug"
+                            onClick={openChangeEditor}
+                            disabled={priceNum <= 0 || changeAmount < 0.01}
+                        >
                             Añadir cambio
                         </Button>
-                        {changeOk && effectiveChangeDestinationId ? (
+                        {priceNum > 0 && changeAmount >= 0.01 && changeOk && effectiveChangeDestinationId ? (
                             <p className="text-xs text-white/70">{changeAmount.toFixed(2)}€ · {changeDestinationLabel}</p>
                         ) : null}
                     </div>
-                ) : null}
+                </PurchaseFieldRow>
 
                 <div data-element="purchase-scan-action" className="flex flex-col items-center">
                     <ScannerClient
