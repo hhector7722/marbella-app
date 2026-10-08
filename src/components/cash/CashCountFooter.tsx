@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 
 export function CashCountFooter({
     total,
+    compactAmounts = false,
     onCancel,
     onSave,
     cancelLabel = 'Cancelar',
@@ -18,6 +19,7 @@ export function CashCountFooter({
     instancePrefix,
 }: {
     total: number;
+    compactAmounts?: boolean;
     onCancel: () => void;
     onSave?: () => void;
     cancelLabel?: string;
@@ -37,8 +39,8 @@ export function CashCountFooter({
             className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2"
         >
             <div className="mr-auto flex shrink-0 items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total</span>
-                <span className="text-base font-black tabular-nums text-zinc-800">
+                <span className={compactAmounts ? 'text-[9px] font-black uppercase tracking-widest text-zinc-500' : 'text-[10px] font-black uppercase tracking-widest text-zinc-500'}>Total</span>
+                <span className={compactAmounts ? 'text-xs font-black tabular-nums text-zinc-800' : 'text-base font-black tabular-nums text-zinc-800'}>
                     {total > 0.005 ? `${total.toFixed(2)}€` : ' '}
                 </span>
             </div>
