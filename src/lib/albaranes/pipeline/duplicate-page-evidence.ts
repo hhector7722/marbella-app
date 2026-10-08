@@ -26,8 +26,9 @@ export function duplicatedPageEvidence(
     if (!page.pageKey || !page.lines.length) continue
     const signature = JSON.stringify(page.lines.map((line) => [
       normalized(line.description_raw), normalized(line.quantity_raw),
-      normalized(line.billing_unit_raw), normalized(line.unit_price_raw),
-      normalized(line.line_total_raw),
+      // La unidad textual puede fluctuar por OCR entre dos fotos del mismo
+      // documento; el contenido económico idéntico exige revisión igualmente.
+      normalized(line.unit_price_raw), normalized(line.line_total_raw),
     ]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))))
     const existing = bySignature.get(signature)
     if (existing) repeated.push({
