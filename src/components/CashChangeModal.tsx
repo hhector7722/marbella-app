@@ -54,8 +54,8 @@ const CASH_CHANGE_PLAN_POSITIONS = {
 } satisfies Record<string, PlanPoint>;
 
 const CASH_CHANGE_PLAN_TOP_LABELS = {
-    inicial: { x: 18, y: 25 },
-    cambio2: { x: 39, y: 25 },
+    inicial: { x: 19, y: 24 },
+    cambio2: { x: 39, y: 24 },
 } satisfies Partial<Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, PlanPoint>>;
 
 const CASH_CHANGE_PLAN_WIDTHS: Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, number> = {
@@ -1095,7 +1095,7 @@ export const CashChangeModal = ({
                                                     isSelected ? 'scale-[1.06]' : 'scale-100',
                                                     shouldDim ? 'opacity-25' : 'opacity-100',
                                                 )}
-                                                style={{ left: topLabel.x + '%', top: topLabel.y + '%', maxWidth: 'calc(21% - 4px)' }}
+                                                style={{ left: topLabel.x + '%', top: topLabel.y + '%', maxWidth: 'calc(20% - 4px)' }}
                                             >
                                                 {cashChangePlanDisplayLabel(option)}
                                             </span>
