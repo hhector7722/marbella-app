@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-08
 
+- **Cambios por lluvia muestra el manual completo en una imagen.** El contenido reconstruido con tarjetas y textos se sustituye por la lámina proporcionada, con las cuatro esquinas redondeadas y desplazamiento vertical en móvil.
+
 - **Cambio precisa la indicación del plano y acerca sus rótulos.** La frase bajo la imagen pasa a «Selecciona las dos cajas que intervienen en el cambio.» con letra ligeramente menor. Inicial y Cambio 2 suben un poco; el nombre de Inicial se mueve a la derecha y el de Cambio 2 a la izquierda, conservando un límite de ancho para evitar solapes.
 
 - **Compra simplifica la selección de cajas y del vuelto.** Los iconos de caja comparten línea con «Caja», flotan sin tarjeta y muestran el nombre con peso normal. «Escanear albarán» se ajusta al texto y adopta el volumen de «Calculadora». El vuelto se añade desde un botón naranja que abre un desglose con Guardar/Cancelar; solo puede volver a una caja real que aportó dinero, y el destino se fija automáticamente cuando solo hay una.
