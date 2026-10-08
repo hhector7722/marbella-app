@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
     ],
   },
   // 🧠 AISLAMIENTO ESTRICTO: Evita que Webpack/Turbopack minifique y rompa la librería
-  serverExternalPackages: ["pdf-parse", "sharp", "pdf2json", "pdfjs-dist"],
+  serverExternalPackages: ["pdf-parse", "sharp", "pdf2json", "pdfjs-dist", "@napi-rs/canvas"],
 
   images: {
     remotePatterns: [
