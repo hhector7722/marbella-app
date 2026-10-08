@@ -282,15 +282,16 @@ export function ClosingPhotoField({
               alt={ariaLabel}
               className="h-9 w-auto max-w-full rounded-md object-contain sm:h-10"
             />
-            <Button
+            <button
               type="button"
-              variant="tertiary"
-              instance="closing-photo-clear"
               onClick={onClear}
               aria-label={`Eliminar ${ariaLabel}`}
-              icon={<X size={7} strokeWidth={3} />}
-              className="absolute -right-0.5 -top-0.5"
-            />
+              className="absolute -right-3 -top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+            >
+              <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-red-600 text-white shadow-sm">
+                <X size={11} strokeWidth={3} aria-hidden="true" />
+              </span>
+            </button>
           </div>
         </div>
       ) : (
