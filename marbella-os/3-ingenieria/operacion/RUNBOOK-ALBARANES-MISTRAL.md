@@ -64,6 +64,8 @@ original y la misma protección para un albarán individual.
 `--invoice <uuid>` limita plan y encolado a un albarán. Al cambiar el perfil
 de memoria, una extracción válida se reutiliza para crear propuestas
 sucesoras; se omiten los documentos con recepción, descartados o duplicados.
+`--exclude-invoice <uuid>` aparta del lote un documento que requiera
+conciliación documental previa, como el par de hojas repetidas descrito abajo.
 
 ## Si falla
 

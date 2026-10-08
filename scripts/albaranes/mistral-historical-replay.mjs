@@ -18,6 +18,11 @@ const targetInvoiceId = invoiceIndex >= 0 ? process.argv[invoiceIndex + 1] : nul
 if (invoiceIndex >= 0 && !/^[0-9a-f-]{36}$/i.test(targetInvoiceId ?? '')) {
   throw new Error('Indica un UUID válido después de --invoice')
 }
+const excludeIndex = process.argv.indexOf('--exclude-invoice')
+const excludedInvoiceId = excludeIndex >= 0 ? process.argv[excludeIndex + 1] : null
+if (excludeIndex >= 0 && !/^[0-9a-f-]{36}$/i.test(excludedInvoiceId ?? '')) {
+  throw new Error('Indica un UUID válido después de --exclude-invoice')
+}
 const outputIndex = process.argv.indexOf('--output')
 const outputPath = outputIndex >= 0 ? process.argv[outputIndex + 1] : null
 
@@ -58,7 +63,8 @@ const first = invoices.find((invoice) => {
 if (!first) throw new Error('No Docling-era boundary found')
 
 const period = invoices.filter((invoice) => invoice.created_at >= first.created_at
-  && (!targetInvoiceId || invoice.id === targetInvoiceId))
+  && (!targetInvoiceId || invoice.id === targetInvoiceId)
+  && invoice.id !== excludedInvoiceId)
 if (targetInvoiceId && period.length === 0) throw new Error('El albarán solicitado no pertenece al periodo histórico.')
 const report = {
   generatedAt: new Date().toISOString(),
