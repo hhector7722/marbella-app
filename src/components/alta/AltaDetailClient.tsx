@@ -133,6 +133,16 @@ export function AltaDetailClient({ intake, profiles }: Props) {
   const onCreateUser = async () => {
     const saved = await save();
     if (!saved) return;
+    if (intake.profile_id) {
+      const appliedResult = await applyIntakeLinkProfile(intake.id, intake.profile_id, true);
+      if (!appliedResult.success) {
+        toast.error(appliedResult.error);
+        return;
+      }
+      toast.success('Contrato aplicado al usuario existente');
+      router.refresh();
+      return;
+    }
     const res = await applyIntakeCreateUser(intake.id);
     if (!res.success) {
       if (res.needsLink) {
@@ -283,9 +293,9 @@ export function AltaDetailClient({ intake, profiles }: Props) {
             Generar PDF
           </Button>
           <Button type="button" variant="secondary" instance="alta-crear-usuario" onClick={() => void onCreateUser()} disabled={applied || !ready}>
-            Crear usuario
+            {intake.profile_id ? 'Aplicar contrato' : 'Crear usuario'}
           </Button>
-          <Button type="button" variant="secondary" instance="alta-vincular" onClick={() => setLinkOpen(true)} disabled={applied || !ready}>
+          <Button type="button" variant="secondary" instance="alta-vincular" onClick={() => setLinkOpen(true)} disabled={applied || !ready || Boolean(intake.profile_id)}>
             Vincular a un perfil
           </Button>
           {status === 'pending_candidate' || status === 'submitted' ? (
