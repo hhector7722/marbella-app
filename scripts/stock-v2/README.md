@@ -11,6 +11,7 @@ Esquema `stock_v2`, no expuesto a usuarios `anon` ni `authenticated`. Primer `ru
 - `01-shadow-replay-2026-03-to-10.sql`: snapshot único con el `run_id` anterior; ventas desde líneas originales del TPV combinadas con `map_tpv_receta` y recetas ACTUALES. Compras solo desde el ledger ya existente. **No ejecutar de nuevo contra otra fecha sin nuevo run y auditoría.**
 - `02-waste-and-diagnostics.sql`: simulación de mermas, ajustes de fuentes separados, incidencias y vistas administrativas.
 - `03-verify-shadow.sql`: pruebas SQL de lectura; no cambia los datos.
+- `04-inventory-evidence.sql`: rescata 27 recuentos físicos del 18/09/2026 desde `stock_movements.provenance`, sin aplicar de nuevo el delta histórico ni certificar el recuento.
 
 El contenido histórico de recetas **no está versionado**: no utilizar las salidas de `sale_recipe_estimate` para cobrar, comprar automáticamente o fijar stock físico sin conciliación.
 
@@ -21,7 +22,7 @@ El contenido histórico de recetas **no está versionado**: no utilizar las sali
 - 2.008 impactos de ingredientes con conversión de unidad no justificada, que se han **excluido** del balance simulado.
 - 118 líneas de ticket sin correspondencia con receta.
 - 62 albaranes capturados sin movimientos PURCHASE trazados: **no incorporar sus compras hasta conciliación individual y autorización K4, con protección contra duplicados**.
-- 61 líneas de inventarios físicos registradas en dos inventarios pendientes, solo 37 ingredientes distintos. **No se ha certificado ningún inventario ni aplicado un stock inicial falso.**
+- 61 líneas de inventarios físicos registradas en dos inventarios pendientes, solo 37 ingredientes distintos. También existen 27 recuentos físicos del 18/09/2026 conservados como evidencia, no certificados. **No se ha certificado ningún inventario ni aplicado un stock inicial falso.**
 - Compras legales/económicas de `public.stock_movements` y `public.stock_current` no se modifican ni se resetean.
 
 ## Regla de cálculo
