@@ -62,6 +62,7 @@ export async function saveIngredientsInventoryVisibility(
   }
 
   revalidatePath('/dashboard/inventory')
+  revalidatePath('/dashboard/inventory/ledger')
   return { success: true as const }
 }
 
@@ -100,67 +101,64 @@ export async function processInventoryCounts(counts: CountPayload[]) {
     throw new Error(profileError.message)
   }
 
-  if (!isManagerRole(profile?.role)) {
-    const { error } = await supabase.rpc('submit_inventory_count', {
-      p_items: counts.map((count) => ({
-        ingredient_id: count.ingredient_id,
-        physical_stock: count.physical_stock,
-        theoretical_stock: count.theoretical_stock,
-        quantity_barra: count.quantity_barra,
-        quantity_camara: count.quantity_camara,
-        unit: count.unit,
-      })),
-    })
+  // Stock 2.0: el primer recuento unitario debe ser completo e incluir
+  // explícitamente las unidades a cero. No consumir ajustes del stock antiguo.
+  const { data: activeUnits, error: unitsError } = await supabase
+    .from('ingredients')
+    .select('id')
+    .eq('inventory_visible', true)
+    .eq('base_unit', 'ud')
+    .is('archived_at', null)
 
-    if (error) {
-      throw new Error(`No se pudo guardar el recuento: ${error.message}`)
-    }
-
-    revalidatePath('/dashboard/inventory')
-    return { success: true as const, message: 'Recuento guardado.' }
+  if (unitsError) throw new Error('No se pudo comprobar la lista de Inventario.')
+  const supplied = new Set(counts.map((item) => item.ingredient_id))
+  const missing = (activeUnits ?? []).filter((item) => !supplied.has(item.id))
+  if (missing.length) {
+    throw new Error(`Faltan ${missing.length} productos por contar. Indica también 0 en los que no tengas existencias.`)
   }
 
-  const actionableCounts = counts.filter(
-    (c) => c.physical_stock !== c.theoretical_stock,
-  )
-
-  if (actionableCounts.length === 0) {
-    return {
-      success: true,
-      message:
-        'Recuento recibido. No fue necesario registrar movimientos de stock para las cantidades indicadas.',
-    }
-  }
-
-  const correlationId = crypto.randomUUID()
-  const items = actionableCounts.map((count) => {
-    const delta = count.physical_stock - count.theoretical_stock
-    return {
+  // Guardar siempre una captura auditada, tanto para gerencia como para personal.
+  // Se incluye el desglose Barra/Cámara para no perder lo que realmente se contó.
+  const { data: submitted, error: submitError } = await supabase.rpc('submit_inventory_count', {
+    p_items: counts.map((count) => ({
       ingredient_id: count.ingredient_id,
-      quantity_base: delta,
-      unit_base: count.unit,
       physical_stock: count.physical_stock,
       theoretical_stock: count.theoretical_stock,
-    }
+      quantity_barra: count.quantity_barra,
+      quantity_camara: count.quantity_camara,
+      unit: count.unit,
+    })),
   })
 
-  const { data, error } = await supabase.rpc('record_inventory_count_movements', {
-    p_items: items,
-    p_correlation_id: correlationId,
-  })
-
-  if (error) {
-    throw new Error(`Fallo crítico al registrar el recuento: ${error.message}`)
+  if (submitError) {
+    throw new Error(`No se pudo guardar el recuento: ${submitError.message}`)
   }
 
-  const inserted = Number((data as { inserted_count?: number } | null)?.inserted_count ?? 0)
+  if (!isManagerRole(profile?.role)) {
+    revalidatePath('/dashboard/inventory')
+    return { success: true as const, message: 'Recuento guardado para certificar.' }
+  }
+
+  const countId = (submitted as { count_id?: string } | null)?.count_id
+  if (!countId) throw new Error('Recuento guardado, pero no se devolvió su identificador. Revisar pendientes.')
+
+  // Gerencia certifica exclusivamente el NUEVO libro Stock 2.0.
+  // La operación NO llama a record_inventory_count_movements.
+  const { error: certifyError } = await supabase.rpc(
+    'certify_unit_stock_count' as never,
+    { p_count_id: countId } as never,
+  )
+  if (certifyError) {
+    // La captura ya existe como pendiente; nunca fingir éxito ni repetir el
+    // formulario porque podría sobrescribir el pendiente.
+    throw new Error(`Recuento guardado como pendiente; no se pudo iniciar Stock 2.0: ${certifyError.message}`)
+  }
 
   revalidatePath('/dashboard/inventory')
+  revalidatePath('/dashboard/inventory/ledger')
   return {
-    success: true,
-    message: `Recuento aplicado: ${inserted} ${
-      inserted === 1 ? 'actualización' : 'actualizaciones'
-    } de stock.`,
+    success: true as const,
+    message: `Inventario certificado: ${activeUnits?.length ?? 0} productos unitarios. Stock 2.0 iniciado sin alterar el stock antiguo.`,
   }
 }
 
@@ -294,22 +292,21 @@ export async function certifyInventoryCount(countId: string) {
     throw new Error(gate.error === 'Forbidden' ? 'Sin permiso.' : 'No autorizado.')
   }
 
-  const { data, error } = await gate.supabase.rpc('certify_inventory_count', {
+  const { data, error } = await gate.supabase.rpc('certify_unit_stock_count' as never, {
     p_count_id: countId,
-  })
+  } as never)
 
   if (error) {
     throw new Error(error.message)
   }
 
-  const inserted = Number((data as { inserted_count?: number } | null)?.inserted_count ?? 0)
+  const certified = Number((data as { certified_unit_products?: number } | null)?.certified_unit_products ?? 0)
   revalidatePath('/dashboard/inventory')
+  revalidatePath('/dashboard/inventory/ledger')
 
   return {
     success: true as const,
-    message: `Recuento certificado: ${inserted} ${
-      inserted === 1 ? 'actualización' : 'actualizaciones'
-    } de stock.`,
+    message: `Stock 2.0 certificado: ${certified} productos unitarios. Sin modificar el stock antiguo.`,
   }
 }
 

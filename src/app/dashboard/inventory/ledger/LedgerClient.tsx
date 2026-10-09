@@ -31,11 +31,12 @@ type Ingredient = {
   id: string
   name: string
   unit: string
-  stock_current: number
+  stock_current: number | null
   category: string
   image_url: string | null
   order_unit: string | null
   has_inventory_count: boolean
+  stock_tracked: boolean
 }
 
 type Movement = {
@@ -163,12 +164,13 @@ function ReadOnlyStockBox({
   unit,
   className,
 }: {
-  stock: number
+  stock: number | null
   unit: string
   className?: string
 }) {
-  const n = Number(stock)
-  const empty = n === 0 || Object.is(n, -0)
+  const waiting = stock === null || !Number.isFinite(stock)
+  const n = waiting ? 0 : Number(stock)
+  const empty = !waiting && (n === 0 || Object.is(n, -0))
   return (
     <div
       className={cn(
@@ -179,7 +181,7 @@ function ReadOnlyStockBox({
     >
       <div className="flex-1 flex items-center justify-center px-2 min-w-0">
         <span className="text-center font-black tabular-nums text-sm text-zinc-800">
-          {empty ? '\u00A0' : String(n)}
+          {waiting ? 'Pendiente' : empty ? '0' : String(n)}
         </span>
       </div>
       <span className="pr-3 flex items-center text-[10px] font-black text-zinc-500 uppercase tracking-wide shrink-0 border-l border-zinc-100">
@@ -257,7 +259,7 @@ function LedgerIngredientCard({
       </div>
       <div className="mt-auto shrink-0 px-2 pb-2 pt-0 w-full">
         <ReadOnlyStockBox
-          stock={Number(item.stock_current)}
+          stock={item.stock_current}
           unit={item.unit}
           className="w-full shadow-none"
         />
@@ -269,7 +271,6 @@ function LedgerIngredientCard({
 export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string | null>(null)
-  const [showAll, setShowAll] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedIng, setSelectedIng] = useState<Ingredient | null>(null)
   const [movements, setMovements] = useState<Movement[]>([])
@@ -299,10 +300,9 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
     }
   }, [filterOpen])
 
-  const visibleIngredients = useMemo(
-    () => (showAll ? ingredients : ingredients.filter((item) => item.has_inventory_count)),
-    [ingredients, showAll],
-  )
+  // Siempre exactamente los productos activos en Inventario.
+  // Los recuentos anteriores no determinan si se muestra un producto.
+  const visibleIngredients = ingredients
 
   const categories = useMemo(() => {
     const set = new Set<string>()
@@ -366,7 +366,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
   return (
     <DashboardDetailLayout
       title="Stock"
-      subtitle="Historial de movimientos y trazabilidad por ingrediente"
+      subtitle="Productos activos en Inventario · stock desde el nuevo recuento"
       maxWidthClass="max-w-7xl"
       showBackButton={false}
       rightSlot={
@@ -387,27 +387,6 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               onChange={setSearch}
             />
           </div>
-          <button
-            type="button"
-            aria-pressed={showAll}
-            onClick={() => {
-              setShowAll((value) => !value)
-              setCategory(null)
-            }}
-            className={cn(
-              'shrink-0 h-8 px-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-colors',
-              showAll
-                ? 'bg-zinc-800 text-white'
-                : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200',
-            )}
-            title={
-              showAll
-                ? 'Mostrando todos los ingredientes'
-                : 'Mostrando solo ingredientes con al menos un inventario físico'
-            }
-          >
-            {showAll ? 'Solo inventariados' : 'Mostrar todos'}
-          </button>
           <div className="shrink-0 relative" data-ledger-filter-root="true">
             <PeriodFilterButton
               instance="ledger-filter-category"
@@ -468,11 +447,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             <EmptyState
               instance="inventory-ledger-mismatch"
               variant="mismatch"
-              title={
-                showAll
-                  ? 'No hay ingredientes que coincidan.'
-                  : 'No hay productos inventariados que coincidan.'
-              }
+              title="No hay productos activos que coincidan."
             />
           ) : (
             <div className="flex flex-col gap-6">
@@ -523,10 +498,10 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               </div>
               <div className="shrink-0 w-full sm:w-auto sm:max-w-[220px]">
                 <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500 mb-1 sm:text-right">
-                  Stock teórico
+                  Stock desde inventario
                 </p>
                 <ReadOnlyStockBox
-                  stock={Number(selectedIng.stock_current)}
+                  stock={selectedIng.stock_current}
                   unit={selectedIng.unit}
                   className="w-full sm:ml-auto sm:max-w-[200px]"
                 />

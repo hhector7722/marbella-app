@@ -488,8 +488,8 @@ export function InventoryClient({
       const payload = initialIngredients
         .map((item) => {
           const u = normalizeUnit(item.unit)
-          const valBarra = numericByIdBarra[item.id]
-          const valCamara = numericByIdCamara[item.id]
+          const valBarra = physicalCountsBarra[item.id] === '' ? undefined : numericByIdBarra[item.id]
+          const valCamara = physicalCountsCamara[item.id] === '' ? undefined : numericByIdCamara[item.id]
           if (valBarra === undefined && valCamara === undefined) return null
 
           const total = (valBarra ?? 0) + (valCamara ?? 0)
@@ -547,7 +547,15 @@ export function InventoryClient({
     [numericByIdBarra, numericByIdCamara],
   )
 
-  const submitDisabled = isSubmitting || !hasAnyCount
+  // Un campo que se dejó vacío NO equivale a haber contado cero. El cero
+  // válido debe introducirse expresamente como "0" en alguna ubicación.
+  const countedIds = new Set([
+    ...Object.keys(numericByIdBarra).filter((id) => physicalCountsBarra[id] !== ''),
+    ...Object.keys(numericByIdCamara).filter((id) => physicalCountsCamara[id] !== ''),
+  ])
+  const countedProducts = initialIngredients.filter((item) => countedIds.has(item.id)).length
+  // Nunca interpretar un producto sin contar como 0 unidades.
+  const submitDisabled = isSubmitting || !hasAnyCount || countedProducts !== initialIngredients.length
 
   const catalog = (
     <div className="flex flex-col gap-5">
@@ -787,7 +795,10 @@ export function InventoryClient({
       </div>
 
       {!visibilityEditMode ? (
-        <div className="flex w-full justify-center">
+        <div className="flex w-full flex-col items-center gap-1">
+          <p className="text-[11px] font-bold tabular-nums text-zinc-500">
+            {countedProducts} de {initialIngredients.length} productos contados · introduce 0 si no quedan unidades
+          </p>
           <PetroleumSegmented
             instance="inventory-location"
             density="compact"
