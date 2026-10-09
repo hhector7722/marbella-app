@@ -131,7 +131,7 @@ export function AltaPublicForm({ token, state }: Props) {
           instance="alta-public-sent"
           variant="none"
           title="Datos enviados"
-          description="Ya los hemos recibido. Si hay que corregir algo, te escribiremos."
+          description="Hemos recibido tus datos y creado tu cuenta. Revisa el correo que has indicado: recibirás un enlace para establecer tu contraseña y entrar en la aplicación."
         />
       </AltaPublicScreen>
     );
