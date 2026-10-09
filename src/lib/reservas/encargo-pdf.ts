@@ -276,17 +276,30 @@ function drawCompanyHeader(doc: PdfDoc, logoDataUrl: string | null) {
 
 function drawTitle(doc: PdfDoc, kind: EncargoPdfKind, meta: EncargoPdfMeta, y: number) {
   const copy = copyFor(meta.language)
+  const reference = referenceFor(kind, meta)
   doc.setTextColor(...TEXT)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.text((kind === 'invoice' ? copy.invoice : copy.quote).toUpperCase(), 14, y)
 
-  const reference = referenceFor(kind, meta)
-  if (reference && !(kind === 'invoice' && meta.invoiceCustomer)) {
+  if (kind === 'invoice') {
+    // Factura y número en la esquina superior derecha de la cabecera.
+    doc.setFontSize(12)
+    doc.text(copy.invoice.toUpperCase(), 196, 17, { align: 'right' })
+    if (reference) {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(...MUTED)
+      doc.text(reference, 196, 23, { align: 'right' })
+    }
+    return
+  }
+
+  doc.setFontSize(12)
+  doc.text(copy.quote.toUpperCase(), 14, y)
+  if (reference) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8.5)
     doc.setTextColor(...MUTED)
-    doc.text(kind === 'invoice' ? `N.º ${reference}` : `Ref. ${reference}`, 196, y, { align: 'right' })
+    doc.text('Ref. ' + reference, 196, y, { align: 'right' })
   }
 }
 
@@ -338,55 +351,36 @@ function drawMeta(doc: PdfDoc, meta: EncargoPdfMeta, y: number) {
 }
 
 /**
- * Solo facturas con datos fiscales: reemplaza el resumen de la reserva.
- * Dos columnas sin contornos; cada campo admite varias líneas sin truncarlo.
- * La altura es dinámica para que la tabla de productos nunca se superponga.
+ * Factura con datos fiscales: solo valores, sin conceptos ni tarjetas.
+ * Las líneas se adaptan al texto, sin truncar direcciones largas.
  */
 function drawInvoiceCustomerMeta(doc: PdfDoc, meta: EncargoPdfMeta, y: number): number {
   const customer = meta.invoiceCustomer
   if (!customer) return y
-  const copy = copyFor(meta.language)
-  const fields: Array<[string, string]> = [
-    [copy.invoiceNumberLabel, meta.invoiceNumber ?? ''],
-    [copy.businessName, customer.businessName],
-    [copy.nif, customer.nif],
-    [copy.address, customer.address],
-    [copy.postalCode, customer.postalCode],
-    [copy.province, customer.province],
-    [copy.country, customer.country],
-  ].map(([label, value]): [string, string] => [label, value.trim()]).filter(([, value]) => Boolean(value))
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(7)
-  doc.setTextColor(...BRAND)
-  doc.text(copy.billingCustomer.toUpperCase(), 14, y)
+  const postalProvince = [customer.postalCode, customer.province]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' ')
 
-  let rowY = y + 6
-  const colWidth = 86
-  const columnXs = [14, 110]
-  for (let index = 0; index < fields.length; index += 2) {
-    let nextRowHeight = 11
-    for (let col = 0; col < 2; col += 1) {
-      const field = fields[index + col]
-      if (!field) continue
-      const [label, value] = field
-      const x = columnXs[col]
+  const values = [
+    customer.businessName,
+    customer.nif,
+    customer.address,
+    postalProvince,
+    customer.country,
+  ].map((value) => value.trim()).filter(Boolean)
 
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(6.7)
-      doc.setTextColor(...MUTED)
-      doc.text(label.toUpperCase(), x, rowY)
-
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(9)
-      doc.setTextColor(...TEXT)
-      const lines = doc.splitTextToSize(value, colWidth) as string[]
-      doc.text(lines, x, rowY + 4.4)
-      nextRowHeight = Math.max(nextRowHeight, 4.4 + lines.length * 4.5 + 2)
-    }
-    rowY += nextRowHeight
+  let cursorY = y
+  for (const [index, value] of values.entries()) {
+    doc.setFont('helvetica', index === 0 ? 'bold' : 'normal')
+    doc.setFontSize(index === 0 ? 9.8 : 9)
+    doc.setTextColor(...TEXT)
+    const lines = doc.splitTextToSize(value, 182) as string[]
+    doc.text(lines, 14, cursorY)
+    cursorY += lines.length * 4.45 + 0.4
   }
-  return rowY
+  return cursorY
 }
 
 function drawTotals(
@@ -730,7 +724,7 @@ export async function generateEncargoPdf(
   const hasInvoiceCustomer = kind === 'invoice' && Boolean(meta.invoiceCustomer)
   if (!hasInvoiceCustomer) drawMeta(doc, meta, 49)
   const tableStartY = hasInvoiceCustomer
-    ? Math.max(67, drawInvoiceCustomerMeta(doc, meta, 48) + 4)
+    ? Math.max(62, drawInvoiceCustomerMeta(doc, meta, 42) + 3.5)
     : 67
 
   let totalGross = 0
@@ -739,13 +733,11 @@ export async function generateEncargoPdf(
     const unit = Math.max(0, Number(item.unit_price) || 0)
     const line = quantity * unit
     totalGross += line
-    return [
-      productLabel(item),
-      productNote(item),
-      quantity > 0 ? String(quantity) : '',
-      formatEuro(unit),
-      formatEuro(line),
-    ]
+    // Para factura se elimina completamente la columna de notas.
+    // El presupuesto mantiene su diseño previo.
+    return kind === 'invoice'
+      ? [productLabel(item), quantity > 0 ? String(quantity) : '', formatEuro(unit), formatEuro(line)]
+      : [productLabel(item), productNote(item), quantity > 0 ? String(quantity) : '', formatEuro(unit), formatEuro(line)]
   })
 
   let headerDrawnOnPage = -1
@@ -753,7 +745,9 @@ export async function generateEncargoPdf(
   autoTable(doc, {
     startY: tableStartY,
     margin: { left: margin, right: margin, top: 15, bottom: 15 },
-    head: [[copy.product, '', copy.qty, copy.unitPrice, copy.amount]],
+    head: [kind === 'invoice'
+      ? [copy.product, copy.qty, copy.unitPrice, copy.amount]
+      : [copy.product, '', copy.qty, copy.unitPrice, copy.amount]],
     body,
     theme: 'plain',
     styles: {
@@ -773,13 +767,20 @@ export async function generateEncargoPdf(
       lineWidth: 0,
     },
     alternateRowStyles: { fillColor: SOFT },
-    columnStyles: {
-      0: { cellWidth: 'auto', fontStyle: 'bold' },
-      1: { cellWidth: 34, textColor: MUTED, fontSize: 8 },
-      2: { cellWidth: 17, halign: 'right', fontStyle: 'bold' },
-      3: { cellWidth: 25, halign: 'right', fontStyle: 'bold' },
-      4: { cellWidth: 27, halign: 'right', fontStyle: 'bold' },
-    },
+    columnStyles: kind === 'invoice'
+      ? {
+        0: { cellWidth: 'auto', fontStyle: 'bold' },
+        1: { cellWidth: 18, halign: 'right', fontStyle: 'bold' },
+        2: { cellWidth: 29, halign: 'right', fontStyle: 'bold' },
+        3: { cellWidth: 31, halign: 'right', fontStyle: 'bold' },
+      }
+      : {
+        0: { cellWidth: 'auto', fontStyle: 'bold' },
+        1: { cellWidth: 34, textColor: MUTED, fontSize: 8 },
+        2: { cellWidth: 17, halign: 'right', fontStyle: 'bold' },
+        3: { cellWidth: 25, halign: 'right', fontStyle: 'bold' },
+        4: { cellWidth: 27, halign: 'right', fontStyle: 'bold' },
+      },
     willDrawCell: (data) => {
       if (data.section !== 'head' || data.column.index !== 0) return
       const pageNumber = data.pageNumber
