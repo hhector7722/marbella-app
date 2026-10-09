@@ -547,7 +547,10 @@ export function InventoryClient({
     [numericByIdBarra, numericByIdCamara],
   )
 
-  const submitDisabled = isSubmitting || !hasAnyCount
+  const countedIds = new Set([...Object.keys(numericByIdBarra), ...Object.keys(numericByIdCamara)])
+  const countedProducts = initialIngredients.filter((item) => countedIds.has(item.id)).length
+  // Nunca interpretar un producto sin contar como 0 unidades.
+  const submitDisabled = isSubmitting || !hasAnyCount || countedProducts !== initialIngredients.length
 
   const catalog = (
     <div className="flex flex-col gap-5">
@@ -787,7 +790,10 @@ export function InventoryClient({
       </div>
 
       {!visibilityEditMode ? (
-        <div className="flex w-full justify-center">
+        <div className="flex w-full flex-col items-center gap-1">
+          <p className="text-[11px] font-bold tabular-nums text-zinc-500">
+            {countedProducts} de {initialIngredients.length} productos contados · introduce 0 si no quedan unidades
+          </p>
           <PetroleumSegmented
             instance="inventory-location"
             density="compact"
