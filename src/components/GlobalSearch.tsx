@@ -66,7 +66,7 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
   // No guardamos cada pulsación ni URLs con parámetros; 1 carácter también
   // cuenta porque las funciones de la app se buscan desde 1 carácter.
   useEffect(() => {
-    const normalized = trimmed.replace(/\\s+/g, ' ').slice(0, 120);
+    const normalized = trimmed.replace(/\s+/g, ' ').slice(0, 120);
     if (!open || !normalized) return;
     const timer = window.setTimeout(() => {
       void sendUsageEvent({
@@ -89,7 +89,7 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
     const requestedQuery = trimmed;
     const serial = ++invoiceRequestSerial.current;
     setInvoiceRequestedFor(requestedQuery); setInvoiceLoading(true); setInvoiceRemote(null);
-    void sendUsageEvent({ eventType: 'action', path: pathname, label: 'Búsqueda en albaranes solicitada', metadata: { action: 'global_search', resultType: 'invoice', query: requestedQuery.replace(/\\s+/g, ' ').slice(0, 120) } });
+    void sendUsageEvent({ eventType: 'action', path: pathname, label: 'Búsqueda en albaranes solicitada', metadata: { action: 'global_search', resultType: 'invoice', query: requestedQuery.replace(/\s+/g, ' ').slice(0, 120) } });
     try {
       const response = await fetch(`/api/global-search?q=${encodeURIComponent(requestedQuery)}&scope=invoices`);
       if (!response.ok) throw new Error('invoice search unavailable');
@@ -103,7 +103,7 @@ export function GlobalSearch({ identity, onOpenChange }: { identity: SearchIdent
   }
 
   function openResult(result: SearchResult) {
-    void sendUsageEvent({ eventType: 'action', path: pathname, label: 'Resultado de búsqueda abierto', metadata: { action: 'global_search_result', resultType: result.type, query: trimmed.replace(/\\s+/g, ' ').slice(0, 120) } });
+    void sendUsageEvent({ eventType: 'action', path: pathname, label: 'Resultado de búsqueda abierto', metadata: { action: 'global_search_result', resultType: result.type, query: trimmed.replace(/\s+/g, ' ').slice(0, 120) } });
     if (result.type === 'function' && result.href.split('?')[0] === pathname && ['closing', 'team', 'orders'].includes(result.id)) {
       closeExplicitly();
       window.setTimeout(() => window.dispatchEvent(new Event(result.id === 'closing' ? 'marbella:open-closing' : result.id === 'orders' ? 'marbella:open-orders' : 'marbella:open-plantilla')), 0);
