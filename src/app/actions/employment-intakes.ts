@@ -300,6 +300,7 @@ export async function applyIntakeCreateUser(
   if (!loaded.success) return loaded;
   const intake = loaded.intake;
   if (intake.status === 'applied') return { success: false, error: 'Esta alta ya está aplicada' };
+  if (intake.profile_id) return { success: false, error: 'La cuenta ya existe. Aplica el contrato a su perfil.' };
   if (!canGenerateAltaPdf(intake)) {
     const missing = missingAltaPdfFields(intake).map((f) => f.label).join(', ');
     return { success: false, error: `Faltan datos: ${missing}` };
@@ -382,6 +383,9 @@ export async function applyIntakeLinkProfile(
   if (!loaded.success) return loaded;
   const intake = loaded.intake;
   if (intake.status === 'applied') return { success: false, error: 'Esta alta ya está aplicada' };
+  if (intake.profile_id && intake.profile_id !== profileId) {
+    return { success: false, error: 'Este expediente ya está vinculado a otro usuario' };
+  }
   if (!canGenerateAltaPdf(intake)) {
     const missing = missingAltaPdfFields(intake).map((f) => f.label).join(', ');
     return { success: false, error: `Faltan datos: ${missing}` };
@@ -411,7 +415,7 @@ export async function applyIntakeLinkProfile(
   const copied = await copyDniToProfile(gate.admin, intake, profileId);
   if (!copied.success) return copied;
 
-  const terms = await applyContractTerms(gate.admin, profileId, intake, 'link');
+  const terms = await applyContractTerms(gate.admin, profileId, intake, intake.profile_id === profileId ? 'create' : 'link');
   if (!terms.success) return terms;
 
   const { error: applyErr } = await gate.admin
