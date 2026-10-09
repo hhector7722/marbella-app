@@ -70,6 +70,16 @@ export function formatUsageActivityTitle(row: UsageEventRowForPresent): string {
       if (applySummary?.trim()) return `${applySummary.trim()} · ${modalLabel}`;
       return `Aplicó filtro en ${modalLabel}`;
     }
+    if (action === 'global_search' || action === 'global_search_result') {
+      const raw = typeof meta.query === 'string' ? meta.query.trim() : '';
+      const term = raw.slice(0, 120);
+      if (term) {
+        if (action === 'global_search_result') return `Abrió resultado de «${term}»`;
+        return meta.resultType === 'invoice'
+          ? `Buscó en albaranes «${term}»`
+          : `Buscó «${term}»`;
+      }
+    }
     if (action === 'clock_in') return 'Fichó entrada';
     if (action === 'clock_out') return 'Fichó salida';
     if (action === 'consumption_saved') return 'Registró consumo';
@@ -99,6 +109,15 @@ function isDuplicateEvent(
         const candidateAction =
           typeof candidate.metadata?.action === 'string' ? candidate.metadata.action : null;
         if (prevAction !== candidateAction) continue;
+
+        // Dos consultas distintas en menos de 3 s son eventos distintos;
+        // nunca ocultar el texto buscado con la deduplicación general.
+        if (candidateAction === 'global_search' || candidateAction === 'global_search_result') {
+          const prevQuery = typeof prev.metadata?.query === 'string' ? prev.metadata.query : null;
+          const nextQuery = typeof candidate.metadata?.query === 'string' ? candidate.metadata.query : null;
+          if (prevQuery !== nextQuery) continue;
+          if (prev.metadata?.resultType !== candidate.metadata?.resultType) continue;
+        }
 
         const prevModalId =
           typeof prev.metadata?.modalId === 'string' ? prev.metadata.modalId : null;

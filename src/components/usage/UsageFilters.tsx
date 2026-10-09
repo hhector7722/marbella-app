@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { firstNameOnly } from '@/lib/usage/display-name';
+import { MASTER_DASHBOARD_EMAIL } from '@/lib/master-dashboard';
 import {
   defaultUsageProfileIds,
   isDefaultUsageSelection,
@@ -31,6 +32,11 @@ function resolveSelectedIds(
 export function UsageFilters({ filters, users }: UsageFiltersProps) {
   const router = useRouter();
   const allUserIds = useMemo(() => users.map((user) => user.profileId), [users]);
+  // La cuenta de Héctor está fuera del filtro por defecto, pero siempre
+  // disponible como selección rápida para consultar su propia actividad.
+  const hector = useMemo(() => users.find((user) =>
+    user.email.trim().toLowerCase() === MASTER_DASHBOARD_EMAIL.toLowerCase(),
+  ), [users]);
 
   const [day, setDay] = useState(filters.day ?? '');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() =>
@@ -135,6 +141,20 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
 
       {usersOpen ? (
         <div className="rounded-xl border border-zinc-100 bg-white p-3 shadow-sm">
+          {hector ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedIds(new Set([hector.profileId]));
+                setUsersOpen(false);
+                applyFilters(day, new Set([hector.profileId]));
+              }}
+              className="mb-2 flex min-h-11 w-full items-center justify-between rounded-lg border border-[var(--color-envolvente)]/30 bg-[var(--color-envolvente)]/5 px-3 text-sm font-semibold text-zinc-800"
+            >
+              <span>Solo Héctor</span>
+              <span className="text-xs font-normal text-zinc-500">Ver mi uso</span>
+            </button>
+          ) : null}
           <div className="mb-2 flex gap-2">
             <Button
               type="button"
@@ -154,7 +174,12 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
           </div>
 
           <div className="flex max-h-48 flex-wrap content-start gap-2 overflow-y-auto">
-            {users.map((user) => {
+            {[...users].sort((a, b) => {
+              const aHector = a.profileId === hector?.profileId;
+              const bHector = b.profileId === hector?.profileId;
+              if (aHector !== bHector) return aHector ? -1 : 1;
+              return a.displayName.localeCompare(b.displayName, 'es');
+            }).map((user) => {
               const checked = selectedIds.has(user.profileId);
               return (
                 <label
@@ -173,7 +198,7 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
                     className="size-4 shrink-0 rounded border-zinc-300 text-[var(--color-envolvente)] focus:ring-[var(--color-envolvente)]/30"
                   />
                   <span className="whitespace-nowrap text-sm text-zinc-800">
-                    {firstNameOnly(user.displayName)}
+                    {user.profileId === hector?.profileId ? 'Héctor (mi uso)' : firstNameOnly(user.displayName)}
                   </span>
                 </label>
               );
