@@ -141,7 +141,7 @@ function ProfileContent() {
 
         const url = new URL(window.location.href);
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-        const searchHasTypeRecovery = url.searchParams.get('type') === 'recovery';
+        const searchHasTypeRecovery = ['recovery', 'invite'].includes(url.searchParams.get('type') ?? '');
         const hashHasTypeRecovery = hashParams.get('type') === 'recovery';
         const hasTokens =
             hashParams.has('access_token') ||
