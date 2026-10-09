@@ -3,6 +3,15 @@ import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/P
 export type EncargoDocumentLanguage = 'ca' | 'es' | 'en'
 export type EncargoPdfKind = 'quote' | 'invoice' | 'comanda'
 
+export type EncargoInvoiceCustomer = {
+  businessName: string
+  nif: string
+  address: string
+  postalCode: string
+  province: string
+  country: string
+}
+
 export type EncargoPdfMeta = {
   encargoDate: string
   encargoTime: string
@@ -12,6 +21,7 @@ export type EncargoPdfMeta = {
   guestCount?: number | null
   language?: EncargoDocumentLanguage
   invoiceNumber?: string | null
+  invoiceCustomer?: EncargoInvoiceCustomer | null
   observations?: string | null
 }
 
@@ -44,6 +54,14 @@ const COMPANY = {
 const COPY = {
   es: {
     invoice: 'Factura',
+    invoiceNumberLabel: 'Factura nº',
+    billingCustomer: 'Datos del cliente',
+    businessName: 'Razón social',
+    nif: 'NIF',
+    address: 'Dirección',
+    postalCode: 'Código postal',
+    province: 'Provincia',
+    country: 'País',
     quote: 'Presupuesto',
     client: 'Cliente',
     contact: 'Contacto',
@@ -70,6 +88,14 @@ const COPY = {
   },
   ca: {
     invoice: 'Factura',
+    invoiceNumberLabel: 'Factura núm.',
+    billingCustomer: 'Dades del client',
+    businessName: 'Raó social',
+    nif: 'NIF',
+    address: 'Adreça',
+    postalCode: 'Codi postal',
+    province: 'Província',
+    country: 'País',
     quote: 'Pressupost',
     client: 'Client',
     contact: 'Contacte',
@@ -96,6 +122,14 @@ const COPY = {
   },
   en: {
     invoice: 'Invoice',
+    invoiceNumberLabel: 'Invoice no.',
+    billingCustomer: 'Customer details',
+    businessName: 'Legal name',
+    nif: 'Tax ID',
+    address: 'Address',
+    postalCode: 'Postal code',
+    province: 'Province',
+    country: 'Country',
     quote: 'Quote',
     client: 'Client',
     contact: 'Contact',
@@ -248,7 +282,7 @@ function drawTitle(doc: PdfDoc, kind: EncargoPdfKind, meta: EncargoPdfMeta, y: n
   doc.text((kind === 'invoice' ? copy.invoice : copy.quote).toUpperCase(), 14, y)
 
   const reference = referenceFor(kind, meta)
-  if (reference) {
+  if (reference && !(kind === 'invoice' && meta.invoiceCustomer)) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8.5)
     doc.setTextColor(...MUTED)
@@ -301,6 +335,58 @@ function drawMeta(doc: PdfDoc, meta: EncargoPdfMeta, y: number) {
   drawMetaInline(doc, copy.time, meta.encargoTime, xs[0], y + rowGap, colW)
   drawMetaInline(doc, copy.guests, guests, xs[1], y + rowGap, colW)
   drawMetaInline(doc, copy.vatApplied, '10%', xs[2], y + rowGap, colW)
+}
+
+/**
+ * Solo facturas con datos fiscales: reemplaza el resumen de la reserva.
+ * Dos columnas sin contornos; cada campo admite varias líneas sin truncarlo.
+ * La altura es dinámica para que la tabla de productos nunca se superponga.
+ */
+function drawInvoiceCustomerMeta(doc: PdfDoc, meta: EncargoPdfMeta, y: number): number {
+  const customer = meta.invoiceCustomer
+  if (!customer) return y
+  const copy = copyFor(meta.language)
+  const fields: Array<[string, string]> = [
+    [copy.invoiceNumberLabel, meta.invoiceNumber ?? ''],
+    [copy.businessName, customer.businessName],
+    [copy.nif, customer.nif],
+    [copy.address, customer.address],
+    [copy.postalCode, customer.postalCode],
+    [copy.province, customer.province],
+    [copy.country, customer.country],
+  ].map(([label, value]): [string, string] => [label, value.trim()]).filter(([, value]) => Boolean(value))
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7)
+  doc.setTextColor(...BRAND)
+  doc.text(copy.billingCustomer.toUpperCase(), 14, y)
+
+  let rowY = y + 6
+  const colWidth = 86
+  const columnXs = [14, 110]
+  for (let index = 0; index < fields.length; index += 2) {
+    let nextRowHeight = 11
+    for (let col = 0; col < 2; col += 1) {
+      const field = fields[index + col]
+      if (!field) continue
+      const [label, value] = field
+      const x = columnXs[col]
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(6.7)
+      doc.setTextColor(...MUTED)
+      doc.text(label.toUpperCase(), x, rowY)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(...TEXT)
+      const lines = doc.splitTextToSize(value, colWidth) as string[]
+      doc.text(lines, x, rowY + 4.4)
+      nextRowHeight = Math.max(nextRowHeight, 4.4 + lines.length * 4.5 + 2)
+    }
+    rowY += nextRowHeight
+  }
+  return rowY
 }
 
 function drawTotals(
@@ -641,7 +727,11 @@ export async function generateEncargoPdf(
 
   drawCompanyHeader(doc, logoDataUrl)
   drawTitle(doc, kind, meta, 39)
-  drawMeta(doc, meta, 49)
+  const hasInvoiceCustomer = kind === 'invoice' && Boolean(meta.invoiceCustomer)
+  if (!hasInvoiceCustomer) drawMeta(doc, meta, 49)
+  const tableStartY = hasInvoiceCustomer
+    ? Math.max(67, drawInvoiceCustomerMeta(doc, meta, 48) + 4)
+    : 67
 
   let totalGross = 0
   const body = items.map((item) => {
@@ -658,7 +748,6 @@ export async function generateEncargoPdf(
     ]
   })
 
-  const tableStartY = 67
   let headerDrawnOnPage = -1
 
   autoTable(doc, {
