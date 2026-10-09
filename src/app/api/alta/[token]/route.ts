@@ -13,7 +13,7 @@ import {
 
 export const runtime = 'nodejs';
 
-const ACCOUNT_REDIRECT = 'https://marbella-app.vercel.app/profile';
+const ACCOUNT_REDIRECT = 'https://marbella-app.vercel.app/profile?type=invite';
 
 // Un error antes de terminar la vinculación deja el enlace reutilizable.
 async function rollbackProvision(
