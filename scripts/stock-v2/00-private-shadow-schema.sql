@@ -18,7 +18,7 @@ create table if not exists stock_v2.daily_deltas (
   run_id uuid not null references stock_v2.replay_runs(id) on delete cascade,
   business_date date not null,
   ingredient_id uuid not null references public.ingredients(id),
-  source text not null check (source in ('sale_recipe_estimate','purchase_legacy','purchase_k4')),
+  source text not null check (source in ('sale_recipe_estimate','purchase_legacy','purchase_k4','waste_legacy','waste_staff')),
   base_unit text not null check (base_unit in ('g','ml','ud')),
   signed_quantity numeric(20,4) not null,
   source_records bigint not null check (source_records >= 0),
