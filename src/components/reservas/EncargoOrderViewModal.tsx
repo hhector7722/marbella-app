@@ -27,6 +27,7 @@ import {
   generateEncargoPdf,
   openEncargoPdf,
   type EncargoDocumentLanguage,
+  type EncargoInvoiceCustomer,
 } from '@/lib/reservas/encargo-pdf'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -66,6 +67,12 @@ async function filterKitchenItems(items: EventOrderItem[]): Promise<EventOrderIt
   } catch {
     return items
   }
+}
+
+type InvoiceStep = 'question' | 'number' | 'customer' | null
+
+function emptyInvoiceCustomer(): EncargoInvoiceCustomer {
+  return { businessName: '', nif: '', address: '', postalCode: '', province: '', country: '' }
 }
 
 export function EncargoOrderViewModal({
@@ -109,6 +116,8 @@ export function EncargoOrderViewModal({
   const [printLanguageFor, setPrintLanguageFor] = useState<'quote' | 'invoice' | 'comanda' | null>(null)
   const [invoiceLanguage, setInvoiceLanguage] = useState<EncargoDocumentLanguage | null>(null)
   const [invoiceNumber, setInvoiceNumber] = useState('')
+  const [invoiceStep, setInvoiceStep] = useState<InvoiceStep>(null)
+  const [invoiceCustomer, setInvoiceCustomer] = useState<EncargoInvoiceCustomer>(emptyInvoiceCustomer)
   const [comandaLanguage, setComandaLanguage] = useState<EncargoDocumentLanguage | null>(null)
   const [comandaObservations, setComandaObservations] = useState('')
 
@@ -161,6 +170,7 @@ export function EncargoOrderViewModal({
   const handlePrintInvoice = useCallback(async (
     language: EncargoDocumentLanguage,
     invoiceNumberValue: string,
+    customer: EncargoInvoiceCustomer | null,
     previewWindow?: Window | null
   ) => {
     if (invoiceBusy || items.length === 0) return
@@ -178,6 +188,7 @@ export function EncargoOrderViewModal({
           logoUrl: `${origin}/icons/logo-white.png`,
           language,
           invoiceNumber: invoiceNumberValue.trim() || null,
+          invoiceCustomer: customer,
         },
         items
       )
@@ -259,10 +270,19 @@ export function EncargoOrderViewModal({
       } else {
         setInvoiceLanguage(language)
         setInvoiceNumber('')
+        setInvoiceCustomer(emptyInvoiceCustomer())
+        setInvoiceStep('question')
       }
     },
     [printLanguageFor, handlePrint]
   )
+
+  const closeInvoiceFlow = useCallback(() => {
+    setInvoiceLanguage(null)
+    setInvoiceStep(null)
+    setInvoiceNumber('')
+    setInvoiceCustomer(emptyInvoiceCustomer())
+  }, [])
 
   const handleGenerateInvoice = useCallback(() => {
     if (!invoiceLanguage || invoiceBusy) return
@@ -270,10 +290,10 @@ export function EncargoOrderViewModal({
     const previewWindow = createEncargoPdfPreviewWindow()
     const language = invoiceLanguage
     const number = invoiceNumber
-    setInvoiceLanguage(null)
-    setInvoiceNumber('')
-    void handlePrintInvoice(language, number, previewWindow)
-  }, [invoiceLanguage, invoiceNumber, invoiceBusy, handlePrintInvoice])
+    const customer = invoiceStep === 'customer' ? { ...invoiceCustomer } : null
+    closeInvoiceFlow()
+    void handlePrintInvoice(language, number, customer, previewWindow)
+  }, [invoiceLanguage, invoiceNumber, invoiceStep, invoiceCustomer, invoiceBusy, closeInvoiceFlow, handlePrintInvoice])
 
   const handleGenerateComanda = useCallback(() => {
     if (!comandaLanguage || comandaBusy) return
@@ -542,13 +562,30 @@ export function EncargoOrderViewModal({
       </Modal>
 
       <Modal
-        open={invoiceLanguage !== null}
-        onClose={() => {
-          if (!invoiceBusy) {
-            setInvoiceLanguage(null)
-            setInvoiceNumber('')
-          }
-        }}
+        open={invoiceLanguage !== null && invoiceStep === 'question'}
+        onClose={() => { if (!invoiceBusy) closeInvoiceFlow() }}
+        variant="compact"
+        layer="derived"
+        instance="encargo-invoice-customer-question"
+        parentInstance="encargo-order-view"
+        title="¿Quieres añadir datos del cliente?"
+        closeOnBackdrop={!invoiceBusy}
+      >
+        <div className="grid grid-cols-2 gap-3 py-2">
+          <Button type="button" variant="secondary" instance="encargo-invoice-customer-no"
+            disabled={invoiceBusy} onClick={() => setInvoiceStep('number')}>
+            No
+          </Button>
+          <Button type="button" variant="primary" instance="encargo-invoice-customer-yes"
+            disabled={invoiceBusy} onClick={() => setInvoiceStep('customer')}>
+            Sí
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={invoiceLanguage !== null && invoiceStep === 'number'}
+        onClose={() => { if (!invoiceBusy) closeInvoiceFlow() }}
         variant="compact"
         layer="derived"
         instance="encargo-invoice-number"
@@ -562,10 +599,7 @@ export function EncargoOrderViewModal({
               variant="secondary"
               instance="encargo-invoice-number-cancel"
               disabled={invoiceBusy}
-              onClick={() => {
-                setInvoiceLanguage(null)
-                setInvoiceNumber('')
-              }}
+              onClick={closeInvoiceFlow}
             >
               Cancelar
             </Button>
@@ -600,6 +634,75 @@ export function EncargoOrderViewModal({
             autoFocus
             className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 disabled:opacity-50"
           />
+        </div>
+      </Modal>
+
+      <Modal
+        open={invoiceLanguage !== null && invoiceStep === 'customer'}
+        onClose={() => { if (!invoiceBusy) closeInvoiceFlow() }}
+        variant="compact"
+        layer="derived"
+        instance="encargo-invoice-customer"
+        parentInstance="encargo-order-view"
+        title="Datos de facturación"
+        closeOnBackdrop={!invoiceBusy}
+        footer={
+          <>
+            <Button type="button" variant="secondary" instance="encargo-invoice-customer-cancel"
+              disabled={invoiceBusy} onClick={closeInvoiceFlow}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="primary" instance="encargo-invoice-customer-generate"
+              disabled={invoiceBusy || !invoiceCustomer.businessName.trim()}
+              loading={invoiceBusy} loadingLabel="Generando factura"
+              onClick={handleGenerateInvoice}>
+              Generar factura
+            </Button>
+          </>
+        }
+      >
+        <div className="max-h-[65dvh] space-y-3 overflow-y-auto py-2 pr-1">
+          <Field instance="encargo-invoice-customer-number" label="Factura nº" htmlFor="encargo-invoice-customer-number-input">
+            <input
+              id="encargo-invoice-customer-number-input"
+              type="text" autoComplete="off"
+              value={invoiceNumber}
+              onChange={(event) => setInvoiceNumber(event.target.value)}
+              placeholder="Ej. 2026-001"
+              disabled={invoiceBusy}
+              className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 outline-none focus:border-zinc-400"
+            />
+          </Field>
+          {([
+            ['businessName', 'Razón social', 'organization'],
+            ['nif', 'NIF', 'off'],
+            ['address', 'Dirección', 'street-address'],
+            ['postalCode', 'Código postal', 'postal-code'],
+            ['province', 'Provincia', 'address-level1'],
+            ['country', 'País', 'country-name'],
+          ] as const).map(([key, label, autoComplete]) => (
+            <Field
+              key={key}
+              instance={'encargo-invoice-customer-' + key}
+              label={label}
+              htmlFor={'encargo-invoice-customer-' + key + '-input'}
+            >
+              <input
+                id={'encargo-invoice-customer-' + key + '-input'}
+                type="text"
+                autoComplete={autoComplete}
+                value={invoiceCustomer[key]}
+                onChange={(event) => setInvoiceCustomer((previous) => ({
+                  ...previous,
+                  [key]: event.target.value,
+                }))}
+                disabled={invoiceBusy}
+                required={key === 'businessName'}
+                maxLength={160}
+                className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 outline-none focus:border-zinc-400"
+              />
+            </Field>
+          ))}
         </div>
       </Modal>
 
