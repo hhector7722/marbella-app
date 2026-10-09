@@ -20,7 +20,7 @@ function isPasswordRecoveryProfileRequest(request: NextRequest) {
 
   const searchParams = request.nextUrl.searchParams;
   return (
-    searchParams.get("type") === "recovery" ||
+    (searchParams.get("type") === "recovery" || searchParams.get("type") === "invite") ||
     searchParams.has("code") ||
     searchParams.has("token") ||
     searchParams.has("token_hash") ||
