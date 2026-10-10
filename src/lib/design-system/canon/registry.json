@@ -1,6 +1,6 @@
 {
   "source": "marbella-visual-canon",
-    "updatedAt": "2026-08-25T20:30:00.000Z",
+  "updatedAt": "2026-08-25T20:30:00.000Z",
   "elements": {
     "color": {
       "status": "CANON CERRADO",
@@ -232,11 +232,6 @@
       "properties": {}
     },
     "header-bottom-sheet": {
-      "status": "ESPECIALIZADO",
-      "version": 0,
-      "properties": {}
-    },
-    "header-kds": {
       "status": "ESPECIALIZADO",
       "version": 0,
       "properties": {}

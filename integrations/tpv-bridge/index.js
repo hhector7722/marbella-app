@@ -526,7 +526,7 @@ async function start() {
             }
         }, CAJA_POLL_INTERVAL_MS);
 
-        // TELEMETRÍA / MONITOR COCINA
+        // TELEMETRÍA / RADAR DE SALA
         setInterval(async () => {
             try {
                 const resVivas = await pool.request().query(`
@@ -723,7 +723,7 @@ async function start() {
                         { timeout: AXIOS_TIMEOUT_MS }
                     );
                     process.stdout.write(
-                        `\r[${new Date().toLocaleTimeString()}] 📡 Enviando a Cocina: ${sala.length} mesas vivas en curso.  `
+                        `\r[${new Date().toLocaleTimeString()}] 📡 Enviando al Radar: ${sala.length} mesas vivas en curso.  `
                     );
                     ultimoEstadoSala = estadoActual;
                 }

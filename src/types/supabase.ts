@@ -840,45 +840,6 @@ export type Database = {
           },
         ]
       }
-      comandero_events: {
-        Row: {
-          articulo_id: number | null
-          cantidad_delta: number
-          created_at: string | null
-          id: string
-          mesa: string | null
-          notas: string | null
-          numero_documento: string
-          order_id: string | null
-          procesado_kds: boolean | null
-          producto_nombre: string
-        }
-        Insert: {
-          articulo_id?: number | null
-          cantidad_delta: number
-          created_at?: string | null
-          id?: string
-          mesa?: string | null
-          notas?: string | null
-          numero_documento: string
-          order_id?: string | null
-          procesado_kds?: boolean | null
-          producto_nombre: string
-        }
-        Update: {
-          articulo_id?: number | null
-          cantidad_delta?: number
-          created_at?: string | null
-          id?: string
-          mesa?: string | null
-          notas?: string | null
-          numero_documento?: string
-          order_id?: string | null
-          procesado_kds?: boolean | null
-          producto_nombre?: string
-        }
-        Relationships: []
-      }
       denominations_log: {
         Row: {
           closing_id: string | null
@@ -2294,245 +2255,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      kds_events: {
-        Row: {
-          articulo_id: number | null
-          created_at: string
-          event_type: string
-          id: string
-          id_ticket: string
-          mesa: string | null
-          notas: string | null
-          payload: Json
-          producto_nombre: string | null
-          qty: number
-          source: string
-          source_event_id: string | null
-        }
-        Insert: {
-          articulo_id?: number | null
-          created_at?: string
-          event_type: string
-          id?: string
-          id_ticket: string
-          mesa?: string | null
-          notas?: string | null
-          payload?: Json
-          producto_nombre?: string | null
-          qty?: number
-          source: string
-          source_event_id?: string | null
-        }
-        Update: {
-          articulo_id?: number | null
-          created_at?: string
-          event_type?: string
-          id?: string
-          id_ticket?: string
-          mesa?: string | null
-          notas?: string | null
-          payload?: Json
-          producto_nombre?: string | null
-          qty?: number
-          source?: string
-          source_event_id?: string | null
-        }
-        Relationships: []
-      }
-      kds_order_lines: {
-        Row: {
-          articulo_id: number | null
-          cantidad: number | null
-          completed_at: string | null
-          created_at: string | null
-          departamento: string | null
-          estado: Database["public"]["Enums"]["kds_item_status"] | null
-          id: string
-          kds_order_id: string | null
-          mesa: string | null
-          nombre: string | null
-          notas: string | null
-          numero_documento: string | null
-          order_id: string | null
-          precio: number | null
-          producto_nombre: string | null
-          status: string | null
-          unidades: number | null
-        }
-        Insert: {
-          articulo_id?: number | null
-          cantidad?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          departamento?: string | null
-          estado?: Database["public"]["Enums"]["kds_item_status"] | null
-          id?: string
-          kds_order_id?: string | null
-          mesa?: string | null
-          nombre?: string | null
-          notas?: string | null
-          numero_documento?: string | null
-          order_id?: string | null
-          precio?: number | null
-          producto_nombre?: string | null
-          status?: string | null
-          unidades?: number | null
-        }
-        Update: {
-          articulo_id?: number | null
-          cantidad?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          departamento?: string | null
-          estado?: Database["public"]["Enums"]["kds_item_status"] | null
-          id?: string
-          kds_order_id?: string | null
-          mesa?: string | null
-          nombre?: string | null
-          notas?: string | null
-          numero_documento?: string | null
-          order_id?: string | null
-          precio?: number | null
-          producto_nombre?: string | null
-          status?: string | null
-          unidades?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "kds_order_lines_kds_order_id_fkey"
-            columns: ["kds_order_id"]
-            isOneToOne: false
-            referencedRelation: "kds_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      kds_orders: {
-        Row: {
-          completed_at: string | null
-          created_at: string | null
-          estado: Database["public"]["Enums"]["kds_order_status"] | null
-          id: string
-          id_ticket: string | null
-          mesa: string
-          nombre_cliente: string | null
-          notas_comanda: string | null
-          origen: string | null
-          origen_referencia: string | null
-          status: string | null
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string | null
-          estado?: Database["public"]["Enums"]["kds_order_status"] | null
-          id?: string
-          id_ticket?: string | null
-          mesa: string
-          nombre_cliente?: string | null
-          notas_comanda?: string | null
-          origen?: string | null
-          origen_referencia?: string | null
-          status?: string | null
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string | null
-          estado?: Database["public"]["Enums"]["kds_order_status"] | null
-          id?: string
-          id_ticket?: string | null
-          mesa?: string
-          nombre_cliente?: string | null
-          notas_comanda?: string | null
-          origen?: string | null
-          origen_referencia?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
-      kds_projection_lines: {
-        Row: {
-          articulo_id: number
-          id_ticket: string
-          last_event_at: string
-          notas_norm: string
-          producto_nombre: string | null
-          qty_added: number
-          qty_cancel_notice: number
-          qty_done: number
-        }
-        Insert: {
-          articulo_id: number
-          id_ticket: string
-          last_event_at?: string
-          notas_norm?: string
-          producto_nombre?: string | null
-          qty_added?: number
-          qty_cancel_notice?: number
-          qty_done?: number
-        }
-        Update: {
-          articulo_id?: number
-          id_ticket?: string
-          last_event_at?: string
-          notas_norm?: string
-          producto_nombre?: string | null
-          qty_added?: number
-          qty_cancel_notice?: number
-          qty_done?: number
-        }
-        Relationships: []
-      }
-      kds_projection_orders: {
-        Row: {
-          completed_at: string | null
-          estado: string
-          id_ticket: string
-          last_event_at: string
-          mesa: string | null
-          notas_comanda: string | null
-          opened_at: string
-        }
-        Insert: {
-          completed_at?: string | null
-          estado?: string
-          id_ticket: string
-          last_event_at?: string
-          mesa?: string | null
-          notas_comanda?: string | null
-          opened_at?: string
-        }
-        Update: {
-          completed_at?: string | null
-          estado?: string
-          id_ticket?: string
-          last_event_at?: string
-          mesa?: string | null
-          notas_comanda?: string | null
-          opened_at?: string
-        }
-        Relationships: []
-      }
-      kds_ticket_state: {
-        Row: {
-          id_ticket: string
-          kitchen_state: string
-          manual_completed_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          id_ticket: string
-          kitchen_state: string
-          manual_completed_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          id_ticket?: string
-          kitchen_state?: string
-          manual_completed_at?: string | null
-          updated_at?: string
-        }
-        Relationships: []
       }
       manager_ledger: {
         Row: {
@@ -6646,53 +6368,10 @@ export type Database = {
         Args: never
         Returns: undefined
       }
-      fn_calculate_and_insert_delta:
-        | {
-            Args: {
-              p_id_ticket: string
-              p_mesa: string
-              p_notas_comanda: string
-              p_productos: Json
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_id_ticket: string
-              p_mesa: string
-              p_nombre_cliente?: string
-              p_notas_comanda: string
-              p_numero_documento?: string
-              p_productos: Json
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              v_id_ticket: string
-              v_kds_order_id: number
-              v_mesa: string
-              v_num_doc: string
-              v_prod: Json
-            }
-            Returns: undefined
-          }
       fn_calculate_rounded_hours: { Args: { p_hours: number }; Returns: number }
       fn_cron_request_persist_overtime_cost: {
         Args: { p_slot: string }
         Returns: number
-      }
-      fn_emit_kds_events_from_sala: {
-        Args: {
-          p_id_ticket: string
-          p_mesa: string
-          p_nombre_cliente?: string
-          p_notas_comanda: string
-          p_numero_documento?: string
-          p_productos: Json
-          p_timestamp_tpv?: string
-        }
-        Returns: undefined
       }
       fn_event_order_apply_price_mode: {
         Args: {
@@ -6823,28 +6502,6 @@ export type Database = {
         Args: { p_event_type?: string; p_on_date: string; p_user_id: string }
         Returns: number
       }
-      fncalcdelta:
-        | {
-            Args: {
-              adoc?: string
-              aid: string
-              amesa: string
-              anotas: string
-              aprods: Json
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              adoc?: string
-              aid: string
-              amesa: string
-              anombre_cliente?: string
-              anotas: string
-              aprods: Json
-            }
-            Returns: undefined
-          }
       generar_informe_diario: { Args: { p_fecha: string }; Returns: Json }
       generar_informe_personalizado: {
         Args: { p_filtros: Json }
@@ -7155,19 +6812,6 @@ export type Database = {
       is_manager_or_admin: { Args: never; Returns: boolean }
       is_purchase_manager_or_admin: { Args: never; Returns: boolean }
       is_usage_analyst: { Args: { p_user_id?: string }; Returns: boolean }
-      kds_ingest_event: {
-        Args: {
-          p_articulo_id: number
-          p_event_type: string
-          p_id_ticket: string
-          p_mesa: string
-          p_notas?: string
-          p_producto_nombre: string
-          p_qty?: number
-          p_source_event_id: string
-        }
-        Returns: string
-      }
       madrid_utc_offset_hours: { Args: { ts?: string }; Returns: number }
       manager_ledger_business_ts: {
         Args: { p_entry_date: string }
@@ -7196,7 +6840,6 @@ export type Database = {
         Args: { p_order_id: string }
         Returns: boolean
       }
-      normalize_kds_name: { Args: { p: string }; Returns: string }
       normalize_pricing_unit: { Args: { p_unit: string }; Returns: string }
       pack_price_for_target_current: {
         Args: {
@@ -7518,8 +7161,6 @@ export type Database = {
       app_usage_event_type: "login" | "session" | "page_view" | "action"
       document_job_status: "pending" | "leased" | "completed" | "failed"
       extraction_status: "success" | "failed" | "no_table"
-      kds_item_status: "pendiente" | "terminado" | "cancelado"
-      kds_order_status: "activa" | "completada"
       purchase_interpretation_proposal_status:
         | "needs_mapping"
         | "needs_review"
@@ -7678,8 +7319,6 @@ export const Constants = {
       app_usage_event_type: ["login", "session", "page_view", "action"],
       document_job_status: ["pending", "leased", "completed", "failed"],
       extraction_status: ["success", "failed", "no_table"],
-      kds_item_status: ["pendiente", "terminado", "cancelado"],
-      kds_order_status: ["activa", "completada"],
       purchase_interpretation_proposal_status: [
         "needs_mapping",
         "needs_review",
