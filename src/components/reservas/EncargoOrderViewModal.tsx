@@ -736,7 +736,7 @@ export function EncargoOrderViewModal({
         variant="work"
         layer="system"
         instance="encargo-invoice-pdf-preview"
-        title="Vista previa de la factura"
+        title="Factura PDF"
         closeOnBackdrop={false}
         scrollContent={false}
         footer={
