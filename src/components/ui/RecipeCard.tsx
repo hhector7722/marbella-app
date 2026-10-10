@@ -90,9 +90,7 @@ export function RecipeCard({
                             </span>
                         ) : null}
                     </div>
-                ) : (
-                    <span className="text-[8px] text-gray-400 font-medium">Elaboración</span>
-                )}
+                ) : null}
             </div>
         </div>
     );

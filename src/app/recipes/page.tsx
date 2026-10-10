@@ -396,13 +396,6 @@ function RecipesContent() {
                                 <CatalogTileUnificado
                                     key={recipe.id}
                                     title={recipe.name}
-                                    subtitle={
-                                        isInternalRecipe(recipe.is_sellable) ? (
-                                            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
-                                                Elaboración
-                                            </span>
-                                        ) : undefined
-                                    }
                                     imageSrc={recipe.photo_url}
                                     fallback={<ChefHat className="h-8 w-8 md:h-10 md:w-10" />}
                                     price={isInternalRecipe(recipe.is_sellable) ? null : recipe.sale_price}
