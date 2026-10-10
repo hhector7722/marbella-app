@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useLayoutEffect, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useKDS } from '@/hooks/useKDS';
+import { useSalaWeekdayMadrid } from '@/hooks/useSalaWeekdayMadrid';
 import { useKdsNotificationSound } from '@/hooks/useKdsNotificationSound';
 import { CommandCard } from './CommandCard';
 import { Loader2, Package, ListChecks, Check, X, RefreshCw, Volume2, VolumeX } from 'lucide-react';
@@ -319,6 +320,24 @@ function KDSOrderRowsLayout({
 }
 
 export default function KDSView() {
+    const isWeekday = useSalaWeekdayMadrid();
+    if (!isWeekday) {
+        return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center px-6 text-center text-white"
+                style={{ backgroundColor: KDS_BG }}>
+                <div>
+                    <h1 className="text-2xl font-bold">Cocina inactiva el fin de semana</h1>
+                    <p className="mt-3 text-sm text-zinc-300">
+                        Las comandas y el estado de sala vuelven a activarse el lunes.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+    return <KDSActiveView />;
+}
+
+function KDSActiveView() {
     const {
         orders,
         loading,
