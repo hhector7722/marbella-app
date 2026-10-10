@@ -4,6 +4,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
+const { isSalaWeekdayMadrid } = require('./sala-schedule');
 
 const app = express();
 app.use(cors());
@@ -326,6 +327,13 @@ app.post('/api/caja', async (req, res) => {
 // Body: `{ total_mesas_vivas, sala }` — contrato en `context/index.txt`
 // =====================================
 app.post('/api/telemetria', async (req, res) => {
+    // El centro no usa Estado de sala ni KDS los sabados y domingos.
+    // Este control impide trabajo en red y consultas innecesarias a Supabase.
+    // IMPORTANTE: /api/ventas y /api/caja siguen procesandose todos los dias.
+    if (!isSalaWeekdayMadrid()) {
+        return res.status(200).json({ success: true, skipped: true, reason: 'weekend_europe_madrid' });
+    }
+
     console.log("\n====== NUEVO PAQUETE DE WINDOWS ======");
     console.log(JSON.stringify(req.body, null, 2));
     console.log("======================================\n");
