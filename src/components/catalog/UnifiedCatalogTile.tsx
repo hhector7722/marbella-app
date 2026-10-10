@@ -10,6 +10,7 @@ export function CatalogSquare({
   imageAlt = '',
   fallback,
   price,
+  valueLabel,
   priceLocked = false,
   priceClassName,
   className,
@@ -18,6 +19,7 @@ export function CatalogSquare({
   imageAlt?: string;
   fallback?: ReactNode;
   price?: number | null;
+  valueLabel?: string;
   priceLocked?: boolean;
   priceClassName?: string;
   className?: string;
@@ -36,7 +38,7 @@ export function CatalogSquare({
       <div
         className={cn(
           'relative z-[1] flex h-full w-full items-center justify-center overflow-hidden px-2 pt-2 sm:px-3 sm:pt-3',
-          hasPrice ? 'pb-6 sm:pb-7' : 'pb-2 sm:pb-3',
+          hasPrice || valueLabel ? 'pb-6 sm:pb-7' : 'pb-2 sm:pb-3',
         )}
       >
         {imageSrc ? (
@@ -50,7 +52,7 @@ export function CatalogSquare({
         ) : null}
       </div>
 
-      {hasPrice ? (
+      {hasPrice || valueLabel ? (
         <div
           data-element="price"
           className="absolute inset-x-0 bottom-1.5 z-[1] flex items-center justify-center gap-1 px-1 sm:bottom-2"
@@ -61,7 +63,7 @@ export function CatalogSquare({
               priceClassName,
             )}
           >
-            {price.toFixed(2)}€
+            {hasPrice && price != null ? `${price.toFixed(2)}€` : valueLabel}
           </span>
           {priceLocked ? (
             <span className="shrink-0 rounded bg-zinc-200 px-1 text-[8px] font-black uppercase text-zinc-600 sm:text-[9px]">
@@ -81,9 +83,11 @@ export function CatalogTileUnificado({
   fallback,
   subtitle,
   price,
+  valueLabel,
   priceLocked = false,
   priceClassName,
   nameTone = 'default',
+  selected = false,
   onClick,
 }: {
   title: string;
@@ -92,9 +96,11 @@ export function CatalogTileUnificado({
   fallback?: ReactNode;
   subtitle?: ReactNode;
   price?: number | null;
+  valueLabel?: string;
   priceLocked?: boolean;
   priceClassName?: string;
   nameTone?: CatalogNameTone;
+  selected?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -111,8 +117,10 @@ export function CatalogTileUnificado({
           imageAlt={imageAlt}
           fallback={fallback}
           price={price}
+          valueLabel={valueLabel}
           priceLocked={priceLocked}
           priceClassName={priceClassName}
+          className={selected ? 'ring-2 ring-ds-marca' : undefined}
         />
 
         <div

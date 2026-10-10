@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-08
+revisado: 2026-10-11
 caducidad: 6 meses
 supersede: —
 ---
@@ -496,7 +496,7 @@ El widget no elige un ancho libre: entra en la misma retícula. Las tres homes u
 
 **Propósito**: elegir un ítem por icono + nombre, en página (recetas, ingredientes) o en modal (Info, Documentos, Manuales, Caja, Stock).
 
-**Anatomía**: rejilla de celdas cuadradas (imagen + pie de una fila). Sin tarjeta. `AccessMenuGrid` es la misma celda con **mínimo 3 columnas**; más solo si el consumidor lo pide. Recetas e ingredientes van a 3. Proveedores no usan esta celda: montan `SupplierPickerGrid` (`DashboardShortcut`, 4 columnas, nombre fuera del squircle).
+**Anatomía**: rejilla de celdas cuadradas con imagen y nombre exterior. La celda muestra precio cuando corresponde; en Stock muestra cantidad y unidad en esa misma posición y permite señalar el producto seleccionado. `AccessMenuGrid` mantiene **mínimo 3 columnas**; más solo si el consumidor lo pide. Recetas, Ingredientes y Stock usan cuatro columnas en móvil. Proveedores montan `SupplierPickerGrid` (`DashboardShortcut`, 4 columnas, nombre fuera del squircle).
 
 **Estado**: existe. No es primitiva del sistema.
 

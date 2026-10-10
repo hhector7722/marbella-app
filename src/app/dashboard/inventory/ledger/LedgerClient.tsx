@@ -10,6 +10,8 @@ import {
   Loader2,
   Package,
   ChevronDown,
+  Filter,
+  BookOpen,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -22,7 +24,7 @@ import { Modal } from '@/components/ui/modal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchField } from '@/components/ui/SearchField'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
-import { PeriodFilterButton } from '@/components/time/PeriodNav'
+import { CatalogTileUnificado } from '@/components/catalog/CatalogTile'
 import { TABLE_COMPONENT_ID } from '@/lib/design-system'
 import { formatMadridHmFromIso } from '@/lib/madrid-date-bounds'
 import Link from 'next/link'
@@ -83,13 +85,6 @@ const TYPE_CONFIG: Record<
     color: 'text-zinc-700',
     bg: 'bg-zinc-50',
   },
-}
-
-function abbreviateLabel(name: string, maxChars = 22): string {
-  const t = name.replace(/\s+/g, ' ').trim()
-  if (t.length <= maxChars) return t
-  const cut = Math.max(8, maxChars - 1)
-  return `${t.slice(0, cut)}…`
 }
 
 function movementRowStyle(mov: Movement): {
@@ -231,40 +226,19 @@ function LedgerIngredientCard({
   selected: boolean
   onSelect: () => void
 }) {
-  const label = abbreviateLabel(item.name)
   return (
-    <button
-      type="button"
+    <CatalogTileUnificado
+      title={item.name}
+      imageSrc={item.image_url}
+      fallback={<Package className="h-8 w-8 md:h-10 md:w-10" />}
+      valueLabel={item.stock_current === null
+        ? 'Pendiente'
+        : item.stock_current === 0
+          ? ''
+          : `${formatCountQuantity(item.stock_current)} ${item.unit}`}
+      selected={selected}
       onClick={onSelect}
-      className={cn(
-        'flex h-full min-h-0 flex-col rounded-xl border bg-white shadow-sm overflow-hidden text-left transition-shadow',
-        'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40',
-        selected ? 'ring-2 ring-zinc-400/60 border-zinc-300' : 'border-zinc-100',
-      )}
-    >
-      <div className="shrink-0 h-14 w-full flex items-center justify-center bg-zinc-50/40">
-        {item.image_url ? (
-          <img src={item.image_url} alt="" className="h-12 w-12 object-contain" />
-        ) : (
-          <Package className="w-8 h-8 text-zinc-200" strokeWidth={1.5} />
-        )}
-      </div>
-      <div className="shrink-0 min-h-[2.5rem] px-2 py-1.5 flex flex-col items-center justify-center min-w-0 flex-1">
-        <span
-          className="w-full min-w-0 text-center text-[10px] min-[380px]:text-[11px] font-black text-zinc-800 whitespace-nowrap overflow-hidden text-ellipsis"
-          title={item.name}
-        >
-          {label}
-        </span>
-      </div>
-      <div className="mt-auto shrink-0 px-2 pb-2 pt-0 w-full">
-        <ReadOnlyStockBox
-          stock={item.stock_current}
-          unit={item.unit}
-          className="w-full shadow-none"
-        />
-      </div>
-    </button>
+    />
   )
 }
 
@@ -388,10 +362,16 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             />
           </div>
           <div className="shrink-0 relative" data-ledger-filter-root="true">
-            <PeriodFilterButton
-              instance="ledger-filter-category"
+            <button
+              type="button"
+              data-design-exception="native-business-button:stock-filter-icon"
+              aria-label="Filtrar productos"
+              aria-expanded={filterOpen}
               onClick={() => setFilterOpen((v) => !v)}
-            />
+              className="flex min-h-12 min-w-12 items-center justify-center border-0 bg-transparent text-ds-texto-invertido"
+            >
+              <Filter className="h-6 w-6" strokeWidth={1.75} />
+            </button>
             {filterOpen ? (
               <div
                 className="absolute right-0 mt-2 w-64 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20"
@@ -433,15 +413,20 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               </div>
             ) : null}
           </div>
-          <PeriodFilterButton
-            instance="ledger-history-open"
+          <button
+            type="button"
+            data-design-exception="native-business-button:stock-history-icon"
+            aria-label="Abrir historial de recuentos"
             onClick={() => void handleOpenHistory()}
-          />
+            className="flex min-h-12 min-w-12 items-center justify-center border-0 bg-transparent text-ds-texto-invertido"
+          >
+            <BookOpen className="h-6 w-6" strokeWidth={1.75} />
+          </button>
         </div>
       }
     >
     <div className="flex flex-col xl:flex-row gap-4 items-stretch min-h-0 flex-1">
-      <div className="w-full xl:w-[min(100%,520px)] xl:max-w-[44%] shrink-0 flex flex-col gap-3 min-h-0">
+      <div className="w-full xl:w-[min(100%,640px)] xl:max-w-[52%] shrink-0 flex flex-col gap-3 min-h-0">
         <div className="flex-1 min-h-[min(480px,55vh)] max-h-[min(640px,70vh)] overflow-y-auto pr-0.5">
           {Object.keys(grouped).length === 0 ? (
             <EmptyState
@@ -453,8 +438,8 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             <div className="flex flex-col gap-6">
               {Object.entries(grouped).map(([cat, items]) => (
                 <section key={cat} className="flex flex-col gap-3">
-                  <div className="text-sm font-black uppercase tracking-wide text-zinc-500 px-0.5">{cat}</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-4 lg:gap-3 items-stretch justify-items-stretch">
+                  <div className="text-sm font-black uppercase tracking-wide text-ds-texto-invertido px-0.5">{cat}</div>
+                  <div className="grid grid-cols-4 items-start gap-5 sm:gap-6 md:gap-8 lg:gap-4 xl:gap-5">
                     {items.map((ing) => (
                       <LedgerIngredientCard
                         key={ing.id}
@@ -620,7 +605,10 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             return (
               <div
                 key={session.id}
-                className="rounded-full bg-white border border-zinc-100 shadow-sm overflow-hidden"
+                className={cn(
+                  'bg-white border border-zinc-100 shadow-sm overflow-hidden',
+                  expanded ? 'rounded-none border-0 bg-transparent shadow-none overflow-visible' : 'rounded-full',
+                )}
               >
                 <button
                   type="button"
@@ -629,7 +617,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                   className={cn(
                     'w-full min-h-[48px] px-5 py-3 flex items-center gap-3 text-left transition-colors',
                     'hover:bg-zinc-50 active:bg-zinc-100',
-                    expanded && 'bg-zinc-50',
+                    expanded && 'bg-transparent',
                   )}
                 >
                   <span className="flex-1 min-w-0 flex flex-col">
@@ -639,9 +627,6 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                     {time ? (
                       <span className="text-[11px] font-medium text-zinc-400">{time}</span>
                     ) : null}
-                  </span>
-                  <span className="shrink-0 text-[11px] font-black uppercase tracking-wider text-zinc-400">
-                    {session.lines.length} {session.lines.length === 1 ? 'artículo' : 'artículos'}
                   </span>
                   <ChevronDown
                     className={cn(
@@ -653,7 +638,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                 </button>
 
                 {expanded ? (
-                  <div className="border-t border-zinc-100 px-3 pb-3 pt-1">
+                  <div className="px-3 pb-3 pt-1">
                     <ul className="flex flex-col divide-y divide-zinc-50">
                       {session.lines.map((line) => (
                         <li
