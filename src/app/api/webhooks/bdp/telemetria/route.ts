@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       const mesaNorm = {
         ...mesa,
         ...(ts ? { timestamp_tpv: ts } : {}),
-        // Fuente de verdad del ticket en nuestros triggers KDS v2
+        // Identificador estable del ticket para el Radar de sala
         id_ticket: mesa.numero_documento,
         // Notas generales de la comanda (cabecera). Acepta alias por robustez ante cambios del extractor.
         notas_comanda:
