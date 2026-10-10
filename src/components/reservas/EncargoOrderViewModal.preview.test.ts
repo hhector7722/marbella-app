@@ -8,37 +8,64 @@ const source = readFileSync(
   'utf8',
 )
 
-test('generating the invoice no longer closes the form or opens a popup before the PDF is ready', () => {
-  const generate = source.slice(
-    source.indexOf('const handleGenerateInvoice = useCallback('),
-    source.indexOf('const handleGenerateComanda = useCallback('),
+function section(start: string, end: string): string {
+  const from = source.indexOf(start)
+  const to = source.indexOf(end, from)
+  assert.ok(from >= 0 && to > from, 'Sección no encontrada: ' + start)
+  return source.slice(from, to)
+}
+
+test('generar factura usa la misma apertura de pestaña que presupuesto y comanda', () => {
+  const quote = section(
+    'const handlePrintLanguage = useCallback(',
+    'const closeInvoiceFlow = useCallback(',
   )
-  assert.match(generate, /handlePrintInvoice\(language, number, customer\)/)
-  assert.doesNotMatch(generate, /createEncargoPdfPreviewWindow|window\.open|closeInvoiceFlow\(\)/)
+  const invoice = section(
+    'const handleGenerateInvoice = useCallback(',
+    'const handleGenerateComanda = useCallback(',
+  )
+  assert.match(quote, /createEncargoPdfPreviewWindow\(\)/)
+  assert.match(quote, /handlePrint\(language, previewWindow\)/)
+  assert.match(invoice, /const previewWindow = createEncargoPdfPreviewWindow\(\)/)
+  assert.match(invoice, /handlePrintInvoice\(language, number, customer, previewWindow\)/)
+  assert.doesNotMatch(invoice, /closeInvoiceFlow\(\)/)
 })
 
-test('generated invoice is shown inside an accessible in-app PDF preview', () => {
-  const print = source.slice(
-    source.indexOf('const handlePrintInvoice = useCallback('),
-    source.indexOf('const handlePrintComanda = useCallback('),
+test('factura con y sin datos de cliente usan el MISMO circuito', () => {
+  const generate = section(
+    'const handleGenerateInvoice = useCallback(',
+    'const handleGenerateComanda = useCallback(',
+  )
+  assert.match(generate, /invoiceStep === 'customer' \? \{ \.\.\.invoiceCustomer \} : null/)
+  assert.equal(
+    generate.match(/handlePrintInvoice\(/g)?.length,
+    1,
+    'No crear caminos de apertura diferentes según datos del cliente',
+  )
+})
+
+test('cuando se abre la pestaña, el PDF se entrega con la misma función que el presupuesto', () => {
+  const print = section(
+    'const handlePrintInvoice = useCallback(',
+    'const handlePrintComanda = useCallback(',
+  )
+  assert.match(print, /previewWindow\?: Window \| null/)
+  assert.match(print, /if \(previewWindow && !previewWindow\.closed\)/)
+  assert.match(print, /openEncargoPdf\(pdf, previewWindow\)/)
+  assert.match(print, /setInvoiceLanguage\(null\)/)
+  assert.match(print, /previewWindow\?\.close\(\)/)
+})
+
+test('si el popup está bloqueado, el PDF sigue accesible en un visor con descarga', () => {
+  const print = section(
+    'const handlePrintInvoice = useCallback(',
+    'const handlePrintComanda = useCallback(',
   )
   assert.match(print, /URL\.createObjectURL\(pdf\.blob\)/)
   assert.match(print, /setInvoicePreview\(\{ url, filename: pdf\.filename \}\)/)
-  assert.doesNotMatch(print, /openEncargoPdf\(|previewWindow/)
   assert.match(source, /instance="encargo-invoice-pdf-preview"/)
-  assert.match(source, /layer="system"/)
-  assert.match(source, /title="Factura PDF"/)
   assert.match(source, /src=\{invoicePreview\.url\}/)
   assert.match(source, /Descargar PDF/)
-  assert.match(source, /Si tu navegador no muestra el PDF/)
   assert.match(source, /Abrir en otra pestaña/)
-})
-
-test('the successful preview closes only when explicitly dismissed', () => {
-  const preview = source.slice(
-    source.indexOf('const closeInvoicePreview = useCallback('),
-    source.indexOf('const handleGenerateInvoice = useCallback('),
-  )
-  assert.match(preview, /setInvoicePreview\(null\)/)
-  assert.match(preview, /closeInvoiceFlow\(\)/)
+  assert.match(source, /closeInvoiceFlow\(\)/)
 })
