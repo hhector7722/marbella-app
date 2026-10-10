@@ -7,6 +7,7 @@ import { parseRadiografiaTimestamp, parseDBDate, formatLocalTime } from '@/utils
 import { cn } from '@/lib/utils';
 import { Surface } from '@/components/ui/Surface';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { useSalaWeekdayMadrid } from '@/hooks/useSalaWeekdayMadrid';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -168,6 +169,23 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
 }
 
 export default function RadarSala() {
+  const enabled = useSalaWeekdayMadrid();
+  if (!enabled) {
+    return (
+      <Surface variant="block" instance="sala-mesas" className="overflow-hidden">
+        <div data-element="header">
+          <h2 data-element="title">Mesas abiertas</h2>
+        </div>
+        <p className="px-4 py-6 text-sm text-zinc-500">
+          Estado de sala inactivo sábados y domingos. Se reactiva el lunes.
+        </p>
+      </Surface>
+    );
+  }
+  return <RadarSalaActive />;
+}
+
+function RadarSalaActive() {
   const [mesas, setMesas] = useState<any[]>([]);
   const [ultimaAct, setUltimaAct] = useState<Date | null>(null);
   /** Evita parpadeo: el TPV a veces manda el ticket ganador sin nombre en un ciclo; conservamos el último por id_ticket. */
