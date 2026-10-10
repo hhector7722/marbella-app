@@ -176,7 +176,8 @@ export function EncargoOrderViewModal({
   const handlePrintInvoice = useCallback(async (
     language: EncargoDocumentLanguage,
     invoiceNumberValue: string,
-    customer: EncargoInvoiceCustomer | null
+    customer: EncargoInvoiceCustomer | null,
+    previewWindow?: Window | null
   ) => {
     if (invoiceBusy || items.length === 0) return
     setInvoiceBusy(true)
@@ -197,13 +198,28 @@ export function EncargoOrderViewModal({
         },
         items
       )
-      // Mostrar el PDF dentro de la aplicación: no depender de popups
-      // bloqueables ni de una descarga lanzada tras una operación async.
-      const url = URL.createObjectURL(pdf.blob)
-      if (invoicePreviewUrlRef.current) URL.revokeObjectURL(invoicePreviewUrlRef.current)
-      invoicePreviewUrlRef.current = url
-      setInvoicePreview({ url, filename: pdf.filename })
+      if (previewWindow && !previewWindow.closed) {
+        // Mismo flujo que el presupuesto: ventana abierta directamente
+        // con el clic, navegación al PDF una vez se ha generado.
+        openEncargoPdf(pdf, previewWindow)
+        setInvoiceLanguage(null)
+        setInvoiceStep(null)
+        setInvoiceNumber('')
+        setInvoiceCustomer(emptyInvoiceCustomer())
+      } else {
+        // Si el navegador bloquea ventanas emergentes, ofrecer el PDF
+        // dentro de la app para que jamás se pierda el documento.
+        const url = URL.createObjectURL(pdf.blob)
+        if (invoicePreviewUrlRef.current) URL.revokeObjectURL(invoicePreviewUrlRef.current)
+        invoicePreviewUrlRef.current = url
+        setInvoicePreview({ url, filename: pdf.filename })
+      }
     } catch (error) {
+      try {
+        previewWindow?.close()
+      } catch {
+        // La pestaña puede haber sido cerrada manualmente.
+      }
       console.error('encargo invoice pdf failed', error)
       toast.error('No se pudo generar la factura PDF.')
     } finally {
@@ -311,12 +327,13 @@ export function EncargoOrderViewModal({
 
   const handleGenerateInvoice = useCallback(() => {
     if (!invoiceLanguage || invoiceBusy || invoicePreview) return
-    // Mantener el formulario abierto mientras se genera. Solo mostrar el
-    // visor al obtener el Blob, para que nunca «vuelva» al pedido sin PDF.
+    // Igual que el presupuesto: abrir la pestaña inmediatamente dentro
+    // del clic evita el bloqueo de Safari/iOS y navegadores de escritorio.
+    const previewWindow = createEncargoPdfPreviewWindow()
     const language = invoiceLanguage
     const number = invoiceNumber
     const customer = invoiceStep === 'customer' ? { ...invoiceCustomer } : null
-    void handlePrintInvoice(language, number, customer)
+    void handlePrintInvoice(language, number, customer, previewWindow)
   }, [invoiceLanguage, invoiceNumber, invoiceStep, invoiceCustomer, invoiceBusy, invoicePreview, handlePrintInvoice])
 
   const handleGenerateComanda = useCallback(() => {
