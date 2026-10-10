@@ -327,7 +327,7 @@ app.post('/api/caja', async (req, res) => {
 // Body: `{ total_mesas_vivas, sala }` — contrato en `context/index.txt`
 // =====================================
 app.post('/api/telemetria', async (req, res) => {
-    // El centro no usa Estado de sala ni KDS los sabados y domingos.
+    // El centro no usa el Radar de sala los sabados y domingos.
     // Este control impide trabajo en red y consultas innecesarias a Supabase.
     // IMPORTANTE: /api/ventas y /api/caja siguen procesandose todos los dias.
     if (!isSalaWeekdayMadrid()) {
