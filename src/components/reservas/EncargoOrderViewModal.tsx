@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState, useTransition } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { ChefHat, Loader2, Pencil, Printer, Receipt } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -105,6 +105,12 @@ export function EncargoOrderViewModal({
   onClientLinkReady?: (token: string) => void
 }) {
   const tableRef = useRef<HTMLDivElement>(null)
+  const invoicePreviewUrlRef = useRef<string | null>(null)
+  const [invoicePreview, setInvoicePreview] = useState<{ url: string; filename: string } | null>(null)
+  useEffect(() => () => {
+    // No dejar URLs de PDF vivas al desmontar el pedido.
+    if (invoicePreviewUrlRef.current) URL.revokeObjectURL(invoicePreviewUrlRef.current)
+  }, [])
   const [printBusy, setPrintBusy] = useState(false)
   const [invoiceBusy, setInvoiceBusy] = useState(false)
   const [comandaBusy, setComandaBusy] = useState(false)
@@ -170,8 +176,7 @@ export function EncargoOrderViewModal({
   const handlePrintInvoice = useCallback(async (
     language: EncargoDocumentLanguage,
     invoiceNumberValue: string,
-    customer: EncargoInvoiceCustomer | null,
-    previewWindow?: Window | null
+    customer: EncargoInvoiceCustomer | null
   ) => {
     if (invoiceBusy || items.length === 0) return
     setInvoiceBusy(true)
@@ -192,13 +197,13 @@ export function EncargoOrderViewModal({
         },
         items
       )
-      openEncargoPdf(pdf, previewWindow)
+      // Mostrar el PDF dentro de la aplicación: no depender de popups
+      // bloqueables ni de una descarga lanzada tras una operación async.
+      const url = URL.createObjectURL(pdf.blob)
+      if (invoicePreviewUrlRef.current) URL.revokeObjectURL(invoicePreviewUrlRef.current)
+      invoicePreviewUrlRef.current = url
+      setInvoicePreview({ url, filename: pdf.filename })
     } catch (error) {
-      try {
-        previewWindow?.close()
-      } catch {
-        // La pestaña puede haber sido cerrada por el usuario.
-      }
       console.error('encargo invoice pdf failed', error)
       toast.error('No se pudo generar la factura PDF.')
     } finally {
@@ -284,16 +289,35 @@ export function EncargoOrderViewModal({
     setInvoiceCustomer(emptyInvoiceCustomer())
   }, [])
 
+  const closeInvoicePreview = useCallback(() => {
+    setInvoicePreview(null)
+    closeInvoiceFlow()
+    const url = invoicePreviewUrlRef.current
+    invoicePreviewUrlRef.current = null
+    // Mantener el enlace unos minutos para permitir aperturas o descargas
+    // desde los controles antes de liberar la URL del PDF.
+    if (url) window.setTimeout(() => URL.revokeObjectURL(url), 5 * 60_000)
+  }, [closeInvoiceFlow])
+
+  const downloadInvoicePreview = useCallback(() => {
+    if (!invoicePreview) return
+    const anchor = document.createElement('a')
+    anchor.href = invoicePreview.url
+    anchor.download = invoicePreview.filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+  }, [invoicePreview])
+
   const handleGenerateInvoice = useCallback(() => {
-    if (!invoiceLanguage || invoiceBusy) return
-    // Abrir la pestaña dentro del gesto del usuario evita el bloqueo de popups en Safari iOS.
-    const previewWindow = createEncargoPdfPreviewWindow()
+    if (!invoiceLanguage || invoiceBusy || invoicePreview) return
+    // Mantener el formulario abierto mientras se genera. Solo mostrar el
+    // visor al obtener el Blob, para que nunca «vuelva» al pedido sin PDF.
     const language = invoiceLanguage
     const number = invoiceNumber
     const customer = invoiceStep === 'customer' ? { ...invoiceCustomer } : null
-    closeInvoiceFlow()
-    void handlePrintInvoice(language, number, customer, previewWindow)
-  }, [invoiceLanguage, invoiceNumber, invoiceStep, invoiceCustomer, invoiceBusy, closeInvoiceFlow, handlePrintInvoice])
+    void handlePrintInvoice(language, number, customer)
+  }, [invoiceLanguage, invoiceNumber, invoiceStep, invoiceCustomer, invoiceBusy, invoicePreview, handlePrintInvoice])
 
   const handleGenerateComanda = useCallback(() => {
     if (!comandaLanguage || comandaBusy) return
@@ -704,6 +728,59 @@ export function EncargoOrderViewModal({
             </Field>
           ))}
         </div>
+      </Modal>
+
+      <Modal
+        open={invoicePreview !== null}
+        onClose={closeInvoicePreview}
+        variant="work"
+        layer="system"
+        instance="encargo-invoice-pdf-preview"
+        title="Factura PDF"
+        closeOnBackdrop={false}
+        scrollContent={false}
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              instance="encargo-invoice-preview-close"
+              onClick={closeInvoicePreview}
+            >
+              Cerrar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="encargo-invoice-preview-download"
+              onClick={downloadInvoicePreview}
+            >
+              Descargar PDF
+            </Button>
+          </>
+        }
+      >
+        {invoicePreview ? (
+          <div className="flex min-h-0 w-full flex-col bg-white">
+            <iframe
+              key={invoicePreview.url}
+              title="Factura PDF"
+              src={invoicePreview.url}
+              className="h-[min(70dvh,780px)] min-h-[240px] w-full border-0 bg-white"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-xs text-zinc-600">
+              <span>Si tu navegador no muestra el PDF, pulsa Descargar PDF.</span>
+              <a
+                href={invoicePreview.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[var(--color-envolvente)] underline"
+              >
+                Abrir en otra pestaña
+              </a>
+            </div>
+          </div>
+        ) : null}
       </Modal>
 
       <Modal
