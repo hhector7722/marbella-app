@@ -15,7 +15,6 @@ const STATIC_ROUTE_LABELS: Record<string, string> = {
   '/dashboard/eventos': 'Eventos',
   '/dashboard/history': 'Historial cierres',
   '/dashboard/instalacion-app': 'Instalar app',
-  '/dashboard/kds': 'KDS cocina',
   '/dashboard/sala': 'Radar sala',
   '/dashboard/recetas-tpv': 'Recetas TPV',
   '/staff/dashboard': 'Dashboard staff',
