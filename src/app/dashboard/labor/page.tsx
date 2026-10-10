@@ -670,7 +670,7 @@ export default function LaborHistoryPage() {
                                                 >
                                                     {format(day, 'd')}
                                                 </span>
-                                                <div className="flex w-full min-w-0 flex-1 flex-col justify-center gap-0.5 pt-4 text-[8px] font-normal leading-tight tabular-nums min-[370px]:text-[9px] sm:px-1 sm:text-[10px]">
+                                                <div className="flex w-full min-w-0 flex-1 flex-col justify-center gap-0.5 px-1 pt-4 text-[8px] font-normal leading-tight tabular-nums min-[370px]:px-1.5 min-[370px]:text-[9px] sm:px-2 sm:text-[10px]">
                                                     {([
                                                         { label: 'Fijo', value: dayOrdinaryUnknown ? '—' : formatEuroRead(cell?.fixed ?? 0).trim() || '0 €', color: 'text-zinc-700' },
                                                         { label: 'Extra', value: formatEuroRead(cell?.overtime ?? 0).trim() || '0 €', color: 'text-amber-600' },
