@@ -36,7 +36,6 @@ const HUMAN_TITLES: Record<string, string> = {
     'header-t1-sala-staff': 'Inicio de Sala y equipo',
     'header-t1-ventas': 'Inicio de Ventas',
     'header-bottom-sheet': 'Panel inferior',
-    'header-kds': 'Cocina',
     'header-calendar': 'Calendario de cuadrante',
     'header-carta-publica': 'Carta para el cliente',
 };
@@ -77,7 +76,6 @@ const HUMAN_SUMMARIES: Record<string, string> = {
     'header-t1-sala-staff': 'Cabeceras propias de las pantallas de inicio de Sala y del equipo.',
     'header-t1-ventas': 'La cabecera de inicio de Ventas, con el día en el centro.',
     'header-bottom-sheet': 'El título del panel que sube desde abajo.',
-    'header-kds': 'La cabecera de la pantalla de cocina.',
     'header-calendar': 'La cabecera del cuadrante, no la de una pantalla de gestión.',
     'header-carta-publica': 'La cabecera de la carta que ve el cliente.',
 };
