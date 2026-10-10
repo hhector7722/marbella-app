@@ -676,7 +676,7 @@ export default function LaborHistoryPage() {
                                                         { label: 'Extra', value: formatEuroRead(cell?.overtime ?? 0).trim() || '0 €', color: 'text-amber-600' },
                                                         { label: 'Total', value: dayOrdinaryUnknown ? '—' : formatEuroRead(cell?.total ?? 0).trim() || '0 €', color: 'text-zinc-900' },
                                                     ] as const).map(({ label, value, color }) => (
-                                                        <div key={label} className="flex min-w-0 flex-col items-center sm:flex-row sm:justify-between sm:gap-1">
+                                                        <div key={label} className="flex min-w-0 w-full flex-row items-center justify-between gap-1">
                                                             <span className="font-normal text-zinc-500">{showData ? label : ''}</span>
                                                             <span className={cn('max-w-full whitespace-nowrap font-normal tracking-tighter', color)}>
                                                                 {showData ? value : ''}
