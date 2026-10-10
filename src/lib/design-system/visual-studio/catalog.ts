@@ -309,19 +309,6 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         properties: [],
     },
     {
-        id: 'header-kds',
-        label: 'KDS',
-        group: 'cabeceras',
-        status: 'ESPECIALIZADO',
-        summary: 'Pantalla de cocina. Sin Page Header. Chrome propio de dominio.',
-        listSummary: 'Especializado · cocina',
-        blueprintNeedle: '| KDS |',
-        sourceFiles: ['src/components/kds/KDSView.tsx'],
-        impactPatterns: [],
-        applyKind: 'locked',
-        properties: [],
-    },
-    {
         id: 'header-calendar',
         label: 'Calendario / ScheduleDayEditor',
         group: 'cabeceras',
@@ -742,7 +729,6 @@ export const HEADER_SPECIALIZED_IDS = [
     'header-t1-sala-staff',
     'header-t1-ventas',
     'header-bottom-sheet',
-    'header-kds',
     'header-calendar',
     'header-carta-publica',
 ] as const;
