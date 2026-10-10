@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-10-11
+
+- **Stock 2.0 incorpora los ajustes de gerencia posteriores al recuento.** La cantidad firmada del ajuste se suma al saldo de unidades y el movimiento aparece en el historial del producto. El recuento certificado y los consumos ya registrados permanecen intactos.
+
 ## 2026-10-08
 
 - **Albaranes permite resolver y recibir en una acción.** Un mapeo revisado y las líneas preparadas pasan por la vista previa técnica y la confirmación K4 sin exigir una segunda pantalla. La memoria automática solo aprende códigos y presentaciones de recepciones confirmadas, deja las similitudes dudosas en revisión y admite reintentos seguros de documentos parcialmente recibidos. Los rechazos quedan visibles para continuar la corrección. El listado distingue procesamiento, recepción completa, necesidad de atención y error técnico usando la comprobación de movimientos; `mapped` ya no equivale a recibido.

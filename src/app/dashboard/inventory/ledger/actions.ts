@@ -29,9 +29,9 @@ export async function getIngredientMovements(ingredientId: string) {
     .select('id, movement_type, quantity, movement_date, reference_doc, original_description, processed_by, origin')
     .eq('ingredient_id', ingredientId)
     .gt('movement_date', baseline.baseline_at)
-    .in('movement_type', ['PURCHASE', 'SALE', 'WASTE'])
+    .in('movement_type', ['PURCHASE', 'SALE', 'WASTE', 'ADJUSTMENT'])
     .in('unit', ['ud', 'u', 'un'])
-    .in('origin', ['legacy', 'receipt_confirmation', 'sale_webhook', 'staff_consumption'])
+    .in('origin', ['legacy', 'receipt_confirmation', 'sale_webhook', 'staff_consumption', 'manager_adjustment'])
     .order('movement_date', { ascending: false })
     .limit(200)
 

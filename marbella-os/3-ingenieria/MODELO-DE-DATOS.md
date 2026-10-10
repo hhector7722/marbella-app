@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-08
+revisado: 2026-10-11
 caducidad: 6 meses
 supersede: —
 ---
@@ -134,6 +134,7 @@ Las tablas `bdp_*` son **copia de un sistema ajeno**. Se sobrescriben en cada si
 - `ingredients.purchase_unit` y `ingredients.base_unit` conservan una pareja física coherente para K4: kg/g → g, l/ml/cl → ml y ud → ud. `ingredients.unit` refleja esa misma unidad base de stock. Una propuesta de albarán no corrige estas unidades al confirmar.
 - `ingredients.archived_at` retira un ingrediente obsoleto del catálogo operativo sin borrarlo ([ADR-0017](../4-decisiones/ADR-0017-archivado-de-ingredientes.md)). `NULL` = activo. Un ingrediente archivado no se ofrece en selecciones nuevas, pero sus referencias históricas siguen siendo legibles. No es `inventory_visible`, que solo afecta al recuento de inventario.
 - `stock_movements` es el **único ledger canónico de stock**. Es append-only: las correcciones son nuevos movimientos reversores. Cada hecho nuevo lleva referencia tipada, idempotencia, origen, actor y procedencia. `stock_current` es su proyección regenerable.
+- Stock 2.0 calcula las unidades desde el último recuento físico certificado y los movimientos posteriores del ledger; los ajustes de gerencia (`ADJUSTMENT` con origen `manager_adjustment`) suman su cantidad con signo y aparecen en el historial del producto.
 - `inventory_counts` e `inventory_count_lines` guardan el recuento **capturado y pendiente de certificar**: autor, estado (`pending`/`certified`/`rejected`), correlación y, por ingrediente, el desglose contado (barra y cámara), el total físico y la teórica. No son un segundo ledger: la certificación escribe `stock_movements` con `record_inventory_count_movements` ([ADR-0019](../4-decisiones/ADR-0019-inventario-captura-y-certificacion.md)). Cada persona mantiene como máximo un recuento pendiente.
 - `inventory_count_drafts` es el **borrador vivo y compartido** del recuento en curso: cantidad por barra y cámara e quién lo tocó por última vez. Como el borrador de pedidos, no es un hecho económico y lo ven todos en tiempo real; se vacía al guardar o al pulsar «Nuevo» ([ADR-0020](../4-decisiones/ADR-0020-borrador-compartido-de-inventario.md)).
 - `map_tpv_receta` une el artículo del punto de venta con la receta. **Sin este puente no hay descuento de existencias ni margen por producto.**
