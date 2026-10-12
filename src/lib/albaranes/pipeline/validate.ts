@@ -1,4 +1,8 @@
 import type { CanonicalDocument } from '../extractors/canonical.ts'
+import {
+  compareExact, divideExact, isPositiveExact, multiplyExact, parseExactDecimal,
+  roundExactToScale, withinExactTolerance,
+} from '../k5/exact-decimal.ts'
 
 export type LineCheck = {
   quantity: number | null
@@ -29,6 +33,41 @@ export function parseObservedDecimal(raw: string | null): number | null {
 
 function near(left: number, right: number): boolean {
   return Math.abs(left - right) <= 0.03
+}
+
+/**
+ * Un precio impreso con dos decimales puede proceder de uno más preciso.
+ * Solo admite el importe si el precio efectivo vuelve a redondear al impreso,
+ * la diferencia total no supera 5 céntimos y el valor a 4 decimales concilia
+ * con K4. No modifica nunca el dato OCR original.
+ */
+export function reconcileRoundedDisplayedUnitPrice(
+  quantityRaw: string | null,
+  printedUnitPriceRaw: string | null,
+  lineTotalRaw: string | null
+): string | null {
+  if (!printedUnitPriceRaw || !/^\s*\d+[.,]\d{2}\s*$/.test(printedUnitPriceRaw)) return null
+  const quantity = parseExactDecimal(quantityRaw)
+  const price = parseExactDecimal(printedUnitPriceRaw)
+  const total = parseExactDecimal(lineTotalRaw)
+  if (!isPositiveExact(quantity) || !isPositiveExact(price) || !isPositiveExact(total)) return null
+
+  const printedTotal = multiplyExact(quantity, price)
+  if (compareExact(printedTotal, total) === 0
+    || !withinExactTolerance(printedTotal, total, parseExactDecimal('0.05')!)) return null
+
+  const effective = divideExact(total, quantity)
+  if (!isPositiveExact(effective)
+    || compareExact(parseExactDecimal(roundExactToScale(effective, 2))!, price) !== 0) return null
+
+  // K4 guarda el precio observado a cuatro decimales.
+  const normalized = roundExactToScale(effective, 4)
+  if (!withinExactTolerance(
+    multiplyExact(quantity, parseExactDecimal(normalized)!),
+    total,
+    parseExactDecimal('0.03')!
+  )) return null
+  return normalized
 }
 
 function embeddedKgPerPackage(line: CanonicalDocument['lines'][number], quantity: number | null): number | null {
@@ -111,7 +150,13 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
     if (unitsPerPackage != null && unitsPerPackage > 0) {
       candidates.push({ basis: 'units_per_package', factor: unitsPerPackage })
     }
-    const match = candidates.find(({ factor }) => near(quantity * factor * effectiveUnitPrice, lineTotal))
+    const roundedBillingPrice = (discount == null || discount === 0)
+      && netUnitPrice == null && !line.other_charge_raw
+      ? reconcileRoundedDisplayedUnitPrice(line.quantity_raw, line.unit_price_raw, line.line_total_raw)
+      : null
+    const match = candidates.find(({ basis, factor }) =>
+      near(quantity * factor * effectiveUnitPrice, lineTotal)
+      || (basis === 'billing_quantity' && roundedBillingPrice != null))
     if (match) priceBasis = match.basis
     else reasons.push('cantidad_precio_importe_no_reconcilian')
     if (netUnitPrice != null) {
