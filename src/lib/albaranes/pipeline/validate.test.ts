@@ -18,6 +18,36 @@ test('reconcilia cantidad, precio y descuento porcentual de Panabad', () => {
   assert.equal(check.discountPercent, 38)
 })
 
+test('SANET: 10 litros a 1,16 € admiten 11,56 € por redondeo del precio mostrado', () => {
+  const checked = validateObservedLine(row({
+    quantity_raw: '10', unit_price_raw: '1,16', line_total_raw: '11,56',
+  }))
+  assert.deepEqual(checked.reasons, [])
+  assert.equal(checked.priceBasis, 'billing_quantity')
+})
+
+test('el redondeo no oculta un importe falso ni un precio impreso con más precisión', () => {
+  for (const [quantity, price, total] of [
+    ['1', '1,16', '1,12'], // Una unidad: cuatro céntimos no son redondeo unitario.
+    ['10', '1,16', '11,50'], // Demasiada diferencia absoluta.
+    ['10', '1,1600', '11,56'], // Cuatro decimales impresos: no hay redondeo a céntimos.
+  ]) {
+    const checked = validateObservedLine(row({
+      quantity_raw: quantity, unit_price_raw: price, line_total_raw: total,
+    }))
+    assert.ok(checked.reasons.includes('cantidad_precio_importe_no_reconcilian'))
+  }
+})
+
+test('un descuento sin interpretar no queda oculto por la tolerancia de redondeo', () => {
+  const checked = validateObservedLine(row({
+    quantity_raw: '10', unit_price_raw: '1,16', line_total_raw: '11,56',
+    discount_raw: '2', discount_header_raw: 'DTO.',
+  }))
+  assert.ok(checked.reasons.includes('descuento_sin_porcentaje_verificado'))
+  assert.ok(checked.reasons.includes('cantidad_precio_importe_no_reconcilian'))
+})
+
 test('deduce el descuento porcentual de Panabad cuando falta su cabecera', () => {
   const check = validateObservedLine(row({ quantity_raw: '12', unit_price_raw: '33,86',
     discount_raw: '38,00', discount_header_raw: null, line_total_raw: '251,92' }))
