@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { reconcileRoundedDisplayedUnitPrice, validateObservedDocument, validateObservedLine } from './validate.ts'
+import {
+  reconcileFixedDiscountedUnitPrice,
+  reconcileRoundedDisplayedUnitPrice,
+  validateObservedDocument,
+  validateObservedLine,
+} from './validate.ts'
 import type { CanonicalDocument } from '../extractors/canonical.ts'
 
 function row(fields: Partial<CanonicalDocument['lines'][number]>): CanonicalDocument['lines'][number] {
@@ -69,6 +74,49 @@ test('reconcilia el descuento en euros de SHERS con su precio neto impreso', () 
   assert.deepEqual(check.reasons, [])
   assert.equal(check.discountPercent, null)
   assert.equal(check.netUnitPrice, 5.2)
+})
+
+test('SHERS: leche entera con DTO fijo de 6,55 €, 15 cajas y 165,34 €', () => {
+  const evidence = row({ quantity_raw: '15,00', unit_price_raw: '17,57',
+    discount_raw: '6,55', discount_header_raw: 'DTO.', net_unit_price_raw: '11,02',
+    line_total_raw: '165,34' })
+  const checked = validateObservedLine(evidence)
+  assert.deepEqual(checked.reasons, [])
+  assert.equal(checked.priceBasis, 'billing_quantity')
+  assert.equal(reconcileFixedDiscountedUnitPrice(evidence), '11.0227')
+})
+
+test('SHERS: leche entera con 6 cajas y avena con 2 cajas conservan importe neto', () => {
+  const milk = row({ quantity_raw: '6,00', unit_price_raw: '17,57', discount_raw: '6,55',
+    discount_header_raw: 'DTO.', net_unit_price_raw: '11,02', line_total_raw: '66,14' })
+  const oat = row({ quantity_raw: '2,00', unit_price_raw: '16,28', discount_raw: '6,68',
+    discount_header_raw: 'DTO.', net_unit_price_raw: '9,60', line_total_raw: '19,20' })
+  assert.deepEqual(validateObservedLine(milk).reasons, [])
+  assert.deepEqual(validateObservedLine(oat).reasons, [])
+  assert.equal(reconcileFixedDiscountedUnitPrice(milk), '11.0233')
+  assert.equal(reconcileFixedDiscountedUnitPrice(oat), '9.6')
+})
+
+test('SHERS: diferencias no justificadas o descuento sin neto impreso mantienen bloqueo', () => {
+  const source = row({ quantity_raw: '15,00', unit_price_raw: '17,57',
+    discount_raw: '6,55', discount_header_raw: 'DTO.', net_unit_price_raw: '11,02',
+    line_total_raw: '165,34' })
+  const failures = [
+    { line_total_raw: '165,60' },
+    { net_unit_price_raw: '12,02' },
+    { discount_raw: '5,55' },
+    { net_unit_price_raw: null },
+    { other_charge_raw: '1,20' },
+    { discount_header_raw: '% DTO.' },
+  ]
+  for (const patch of failures) {
+    const evidence = row({ ...source, ...patch })
+    assert.equal(reconcileFixedDiscountedUnitPrice(evidence), null)
+    const reasons = validateObservedLine(evidence).reasons
+    assert.ok(reasons.includes('cantidad_precio_importe_no_reconcilian')
+      || reasons.includes('descuento_sin_porcentaje_verificado')
+      || reasons.includes('precio_neto_contradictorio'))
+  }
 })
 
 test('no supone un descuento en euros sin precio neto explícito', () => {
