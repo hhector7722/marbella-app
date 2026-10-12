@@ -1308,47 +1308,64 @@ export async function markInvoiceLineExpenseOnlyAction(params: {
 }): Promise<{ success: true } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
+  if (gate.role !== 'manager' && gate.role !== 'admin') {
+    return { success: false, message: 'Solo un responsable puede registrar compras puntuales como gasto.' }
+  }
 
   const lineId = String(params?.lineId ?? '').trim()
   if (!lineId) return { success: false, message: 'ID de línea inválido' }
 
   const { data: line, error: lineErr } = await gate.supabase
     .from('purchase_invoice_lines')
-    .select('id, invoice_id, mapped_ingredient_id, status')
+    .select('id,invoice_id,mapped_ingredient_id,status,total_price,superseded_by_extraction_id')
     .eq('id', lineId)
     .maybeSingle()
   if (lineErr) return { success: false, message: lineErr.message }
-  if (!line) return { success: false, message: 'Línea no encontrada' }
-
-  const invoiceId = String((line as any).invoice_id ?? '').trim()
-
-  const hadMapping =
-    Boolean((line as any).mapped_ingredient_id) && String((line as any).status ?? '') === 'mapped'
-
-  if (hadMapping) {
-    const { error: rpcErr } = await gate.supabase.rpc('delete_stock_movements_for_albaran_line', {
-      p_line_id: lineId,
-    })
-    if (rpcErr) {
-      const msg = String(rpcErr.message ?? '')
-      if (!/could not find the function|PGRST202|function .* does not exist/i.test(msg)) {
-        return { success: false, message: `Error borrando stock: ${msg}` }
-      }
-    }
+  if (!line?.invoice_id || line.superseded_by_extraction_id) {
+    return { success: false, message: 'No se encontró una línea operativa de este albarán.' }
   }
 
-  const { error: updErr } = await gate.supabase
+  const invoiceId = String(line.invoice_id)
+  if (line.status === INVOICE_LINE_STATUS_EXPENSE_ONLY) return { success: true }
+  if (line.status !== 'pending' || line.mapped_ingredient_id) {
+    return { success: false, message: 'Esta compra ya está mapeada. Revisa su recepción antes de cambiarla a gasto.' }
+  }
+  const amount = Number(line.total_price)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { success: false, message: 'Completa primero un importe positivo de la compra.' }
+  }
+
+  // No convertir nunca una recepción existente en gasto, ni borrar stock.
+  // El gasto se registra sin ingrediente conservando el importe económico OCR.
+  const [confirmations, movements] = await Promise.all([
+    gate.supabase.from('purchase_receipt_confirmations').select('id')
+      .eq('purchase_invoice_line_id', lineId).limit(1),
+    gate.supabase.from('stock_movements').select('id')
+      .or(`reference_id.eq.${lineId},reference_doc.eq.ALB-LINE-${lineId}`)
+      .limit(1),
+  ])
+  if (confirmations.error || movements.error) {
+    return { success: false, message: 'No se pudo verificar que esta compra carece de recepciones de stock.' }
+  }
+  if ((confirmations.data?.length ?? 0) > 0 || (movements.data?.length ?? 0) > 0) {
+    return { success: false, message: 'Esta línea ya tiene movimientos o recepciones. No se puede convertir sin revisar el stock.' }
+  }
+
+  const { data: updated, error: updErr } = await gate.supabase
     .from('purchase_invoice_lines')
     .update({ mapped_ingredient_id: null, status: INVOICE_LINE_STATUS_EXPENSE_ONLY })
     .eq('id', lineId)
-  if (updErr) return { success: false, message: `Error actualizando línea: ${updErr.message}` }
+    .eq('status', 'pending')
+    .is('superseded_by_extraction_id', null)
+    .select('id')
+    .maybeSingle()
+  if (updErr) return { success: false, message: `Error registrando el gasto: ${updErr.message}` }
+  if (!updated) return { success: false, message: 'La línea ha cambiado. Actualiza el albarán y vuelve a intentarlo.' }
 
-  if (invoiceId) await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
-
+  await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
   try {
     revalidatePath('/dashboard/albaranes')
   } catch {}
-
   return { success: true }
 }
 
