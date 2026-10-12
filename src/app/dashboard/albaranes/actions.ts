@@ -10,7 +10,10 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoices-list'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
-import { parseObservedDecimal } from '@/lib/albaranes/pipeline/validate'
+import {
+  parseObservedDecimal,
+  reconcilePercentageDiscountedUnitPrice,
+} from '@/lib/albaranes/pipeline/validate'
 import { isAdministrativeNonProductRow } from '@/lib/albaranes/pipeline/non-product-line'
 
 type GateResult =
@@ -513,6 +516,22 @@ export async function getPurchaseInvoiceDetailAction(
         line.printed_unit_price = gross != null && gross > 0 ? gross : null
         line.printed_fixed_discount_eur = discount != null && discount > 0 ? discount : null
         line.printed_net_unit_price = net != null && net > 0 ? net : null
+      }
+      if (Number((data as any).supplier_id) !== 2
+        && line.printed_fixed_discount_eur == null
+        && proposal?.observed?.discount_raw) {
+        const original = proposal.observed
+        const discount = parseObservedDecimal(original.discount_raw)
+        const price = parseObservedDecimal(original.unit_price_raw)
+        const header = String(original.discount_header_raw ?? '')
+        const isPercent = /%|percent|por\\s*ciento/i.test(header)
+          || (!header.trim() && reconcilePercentageDiscountedUnitPrice(original) != null)
+        if (isPercent && discount != null && discount > 0 && discount < 100
+          && price != null && price > 0
+          && reconcilePercentageDiscountedUnitPrice(original) != null) {
+          line.printed_discount_percent = discount
+          line.printed_unit_price = price
+        }
       }
       if (Number((data as any).supplier_id) === 2) {
         const reviewed = proposal?.pricing?.human_review
