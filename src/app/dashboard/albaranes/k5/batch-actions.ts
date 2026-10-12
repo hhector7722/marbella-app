@@ -12,6 +12,7 @@ import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprin
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
 import { currentDocumentWarnings } from '@/lib/albaranes/k5/document-review'
 import { canonicalDocumentSchema, type CanonicalDocument } from '@/lib/albaranes/extractors/canonical'
+import { isAdministrativeNonProductRow } from '@/lib/albaranes/pipeline/non-product-line'
 import {
   applyReceiptLineAction,
   previewReceiptLineAction,
@@ -101,14 +102,26 @@ async function loadBatchState(
 
   const { data: proposalRows, error: proposalError } = await supabase
     .from('purchase_interpretation_proposals')
-    .select('id,proposal_set_id,supersedes_proposal_id,provenance,created_at,document_extraction_id,source_table_index,source_row_index,source_item_name,mapping_version_id,ingredient_id,status,review_reasons,warnings,line_quantity,line_unit,observed_unit_price,line_total')
+    .select('id,proposal_set_id,supersedes_proposal_id,provenance,created_at,document_extraction_id,source_table_index,source_row_index,source_item_name,mapping_version_id,ingredient_id,status,review_reasons,warnings,line_quantity,line_unit,observed_unit_price,line_total,observed')
     .eq('purchase_invoice_id', invoiceId)
     .eq('normalizer_version', 'mistral-pipeline-v3')
     .order('created_at', { ascending: true })
   if (proposalError) throw new Error('No se pudieron leer las propuestas K5.')
 
   const allProposals = (proposalRows ?? []) as Array<Record<string, unknown>>
-  const active = selectCurrentProposalLineage(allProposals)
+  const active = selectCurrentProposalLineage(allProposals).filter((proposal) => {
+    const source = proposal.observed && typeof proposal.observed === 'object'
+      ? proposal.observed as Record<string, unknown> : {}
+    return !isAdministrativeNonProductRow({
+      name: text(proposal.source_item_name),
+      supplierProductCode: text(source.supplier_product_code_raw),
+      quantity: text(source.quantity_raw) || numberOrNull(proposal.line_quantity),
+      unitPrice: text(source.unit_price_raw) || numberOrNull(proposal.observed_unit_price),
+      total: text(source.line_total_raw) || numberOrNull(proposal.line_total),
+      netUnitPrice: text(source.net_unit_price_raw),
+      discount: text(source.discount_raw),
+    })
+  })
   const proposalById = new Map(allProposals.map((row) => [text(row.id), row]))
 
   const extractionIds = [...new Set(active.map((row) => text(row.document_extraction_id)).filter(Boolean))]
