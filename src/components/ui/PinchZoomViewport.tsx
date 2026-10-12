@@ -43,6 +43,10 @@ type PinchZoomViewportProps = {
   resetKey?: string | number
   /** Captura el gesto desde escala 1 para que el pinch no lo absorba el navegador. */
   captureGestures?: boolean
+  /** Pellizco de touchpad (Ctrl/Meta+rueda) y desplazamiento a zoom > 1. */
+  trackpadGestures?: boolean
+  /** Conserva el paso entre hojas con un dedo cuando no hay zoom. */
+  onSwipeAtRest?: (direction: 'prev' | 'next') => void
 }
 
 export function PinchZoomViewport({
@@ -55,6 +59,8 @@ export function PinchZoomViewport({
   initialPan = { x: 0, y: 0 },
   resetKey,
   captureGestures = false,
+  trackpadGestures = false,
+  onSwipeAtRest,
 }: PinchZoomViewportProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -67,7 +73,8 @@ export function PinchZoomViewport({
   const [pan, setPan] = useState(initialPan)
   const scaleRef = useRef(1)
   const panRef = useRef({ x: 0, y: 0 })
-  const pinchRef = useRef<{ distance: number; scale: number } | null>(null)
+  const pinchRef = useRef<{ distance: number; scale: number; midpoint: { x: number; y: number } } | null>(null)
+  const swipeRef = useRef<{ x: number; y: number } | null>(null)
   const panDragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
   const rafRef = useRef<number | null>(null)
   const pendingRef = useRef<{ scale: number; pan: { x: number; y: number } } | null>(null)
@@ -85,6 +92,10 @@ export function PinchZoomViewport({
 
   const scheduleUpdate = useCallback(
     (s: number, p: { x: number; y: number }) => {
+      // Los gestos pueden generar varios eventos antes del siguiente fotograma.
+      // Las referencias deben tener siempre el último valor, no el último render.
+      scaleRef.current = s
+      panRef.current = p
       pendingRef.current = { scale: s, pan: p }
       if (rafRef.current == null) {
         rafRef.current = requestAnimationFrame(flushPending)
@@ -126,27 +137,23 @@ export function PinchZoomViewport({
 
   const panForScaleAroundFocal = useCallback(
     (nextScale: number, focalClientX: number, focalClientY: number) => {
-      const scrollEl = scrollRef.current
       const contentEl = contentRef.current
-      if (!scrollEl || !contentEl) return panRef.current
+      if (!contentEl) return panRef.current
 
-      const scrollRect = scrollEl.getBoundingClientRect()
       const contentRect = contentEl.getBoundingClientRect()
-      const prevScale = scaleRef.current
-      const pan = panRef.current
-
-      const anchorX =
-        focalClientX - scrollRect.left + scrollEl.scrollLeft - (contentRect.left - scrollRect.left + scrollEl.scrollLeft)
-      const anchorY =
-        focalClientY - scrollRect.top + scrollEl.scrollTop - (contentRect.top - scrollRect.top + scrollEl.scrollTop)
-
-      const ratio = nextScale / prevScale
+      const previousScale = scaleRef.current
+      const currentPan = panRef.current
+      // getBoundingClientRect representa el último render, mientras que los
+      // eventos rápidos ya pueden haber actualizado las refs (RAF pendiente).
+      const baseX = contentRect.left - pan.x
+      const baseY = contentRect.top - pan.y
+      const ratio = nextScale / previousScale
       return {
-        x: anchorX - ratio * (anchorX - pan.x),
-        y: anchorY - ratio * (anchorY - pan.y),
+        x: currentPan.x + (focalClientX - baseX - currentPan.x) * (1 - ratio),
+        y: currentPan.y + (focalClientY - baseY - currentPan.y) * (1 - ratio),
       }
     },
-    [],
+    [pan.x, pan.y],
   )
 
   const isTransformed = useCallback(() => {
@@ -160,24 +167,59 @@ export function PinchZoomViewport({
     )
   }, [])
 
+  useEffect(() => {
+    if (!trackpadGestures) return
+    const node = scrollRef.current
+    if (!node) return
+
+    // Chromium (incluido Linux) entrega el pellizco de touchpad como wheel+ctrlKey.
+    // El listener debe ser no pasivo para impedir zoom de la página completa.
+    const onWheel = (event: WheelEvent) => {
+      const isPinch = event.ctrlKey || event.metaKey
+      if (!isPinch && !isTransformed()) return
+      event.preventDefault()
+      event.stopPropagation()
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? node.clientHeight : 1
+      const dx = event.deltaX * unit
+      const dy = event.deltaY * unit
+      if (isPinch) {
+        const nextScale = clampScale(scaleRef.current * Math.exp(-dy * 0.01))
+        const nextPan = panForScaleAroundFocal(nextScale, event.clientX, event.clientY)
+        syncRefs(nextScale, nextPan)
+      } else {
+        syncRefs(scaleRef.current, {
+          x: panRef.current.x - dx,
+          y: panRef.current.y - dy,
+        })
+      }
+    }
+
+    node.addEventListener('wheel', onWheel, { passive: false })
+    return () => node.removeEventListener('wheel', onWheel)
+  }, [trackpadGestures, clampScale, isTransformed, panForScaleAroundFocal, syncRefs])
+
   const onTouchStart = (e: TouchEvent) => {
     if (e.touches.length === 2) {
       e.stopPropagation()
       const distance = touchDistance(e.touches)
       if (distance > 0) {
-        pinchRef.current = { distance, scale: scaleRef.current }
+        pinchRef.current = { distance, scale: scaleRef.current, midpoint: touchMidpoint(e.touches) }
         panDragRef.current = null
+        swipeRef.current = null
       }
       return
     }
     if (e.touches.length === 1 && isTransformed()) {
       e.stopPropagation()
+      swipeRef.current = null
       panDragRef.current = {
         x: e.touches[0].clientX,
         y: e.touches[0].clientY,
         panX: panRef.current.x,
         panY: panRef.current.y,
       }
+    } else if (e.touches.length === 1 && onSwipeAtRest) {
+      swipeRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
     }
   }
 
@@ -190,7 +232,13 @@ export function PinchZoomViewport({
       const ratio = distance / pinchRef.current.distance
       const next = clampScale(pinchRef.current.scale * ratio)
       const mid = touchMidpoint(e.touches)
-      const nextPan = panForScaleAroundFocal(next, mid.x, mid.y)
+      const previousMid = pinchRef.current.midpoint
+      const anchored = panForScaleAroundFocal(next, previousMid.x, previousMid.y)
+      const nextPan = {
+        x: anchored.x + mid.x - previousMid.x,
+        y: anchored.y + mid.y - previousMid.y,
+      }
+      pinchRef.current = { distance, scale: next, midpoint: mid }
       syncRefs(next, nextPan)
       return
     }
@@ -208,9 +256,29 @@ export function PinchZoomViewport({
   }
 
   const onTouchEnd = (e: TouchEvent) => {
+    const wasPinching = pinchRef.current != null
     if (e.touches.length < 2) {
       pinchRef.current = null
+      if (e.touches.length === 1 && wasPinching && isTransformed()) {
+        panDragRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          panX: panRef.current.x,
+          panY: panRef.current.y,
+        }
+      }
       if (e.touches.length === 0) {
+        if (swipeRef.current && !isTransformed() && !wasPinching && onSwipeAtRest) {
+          const touch = e.changedTouches.item(0)
+          if (touch) {
+            const dx = touch.clientX - swipeRef.current.x
+            const dy = touch.clientY - swipeRef.current.y
+            if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy)) {
+              onSwipeAtRest(dx < 0 ? 'next' : 'prev')
+            }
+          }
+        }
+        swipeRef.current = null
         panDragRef.current = null
         flushPending()
       }
