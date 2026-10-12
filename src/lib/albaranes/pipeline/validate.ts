@@ -1,7 +1,7 @@
 import type { CanonicalDocument } from '../extractors/canonical.ts'
 import {
   compareExact, divideExact, isPositiveExact, multiplyExact, parseExactDecimal,
-  roundExactToScale, withinExactTolerance,
+  roundExactToScale, subtractExact, withinExactTolerance,
 } from '../k5/exact-decimal.ts'
 
 export type LineCheck = {
@@ -70,6 +70,49 @@ export function reconcileRoundedDisplayedUnitPrice(
   return normalized
 }
 
+/**
+ * Descuento fijo por unidad facturada (DTO. en euros), como en SHERS.
+ * Verifica precio bruto - descuento = neto impreso; el precio real procede
+ * del importe de la línea y solo puede diferir por redondeo del neto a céntimos.
+ * No acepta descuentos sin precio neto explícito ni cargos adicionales.
+ */
+export function reconcileFixedDiscountedUnitPrice(line: {
+  quantity_raw: string | null
+  unit_price_raw: string | null
+  discount_raw: string | null
+  discount_header_raw: string | null
+  net_unit_price_raw: string | null
+  line_total_raw: string | null
+  other_charge_raw?: string | null
+}): string | null {
+  if (!/dto|discount|descuento/i.test(line.discount_header_raw ?? '')
+    || /%|por\\s*ciento|percent/i.test(line.discount_header_raw ?? '')
+    || line.other_charge_raw?.trim()) return null
+  const quantity = parseExactDecimal(line.quantity_raw)
+  const gross = parseExactDecimal(line.unit_price_raw)
+  const discount = parseExactDecimal(line.discount_raw)
+  const printedNet = parseExactDecimal(line.net_unit_price_raw)
+  const total = parseExactDecimal(line.line_total_raw)
+  if (!isPositiveExact(quantity) || !isPositiveExact(gross)
+    || !isPositiveExact(discount) || !isPositiveExact(printedNet)
+    || !isPositiveExact(total) || compareExact(discount, gross) >= 0
+    || compareExact(subtractExact(gross, discount), printedNet) !== 0) return null
+
+  const effective = divideExact(total, quantity)
+  if (!isPositiveExact(effective)
+    || compareExact(parseExactDecimal(roundExactToScale(effective, 2))!, printedNet) !== 0
+    || !withinExactTolerance(
+      multiplyExact(quantity, printedNet), total, parseExactDecimal('0.10')!
+    )) return null
+
+  // K4 aplica precios de cuatro decimales; nunca cambia el total observado.
+  const result = roundExactToScale(effective, 4)
+  return withinExactTolerance(
+    multiplyExact(quantity, parseExactDecimal(result)!),
+    total, parseExactDecimal('0.03')!
+  ) ? result : null
+}
+
 function embeddedKgPerPackage(line: CanonicalDocument['lines'][number], quantity: number | null): number | null {
   // Con más de un bulto, el peso impreso puede ser total o por bulto.
   if (quantity !== 1 || line.content_per_unit_raw) return null
@@ -119,11 +162,9 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
     const percentMatchesAmount = quantity != null && quantity > 0
       && unitPrice != null && unitPrice > 0 && lineTotal != null
       && discount < 100 && near(quantity * unitPrice * (1 - discount / 100), lineTotal)
-    const fixedDiscountMatchesNetPrice = quantity != null && quantity > 0
-      && unitPrice != null && unitPrice > 0 && netUnitPrice != null && netUnitPrice > 0
-      && lineTotal != null && declaresDiscount
-      && near(unitPrice - discount, netUnitPrice)
-      && near(quantity * netUnitPrice, lineTotal)
+    const verifiedFixedDiscountPrice = declaresDiscount
+      ? reconcileFixedDiscountedUnitPrice(line) : null
+    const fixedDiscountMatchesNetPrice = verifiedFixedDiscountPrice != null
 
     if (declaresPercent && discount < 100) discountPercent = discount
     // Algunos proveedores no preservan la cabecera "% DTO" en la lectura.
@@ -150,13 +191,16 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
     if (unitsPerPackage != null && unitsPerPackage > 0) {
       candidates.push({ basis: 'units_per_package', factor: unitsPerPackage })
     }
+    const verifiedFixedDiscountPrice = fixedDiscountPerUnit != null
+      ? reconcileFixedDiscountedUnitPrice(line) : null
     const roundedBillingPrice = (discount == null || discount === 0)
       && netUnitPrice == null && !line.other_charge_raw
       ? reconcileRoundedDisplayedUnitPrice(line.quantity_raw, line.unit_price_raw, line.line_total_raw)
       : null
     const match = candidates.find(({ basis, factor }) =>
       near(quantity * factor * effectiveUnitPrice, lineTotal)
-      || (basis === 'billing_quantity' && roundedBillingPrice != null))
+      || (basis === 'billing_quantity'
+        && (roundedBillingPrice != null || verifiedFixedDiscountPrice != null)))
     if (match) priceBasis = match.basis
     else reasons.push('cantidad_precio_importe_no_reconcilian')
     if (netUnitPrice != null) {
