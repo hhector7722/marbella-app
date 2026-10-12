@@ -422,7 +422,7 @@ export function LineMappingModal({
     return Number.isFinite(value) && value > 0 ? value : null
   }, [observedUnitPriceDraft])
   const isPanabad = supplierId === 2
-  const isShersFixedDiscount = supplierId === 8 && line?.printed_fixed_discount_eur != null
+  const isShersFixedDiscount = !isPanabad && line?.printed_fixed_discount_eur != null
   const shersEffectiveUnitPrice = isShersFixedDiscount && grossUnitPrice != null
     && line?.quantity != null && line.printed_net_unit_price != null
     ? reconcileFixedDiscountedUnitPrice({
@@ -551,7 +551,7 @@ export function LineMappingModal({
     if (observedUnitPrice == null) return isPanabad
       ? 'Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.'
       : isShersFixedDiscount
-        ? 'El descuento fijo de SHERS no concilia con el precio neto y el importe impresos.'
+        ? 'El descuento fijo no concilia con el precio neto y el importe impresos.'
         : 'Indica un precio facturado válido.'
     if (isVariableWeightMode) return null
     if (!dimensionalParsed.lineBillingUnit && !automaticDimensional) {
@@ -681,7 +681,7 @@ export function LineMappingModal({
       reject(isPanabad
         ? 'Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.'
         : isShersFixedDiscount
-          ? 'El descuento fijo de SHERS no concilia con el precio neto y el importe impresos.'
+          ? 'El descuento fijo no concilia con el precio neto y el importe impresos.'
           : 'Indica un precio facturado válido.')
       return
     }
