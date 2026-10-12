@@ -1,7 +1,7 @@
 import type { CanonicalDocument } from '../extractors/canonical.ts'
 import { buildExactMappedSnapshot, type ExactMappingInput } from '../k5/mapped-snapshot.ts'
 import { matchSupplierProduct, type SupplierProductMemory } from './matcher.ts'
-import { validateObservedDocument } from './validate.ts'
+import { reconcileFixedDiscountedUnitPrice, validateObservedDocument } from './validate.ts'
 
 export type PresentationMemory = SupplierProductMemory & ExactMappingInput & {
   lineBillingUnit: string
@@ -69,7 +69,12 @@ export function assessDocument(params: {
 
     let normalized: ReturnType<typeof buildExactMappedSnapshot> = null
     let economicQuantity: string | null = null
-    let effectiveUnitPrice: string | null = null
+    // Aunque el producto aún no esté mapeado, una factura SHERS con DTO
+    // fijo demostrado debe persistir el precio neto, nunca el bruto.
+    let effectiveUnitPrice: string | null = params.supplierId === 8
+      && check.priceBasis === 'billing_quantity'
+      && !check.reasons.length
+      ? reconcileFixedDiscountedUnitPrice(line) : null
     if (presentation && check.quantity && check.unitPrice && check.lineTotal != null && check.priceBasis) {
       let numericEconomicQuantity = check.quantity
       if (check.priceBasis === 'package_content') {
