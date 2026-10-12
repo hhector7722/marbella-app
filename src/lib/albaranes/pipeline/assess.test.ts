@@ -73,6 +73,38 @@ test('SHERS conserva el DTO por caja antes incluso de elegir ingrediente', () =>
   assert.ok(!result.lines[0]?.reasons.includes('cantidad_precio_importe_no_reconcilian'))
 })
 
+test('general: precio neto, porcentajes y redondeos funcionan sin limitarse a un proveedor', () => {
+  for (const [line, expected] of [
+    [{ quantity_raw: '2', unit_price_raw: '3,23', net_unit_price_raw: '3,24', line_total_raw: '6,47' }, '3.235'],
+    [{ quantity_raw: '100', unit_price_raw: '33,86', discount_raw: '38,00',
+      discount_header_raw: '% DTO.', line_total_raw: '2099,43' }, '20.9943'],
+    [{ quantity_raw: '100', unit_price_raw: '1,16', line_total_raw: '115,55' }, '1.1555'],
+  ] as const) {
+    const source = document(line)
+    source.subtotal_raw = line.line_total_raw
+    const result = assessDocument({ document: source, supplierId: 7, memory: [], presentations: [] })
+    assert.equal(result.lines[0]?.effectiveUnitPrice, expected)
+  }
+})
+
+test('los textos administrativos no generan propuestas ni suman al subtotal', () => {
+  const source = document({})
+  source.lines.push(
+    { ...source.lines[0]!, description_raw: 'TANCAT', quantity_raw: null,
+      unit_price_raw: null, line_total_raw: null },
+    { ...source.lines[0]!, description_raw: 'NO HI HA DINERS', quantity_raw: null,
+      unit_price_raw: null, line_total_raw: null },
+    { ...source.lines[0]!, description_raw: 'FILTEMP./RECOLLIDA', quantity_raw: null,
+      unit_price_raw: null, line_total_raw: null },
+  )
+  const result = assessDocument({ document: source, supplierId: 7,
+    memory: [presentation], presentations: [presentation] })
+  assert.equal(result.lines.length, 1)
+  assert.equal(result.readyCount, 1)
+  assert.deepEqual(result.documentReasons, [])
+  assert.equal(result.lines[0]?.rowIndex, 0)
+})
+
 test('Videla: la propuesta usa 10 kg y 5,56 €/kg del bulto impreso', () => {
   const chicken: PresentationMemory = { ...presentation, supplierId: 3,
     ingredientId: 'pechuga', observedName: 'POLLO CONG PECHUGA', mappingVersionId: 'pollo-m1',
