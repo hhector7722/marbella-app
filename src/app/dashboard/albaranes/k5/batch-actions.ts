@@ -142,10 +142,12 @@ async function loadBatchState(
   // hace que una recepción ya aplicada reaparezca como pendiente.
   const { data: lineRows, error: lineError } = await supabase
     .from('purchase_invoice_lines')
-    .select('id,interpretation_proposal_id')
+    .select('id,interpretation_proposal_id,status,superseded_by_extraction_id')
     .eq('invoice_id', invoiceId)
   if (lineError) throw new Error('No se pudieron resolver las líneas revisables.')
-  const invoiceLines = (lineRows ?? []) as Array<Record<string, unknown>>
+  const invoiceLines = ((lineRows ?? []) as Array<Record<string, unknown>>)
+    .filter((row) => !row.superseded_by_extraction_id)
+  const statusByLineId = new Map(invoiceLines.map((row) => [text(row.id), text(row.status)]))
   const lineByProposal = new Map(
     invoiceLines.map((row) => [text(row.interpretation_proposal_id), text(row.id)])
   )
@@ -277,14 +279,19 @@ async function loadBatchState(
         && !reviewReasons.includes('mapping_requires_human_review')) {
         reviewReasons.push('mapping_requires_human_review')
       }
-      const disposition = classifyK5BatchCandidate({
-        status,
-        mappingVersionId,
-        ingredientId,
-        lineId,
-        confirmed,
-        pendingOrderCount: pending,
-      })
+      // Una compra puntual clasificada como gasto queda resuelta sin stock
+      // aunque la propuesta OCR siga necesitando mapeo de ingrediente.
+      const lineStatus = lineId ? statusByLineId.get(lineId) : null
+      const disposition = lineStatus === 'expense_only' || lineStatus === 'excluded'
+        ? 'excluded'
+        : classifyK5BatchCandidate({
+          status,
+          mappingVersionId,
+          ingredientId,
+          lineId,
+          confirmed,
+          pendingOrderCount: pending,
+        })
 
       return {
         proposalId,
