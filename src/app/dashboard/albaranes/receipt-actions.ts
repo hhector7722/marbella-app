@@ -616,7 +616,10 @@ export async function saveReceiptMappingProposalAction(params: {
       mapped_ingredient_id: ingredientId,
       status: revisedProposal ? (revisedProposal.status === 'ready_for_review' ? 'mapped' : 'pending') : 'mapped',
       ...(revisedProposal ? { interpretation_proposal_id: revisedProposal.id } : {}),
-      ...(variableWeightKg != null ? { quantity: variableWeightKg, line_unit: 'kg' } : {}),
+      // K4 exige que la unidad confirmada coincida con la propuesta K5.
+      // El OCR puede haber dejado line_unit vacío aunque la persona la revise aquí.
+      line_unit: effectiveLineBillingUnit,
+      ...(variableWeightKg != null ? { quantity: variableWeightKg } : {}),
     })
     .eq('id', lineId)
   if (updateError) return { success: false, message: 'La propuesta se guardó, pero no se pudo vincular a la línea.' }

@@ -127,6 +127,11 @@ confirmada. La corrección humana crea una nueva versión de propuesta con las
 tres cifras y el actor; conserva intacta la evidencia OCR. Si la ecuación no
 cuadra, la línea no pasa a confirmación K4.
 
+Cuando la persona revisa la presentación facturada, la unidad elegida queda
+también en la línea operativa. La propuesta versionada y la línea deben
+coincidir en esa unidad para que K4 pueda validar la recepción; una unidad
+omitida por el OCR no se interpreta como una unidad distinta.
+
 Cuando un documento imprime varias bases de IVA y la lectura conserva solo
 una como subtotal, la conciliación usa la suma completa de los importes de
 línea más el IVA observado contra el total impreso. Solo se acepta si todas
