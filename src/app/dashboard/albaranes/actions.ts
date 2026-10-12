@@ -10,6 +10,7 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoices-list'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
+import { canonicalDocumentSchema } from '@/lib/albaranes/extractors/canonical'
 import {
   parseObservedDecimal,
   reconcilePercentageDiscountedUnitPrice,
@@ -1303,9 +1304,80 @@ export async function excludeInvoiceLineFromMappingAction(params: {
 // la sincronización de cabecera `mapped` y para PyG.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Algunas cabeceras históricas siguen en PROCESANDO… / 0 € aunque Mistral
+ * extrajo importes válidos. PyG lee base_amount y total_amount del albarán,
+ * no las líneas expense_only, así que restaurar solo cuando los totales
+ * originales y todas las líneas operativas cuadran al céntimo.
+ * Nunca se estima IVA ni se altera una cabecera que ya tenga importes.
+ */
+async function fillVerifiedExpenseInvoiceHeader(
+  supabase: SupabaseServerClient,
+  invoiceId: string
+): Promise<boolean> {
+  const { data: invoice, error: invoiceErr } = await supabase
+    .from('purchase_invoices')
+    .select('id,invoice_number,total_amount,base_amount,tax_amount,expected_pages,content_sha256,duplicate_of_invoice_id')
+    .eq('id', invoiceId).maybeSingle()
+  if (invoiceErr || !invoice) return false
+  if (Number(invoice.total_amount) > 0) return true
+  if (invoice.duplicate_of_invoice_id || invoice.expected_pages !== 1) return false
+
+  const [extraSheets, extractions, invoiceLines] = await Promise.all([
+    supabase.from('purchase_invoice_attachments').select('id').eq('invoice_id', invoiceId).limit(1),
+    supabase.from('document_extractions')
+      .select('file_version_hash,raw_json_artifact')
+      .eq('invoice_id', invoiceId).eq('status', 'success')
+      .eq('extractor_version', 'mistral-ocr-4-1-document-observation-v2')
+      .order('extracted_at', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('purchase_invoice_lines')
+      .select('total_price,status,superseded_by_extraction_id')
+      .eq('invoice_id', invoiceId).is('superseded_by_extraction_id', null),
+  ])
+  if (extraSheets.error || extractions.error || invoiceLines.error
+    || extraSheets.data?.length || !extractions.data) return false
+  if (invoice.content_sha256
+    && extractions.data.file_version_hash !== invoice.content_sha256) return false
+
+  const artifact = extractions.data.raw_json_artifact as Record<string, unknown> | null
+  const parsed = canonicalDocumentSchema.safeParse(artifact?.canonical)
+  if (!parsed.success) return false
+  const canonical = parsed.data
+  const base = parseObservedDecimal(canonical.subtotal_raw)
+  const tax = parseObservedDecimal(canonical.tax_raw)
+  const total = parseObservedDecimal(canonical.total_raw)
+  if (base == null || base <= 0 || tax == null || tax < 0 || total == null || total <= 0) return false
+  const cents = (value: number) => Math.round((value + Number.EPSILON) * 100)
+  if (Math.abs(cents(base) + cents(tax) - cents(total)) > 1) return false
+  const lines = invoiceLines.data ?? []
+  if (!lines.length || lines.some((line) => line.total_price == null
+    || !Number.isFinite(Number(line.total_price)) || Number(line.total_price) < 0)) return false
+  const lineTotalCents = lines.reduce((sum, line) => sum + cents(Number(line.total_price)), 0)
+  if (Math.abs(lineTotalCents - cents(total)) > 1) return false
+
+  const printedNumber = String(canonical.document_number_raw ?? '').trim()
+  const replaceNumber = /^(PROCESANDO|PENDIENTE)/i.test(String(invoice.invoice_number ?? '').trim())
+    && printedNumber.length > 0 && printedNumber.length <= 80
+  const { data: updated, error: updateError } = await supabase
+    .from('purchase_invoices')
+    .update({
+      total_amount: total,
+      base_amount: base,
+      tax_amount: tax,
+      ...(replaceNumber ? { invoice_number: printedNumber } : {}),
+    })
+    .eq('id', invoiceId).eq('total_amount', 0).select('id').maybeSingle()
+  // Si otro proceso restauró antes la cabecera, también está resuelto.
+  if (updateError) return false
+  if (updated) return true
+  const { data: refreshed } = await supabase.from('purchase_invoices')
+    .select('total_amount').eq('id', invoiceId).maybeSingle()
+  return Number(refreshed?.total_amount) > 0
+}
+
 export async function markInvoiceLineExpenseOnlyAction(params: {
   lineId: string
-}): Promise<{ success: true } | { success: false; message: string }> {
+ }): Promise<{ success: true; warning?: string } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
   if (gate.role !== 'manager' && gate.role !== 'admin') {
@@ -1362,11 +1434,17 @@ export async function markInvoiceLineExpenseOnlyAction(params: {
   if (updErr) return { success: false, message: `Error registrando el gasto: ${updErr.message}` }
   if (!updated) return { success: false, message: 'La línea ha cambiado. Actualiza el albarán y vuelve a intentarlo.' }
 
+  const headerOk = await fillVerifiedExpenseInvoiceHeader(gate.supabase, invoiceId)
   await syncPurchaseInvoiceStatusRpc(gate.supabase, invoiceId)
   try {
     revalidatePath('/dashboard/albaranes')
   } catch {}
-  return { success: true }
+  return headerOk
+    ? { success: true }
+    : {
+        success: true,
+        warning: 'Gasto guardado sin stock, pero la cabecera del albarán sigue sin importes verificados. Revisa el original antes de usarlo en PyG.',
+      }
 }
 
 export async function restoreInvoiceLineFromExpenseOnlyAction(params: {
