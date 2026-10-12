@@ -86,6 +86,24 @@ test('SHERS: el mapeo no oculta descuentos ni importes contradictorios', () => {
   ])
 })
 
+test('SHERS: el DTO fijo verificado resuelve bloqueos anteriores sin ocultar avisos documentales', () => {
+  const reasons = resolveMappingReviewReasons({
+    previousReasons: [
+      'descuento_sin_porcentaje_verificado', 'cantidad_precio_importe_no_reconcilian',
+      'precio_neto_contradictorio', 'presentacion_sin_validar',
+      'lineas_subtotal_no_reconcilian',
+    ],
+    hasResolvedName: true,
+    hasMappedSnapshot: true,
+    humanLineOverride: true,
+    quantity: 15,
+    unitPrice: 11.0227,
+    lineTotal: 165.34,
+    verifiedFixedDiscountMath: true,
+  })
+  assert.deepEqual(reasons, ['lineas_subtotal_no_reconcilian'])
+})
+
 test('Panabad: una revisión explícita que concilia descuento e importe resuelve los bloqueos de precio', () => {
   const reasons = resolveMappingReviewReasons({
     previousReasons: [
