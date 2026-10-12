@@ -119,6 +119,41 @@ test('SHERS: diferencias no justificadas o descuento sin neto impreso mantienen 
   }
 })
 
+test('SHERS guantes negros: 2 unidades con 8,22 € bruto, 3,24 € de DTO y total 9,97 €', () => {
+  const evidence = row({
+    quantity_raw: '2,00',
+    unit_price_raw: '8,22',
+    discount_raw: '3,24',
+    discount_header_raw: 'DTO.',
+    net_unit_price_raw: '4,99',
+    line_total_raw: '9,97',
+  })
+  assert.equal(reconcileFixedDiscountedUnitPrice(evidence), '4.985')
+  const checked = validateObservedLine(evidence)
+  assert.deepEqual(checked.reasons, [])
+  assert.equal(checked.priceBasis, 'billing_quantity')
+})
+
+test('SHERS guantes: rechaza errores mayores que un céntimo o precio neto no respaldado', () => {
+  const evidence = row({
+    quantity_raw: '2,00',
+    unit_price_raw: '8,22',
+    discount_raw: '3,24',
+    discount_header_raw: 'DTO.',
+    net_unit_price_raw: '4,99',
+    line_total_raw: '9,97',
+  })
+  for (const patch of [
+    { discount_raw: '3,22' },
+    { net_unit_price_raw: '4,97' },
+    { line_total_raw: '9,90' },
+    { unit_price_raw: '8,2200' },
+    { other_charge_raw: '1,00' },
+  ]) {
+    assert.equal(reconcileFixedDiscountedUnitPrice({ ...evidence, ...patch }), null)
+  }
+})
+
 test('no supone un descuento en euros sin precio neto explícito', () => {
   const check = validateObservedLine(row({ quantity_raw: '1', unit_price_raw: '8,58',
     discount_raw: '3,38', discount_header_raw: 'DTO.', line_total_raw: '5,20' }))
