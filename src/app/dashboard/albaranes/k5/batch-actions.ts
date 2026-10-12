@@ -145,8 +145,15 @@ async function loadBatchState(
     .select('id,interpretation_proposal_id,status,superseded_by_extraction_id')
     .eq('invoice_id', invoiceId)
   if (lineError) throw new Error('No se pudieron resolver las líneas revisables.')
-  const invoiceLines = ((lineRows ?? []) as Array<Record<string, unknown>>)
-    .filter((row) => !row.superseded_by_extraction_id)
+  const allLineRows = (lineRows ?? []) as Array<Record<string, unknown>>
+  // Si el original OCR generó una fila fantasma que se descartó con
+  // superseded_by_extraction_id, su propuesta K5 no debe reaparecer como
+  // pendiente. Se conserva en la extracción inmutable para auditoría.
+  const supersededProposalIds = new Set(allLineRows
+    .filter((row) => Boolean(row.superseded_by_extraction_id))
+    .map((row) => text(row.interpretation_proposal_id))
+    .filter(Boolean))
+  const invoiceLines = allLineRows.filter((row) => !row.superseded_by_extraction_id)
   const statusByLineId = new Map(invoiceLines.map((row) => [text(row.id), text(row.status)]))
   const lineByProposal = new Map(
     invoiceLines.map((row) => [text(row.interpretation_proposal_id), text(row.id)])
@@ -245,6 +252,7 @@ async function loadBatchState(
   }
 
   const rows = active
+    .filter((proposal) => !supersededProposalIds.has(text(proposal.id)))
     .map((proposal): K5BatchReviewRow => {
       const proposalId = text(proposal.id)
       const lineId = lineIdForProposal(proposalId)
