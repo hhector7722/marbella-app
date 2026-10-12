@@ -320,7 +320,7 @@ export function DocumentEvidenceModal({
                                 onClose()
                               }}
                             >
-                              Gasto
+                              Otros · gasto sin stock
                             </Button>
                           )}
                         </div>
