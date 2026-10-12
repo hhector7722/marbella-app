@@ -7,6 +7,7 @@ import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
 import { resolveMappingReviewReasons } from '@/lib/albaranes/k5/mapping-review-reasons'
 import {
   reconcileFixedDiscountedUnitPrice,
+  reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
 } from '@/lib/albaranes/pipeline/validate'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
@@ -288,12 +289,10 @@ async function supersedeK5ProposalWithMapping(params: {
       observedUnitPrice
     )
   )
-  // Descuento fijo (euros por caja) verificable de SHERS. No depende de la
-  // presentación elegida ni acepta la mera corrección manual como evidencia:
-  // bruto, DTO, neto y total proceden de la lectura original inmutable.
-  const verifiedShersFixedDiscount = Boolean(
-    Number(current.supplier_id) === 8
-    && sourceLine.success
+  // Descuento fijo verificable para cualquier proveedor. No acepta una
+  // mera corrección manual: bruto, DTO, neto y total vienen del original.
+  const verifiedFixedDiscount = Boolean(
+    sourceLine.success
     && sourceCheck?.priceBasis === 'billing_quantity'
     && sameExactDecimal(sourceCheck.quantity, lineQuantity)
     && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
@@ -302,7 +301,20 @@ async function supersedeK5ProposalWithMapping(params: {
       observedUnitPrice
     )
   )
-  // La revisión humana puede completar datos que el OCR dejó vacíos. Esos
+  // Recalcular también bloqueos heredados de porcentajes redondeados,
+  // pero exclusivamente a partir de la evidencia original verificable.
+  const verifiedPercentDiscount = Boolean(
+    sourceLine.success
+    && sourceCheck?.priceBasis === 'billing_quantity'
+    && sourceCheck.discountPercent != null
+    && sameExactDecimal(sourceCheck.quantity, lineQuantity)
+    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+    && sameExactDecimal(
+      reconcilePercentageDiscountedUnitPrice(sourceLine.data),
+      observedUnitPrice
+    )
+  )
+    // La revisión humana puede completar datos que el OCR dejó vacíos. Esos
   // valores quedan versionados en la propuesta sucesora; la evidencia original
   // no se modifica y K4 seguirá revalidando antes de cualquier efecto económico.
   const semanticReasons = resolveMappingReviewReasons({
@@ -314,8 +326,9 @@ async function supersedeK5ProposalWithMapping(params: {
     quantity: quantityNumber,
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
-    verifiedObservedMath: verifiedEmbeddedKgMath || verifiedRoundedUnitMath,
-    verifiedFixedDiscountMath: verifiedShersFixedDiscount,
+    verifiedObservedMath: verifiedEmbeddedKgMath || verifiedRoundedUnitMath
+      || verifiedPercentDiscount,
+    verifiedFixedDiscountMath: verifiedFixedDiscount,
     verifiedReviewedPricing: Boolean(reviewedPricing),
   })
   const reviewReasons: string[] = [...new Set(snapshot
