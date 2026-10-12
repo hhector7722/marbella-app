@@ -438,6 +438,9 @@ export function LineMappingModal({
       ),
     [ingredientId, variableWeightKg, purchaseUnitForPresentation]
   )
+  const billingUnitForDisplay = isVariableWeightMode
+    ? 'kg'
+    : dimensionalParsed.lineBillingUnit || line?.line_unit || 'unidad'
 
   const billingMassVolumeNorm = useMemo(
     () => billingMassVolumeNormForAuto(dimensional.lineBillingUnit, line?.line_unit),
@@ -507,6 +510,9 @@ export function LineMappingModal({
       ? 'Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.'
       : 'Indica un precio facturado válido.'
     if (isVariableWeightMode) return null
+    if (!dimensionalParsed.lineBillingUnit && !automaticDimensional) {
+      return 'Indica la unidad que factura el proveedor (por ejemplo, caja, pack o ud).'
+    }
     if (automaticDimensional) return presentationEconomics ? null : 'No se pudo calcular la conversión automática.'
     if (dimensionalParsed.lineContentQty == null || dimensionalParsed.lineContentQty <= 0) {
       return 'Indica cuánta cantidad contiene una unidad facturada.'
@@ -526,6 +532,7 @@ export function LineMappingModal({
     observedUnitPrice,
     isPanabad,
     isVariableWeightMode,
+    dimensionalParsed.lineBillingUnit,
     dimensionalParsed.lineContentQty,
     dimensionalParsed.lineContentUnit,
     purchaseUnitForPresentation,
@@ -582,7 +589,7 @@ export function LineMappingModal({
 
     let factorNum = presentationEconomics?.conversionFactor ?? Number(String(factor).replace(',', '.'))
     let { lineContentQty, lineContentUnit } = dimensionalParsed
-    let lineBillingUnit = String(line.line_unit ?? dimensionalParsed.lineBillingUnit ?? '').trim()
+    let lineBillingUnit = String(dimensionalParsed.lineBillingUnit ?? line.line_unit ?? '').trim()
 
     if (isVariableWeightMode) {
       lineBillingUnit = 'kg'
@@ -955,7 +962,7 @@ export function LineMappingModal({
                       className="min-h-12 w-28 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
                     <span className="text-xs font-semibold text-zinc-700">
-                      € por {isVariableWeightMode ? 'kg' : String(line.line_unit || 'unidad').trim()}
+                      € por {billingUnitForDisplay}
                     </span>
                   </div>
                   {isPanabad ? (
@@ -1094,9 +1101,27 @@ export function LineMappingModal({
                         Indica qué contiene una unidad del albarán. El precio final se calcula automáticamente.
                       </p>
 
+                      <div className="px-1">
+                        <Field
+                          instance="albaran-line-billing-unit"
+                          label="Unidad facturada"
+                          htmlFor="albaran-line-billing-unit"
+                          hint="Escribe la unidad que figura en el albarán: caja, pack, ud…"
+                        >
+                          <input
+                            id="albaran-line-billing-unit"
+                            value={dimensional.lineBillingUnit}
+                            onChange={(event) => {
+                              setShowAdvancedCalibration(true)
+                              setDimensional((current) => ({ ...current, lineBillingUnit: event.target.value }))
+                            }}
+                          />
+                        </Field>
+                      </div>
+
                       <div className="flex flex-wrap items-center gap-1.5 px-1">
                         <span className="text-[11px] font-semibold text-zinc-700 shrink-0">
-                          1 {String(line.line_unit || 'unidad').trim()} contiene
+                          1 {billingUnitForDisplay} contiene
                         </span>
                         <input
                           inputMode="decimal"
@@ -1105,7 +1130,6 @@ export function LineMappingModal({
                             setShowAdvancedCalibration(true)
                             setDimensional((d) => ({
                               ...d,
-                              lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
                               lineContentQty: e.target.value,
                             }))
                                                   }}
@@ -1119,7 +1143,6 @@ export function LineMappingModal({
                             setShowAdvancedCalibration(true)
                             setDimensional((d) => ({
                               ...d,
-                              lineBillingUnit: String(line.line_unit ?? d.lineBillingUnit ?? '').trim(),
                               lineContentUnit: e.target.value,
                             }))
                                                   }}
@@ -1206,7 +1229,7 @@ export function LineMappingModal({
                                 />
                               </label>
                               <label className="min-w-[8rem] flex-1 text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
-                                Recibido ({line.line_unit || 'unidad línea'})
+                                Recibido ({billingUnitForDisplay})
                                 <input
                                   inputMode="decimal"
                                   value={draft.lineQuantity}

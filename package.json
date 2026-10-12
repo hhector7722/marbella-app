@@ -29,7 +29,7 @@
     "test:k2:allowlist": "node scripts/k2/k2b-allowlist.test.cjs",
     "test:k2:runner": "node --test scripts/k2/k2-runner.test.cjs",
     "test:p0:stock-ledger": "node --test scripts/k2/stock-ledger-gate.test.cjs",
-    "test:k4:receipt-contract": "node --test scripts/k4/k4-receipt-contract.test.cjs",
+    "test:k4:receipt-contract": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test scripts/k4/k4-receipt-contract.test.cjs src/lib/albaranes/k5/receipt-mismatch.test.ts",
     "test:pricing": "node --test scripts/pricing/canonical-price-writers.test.cjs",
     "test:suppliers-successor": "node --test scripts/suppliers/suppliers-successor-contract.test.mjs",
     "shadow": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/shadow-run.ts",

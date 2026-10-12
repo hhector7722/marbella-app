@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-12
 
+- **Albaranes permite corregir la unidad facturada y explica los rechazos de una revisión desactualizada.** La unidad elegida se conserva en la línea y en su propuesta; si otro dato cambia antes de confirmar, el mensaje indica qué revisar. K4 mantiene la validación económica y las recepciones pendientes no se aplican por esta corrección.
+
 - **Los modales recuperan la navegación por niveles.** La flecha atrás vuelve a mostrar el modal inmediatamente anterior y queda visible dentro de la cabecera. Pulsar fuera, la X o Escape cierra toda la cadena desde cualquier nivel. Información y Manuales conservan el origen de sus visores al retroceder.
 
 - **Master afina los accesos de «Otros» y su retorno.** Stock usa la imagen de Proveedores; Info y Altas llenan el contorno de sus iconos. Los modales abiertos desde «Otros» muestran una flecha que vuelve a ese menú, y cada nivel de Info, Manuales y sus visores vuelve al nivel inmediatamente anterior.

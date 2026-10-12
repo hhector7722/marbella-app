@@ -141,6 +141,12 @@ export async function proposeMistralExtraction(params: {
   for (const assessmentLine of assessment.lines) {
     const rowIndex = assessmentLine.rowIndex
     const observed = params.canonical.lines[rowIndex]!
+    // Propuesta y línea operativa comparten exactamente el mismo dato revisable.
+    const lineQuantity = assessmentLine.economicQuantity ?? assessmentLine.observedQuantity
+    const lineUnit = memory.presentations.find((row) => row.mappingVersionId === assessmentLine.mappingVersionId)?.lineBillingUnit
+      ?? observed.billing_unit_raw
+    const unitPrice = assessmentLine.effectiveUnitPrice ?? assessmentLine.observedUnitPrice
+    const lineTotal = assessmentLine.observedLineTotal
     let proposalId = byRow.get(rowIndex)
     if (!proposalId) {
       let mappingVersionId = assessmentLine.mappingVersionId
@@ -205,11 +211,10 @@ export async function proposeMistralExtraction(params: {
         proposed_allocations: [],
         review_reasons: assessmentLine.reasons,
         warnings: assessment.documentReasons,
-        line_quantity: assessmentLine.economicQuantity ?? assessmentLine.observedQuantity,
-        line_unit: memory.presentations.find((row) => row.mappingVersionId === assessmentLine.mappingVersionId)?.lineBillingUnit
-          ?? observed.billing_unit_raw,
-        observed_unit_price: assessmentLine.effectiveUnitPrice ?? assessmentLine.observedUnitPrice,
-        line_total: assessmentLine.observedLineTotal,
+        line_quantity: lineQuantity,
+        line_unit: lineUnit,
+        observed_unit_price: unitPrice,
+        line_total: lineTotal,
         physical_quantity: assessmentLine.normalized?.physicalQuantity ?? null,
         base_unit: assessmentLine.normalized?.baseUnit ?? null,
         purchase_quantity: assessmentLine.normalized?.purchaseQuantity ?? null,
@@ -234,11 +239,10 @@ export async function proposeMistralExtraction(params: {
         invoice_id: params.invoiceId,
         interpretation_proposal_id: proposalId,
         original_name: observed.description_raw,
-        quantity: assessmentLine.economicQuantity ?? assessmentLine.observedQuantity,
-        line_unit: memory.presentations.find((row) => row.mappingVersionId === assessmentLine.mappingVersionId)?.lineBillingUnit
-          ?? observed.billing_unit_raw,
-        unit_price: assessmentLine.effectiveUnitPrice ?? assessmentLine.observedUnitPrice,
-        total_price: assessmentLine.observedLineTotal,
+        quantity: lineQuantity,
+        line_unit: lineUnit,
+        unit_price: unitPrice,
+        total_price: lineTotal,
         mapped_ingredient_id: assessmentLine.status === 'ready_for_review' ? assessmentLine.ingredientId : null,
         status: assessmentLine.status === 'ready_for_review' ? 'mapped' : 'pending',
       }

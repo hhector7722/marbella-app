@@ -131,6 +131,10 @@ Cuando la persona revisa la presentación facturada, la unidad elegida queda
 también en la línea operativa. La propuesta versionada y la línea deben
 coincidir en esa unidad para que K4 pueda validar la recepción; una unidad
 omitida por el OCR no se interpreta como una unidad distinta.
+«Revisar compra» permite corregir la unidad facturada junto al contenido de
+esa unidad. Si K4 detecta que nombre, cantidad, unidad, precio, importe o
+ingrediente ya no coinciden con la propuesta, el rechazo identifica el dato
+que debe revisarse y conserva lo escrito para reintentar.
 
 Cuando un documento imprime varias bases de IVA y la lectura conserva solo
 una como subtotal, la conciliación usa la suma completa de los importes de

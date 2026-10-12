@@ -10,6 +10,7 @@ import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight
 import { canonicalLineSchema } from '@/lib/albaranes/extractors/canonical'
 import { validateObservedLine } from '@/lib/albaranes/pipeline/validate'
 import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
+import { explainReceiptProposalMismatch } from '@/lib/albaranes/k5/receipt-mismatch'
 
 type PricingReview = {
   grossUnitPrice: number
@@ -103,6 +104,34 @@ async function interpretationProposalIdForLine(
     .maybeSingle()
   if (error) throw new Error('No se pudo comprobar la propuesta de interpretación de la línea.')
   return text(data?.interpretation_proposal_id) || null
+}
+
+const K4_LINE_MISMATCH = 'La línea ya no coincide exactamente con la propuesta revisada.'
+
+async function explainReceiptFailure(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  lineId: string,
+  proposalId: string | null,
+  mappingVersionId: string,
+  result: Extract<ReceiptApplyResult, { ok: false }>
+): Promise<Extract<ReceiptApplyResult, { ok: false }>> {
+  if (result.message !== K4_LINE_MISMATCH || !proposalId) return result
+
+  const [lineResult, proposalResult] = await Promise.all([
+    supabase.from('purchase_invoice_lines')
+      .select('interpretation_proposal_id,mapped_ingredient_id,original_name,quantity,line_unit,unit_price,total_price')
+      .eq('id', lineId).maybeSingle(),
+    supabase.from('purchase_interpretation_proposals')
+      .select('id,mapping_version_id,ingredient_id,source_item_name,line_quantity,line_unit,observed_unit_price,line_total')
+      .eq('id', proposalId).maybeSingle(),
+  ])
+  if (lineResult.error || proposalResult.error) {
+    return { ...result, message: 'No se pudo comprobar qué dato cambió. Cierra y vuelve a abrir el albarán.' }
+  }
+  return {
+    ...result,
+    message: explainReceiptProposalMismatch(lineResult.data, proposalResult.data, mappingVersionId),
+  }
 }
 
 type K5MappingRevision = {
@@ -610,7 +639,7 @@ export async function saveReceiptMappingProposalAction(params: {
     return { success: false, message: error instanceof Error ? error.message : 'No se pudo revisar la propuesta K5.' }
   }
 
-  const { error: updateError } = await gate.supabase
+  const { data: updatedLine, error: updateError } = await gate.supabase
     .from('purchase_invoice_lines')
     .update({
       mapped_ingredient_id: ingredientId,
@@ -622,7 +651,12 @@ export async function saveReceiptMappingProposalAction(params: {
       ...(variableWeightKg != null ? { quantity: variableWeightKg } : {}),
     })
     .eq('id', lineId)
-  if (updateError) return { success: false, message: 'La propuesta se guardó, pero no se pudo vincular a la línea.' }
+    .eq('interpretation_proposal_id', k5ProposalId)
+    .select('id')
+    .maybeSingle()
+  if (updateError || !updatedLine) {
+    return { success: false, message: 'La línea cambió durante el guardado. Cierra y vuelve a abrir el albarán para revisar los datos actuales.' }
+  }
 
   revalidatePath('/dashboard/albaranes')
   return {
@@ -701,7 +735,10 @@ export async function previewReceiptLineAction(params: {
     return { success: false, message: 'No se pudo validar esta recepción. Revísala antes de confirmar.' }
   }
   const result = data as unknown as ReceiptApplyResult
-  if (!result.ok) return { success: false, code: result.code, message: result.message }
+  if (!result.ok) {
+    const explained = await explainReceiptFailure(gate.supabase, text(params?.lineId), proposalId, text(params?.mappingVersionId), result)
+    return { success: false, code: explained.code, message: explained.message }
+  }
   return { success: true, preview: result as unknown as ReceiptPreview }
 }
 
@@ -733,7 +770,10 @@ export async function applyReceiptLineAction(params: {
     return { success: false, message: 'No se pudo confirmar la recepción. No se aplicó ningún cambio.' }
   }
   const result = data as unknown as ReceiptApplyResult
-  if (!result.ok) return { success: false, code: result.code, message: result.message }
+  if (!result.ok) {
+    const explained = await explainReceiptFailure(gate.supabase, text(params?.lineId), proposalId, text(params?.mappingVersionId), result)
+    return { success: false, code: explained.code, message: explained.message }
+  }
 
   revalidatePath('/dashboard/albaranes')
   revalidatePath('/dashboard/inventory')
