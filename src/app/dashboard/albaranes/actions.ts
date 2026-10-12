@@ -341,6 +341,7 @@ export type PurchaseInvoiceDetail = {
   id: string
   created_at: string
   created_by: string | null
+  created_by_name: string | null
   source: string | null
   status: string | null
   ocr_error: string | null
@@ -563,10 +564,25 @@ export async function getPurchaseInvoiceDetailAction(
     }
   }
 
+  let createdByName: string | null = null
+  if ((data as any).created_by) {
+    const { data: creator, error: creatorError } = await gate.supabase
+      .from('profiles')
+      .select('first_name')
+      .eq('id', (data as any).created_by)
+      .maybeSingle()
+    if (creatorError) {
+      console.error('purchase_invoice_creator select:', creatorError.message)
+    } else {
+      createdByName = String(creator?.first_name ?? '').trim() || null
+    }
+  }
+
   const detail: PurchaseInvoiceDetail = {
     id: (data as any).id,
     created_at: (data as any).created_at,
     created_by: (data as any).created_by ?? null,
+    created_by_name: createdByName,
     source: (data as any).source ?? null,
     status: (data as any).status ?? null,
     ocr_error: (data as any).ocr_error ?? null,
