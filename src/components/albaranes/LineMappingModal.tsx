@@ -41,6 +41,7 @@ import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
 import {
   reconcileFixedDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
+  reconcileUnadjustedNetUnitPrice,
 } from '@/lib/albaranes/pipeline/validate'
 import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal'
 type LineDimensionalDraft = {
@@ -358,9 +359,16 @@ export function LineMappingModal({
       const originalPrintedPrice = currentLine.printed_unit_price_raw
       const roundingResult = originalPrintedPrice && !currentLine.printed_has_adjustments
         && currentLine.quantity != null && currentLine.total_price != null
-        ? reconcileRoundedDisplayedUnitPrice(
+        ? (reconcileUnadjustedNetUnitPrice({
+            quantity_raw: String(currentLine.quantity),
+            unit_price_raw: originalPrintedPrice,
+            discount_raw: null,
+            net_unit_price_raw: currentLine.printed_net_unit_price == null
+              ? null : String(currentLine.printed_net_unit_price),
+            line_total_raw: String(currentLine.total_price),
+          }) ?? reconcileRoundedDisplayedUnitPrice(
             String(currentLine.quantity), originalPrintedPrice, String(currentLine.total_price)
-          )
+          ))
         : null
       const storedPrice = currentLine.unit_price
       const mayDisplayPrintedPrice = roundingResult != null && storedPrice != null
@@ -451,9 +459,16 @@ export function LineMappingModal({
   const roundedUnitPrice = !isPanabad && line?.variable_weight_kg == null
     && !line?.printed_has_adjustments
     && line?.quantity != null && line?.total_price != null
-    ? reconcileRoundedDisplayedUnitPrice(
+    ? (reconcileUnadjustedNetUnitPrice({
+        quantity_raw: String(line.quantity),
+        unit_price_raw: observedUnitPriceDraft,
+        discount_raw: null,
+        net_unit_price_raw: line.printed_net_unit_price == null
+          ? null : String(line.printed_net_unit_price),
+        line_total_raw: String(line.total_price),
+      }) ?? reconcileRoundedDisplayedUnitPrice(
         String(line.quantity), observedUnitPriceDraft, String(line.total_price)
-      )
+      ))
     : null
   const observedUnitPrice = isPanabad
     ? reviewedDiscount == null ? null : Number(reviewedDiscount.effectiveUnitPrice.toFixed(4))
