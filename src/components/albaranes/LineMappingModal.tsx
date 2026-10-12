@@ -22,6 +22,7 @@ import {
 } from '@/lib/ingredient-pack-pricing'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import {
+  markInvoiceLineExpenseOnlyAction,
   resolveLineMappingAction,
   searchIngredientsForMappingAction,
   updatePurchaseInvoiceLineAction,
@@ -123,6 +124,7 @@ export function LineMappingModal({
   const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Revisar línea de albarán')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [expenseMode, setExpenseMode] = useState(false)
 
   const [ingredientId, setIngredientId] = useState<string | null>(null)
   const [ingredientLabel, setIngredientLabel] = useState<string | null>(null)
@@ -352,6 +354,7 @@ export function LineMappingModal({
     setPrevResolveSyncKey(resolveSyncKey)
     if (resolveSyncKey) {
       setLoading(true)
+      setExpenseMode(false)
       setSearchQuery('')
       setSearchResults([])
       // Si K5 guardó un precio efectivo más preciso, el campo sigue mostrando
@@ -854,7 +857,32 @@ export function LineMappingModal({
     }
   }
 
+  async function handleSaveExpenseOnly() {
+    if (!line || !invoiceId || stockApplied || saving || confirming || busy) return
+    const lineId = line.id
+    setApplyError(null)
+    setSaving(true)
+    try {
+      const result = await markInvoiceLineExpenseOnlyAction({ lineId })
+      if (!result.success) {
+        setApplyError(result.message)
+        toast.error(result.message)
+        return
+      }
+      toast.success('Otros: gasto registrado sin modificar el stock.')
+      handleClose()
+      await onSuccess()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo registrar el gasto.'
+      setApplyError(message)
+      toast.error(message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   function handleClose() {
+    setExpenseMode(false)
     setOrderOptions([])
     setAllocationDraft({})
     setApplyError(null)
@@ -892,7 +920,19 @@ export function LineMappingModal({
             Cancelar
           </Button>
 
-          {!stockApplied ? (
+          {!stockApplied && line.status !== 'expense_only' ? expenseMode ? (
+            <Button
+              type="button"
+              variant="primary"
+              instance="albaran-line-mapping-other-expense-apply"
+              onClick={() => void handleSaveExpenseOnly()}
+              disabled={saving || confirming || busy || !(Number(line.total_price) > 0)}
+              loading={saving}
+              loadingLabel="Registrando gasto…"
+            >
+              Guardar como gasto
+            </Button>
+          ) : (
             <Button
               type="button"
               variant="primary"
@@ -911,7 +951,38 @@ export function LineMappingModal({
       <div className="flex flex-col gap-1.5 min-w-0 max-w-full bg-zinc-50">
         {orderError ? <p role="alert" className="text-sm text-red-700">{orderError}</p> : null}
         {applyError ? <p role="alert" className="text-sm text-red-700">{applyError}</p> : null}
-        {loading ? (
+        {expenseMode ? (
+          <section className="rounded-lg border border-[#36606F]/25 bg-white px-4 py-4 flex flex-col gap-3">
+            <p className="text-sm font-semibold text-[#284c59]">Otros · gasto sin stock</p>
+            <p className="text-xs leading-relaxed text-zinc-600">
+              Compra puntual, material de mantenimiento o gasto que no forma parte del inventario.
+              Se conserva el artículo y su importe en el albarán, sin crear un ingrediente,
+              sin descontar existencias y sin generar movimientos de stock.
+            </p>
+            <div className="flex items-center justify-between border-t border-zinc-100 pt-3 gap-3">
+              <span className="text-xs font-medium text-zinc-700">Importe del gasto</span>
+              <span className="text-base font-semibold tabular-nums text-zinc-900">
+                {Number(line.total_price ?? 0).toLocaleString('es-ES', {
+                  minimumFractionDigits: 2, maximumFractionDigits: 2,
+                })} €
+              </span>
+            </div>
+            {!(Number(line.total_price) > 0) ? (
+              <p role="alert" className="text-xs font-medium text-amber-800">
+                El importe está vacío o es inválido. Corrige la línea antes de guardarla como gasto.
+              </p>
+            ) : null}
+            <Button
+              type="button"
+              variant="tertiary"
+              instance="albaran-line-mapping-back-to-ingredient"
+              onClick={() => setExpenseMode(false)}
+              disabled={saving}
+            >
+              Volver a ingredientes
+            </Button>
+          </section>
+        ) : loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-xs font-medium text-zinc-600">
               <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
               Preparando sugerencias…
@@ -946,6 +1017,19 @@ export function LineMappingModal({
                     </Button>
                   )}
                 </div>
+
+                {!stockApplied && line.status !== 'expense_only' ? (
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    instance="albaran-line-mapping-select-other-expense"
+                    className="mx-1 justify-start"
+                    onClick={() => setExpenseMode(true)}
+                    disabled={saving || confirming || busy}
+                  >
+                    Otros · gasto sin stock
+                  </Button>
+                ) : null}
 
                 {ingredientId ? (
                   <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 min-h-12 mx-1">
