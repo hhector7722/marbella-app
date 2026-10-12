@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   reconcileFixedDiscountedUnitPrice,
+  reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
+  reconcileUnadjustedNetUnitPrice,
   validateObservedDocument,
   validateObservedLine,
 } from './validate.ts'
@@ -152,6 +154,48 @@ test('SHERS guantes: rechaza errores mayores que un céntimo o precio neto no re
   ]) {
     assert.equal(reconcileFixedDiscountedUnitPrice({ ...evidence, ...patch }), null)
   }
+})
+
+test('redondeo general: se acepta una diferencia mayor de 5 céntimos solo cuando la unidad redondea exactamente', () => {
+  const evidence = row({
+    quantity_raw: '100', unit_price_raw: '1,16', line_total_raw: '115,55',
+  })
+  assert.equal(reconcileRoundedDisplayedUnitPrice('100', '1,16', '115,55'), '1.1555')
+  assert.deepEqual(validateObservedLine(evidence).reasons, [])
+  assert.equal(validateObservedLine(evidence).priceBasis, 'billing_quantity')
+  assert.equal(reconcileRoundedDisplayedUnitPrice('100', '1,16', '114,00'), null)
+})
+
+test('SHERS: descuento fijo con 100 cajas concilia sin límite arbitrario de 10 céntimos', () => {
+  const evidence = row({
+    quantity_raw: '100', unit_price_raw: '17,57', discount_raw: '6,55',
+    discount_header_raw: 'DTO.', net_unit_price_raw: '11,02',
+    line_total_raw: '1102,30',
+  })
+  assert.equal(reconcileFixedDiscountedUnitPrice(evidence), '11.023')
+  assert.deepEqual(validateObservedLine(evidence).reasons, [])
+})
+
+test('descuento porcentual genérico verificado para lotes grandes', () => {
+  const evidence = row({
+    quantity_raw: '100', unit_price_raw: '33,86', discount_raw: '38,00',
+    discount_header_raw: '% DTO.', line_total_raw: '2099,43',
+  })
+  assert.equal(reconcilePercentageDiscountedUnitPrice(evidence), '20.9943')
+  const check = validateObservedLine(evidence)
+  assert.deepEqual(check.reasons, [])
+  assert.equal(check.priceBasis, 'billing_quantity')
+})
+
+test('neto impreso sin descuento: se calcula el precio real desde la línea', () => {
+  const evidence = row({
+    quantity_raw: '2', unit_price_raw: '3,23', net_unit_price_raw: '3,24',
+    line_total_raw: '6,47',
+  })
+  assert.equal(reconcileUnadjustedNetUnitPrice(evidence), '3.235')
+  assert.deepEqual(validateObservedLine(evidence).reasons, [])
+  assert.equal(reconcileUnadjustedNetUnitPrice({ ...evidence, discount_raw: '0,50' }), null)
+  assert.equal(reconcileUnadjustedNetUnitPrice({ ...evidence, line_total_raw: '6,37' }), null)
 })
 
 test('no supone un descuento en euros sin precio neto explícito', () => {
