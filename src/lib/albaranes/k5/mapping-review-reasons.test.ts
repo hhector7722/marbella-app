@@ -24,6 +24,19 @@ test('un mapeo humano válido resuelve las dudas de identidad y presentación Mi
   ])
 })
 
+test('SANET: el redondeo comprobado elimina solo la discrepancia económica previa', () => {
+  assert.deepEqual(resolveMappingReviewReasons({
+    previousReasons: ['cantidad_precio_importe_no_reconcilian', 'presentacion_sin_validar'],
+    hasResolvedName: true,
+    hasMappedSnapshot: true,
+    humanLineOverride: true,
+    quantity: 10,
+    unitPrice: 1.156,
+    lineTotal: 11.56,
+    verifiedObservedMath: true,
+  }), [])
+})
+
 test('un aviso del documento no bloquea la confirmación de la línea', () => {
   assert.deepEqual(resolveMappingReviewReasons({
     previousReasons: ['presentacion_sin_validar', 'lineas_subtotal_no_reconcilian'],
