@@ -349,10 +349,25 @@ export function LineMappingModal({
       setLoading(true)
       setSearchQuery('')
       setSearchResults([])
+      // Si K5 guardó un precio efectivo más preciso, el campo sigue mostrando
+      // los dos decimales impresos cuando ambos valores reconcilian.
+      const currentLine = resolveSyncKey.line
+      const originalPrintedPrice = currentLine.printed_unit_price_raw
+      const roundingResult = originalPrintedPrice && !currentLine.printed_has_adjustments
+        && currentLine.quantity != null && currentLine.total_price != null
+        ? reconcileRoundedDisplayedUnitPrice(
+            String(currentLine.quantity), originalPrintedPrice, String(currentLine.total_price)
+          )
+        : null
+      const storedPrice = currentLine.unit_price
+      const mayDisplayPrintedPrice = roundingResult != null && storedPrice != null
+        && (Math.abs(Number(roundingResult) - Number(storedPrice)) < 0.00000001
+          || Math.abs(Number(originalPrintedPrice!.replace(',', '.')) - Number(storedPrice)) < 0.00000001)
       setObservedUnitPriceDraft(
-        resolveSyncKey.line.printed_unit_price == null
-          ? resolveSyncKey.line.unit_price == null ? '' : String(resolveSyncKey.line.unit_price)
-          : String(resolveSyncKey.line.printed_unit_price)
+        mayDisplayPrintedPrice ? originalPrintedPrice!
+          : currentLine.printed_unit_price == null
+            ? storedPrice == null ? '' : String(storedPrice)
+            : String(currentLine.printed_unit_price)
       )
       setDiscountDraft(resolveSyncKey.line.printed_discount_percent == null
         ? '' : String(resolveSyncKey.line.printed_discount_percent))
@@ -419,6 +434,7 @@ export function LineMappingModal({
   // El campo conserva el precio impreso (1,16), pero la recepción utiliza
   // el precio efectivo justificable por el total (11,56 / 10 = 1,156).
   const roundedUnitPrice = !isPanabad && line?.variable_weight_kg == null
+    && !line?.printed_has_adjustments
     && line?.quantity != null && line?.total_price != null
     ? reconcileRoundedDisplayedUnitPrice(
         String(line.quantity), observedUnitPriceDraft, String(line.total_price)
