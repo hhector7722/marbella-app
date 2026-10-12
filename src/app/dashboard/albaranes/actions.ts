@@ -509,7 +509,7 @@ export async function getPurchaseInvoiceDetailAction(
       )
       if (Number((data as any).supplier_id) !== 2
         && /dto|discount|descuento/i.test(proposal?.observed?.discount_header_raw ?? '')
-        && !/%|por\\s*ciento|percent/i.test(proposal?.observed?.discount_header_raw ?? '')) {
+        && !/%|por\s*ciento|percent/i.test(proposal?.observed?.discount_header_raw ?? '')) {
         const gross = parseObservedDecimal(proposal?.observed?.unit_price_raw ?? null)
         const discount = parseObservedDecimal(proposal?.observed?.discount_raw ?? null)
         const net = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
@@ -524,7 +524,7 @@ export async function getPurchaseInvoiceDetailAction(
         const discount = parseObservedDecimal(original.discount_raw)
         const price = parseObservedDecimal(original.unit_price_raw)
         const header = String(original.discount_header_raw ?? '')
-        const isPercent = /%|percent|por\\s*ciento/i.test(header)
+        const isPercent = /%|percent|por\s*ciento/i.test(header)
           || (!header.trim() && reconcilePercentageDiscountedUnitPrice(original) != null)
         if (isPercent && discount != null && discount > 0 && discount < 100
           && price != null && price > 0
