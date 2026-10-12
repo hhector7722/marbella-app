@@ -9,6 +9,7 @@ import {
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
+  reconcileUnadjustedNetUnitPrice,
 } from '@/lib/albaranes/pipeline/validate'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
@@ -289,6 +290,16 @@ async function supersedeK5ProposalWithMapping(params: {
       observedUnitPrice
     )
   )
+  const verifiedUnadjustedNet = Boolean(
+    sourceLine.success
+    && sourceCheck?.priceBasis === 'billing_quantity'
+    && sameExactDecimal(sourceCheck.quantity, lineQuantity)
+    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+    && sameExactDecimal(
+      reconcileUnadjustedNetUnitPrice(sourceLine.data),
+      observedUnitPrice
+    )
+  )
   // Descuento fijo verificable para cualquier proveedor. No acepta una
   // mera corrección manual: bruto, DTO, neto y total vienen del original.
   const verifiedFixedDiscount = Boolean(
@@ -327,7 +338,7 @@ async function supersedeK5ProposalWithMapping(params: {
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
     verifiedObservedMath: verifiedEmbeddedKgMath || verifiedRoundedUnitMath
-      || verifiedPercentDiscount,
+      || verifiedUnadjustedNet || verifiedPercentDiscount,
     verifiedFixedDiscountMath: verifiedFixedDiscount,
     verifiedReviewedPricing: Boolean(reviewedPricing),
   })
