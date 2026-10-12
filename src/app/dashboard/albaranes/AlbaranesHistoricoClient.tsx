@@ -90,6 +90,21 @@ function formatDateTitle(v: string | null | undefined) {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : t
 }
 
+function formatRegistrationDateTime(value: string | null | undefined): string {
+  if (!value) return 'Fecha desconocida'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Fecha desconocida'
+  return new Intl.DateTimeFormat('es-ES', {
+    timeZone: 'Europe/Madrid',
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(date)
+}
+
 function formatMaybeMoney(v: number | null | undefined) {
   const n = typeof v === 'number' && Number.isFinite(v) ? v : null
   if (n == null || n === 0) return ' '
@@ -1500,6 +1515,11 @@ export default function AlbaranesHistoricoClient({
         usageId="albaran-detail"
         usageLabel="Detalle albarán"
         headerTitleAlign="left"
+        subtitle={detail ? (
+          <span title={`Registrado por ${detail.created_by_name ?? 'Usuario desconocido'} · ${formatRegistrationDateTime(detail.created_at)}`}>
+            {detail.created_by_name ?? 'Usuario desconocido'} · {formatRegistrationDateTime(detail.created_at)}
+          </span>
+        ) : undefined}
         title={
           detail ? (
               <button
@@ -1743,7 +1763,6 @@ export default function AlbaranesHistoricoClient({
                           loading={ocrActionBusy}
                           loadingLabel="Leyendo…"
                         >
-                          <RefreshCw className="h-3.5 w-3.5" />
                           Reprocesar
                         </Button>
                       </div>
