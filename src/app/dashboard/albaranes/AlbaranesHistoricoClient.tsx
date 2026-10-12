@@ -152,7 +152,9 @@ function inlineReviewLabel(row: K5BatchReviewRow | null): string | null {
   if (!row) return null
   if (row.confirmed || row.disposition === 'confirmed') return 'Confirmado'
   if (row.disposition === 'ready') return 'Confirmar'
-  if (isDocumentOnlyReview(row)) return 'Documento'
+  // Los avisos de cabecera no convierten la revisión de una línea
+  // en una etiqueta pasiva: la persona debe poder abrir y confirmar
+  // sus datos sin esperar a recuperar el total documental por OCR.
   if (row.disposition === 'needs_mapping') return 'Mapear'
   if (row.disposition === 'order_review') return 'Revisar pedido'
   if (row.disposition === 'needs_review' || row.disposition === 'unavailable') return 'Revisar'
@@ -394,7 +396,6 @@ export default function AlbaranesHistoricoClient({
       !row.confirmed
       && row.disposition !== 'confirmed'
       && row.disposition !== 'excluded'
-      && !isDocumentOnlyReview(row)
     ).length,
     [inlineReviewRows]
   )
@@ -1752,7 +1753,7 @@ export default function AlbaranesHistoricoClient({
                           <div className="text-right text-[10px] font-semibold leading-snug text-zinc-500">
                             El aviso afecta al documento completo.
                             <br />
-                            No tienes que editar cada producto.
+                            Puedes revisar las líneas sin esperar al total.
                           </div>
                         ) : null}
                         <Button
@@ -1780,8 +1781,8 @@ export default function AlbaranesHistoricoClient({
                   {inlineDocumentReviewReasons.length > 0 ? (
                     <Notice instance="albaran-inline-document-review" variant="warning" title="Revisión del documento">
                       {inlineDocumentReviewReasons.length === 1
-                        ? 'Hay una comprobación pendiente del albarán completo. No bloquea las líneas que por lo demás están correctas: puedes confirmarlas sin editar cada producto. Si el aviso persiste, revisa el original o reprocesa con Mistral.'
-                        : 'Hay comprobaciones pendientes del albarán completo. No bloquean las líneas que por lo demás están correctas: puedes confirmarlas sin editar cada producto. Si los avisos persisten, revisa el original o reprocesa con Mistral.'}
+                        ? 'Hay una comprobación pendiente del albarán completo. Puedes revisar y confirmar las líneas mediante sus botones, sin tener que reconstruir el total del documento. Si el aviso persiste, revisa el original o reprocesa con Mistral.'
+                        : 'Hay comprobaciones pendientes del albarán completo. Puedes revisar y confirmar las líneas mediante sus botones, sin tener que reconstruir el total del documento. Si persisten, revisa el original o reprocesa con Mistral.'}
                     </Notice>
                   ) : null}
 
@@ -1834,19 +1835,14 @@ export default function AlbaranesHistoricoClient({
                             const reviewLabel = expenseOnly ? 'Otros · Gasto' : inlineReviewLabel(reviewRow)
                             const backgroundPhase = backgroundLineActions[l.id] ?? null
                             const needsRepair = lineNeedsStockRepair(l)
-                            const reviewLabelDocumentOnly = Boolean(
-                              reviewRow && isDocumentOnlyReview(reviewRow)
-                            )
-                            // Etiquetas pasivas (sin acción): ya confirmada,
-                            // excluida o bloqueada solo por el documento. Una
-                            // línea lista se confirma aunque el documento tenga
-                            // avisos, así que sigue siendo accionable.
+                            // El aviso «DOCUMENTO» se muestra solo en la
+                            // cabecera; las líneas pendientes siempre son
+                            // accionables mediante Revisar/Mapear/Confirmar.
                             const reviewLabelPassive =
                               expenseOnly ||
                               Boolean(reviewRow?.confirmed) ||
                               reviewRow?.disposition === 'confirmed' ||
-                              reviewRow?.disposition === 'excluded' ||
-                              (reviewLabelDocumentOnly && reviewRow?.disposition !== 'ready')
+                              reviewRow?.disposition === 'excluded'
                             const reviewLabelTextVisible =
                               Boolean(reviewLabel) && (reviewLabelPassive || isManager)
                             // Lápiz de edición: aparece cuando la línea ya está
