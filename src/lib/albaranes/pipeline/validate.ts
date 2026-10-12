@@ -86,7 +86,7 @@ export function reconcileFixedDiscountedUnitPrice(line: {
   other_charge_raw?: string | null
 }): string | null {
   if (!/dto|discount|descuento/i.test(line.discount_header_raw ?? '')
-    || /%|por\\s*ciento|percent/i.test(line.discount_header_raw ?? '')
+    || /%|por\s*ciento|percent/i.test(line.discount_header_raw ?? '')
     || line.other_charge_raw?.trim()) return null
   const quantity = parseExactDecimal(line.quantity_raw)
   const gross = parseExactDecimal(line.unit_price_raw)
@@ -106,7 +106,7 @@ export function reconcileFixedDiscountedUnitPrice(line: {
     // puede estar a mitad de céntimo: p.ej. 8,22 - 3,24 = 4,98, pero
     // 9,97 / 2 = 4,985, impreso como 4,99. Solo aceptamos hasta 1 céntimo
     // de desfase y comprobamos ambas cifras contra el importe original.
-    const printedCents = /^\\s*\\d+[.,]\\d{2}\\s*$/
+    const printedCents = /^\s*\d+[.,]\d{2}\s*$/
     if (!printedCents.test(line.unit_price_raw ?? '')
       || !printedCents.test(line.discount_raw ?? '')
       || !printedCents.test(line.net_unit_price_raw ?? '')
