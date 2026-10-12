@@ -38,6 +38,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { explainReviewReason } from '@/lib/albaranes/k5/review-reason-labels'
 import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
+import { reconcileRoundedDisplayedUnitPrice } from '@/lib/albaranes/pipeline/validate'
 import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal'
 type LineDimensionalDraft = {
   lineBillingUnit: string
@@ -415,9 +416,17 @@ export function LineMappingModal({
       lineTotal: Number(total),
     })
   }, [isPanabad, discountDraft, lineTotalDraft, line?.quantity, grossUnitPrice])
+  // El campo conserva el precio impreso (1,16), pero la recepción utiliza
+  // el precio efectivo justificable por el total (11,56 / 10 = 1,156).
+  const roundedUnitPrice = !isPanabad && line?.variable_weight_kg == null
+    && line?.quantity != null && line?.total_price != null
+    ? reconcileRoundedDisplayedUnitPrice(
+        String(line.quantity), observedUnitPriceDraft, String(line.total_price)
+      )
+    : null
   const observedUnitPrice = isPanabad
     ? reviewedDiscount == null ? null : Number(reviewedDiscount.effectiveUnitPrice.toFixed(4))
-    : grossUnitPrice
+    : roundedUnitPrice == null ? grossUnitPrice : Number(roundedUnitPrice)
 
   const purchaseUnitForPresentation = useMemo(
     () =>
