@@ -22,9 +22,12 @@ export function reviewDiscountedLine(input: {
     || !Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent >= 100
     || !Number.isFinite(lineTotal) || lineTotal <= 0) return null
 
-  const expected = quantity * grossUnitPrice * (1 - discountPercent / 100)
-  if (Math.abs(expected - lineTotal) > 0.03) return null
   const effectiveUnitPrice = lineTotal / quantity
   if (!Number.isFinite(effectiveUnitPrice) || effectiveUnitPrice <= 0) return null
+  const expectedNetUnitPrice = grossUnitPrice * (1 - discountPercent / 100)
+  // El desfase admitido es como máximo medio céntimo por unidad, no
+  // 0,03 € por línea. Así se admiten líneas grandes realmente redondeadas
+  // sin tolerar importes de proveedores económicamente contradictorios.
+  if (Math.abs(expectedNetUnitPrice - effectiveUnitPrice) > 0.005000001) return null
   return { grossUnitPrice, discountPercent, lineTotal, effectiveUnitPrice }
 }
