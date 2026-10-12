@@ -5,6 +5,7 @@ import {
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
+  reconcileUnadjustedNetUnitPrice,
   validateObservedDocument,
 } from './validate.ts'
 import { isAdministrativeNonProductRow } from './non-product-line.ts'
@@ -91,6 +92,7 @@ export function assessDocument(params: {
       && !check.reasons.length
       ? reconcileFixedDiscountedUnitPrice(line)
         ?? (check.discountPercent != null ? reconcilePercentageDiscountedUnitPrice(line) : null)
+        ?? reconcileUnadjustedNetUnitPrice(line)
         ?? (!line.discount_raw && !line.net_unit_price_raw
           ? reconcileRoundedDisplayedUnitPrice(line.quantity_raw, line.unit_price_raw, line.line_total_raw)
           : null)
