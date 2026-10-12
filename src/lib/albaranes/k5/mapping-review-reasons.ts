@@ -15,6 +15,7 @@ type MappingReviewInput = {
   lineTotal: number | null
   verifiedObservedMath?: boolean
   verifiedFixedDiscountMath?: boolean
+  verifiedPercentDiscountMath?: boolean
   verifiedReviewedPricing?: boolean
 }
 
@@ -51,10 +52,10 @@ export function resolveMappingReviewReasons(input: MappingReviewInput): string[]
     if (['missing_line_amount', 'importe_ausente_o_invalido'].includes(reason) && input.lineTotal != null && input.lineTotal > 0) return false
     if (reason === 'cantidad_precio_importe_no_reconcilian'
       && (input.verifiedObservedMath || input.verifiedFixedDiscountMath
-        || input.verifiedReviewedPricing)) return false
-    // Solo un DTO fijo respaldado por bruto, descuento, neto e importe
-    // impresos resuelve estos avisos históricos; no se ignoran otros cargos.
-    if (input.verifiedFixedDiscountMath && [
+        || input.verifiedPercentDiscountMath || input.verifiedReviewedPricing)) return false
+    // Solo la aritmética comprobada sobre el original resuelve un bloqueo
+    // histórico de descuento, tanto por unidad fija como porcentual.
+    if ((input.verifiedFixedDiscountMath || input.verifiedPercentDiscountMath) && [
       'descuento_sin_porcentaje_verificado',
       'precio_neto_contradictorio',
       'discount_not_interpretable',
