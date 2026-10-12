@@ -44,7 +44,7 @@ function cleanPhone(phone: string) {
 type InfoMenuModalsProps = {
     open: boolean;
     onClose: () => void;
-    usagePrefix?: 'staff' | 'admin';
+    usagePrefix?: 'staff' | 'admin' | 'master';
 };
 
 export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMenuModalsProps) {

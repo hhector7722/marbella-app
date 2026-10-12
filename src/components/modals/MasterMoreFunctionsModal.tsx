@@ -18,7 +18,9 @@ interface MasterMoreFunctionsModalProps {
     isOpen: boolean;
     onClose: () => void;
     onOpenCierre: () => void;
-    onOpenAlbaranes: () => void;
+    onOpenStock: () => void;
+    onOpenCompra: () => void;
+    onOpenInfo: () => void;
 }
 
 type MoreFunctionsItem = {
@@ -27,32 +29,32 @@ type MoreFunctionsItem = {
     img: string;
 } & (
     | { href: string }
-    | { action: 'cierre' | 'web' | 'albaranes' }
+    | { action: 'cierre' | 'web' | 'stock' | 'compra' | 'info' }
 );
 
 const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
-    { label: 'Proveedores', instance: 'proveedores', href: '/suppliers', img: '/icons/suplier.png' },
+    { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/productes.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
     { label: 'Consumo', instance: 'consumo', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },
-    { label: 'Horarios', instance: 'horarios', href: '/horario', img: '/icons/schedule.png' },
-    { label: 'Asistencia', instance: 'asistencia', href: '/staff/history', img: '/icons/calendar.png' },
+    { label: 'M obra', instance: 'm-obra', href: '/dashboard/labor', img: '/icons/overtime.png' },
+    { label: 'Compra', instance: 'compra', action: 'compra', img: '/icons/shop.png' },
     { label: 'Cierre', instance: 'cierre', action: 'cierre', img: '/icons/lock.png' },
     { label: 'Propinas', instance: 'propinas', href: '/dashboard/propinas', img: '/icons/tip.png' },
     { label: 'Uso app', instance: 'uso-app', href: '/dashboard/uso', img: '/icons/uso.png' },
     { label: 'Rentabilidad', instance: 'rentabilidad', href: '/dashboard/insights', img: '/icons/rent.png' },
-    { label: 'Albaranes', instance: 'albaranes', action: 'albaranes', img: '/icons/scan.png' },
+    { label: 'Info', instance: 'info', action: 'info', img: '/icons/information.png' },
     { label: 'Altas', instance: 'altas', href: '/dashboard/altas', img: '/icons/staff-card.png' },
     { label: 'Vitrina', instance: 'vitrina', href: '/master/carta', img: '/icons/menu2.png' },
-    { label: 'Inventario', instance: 'inventario', href: '/dashboard/inventory', img: '/icons/inventory.png' },
-    { label: 'Stock', instance: 'stock', href: '/dashboard/inventory/ledger', img: '/icons/productes.png' },
 ];
 
 export function MasterMoreFunctionsModal({
     isOpen,
     onClose,
     onOpenCierre,
-    onOpenAlbaranes,
+    onOpenStock,
+    onOpenCompra,
+    onOpenInfo,
 }: MasterMoreFunctionsModalProps) {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
@@ -84,10 +86,12 @@ export function MasterMoreFunctionsModal({
         setTimeout(action, 150);
     };
 
-    const actionHandlers: Record<'cierre' | 'web' | 'albaranes', () => void> = {
+    const actionHandlers: Record<'cierre' | 'web' | 'stock' | 'compra' | 'info', () => void> = {
         cierre: onOpenCierre,
         web: () => window.open(WEB_URL, '_blank', 'noopener,noreferrer'),
-        albaranes: onOpenAlbaranes,
+        stock: onOpenStock,
+        compra: onOpenCompra,
+        info: onOpenInfo,
     };
 
     return (

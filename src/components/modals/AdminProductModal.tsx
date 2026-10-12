@@ -10,6 +10,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 interface AdminProductModalProps {
     isOpen: boolean;
     onClose: () => void;
+    usagePrefix?: 'admin' | 'master';
 }
 
 const ADMIN_MENU_ITEMS = [
@@ -19,11 +20,13 @@ const ADMIN_MENU_ITEMS = [
     { title: 'Proveedores', href: '/suppliers', img: '/icons/suplier.png' },
 ] as const;
 
-export function AdminProductModal({ isOpen, onClose }: AdminProductModalProps) {
+export function AdminProductModal({ isOpen, onClose, usagePrefix = 'admin' }: AdminProductModalProps) {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
 
-    const trackAdminProduct = useTrackModalApply('admin-product', 'Menú stock (admin)');
+    const usageId = `${usagePrefix}-product`;
+    const usageLabel = `Menú stock (${usagePrefix})`;
+    const trackProduct = useTrackModalApply(usageId, usageLabel);
 
     const handleClose = () => {
         if (isNavigating) return;
@@ -37,8 +40,8 @@ export function AdminProductModal({ isOpen, onClose }: AdminProductModalProps) {
             title="Stock"
             variant="standard"
             scheme="dark"
-            usageId="admin-product"
-            usageLabel="Menú stock (admin)"
+            usageId={usageId}
+            usageLabel={usageLabel}
             scrollContent={false}
         >
             <div className="relative overflow-y-auto">
@@ -49,7 +52,7 @@ export function AdminProductModal({ isOpen, onClose }: AdminProductModalProps) {
                             title={item.title}
                             imageSrc={item.img}
                             onClick={() => {
-                                trackAdminProduct(item.title);
+                                trackProduct(item.title);
                                 setIsNavigating(true);
                                 router.push(item.href);
                             }}

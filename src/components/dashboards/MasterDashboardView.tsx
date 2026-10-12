@@ -18,6 +18,8 @@ import { MasterTodayAttendanceWidget } from '@/components/dashboards/MasterToday
 import { MasterLastClosingWidget } from '@/components/dashboards/MasterLastClosingWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
 import { MasterMoreFunctionsModal } from '@/components/modals/MasterMoreFunctionsModal';
+import { AdminProductModal } from '@/components/modals/AdminProductModal';
+import { InfoMenuModals } from '@/components/modals/InfoMenuModals';
 import { AlbaranesOptionsModal } from '@/components/dashboards/AlbaranesOptionsModal';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
@@ -175,6 +177,8 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [userEmail, setUserEmail] = useState('');
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
     const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isAlbaranesModalOpen, setIsAlbaranesModalOpen] = useState(false);
     const [attendanceExpanded, setAttendanceExpanded] = useState(false);
 
@@ -439,6 +443,14 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
         setShowPurchaseMultiSourceModal(true);
     };
 
+    const handleOpenCompra = () => {
+        if (!boxes.some((box) => box.type === 'operational' || box.type === 'change' || box.type === 'tpv')) {
+            toast.error('No hay cajas configuradas');
+            return;
+        }
+        void openPurchaseMultiSourceModal();
+    };
+
     const handlePurchaseMultiSourceSubmit = async (payload: PurchaseMultiSourcePayload) => {
         try {
             const baseNotes = payload.notes || 'Compra';
@@ -692,7 +704,21 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 isOpen={isMoreFunctionsModalOpen}
                 onClose={() => setIsMoreFunctionsModalOpen(false)}
                 onOpenCierre={() => setIsClosingModalOpen(true)}
-                onOpenAlbaranes={() => setIsAlbaranesModalOpen(true)}
+                onOpenStock={() => setIsProductModalOpen(true)}
+                onOpenCompra={handleOpenCompra}
+                onOpenInfo={() => setIsInfoModalOpen(true)}
+            />
+
+            <AdminProductModal
+                isOpen={isProductModalOpen}
+                onClose={() => setIsProductModalOpen(false)}
+                usagePrefix="master"
+            />
+
+            <InfoMenuModals
+                open={isInfoModalOpen}
+                onClose={() => setIsInfoModalOpen(false)}
+                usagePrefix="master"
             />
 
             <AlbaranesOptionsModal

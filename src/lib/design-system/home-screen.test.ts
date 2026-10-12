@@ -497,22 +497,19 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             join(SRC_ROOT, 'components/modals/MasterMoreFunctionsModal.tsx'),
             'utf8'
         );
-        assert.match(
-            otros,
-            /label: 'Albaranes'[\s\S]*action: 'albaranes'/,
-            'Albaranes sigue disponible en el modal Otros del Master'
-        );
         assert.match(otros, /label: 'Altas'/);
-        assert.match(
-            otros,
-            /label: 'Inventario'[\s\S]*href: '\/dashboard\/inventory'[\s\S]*img: '\/icons\/inventory\.png'/,
-            'Inventario está disponible en Otros del Master con su icono'
-        );
-        assert.match(
-            otros,
-            /label: 'Stock'[\s\S]*href: '\/dashboard\/inventory\/ledger'[\s\S]*img: '\/icons\/productes\.png'/,
-            'Stock está disponible en Otros del Master con su icono'
-        );
+        for (const label of ['Proveedores', 'Albaranes', 'Horarios', 'Asistencia', 'Inventario']) {
+            assert.doesNotMatch(otros, new RegExp(`label: '${label}'`));
+        }
+        assert.match(otros, /label: 'Stock'[^\n]*action: 'stock'/);
+        assert.doesNotMatch(otros, /label: 'Stock'[^\n]*href:/);
+        assert.match(otros, /label: 'M obra'[^\n]*href: '\/dashboard\/labor'/);
+        assert.match(otros, /label: 'Compra'[^\n]*action: 'compra'/);
+        assert.match(otros, /label: 'Info'[^\n]*action: 'info'/);
+        assert.match(master, /onOpenStock=\{\(\) => setIsProductModalOpen\(true\)\}/);
+        assert.match(master, /<AdminProductModal[\s\S]*?usagePrefix="master"/);
+        assert.match(master, /onOpenCompra=\{handleOpenCompra\}/);
+        assert.match(master, /onOpenInfo=\{\(\) => setIsInfoModalOpen\(true\)\}/);
         assert.match(ops, /layout="ops-admin"/);
         assert.match(ops, /size="wide" instance="dashboard-ventas"/);
         assert.match(ops, /size="icon" instance="caja-inicial"/);
