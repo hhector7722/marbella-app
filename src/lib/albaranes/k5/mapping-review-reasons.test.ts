@@ -104,6 +104,28 @@ test('SHERS: el DTO fijo verificado resuelve bloqueos anteriores sin ocultar avi
   assert.deepEqual(reasons, ['lineas_subtotal_no_reconcilian'])
 })
 
+test('descuento porcentual documentado permite resolver avisos aritméticos anteriores', () => {
+  const sample = {
+    previousReasons: ['descuento_sin_porcentaje_verificado',
+      'cantidad_precio_importe_no_reconcilian', 'precio_neto_contradictorio',
+      'presentacion_sin_validar'],
+    hasResolvedName: true,
+    hasMappedSnapshot: true,
+    humanLineOverride: false,
+    quantity: 100,
+    unitPrice: 20.9943,
+    lineTotal: 2099.43,
+  }
+  assert.deepEqual(resolveMappingReviewReasons({
+    ...sample, verifiedPercentDiscountMath: true,
+  }), [])
+  assert.deepEqual(resolveMappingReviewReasons(sample), [
+    'descuento_sin_porcentaje_verificado',
+    'cantidad_precio_importe_no_reconcilian',
+    'precio_neto_contradictorio',
+  ])
+})
+
 test('Panabad: una revisión explícita que concilia descuento e importe resuelve los bloqueos de precio', () => {
   const reasons = resolveMappingReviewReasons({
     previousReasons: [
