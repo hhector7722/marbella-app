@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { validateObservedDocument, validateObservedLine } from './validate.ts'
+import { reconcileRoundedDisplayedUnitPrice, validateObservedDocument, validateObservedLine } from './validate.ts'
 import type { CanonicalDocument } from '../extractors/canonical.ts'
 
 function row(fields: Partial<CanonicalDocument['lines'][number]>): CanonicalDocument['lines'][number] {
@@ -16,6 +16,13 @@ test('reconcilia cantidad, precio y descuento porcentual de Panabad', () => {
     discount_raw: '38,00', discount_header_raw: '% Dto.', line_total_raw: '209,93' }))
   assert.deepEqual(check.reasons, [])
   assert.equal(check.discountPercent, 38)
+})
+
+test('el precio efectivo se calcula del importe, sin alterar el impreso', () => {
+  assert.equal(reconcileRoundedDisplayedUnitPrice('10', '1,16', '11,56'), '1.156')
+  assert.equal(reconcileRoundedDisplayedUnitPrice('5', '1,29', '6,46'), '1.292')
+  assert.equal(reconcileRoundedDisplayedUnitPrice('10', '1,1600', '11,56'), null)
+  assert.equal(reconcileRoundedDisplayedUnitPrice('1', '1,16', '1,12'), null)
 })
 
 test('SANET: 10 litros a 1,16 € admiten 11,56 € por redondeo del precio mostrado', () => {
