@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
+import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
@@ -1793,7 +1794,7 @@ export default function AlbaranesHistoricoClient({
                                 Cant
                               </div>
                               <div className="flex w-[3.75rem] sm:w-[5rem] justify-end text-[9px] font-black uppercase tracking-wider text-zinc-400">
-                                Precio ud
+                                {detail.supplier_id === 2 ? 'Precio neto' : 'Precio ud'}
                               </div>
                               <div className="flex w-[3.75rem] sm:w-[5rem] justify-end text-[9px] font-black uppercase tracking-wider text-zinc-400">
                                 Importe
@@ -1833,6 +1834,14 @@ export default function AlbaranesHistoricoClient({
                             const displayName = l.ingredient_name
                               ? l.ingredient_name
                               : l.original_name || 'Sin nombre'
+                            const discountedPrice = detail.supplier_id === 2
+                              ? reviewDiscountedLine({
+                                  quantity: l.quantity,
+                                  grossUnitPrice: l.printed_unit_price ?? l.unit_price,
+                                  discountPercent: l.printed_discount_percent ?? 0,
+                                  lineTotal: l.total_price,
+                                })
+                              : null
 
                             return (
                               <div
@@ -1916,9 +1925,23 @@ export default function AlbaranesHistoricoClient({
                                     </span>
                                   </div>
                                   <div className="flex w-[3.75rem] sm:w-[5rem] justify-end">
-                                    <span className="text-right text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
-                                      {l.unit_price != null ? `${Number(l.unit_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €` : '—'}
-                                    </span>
+                                    {detail.supplier_id === 2 ? (
+                                      <span className="text-right text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums"
+                                        title={discountedPrice
+                                          ? `${discountedPrice.grossUnitPrice.toLocaleString('es-ES')} € − ${discountedPrice.discountPercent.toLocaleString('es-ES')} % = ${discountedPrice.effectiveUnitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} € por caja`
+                                          : 'Revisa el descuento y el importe de la línea'}>
+                                        {discountedPrice
+                                          ? `${discountedPrice.effectiveUnitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+                                          : 'Revisar'}
+                                        {discountedPrice && discountedPrice.discountPercent > 0 ? (
+                                          <span className="block text-[9px] text-zinc-500">−{discountedPrice.discountPercent.toLocaleString('es-ES', { maximumFractionDigits: 1 })} %</span>
+                                        ) : null}
+                                      </span>
+                                    ) : (
+                                      <span className="text-right text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
+                                        {l.unit_price != null ? `${Number(l.unit_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €` : '—'}
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="flex w-[3.75rem] sm:w-[5rem] justify-end">
                                     <span className="text-right text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">

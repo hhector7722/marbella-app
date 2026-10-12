@@ -73,6 +73,26 @@ test('SHERS: el mapeo no oculta descuentos ni importes contradictorios', () => {
   ])
 })
 
+test('Panabad: una revisión explícita que concilia descuento e importe resuelve los bloqueos de precio', () => {
+  const reasons = resolveMappingReviewReasons({
+    previousReasons: [
+      'descuento_sin_porcentaje_verificado',
+      'cantidad_precio_importe_no_reconcilian',
+      'presentacion_sin_validar',
+      'lineas_subtotal_no_reconcilian',
+    ],
+    documentReasons: ['lineas_subtotal_no_reconcilian'],
+    hasResolvedName: true,
+    hasMappedSnapshot: true,
+    humanLineOverride: true,
+    verifiedReviewedPricing: true,
+    quantity: 2,
+    unitPrice: 36.935,
+    lineTotal: 73.87,
+  })
+  assert.deepEqual(reasons, [])
+})
+
 test('un mapeo incompleto conserva los bloqueos de presentación y económicos', () => {
   const reasons = resolveMappingReviewReasons({
     previousReasons: ['presentacion_sin_validar', 'conversion_de_presentacion_incompatible', 'precio_neto_contradictorio'],

@@ -10,6 +10,7 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoices-list'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
+import { parseObservedDecimal } from '@/lib/albaranes/pipeline/validate'
 
 type GateResult =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; role: string | null }
@@ -322,6 +323,9 @@ export type PurchaseInvoiceLine = {
   interpretation_proposal_id: string | null
   variable_weight_kg: number | null
   variable_piece_count: number | null
+  /** Porcentaje literal reconocido en la evidencia de Panabad, si existe. */
+  printed_discount_percent: number | null
+  printed_unit_price: number | null
 }
 
 export type PurchaseInvoiceExtraSheet = {
@@ -457,13 +461,15 @@ export async function getPurchaseInvoiceDetailAction(
     interpretation_proposal_id: l.interpretation_proposal_id ?? null,
     variable_weight_kg: null as number | null,
     variable_piece_count: null as number | null,
+    printed_discount_percent: null as number | null,
+    printed_unit_price: null as number | null,
   })) as PurchaseInvoiceLine[]
 
   const proposalIds = lines.map((line) => line.interpretation_proposal_id).filter((id): id is string => Boolean(id))
   if (proposalIds.length > 0) {
     const { data: proposalRows, error: proposalError } = await gate.supabase
       .from('purchase_interpretation_proposals')
-      .select('id,observed,observed_unit_price,line_total')
+      .select('id,observed,pricing,observed_unit_price,line_total')
       .in('id', proposalIds)
     if (proposalError) return { success: false, message: proposalError.message }
 
@@ -472,6 +478,18 @@ export async function getPurchaseInvoiceDetailAction(
       if (!line.interpretation_proposal_id) continue
       const proposal = proposalById.get(line.interpretation_proposal_id)
       const rawCells = Array.isArray(proposal?.observed?.raw_cells) ? proposal.observed.raw_cells : []
+      if (Number((data as any).supplier_id) === 2) {
+        const reviewed = proposal?.pricing?.human_review
+        const observedDiscount = reviewed?.discountPercent != null
+          ? Number(reviewed.discountPercent)
+          : parseObservedDecimal(proposal?.observed?.discount_raw ?? null)
+        line.printed_discount_percent = observedDiscount != null && observedDiscount >= 0 && observedDiscount < 100
+          ? observedDiscount : null
+        const printedPrice = reviewed?.grossUnitPrice != null
+          ? Number(reviewed.grossUnitPrice)
+          : parseObservedDecimal(proposal?.observed?.unit_price_raw ?? null)
+        line.printed_unit_price = printedPrice != null && printedPrice > 0 ? printedPrice : null
+      }
       const variable = deriveVariableWeightEvidence({
         rawCells,
         unitPrice: proposal?.observed_unit_price ?? line.unit_price,

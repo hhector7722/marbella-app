@@ -17,6 +17,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **Master reordena «Otros».** Stock ocupa el lugar de Proveedores y abre Inventario, Mermas, Stock y Proveedores como en Admin. M obra, Compra e Info entran en ese menú. Se retiran de «Otros» los accesos directos a Proveedores, Albaranes, Horarios, Asistencia, Inventario y al listado de Stock; Albaranes conserva su acceso en el mosaico móvil.
 
+- **Panabad muestra y aplica el descuento por caja en la revisión.** La pantalla separa precio impreso, porcentaje e importe neto, permite corregir una lectura errónea y calcula el precio efectivo desde el importe conciliado. La revisión queda versionada junto a la evidencia original; una línea cuyos importes no cuadran no se confirma.
+
 ## 2026-10-11
 
 - **Stock 2.0 incorpora los ajustes de gerencia posteriores al recuento.** La cantidad firmada del ajuste se suma al saldo de unidades y el movimiento aparece en el historial del producto. El recuento certificado y los consumos ya registrados permanecen intactos.

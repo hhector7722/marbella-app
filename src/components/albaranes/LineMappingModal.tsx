@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { SearchField } from '@/components/ui/SearchField'
+import { Field } from '@/components/ui/Field'
 import {
   ALBARAN_LINE_CONTENT_UNITS,
   billingMassVolumeNormForAuto,
@@ -36,6 +37,7 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { explainReviewReason } from '@/lib/albaranes/k5/review-reason-labels'
+import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
 import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal'
 type LineDimensionalDraft = {
   lineBillingUnit: string
@@ -126,6 +128,8 @@ export function LineMappingModal({
   const [factor, setFactor] = useState('1')
   const [dimensional, setDimensional] = useState<LineDimensionalDraft>(EMPTY_DIMENSIONAL)
   const [observedUnitPriceDraft, setObservedUnitPriceDraft] = useState('')
+  const [discountDraft, setDiscountDraft] = useState('')
+  const [lineTotalDraft, setLineTotalDraft] = useState('')
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<IngredientMappingSearchItem[]>([])
@@ -345,8 +349,13 @@ export function LineMappingModal({
       setSearchQuery('')
       setSearchResults([])
       setObservedUnitPriceDraft(
-        resolveSyncKey.line.unit_price == null ? '' : String(resolveSyncKey.line.unit_price)
+        resolveSyncKey.line.printed_unit_price == null
+          ? resolveSyncKey.line.unit_price == null ? '' : String(resolveSyncKey.line.unit_price)
+          : String(resolveSyncKey.line.printed_unit_price)
       )
+      setDiscountDraft(resolveSyncKey.line.printed_discount_percent == null
+        ? '' : String(resolveSyncKey.line.printed_discount_percent))
+      setLineTotalDraft(resolveSyncKey.line.total_price == null ? '' : String(resolveSyncKey.line.total_price))
     }
   }
 
@@ -387,12 +396,28 @@ export function LineMappingModal({
   }
 
   const dimensionalParsed = useMemo(() => parseDimensionalPayload(dimensional), [dimensional])
-  const observedUnitPrice = useMemo(() => {
+  const grossUnitPrice = useMemo(() => {
     const raw = observedUnitPriceDraft.trim().replace(',', '.')
     if (!raw) return null
     const value = Number(raw)
     return Number.isFinite(value) && value > 0 ? value : null
   }, [observedUnitPriceDraft])
+  const isPanabad = supplierId === 2
+  const reviewedDiscount = useMemo(() => {
+    if (!isPanabad) return null
+    const discount = discountDraft.trim().replace(',', '.')
+    const total = lineTotalDraft.trim().replace(',', '.')
+    if (!discount || !total) return null
+    return reviewDiscountedLine({
+      quantity: line?.quantity,
+      grossUnitPrice,
+      discountPercent: Number(discount),
+      lineTotal: Number(total),
+    })
+  }, [isPanabad, discountDraft, lineTotalDraft, line?.quantity, grossUnitPrice])
+  const observedUnitPrice = isPanabad
+    ? reviewedDiscount == null ? null : Number(reviewedDiscount.effectiveUnitPrice.toFixed(4))
+    : grossUnitPrice
 
   const purchaseUnitForPresentation = useMemo(
     () =>
@@ -478,7 +503,9 @@ export function LineMappingModal({
 
   const presentationBlockingMessage = useMemo(() => {
     if (!ingredientId) return 'Selecciona un ingrediente del catálogo.'
-    if (observedUnitPrice == null) return 'Indica un precio facturado válido.'
+    if (observedUnitPrice == null) return isPanabad
+      ? 'Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.'
+      : 'Indica un precio facturado válido.'
     if (isVariableWeightMode) return null
     if (automaticDimensional) return presentationEconomics ? null : 'No se pudo calcular la conversión automática.'
     if (dimensionalParsed.lineContentQty == null || dimensionalParsed.lineContentQty <= 0) {
@@ -497,6 +524,7 @@ export function LineMappingModal({
   }, [
     ingredientId,
     observedUnitPrice,
+    isPanabad,
     isVariableWeightMode,
     dimensionalParsed.lineContentQty,
     dimensionalParsed.lineContentUnit,
@@ -598,17 +626,21 @@ export function LineMappingModal({
       return
     }
     if (observedUnitPrice == null) {
-      reject('Indica un precio facturado válido.')
+      reject(isPanabad
+        ? 'Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.'
+        : 'Indica un precio facturado válido.')
       return
     }
 
     setSaving(true)
     try {
       const storedPrice = line.unit_price == null ? null : Number(line.unit_price)
-      if (storedPrice == null || Math.abs(storedPrice - observedUnitPrice) > 0.00000001) {
+      if (storedPrice == null || Math.abs(storedPrice - observedUnitPrice) > 0.00000001
+        || (isPanabad && reviewedDiscount && Math.abs(Number(line.total_price) - reviewedDiscount.lineTotal) > 0.00000001)) {
         const priceUpdate = await updatePurchaseInvoiceLineAction({
           lineId: line.id,
-          patch: { unit_price: observedUnitPrice },
+          patch: { unit_price: observedUnitPrice,
+            ...(isPanabad && reviewedDiscount ? { total_price: reviewedDiscount.lineTotal } : {}) },
         })
         if (!priceUpdate.success) {
           reject(priceUpdate.message)
@@ -624,6 +656,11 @@ export function LineMappingModal({
         lineBillingUnit,
         lineContentQty,
         lineContentUnit,
+        pricingReview: isPanabad && reviewedDiscount ? {
+          grossUnitPrice: reviewedDiscount.grossUnitPrice,
+          discountPercent: reviewedDiscount.discountPercent,
+          lineTotal: reviewedDiscount.lineTotal,
+        } : null,
       })
 
       if (!res.success) {
@@ -736,7 +773,7 @@ export function LineMappingModal({
 
   if (!open || !line) return null
 
-  const headerTitle = `${line.original_name || 'Sin nombre'} — ${formatLineTotal(line.total_price)}`
+  const headerTitle = `${line.original_name || 'Sin nombre'} — ${formatLineTotal(isPanabad && reviewedDiscount ? reviewedDiscount.lineTotal : line.total_price)}`
 
   return (
     <>
@@ -905,7 +942,7 @@ export function LineMappingModal({
               {ingredientId ? (
                 <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-1.5">
                   <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                    Precio del albarán
+                    {isPanabad ? 'Precio antes del descuento' : 'Precio del albarán'}
                   </p>
                   <div className="flex items-center gap-2 px-1">
                     <input
@@ -914,16 +951,55 @@ export function LineMappingModal({
                       onChange={(e) => {
                         setObservedUnitPriceDraft(e.target.value)
                                           }}
-                      aria-label="Precio facturado por unidad de línea"
+                      aria-label={isPanabad ? 'Precio antes del descuento por caja' : 'Precio facturado por unidad de línea'}
                       className="min-h-12 w-28 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
                     <span className="text-xs font-semibold text-zinc-700">
                       € por {isVariableWeightMode ? 'kg' : String(line.line_unit || 'unidad').trim()}
                     </span>
                   </div>
-                  <p className="px-1 text-[10px] leading-snug text-zinc-500">
-                    Es el precio que figura en el albarán. Si la lectura lo interpretó mal, corrígelo aquí.
-                  </p>
+                  {isPanabad ? (
+                    <>
+                      <div className="flex flex-wrap items-end gap-3 px-1">
+                        <Field instance="albaran-line-discount" label="Descuento del albarán (%)" htmlFor="albaran-line-discount">
+                          <input
+                            id="albaran-line-discount"
+                            inputMode="decimal"
+                            value={discountDraft}
+                            onChange={(e) => setDiscountDraft(e.target.value)}
+                            className="w-28 tabular-nums"
+                          />
+                        </Field>
+                        <Field instance="albaran-line-net-total" label="Importe total de la línea (€)" htmlFor="albaran-line-net-total">
+                          <input
+                            id="albaran-line-net-total"
+                            inputMode="decimal"
+                            value={lineTotalDraft}
+                            onChange={(e) => setLineTotalDraft(e.target.value)}
+                            className="w-28 tabular-nums"
+                          />
+                        </Field>
+                      </div>
+                      {reviewedDiscount ? (
+                        <p className="px-1 text-sm font-semibold text-zinc-800" aria-live="polite">
+                          Precio con descuento: {reviewedDiscount.effectiveUnitPrice.toLocaleString('es-ES', {
+                            minimumFractionDigits: 2, maximumFractionDigits: 2,
+                          })} € por caja
+                        </p>
+                      ) : (
+                        <p role="alert" className="px-1 text-xs font-semibold text-amber-800">
+                          Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.
+                        </p>
+                      )}
+                      <p className="px-1 text-[10px] leading-snug text-zinc-500">
+                        El importe ya incluye el descuento. Corrige aquí cualquier cifra que se haya leído mal.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="px-1 text-[10px] leading-snug text-zinc-500">
+                      Es el precio que figura en el albarán. Si la lectura lo interpretó mal, corrígelo aquí.
+                    </p>
+                  )}
                 </section>
               ) : null}
 

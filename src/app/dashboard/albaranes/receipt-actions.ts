@@ -9,6 +9,13 @@ import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprin
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
 import { canonicalLineSchema } from '@/lib/albaranes/extractors/canonical'
 import { validateObservedLine } from '@/lib/albaranes/pipeline/validate'
+import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
+
+type PricingReview = {
+  grossUnitPrice: number
+  discountPercent: number
+  lineTotal: number
+}
 
 export type ReceiptAllocationInput = {
   purchase_order_item_id: string
@@ -116,6 +123,7 @@ async function supersedeK5ProposalWithMapping(params: {
   lineContentUnit: string
   variableWeightKg?: number | null
   variablePieceCount?: number | null
+  pricingReview?: PricingReview | null
 }): Promise<K5MappingRevision | null> {
   const currentProposalId = text(params.line.interpretation_proposal_id)
   if (!currentProposalId) return null
@@ -171,6 +179,15 @@ async function supersedeK5ProposalWithMapping(params: {
   const quantityNumber = decimal(lineQuantity)
   const unitPriceNumber = decimal(observedUnitPrice)
   const lineTotalNumber = decimal(lineTotal)
+  const reviewedPricing = params.pricingReview == null ? null : reviewDiscountedLine({
+    quantity: quantityNumber,
+    ...params.pricingReview,
+  })
+  if (params.pricingReview != null && (
+    Number(current.supplier_id) !== 2 || !reviewedPricing
+    || !sameExactDecimal(lineTotal, reviewedPricing.lineTotal)
+    || !sameExactDecimal(observedUnitPrice, Number(reviewedPricing.effectiveUnitPrice.toFixed(4)))
+  )) throw new Error('El precio, el descuento y el importe revisados no coinciden con la línea.')
   const humanLineOverride = Boolean(
     hasResolvedName
     && (
@@ -231,6 +248,7 @@ async function supersedeK5ProposalWithMapping(params: {
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
     verifiedObservedMath: verifiedEmbeddedKgMath,
+    verifiedReviewedPricing: Boolean(reviewedPricing),
   })
   const reviewReasons: string[] = [...new Set(snapshot
     ? semanticReasons
@@ -266,6 +284,7 @@ async function supersedeK5ProposalWithMapping(params: {
     purchase_quantity: snapshot?.purchaseQuantity ?? null,
     purchase_unit: snapshot?.purchaseUnit ?? null,
     normalized_unit_price: snapshot?.normalizedUnitPrice ?? null,
+    pricing_review: reviewedPricing,
   })
 
   const { data: existing, error: existingError } = await params.supabase
@@ -310,7 +329,10 @@ async function supersedeK5ProposalWithMapping(params: {
       observed: current.observed ?? {},
       interpreted: current.interpreted ?? {},
       normalized,
-      pricing: current.pricing ?? {},
+      pricing: reviewedPricing
+        ? { ...(current.pricing && typeof current.pricing === 'object' ? current.pricing : {}),
+            human_review: { ...reviewedPricing, reviewer_id: params.userId } }
+        : current.pricing ?? {},
       proposed_allocations: current.proposed_allocations ?? [],
       review_reasons: reviewReasons,
       warnings: current.warnings ?? [],
@@ -329,6 +351,7 @@ async function supersedeK5ProposalWithMapping(params: {
         ...(current.provenance && typeof current.provenance === 'object' ? current.provenance : {}),
         revision: 'human_mapping_selection',
         manual_line_override: humanLineOverride,
+        ...(reviewedPricing ? { manual_discount_review: true } : {}),
         ...(params.variableWeightKg != null
           ? {
               variable_weight_kg: params.variableWeightKg,
@@ -356,6 +379,7 @@ export async function saveReceiptMappingProposalAction(params: {
   lineBillingUnit: string
   lineContentQty: number
   lineContentUnit: string
+  pricingReview?: PricingReview | null
 }): Promise<
   | {
       success: true
@@ -375,6 +399,7 @@ export async function saveReceiptMappingProposalAction(params: {
   const lineBillingUnit = text(params?.lineBillingUnit)
   const lineContentQty = decimal(params?.lineContentQty)
   const lineContentUnit = text(params?.lineContentUnit)
+  const pricingReview = params?.pricingReview ?? null
   if (!invoiceId || !lineId || !ingredientId || conversionFactor == null || conversionFactor <= 0) {
     return { success: false, message: 'Faltan el ingrediente o el factor de conversión válido.' }
   }
@@ -464,6 +489,9 @@ export async function saveReceiptMappingProposalAction(params: {
   const supplierId = invoice?.supplier_id ?? null
   if (invoiceError || supplierId == null) {
     return { success: false, message: 'Asigna un proveedor antes de preparar el mapeo.' }
+  }
+  if (pricingReview != null && Number(supplierId) !== 2) {
+    return { success: false, message: 'Esta revisión de descuento no corresponde al proveedor.' }
   }
 
   const { data: legacyMapping, error: legacyError } = await gate.supabase
@@ -574,6 +602,7 @@ export async function saveReceiptMappingProposalAction(params: {
       lineBillingUnit: effectiveLineBillingUnit,
       lineContentQty: effectiveLineContentQty,
       lineContentUnit: effectiveLineContentUnit,
+      pricingReview,
       variableWeightKg,
       variablePieceCount,
     })

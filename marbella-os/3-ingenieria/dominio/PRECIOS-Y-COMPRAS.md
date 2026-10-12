@@ -113,6 +113,20 @@ precio neto unitario explícito que coincida tanto con precio − descuento como
 con el importe. Fuera de esas dos demostraciones, el descuento sigue en
 revisión.
 
+En Panabad, «Preu» es el precio por caja antes del descuento, «%» es el
+descuento y «Import» es el importe neto de toda la línea. La revisión humana
+muestra las tres cifras y permite corregir una lectura errónea. El listado
+muestra el precio neto y el porcentaje cuando cuadran; si no, indica que hay
+que revisar la línea en vez de presentar el precio bruto como neto. Solo cuando
+`cajas × precio bruto × (1 − descuento / 100)` coincide con el importe neto
+(tolerancia documental de tres céntimos), el precio efectivo por caja procede
+de `importe neto / cajas`. Por ejemplo, 2 cajas a 49,25 € con un 25 % de
+descuento e importe 73,87 € dan 36,935 € por caja, mostrados como 36,94 €.
+El precio por unidad de compra se calcula después con la presentación
+confirmada. La corrección humana crea una nueva versión de propuesta con las
+tres cifras y el actor; conserva intacta la evidencia OCR. Si la ecuación no
+cuadra, la línea no pasa a confirmación K4.
+
 Cuando un documento imprime varias bases de IVA y la lectura conserva solo
 una como subtotal, la conciliación usa la suma completa de los importes de
 línea más el IVA observado contra el total impreso. Solo se acepta si todas
