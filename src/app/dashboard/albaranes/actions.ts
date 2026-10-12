@@ -11,6 +11,7 @@ import { revalidatePath } from 'next/cache'
 import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoices-list'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
 import { parseObservedDecimal } from '@/lib/albaranes/pipeline/validate'
+import { isAdministrativeNonProductRow } from '@/lib/albaranes/pipeline/non-product-line'
 
 type GateResult =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; role: string | null }
@@ -452,7 +453,11 @@ export async function getPurchaseInvoiceDetailAction(
   }
 
   const lines = ((data as any).purchase_invoice_lines ?? [])
-    .filter((l: any) => l.superseded_by_extraction_id == null)
+    .filter((l: any) => l.superseded_by_extraction_id == null
+      && !isAdministrativeNonProductRow({
+        name: l.original_name,
+        quantity: l.quantity, unitPrice: l.unit_price, total: l.total_price,
+      }))
     .map((l: any) => ({
     id: l.id,
     original_name: l.original_name ?? 'Sin nombre',
@@ -498,7 +503,7 @@ export async function getPurchaseInvoiceDetailAction(
         || String(proposal?.observed?.net_unit_price_raw ?? '').trim()
         || String(proposal?.observed?.other_charge_raw ?? '').trim()
       )
-      if (Number((data as any).supplier_id) === 8
+      if (Number((data as any).supplier_id) !== 2
         && /dto|discount|descuento/i.test(proposal?.observed?.discount_header_raw ?? '')
         && !/%|por\\s*ciento|percent/i.test(proposal?.observed?.discount_header_raw ?? '')) {
         const gross = parseObservedDecimal(proposal?.observed?.unit_price_raw ?? null)
