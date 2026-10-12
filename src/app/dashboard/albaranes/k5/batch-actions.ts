@@ -110,7 +110,7 @@ async function loadBatchState(
 
   const allProposals = (proposalRows ?? []) as Array<Record<string, unknown>>
   const active = selectCurrentProposalLineage(allProposals).filter((proposal) => {
-    const source = proposal.observed && typeof proposal.observed === 'object'
+    const source: Record<string, unknown> = proposal.observed && typeof proposal.observed === 'object'
       ? proposal.observed as Record<string, unknown> : {}
     return !isAdministrativeNonProductRow({
       name: text(proposal.source_item_name),
