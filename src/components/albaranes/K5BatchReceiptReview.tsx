@@ -9,7 +9,6 @@ import { Notice } from '@/components/ui/Notice'
 import { Surface } from '@/components/ui/Surface'
 import {
   collectDocumentReviewReasons,
-  isDocumentOnlyReview,
 } from '@/lib/albaranes/k5/document-review'
 import { explainReviewReason } from '@/lib/albaranes/k5/review-reason-labels'
 import {
@@ -80,7 +79,6 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
   const exceptionRows = useMemo(
     () => context?.rows.filter((row) => {
       if (!['needs_mapping', 'needs_review', 'order_review', 'unavailable'].includes(row.disposition)) return false
-      if (isDocumentOnlyReview(row)) return false
       const handledByMappingStep =
         !row.ingredientId
         && (row.disposition === 'needs_mapping' || row.reviewReasons.includes('mapping_missing'))
