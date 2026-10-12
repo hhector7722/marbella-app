@@ -5,7 +5,10 @@ import { createClient } from '@/utils/supabase/server'
 import { compareExact, parseExactDecimal } from '@/lib/albaranes/k5/exact-decimal'
 import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
 import { resolveMappingReviewReasons } from '@/lib/albaranes/k5/mapping-review-reasons'
-import { reconcileRoundedDisplayedUnitPrice } from '@/lib/albaranes/pipeline/validate'
+import {
+  reconcileFixedDiscountedUnitPrice,
+  reconcileRoundedDisplayedUnitPrice,
+} from '@/lib/albaranes/pipeline/validate'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
 import { canonicalLineSchema } from '@/lib/albaranes/extractors/canonical'
@@ -285,6 +288,20 @@ async function supersedeK5ProposalWithMapping(params: {
       observedUnitPrice
     )
   )
+  // Descuento fijo (euros por caja) verificable de SHERS. No depende de la
+  // presentación elegida ni acepta la mera corrección manual como evidencia:
+  // bruto, DTO, neto y total proceden de la lectura original inmutable.
+  const verifiedShersFixedDiscount = Boolean(
+    Number(current.supplier_id) === 8
+    && sourceLine.success
+    && sourceCheck?.priceBasis === 'billing_quantity'
+    && sameExactDecimal(sourceCheck.quantity, lineQuantity)
+    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+    && sameExactDecimal(
+      reconcileFixedDiscountedUnitPrice(sourceLine.data),
+      observedUnitPrice
+    )
+  )
   // La revisión humana puede completar datos que el OCR dejó vacíos. Esos
   // valores quedan versionados en la propuesta sucesora; la evidencia original
   // no se modifica y K4 seguirá revalidando antes de cualquier efecto económico.
@@ -298,6 +315,7 @@ async function supersedeK5ProposalWithMapping(params: {
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
     verifiedObservedMath: verifiedEmbeddedKgMath || verifiedRoundedUnitMath,
+    verifiedFixedDiscountMath: verifiedShersFixedDiscount,
     verifiedReviewedPricing: Boolean(reviewedPricing),
   })
   const reviewReasons: string[] = [...new Set(snapshot
