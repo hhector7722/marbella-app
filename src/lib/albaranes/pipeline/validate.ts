@@ -1,7 +1,8 @@
 import type { CanonicalDocument } from '../extractors/canonical.ts'
+import { isAdministrativeNonProductRow } from './non-product-line.ts'
 import {
   compareExact, divideExact, isPositiveExact, multiplyExact, parseExactDecimal,
-  roundExactToScale, subtractExact, withinExactTolerance,
+  roundExactToScale, subtractExact, withinExactTolerance, ratio,
 } from '../k5/exact-decimal.ts'
 
 export type LineCheck = {
@@ -38,7 +39,7 @@ function near(left: number, right: number): boolean {
 /**
  * Un precio impreso con dos decimales puede proceder de uno más preciso.
  * Solo admite el importe si el precio efectivo vuelve a redondear al impreso,
- * la diferencia total no supera 5 céntimos y el valor a 4 decimales concilia
+ * la discrepancia respeta la precisión impresa y el valor a 4 decimales concilia
  * con K4. No modifica nunca el dato OCR original.
  */
 export function reconcileRoundedDisplayedUnitPrice(
@@ -53,8 +54,11 @@ export function reconcileRoundedDisplayedUnitPrice(
   if (!isPositiveExact(quantity) || !isPositiveExact(price) || !isPositiveExact(total)) return null
 
   const printedTotal = multiplyExact(quantity, price)
-  if (compareExact(printedTotal, total) === 0
-    || !withinExactTolerance(printedTotal, total, parseExactDecimal('0.05')!)) return null
+  // El umbral es la mitad de un céntimo POR UNIDAD, no un importe fijo
+  // de cinco céntimos que bloquearía compras de muchas unidades.
+  if (compareExact(printedTotal, total) === 0) return null
+  const roundingMargin = divideExact(quantity, ratio(BigInt(200)))!
+  if (!withinExactTolerance(printedTotal, total, roundingMargin)) return null
 
   const effective = divideExact(total, quantity)
   if (!isPositiveExact(effective)
@@ -116,7 +120,8 @@ export function reconcileFixedDiscountedUnitPrice(line: {
 
   if (compareExact(parseExactDecimal(roundExactToScale(effective, 2))!, printedNet) !== 0
     || !withinExactTolerance(
-      multiplyExact(quantity, printedNet), total, parseExactDecimal('0.10')!
+      multiplyExact(quantity, printedNet), total,
+      divideExact(quantity, ratio(BigInt(200)))!
     )) return null
 
   // K4 aplica precios de cuatro decimales; nunca cambia el total observado.
@@ -125,6 +130,42 @@ export function reconcileFixedDiscountedUnitPrice(line: {
     multiplyExact(quantity, parseExactDecimal(result)!),
     total, parseExactDecimal('0.03')!
   ) ? result : null
+}
+
+/**
+ * Descuento porcentual: comprueba a escala de céntimos por unidad
+ * sin depender del volumen del pedido. La factura conserva el total
+ * y el precio de K4 se calcula a cuatro decimales.
+ */
+export function reconcilePercentageDiscountedUnitPrice(line: {
+  quantity_raw: string | null
+  unit_price_raw: string | null
+  discount_raw: string | null
+  net_unit_price_raw?: string | null
+  line_total_raw: string | null
+  other_charge_raw?: string | null
+}): string | null {
+  if (line.other_charge_raw?.trim()) return null
+  const quantity = parseExactDecimal(line.quantity_raw)
+  const gross = parseExactDecimal(line.unit_price_raw)
+  const discount = parseExactDecimal(line.discount_raw)
+  const total = parseExactDecimal(line.line_total_raw)
+  if (!isPositiveExact(quantity) || !isPositiveExact(gross)
+    || !isPositiveExact(discount) || !isPositiveExact(total)
+    || compareExact(discount, ratio(BigInt(100))) >= 0) return null
+  const multiplier = divideExact(subtractExact(ratio(BigInt(100)), discount), ratio(BigInt(100)))!
+  const calculated = multiplyExact(gross, multiplier)
+  const actual = divideExact(total, quantity)!
+  const maxDeviation = parseExactDecimal('0.005')!
+  if (!isPositiveExact(actual)
+    || !withinExactTolerance(actual, calculated, maxDeviation)) return null
+  const net = parseExactDecimal(line.net_unit_price_raw)
+  if (net && compareExact(parseExactDecimal(roundExactToScale(actual, 2))!, net) !== 0) return null
+  const normalized = roundExactToScale(actual, 4)
+  return withinExactTolerance(
+    multiplyExact(quantity, parseExactDecimal(normalized)!), total,
+    parseExactDecimal('0.03')!
+  ) ? normalized : null
 }
 
 function embeddedKgPerPackage(line: CanonicalDocument['lines'][number], quantity: number | null): number | null {
@@ -175,7 +216,7 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
     const declaresDiscount = /dto|discount|descuento/.test(header)
     const percentMatchesAmount = quantity != null && quantity > 0
       && unitPrice != null && unitPrice > 0 && lineTotal != null
-      && discount < 100 && near(quantity * unitPrice * (1 - discount / 100), lineTotal)
+      && discount < 100 && reconcilePercentageDiscountedUnitPrice(line) != null
     const verifiedFixedDiscountPrice = declaresDiscount
       ? reconcileFixedDiscountedUnitPrice(line) : null
     const fixedDiscountMatchesNetPrice = verifiedFixedDiscountPrice != null
@@ -207,6 +248,8 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
     }
     const verifiedFixedDiscountPrice = fixedDiscountPerUnit != null
       ? reconcileFixedDiscountedUnitPrice(line) : null
+    const verifiedPercentDiscountPrice = discountPercent != null
+      ? reconcilePercentageDiscountedUnitPrice(line) : null
     const roundedBillingPrice = (discount == null || discount === 0)
       && netUnitPrice == null && !line.other_charge_raw
       ? reconcileRoundedDisplayedUnitPrice(line.quantity_raw, line.unit_price_raw, line.line_total_raw)
@@ -214,7 +257,8 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
     const match = candidates.find(({ basis, factor }) =>
       near(quantity * factor * effectiveUnitPrice, lineTotal)
       || (basis === 'billing_quantity'
-        && (roundedBillingPrice != null || verifiedFixedDiscountPrice != null)))
+        && (roundedBillingPrice != null || verifiedFixedDiscountPrice != null
+          || verifiedPercentDiscountPrice != null)))
     if (match) priceBasis = match.basis
     else reasons.push('cantidad_precio_importe_no_reconcilian')
     if (netUnitPrice != null) {
@@ -235,10 +279,21 @@ export function validateObservedDocument(document: CanonicalDocument): {
   lineSum: number | null
 } {
   const lines = document.lines.map(validateObservedLine)
+  const economicLines = lines.filter((_, index) => {
+    const source = document.lines[index]!
+    return !isAdministrativeNonProductRow({
+      name: source.description_raw,
+      supplierProductCode: source.supplier_product_code_raw,
+      quantity: source.quantity_raw, unitPrice: source.unit_price_raw,
+      total: source.line_total_raw, netUnitPrice: source.net_unit_price_raw,
+      discount: source.discount_raw,
+    })
+  })
   const reasons: string[] = []
-  if (lines.length === 0) reasons.push('sin_lineas')
-  const complete = lines.every((line) => line.lineTotal != null)
-  const lineSum = complete ? lines.reduce((sum, line) => sum + line.lineTotal!, 0) : null
+  if (economicLines.length === 0) reasons.push('sin_lineas')
+  const complete = economicLines.every((line) => line.lineTotal != null)
+  const lineSum = economicLines.length > 0 && complete
+    ? economicLines.reduce((sum, line) => sum + line.lineTotal!, 0) : null
   const subtotal = parseObservedDecimal(document.subtotal_raw)
   const tax = parseObservedDecimal(document.tax_raw)
   const total = parseObservedDecimal(document.total_raw)
