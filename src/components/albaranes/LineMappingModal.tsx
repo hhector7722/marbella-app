@@ -40,6 +40,7 @@ import { explainReviewReason } from '@/lib/albaranes/k5/review-reason-labels'
 import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
 import {
   reconcileFixedDiscountedUnitPrice,
+  reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
   reconcileUnadjustedNetUnitPrice,
 } from '@/lib/albaranes/pipeline/validate'
@@ -442,6 +443,19 @@ export function LineMappingModal({
         line_total_raw: lineTotalDraft,
       })
     : null
+  const isOtherPercentDiscount = !isPanabad && !isShersFixedDiscount
+    && line?.printed_discount_percent != null
+  const otherPercentEffectiveUnitPrice = isOtherPercentDiscount && grossUnitPrice != null
+    && line?.quantity != null
+    ? reconcilePercentageDiscountedUnitPrice({
+        quantity_raw: String(line.quantity),
+        unit_price_raw: String(grossUnitPrice),
+        discount_raw: String(line.printed_discount_percent),
+        net_unit_price_raw: line.printed_net_unit_price == null
+          ? null : String(line.printed_net_unit_price),
+        line_total_raw: lineTotalDraft,
+      })
+    : null
   const reviewedDiscount = useMemo(() => {
     if (!isPanabad) return null
     const discount = discountDraft.trim().replace(',', '.')
@@ -474,7 +488,9 @@ export function LineMappingModal({
     ? reviewedDiscount == null ? null : Number(reviewedDiscount.effectiveUnitPrice.toFixed(4))
     : isShersFixedDiscount
       ? shersEffectiveUnitPrice == null ? null : Number(shersEffectiveUnitPrice)
-      : roundedUnitPrice == null ? grossUnitPrice : Number(roundedUnitPrice)
+      : isOtherPercentDiscount
+        ? otherPercentEffectiveUnitPrice == null ? null : Number(otherPercentEffectiveUnitPrice)
+        : roundedUnitPrice == null ? grossUnitPrice : Number(roundedUnitPrice)
 
   const purchaseUnitForPresentation = useMemo(
     () =>
@@ -567,7 +583,9 @@ export function LineMappingModal({
       ? 'Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.'
       : isShersFixedDiscount
         ? 'El descuento fijo no concilia con el precio neto y el importe impresos.'
-        : 'Indica un precio facturado válido.'
+        : isOtherPercentDiscount
+          ? 'El descuento porcentual no concilia con el importe original.'
+          : 'Indica un precio facturado válido.'
     if (isVariableWeightMode) return null
     if (!dimensionalParsed.lineBillingUnit && !automaticDimensional) {
       return 'Indica la unidad que factura el proveedor (por ejemplo, caja, pack o ud).'
@@ -591,6 +609,7 @@ export function LineMappingModal({
     observedUnitPrice,
     isPanabad,
     isShersFixedDiscount,
+    isOtherPercentDiscount,
     isVariableWeightMode,
     dimensionalParsed.lineBillingUnit,
     dimensionalParsed.lineContentQty,
@@ -697,7 +716,9 @@ export function LineMappingModal({
         ? 'Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.'
         : isShersFixedDiscount
           ? 'El descuento fijo no concilia con el precio neto y el importe impresos.'
-          : 'Indica un precio facturado válido.')
+          : isOtherPercentDiscount
+            ? 'El descuento porcentual no concilia con el importe original.'
+            : 'Indica un precio facturado válido.')
       return
     }
 
@@ -1011,7 +1032,7 @@ export function LineMappingModal({
               {ingredientId ? (
                 <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-1.5">
                   <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                    {isPanabad || isShersFixedDiscount ? 'Precio antes del descuento' : 'Precio del albarán'}
+                    {isPanabad || isShersFixedDiscount || isOtherPercentDiscount ? 'Precio antes del descuento' : 'Precio del albarán'}
                   </p>
                   <div className="flex items-center gap-2 px-1">
                     <input
@@ -1020,7 +1041,7 @@ export function LineMappingModal({
                       onChange={(e) => {
                         setObservedUnitPriceDraft(e.target.value)
                                           }}
-                      aria-label={isPanabad || isShersFixedDiscount ? 'Precio antes del descuento por caja' : 'Precio facturado por unidad de línea'}
+                      aria-label={isPanabad || isShersFixedDiscount || isOtherPercentDiscount ? 'Precio antes del descuento' : 'Precio facturado por unidad de línea'}
                       className="min-h-12 w-28 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
                     <span className="text-xs font-semibold text-zinc-700">
@@ -1085,6 +1106,23 @@ export function LineMappingModal({
                       ) : (
                         <p role="alert" className="font-semibold text-amber-800">
                           El descuento y el importe no concilian. Revisa la lectura original.
+                        </p>
+                      )}
+                    </div>
+                  ) : isOtherPercentDiscount ? (
+                    <div className="flex flex-col gap-1 px-1 text-xs text-zinc-700">
+                      <p>Descuento: <span className="font-semibold">
+                        {line?.printed_discount_percent?.toLocaleString('es-ES')} %
+                      </span></p>
+                      {otherPercentEffectiveUnitPrice != null ? (
+                        <p className="font-semibold text-zinc-900">
+                          Precio efectivo: {Number(otherPercentEffectiveUnitPrice).toLocaleString('es-ES', {
+                            minimumFractionDigits: 2, maximumFractionDigits: 4,
+                          })} € por {billingUnitForDisplay}
+                        </p>
+                      ) : (
+                        <p role="alert" className="font-semibold text-amber-800">
+                          El descuento porcentual no concilia con el importe original.
                         </p>
                       )}
                     </div>
