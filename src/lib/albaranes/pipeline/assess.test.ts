@@ -59,6 +59,20 @@ test('importe que no reconcilia impide propuesta lista', () => {
   assert.ok(result.lines[0]?.reasons.includes('cantidad_precio_importe_no_reconcilian'))
 })
 
+test('SHERS conserva el DTO por caja antes incluso de elegir ingrediente', () => {
+  const milk = document({ description_raw: 'RAM SENCERA 1,5L C/6',
+    quantity_raw: '15,00', billing_unit_raw: 'CA', unit_price_raw: '17,57',
+    discount_raw: '6,55', discount_header_raw: 'DTO.', net_unit_price_raw: '11,02',
+    line_total_raw: '165,34' })
+  milk.subtotal_raw = '165,34'
+  const result = assessDocument({ document: milk, supplierId: 8,
+    memory: [], presentations: [] })
+  assert.equal(result.lines[0]?.status, 'needs_mapping')
+  assert.equal(result.lines[0]?.effectiveUnitPrice, '11.0227')
+  assert.equal(result.lines[0]?.observedUnitPrice, 17.57)
+  assert.ok(!result.lines[0]?.reasons.includes('cantidad_precio_importe_no_reconcilian'))
+})
+
 test('Videla: la propuesta usa 10 kg y 5,56 €/kg del bulto impreso', () => {
   const chicken: PresentationMemory = { ...presentation, supplierId: 3,
     ingredientId: 'pechuga', observedName: 'POLLO CONG PECHUGA', mappingVersionId: 'pollo-m1',
