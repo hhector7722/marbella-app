@@ -1,7 +1,13 @@
 import type { CanonicalDocument } from '../extractors/canonical.ts'
 import { buildExactMappedSnapshot, type ExactMappingInput } from '../k5/mapped-snapshot.ts'
 import { matchSupplierProduct, type SupplierProductMemory } from './matcher.ts'
-import { reconcileFixedDiscountedUnitPrice, validateObservedDocument } from './validate.ts'
+import {
+  reconcileFixedDiscountedUnitPrice,
+  reconcilePercentageDiscountedUnitPrice,
+  reconcileRoundedDisplayedUnitPrice,
+  validateObservedDocument,
+} from './validate.ts'
+import { isAdministrativeNonProductRow } from './non-product-line.ts'
 
 export type PresentationMemory = SupplierProductMemory & ExactMappingInput & {
   lineBillingUnit: string
@@ -47,7 +53,16 @@ export function assessDocument(params: {
   presentations: PresentationMemory[]
 }): { lines: LineAssessment[]; documentReasons: string[]; readyCount: number } {
   const validation = validateObservedDocument(params.document)
-  const lines = params.document.lines.map((line, rowIndex): LineAssessment => {
+  const lines = params.document.lines.flatMap((line, rowIndex): LineAssessment[] => {
+    if (isAdministrativeNonProductRow({
+      name: line.description_raw,
+      supplierProductCode: line.supplier_product_code_raw,
+      quantity: line.quantity_raw,
+      unitPrice: line.unit_price_raw,
+      total: line.line_total_raw,
+      netUnitPrice: line.net_unit_price_raw,
+      discount: line.discount_raw,
+    })) return []
     const check = validation.lines[rowIndex]!
     const match = matchSupplierProduct({ supplierId: params.supplierId,
       productCode: line.supplier_product_code_raw, description: line.description_raw, memory: params.memory })
@@ -69,12 +84,17 @@ export function assessDocument(params: {
 
     let normalized: ReturnType<typeof buildExactMappedSnapshot> = null
     let economicQuantity: string | null = null
-    // Aunque el producto aún no esté mapeado, una factura SHERS con DTO
-    // fijo demostrado debe persistir el precio neto, nunca el bruto.
-    let effectiveUnitPrice: string | null = params.supplierId === 8
-      && check.priceBasis === 'billing_quantity'
+    // Para todos los proveedores: el documento manda sobre el precio
+    // impreso redondeado. El precio efectivo se materializa aunque aún
+    // falte confirmar la presentación, pero solo con aritmética probada.
+    let effectiveUnitPrice: string | null = check.priceBasis === 'billing_quantity'
       && !check.reasons.length
-      ? reconcileFixedDiscountedUnitPrice(line) : null
+      ? reconcileFixedDiscountedUnitPrice(line)
+        ?? (check.discountPercent != null ? reconcilePercentageDiscountedUnitPrice(line) : null)
+        ?? (!line.discount_raw && !line.net_unit_price_raw
+          ? reconcileRoundedDisplayedUnitPrice(line.quantity_raw, line.unit_price_raw, line.line_total_raw)
+          : null)
+      : null
     if (presentation && check.quantity && check.unitPrice && check.lineTotal != null && check.priceBasis) {
       let numericEconomicQuantity = check.quantity
       if (check.priceBasis === 'package_content') {
@@ -109,14 +129,14 @@ export function assessDocument(params: {
     const distinct = unique(reasons)
     const status = !match.ingredientId ? 'needs_mapping'
       : distinct.length ? 'needs_review' : 'ready_for_review'
-    return { rowIndex, status, ingredientId: match.ingredientId,
+    return [{ rowIndex, status, ingredientId: match.ingredientId,
       // Se conserva la versión candidata para revisión aunque su presentación
       // no sea reutilizable. La propuesta seguirá bloqueada hasta validarla.
       mappingVersionId: presentation?.mappingVersionId ?? match.mappingVersionId ?? null,
       matchSource: match.source, matchScore: match.score, normalized,
       observedQuantity: check.quantity, observedUnitPrice: check.unitPrice,
       observedLineTotal: check.lineTotal, economicQuantity, effectiveUnitPrice,
-      reasons: distinct }
+      reasons: distinct }]
   })
   return { lines, documentReasons: validation.reasons,
     readyCount: lines.filter((line) => line.status === 'ready_for_review').length }
