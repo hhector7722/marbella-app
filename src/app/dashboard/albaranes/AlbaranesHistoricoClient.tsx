@@ -2245,12 +2245,25 @@ export default function AlbaranesHistoricoClient({
                             : 'w-full min-w-0'
                         )}
                       >
-                        <PinchZoomViewport resetKey={`${opt.key}-${invoiceCarouselIndex}`}>
+                        <PinchZoomViewport
+                          resetKey={`${opt.key}-${invoiceCarouselIndex}`}
+                          captureGestures
+                          trackpadGestures
+                          minScale={1}
+                          maxScale={8}
+                          className="flex-1 overflow-hidden"
+                          onSwipeAtRest={invoiceImageSheetOptions.length > 1
+                            ? (direction) => scrollInvoiceCarouselToIndex(
+                                invoiceCarouselIndex + (direction === 'next' ? 1 : -1)
+                              )
+                            : undefined}
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={opt.url}
                             alt={opt.label}
-                            className="block h-auto max-h-[min(58dvh,calc(100svh-18rem))] w-auto max-w-[min(100vw,100%)] rounded-xl object-contain shadow-lg ring-1 ring-white/10 md:max-h-[min(60vh,calc(100vh-18rem))]"
+                            draggable={false}
+                            className="block h-auto max-h-[min(58dvh,calc(100svh-18rem))] w-auto max-w-[min(100vw,100%)] select-none rounded-xl object-contain shadow-lg ring-1 ring-white/10 md:max-h-[min(60vh,calc(100vh-18rem))]"
                           />
                         </PinchZoomViewport>
                       </div>
