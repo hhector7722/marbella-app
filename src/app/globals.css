@@ -4225,6 +4225,13 @@ button[data-element='catalog-filter'] {
   left: -6%;
   top: -6%;
 }
+[data-component='AccessShortcutGrid'] [data-component='DashboardShortcut'][data-instance='info'] [data-element='asset'] img,
+[data-component='AccessShortcutGrid'] [data-component='DashboardShortcut'][data-instance='altas'] [data-element='asset'] img {
+  width: 112%;
+  height: 112%;
+  left: -6%;
+  top: -6%;
+}
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='web'] [data-element='asset'] img,
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-web'] [data-element='asset'] img {
   width: 120%;

@@ -10,6 +10,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 interface AdminProductModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onBack?: () => void;
     usagePrefix?: 'admin' | 'master';
 }
 
@@ -20,7 +21,7 @@ const ADMIN_MENU_ITEMS = [
     { title: 'Proveedores', href: '/suppliers', img: '/icons/suplier.png' },
 ] as const;
 
-export function AdminProductModal({ isOpen, onClose, usagePrefix = 'admin' }: AdminProductModalProps) {
+export function AdminProductModal({ isOpen, onClose, onBack, usagePrefix = 'admin' }: AdminProductModalProps) {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
 
@@ -37,6 +38,7 @@ export function AdminProductModal({ isOpen, onClose, usagePrefix = 'admin' }: Ad
         <Modal
             open={isOpen}
             onClose={handleClose}
+            onBack={onBack}
             title="Stock"
             variant="standard"
             scheme="dark"

@@ -64,12 +64,13 @@ type ClosingStep = 'tpv_data' | 'count' | 'summary';
 interface CashClosingModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onBack?: () => void;
     onSuccess?: () => void;
     initialTotalSales?: number;
     initialTicketsCount?: number;
 }
 
-export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTotalSales = 0, initialTicketsCount = 0 }: CashClosingModalProps) {
+export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, initialTotalSales = 0, initialTicketsCount = 0 }: CashClosingModalProps) {
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<ClosingStep>('tpv_data');
@@ -579,6 +580,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         <Modal
             open={isOpen}
             onClose={onClose}
+            onBack={onBack}
             variant="amplify"
             layer="base"
             instance="cash-closing"

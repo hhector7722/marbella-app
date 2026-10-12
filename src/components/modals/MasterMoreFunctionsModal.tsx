@@ -33,7 +33,7 @@ type MoreFunctionsItem = {
 );
 
 const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
-    { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/productes.png' },
+    { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/suplier.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
     { label: 'Consumo', instance: 'consumo', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },

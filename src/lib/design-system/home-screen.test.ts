@@ -502,6 +502,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             assert.doesNotMatch(otros, new RegExp(`label: '${label}'`));
         }
         assert.match(otros, /label: 'Stock'[^\n]*action: 'stock'/);
+        assert.match(otros, /label: 'Stock'[^\n]*img: '\/icons\/suplier\.png'/);
         assert.doesNotMatch(otros, /label: 'Stock'[^\n]*href:/);
         assert.match(otros, /label: 'M obra'[^\n]*href: '\/dashboard\/labor'/);
         assert.match(otros, /label: 'Compra'[^\n]*action: 'compra'/);
@@ -510,6 +511,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(master, /<AdminProductModal[\s\S]*?usagePrefix="master"/);
         assert.match(master, /onOpenCompra=\{handleOpenCompra\}/);
         assert.match(master, /onOpenInfo=\{\(\) => setIsInfoModalOpen\(true\)\}/);
+        assert.match(master, /<AdminProductModal[\s\S]*?onBack=\{\(\) => \{[\s\S]*?setIsMoreFunctionsModalOpen\(true\)/);
+        assert.match(master, /<InfoMenuModals[\s\S]*?onBack=\{\(\) => setIsMoreFunctionsModalOpen\(true\)\}/);
         assert.match(ops, /layout="ops-admin"/);
         assert.match(ops, /size="wide" instance="dashboard-ventas"/);
         assert.match(ops, /size="icon" instance="caja-inicial"/);

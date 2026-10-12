@@ -112,9 +112,14 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+    const [closingFromOtros, setClosingFromOtros] = useState(false);
     useEffect(() => {
         const isActive = () => document.querySelector('.dashboard-mosaic-switcher')?.getAttribute('data-active-view') === 'master';
-        const openClosing = () => { if (isActive()) setIsClosingModalOpen(true); };
+        const openClosing = () => {
+            if (!isActive()) return;
+            setClosingFromOtros(false);
+            setIsClosingModalOpen(true);
+        };
         const url = new URL(window.location.href);
         if (isActive() && url.searchParams.get('open') === 'cierre') {
             openClosing();
@@ -134,6 +139,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out'>('none');
     const [selectedCashBox, setSelectedCashBox] = useState<HomeTreasuryBox | null>(null);
     const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
+    const [purchaseFromOtros, setPurchaseFromOtros] = useState(false);
     const [purchaseDate, setPurchaseDate] = useState(formatCashCountDateInput);
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
 
@@ -448,6 +454,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             toast.error('No hay cajas configuradas');
             return;
         }
+        setPurchaseFromOtros(true);
         void openPurchaseMultiSourceModal();
     };
 
@@ -515,6 +522,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
         }
         if (accion === 'compra') {
             setIsCajaInicialActionsOpen(false);
+            setPurchaseFromOtros(false);
             void openPurchaseMultiSourceModal();
             return;
         }
@@ -641,7 +649,15 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
 
             <CashClosingModal
                 isOpen={isClosingModalOpen}
-                onClose={() => setIsClosingModalOpen(false)}
+                onClose={() => {
+                    setIsClosingModalOpen(false);
+                    setClosingFromOtros(false);
+                }}
+                onBack={closingFromOtros ? () => {
+                    setIsClosingModalOpen(false);
+                    setClosingFromOtros(false);
+                    setIsMoreFunctionsModalOpen(true);
+                } : undefined}
                 onSuccess={() => {
                     void refresh();
                 }}
@@ -703,7 +719,10 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             <MasterMoreFunctionsModal
                 isOpen={isMoreFunctionsModalOpen}
                 onClose={() => setIsMoreFunctionsModalOpen(false)}
-                onOpenCierre={() => setIsClosingModalOpen(true)}
+                onOpenCierre={() => {
+                    setClosingFromOtros(true);
+                    setIsClosingModalOpen(true);
+                }}
                 onOpenStock={() => setIsProductModalOpen(true)}
                 onOpenCompra={handleOpenCompra}
                 onOpenInfo={() => setIsInfoModalOpen(true)}
@@ -712,12 +731,17 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             <AdminProductModal
                 isOpen={isProductModalOpen}
                 onClose={() => setIsProductModalOpen(false)}
+                onBack={() => {
+                    setIsProductModalOpen(false);
+                    setIsMoreFunctionsModalOpen(true);
+                }}
                 usagePrefix="master"
             />
 
             <InfoMenuModals
                 open={isInfoModalOpen}
                 onClose={() => setIsInfoModalOpen(false)}
+                onBack={() => setIsMoreFunctionsModalOpen(true)}
                 usagePrefix="master"
             />
 
@@ -837,7 +861,17 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             {showPurchaseMultiSourceModal && (
                 <Modal
                     open
-                    onClose={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
+                    onClose={() => {
+                        setShowPurchaseMultiSourceModal(false);
+                        setPurchaseInventoriesByBoxId({});
+                        setPurchaseFromOtros(false);
+                    }}
+                    onBack={purchaseFromOtros ? () => {
+                        setShowPurchaseMultiSourceModal(false);
+                        setPurchaseInventoriesByBoxId({});
+                        setPurchaseFromOtros(false);
+                        setIsMoreFunctionsModalOpen(true);
+                    } : undefined}
                     variant="amplify"
                     layer="base"
                     scheme="dark"

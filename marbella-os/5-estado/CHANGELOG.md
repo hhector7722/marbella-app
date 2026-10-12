@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-12
 
+- **Master afina los accesos de «Otros» y su retorno.** Stock usa la imagen de Proveedores; Info y Altas llenan el contorno de sus iconos. Los modales abiertos desde «Otros» muestran una flecha que vuelve a ese menú, y cada nivel de Info, Manuales y sus visores vuelve al nivel inmediatamente anterior.
+
 - **Master reordena «Otros».** Stock ocupa el lugar de Proveedores y abre Inventario, Mermas, Stock y Proveedores como en Admin. M obra, Compra e Info entran en ese menú. Se retiran de «Otros» los accesos directos a Proveedores, Albaranes, Horarios, Asistencia, Inventario y al listado de Stock; Albaranes conserva su acceso en el mosaico móvil.
 
 - **Panabad muestra y aplica el descuento por caja en la revisión.** La pantalla separa precio impreso, porcentaje e importe neto, permite corregir una lectura errónea y calcula el precio efectivo desde el importe conciliado. La revisión queda versionada junto a la evidencia original; una línea cuyos importes no cuadran no se confirma.

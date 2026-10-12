@@ -33,8 +33,8 @@ const INFO_MENU = [
 ];
 
 type ManualMediaViewerState =
-    | { type: 'video' | 'image'; src: string; title: string }
-    | { type: 'rain'; title: string }
+    | { type: 'video' | 'image'; src: string; title: string; parent: 'manuales' | 'tpv' | 'horno' }
+    | { type: 'rain'; title: string; parent: 'manuales' }
     | null;
 
 function cleanPhone(phone: string) {
@@ -44,10 +44,11 @@ function cleanPhone(phone: string) {
 type InfoMenuModalsProps = {
     open: boolean;
     onClose: () => void;
+    onBack?: () => void;
     usagePrefix?: 'staff' | 'admin' | 'master';
 };
 
-export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMenuModalsProps) {
+export function InfoMenuModals({ open, onClose, onBack, usagePrefix = 'admin' }: InfoMenuModalsProps) {
     const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | null>(null);
     const [isManualsModalOpen, setIsManualsModalOpen] = useState(false);
     const [isTpvManualModalOpen, setIsTpvManualModalOpen] = useState(false);
@@ -90,6 +91,11 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
         onClose();
     };
 
+    const backFromInfoRoot = () => {
+        closeAll();
+        onBack?.();
+    };
+
     const closeManualsModal = () => {
         setIsManualsModalOpen(false);
         setIsTpvManualModalOpen(false);
@@ -99,6 +105,13 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
     const backToInfoFromManuals = () => {
         closeManualsModal();
         setInfoSubMenu(null);
+    };
+
+    const backFromManualMedia = () => {
+        const parent = manualMediaViewer?.parent;
+        setManualMediaViewer(null);
+        if (parent === 'tpv') setIsTpvManualModalOpen(true);
+        if (parent === 'horno') setIsHornoManualModalOpen(true);
     };
 
     const openStaffPdf = (url: string) => {
@@ -121,22 +134,22 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
             case 'altavoces':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'video', src: STAFF_MANUAL_ASSETS.altavocesVideo, title: 'Altavoces' });
+                setManualMediaViewer({ type: 'video', src: STAFF_MANUAL_ASSETS.altavocesVideo, title: 'Altavoces', parent: 'manuales' });
                 break;
             case 'bebidas':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.bebidasImage, title: 'Bebidas' });
+                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.bebidasImage, title: 'Bebidas', parent: 'manuales' });
                 break;
             case 'cambios-lluvia':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'rain', title: 'Cambios por Lluvia' });
+                setManualMediaViewer({ type: 'rain', title: 'Cambios por Lluvia', parent: 'manuales' });
                 break;
             case 'cuadro-electrico':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cuadroElectricoImage, title: 'Acceso Cuadro Eléctrico' });
+                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cuadroElectricoImage, title: 'Acceso Cuadro Eléctrico', parent: 'manuales' });
                 break;
             default:
                 break;
@@ -153,7 +166,7 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                 instance={`${usagePrefix}-info`}
                 title={infoSubMenu === 'contactos' ? 'Contactos' : 'Información'}
                 scheme="dark"
-                onBack={infoSubMenu ? () => setInfoSubMenu(null) : undefined}
+                onBack={infoSubMenu ? () => setInfoSubMenu(null) : onBack ? backFromInfoRoot : undefined}
             >
                 <div className="space-y-2">
                     {!infoSubMenu && (
@@ -221,6 +234,7 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
             <Modal
                 open={isManualsModalOpen && isTpvManualModalOpen}
                 onClose={() => setIsTpvManualModalOpen(false)}
+                onBack={() => setIsTpvManualModalOpen(false)}
                 variant="standard"
                 layer="derived"
                 instance={`${usagePrefix}-manual-tpv`}
@@ -243,7 +257,7 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                                 }
                                 setIsTpvManualModalOpen(false);
                                 setIsHornoManualModalOpen(false);
-                                setManualMediaViewer({ type: 'video', src: v.src, title: v.title });
+                                setManualMediaViewer({ type: 'video', src: v.src, title: v.title, parent: 'tpv' });
                             }}
                         />
                     ))}
@@ -253,6 +267,7 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
             <Modal
                 open={isManualsModalOpen && isHornoManualModalOpen}
                 onClose={() => setIsHornoManualModalOpen(false)}
+                onBack={() => setIsHornoManualModalOpen(false)}
                 variant="standard"
                 layer="derived"
                 instance={`${usagePrefix}-manual-horno`}
@@ -277,6 +292,7 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                                     type: 'video',
                                     src: STAFF_MANUAL_ASSETS.hornoFuncionamientoVideo,
                                     title: 'Funcionamiento Horno',
+                                    parent: 'horno',
                                 });
                             }}
                         />
@@ -287,10 +303,11 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
             <Modal
                 open={!!manualMediaViewer}
                 onClose={() => setManualMediaViewer(null)}
+                onBack={backFromManualMedia}
                 variant="amplify"
                 layer="derived"
                 instance={`${usagePrefix}-manual-media`}
-                parentInstance={`${usagePrefix}-manuales`}
+                parentInstance={manualMediaViewer?.parent === 'manuales' ? `${usagePrefix}-manuales` : undefined}
                 title={manualMediaViewer?.title ?? ''}
                 scheme={manualMediaViewer?.type === 'rain' ? 'dark' : 'work'}
                 wrapperClassName={manualMediaViewer?.type === 'rain' ? 'max-w-5xl' : 'max-w-3xl'}
