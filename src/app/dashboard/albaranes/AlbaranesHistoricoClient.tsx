@@ -64,10 +64,7 @@ import {
   PURCHASE_INVOICES_INITIAL_LIMIT,
   PURCHASE_INVOICES_PAGE_SIZE,
 } from '@/lib/albaranes/purchase-invoices-list'
-import {
-  collectDocumentReviewReasons,
-  isDocumentOnlyReview,
-} from '@/lib/albaranes/k5/document-review'
+import { collectDocumentReviewReasons } from '@/lib/albaranes/k5/document-review'
 import {
   deletePurchaseInvoiceAction,
   excludeInvoiceLineFromMappingAction,
