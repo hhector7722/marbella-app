@@ -215,8 +215,8 @@ export function K5BatchReceiptReview({ invoiceId, onResolveLine }: Props) {
         <div className="mt-3">
           <Notice instance="k5-batch-document-review" variant="warning" title="Revisión del documento">
             {documentReviewReasons.length === 1
-              ? 'Hay una comprobación pendiente del albarán completo. No necesitas revisar cada producto que solo esté bloqueado por este aviso.'
-              : 'Hay comprobaciones pendientes del albarán completo. No necesitas revisar cada producto que solo esté bloqueado por estos avisos.'}
+              ? 'Hay una comprobación pendiente del albarán completo. Puedes abrir las revisiones de productos y confirmar las líneas válidas sin reconstruir el total del documento.'
+              : 'Hay comprobaciones pendientes del albarán completo. Puedes abrir las revisiones de productos y confirmar las líneas válidas sin reconstruir el total del documento.'}
           </Notice>
         </div>
       ) : null}
