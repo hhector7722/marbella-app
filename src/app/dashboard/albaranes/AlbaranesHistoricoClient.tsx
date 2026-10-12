@@ -1204,7 +1204,8 @@ export default function AlbaranesHistoricoClient({
         toast.error(res.message)
         return
       }
-      toast.success('Línea marcada como gasto (sin stock).')
+      if (res.warning) toast.warning(res.warning)
+      else toast.success('Otros: gasto registrado sin modificar el stock.')
       await refreshDetailAndStock()
     } finally {
       setLineActionBusy(false)
