@@ -869,7 +869,8 @@ export function LineMappingModal({
         toast.error(result.message)
         return
       }
-      toast.success('Otros: gasto registrado sin modificar el stock.')
+      if (result.warning) toast.warning(result.warning)
+      else toast.success('Otros: gasto registrado sin modificar el stock.')
       handleClose()
       await onSuccess()
     } catch (error) {
