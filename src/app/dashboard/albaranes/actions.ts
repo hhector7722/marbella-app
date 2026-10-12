@@ -498,9 +498,10 @@ export async function getPurchaseInvoiceDetailAction(
       const rawCells = Array.isArray(proposal?.observed?.raw_cells) ? proposal.observed.raw_cells : []
       line.printed_unit_price_raw = typeof proposal?.observed?.unit_price_raw === 'string'
         ? proposal.observed.unit_price_raw : null
+      const printedNet = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
+      line.printed_net_unit_price = printedNet != null && printedNet > 0 ? printedNet : null
       line.printed_has_adjustments = Boolean(
         String(proposal?.observed?.discount_raw ?? '').trim()
-        || String(proposal?.observed?.net_unit_price_raw ?? '').trim()
         || String(proposal?.observed?.other_charge_raw ?? '').trim()
       )
       if (Number((data as any).supplier_id) !== 2
