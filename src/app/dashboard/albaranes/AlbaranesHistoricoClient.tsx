@@ -65,6 +65,7 @@ import {
   PURCHASE_INVOICES_PAGE_SIZE,
 } from '@/lib/albaranes/purchase-invoices-list'
 import { collectDocumentReviewReasons } from '@/lib/albaranes/k5/document-review'
+import { isPassiveLineReviewAction, lineReviewActionLabel } from '@/lib/albaranes/k5/line-review-action'
 import {
   deletePurchaseInvoiceAction,
   excludeInvoiceLineFromMappingAction,
@@ -143,20 +144,6 @@ function parseDecimalInput(value: string): number | null {
 function isImagePath(filePath: string | null) {
   const p = (filePath ?? '').toLowerCase()
   return p.endsWith('.jpg') || p.endsWith('.jpeg') || p.endsWith('.png') || p.endsWith('.webp')
-}
-
-function inlineReviewLabel(row: K5BatchReviewRow | null): string | null {
-  if (!row) return null
-  if (row.confirmed || row.disposition === 'confirmed') return 'Confirmado'
-  if (row.disposition === 'ready') return 'Confirmar'
-  // Los avisos de cabecera no convierten la revisión de una línea
-  // en una etiqueta pasiva: la persona debe poder abrir y confirmar
-  // sus datos sin esperar a recuperar el total documental por OCR.
-  if (row.disposition === 'needs_mapping') return 'Mapear'
-  if (row.disposition === 'order_review') return 'Revisar pedido'
-  if (row.disposition === 'needs_review' || row.disposition === 'unavailable') return 'Revisar'
-  if (row.disposition === 'excluded') return 'Excluida'
-  return 'Revisar'
 }
 
 function inlineReviewTone(row: K5BatchReviewRow | null): string {
@@ -1829,17 +1816,13 @@ export default function AlbaranesHistoricoClient({
                             const expenseOnly = isInvoiceLineExpenseOnly(l)
                             const noMatch = !excluded && !expenseOnly && !l.ingredient_name
                             const reviewRow = inlineReviewByLineId.get(l.id) ?? null
-                            const reviewLabel = expenseOnly ? 'Otros · Gasto' : inlineReviewLabel(reviewRow)
+                            const reviewLabel = expenseOnly ? 'Otros · Gasto' : lineReviewActionLabel(reviewRow)
                             const backgroundPhase = backgroundLineActions[l.id] ?? null
                             const needsRepair = lineNeedsStockRepair(l)
                             // El aviso «DOCUMENTO» se muestra solo en la
                             // cabecera; las líneas pendientes siempre son
                             // accionables mediante Revisar/Mapear/Confirmar.
-                            const reviewLabelPassive =
-                              expenseOnly ||
-                              Boolean(reviewRow?.confirmed) ||
-                              reviewRow?.disposition === 'confirmed' ||
-                              reviewRow?.disposition === 'excluded'
+                            const reviewLabelPassive = isPassiveLineReviewAction(reviewRow, expenseOnly)
                             const reviewLabelTextVisible =
                               Boolean(reviewLabel) && (reviewLabelPassive || isManager)
                             // Lápiz de edición: aparece cuando la línea ya está
