@@ -87,8 +87,8 @@ const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
 type WorkStatus = 'idle' | 'working' | 'finished';
 
 type ManualMediaViewerState =
-    | { type: 'video' | 'image'; src: string; title: string }
-    | { type: 'rain'; title: string }
+    | { type: 'video' | 'image'; src: string; title: string; parent: 'manuales' | 'tpv' | 'horno' }
+    | { type: 'rain'; title: string; parent: 'manuales' }
     | null;
 
 type CashBoxRow = Tables<'cash_boxes'>;
@@ -891,6 +891,13 @@ export default function StaffDashboardView({
     };
 
     const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); };
+    const closeInfoFlow = () => {
+        closeMenus();
+        setIsManualsModalOpen(false);
+        setIsTpvManualModalOpen(false);
+        setIsHornoManualModalOpen(false);
+        setManualMediaViewer(null);
+    };
     const closeManualsModal = () => {
         setIsManualsModalOpen(false);
         setIsTpvManualModalOpen(false);
@@ -902,6 +909,12 @@ export default function StaffDashboardView({
         closeManualsModal();
         setActiveMenu('info');
         setInfoSubMenu(null);
+    };
+    const backFromManualMedia = () => {
+        const parent = manualMediaViewer?.parent;
+        setManualMediaViewer(null);
+        if (parent === 'tpv') setIsTpvManualModalOpen(true);
+        if (parent === 'horno') setIsHornoManualModalOpen(true);
     };
 
     /** Misma UX que nóminas: visor PDF nativo del navegador en nueva pestaña (`NominasModal.openNomina`). */
@@ -925,22 +938,22 @@ export default function StaffDashboardView({
             case 'altavoces':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'video', src: STAFF_MANUAL_ASSETS.altavocesVideo, title: 'Altavoces' });
+                setManualMediaViewer({ type: 'video', src: STAFF_MANUAL_ASSETS.altavocesVideo, title: 'Altavoces', parent: 'manuales' });
                 break;
             case 'bebidas':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.bebidasImage, title: 'Bebidas' });
+                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.bebidasImage, title: 'Bebidas', parent: 'manuales' });
                 break;
             case 'cambios-lluvia':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'rain', title: 'Cambios por Lluvia' });
+                setManualMediaViewer({ type: 'rain', title: 'Cambios por Lluvia', parent: 'manuales' });
                 break;
             case 'cuadro-electrico':
                 setIsTpvManualModalOpen(false);
                 setIsHornoManualModalOpen(false);
-                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cuadroElectricoImage, title: 'Acceso Cuadro Eléctrico' });
+                setManualMediaViewer({ type: 'image', src: STAFF_MANUAL_ASSETS.cuadroElectricoImage, title: 'Acceso Cuadro Eléctrico', parent: 'manuales' });
                 break;
             default:
                 break;
@@ -1262,7 +1275,7 @@ export default function StaffDashboardView({
 
             <Modal
                 open={isManualsModalOpen}
-                onClose={closeManualsModal}
+                onClose={closeInfoFlow}
                 variant="standard"
                 layer="base"
                 instance="staff-manuales"
@@ -1307,7 +1320,7 @@ export default function StaffDashboardView({
                                 }
                                 setIsTpvManualModalOpen(false);
                                 setIsHornoManualModalOpen(false);
-                                setManualMediaViewer({ type: 'video', src: v.src, title: v.title });
+                                setManualMediaViewer({ type: 'video', src: v.src, title: v.title, parent: 'tpv' });
                             }}
                         />
                     ))}
@@ -1341,6 +1354,7 @@ export default function StaffDashboardView({
                                     type: 'video',
                                     src: STAFF_MANUAL_ASSETS.hornoFuncionamientoVideo,
                                     title: 'Funcionamiento Horno',
+                                    parent: 'horno',
                                 });
                             }}
                         />
@@ -1350,11 +1364,11 @@ export default function StaffDashboardView({
 
             <Modal
                 open={!!manualMediaViewer}
-                onClose={() => setManualMediaViewer(null)}
+                onClose={closeInfoFlow}
+                onBack={backFromManualMedia}
                 variant="amplify"
                 layer="derived"
                 instance="staff-manual-media"
-                parentInstance="staff-manuales"
                 title={manualMediaViewer?.title ?? ''}
                 scheme={manualMediaViewer?.type === 'rain' ? 'dark' : 'work'}
                 wrapperClassName={manualMediaViewer?.type === 'rain' ? 'max-w-5xl' : 'max-w-3xl'}

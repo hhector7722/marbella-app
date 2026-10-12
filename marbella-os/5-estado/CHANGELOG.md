@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-12
 
+- **Los modales recuperan la navegación por niveles.** La flecha atrás vuelve a mostrar el modal inmediatamente anterior y queda visible dentro de la cabecera. Pulsar fuera, la X o Escape cierra toda la cadena desde cualquier nivel. Información y Manuales conservan el origen de sus visores al retroceder.
+
 - **Master afina los accesos de «Otros» y su retorno.** Stock usa la imagen de Proveedores; Info y Altas llenan el contorno de sus iconos. Los modales abiertos desde «Otros» muestran una flecha que vuelve a ese menú, y cada nivel de Info, Manuales y sus visores vuelve al nivel inmediatamente anterior.
 
 - **Master reordena «Otros».** Stock ocupa el lugar de Proveedores y abre Inventario, Mermas, Stock y Proveedores como en Admin. M obra, Compra e Info entran en ese menú. Se retiran de «Otros» los accesos directos a Proveedores, Albaranes, Horarios, Asistencia, Inventario y al listado de Stock; Albaranes conserva su acceso en el mosaico móvil.

@@ -179,7 +179,7 @@ function dismissModalHistoryChain(rootSurfaceId: string): void {
 }
 
 /**
- * Política de cierre del chrome (←, X, Escape, backdrop).
+ * La flecha vuelve un nivel. En la raíz, cierra el flujo.
  * `system` no participa: el overlay lo cierra como cima de pila.
  */
 export function requestModalClose(surfaceId: string): boolean {
@@ -190,6 +190,24 @@ export function requestModalClose(surfaceId: string): boolean {
         return true;
     }
     dismissModalHistoryChain(surfaceId);
+    return true;
+}
+
+/** X, Escape y backdrop cierran toda la cadena, también desde un hijo. */
+export function requestModalDismiss(surfaceId: string): boolean {
+    const entry = get(surfaceId);
+    if (!entry || entry.layer === 'system') return false;
+    let root = entry;
+    const visited = new Set([surfaceId]);
+    while (root.parentInstance) {
+        const parentId = resolveModalHistoryParentSurfaceId(root.parentInstance, root.surfaceId);
+        if (!parentId || visited.has(parentId)) break;
+        const parent = get(parentId);
+        if (!parent) break;
+        visited.add(parentId);
+        root = parent;
+    }
+    dismissModalHistoryChain(root.surfaceId);
     return true;
 }
 

@@ -30,6 +30,7 @@ import {
     notifyModalHistoryClose,
     registerModalHistory,
     requestModalClose,
+    requestModalDismiss,
     resetModalHistoryForTests,
     resolveModalHistoryParentSurfaceId,
     unregisterModalHistory,
@@ -166,7 +167,8 @@ describe('Modal identidad y variantes', () => {
         assert.match(css, /\[data-component='Modal'\] \[data-element='body'\]/);
         assert.match(css, /padding-top:\s*var\(--modal-body-start-gap\)/);
         assert.match(css, /--modal-content-inset-start:\s*var\(--modal-header-inset\)/);
-        assert.match(css, /\[data-element='container'\]\[data-has-back='true'\][\s\S]*\[data-element='back'\]/);
+        assert.doesNotMatch(css, /left:\s*calc\(var\(--modal-header-inset\)\s*-\s*var\(--modal-header-height\)/);
+        assert.match(modalSource, /data-element="back"[\s\S]*?<ChevronLeft/);
         assert.match(css, /padding-inline-start:\s*var\(--modal-content-inset-start\)/);
         assert.equal(
             css.includes('--modal-content-inset-start: calc'),
@@ -497,46 +499,45 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
         assert.deepEqual(events, ['dismiss:c', 'dismiss:b']);
     });
 
-    it('5. X hijo = pop', () => {
+    it('5. X hijo = cerrar toda la cadena', () => {
         const events: string[] = [];
         registerNav({ surfaceId: 'a', instance: 'a', events });
         registerNav({ surfaceId: 'b', instance: 'b', parentInstance: 'a', events });
-        requestModalClose('b');
-        assert.deepEqual(events, ['dismiss:b']);
-        assert.equal(getModalHistorySnapshot().length, 1);
+        requestModalDismiss('b');
+        assert.deepEqual(events, ['dismiss:b', 'dismiss:a']);
+        assert.equal(getModalHistorySnapshot().length, 0);
     });
 
-    it('6. Escape hijo = pop', () => {
+    it('6. Escape hijo = cerrar toda la cadena', () => {
         const events: string[] = [];
         registerNav({ surfaceId: 'a', instance: 'a', events });
         registerNav({ surfaceId: 'b', instance: 'b', parentInstance: 'a', events });
         const base = registerModalSurface({
             id: 'a-overlay',
             layer: 'base',
-            onEscape: () => requestModalClose('a'),
+            onEscape: () => requestModalDismiss('a'),
         });
         const derived = registerModalSurface({
             id: 'b-overlay',
             layer: 'derived',
-            onEscape: () => requestModalClose('b'),
+            onEscape: () => requestModalDismiss('b'),
         });
         assert.equal(base.ok && derived.ok, true);
         dispatchModalEscapeForTests();
-        assert.deepEqual(events, ['dismiss:b']);
+        assert.deepEqual(events, ['dismiss:b', 'dismiss:a']);
         if (derived.ok) derived.unregister();
         if (base.ok) base.unregister();
     });
 
-    it('7. Backdrop hijo = pop', () => {
+    it('7. Backdrop en C cierra C, B y A, sin tocar otra cadena', () => {
         const events: string[] = [];
         registerNav({ surfaceId: 'a', instance: 'a', events });
         registerNav({ surfaceId: 'b', instance: 'b', parentInstance: 'a', events });
-        requestModalClose('b');
-        assert.deepEqual(events, ['dismiss:b']);
-        assert.equal(
-            getModalHistorySnapshot().some((e) => e.surfaceId === 'a'),
-            true
-        );
+        registerNav({ surfaceId: 'c', instance: 'c', parentInstance: 'b', events });
+        registerNav({ surfaceId: 'other', instance: 'other', events });
+        requestModalDismiss('c');
+        assert.deepEqual(events, ['dismiss:c', 'dismiss:b', 'dismiss:a']);
+        assert.deepEqual(getModalHistorySnapshot().map((e) => e.surfaceId), ['other']);
     });
 
     it('8. X raíz = dismiss completo', () => {
@@ -544,7 +545,7 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
         registerNav({ surfaceId: 'a', instance: 'a', events });
         registerNav({ surfaceId: 'b', instance: 'b', parentInstance: 'a', events });
         registerNav({ surfaceId: 'c', instance: 'c', parentInstance: 'b', events });
-        requestModalClose('a');
+        requestModalDismiss('a');
         assert.deepEqual(events, ['dismiss:c', 'dismiss:b', 'dismiss:a']);
         assert.equal(getModalHistorySnapshot().length, 0);
     });
@@ -555,7 +556,7 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
         const overlay = registerModalSurface({
             id: 'a-overlay',
             layer: 'base',
-            onEscape: () => requestModalClose('a'),
+            onEscape: () => requestModalDismiss('a'),
         });
         assert.equal(overlay.ok, true);
         dispatchModalEscapeForTests();
@@ -675,7 +676,7 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
         assert.equal(after.some((e) => e.surfaceId === 'b'), false);
     });
 
-    it('chrome: ← solo con padre vivo; X/Escape/backdrop comparten requestModalClose; onBack no es el historial', () => {
+    it('chrome: ← retrocede; X/Escape/backdrop cierran toda la cadena', () => {
         const modalSource = readFileSync(
             join(process.cwd(), 'src/components/ui/modal.tsx'),
             'utf8'
@@ -683,9 +684,10 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
         assert.match(modalSource, /parentInstance\?: string/);
         assert.match(modalSource, /hasLiveModalParent\(surfaceId\)/);
         assert.match(modalSource, /requestModalClose\(surfaceId\)/);
-        assert.match(modalSource, /onEscape: \(\) => requestCloseRef\.current\(\)/);
-        assert.match(modalSource, /closeOnBackdrop \? \(\) => requestCloseRef\.current\(\)/);
-        assert.match(modalSource, /onClose=\{\(\) => requestCloseRef\.current\(\)\}/);
+        assert.match(modalSource, /requestModalDismiss\(surfaceId\)/);
+        assert.match(modalSource, /onEscape: \(\) => requestDismissRef\.current\(\)/);
+        assert.match(modalSource, /closeOnBackdrop \? \(\) => requestDismissRef\.current\(\)/);
+        assert.match(modalSource, /onClose=\{\(\) => requestDismissRef\.current\(\)\}/);
         assert.match(modalSource, /showNavBack \? \(\) => requestCloseRef\.current\(\) : onBack/);
         assert.match(modalSource, /data-element="back"/);
         assert.equal(modalSource.includes('getModalSurfaceStackSnapshot'), false);

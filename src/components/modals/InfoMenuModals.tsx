@@ -211,7 +211,7 @@ export function InfoMenuModals({ open, onClose, onBack, usagePrefix = 'admin' }:
 
             <Modal
                 open={isManualsModalOpen}
-                onClose={closeManualsModal}
+                onClose={closeAll}
                 variant="standard"
                 layer="base"
                 instance={`${usagePrefix}-manuales`}
@@ -302,12 +302,11 @@ export function InfoMenuModals({ open, onClose, onBack, usagePrefix = 'admin' }:
 
             <Modal
                 open={!!manualMediaViewer}
-                onClose={() => setManualMediaViewer(null)}
+                onClose={closeAll}
                 onBack={backFromManualMedia}
                 variant="amplify"
                 layer="derived"
                 instance={`${usagePrefix}-manual-media`}
-                parentInstance={manualMediaViewer?.parent === 'manuales' ? `${usagePrefix}-manuales` : undefined}
                 title={manualMediaViewer?.title ?? ''}
                 scheme={manualMediaViewer?.type === 'rain' ? 'dark' : 'work'}
                 wrapperClassName={manualMediaViewer?.type === 'rain' ? 'max-w-5xl' : 'max-w-3xl'}

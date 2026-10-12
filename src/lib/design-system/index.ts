@@ -77,6 +77,7 @@ export {
     notifyModalHistoryOpen,
     notifyModalHistoryClose,
     requestModalClose,
+    requestModalDismiss,
     hasLiveModalParent,
     resolveModalHistoryParentSurfaceId,
     subscribeModalHistory,

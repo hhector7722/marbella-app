@@ -356,27 +356,7 @@ html[data-quick-fab='open'] main {
   background-color: var(--color-superficie-inactiva);
 }
 
-/*
- * Chrome ←: a la izquierda del inset contractual, sin empujar título ni body.
- * Termina espacio.2 antes del inicio del título (ref. Albaranes / SISTEMA §Modal).
- */
-[data-component='Modal'] [data-element='container'][data-has-back='true'] [data-element='header'] {
-  position: relative;
-}
-
-[data-component='Modal'] [data-element='container'][data-has-back='true'] [data-element='back'] {
-  position: absolute;
-  top: 0;
-  left: calc(var(--modal-header-inset) - var(--modal-header-height) - var(--espacio-2));
-  height: 100%;
-  width: var(--modal-header-height);
-}
-
-[data-component='Modal']
-  [data-element='container'][data-has-back='true'][data-header-compact='true']
-  [data-element='back'] {
-  left: calc(var(--modal-header-inset) - var(--modal-header-height) - var(--espacio-1));
-}
+/* La flecha participa en el flex de cabecera: queda visible antes del título. */
 
 [data-component='Modal'] [data-element='body'] {
   padding-inline-start: var(--modal-content-inset-start);

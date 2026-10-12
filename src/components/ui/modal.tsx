@@ -20,6 +20,7 @@ import {
     registerModalHistory,
     registerModalSurface,
     requestModalClose,
+    requestModalDismiss,
     resolveModalVariant,
     subscribeModalHistory,
     getModalHistoryVersion,
@@ -467,13 +468,21 @@ export function Modal({
             onCloseRef.current();
         }
     };
+    const requestDismiss = () => {
+        setRestoredOpen(false);
+        if (!participatesInHistory || !requestModalDismiss(surfaceId)) {
+            onCloseRef.current();
+        }
+    };
     const requestCloseRef = useRef(requestClose);
+    const requestDismissRef = useRef(requestDismiss);
     useLayoutEffect(() => {
         onCloseRef.current = onClose;
         restoreRef.current = () => {
             setRestoredOpen(true);
         };
         requestCloseRef.current = requestClose;
+        requestDismissRef.current = requestDismiss;
     });
 
     const [prevOpen, setPrevOpen] = useState(false);
@@ -553,7 +562,7 @@ export function Modal({
         const registration = registerModalSurface({
             id: surfaceId,
             layer,
-            onEscape: () => requestCloseRef.current(),
+            onEscape: () => requestDismissRef.current(),
         });
 
         if (!registration.ok) {
@@ -664,7 +673,7 @@ export function Modal({
                     'absolute inset-0 touch-none overscroll-none border-0 p-0',
                     backdropClassName
                 )}
-                onClick={closeOnBackdrop ? () => requestCloseRef.current() : undefined}
+                onClick={closeOnBackdrop ? () => requestDismissRef.current() : undefined}
             />
             <div
                 data-element="frame"
@@ -701,7 +710,7 @@ export function Modal({
                         headerTone={headerTone}
                         scheme={scheme}
                         headerActionChrome={headerActionChrome}
-                        onClose={() => requestCloseRef.current()}
+                        onClose={() => requestDismissRef.current()}
                         onBack={backHandler}
                         onBackPlain={onBackPlain}
                         hideHeaderDivider={hideHeaderDivider}
