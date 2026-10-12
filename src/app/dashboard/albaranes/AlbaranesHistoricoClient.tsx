@@ -32,6 +32,7 @@ import { getSupplierLogo } from '@/lib/supplier-logos'
 import {
   invoiceLineRequiresStock,
   isInvoiceLineExcluded,
+  isInvoiceLineExpenseOnly,
   isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
@@ -1826,9 +1827,10 @@ export default function AlbaranesHistoricoClient({
                             const stockApplied = Boolean(stock?.stockApplied)
                             const rectified = (stock?.rectifiedCount ?? 0) > 0
                             const excluded = isInvoiceLineExcluded(l)
-                            const noMatch = !excluded && !l.ingredient_name
+                            const expenseOnly = isInvoiceLineExpenseOnly(l)
+                            const noMatch = !excluded && !expenseOnly && !l.ingredient_name
                             const reviewRow = inlineReviewByLineId.get(l.id) ?? null
-                            const reviewLabel = inlineReviewLabel(reviewRow)
+                            const reviewLabel = expenseOnly ? 'Otros · Gasto' : inlineReviewLabel(reviewRow)
                             const backgroundPhase = backgroundLineActions[l.id] ?? null
                             const needsRepair = lineNeedsStockRepair(l)
                             const reviewLabelDocumentOnly = Boolean(
@@ -1839,6 +1841,7 @@ export default function AlbaranesHistoricoClient({
                             // línea lista se confirma aunque el documento tenga
                             // avisos, así que sigue siendo accionable.
                             const reviewLabelPassive =
+                              expenseOnly ||
                               Boolean(reviewRow?.confirmed) ||
                               reviewRow?.disposition === 'confirmed' ||
                               reviewRow?.disposition === 'excluded' ||
@@ -1883,6 +1886,9 @@ export default function AlbaranesHistoricoClient({
                                     {excluded ? (
                                       <span className="inline-flex text-zinc-400" aria-label="Portes o ajuste" title="Portes / ajuste / sin cargo"><MinusCircle className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
+                                    {expenseOnly ? (
+                                      <span className="inline-flex text-emerald-600" aria-label="Gasto sin stock" title="Gasto contabilizable, sin stock"><Check className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
+                                    ) : null}
                                     {needsRepair ? (
                                       <span className="inline-flex text-amber-600" aria-label="Pendiente de confirmar" title="Pendiente de confirmar"><AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
@@ -1899,7 +1905,10 @@ export default function AlbaranesHistoricoClient({
                                       </span>
                                     ) : reviewLabel ? (
                                       reviewLabelPassive ? (
-                                        <span className={cn('ml-1 text-[9px] font-black uppercase tracking-wide', inlineReviewTone(reviewRow))}>
+                                        <span className={cn(
+                                          'ml-1 text-[9px] font-black uppercase tracking-wide',
+                                          expenseOnly ? 'text-emerald-700' : inlineReviewTone(reviewRow)
+                                        )}>
                                           {reviewLabel}
                                         </span>
                                       ) : isManager ? (
