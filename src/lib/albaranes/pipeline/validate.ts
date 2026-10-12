@@ -72,7 +72,7 @@ export function reconcileRoundedDisplayedUnitPrice(
 
 /**
  * Descuento fijo por unidad facturada (DTO. en euros), como en SHERS.
- * Verifica precio bruto - descuento = neto impreso; el precio real procede
+ * Verifica el descuento fijo y admite 1 céntimo de desviación por redondeo\n * entre bruto, descuento y neto impresos; el precio real procede
  * del importe de la línea y solo puede diferir por redondeo del neto a céntimos.
  * No acepta descuentos sin precio neto explícito ni cargos adicionales.
  */
@@ -95,12 +95,26 @@ export function reconcileFixedDiscountedUnitPrice(line: {
   const total = parseExactDecimal(line.line_total_raw)
   if (!isPositiveExact(quantity) || !isPositiveExact(gross)
     || !isPositiveExact(discount) || !isPositiveExact(printedNet)
-    || !isPositiveExact(total) || compareExact(discount, gross) >= 0
-    || compareExact(subtractExact(gross, discount), printedNet) !== 0) return null
+    || !isPositiveExact(total) || compareExact(discount, gross) >= 0) return null
 
   const effective = divideExact(total, quantity)
-  if (!isPositiveExact(effective)
-    || compareExact(parseExactDecimal(roundExactToScale(effective, 2))!, printedNet) !== 0
+  if (!isPositiveExact(effective)) return null
+
+  const discountedGross = subtractExact(gross, discount)
+  if (compareExact(discountedGross, printedNet) !== 0) {
+    // Las tres cifras del proveedor se imprimen en céntimos. El precio real
+    // puede estar a mitad de céntimo: p.ej. 8,22 - 3,24 = 4,98, pero
+    // 9,97 / 2 = 4,985, impreso como 4,99. Solo aceptamos hasta 1 céntimo
+    // de desfase y comprobamos ambas cifras contra el importe original.
+    const printedCents = /^\\s*\\d+[.,]\\d{2}\\s*$/
+    if (!printedCents.test(line.unit_price_raw ?? '')
+      || !printedCents.test(line.discount_raw ?? '')
+      || !printedCents.test(line.net_unit_price_raw ?? '')
+      || !withinExactTolerance(discountedGross, printedNet, parseExactDecimal('0.01')!)
+      || !withinExactTolerance(discountedGross, effective, parseExactDecimal('0.01')!)) return null
+  }
+
+  if (compareExact(parseExactDecimal(roundExactToScale(effective, 2))!, printedNet) !== 0
     || !withinExactTolerance(
       multiplyExact(quantity, printedNet), total, parseExactDecimal('0.10')!
     )) return null
