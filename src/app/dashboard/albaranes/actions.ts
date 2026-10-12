@@ -326,6 +326,10 @@ export type PurchaseInvoiceLine = {
   /** Porcentaje literal reconocido en la evidencia de Panabad, si existe. */
   printed_discount_percent: number | null
   printed_unit_price: number | null
+  /** DTO fijo por unidad facturada SHERS, nunca porcentaje. */
+  printed_fixed_discount_eur: number | null
+  /** Neto unitario que SHERS muestra ya redondeado a céntimos. */
+  printed_net_unit_price: number | null
   /** Precio literal del documento, independiente del precio efectivo recibido. */
   printed_unit_price_raw: string | null
   /** Evita inferir redondeo si el documento declara descuentos o cargos. */
@@ -468,6 +472,8 @@ export async function getPurchaseInvoiceDetailAction(
     variable_piece_count: null as number | null,
     printed_discount_percent: null as number | null,
     printed_unit_price: null as number | null,
+    printed_fixed_discount_eur: null as number | null,
+    printed_net_unit_price: null as number | null,
     printed_unit_price_raw: null as string | null,
     printed_has_adjustments: false,
   })) as PurchaseInvoiceLine[]
@@ -492,6 +498,16 @@ export async function getPurchaseInvoiceDetailAction(
         || String(proposal?.observed?.net_unit_price_raw ?? '').trim()
         || String(proposal?.observed?.other_charge_raw ?? '').trim()
       )
+      if (Number((data as any).supplier_id) === 8
+        && /dto|discount|descuento/i.test(proposal?.observed?.discount_header_raw ?? '')
+        && !/%|por\\s*ciento|percent/i.test(proposal?.observed?.discount_header_raw ?? '')) {
+        const gross = parseObservedDecimal(proposal?.observed?.unit_price_raw ?? null)
+        const discount = parseObservedDecimal(proposal?.observed?.discount_raw ?? null)
+        const net = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
+        line.printed_unit_price = gross != null && gross > 0 ? gross : null
+        line.printed_fixed_discount_eur = discount != null && discount > 0 ? discount : null
+        line.printed_net_unit_price = net != null && net > 0 ? net : null
+      }
       if (Number((data as any).supplier_id) === 2) {
         const reviewed = proposal?.pricing?.human_review
         const observedDiscount = reviewed?.discountPercent != null
