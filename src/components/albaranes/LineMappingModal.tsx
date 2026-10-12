@@ -38,7 +38,10 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { explainReviewReason } from '@/lib/albaranes/k5/review-reason-labels'
 import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
-import { reconcileRoundedDisplayedUnitPrice } from '@/lib/albaranes/pipeline/validate'
+import {
+  reconcileFixedDiscountedUnitPrice,
+  reconcileRoundedDisplayedUnitPrice,
+} from '@/lib/albaranes/pipeline/validate'
 import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal'
 type LineDimensionalDraft = {
   lineBillingUnit: string
@@ -419,6 +422,18 @@ export function LineMappingModal({
     return Number.isFinite(value) && value > 0 ? value : null
   }, [observedUnitPriceDraft])
   const isPanabad = supplierId === 2
+  const isShersFixedDiscount = supplierId === 8 && line?.printed_fixed_discount_eur != null
+  const shersEffectiveUnitPrice = isShersFixedDiscount && grossUnitPrice != null
+    && line?.quantity != null && line.printed_net_unit_price != null
+    ? reconcileFixedDiscountedUnitPrice({
+        quantity_raw: String(line.quantity),
+        unit_price_raw: String(grossUnitPrice),
+        discount_raw: String(line.printed_fixed_discount_eur),
+        discount_header_raw: 'DTO.',
+        net_unit_price_raw: String(line.printed_net_unit_price),
+        line_total_raw: lineTotalDraft,
+      })
+    : null
   const reviewedDiscount = useMemo(() => {
     if (!isPanabad) return null
     const discount = discountDraft.trim().replace(',', '.')
@@ -442,7 +457,9 @@ export function LineMappingModal({
     : null
   const observedUnitPrice = isPanabad
     ? reviewedDiscount == null ? null : Number(reviewedDiscount.effectiveUnitPrice.toFixed(4))
-    : roundedUnitPrice == null ? grossUnitPrice : Number(roundedUnitPrice)
+    : isShersFixedDiscount
+      ? shersEffectiveUnitPrice == null ? null : Number(shersEffectiveUnitPrice)
+      : roundedUnitPrice == null ? grossUnitPrice : Number(roundedUnitPrice)
 
   const purchaseUnitForPresentation = useMemo(
     () =>
@@ -533,7 +550,9 @@ export function LineMappingModal({
     if (!ingredientId) return 'Selecciona un ingrediente del catálogo.'
     if (observedUnitPrice == null) return isPanabad
       ? 'Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.'
-      : 'Indica un precio facturado válido.'
+      : isShersFixedDiscount
+        ? 'El descuento fijo de SHERS no concilia con el precio neto y el importe impresos.'
+        : 'Indica un precio facturado válido.'
     if (isVariableWeightMode) return null
     if (!dimensionalParsed.lineBillingUnit && !automaticDimensional) {
       return 'Indica la unidad que factura el proveedor (por ejemplo, caja, pack o ud).'
@@ -556,6 +575,7 @@ export function LineMappingModal({
     ingredientId,
     observedUnitPrice,
     isPanabad,
+    isShersFixedDiscount,
     isVariableWeightMode,
     dimensionalParsed.lineBillingUnit,
     dimensionalParsed.lineContentQty,
@@ -660,7 +680,9 @@ export function LineMappingModal({
     if (observedUnitPrice == null) {
       reject(isPanabad
         ? 'Revisa precio, descuento e importe: deben cuadrar con la cantidad de cajas.'
-        : 'Indica un precio facturado válido.')
+        : isShersFixedDiscount
+          ? 'El descuento fijo de SHERS no concilia con el precio neto y el importe impresos.'
+          : 'Indica un precio facturado válido.')
       return
     }
 
@@ -974,7 +996,7 @@ export function LineMappingModal({
               {ingredientId ? (
                 <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-1.5">
                   <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
-                    {isPanabad ? 'Precio antes del descuento' : 'Precio del albarán'}
+                    {isPanabad || isShersFixedDiscount ? 'Precio antes del descuento' : 'Precio del albarán'}
                   </p>
                   <div className="flex items-center gap-2 px-1">
                     <input
@@ -983,7 +1005,7 @@ export function LineMappingModal({
                       onChange={(e) => {
                         setObservedUnitPriceDraft(e.target.value)
                                           }}
-                      aria-label={isPanabad ? 'Precio antes del descuento por caja' : 'Precio facturado por unidad de línea'}
+                      aria-label={isPanabad || isShersFixedDiscount ? 'Precio antes del descuento por caja' : 'Precio facturado por unidad de línea'}
                       className="min-h-12 w-28 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm font-semibold tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
                     <span className="text-xs font-semibold text-zinc-700">
@@ -1027,6 +1049,30 @@ export function LineMappingModal({
                         El importe ya incluye el descuento. Corrige aquí cualquier cifra que se haya leído mal.
                       </p>
                     </>
+                  ) : isShersFixedDiscount ? (
+                    <div className="flex flex-col gap-1 px-1 text-xs text-zinc-700">
+                      <p>Descuento fijo: <span className="font-semibold tabular-nums">
+                        {line?.printed_fixed_discount_eur?.toLocaleString('es-ES', {
+                          minimumFractionDigits: 2, maximumFractionDigits: 2,
+                        })} € por {billingUnitForDisplay}</span>
+                      </p>
+                      <p>Precio neto impreso: <span className="tabular-nums">
+                        {line?.printed_net_unit_price?.toLocaleString('es-ES', {
+                          minimumFractionDigits: 2, maximumFractionDigits: 2,
+                        })} €</span>
+                      </p>
+                      {shersEffectiveUnitPrice != null ? (
+                        <p className="font-semibold text-zinc-900">
+                          Precio efectivo: {Number(shersEffectiveUnitPrice).toLocaleString('es-ES', {
+                            minimumFractionDigits: 2, maximumFractionDigits: 4,
+                          })} € por {billingUnitForDisplay}
+                        </p>
+                      ) : (
+                        <p role="alert" className="font-semibold text-amber-800">
+                          El descuento y el importe no concilian. Revisa la lectura original.
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <p className="px-1 text-[10px] leading-snug text-zinc-500">
                       Es el precio que figura en el albarán. Si la lectura lo interpretó mal, corrígelo aquí.
