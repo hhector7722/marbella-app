@@ -326,6 +326,10 @@ export type PurchaseInvoiceLine = {
   /** Porcentaje literal reconocido en la evidencia de Panabad, si existe. */
   printed_discount_percent: number | null
   printed_unit_price: number | null
+  /** Precio literal del documento, independiente del precio efectivo recibido. */
+  printed_unit_price_raw: string | null
+  /** Evita inferir redondeo si el documento declara descuentos o cargos. */
+  printed_has_adjustments: boolean
 }
 
 export type PurchaseInvoiceExtraSheet = {
@@ -463,6 +467,8 @@ export async function getPurchaseInvoiceDetailAction(
     variable_piece_count: null as number | null,
     printed_discount_percent: null as number | null,
     printed_unit_price: null as number | null,
+    printed_unit_price_raw: null as string | null,
+    printed_has_adjustments: false,
   })) as PurchaseInvoiceLine[]
 
   const proposalIds = lines.map((line) => line.interpretation_proposal_id).filter((id): id is string => Boolean(id))
@@ -478,6 +484,13 @@ export async function getPurchaseInvoiceDetailAction(
       if (!line.interpretation_proposal_id) continue
       const proposal = proposalById.get(line.interpretation_proposal_id)
       const rawCells = Array.isArray(proposal?.observed?.raw_cells) ? proposal.observed.raw_cells : []
+      line.printed_unit_price_raw = typeof proposal?.observed?.unit_price_raw === 'string'
+        ? proposal.observed.unit_price_raw : null
+      line.printed_has_adjustments = Boolean(
+        String(proposal?.observed?.discount_raw ?? '').trim()
+        || String(proposal?.observed?.net_unit_price_raw ?? '').trim()
+        || String(proposal?.observed?.other_charge_raw ?? '').trim()
+      )
       if (Number((data as any).supplier_id) === 2) {
         const reviewed = proposal?.pricing?.human_review
         const observedDiscount = reviewed?.discountPercent != null
