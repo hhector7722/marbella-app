@@ -340,6 +340,7 @@ async function supersedeK5ProposalWithMapping(params: {
     verifiedObservedMath: verifiedEmbeddedKgMath || verifiedRoundedUnitMath
       || verifiedUnadjustedNet || verifiedPercentDiscount,
     verifiedFixedDiscountMath: verifiedFixedDiscount,
+    verifiedPercentDiscountMath: verifiedPercentDiscount,
     verifiedReviewedPricing: Boolean(reviewedPricing),
   })
   const reviewReasons: string[] = [...new Set(snapshot
