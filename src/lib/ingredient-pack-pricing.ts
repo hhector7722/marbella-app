@@ -15,6 +15,7 @@ function norm(u: string | null | undefined): string {
   if (s === 'cl') return 'cl'
   if (['kg', 'kilo', 'kilos', 'quilo', 'quilos'].includes(s)) return 'kg'
   if (s === 'g' || s === 'gr') return 'g'
+  if (['m', 'mt', 'mts', 'mts.', 'metro', 'metros'].includes(s)) return 'm'
   return s
 }
 
@@ -30,6 +31,7 @@ export function resolveDeclaredPurchaseUnitWithPackContent(
   if (sz === 'ud') return 'ud'
   if (szIsVol) return 'l'
   if (szIsMass) return 'kg'
+  if (sz === 'm') return 'm'
   if (dec === 'ud') return 'ud'
   return dec || 'ud'
 }
@@ -56,6 +58,7 @@ export function convertPackUnitSizeToPurchaseUnit(
     if (from === 'kg') return qty
     return null
   }
+  if (to === 'm' && from === 'm') return qty
   if (to === 'ud' && from === 'ud') return qty
   return null
 }
@@ -78,7 +81,7 @@ export function suggestedAlbaranConversionFactorFromIngredient(row: {
   )
   if (mode !== 'per_pack') {
     if (pu === 'ud') return 1
-    if (pu === 'l' || pu === 'kg') return 1
+    if (pu === 'l' || pu === 'kg' || pu === 'm') return 1
     return null
   }
   const perPiece = convertPackUnitSizeToPurchaseUnit(
@@ -220,7 +223,7 @@ export function sameFamilyAutomaticConversionCaption(
 }
 
 /** Unidades operativas para `line_content_unit` en mapeos de albarán. */
-export const ALBARAN_LINE_CONTENT_UNITS = ['l', 'ml', 'cl', 'kg', 'g', 'ud'] as const
+export const ALBARAN_LINE_CONTENT_UNITS = ['l', 'ml', 'cl', 'kg', 'g', 'ud', 'm'] as const
 
 export type IngredientDimensionalSource = {
   supplier_pricing_mode?: string | null
@@ -278,7 +281,7 @@ export function suggestedDimensionalMappingFromIngredient(
     }
   }
 
-  if (pu === 'l' || pu === 'kg') {
+  if (pu === 'l' || pu === 'kg' || pu === 'm') {
     return {
       lineBillingUnit: lineUnitHint || pu,
       lineContentQty: '1',
