@@ -187,6 +187,60 @@ const staffOrderItemSchema = z.object({
   price_mode: z.enum(['standard', 'pavello']).optional().default('standard'),
 })
 
+/**
+ * "Precio pabellón" es una tarifa por receta, no un descuento porcentual.
+ * El RPC aplica el precio estándar cuando falta: evitar guardar un pedido
+ * como pavelló si alguna línea no tiene una tarifa reducida configurada.
+ */
+async function validateStaffPavelloPricing(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  items: z.infer<typeof staffOrderItemSchema>[]
+): Promise<string | null> {
+  const pavilionItems = items.filter((item) => item.price_mode === 'pavello')
+  if (pavilionItems.length === 0) return null
+
+  const articleIds = [...new Set(pavilionItems.map((item) => Number(item.product_id)))]
+  if (articleIds.some((id) => !Number.isSafeInteger(id) || id <= 0)) {
+    return 'Hay productos con identificadores inválidos para la tarifa de pabellón.'
+  }
+
+  const { data: mappings, error: mappingError } = await supabase
+    .from('map_tpv_receta')
+    .select('articulo_id, recipe_id')
+    .in('articulo_id', articleIds)
+  if (mappingError) return `No se pudo comprobar la tarifa de pabellón: ${mappingError.message}`
+
+  const mappedRecipes = new Map(
+    (mappings ?? []).map((mapping) => [Number(mapping.articulo_id), mapping.recipe_id])
+  )
+  const recipeIds = [...new Set([...mappedRecipes.values()].filter((id): id is string => Boolean(id)))]
+  const { data: recipes, error: recipeError } = recipeIds.length > 0
+    ? await supabase
+        .from('recipes')
+        .select('id, name, sales_price_pavello, sale_price_half_pavello, price_pavello_half')
+        .in('id', recipeIds)
+    : { data: [], error: null }
+  if (recipeError) return `No se pudo comprobar la tarifa de pabellón: ${recipeError.message}`
+
+  const byRecipeId = new Map((recipes ?? []).map((recipe) => [recipe.id, recipe]))
+  const missing = new Set<string>()
+
+  for (const item of pavilionItems) {
+    const recipe = byRecipeId.get(mappedRecipes.get(Number(item.product_id)) ?? '')
+    const half = Boolean(item.is_half) ||
+      /^(1\/2|½|medio|mitad|half)$/i.test(item.notes?.trim() ?? '')
+    const price = half
+      ? Number(recipe?.sale_price_half_pavello) || Number(recipe?.price_pavello_half)
+      : Number(recipe?.sales_price_pavello)
+    if (!(price > 0)) missing.add(recipe?.name?.trim() || `artículo ${item.product_id}`)
+  }
+
+  if (missing.size === 0) return null
+  const names = [...missing]
+  const suffix = names.length > 5 ? ` y ${names.length - 5} más` : ''
+  return `No se ha guardado: falta configurar el precio de pabellón de ${names.slice(0, 5).join(', ')}${suffix}. Revisa sus fichas de receta antes de generar la factura.`
+}
+
 const createStaffEventOrderSchema = z.object({
   eventId: z.string().uuid(),
   items: z.array(staffOrderItemSchema).min(1).max(200),
@@ -455,6 +509,9 @@ export async function createStaffEventOrderAction(input: unknown): Promise<
   const gate = await gateStaffEncargo()
   if (!gate.ok) return { success: false, message: gate.message }
 
+  const priceError = await validateStaffPavelloPricing(gate.supabase, parsed.data.items)
+  if (priceError) return { success: false, message: priceError }
+
   const { data, error } = await gate.supabase.rpc('create_staff_event_order', {
     p_event_id: parsed.data.eventId,
     p_items: parsed.data.items.map((it) => ({
@@ -531,6 +588,9 @@ export async function updateStaffEventOrderAction(input: unknown): Promise<
 
   const gate = await gateStaffEncargo()
   if (!gate.ok) return { success: false, message: gate.message }
+
+  const priceError = await validateStaffPavelloPricing(gate.supabase, parsed.data.items)
+  if (priceError) return { success: false, message: priceError }
 
   const { data, error } = await gate.supabase.rpc('update_staff_event_order', {
     p_order_id: parsed.data.orderId,
