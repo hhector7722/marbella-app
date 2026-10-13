@@ -17,6 +17,7 @@ type MappingReviewInput = {
   verifiedFixedDiscountMath?: boolean
   verifiedPercentDiscountMath?: boolean
   verifiedReviewedPricing?: boolean
+  verifiedMisreadNetAmount?: boolean
 }
 
 /** Resolve only facts explicitly supplied by the reviewer; keep economic and
@@ -69,6 +70,8 @@ export function resolveMappingReviewReasons(input: MappingReviewInput): string[]
       'discount_requires_review',
       'line_amount_mismatch',
     ].includes(reason)) return false
+    if (reason === 'precio_neto_contradictorio'
+      && input.hasMappedSnapshot && input.verifiedMisreadNetAmount) return false
     if (input.hasMappedSnapshot && input.humanLineOverride && [
       'discount_not_interpretable',
       'discount_requires_review',

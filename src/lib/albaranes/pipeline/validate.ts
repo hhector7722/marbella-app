@@ -89,7 +89,7 @@ export function reconcileUnadjustedNetUnitPrice(line: {
   other_charge_raw?: string | null
 }): string | null {
   if (line.discount_raw?.trim() || line.other_charge_raw?.trim()) return null
-  if (!line.net_unit_price_raw || !/^\\s*\\d+[.,]\\d{2}\\s*$/.test(line.net_unit_price_raw)) return null
+  if (!line.net_unit_price_raw || !/^\s*\d+[.,]\d{2}\s*$/.test(line.net_unit_price_raw)) return null
   const gross = parseExactDecimal(line.unit_price_raw)
   const net = parseExactDecimal(line.net_unit_price_raw)
   const quantity = parseExactDecimal(line.quantity_raw)
@@ -104,6 +104,32 @@ export function reconcileUnadjustedNetUnitPrice(line: {
     multiplyExact(quantity, parseExactDecimal(normalized)!), total,
     parseExactDecimal('0.03')!
   ) ? normalized : null
+}
+
+/**
+ * Un OCR puede copiar el importe total en la columna «precio neto».
+ * La revisión humana solo puede descartar esa lectura si no hay descuento ni
+ * cargo, el neto leído es exactamente el importe y cantidad × precio impreso
+ * reconcilia con ese importe a céntimos. La evidencia OCR no se modifica.
+ */
+export function isMisreadNetAmount(line: {
+  quantity_raw: string | null
+  unit_price_raw: string | null
+  discount_raw: string | null
+  net_unit_price_raw: string | null
+  line_total_raw: string | null
+  other_charge_raw?: string | null
+}): boolean {
+  if (line.discount_raw?.trim() || line.other_charge_raw?.trim()) return false
+  const quantity = parseExactDecimal(line.quantity_raw)
+  const price = parseExactDecimal(line.unit_price_raw)
+  const net = parseExactDecimal(line.net_unit_price_raw)
+  const total = parseExactDecimal(line.line_total_raw)
+  if (!isPositiveExact(quantity) || !isPositiveExact(price)
+    || !isPositiveExact(net) || !isPositiveExact(total)) return false
+  if (compareExact(net, total) !== 0
+    || withinExactTolerance(price, total, parseExactDecimal('0.03')!)) return false
+  return withinExactTolerance(multiplyExact(quantity, price), total, parseExactDecimal('0.01')!)
 }
 
 /**

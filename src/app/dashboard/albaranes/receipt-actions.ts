@@ -2,10 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
-import { compareExact, parseExactDecimal } from '@/lib/albaranes/k5/exact-decimal'
+import { compareExact, multiplyExact, parseExactDecimal, withinExactTolerance } from '@/lib/albaranes/k5/exact-decimal'
 import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
 import { resolveMappingReviewReasons } from '@/lib/albaranes/k5/mapping-review-reasons'
 import {
+  isMisreadNetAmount,
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
@@ -325,7 +326,19 @@ async function supersedeK5ProposalWithMapping(params: {
       observedUnitPrice
     )
   )
-    // La revisión humana puede completar datos que el OCR dejó vacíos. Esos
+  const savedQuantity = parseExactDecimal(lineQuantity)
+  const savedPrice = parseExactDecimal(observedUnitPrice)
+  const savedTotal = parseExactDecimal(lineTotal)
+  const verifiedMisreadNetAmount = Boolean(
+    Number(current.supplier_id) === 1
+    && sourceLine.success
+    && isMisreadNetAmount(sourceLine.data)
+    && sameExactDecimal(sourceCheck?.quantity, lineQuantity)
+    && sameExactDecimal(sourceCheck?.lineTotal, lineTotal)
+    && savedQuantity && savedPrice && savedTotal
+    && withinExactTolerance(multiplyExact(savedQuantity, savedPrice), savedTotal, parseExactDecimal('0.03')!)
+  )
+  // La revisión humana puede completar datos que el OCR dejó vacíos. Esos
   // valores quedan versionados en la propuesta sucesora; la evidencia original
   // no se modifica y K4 seguirá revalidando antes de cualquier efecto económico.
   const semanticReasons = resolveMappingReviewReasons({
@@ -342,6 +355,7 @@ async function supersedeK5ProposalWithMapping(params: {
     verifiedFixedDiscountMath: verifiedFixedDiscount,
     verifiedPercentDiscountMath: verifiedPercentDiscount,
     verifiedReviewedPricing: Boolean(reviewedPricing),
+    verifiedMisreadNetAmount,
   })
   const reviewReasons: string[] = [...new Set(snapshot
     ? semanticReasons

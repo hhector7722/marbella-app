@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-13
 
+- **La revisión de Ametller distingue un importe copiado como precio neto.** Cuando el OCR duplica el importe en esa columna y la cantidad por el precio impreso concilia sin descuentos ni cargos, la revisión humana puede resolver el aviso. K4 conserva el bloqueo ante cualquier diferencia real y sigue validando antes de recibir.
+
 - **Albaranes incorpora la confirmación explícita de recepciones verificadas.** Gerencia y administración ven el botón en el detalle, también cuando no hay líneas verificadas pendientes, y pueden confirmar en lote cuando las haya. Cada línea pasa de nuevo por K4; el resultado distingue confirmadas, omitidas y bloqueadas, y los reintentos no duplican movimientos de stock.
 
 ## 2026-10-12

@@ -115,6 +115,14 @@ precio neto unitario explícito que coincida tanto con precio − descuento como
 con el importe. Fuera de esas dos demostraciones, el descuento sigue en
 revisión.
 
+En la revisión humana de Ametller, una columna leída como «precio neto» puede
+ser en realidad una copia OCR del importe total. Solo se descarta ese aviso si
+no hay descuento ni cargo, el supuesto neto es exactamente el importe y la
+cantidad multiplicada por el precio unitario impreso concilia a céntimos con
+el importe. La evidencia OCR permanece intacta en la propuesta anterior. Un
+descuento o un descuadre real conserva su bloqueo y K4 vuelve a validar la
+línea antes de cualquier recepción.
+
 En Panabad, «Preu» es el precio por caja antes del descuento, «%» es el
 descuento y «Import» es el importe neto de toda la línea. La revisión humana
 muestra las tres cifras y permite corregir una lectura errónea. El listado

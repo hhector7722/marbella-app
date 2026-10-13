@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  isMisreadNetAmount,
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
@@ -30,6 +31,17 @@ test('el precio efectivo se calcula del importe, sin alterar el impreso', () => 
   assert.equal(reconcileRoundedDisplayedUnitPrice('5', '1,29', '6,46'), '1.292')
   assert.equal(reconcileRoundedDisplayedUnitPrice('10', '1,1600', '11,56'), null)
   assert.equal(reconcileRoundedDisplayedUnitPrice('1', '1,16', '1,12'), null)
+})
+
+test('Ametller: reconoce importe copiado como precio neto solo cuando la línea cuadra', () => {
+  const evidence = row({
+    quantity_raw: '1,600', unit_price_raw: '2,490',
+    net_unit_price_raw: '3,99', line_total_raw: '3,99',
+  })
+  assert.equal(isMisreadNetAmount(evidence), true)
+  assert.equal(isMisreadNetAmount({ ...evidence, discount_raw: '10' }), false)
+  assert.equal(isMisreadNetAmount({ ...evidence, line_total_raw: '4,30' }), false)
+  assert.equal(isMisreadNetAmount({ ...evidence, net_unit_price_raw: '2,49' }), false)
 })
 
 test('SANET: 10 litros a 1,16 € admiten 11,56 € por redondeo del precio mostrado', () => {

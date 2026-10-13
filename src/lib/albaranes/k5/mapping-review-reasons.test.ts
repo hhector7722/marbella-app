@@ -86,6 +86,23 @@ test('SHERS: el mapeo no oculta descuentos ni importes contradictorios', () => {
   ])
 })
 
+test('Ametller: la lectura duplicada del importe resuelve solo el aviso de neto tras mapear', () => {
+  const sample = {
+    previousReasons: ['precio_neto_contradictorio', 'descuento_sin_porcentaje_verificado', 'presentacion_sin_validar'],
+    hasResolvedName: true,
+    hasMappedSnapshot: true,
+    humanLineOverride: false,
+    quantity: 4,
+    unitPrice: 6.66,
+    lineTotal: 26.64,
+    verifiedMisreadNetAmount: true,
+  }
+  assert.deepEqual(resolveMappingReviewReasons(sample), ['descuento_sin_porcentaje_verificado'])
+  assert.deepEqual(resolveMappingReviewReasons({ ...sample, hasMappedSnapshot: false }), [
+    'precio_neto_contradictorio', 'descuento_sin_porcentaje_verificado', 'presentacion_sin_validar',
+  ])
+})
+
 test('SHERS: el DTO fijo verificado resuelve bloqueos anteriores sin ocultar avisos documentales', () => {
   const reasons = resolveMappingReviewReasons({
     previousReasons: [
