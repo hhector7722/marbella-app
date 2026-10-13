@@ -43,6 +43,7 @@ import WorkTimer, { StaffElapsedDigits, formatStaffElapsedHms } from '@/componen
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { RainChangesManualContent } from '@/components/modals/RainChangesManualContent';
+import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { StaffClockCameraFovNotice } from '@/components/dashboards/StaffClockCameraFovNotice';
@@ -1386,6 +1387,25 @@ export default function StaffDashboardView({
                         >
                             Tu navegador no reproduce vídeo embebido.
                         </video>
+                    ) : manualMediaViewer?.type === 'image' && manualMediaViewer.src === STAFF_MANUAL_ASSETS.cuadroElectricoImage ? (
+                        <PinchZoomViewport
+                            resetKey={manualMediaViewer.src}
+                            minScale={0.5}
+                            maxScale={6}
+                            trackpadGestures
+                            className="w-full"
+                        >
+                            <div className="flex justify-center">
+                                <Image
+                                    src={manualMediaViewer.src}
+                                    alt={manualMediaViewer.title}
+                                    width={1200}
+                                    height={1600}
+                                    className="h-auto max-h-[75vh] w-auto max-w-full object-contain"
+                                    draggable={false}
+                                />
+                            </div>
+                        </PinchZoomViewport>
                     ) : manualMediaViewer ? (
                         <div className="flex justify-center">
                             <Image
