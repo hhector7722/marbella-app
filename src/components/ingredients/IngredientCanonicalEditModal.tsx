@@ -402,7 +402,7 @@ export function IngredientCanonicalEditModal({
             <section className="rounded-ds-superficie border border-ds-borde bg-zinc-50/80 p-3">
               <p className="text-[11px] font-bold text-zinc-500">Precio actual</p>
               <p className="mt-1 font-mono text-xl font-black tabular-nums text-zinc-950">
-                {formatPrice(ingredient.current_price)} €/{unit}
+                {formatPrice(ingredient.current_price)} €/{ingredient.purchase_unit}
               </p>
               <p className="mt-2 text-[11px] font-semibold leading-snug text-zinc-500">
                 Los albaranes {ingredient.price_locked ? 'no pueden' : 'pueden'} actualizar este precio.
