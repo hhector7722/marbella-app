@@ -22,35 +22,57 @@ export async function getIngredientMovements(ingredientId: string) {
   const { data: ingredient, error: ingredientError } = await supabase
     .from('ingredients').select('base_unit').eq('id', ingredientId).maybeSingle()
   if (ingredientError) throw new Error('No se pudo verificar la unidad del ingrediente.')
-  if (ingredient?.base_unit === 'm') {
-    // Los movimientos previos en g conservan su unidad original; nunca se
-    // recodifican ni se suman al saldo actual en metros.
-    const { data, error } = await supabase.from('stock_movements')
-      .select('id, movement_type, quantity, unit, movement_date, reference_doc, original_description, processed_by, origin')
-      .eq('ingredient_id', ingredientId)
-      .order('movement_date', { ascending: false })
-      .limit(200)
-    if (error) throw new Error(`Error al consultar el historial en metros: ${error.message}`)
-    return data ?? []
-  }
+  const isMeters = ingredient?.base_unit === 'm'
   const baseline = ((projected ?? []) as StockResult[]).find(
     (row) => row.ingredient_id === ingredientId,
   )
-  if (!baseline?.baseline_at || !baseline.stock_tracked) return []
 
-  const { data, error } = await supabase
-    .from('stock_movements')
-    .select('id, movement_type, quantity, unit, movement_date, reference_doc, original_description, processed_by, origin')
-    .eq('ingredient_id', ingredientId)
-    .gt('movement_date', baseline.baseline_at)
-    .in('movement_type', ['PURCHASE', 'SALE', 'WASTE', 'ADJUSTMENT'])
-    .in('unit', ['ud', 'u', 'un'])
-    .in('origin', ['legacy', 'receipt_confirmation', 'sale_webhook', 'staff_consumption', 'manager_adjustment'])
-    .order('movement_date', { ascending: false })
-    .limit(200)
+  // Stock 2.0 en unidades empieza exclusivamente tras el recuento certificado.
+  // En metros conservamos el historial original con su unidad, sin mezclar saldos.
+  if (!isMeters && (!baseline?.baseline_at || !baseline.stock_tracked)) return []
 
-  if (error) throw new Error(`Error al cargar los movimientos nuevos: ${error.message}`)
-  return data ?? []
+  // No limitar a 200: un corte a mitad de día falsearía los totales diarios.
+  // Paginación estable por fecha + id, evitando el límite de PostgREST por petición.
+  const PAGE_SIZE = 500
+  const MAX_ROWS = 10000
+  const accumulated: Array<{
+    id: string
+    movement_type: string
+    quantity: number
+    unit: string
+    movement_date: string
+    reference_doc: string | null
+    original_description: string | null
+    processed_by: string | null
+    origin: string | null
+  }> = []
+
+  for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
+    let query = supabase
+      .from('stock_movements')
+      .select('id, movement_type, quantity, unit, movement_date, reference_doc, original_description, processed_by, origin')
+      .eq('ingredient_id', ingredientId)
+
+    if (!isMeters) {
+      query = query
+        .gt('movement_date', baseline!.baseline_at!)
+        .in('movement_type', ['PURCHASE', 'SALE', 'WASTE', 'ADJUSTMENT'])
+        .in('unit', ['ud', 'u', 'un'])
+        .in('origin', ['legacy', 'receipt_confirmation', 'sale_webhook', 'staff_consumption', 'manager_adjustment'])
+    }
+
+    const { data, error } = await query
+      .order('movement_date', { ascending: false })
+      .order('id', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1)
+
+    if (error) throw new Error('No se pudieron cargar los movimientos de stock: ' + error.message)
+    accumulated.push(...(data ?? []))
+    if ((data?.length ?? 0) < PAGE_SIZE) return accumulated
+  }
+  // Nunca mostrar agregados de días incompletos como si fueran totales.
+  throw new Error('Este producto tiene más de 10.000 movimientos. No se puede mostrar un total diario parcial.')
+
 }
 
 export type InventoryCountLine = {
