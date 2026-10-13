@@ -235,7 +235,7 @@ function embeddedKgPerPackage(line: CanonicalDocument['lines'][number], quantity
   return content != null && content > 0 ? content : null
 }
 
-function verifiedAmountColumn(line: CanonicalDocument['lines'][number], quantity: number | null,
+export function verifiedAmountColumn(line: CanonicalDocument['lines'][number], quantity: number | null,
   unitPrice: number | null): number | null {
   if ((line.other_charge_header_raw ?? '').trim().toLocaleLowerCase('es') !== 'importe'
     || quantity == null || quantity <= 0 || unitPrice == null || unitPrice <= 0) return null
@@ -244,8 +244,15 @@ function verifiedAmountColumn(line: CanonicalDocument['lines'][number], quantity
   const taxRate = parseObservedDecimal(line.tax_rate_raw)
   if (amount == null || printedPriceWithTax == null || taxRate == null
     || taxRate < 0 || taxRate > 25) return null
-  const expectedTaxPrice = Math.round((unitPrice * (1 + taxRate / 100) + Number.EPSILON) * 100) / 100
-  if (!near(quantity * unitPrice, amount) || Math.abs(expectedTaxPrice - printedPriceWithTax) > 0.01) return null
+  // En una factura con varias bases, el OCR puede copiar a todas las filas
+  // la tasa de otra base. Las tasas legales impresas se prueban por la
+  // igualdad del precio con IVA; el importe bruto debe cuadrar por separado.
+  const candidateRates = new Set([taxRate, 4, 10, 21])
+  const taxPriceMatches = [...candidateRates].some((rate) => {
+    const expected = Math.round((unitPrice * (1 + rate / 100) + Number.EPSILON) * 100) / 100
+    return Math.abs(expected - printedPriceWithTax) <= 0.01
+  })
+  if (!near(quantity * unitPrice, amount) || !taxPriceMatches) return null
   return amount
 }
 

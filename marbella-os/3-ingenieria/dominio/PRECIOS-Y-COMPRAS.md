@@ -108,6 +108,11 @@ cantidad × precio y el precio con IVA calculado. La evidencia OCR se conserva
 literal y cualquier descuento o total documental aún contradictorio sigue en
 revisión. Una corrección de lectura no confirma K4 ni mueve stock.
 
+En facturas con varias bases de IVA, la tasa copiada por OCR puede pertenecer
+a otra línea. Se admite el «Importe» bruto solo cuando cantidad × precio lo
+reproduce y el precio unitario con IVA coincide con una de las tasas 4 %, 10 %
+o 21 %; ningún descuadre de importe o precio queda resuelto por esa inferencia.
+
 Si se pierde la cabecera de un descuento, el sistema solo lo interpreta como
 porcentaje cuando cantidad × precio × (1 − descuento) coincide con el importe
 impreso. Un descuento en euros exige además una cabecera de descuento y un

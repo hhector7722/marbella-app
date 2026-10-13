@@ -12,6 +12,7 @@ import {
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
   reconcileUnadjustedNetUnitPrice,
+  verifiedAmountColumn,
 } from '@/lib/albaranes/pipeline/validate'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
@@ -255,6 +256,16 @@ async function supersedeK5ProposalWithMapping(params: {
     : []
   const sourceLine = canonicalLineSchema.safeParse(current.observed)
   const sourceCheck = sourceLine.success ? validateObservedLine(sourceLine.data) : null
+  const verifiedAmountColumnMath = Boolean(
+    sourceLine.success && sourceCheck?.priceBasis === 'billing_quantity'
+    && sameExactDecimal(sourceCheck.quantity, lineQuantity)
+    && sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
+    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+    && sameExactDecimal(
+      verifiedAmountColumn(sourceLine.data, sourceCheck.quantity, sourceCheck.unitPrice),
+      lineTotal
+    )
+  )
   const verifiedIbeeCharge = Boolean(
     sourceLine.success && isVerifiedIbeeCharge(sourceLine.data)
     && sourceCheck?.priceBasis === 'billing_quantity'
@@ -359,6 +370,7 @@ async function supersedeK5ProposalWithMapping(params: {
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
     verifiedObservedMath: verifiedEmbeddedKgMath || verifiedRoundedUnitMath
+      || verifiedAmountColumnMath
       || verifiedUnadjustedNet || verifiedPercentDiscount,
     verifiedFixedDiscountMath: verifiedFixedDiscount,
     verifiedPercentDiscountMath: verifiedPercentDiscount,

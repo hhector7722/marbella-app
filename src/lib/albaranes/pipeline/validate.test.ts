@@ -270,6 +270,21 @@ test('Santa Teresa: Importe es el total y Pre+Iva el precio de una unidad', () =
     .includes('cantidad_precio_importe_no_reconcilian'))
 })
 
+test('Santa Teresa: varias bases de IVA corrigen una tasa OCR común sin ocultar descuadres', () => {
+  const pimientos = row({ quantity_raw: '3', unit_price_raw: '2.95',
+    tax_rate_raw: '21.0', line_total_raw: '3.25', other_charge_raw: '8.85',
+    other_charge_header_raw: 'Importe' })
+  assert.equal(validateObservedLine(pimientos).lineTotal, 8.85)
+  assert.deepEqual(validateObservedLine(pimientos).reasons, [])
+  const zumo = row({ quantity_raw: '24', unit_price_raw: '0.50', tax_rate_raw: '4.0',
+    line_total_raw: '0.61', other_charge_raw: '12.00', other_charge_header_raw: 'Importe' })
+  assert.deepEqual(validateObservedLine(zumo).reasons, [])
+  assert.ok(validateObservedLine({ ...zumo, other_charge_raw: '11.00' }).reasons
+    .includes('cantidad_precio_importe_no_reconcilian'))
+  assert.ok(validateObservedLine({ ...zumo, line_total_raw: '0.74' }).reasons
+    .includes('cantidad_precio_importe_no_reconcilian'))
+})
+
 test('bloquea total inconsistente y precio neto que es un porcentaje', () => {
   const check = validateObservedLine(row({ quantity_raw: '2', unit_price_raw: '43,98',
     net_unit_price_raw: '25', line_total_raw: '65,97' }))
