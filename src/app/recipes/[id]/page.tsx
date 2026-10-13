@@ -29,6 +29,7 @@ import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLay
 import { CatalogSquare } from '@/components/catalog/CatalogTile';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
+import { groupRecipeIngredients } from '@/lib/recipe-ingredient-grouping';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
@@ -164,6 +165,7 @@ function RecipeDetailContent() {
     const [view, setView] = useState<ViewState>({ location: 'pvp', size: 'full' });
 
     const [ingredients, setIngredients] = useState<RecipeIngredientRow[]>([]);
+    const groupedRecipeIngredients = useMemo(() => groupRecipeIngredients(ingredients), [ingredients]);
     const [availableIngredients, setAvailableIngredients] = useState<IngredientRow[]>([]);
     const [allRecipes, setAllRecipes] = useState<RecipeListItem[]>([]);
     const [currentRecipeIndex, setCurrentRecipeIndex] = useState<number>(-1);
@@ -1294,7 +1296,7 @@ function RecipeDetailContent() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {ingredients.map((ing) => {
+                                    {groupedRecipeIngredients.ordered.map((ing, index) => {
                                         const qty = getIngredientQuantity(ing);
                                         const costAnalysis = getRecipeIngredientLineCostAnalysis(
                                             qty,
@@ -1309,7 +1311,10 @@ function RecipeDetailContent() {
                                             ? directIngredientLineCost(elaborationCost?.components, ing.id)
                                             : null;
                                         return (
-                                            <tr key={ing.id} className="transition-colors hover:bg-gray-50/80">
+                                            <tr key={ing.id} className={cn(
+                                                "transition-colors hover:bg-gray-50/80",
+                                                index === groupedRecipeIngredients.separatorIndex && "border-t border-zinc-200"
+                                            )}>
                                                 <td className="py-1 pe-2">
                                                     {!isRestricted && ing.ingredients ? (
                                                         <button
