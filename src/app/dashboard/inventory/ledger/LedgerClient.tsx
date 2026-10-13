@@ -216,6 +216,106 @@ function displayReference(ref: string | null) {
   )
 }
 
+
+type UnitImpact = { unit: string; quantity: number }
+type SaleTicketGroup = {
+  key: string
+  reference: string | null
+  at: string
+  impacts: UnitImpact[]
+}
+type LedgerDisplayRow =
+  | { kind: 'movement'; key: string; at: string; movement: Movement }
+  | {
+      kind: 'sale-day'
+      key: string
+      at: string
+      date: string
+      impacts: UnitImpact[]
+      tickets: SaleTicketGroup[]
+    }
+
+const madridDayFormat = new Intl.DateTimeFormat('es-ES', {
+  timeZone: 'Europe/Madrid',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+
+function saleImpacts(rows: Movement[]): UnitImpact[] {
+  const totals = new Map<string, number>()
+  for (const row of rows) {
+    const unit = row.unit || ''
+    const quantity = Math.abs(Number(row.quantity))
+    if (!Number.isFinite(quantity)) continue
+    totals.set(unit, (totals.get(unit) || 0) + quantity)
+  }
+  return Array.from(totals, ([unit, quantity]) => ({ unit, quantity }))
+}
+
+function movementHistoryRows(movements: Movement[]): LedgerDisplayRow[] {
+  const salesByDay = new Map<string, Movement[]>()
+  const rows: LedgerDisplayRow[] = []
+
+  for (const movement of movements) {
+    if (movement.movement_type !== 'SALE') {
+      rows.push({ kind: 'movement', key: movement.id, at: movement.movement_date, movement })
+      continue
+    }
+    // Fecha de actividad local: un ticket a las 00:15 pertenece al día de Barcelona.
+    const day = madridDayFormat.format(new Date(movement.movement_date))
+    const bucket = salesByDay.get(day) || []
+    bucket.push(movement)
+    salesByDay.set(day, bucket)
+  }
+
+  for (const [date, sales] of salesByDay) {
+    const ticketsByReference = new Map<string, Movement[]>()
+    for (const sale of sales) {
+      // Solo fusionamos movimientos con la MISMA referencia de ticket.
+      // Un movimiento sin referencia conserva su propia identidad.
+      const key = sale.reference_doc?.trim() || sale.id
+      const bucket = ticketsByReference.get(key) || []
+      bucket.push(sale)
+      ticketsByReference.set(key, bucket)
+    }
+
+    const tickets = Array.from(ticketsByReference, ([key, ticketRows]) => ({
+      key,
+      reference: ticketRows[0].reference_doc?.trim() || null,
+      at: ticketRows.reduce(
+        (latest, ticketRow) =>
+          ticketRow.movement_date > latest ? ticketRow.movement_date : latest,
+        ticketRows[0].movement_date,
+      ),
+      impacts: saleImpacts(ticketRows),
+    })).sort((a, b) => b.at.localeCompare(a.at))
+
+    rows.push({
+      kind: 'sale-day',
+      key: 'sales-' + date,
+      date,
+      at: tickets[0].at,
+      impacts: saleImpacts(sales),
+      tickets,
+    })
+  }
+  return rows.sort((a, b) => b.at.localeCompare(a.at))
+}
+
+function SaleImpact({ impacts }: { impacts: UnitImpact[] }) {
+  return (
+    <span className="flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0.5 tabular-nums text-rose-300">
+      {impacts.map((impact) => (
+        <span key={impact.unit} className="whitespace-nowrap font-bold">
+          {'−' + formatCountQuantity(impact.quantity)}
+          <span className="ml-1 text-xs font-medium text-white/55">{impact.unit}</span>
+        </span>
+      ))}
+    </span>
+  )
+}
+
 function LedgerIngredientCard({
   item,
   selected,
@@ -249,6 +349,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
   const [movements, setMovements] = useState<Movement[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [movementError, setMovementError] = useState<string | null>(null)
+  const [expandedSaleDay, setExpandedSaleDay] = useState<string | null>(null)
   const movementRequestId = useRef(0)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [history, setHistory] = useState<InventoryCountSession[]>([])
@@ -304,10 +405,13 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
     )
   }, [visibleIngredients, search, category])
 
+  const movementRows = useMemo(() => movementHistoryRows(movements), [movements])
+
   const handleSelect = async (ing: Ingredient) => {
     const requestId = ++movementRequestId.current
     setSelectedIng(ing)
     setMovements([])
+    setExpandedSaleDay(null)
     setMovementError(null)
     setIsLoading(true)
     try {
@@ -327,6 +431,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
     ++movementRequestId.current
     setSelectedIng(null)
     setMovements([])
+    setExpandedSaleDay(null)
     setMovementError(null)
     setIsLoading(false)
   }
@@ -533,65 +638,88 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                   ? "No hay movimientos posteriores al inventario inicial."
                   : "Pendiente de inventario inicial. Aún no hay movimientos de Stock 2.0."}</div>
               ) : (
-                <table data-instance="inventory-ledger-movements" className="w-full text-left text-white text-xs sm:text-sm">
-                  <thead className="sticky top-0 z-10 bg-[var(--color-envolvente-bajo)] text-xs text-white/70">
-                    <tr>
-                      <th className="px-3 py-2">Fecha / Ref</th>
-                      <th className="px-3 py-2">Tipo</th>
-                      <th className="px-3 py-2 text-right">Impacto</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/10">
-                    {movements.map((mov) => {
-                      const conf = movementRowStyle(mov)
-                      const Icon = conf.icon
-
+                <div className="divide-y divide-white/10" data-instance="inventory-ledger-movements">
+                  {movementRows.map((row) => {
+                    if (row.kind === 'sale-day') {
+                      const expanded = expandedSaleDay === row.key
                       return (
-                        <tr key={mov.id} className="hover:bg-white/5 transition-colors">
-                          <td className="p-2 sm:p-4 align-top w-2/5">
-                            <p className="text-sm font-medium text-white">
-                              {new Date(mov.movement_date).toLocaleString('es-ES', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                timeZone: 'Europe/Madrid',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </p>
-                            {displayReference(mov.reference_doc)}
-                            {mov.original_description ? (
-                              <p
-                                className="text-xs text-white/50 mt-1 break-words"
-                                title={mov.original_description}
-                              >
-                                {mov.original_description}
-                              </p>
-                            ) : null}
-                          </td>
-                          <td className="p-2 sm:p-4 align-top w-1/4">
-                            <span
-                              className={cn(
-                                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium',
-                                conf.bg,
-                                conf.color,
-                              )}
-                            >
-                              <Icon className="w-3.5 h-3.5 shrink-0" />
-                              {conf.label}
+                        <div key={row.key}>
+                          <button
+                            type="button"
+                            aria-expanded={expanded}
+                            aria-label={'Ventas del ' + row.date + '. Ver desglose por ticket'}
+                            onClick={() => setExpandedSaleDay(expanded ? null : row.key)}
+                            className="flex w-full min-h-16 items-center gap-3 p-3 sm:p-4 text-left transition-colors hover:bg-white/10 active:bg-white/10"
+                          >
+                            <Receipt className="h-5 w-5 shrink-0 text-white/70" strokeWidth={1.75} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-semibold text-white">Ventas · {row.date}</span>
+                              <span className="mt-0.5 block text-xs text-white/55">
+                                {row.tickets.length} {row.tickets.length === 1 ? 'ticket' : 'tickets'}
+                              </span>
                             </span>
-                          </td>
-                          <td className="p-2 sm:p-4 align-top text-right w-1/4">
-                            <div className="text-base flex justify-end">
-                              {formatQuantity(mov.quantity, mov.movement_type)}
+                            <SaleImpact impacts={row.impacts} />
+                            <ChevronDown
+                              className={cn('h-4 w-4 shrink-0 text-white/60 transition-transform', expanded && 'rotate-180')}
+                              strokeWidth={2}
+                            />
+                          </button>
+                          {expanded ? (
+                            <div className="border-t border-white/10 bg-black/10 px-3 pb-2 pt-1 sm:px-4">
+                              {row.tickets.map((ticket) => (
+                                <div key={ticket.key} className="flex items-start justify-between gap-3 border-b border-white/10 py-3 last:border-b-0">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium text-white/90 break-all">
+                                      {ticket.reference
+                                        ? 'Ticket ' + ticket.reference.replace(/^TICKET-/i, '')
+                                        : 'Venta sin número de ticket'}
+                                    </p>
+                                    <p className="mt-0.5 text-xs tabular-nums text-white/55">
+                                      {formatMadridHmFromIso(ticket.at)}
+                                    </p>
+                                  </div>
+                                  <SaleImpact impacts={ticket.impacts} />
+                                </div>
+                              ))}
                             </div>
-                            <p className="text-xs text-white/60 mt-1">{mov.unit}</p>
-                          </td>
-                        </tr>
+                          ) : null}
+                        </div>
                       )
-                    })}
-                  </tbody>
-                </table>
+                    }
+
+                    const movement = row.movement
+                    const conf = movementRowStyle(movement)
+                    const Icon = conf.icon
+                    return (
+                      <div key={row.key} className="flex items-start justify-between gap-3 p-3 sm:p-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-white/90">
+                            {new Date(movement.movement_date).toLocaleString('es-ES', {
+                              timeZone: 'Europe/Madrid',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                          <p className="mt-1 flex items-center gap-1.5 text-xs text-white/75">
+                            <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                            {conf.label}
+                          </p>
+                          {displayReference(movement.reference_doc)}
+                          {movement.original_description ? (
+                            <p className="mt-1 text-xs text-white/50 break-words">{movement.original_description}</p>
+                          ) : null}
+                        </div>
+                        <span className="shrink-0 text-right text-sm tabular-nums">
+                          {formatQuantity(movement.quantity, movement.movement_type)}
+                          <span className="ml-1 text-xs text-white/55">{movement.unit}</span>
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
           </>
