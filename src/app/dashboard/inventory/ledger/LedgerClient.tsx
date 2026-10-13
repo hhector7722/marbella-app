@@ -484,14 +484,14 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
       title={selectedIng?.name ?? 'Movimientos de stock'}
       subtitle="Historial de movimientos"
     >
-      <div className="w-full min-w-0 rounded-xl border border-white/10 bg-white/10/5 flex flex-col">
+      <div className="w-full min-w-0 rounded-xl border border-white/10 bg-white/5 flex flex-col">
         {!selectedIng ? (
           <div className="flex-1 flex items-center justify-center text-white/55 font-medium px-6 py-16 text-center text-sm">
             Selecciona un ingrediente para ver sus movimientos
           </div>
         ) : (
           <>
-            <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4 justify-between bg-white/10/5 shrink-0">
+            <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4 justify-between bg-white/5 shrink-0">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="shrink-0 h-14 w-14 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
                   {selectedIng.image_url ? (
@@ -526,10 +526,14 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                 <div className="flex justify-center p-10">
                   <Loader2 className="w-8 h-8 animate-spin text-white/55" />
                 </div>
+              ) : movementError ? (
+                <div role="alert" className="p-10 text-center text-sm text-rose-200">{movementError}</div>
               ) : movements.length === 0 ? (
-                <div className="p-10 text-center text-white/60">No hay movimientos posteriores al inventario inicial.</div>
+                <div className="p-10 text-center text-white/60">{selectedIng.has_inventory_count
+                  ? "No hay movimientos posteriores al inventario inicial."
+                  : "Pendiente de inventario inicial. Aún no hay movimientos de Stock 2.0."}</div>
               ) : (
-                <table data-instance="inventory-ledger-movements" className="w-full text-left text-white">
+                <table data-instance="inventory-ledger-movements" className="w-full text-left text-white text-xs sm:text-sm">
                   <thead className="sticky top-0 z-10 bg-[var(--color-envolvente-bajo)] text-xs text-white/70">
                     <tr>
                       <th className="px-3 py-2">Fecha / Ref</th>
@@ -543,12 +547,14 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                       const Icon = conf.icon
 
                       return (
-                        <tr key={mov.id} className="hover:bg-white/10/5 transition-colors">
+                        <tr key={mov.id} className="hover:bg-white/5 transition-colors">
                           <td className="p-2 sm:p-4 align-top w-2/5">
                             <p className="text-sm font-medium text-white">
                               {new Date(mov.movement_date).toLocaleString('es-ES', {
                                 day: '2-digit',
                                 month: '2-digit',
+                                year: 'numeric',
+                                timeZone: 'Europe/Madrid',
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
@@ -556,7 +562,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                             {displayReference(mov.reference_doc)}
                             {mov.original_description ? (
                               <p
-                                className="text-xs text-white/50 mt-1 line-clamp-1"
+                                className="text-xs text-white/50 mt-1 break-words"
                                 title={mov.original_description}
                               >
                                 {mov.original_description}
@@ -592,9 +598,6 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
         )}
       </div>
 
-      {movementError && !isLoading ? (
-        <div role="alert" className="p-4 text-sm text-rose-200">{movementError}</div>
-      ) : null}
     </Modal>
     <Modal
       open={historyOpen}
