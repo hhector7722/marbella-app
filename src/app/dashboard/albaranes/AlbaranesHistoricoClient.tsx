@@ -1726,7 +1726,7 @@ export default function AlbaranesHistoricoClient({
                   )}
 
                   {detail && !isLoadingDetail && isManager ? (
-                    <div className="mb-2 flex min-w-0 items-center justify-between gap-3 rounded-xl bg-zinc-50 px-3 py-2">
+                    <div className="mb-2 flex min-w-0 flex-col items-stretch gap-3 rounded-xl bg-zinc-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
                           Estado de revisión
@@ -1754,20 +1754,23 @@ export default function AlbaranesHistoricoClient({
                           </div>
                         )}
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1.5">
-                        {inlineReviewRows.some((row) => row.disposition === 'ready') ? (
-                          <Button
-                            type="button"
-                            variant="primary"
-                            instance="albaran-confirm-verified-receipts"
-                            disabled={inlineReviewLoading || verifiedConfirmBusy || inlineReviewRows.length > 80}
-                            onClick={() => {
-                              setVerifiedResult(null)
-                              setVerifiedConfirmIds(inlineReviewRows.map((row) => row.proposalId))
-                            }}
-                          >
-                            Confirmar recepciones verificadas
-                          </Button>
+                      <div className="flex min-w-0 flex-col items-start gap-1.5 sm:shrink-0 sm:items-end">
+                        <Button
+                          type="button"
+                          variant="primary"
+                          instance="albaran-confirm-verified-receipts"
+                          disabled={inlineReviewLoading || inlineReviewError != null || verifiedConfirmBusy || !inlineReviewRows.some((row) => row.disposition === 'ready') || inlineReviewRows.length > 80}
+                          onClick={() => {
+                            setVerifiedResult(null)
+                            setVerifiedConfirmIds(inlineReviewRows.map((row) => row.proposalId))
+                          }}
+                        >
+                          Confirmar recepciones verificadas
+                        </Button>
+                        {!inlineReviewLoading && !inlineReviewError && !inlineReviewRows.some((row) => row.disposition === 'ready') ? (
+                          <p className="text-xs font-medium text-zinc-500">No hay líneas verificadas pendientes en este albarán.</p>
+                        ) : inlineReviewRows.length > 80 ? (
+                          <p className="text-xs font-medium text-zinc-500">El lote supera las 80 líneas admitidas.</p>
                         ) : null}
                         {inlineReviewPendingCount > 0 ? (
                           <div className="text-right text-[10px] font-semibold leading-snug text-zinc-500">

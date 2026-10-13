@@ -15,7 +15,7 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-13
 
-- **Albaranes incorpora la confirmación explícita de recepciones verificadas.** Gerencia y administración pueden confirmar en lote desde el detalle. Cada línea pasa de nuevo por K4; el resultado distingue confirmadas, omitidas y bloqueadas, y los reintentos no duplican movimientos de stock.
+- **Albaranes incorpora la confirmación explícita de recepciones verificadas.** Gerencia y administración ven el botón en el detalle, también cuando no hay líneas verificadas pendientes, y pueden confirmar en lote cuando las haya. Cada línea pasa de nuevo por K4; el resultado distingue confirmadas, omitidas y bloqueadas, y los reintentos no duplican movimientos de stock.
 
 ## 2026-10-12
 
