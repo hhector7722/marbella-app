@@ -367,7 +367,11 @@ export function IngredientCanonicalEditModal({
                   <select
                     id="ingredient-canonical-unit"
                     value={newUnit}
-                    onChange={(event) => setNewUnit(event.target.value)}
+                    onChange={(event) => {
+                       const chosen = event.target.value
+                       setNewUnit(chosen)
+                       if (chosen === 'm') setNewRecipeUnit('m')
+                     }}
                   >
                     <option value="kg">kg</option>
                     <option value="g">g</option>
