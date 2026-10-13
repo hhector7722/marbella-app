@@ -25,3 +25,13 @@ test('mantiene un producto verdadero si hay código, cantidad, precio o importe'
   assert.equal(isAdministrativeNonProductRow({ name: 'Leche entera', quantity: null }), false)
   assert.equal(isAdministrativeNonProductRow({ name: 'Tancat de pollo', quantity: null }), false)
 })
+
+test('OCR de una pantalla: descarta teclas y etiquetas fiscales vacías', () => {
+  for (const name of ['←','→','Esc','FnLocal','F1','F2','F3','F4','F5','2%','21%','Envases: 0']) {
+    assert.equal(isAdministrativeNonProductRow({ name }), true, name)
+  }
+  // No descartar compras reales con evidencia de importe o código.
+  assert.equal(isAdministrativeNonProductRow({ name: 'F1', total: '1,50' }), false)
+  assert.equal(isAdministrativeNonProductRow({ name: 'Go' }), false)
+  assert.equal(isAdministrativeNonProductRow({ name: 'PIs' }), false)
+})
