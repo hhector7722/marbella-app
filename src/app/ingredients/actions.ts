@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { revalidatePath } from 'next/cache'
 import { normalizeProductPhotoFile } from '@/lib/server/normalize-product-photo'
 import { canonicalBaseUnitForPurchaseUnit } from '@/lib/ingredient-units'
 
@@ -113,6 +114,50 @@ export async function getIngredientCanonicalConfigAction(
   }
 }
 
+
+export type IngredientUnitTransitionResult =
+  | { ok: true; transitionId: string; openingMeters: number }
+  | { ok: false; message: string }
+
+/** Operación indivisible y auditada; conserva todos los movimientos originales. */
+export async function transitionIngredientToMetersAction(
+  ingredientId: string,
+  expectedBaseUnit: string,
+  pricePerMeter: number,
+  openingMeters: number,
+  requestId: string,
+): Promise<IngredientUnitTransitionResult> {
+  if (!INGREDIENT_ID_RE.test(ingredientId) || !INGREDIENT_ID_RE.test(requestId)) {
+    return { ok: false, message: 'Identificador de cambio inválido.' }
+  }
+  if (!['g', 'ml', 'ud'].includes(expectedBaseUnit)
+      || !Number.isFinite(pricePerMeter) || pricePerMeter <= 0
+      || !Number.isFinite(openingMeters) || openingMeters < 0) {
+    return { ok: false, message: 'Indica el nuevo precio por metro y un recuento de metros válido (puede ser cero).' }
+  }
+  const gate = await requireIngredientManager()
+  if (!gate.ok) return { ok: false, message: gate.message }
+
+  const { data, error } = await gate.supabase.rpc('transition_ingredient_to_meters', {
+    p_ingredient_id: ingredientId,
+    p_expected_base_unit: expectedBaseUnit,
+    p_new_price: pricePerMeter,
+    p_opening_meters: openingMeters,
+    p_request_id: requestId,
+  })
+  if (error) return { ok: false, message: error.message }
+  const result = data as Record<string, unknown> | null
+  if (result?.ok !== true) return { ok: false, message: 'No se pudo completar la transición.' }
+  revalidatePath('/ingredients')
+  revalidatePath(`/ingredients/${ingredientId}`)
+  revalidatePath('/dashboard/inventory')
+  revalidatePath('/dashboard/inventory/ledger')
+  return {
+    ok: true,
+    transitionId: String(result.transition_id),
+    openingMeters: Number(result.opening_meters ?? openingMeters),
+  }
+}
 
 export async function setIngredientPriceAndUnitAction(
   ingredientId: string,
