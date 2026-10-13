@@ -24,7 +24,7 @@ type Props = {
 }
 
 const CATEGORY_OPTIONS = ['Alimentos', 'Bebidas', 'Packaging', 'Limpieza', 'Otros'] as const
-const UNIT_OPTIONS = ['kg', 'l', 'ud'] as const
+const UNIT_OPTIONS = ['kg', 'l', 'ud', 'm'] as const
 
 function parsePrice(value: string): number {
   return Number(value.trim().replace(',', '.'))
@@ -80,6 +80,7 @@ export function IngredientCreateForm({
           unit_type: purchaseUnit,
           base_unit: baseUnit,
           unit: baseUnit,
+          recipe_unit: purchaseUnit,
           current_price: 0,
         })
         .select('id')
@@ -154,6 +155,7 @@ export function IngredientCreateForm({
           <option value="kg">kg</option>
           <option value="l">litro</option>
           <option value="ud">unidad</option>
+          <option value="m">metro (m)</option>
         </select>
       </Field>
 
