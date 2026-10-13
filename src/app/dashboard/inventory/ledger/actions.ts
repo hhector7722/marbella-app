@@ -19,6 +19,20 @@ export async function getIngredientMovements(ingredientId: string) {
     'get_unit_stock_status' as never,
   )
   if (projectionError) throw new Error(`No se pudo cargar Stock 2.0: ${projectionError.message}`)
+  const { data: ingredient, error: ingredientError } = await supabase
+    .from('ingredients').select('base_unit').eq('id', ingredientId).maybeSingle()
+  if (ingredientError) throw new Error('No se pudo verificar la unidad del ingrediente.')
+  if (ingredient?.base_unit === 'm') {
+    // Los movimientos previos en g conservan su unidad original; nunca se
+    // recodifican ni se suman al saldo actual en metros.
+    const { data, error } = await supabase.from('stock_movements')
+      .select('id, movement_type, quantity, unit, movement_date, reference_doc, original_description, processed_by, origin')
+      .eq('ingredient_id', ingredientId)
+      .order('movement_date', { ascending: false })
+      .limit(200)
+    if (error) throw new Error(`Error al consultar el historial en metros: ${error.message}`)
+    return data ?? []
+  }
   const baseline = ((projected ?? []) as StockResult[]).find(
     (row) => row.ingredient_id === ingredientId,
   )
@@ -26,7 +40,7 @@ export async function getIngredientMovements(ingredientId: string) {
 
   const { data, error } = await supabase
     .from('stock_movements')
-    .select('id, movement_type, quantity, movement_date, reference_doc, original_description, processed_by, origin')
+    .select('id, movement_type, quantity, unit, movement_date, reference_doc, original_description, processed_by, origin')
     .eq('ingredient_id', ingredientId)
     .gt('movement_date', baseline.baseline_at)
     .in('movement_type', ['PURCHASE', 'SALE', 'WASTE', 'ADJUSTMENT'])
