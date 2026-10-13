@@ -375,6 +375,7 @@ export function IngredientCanonicalEditModal({
                     <option value="ml">ml</option>
                     <option value="cl">cl</option>
                     <option value="ud">ud</option>
+                     <option value="m">m (metro)</option>
                   </select>
                 </Field>
 
@@ -426,6 +427,7 @@ export function IngredientCanonicalEditModal({
                     <option value="cl">cl</option>
                     <option value="l">l</option>
                     <option value="ud">ud</option>
+                     <option value="m">m (metro)</option>
                   </select>
                 </Field>
 
