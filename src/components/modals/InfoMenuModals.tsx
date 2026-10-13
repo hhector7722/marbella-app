@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import { Modal } from '@/components/ui/modal';
 import { RainChangesManualContent } from '@/components/modals/RainChangesManualContent';
+import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport';
 import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
@@ -324,6 +325,25 @@ export function InfoMenuModals({ open, onClose, onBack, usagePrefix = 'admin' }:
                         >
                             Tu navegador no reproduce vídeo embebido.
                         </video>
+                    ) : manualMediaViewer?.type === 'image' && manualMediaViewer.src === STAFF_MANUAL_ASSETS.cuadroElectricoImage ? (
+                        <PinchZoomViewport
+                            resetKey={manualMediaViewer.src}
+                            minScale={0.5}
+                            maxScale={6}
+                            trackpadGestures
+                            className="w-full"
+                        >
+                            <div className="flex justify-center">
+                                <Image
+                                    src={manualMediaViewer.src}
+                                    alt={manualMediaViewer.title}
+                                    width={1200}
+                                    height={1600}
+                                    className="h-auto max-h-[75vh] w-auto max-w-full object-contain"
+                                    draggable={false}
+                                />
+                            </div>
+                        </PinchZoomViewport>
                     ) : manualMediaViewer ? (
                         <div className="flex justify-center">
                             <Image
