@@ -8,7 +8,7 @@
  * SSOT precios vs albaranes: `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md`
  */
 
-export type MassVolumeUnit = 'g' | 'kg' | 'ml' | 'l' | 'cl' | 'ud';
+export type MassVolumeUnit = 'g' | 'kg' | 'ml' | 'l' | 'cl' | 'ud' | 'm';
 
 const MASS_UNITS: MassVolumeUnit[] = ['g', 'kg'];
 const VOLUME_UNITS: MassVolumeUnit[] = ['ml', 'l', 'cl'];
@@ -22,6 +22,7 @@ function normalizeUnit(u: string): MassVolumeUnit {
   if (s === 'kg' || s === 'kilo') return 'kg';
   if (s === 'g' || s === 'gr' || s === 'gramo') return 'g';
   if (s === 'ud' || s === 'u' || s === 'unidad' || s === 'un') return 'ud';
+  if (['m', 'mt', 'mts', 'mts.', 'metro', 'metros'].includes(s)) return 'm';
   return s as MassVolumeUnit;
 }
 
@@ -30,9 +31,10 @@ export function normalizeRecipeImportUnit(u: string): MassVolumeUnit {
   return normalizeUnit(u);
 }
 
-function unitDimension(unit: MassVolumeUnit): 'mass' | 'volume' | 'count' {
+function unitDimension(unit: MassVolumeUnit): 'mass' | 'volume' | 'count' | 'length' {
   if (MASS_UNITS.includes(unit)) return 'mass';
   if (VOLUME_UNITS.includes(unit)) return 'volume';
+  if (unit === 'm') return 'length';
   return 'count';
 }
 
@@ -314,6 +316,7 @@ export const RECIPE_UNIT_OPTIONS: { value: MassVolumeUnit; label: string }[] = [
   { value: 'cl', label: 'cl' },
   { value: 'l', label: 'L' },
   { value: 'ud', label: 'ud' },
+  { value: 'm', label: 'm' },
 ];
 
 /** Unidades compatibles con la dimensión del ingrediente (purchase_unit). */
@@ -321,6 +324,7 @@ export function compatibleRecipeUnits(purchaseUnit: string): MassVolumeUnit[] {
   const u = normalizeUnit(purchaseUnit);
   if (MASS_UNITS.includes(u)) return MASS_UNITS;
   if (VOLUME_UNITS.includes(u)) return VOLUME_UNITS;
+  if (u === 'm') return ['m'];
   return COUNT_UNITS;
 }
 
