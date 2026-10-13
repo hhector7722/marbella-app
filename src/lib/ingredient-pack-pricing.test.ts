@@ -4,6 +4,7 @@ import {
   billingMassVolumeNormForAuto,
   buildAutomaticSameFamilyDimensional,
   deriveReceiptPresentationEconomics,
+  convertPricingQtyNumeric,
   sameMassVolumeFamilyBillingAndIngredient,
 } from './ingredient-pack-pricing.ts'
 
@@ -63,4 +64,16 @@ test('QUILOS del albarán se convierte automáticamente a 1 kg sin contar piezas
   })
   assert.equal(economics?.normalizedUnitPrice, 13.52)
   assert.equal(3.21 * dimensional!.conversionFactor, 3.21)
+})
+
+test('un rollo de papel de 300 m a 23,64 € se calcula a 0,0788 €/m', () => {
+  const result = deriveReceiptPresentationEconomics({
+    contentQty: 300, contentUnit: 'm',
+    purchaseUnit: 'm', observedUnitPrice: 23.64,
+  })
+  assert.ok(result)
+  assert.equal(result.conversionFactor, 300)
+  assert.equal(result.normalizedUnitPrice, 0.0788)
+  assert.equal(convertPricingQtyNumeric(1, 'mts.', 'm'), 1)
+  assert.equal(convertPricingQtyNumeric(300, 'm', 'kg'), null)
 })
