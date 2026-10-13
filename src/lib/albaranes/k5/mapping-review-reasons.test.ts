@@ -86,6 +86,19 @@ test('SHERS: el mapeo no oculta descuentos ni importes contradictorios', () => {
   ])
 })
 
+test('Ibee verificado elimina el falso descuento, pero conserva un descuadre', () => {
+  assert.deepEqual(resolveMappingReviewReasons({
+    previousReasons: ['descuento_sin_porcentaje_verificado', 'cantidad_precio_importe_no_reconcilian'],
+    hasResolvedName: true,
+    hasMappedSnapshot: true,
+    humanLineOverride: false,
+    quantity: 24,
+    unitPrice: 0.54,
+    lineTotal: 12.96,
+    verifiedIbeeCharge: true,
+  }), ['cantidad_precio_importe_no_reconcilian'])
+})
+
 test('Ametller: la lectura duplicada del importe resuelve solo el aviso de neto tras mapear', () => {
   const sample = {
     previousReasons: ['precio_neto_contradictorio', 'descuento_sin_porcentaje_verificado', 'presentacion_sin_validar'],

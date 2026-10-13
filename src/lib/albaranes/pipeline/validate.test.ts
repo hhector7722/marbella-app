@@ -223,6 +223,17 @@ test('no trata Ibee de Santa Teresa como descuento', () => {
   assert.deepEqual(check.reasons, [])
 })
 
+test('Ibee en columna OCR de descuento no bloquea si el importe bruto cuadra', () => {
+  const evidence = row({ quantity_raw: '24', unit_price_raw: '0.54',
+    net_unit_price_raw: '0.54', discount_raw: '0.79', discount_header_raw: 'Ibee',
+    line_total_raw: '12.96' })
+  assert.deepEqual(validateObservedLine(evidence).reasons, [])
+  assert.ok(validateObservedLine({ ...evidence, line_total_raw: '12.17' }).reasons
+    .includes('descuento_sin_porcentaje_verificado'))
+  assert.ok(validateObservedLine({ ...evidence, net_unit_price_raw: '0.48' }).reasons
+    .includes('descuento_sin_porcentaje_verificado'))
+})
+
 test('bloquea filas impresas sin cantidad entregada', () => {
   assert.ok(validateObservedLine(row({ unit_price_raw: '1', line_total_raw: '1' }))
     .reasons.includes('cantidad_ausente_o_invalida'))

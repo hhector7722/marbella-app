@@ -18,6 +18,7 @@ type MappingReviewInput = {
   verifiedPercentDiscountMath?: boolean
   verifiedReviewedPricing?: boolean
   verifiedMisreadNetAmount?: boolean
+  verifiedIbeeCharge?: boolean
 }
 
 /** Resolve only facts explicitly supplied by the reviewer; keep economic and
@@ -62,6 +63,11 @@ export function resolveMappingReviewReasons(input: MappingReviewInput): string[]
       'discount_not_interpretable',
       'discount_requires_review',
       'line_amount_mismatch',
+    ].includes(reason)) return false
+    if (input.verifiedIbeeCharge && [
+      'descuento_sin_porcentaje_verificado',
+      'discount_not_interpretable',
+      'discount_requires_review',
     ].includes(reason)) return false
     if (input.verifiedReviewedPricing && [
       'descuento_sin_porcentaje_verificado',

@@ -7,6 +7,7 @@ import { buildExactMappedSnapshot } from '@/lib/albaranes/k5/mapped-snapshot'
 import { resolveMappingReviewReasons } from '@/lib/albaranes/k5/mapping-review-reasons'
 import {
   isMisreadNetAmount,
+  isVerifiedIbeeCharge,
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
@@ -254,6 +255,13 @@ async function supersedeK5ProposalWithMapping(params: {
     : []
   const sourceLine = canonicalLineSchema.safeParse(current.observed)
   const sourceCheck = sourceLine.success ? validateObservedLine(sourceLine.data) : null
+  const verifiedIbeeCharge = Boolean(
+    sourceLine.success && isVerifiedIbeeCharge(sourceLine.data)
+    && sourceCheck?.priceBasis === 'billing_quantity'
+    && sameExactDecimal(sourceCheck.quantity, lineQuantity)
+    && sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
+    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+  )
   const verifiedEmbeddedKgMath = Boolean(
     sourceLine.success
     && /^\s*(?:BU|BULTOS?|CJ|CAJAS?)\s+\d+(?:[.,]\d+)?\s*(?:KG|KILOS?|QUILOS?)\s*$/i
@@ -356,6 +364,7 @@ async function supersedeK5ProposalWithMapping(params: {
     verifiedPercentDiscountMath: verifiedPercentDiscount,
     verifiedReviewedPricing: Boolean(reviewedPricing),
     verifiedMisreadNetAmount,
+    verifiedIbeeCharge,
   })
   const reviewReasons: string[] = [...new Set(snapshot
     ? semanticReasons

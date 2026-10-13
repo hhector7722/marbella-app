@@ -249,6 +249,23 @@ function verifiedAmountColumn(line: CanonicalDocument['lines'][number], quantity
   return amount
 }
 
+/** El impuesto de envases Ibee puede llegar en la columna OCR de descuento.
+ * Solo se descarta esa interpretación si el importe impreso es bruto y cuadra. */
+export function isVerifiedIbeeCharge(line: CanonicalDocument['lines'][number]): boolean {
+  if ((line.discount_header_raw ?? '').trim().toLocaleLowerCase('es') !== 'ibee') return false
+  const quantity = parseObservedDecimal(line.quantity_raw)
+  const unitPrice = parseObservedDecimal(line.unit_price_raw)
+  const charge = parseObservedDecimal(line.discount_raw)
+  const netUnitPrice = parseObservedDecimal(line.net_unit_price_raw)
+  const verifiedAmount = verifiedAmountColumn(line, quantity, unitPrice)
+  const amount = verifiedAmount ?? parseObservedDecimal(line.line_total_raw)
+  return quantity != null && quantity > 0 && unitPrice != null && unitPrice > 0
+    && charge != null && charge > 0 && amount != null && amount > 0
+    && (netUnitPrice == null || near(netUnitPrice, unitPrice))
+    && (!line.other_charge_raw || verifiedAmount != null)
+    && near(quantity * unitPrice, amount)
+}
+
 export function validateObservedLine(line: CanonicalDocument['lines'][number]): LineCheck {
   const quantity = parseObservedDecimal(line.quantity_raw)
   const unitPrice = parseObservedDecimal(line.unit_price_raw)
@@ -267,8 +284,7 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
 
   let discountPercent: number | null = null
   let fixedDiscountPerUnit: number | null = null
-  if (discount != null && discount > 0 && !(verifiedAmount != null
-    && (line.discount_header_raw ?? '').trim().toLocaleLowerCase('es') === 'ibee')) {
+  if (discount != null && discount > 0 && !isVerifiedIbeeCharge(line)) {
     const header = (line.discount_header_raw ?? '').toLowerCase()
     const declaresPercent = /%|por\s*ciento|percent/.test(header)
     const declaresDiscount = /dto|discount|descuento/.test(header)

@@ -115,6 +115,13 @@ precio neto unitario explícito que coincida tanto con precio − descuento como
 con el importe. Fuera de esas dos demostraciones, el descuento sigue en
 revisión.
 
+Si la columna observada lleva la cabecera exacta «Ibee», se trata como cargo
+de envases y no como descuento únicamente cuando cantidad × precio concilia
+con el importe bruto de la línea, el precio neto observado no contradice al
+unitario y no queda otro cargo sin interpretar. La revisión puede retirar un
+bloqueo heredado de descuento solo si esos datos originales coinciden con la
+línea guardada; un descuadre de importe conserva su bloqueo.
+
 En la revisión humana de Ametller, una columna leída como «precio neto» puede
 ser en realidad una copia OCR del importe total. Solo se descarta ese aviso si
 no hay descuento ni cargo, el supuesto neto es exactamente el importe y la
