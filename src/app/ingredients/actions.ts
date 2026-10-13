@@ -171,6 +171,26 @@ export async function setIngredientPriceAndUnitAction(
       ? oldDensity !== density
       : Math.abs(oldDensity - density) >= 1e-9
 
+  // Cambiar la dimensión de un ingrediente con movimientos históricos
+  // reinterpretaría cantidades registradas (g como metros, por ejemplo).
+  // Exigir un ingrediente nuevo en lugar de alterar el ledger antiguo.
+  if (unitChanged && oldBaseUnit !== baseUnit) {
+    const { data: existingMovements, error: historyError } = await gate.supabase
+      .from('stock_movements')
+      .select('id')
+      .eq('ingredient_id', id)
+      .limit(1)
+    if (historyError) {
+      return { ok: false, message: 'No se pudo comprobar el historial de stock de este ingrediente.' }
+    }
+    if ((existingMovements?.length ?? 0) > 0) {
+      return {
+        ok: false,
+        message: 'Este ingrediente ya tiene movimientos de stock en otra unidad. Para usar €/m crea un ingrediente nuevo en metros, sin convertir el historial de kg, litros o unidades.',
+      }
+    }
+  }
+
   if (unitChanged || recipeUnitChanged || densityChanged) {
     const { error: unitError } = await gate.supabase
       .from('ingredients')
