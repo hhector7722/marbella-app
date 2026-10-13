@@ -49,6 +49,7 @@ const COMPANY = {
   address: 'Av. Litoral 86, 08005 Barcelona',
   phone: '647 229 309',
   email: 'fogotorrat@gmail.com',
+  iban: 'ES5901827280710201626770',
 } as const
 
 const COPY = {
@@ -241,7 +242,7 @@ async function loadImageAsDataUrl(url: string): Promise<string | null> {
   }
 }
 
-function drawCompanyHeader(doc: PdfDoc, logoDataUrl: string | null) {
+function drawCompanyHeader(doc: PdfDoc, logoDataUrl: string | null, kind: EncargoPdfKind) {
   const left = 14
   const top = 12
   const logoSize = 17
@@ -268,10 +269,12 @@ function drawCompanyHeader(doc: PdfDoc, logoDataUrl: string | null) {
   doc.text(`${COMPANY.legalName} · CIF ${COMPANY.cif}`, textX, detailY)
   doc.text(COMPANY.address, textX, detailY + step)
   doc.text(`Tel. ${COMPANY.phone} · ${COMPANY.email}`, textX, detailY + step * 2)
+  if (kind === 'invoice') doc.text(COMPANY.iban, textX, detailY + step * 3)
 
   doc.setDrawColor(...LINE)
   doc.setLineWidth(0.2)
-  doc.line(left, top + logoSize + 5, 196, top + logoSize + 5)
+  const headerBottom = top + logoSize + (kind === 'invoice' ? 9 : 5)
+  doc.line(left, headerBottom, 196, headerBottom)
 }
 
 function drawTitle(doc: PdfDoc, kind: EncargoPdfKind, meta: EncargoPdfMeta, y: number) {
@@ -719,12 +722,12 @@ export async function generateEncargoPdf(
     }
   }
 
-  drawCompanyHeader(doc, logoDataUrl)
+  drawCompanyHeader(doc, logoDataUrl, kind)
   drawTitle(doc, kind, meta, 39)
   const hasInvoiceCustomer = kind === 'invoice' && Boolean(meta.invoiceCustomer)
   if (!hasInvoiceCustomer) drawMeta(doc, meta, 49)
   const tableStartY = hasInvoiceCustomer
-    ? Math.max(62, drawInvoiceCustomerMeta(doc, meta, 42) + 3.5)
+    ? Math.max(62, drawInvoiceCustomerMeta(doc, meta, 46) + 3.5)
     : 67
 
   let totalGross = 0
