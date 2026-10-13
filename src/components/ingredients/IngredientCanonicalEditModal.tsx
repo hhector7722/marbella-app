@@ -11,6 +11,7 @@ import {
   getIngredientCanonicalConfigAction,
   setIngredientArchivedAction,
   setIngredientPriceAndUnitAction,
+  transitionIngredientToMetersAction,
   uploadIngredientPhotoAction,
 } from '@/app/ingredients/actions'
 export interface Ingredient {
@@ -84,6 +85,10 @@ export function IngredientCanonicalEditModal({
     ingredient.density_g_per_ml != null ? String(ingredient.density_g_per_ml).replace('.', ',') : ''
   )
   const [baselineRecipeUnit, setBaselineRecipeUnit] = useState(() => ingredient.recipe_unit || ingredient.purchase_unit || 'ud')
+  const [baselineBaseUnit, setBaselineBaseUnit] = useState(() => ingredient.base_unit || 'ud')
+  const [openingMetersInput, setOpeningMetersInput] = useState('')
+  const [confirmUnitTransition, setConfirmUnitTransition] = useState(false)
+  const unitTransitionRequestRef = useRef<string | null>(null)
   const [baselineDensity, setBaselineDensity] = useState<number | null>(() => ingredient.density_g_per_ml ?? null)
   const [configLoading, setConfigLoading] = useState(true)
   const [baselineImageUrl, setBaselineImageUrl] = useState(ingredient.image_url ?? null)
@@ -112,10 +117,15 @@ export function IngredientCanonicalEditModal({
       ? baselineDensity !== parsedDensity
       : Math.abs(baselineDensity - parsedDensity) >= 1e-9
   const imageChanged = selectedFile != null
+  const requiresUnitTransition = unitChanged && newUnit === 'm' && baselineBaseUnit !== 'm'
+  const openingMeters = Number(openingMetersInput.trim().replace(',', '.'))
+  const validOpeningMeters = openingMetersInput.trim() !== ''
+    && Number.isFinite(openingMeters) && openingMeters >= 0
   const canonicalChanged = priceChanged || unitChanged || recipeUnitChanged || densityChanged
   const canSave =
     (imageChanged && !canonicalChanged) ||
-    (canonicalChanged && validPrice && validDensity)
+    (canonicalChanged && validPrice && validDensity
+      && (!requiresUnitTransition || validOpeningMeters))
   const unit = newUnit || 'ud'
   const isArchived = Boolean(ingredient.archived_at)
   const displayImageSrc = previewBlobUrl ?? baselineImageUrl
@@ -138,6 +148,7 @@ export function IngredientCanonicalEditModal({
       }
       setNewPrice(priceInputValue(result.currentPrice))
       setNewUnit(result.purchaseUnit)
+      setBaselineBaseUnit(result.baseUnit)
       setNewRecipeUnit(result.recipeUnit)
       setBaselineRecipeUnit(result.recipeUnit)
       setDensityInput(result.densityGPerMl == null ? '' : String(result.densityGPerMl).replace('.', ','))
@@ -183,6 +194,14 @@ export function IngredientCanonicalEditModal({
   }
 
   async function save() {
+    if (requiresUnitTransition) {
+      if (!validPrice || !validOpeningMeters || newRecipeUnit !== 'm') {
+        toast.error('Indica el precio por metro y el stock real en metros (0 si no hay existencias).')
+        return
+      }
+      setConfirmUnitTransition(true)
+      return
+    }
     if (canonicalChanged && !validPrice) {
       toast.error('El precio debe ser mayor que cero.')
       return
@@ -248,6 +267,46 @@ export function IngredientCanonicalEditModal({
         densityGPerMl: result.densityGPerMl,
       })
       onClose()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function confirmMetersUnitTransition() {
+    if (saving || !requiresUnitTransition || !validPrice || !validOpeningMeters) return
+    setSaving(true)
+    try {
+      const requestId = unitTransitionRequestRef.current ?? crypto.randomUUID()
+      unitTransitionRequestRef.current = requestId
+      const result = await transitionIngredientToMetersAction(
+        ingredient.id,
+        baselineBaseUnit,
+        parsedPrice,
+        openingMeters,
+        requestId,
+      )
+      if (!result.ok) {
+        toast.error(result.message)
+        return
+      }
+      setConfirmUnitTransition(false)
+      toast.success(`Unidad actualizada a metros. Saldo inicial: ${result.openingMeters.toLocaleString('es-ES')} m.`)
+      if (selectedFile) {
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+        const photo = await uploadIngredientPhotoAction(ingredient.id, formData)
+        if (!photo.ok) toast.warning('La unidad y el stock se guardaron; la imagen no pudo actualizarse.')
+      }
+      onSaved({
+        currentPrice: parsedPrice,
+        purchaseUnit: 'm',
+        baseUnit: 'm',
+        recipeUnit: 'm',
+        densityGPerMl: null,
+      })
+      onClose()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No pudo completarse el cambio a metros.')
     } finally {
       setSaving(false)
     }
@@ -370,7 +429,19 @@ export function IngredientCanonicalEditModal({
                     onChange={(event) => {
                        const chosen = event.target.value
                        setNewUnit(chosen)
-                       if (chosen === 'm') setNewRecipeUnit('m')
+                       if (chosen === 'm') {
+                         setNewRecipeUnit('m')
+                         if (baselineBaseUnit !== 'm') {
+                           setNewPrice('')
+                           setOpeningMetersInput('')
+                           setDensityInput('')
+                           unitTransitionRequestRef.current = null
+                         }
+                       } else if (newUnit === 'm' && baselineBaseUnit !== 'm') {
+                         setNewPrice(priceInputValue(ingredient.current_price))
+                         setOpeningMetersInput('')
+                         unitTransitionRequestRef.current = null
+                       }
                      }}
                   >
                     <option value="kg">kg</option>
@@ -406,6 +477,44 @@ export function IngredientCanonicalEditModal({
                 </Field>
               </div>
             </section>
+
+            {requiresUnitTransition ? (
+              <section className="rounded-ds-superficie border border-amber-200 bg-amber-50 p-4 space-y-3">
+                <h3 className="text-sm font-bold text-amber-950">Cambio de unidad con historial de stock</h3>
+                <p className="text-xs leading-relaxed text-amber-900">
+                  Se conservará este mismo ingrediente y todos los movimientos históricos en {baselineBaseUnit}.
+                  El saldo antiguo se cerrará mediante un ajuste auditable, y se iniciará un nuevo
+                  saldo en metros. Los gramos no se convertirán a metros.
+                </p>
+                <Field
+                  instance="ingredient-unit-transition-opening-meters"
+                  label="Existencias actuales, contadas en metros"
+                  htmlFor="ingredient-unit-transition-opening-meters"
+                  hint="Introduce 0 si no hay metros disponibles. No se calcula desde el stock anterior."
+                  error={openingMetersInput !== '' && !validOpeningMeters
+                    ? 'Indica una cantidad de metros igual o superior a cero.' : undefined}
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="ingredient-unit-transition-opening-meters"
+                      className="min-h-12 w-full min-w-0 rounded-lg border border-amber-300 px-3 text-sm tabular-nums"
+                      inputMode="decimal"
+                      value={openingMetersInput}
+                      onChange={(event) => {
+                        setOpeningMetersInput(event.target.value)
+                        unitTransitionRequestRef.current = null
+                      }}
+                      placeholder="Ej.: 150"
+                    />
+                    <span className="font-semibold text-sm text-amber-950">m</span>
+                  </div>
+                </Field>
+                <p className="text-xs text-amber-900">
+                  Introduce arriba también el nuevo precio por metro (€/m).
+                  No se heredará el precio antiguo por kilogramo.
+                </p>
+              </section>
+            ) : null}
 
             <section className="overflow-hidden rounded-ds-superficie border border-ds-borde bg-ds-superficie">
               <div className="border-b border-ds-borde bg-zinc-50/80 px-4 py-3">
@@ -491,6 +600,24 @@ export function IngredientCanonicalEditModal({
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={confirmUnitTransition}
+        onClose={() => { if (!saving) setConfirmUnitTransition(false) }}
+        title="Confirmar cambio a metros"
+        confirmLabel="Cambiar a metros"
+        confirmVariant="primary"
+        onConfirm={() => void confirmMetersUnitTransition()}
+        instance="ingredient-canonical-unit-transition-confirm"
+        usageLabel="Confirmar cambio de unidad y apertura de stock"
+        parentInstance="ingredient-canonical-price"
+        confirming={saving}
+      >
+        Se conservará el ingrediente «{ingredient.name}» y su historial en {baselineBaseUnit}.
+        Se cerrará el saldo anterior y se abrirán {openingMeters.toLocaleString('es-ES')} m
+        con precio {parsedPrice.toLocaleString('es-ES', { maximumFractionDigits: 4 })} €/m.
+        Esta operación quedará registrada y no convertirá gramos a metros.
+      </ConfirmModal>
 
       <ConfirmModal
         open={confirmArchive}
