@@ -47,10 +47,12 @@ import { SearchField } from '@/components/ui/SearchField'
 import { IngredientCreateForm, type IngredientCreateContext } from '@/components/ingredients/IngredientCreateForm'
 import {
   listK5BatchReviewAction,
+  confirmVerifiedReceiptsAction,
   prepareK5ManualReviewLineAction,
   type K5BatchReviewRow,
   type K5BatchReviewSummary,
 } from './k5/batch-actions'
+import type { VerifiedReceiptResult } from '@/lib/albaranes/k5/verified-receipts'
 import type {
   PurchaseInvoiceDetail,
   PurchaseInvoiceLine,
@@ -191,6 +193,9 @@ export default function AlbaranesHistoricoClient({
   const [inlineReviewSummary, setInlineReviewSummary] = useState<K5BatchReviewSummary | null>(null)
   const [inlineReviewLoading, setInlineReviewLoading] = useState(false)
   const [inlineReviewError, setInlineReviewError] = useState<string | null>(null)
+  const [verifiedConfirmIds, setVerifiedConfirmIds] = useState<string[] | null>(null)
+  const [verifiedConfirmBusy, setVerifiedConfirmBusy] = useState(false)
+  const [verifiedResult, setVerifiedResult] = useState<VerifiedReceiptResult | null>(null)
   const detailReqRef = useRef(0)
   const [supplierPickerOpen, setSupplierPickerOpen] = useState(false)
   const [supplierQuery, setSupplierQuery] = useState('')
@@ -741,6 +746,8 @@ export default function AlbaranesHistoricoClient({
     setInlineReviewRows([])
     setInlineReviewSummary(null)
     setInlineReviewError(null)
+    setVerifiedConfirmIds(null)
+    setVerifiedResult(null)
     setLineForEditModal(null)
     setLineForMappingModal(null)
     setLineForEvidenceModal(null)
@@ -1148,6 +1155,27 @@ export default function AlbaranesHistoricoClient({
       setStockStatusByLineId(map)
     }
     if (isManager) await loadInlineReview(dRes.detail.id)
+  }
+
+  async function confirmVerifiedReceipts() {
+    if (!detail || !verifiedConfirmIds || verifiedConfirmBusy) return
+    setVerifiedConfirmBusy(true)
+    try {
+      const result = await confirmVerifiedReceiptsAction({
+        invoiceId: detail.id,
+        proposalIds: verifiedConfirmIds,
+        confirmedByUser: true,
+      })
+      if (!result.success) {
+        toast.error(result.message)
+        return
+      }
+      setVerifiedConfirmIds(null)
+      setVerifiedResult(result)
+      await refreshDetailAndStock()
+    } finally {
+      setVerifiedConfirmBusy(false)
+    }
   }
 
 
@@ -1727,6 +1755,20 @@ export default function AlbaranesHistoricoClient({
                         )}
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        {inlineReviewRows.some((row) => row.disposition === 'ready') ? (
+                          <Button
+                            type="button"
+                            variant="primary"
+                            instance="albaran-confirm-verified-receipts"
+                            disabled={inlineReviewLoading || verifiedConfirmBusy || inlineReviewRows.length > 80}
+                            onClick={() => {
+                              setVerifiedResult(null)
+                              setVerifiedConfirmIds(inlineReviewRows.map((row) => row.proposalId))
+                            }}
+                          >
+                            Confirmar recepciones verificadas
+                          </Button>
+                        ) : null}
                         {inlineReviewPendingCount > 0 ? (
                           <div className="text-right text-[10px] font-semibold leading-snug text-zinc-500">
                             Pulsa una línea para editarla.
@@ -1759,6 +1801,15 @@ export default function AlbaranesHistoricoClient({
                   {inlineReviewError ? (
                     <Notice instance="albaran-inline-review-error" variant="negative" title="No se pudo preparar la revisión">
                       {inlineReviewError}
+                    </Notice>
+                  ) : null}
+
+                  {verifiedResult ? (
+                    <Notice instance="albaran-verified-receipts-result" variant={verifiedResult.blocked ? 'warning' : 'info'} title="Resultado de las recepciones">
+                      <p>Confirmadas: {verifiedResult.confirmed} · Omitidas: {verifiedResult.skipped} · Bloqueadas: {verifiedResult.blocked}</p>
+                      {verifiedResult.outcomes.filter((item) => item.status === 'blocked').map((item) => (
+                        <p key={item.proposalId}>{item.name}: {item.reason}</p>
+                      ))}
                     </Notice>
                   ) : null}
 
@@ -2392,6 +2443,18 @@ export default function AlbaranesHistoricoClient({
           {filterSuppliersLoading ? <p className="mt-2 text-xs font-bold text-zinc-500">Cargando proveedores…</p> : null}
         </div>
       </Modal>
+      <ConfirmModal
+        open={verifiedConfirmIds != null}
+        onClose={() => setVerifiedConfirmIds(null)}
+        title="Confirmar recepciones verificadas"
+        confirmLabel="Confirmar recepciones"
+        confirmVariant="primary"
+        instance="albaran-verified-receipts-confirm"
+        confirming={verifiedConfirmBusy}
+        onConfirm={() => void confirmVerifiedReceipts()}
+      >
+        K4 volverá a comprobar cada línea de este albarán. Solo las que superen todas sus validaciones crearán una recepción y un movimiento de stock. Las demás se omitirán o quedarán bloqueadas. ¿Confirmas la operación?
+      </ConfirmModal>
       <ConfirmModal
         open={destructiveConfirm != null}
         onClose={() => {

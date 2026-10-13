@@ -13,6 +13,7 @@ import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineag
 import { currentDocumentWarnings } from '@/lib/albaranes/k5/document-review'
 import { canonicalDocumentSchema, type CanonicalDocument } from '@/lib/albaranes/extractors/canonical'
 import { isAdministrativeNonProductRow } from '@/lib/albaranes/pipeline/non-product-line'
+import { runVerifiedReceiptBatch, type VerifiedReceiptResult } from '@/lib/albaranes/k5/verified-receipts'
 import {
   applyReceiptLineAction,
   previewReceiptLineAction,
@@ -633,4 +634,49 @@ export async function applyK5ReadyReceiptsAction(params: {
   revalidatePath('/dashboard/inventory')
   revalidatePath('/dashboard/inventory/ledger')
   return { success: true, applied }
+}
+
+/** Acción explícita del detalle del albarán; cada línea pasa por la vista previa y el comando oficial K4. */
+export async function confirmVerifiedReceiptsAction(params: {
+  invoiceId: string
+  proposalIds: string[]
+  confirmedByUser: boolean
+}): Promise<
+  | ({ success: true } & VerifiedReceiptResult)
+  | { success: false; message: string }
+> {
+  const gate = await requireManager()
+  if (!gate.ok) return { success: false, message: gate.message }
+  const invoiceId = text(params?.invoiceId)
+  const proposalIds = params?.proposalIds
+  if (params?.confirmedByUser !== true) return { success: false, message: 'Confirma la operación antes de continuar.' }
+  if (!invoiceId || !Array.isArray(proposalIds) || proposalIds.length === 0 || proposalIds.length > 80
+    || proposalIds.some((id) => typeof id !== 'string' || !id.trim())
+    || new Set(proposalIds).size !== proposalIds.length) {
+    return { success: false, message: 'El lote de recepciones no es válido.' }
+  }
+
+  let state: Awaited<ReturnType<typeof loadBatchState>>
+  try {
+    state = await loadBatchState(gate.supabase, invoiceId)
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'No se pudo consultar el albarán.' }
+  }
+
+  const result = await runVerifiedReceiptBatch(proposalIds, state.rows, {
+    preview: async (lineId, mappingVersionId) => {
+      const preview = await previewReceiptLineAction({ lineId, mappingVersionId, allocations: [] })
+      return preview.success ? { success: true } : preview
+    },
+    apply: async (lineId, mappingVersionId, idempotencyKey) => {
+      const applied = await applyReceiptLineAction({ lineId, mappingVersionId, allocations: [], idempotencyKey })
+      return applied.success
+        ? { success: true, idempotent: applied.result.ok && applied.result.idempotent }
+        : applied
+    },
+  })
+  revalidatePath('/dashboard/albaranes')
+  revalidatePath('/dashboard/inventory')
+  revalidatePath('/dashboard/inventory/ledger')
+  return { success: true, ...result }
 }

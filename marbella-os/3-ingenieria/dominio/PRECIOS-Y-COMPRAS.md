@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-08
+revisado: 2026-10-13
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -70,6 +70,8 @@ El resultado debe ser euros por unidad de compra del ingrediente. Si no lo es, e
 **Un albarán no cambia el precio de un ingrediente hasta que existen tres cosas: un mapeo versionado entre el nombre del proveedor y el ingrediente, un factor de conversión válido y una confirmación económica de `manager` o `admin`.** La confirmación puede ser humana o ejecutada por el actor técnico `manager` dedicado tras las comprobaciones automáticas de [ADR-0023](../../4-decisiones/ADR-0023-mistral-unico-y-relectura-historica.md) y [ADR-0025](../../4-decisiones/ADR-0025-recepcion-autonoma-y-una-accion-humana.md). Sin una de ellas no se actualiza nada.
 
 Capturar una línea, extraerla con visión artificial o proponer un mapeo nunca actualiza el precio. `apply_receipt_line(...)` aplica la fórmula solo después de una vista previa técnica y una confirmación autorizada, que puede ejecutarse sin segundo gesto humano cuando la revisión acaba de resolver la excepción; registra el histórico con actor, documento, línea, movimiento y versión de mapeo. Los disparadores heredados que cambiaban precio al insertar o mapear una línea están retirados de este flujo.
+
+En el detalle del albarán, «Confirmar recepciones verificadas» pide una confirmación explícita al responsable autenticado. El servidor vuelve a consultar las propuestas activas de ese albarán y valida cada candidata con la vista previa oficial de K4 antes de invocar el mismo comando económico. Las líneas ya recibidas o excluidas se omiten y las que no superan K4 quedan bloqueadas con su motivo; el resumen muestra confirmadas, omitidas y bloqueadas. El reintento usa una clave estable por línea y no crea una segunda recepción ni un segundo movimiento.
 
 ### Precio fijo
 

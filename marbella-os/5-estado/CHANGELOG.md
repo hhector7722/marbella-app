@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-10-13
+
+- **Albaranes incorpora la confirmación explícita de recepciones verificadas.** Gerencia y administración pueden confirmar en lote desde el detalle. Cada línea pasa de nuevo por K4; el resultado distingue confirmadas, omitidas y bloqueadas, y los reintentos no duplican movimientos de stock.
+
 ## 2026-10-12
 
 - **Albaranes permite corregir la unidad facturada y explica los rechazos de una revisión desactualizada.** La unidad elegida se conserva en la línea y en su propuesta; si otro dato cambia antes de confirmar, el mensaje indica qué revisar. K4 mantiene la validación económica y las recepciones pendientes no se aplican por esta corrección.

@@ -1,5 +1,5 @@
 <!-- Generado desde 46 documentos de marbella-os/.
-     Huella del origen: f8562f70c1d09e85
+     Huella del origen: 1da50bfd6627e60d
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -43,10 +43,10 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-04-07 | `marbella-os/2-diseno/TOKENS.md` | 2026-10-07 | 6 meses | propiedad del producto |
 | 2027-04-07 | `marbella-os/3-ingenieria/ARQUITECTURA.md` | 2026-10-07 | 6 meses | propiedad del producto |
 | 2027-04-07 | `marbella-os/GLOSARIO.md` | 2026-10-07 | 6 meses | propiedad del producto |
-| 2027-04-08 | `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` | 2026-10-08 | 6 meses | propiedad del producto |
 | 2027-04-08 | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 2026-10-08 | 6 meses | propiedad del producto |
 | 2027-04-11 | `marbella-os/3-ingenieria/MODELO-DE-DATOS.md` | 2026-10-11 | 6 meses | propiedad del producto |
 | 2027-04-12 | `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` | 2026-10-12 | 6 meses | propiedad del producto |
+| 2027-04-13 | `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` | 2026-10-13 | 6 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/PRINCIPIOS.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/VISION.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/2-diseno/LENGUAJE-VISUAL.md` | 2026-07-29 | 12 meses | propiedad del producto |
