@@ -25,7 +25,7 @@ export type ExactMappedSnapshot = {
   normalizedUnitPrice: string
 }
 
-function unit(value: string): 'kg' | 'g' | 'l' | 'ml' | 'cl' | 'ud' | null {
+function unit(value: string): 'kg' | 'g' | 'l' | 'ml' | 'cl' | 'ud' | 'm' | null {
   const normalized = String(value ?? '').trim().toLowerCase()
   if (['ud', 'uds', 'u', 'un', 'unidad', 'unidades'].includes(normalized)) return 'ud'
   if (['kg', 'kilo', 'kilos', 'quilo', 'quilos'].includes(normalized)) return 'kg'
@@ -33,6 +33,7 @@ function unit(value: string): 'kg' | 'g' | 'l' | 'ml' | 'cl' | 'ud' | null {
   if (['l', 'lt', 'litro', 'litros'].includes(normalized)) return 'l'
   if (normalized === 'ml') return 'ml'
   if (normalized === 'cl') return 'cl'
+  if (['m', 'mt', 'mts', 'mts.', 'metro', 'metros'].includes(normalized)) return 'm'
   return null
 }
 
