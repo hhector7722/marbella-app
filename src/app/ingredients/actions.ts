@@ -65,7 +65,7 @@ function photoFailureMessage(error: unknown): string {
   return 'No se ha podido guardar la imagen. Vuelve a intentarlo.'
 }
 
-const INGREDIENT_PHYSICAL_UNITS = new Set(['kg', 'g', 'l', 'ml', 'cl', 'ud'])
+const INGREDIENT_PHYSICAL_UNITS = new Set(['kg', 'g', 'l', 'ml', 'cl', 'ud', 'm'])
 
 async function requireIngredientManager() {
   const supabase = await createClient()
