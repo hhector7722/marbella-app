@@ -45,6 +45,7 @@ type Movement = {
   id: string
   movement_type: string
   quantity: number
+  unit: string
   movement_date: string
   reference_doc: string | null
   original_description: string | null
@@ -551,7 +552,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                             <div className="text-base flex justify-end">
                               {formatQuantity(mov.quantity, mov.movement_type)}
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">{selectedIng.unit}</p>
+                            <p className="text-xs text-gray-500 mt-1">{mov.unit}</p>
                           </td>
                         </tr>
                       )
