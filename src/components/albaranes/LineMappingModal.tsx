@@ -1309,6 +1309,13 @@ export function LineMappingModal({
                       <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
                         Indica qué contiene una unidad del albarán. El precio final se calcula automáticamente.
                       </p>
+                      {purchaseUnitForPresentation === 'm' ? (
+                        <p className="px-1 text-xs text-zinc-700">
+                          Precio por metro: indica la longitud real de lo facturado.
+                          Ejemplo: 1 rollo de 300 m contiene 300 m; un rollo de 23,64 €
+                          equivale a 0,0788 €/m. No se convierte de kg a metros.
+                        </p>
+                      ) : null}
 
                       <div className="px-1">
                         <Field
