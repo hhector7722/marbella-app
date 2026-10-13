@@ -84,6 +84,26 @@ export function isMenusPackCategory(recipe: { category?: string | null; menu_cat
   return false
 }
 
+
+/** Solamente bocadillos fríos/calientes tienen los dos tamaños de precio.
+ * Especiales y cualquier otra categoría permanecen siempre en Entero.
+ * El slug de la categoría del menú es la autoridad; la etiqueta denormalizada
+ * permite abrir las recetas antiguas mientras se carga el catálogo.
+ */
+export function isHalfPortionSandwichCategory(
+  recipe: { category?: string | null; menu_category_id?: string | null } | null,
+  categories: readonly MenuCategoryRow[],
+): boolean {
+  if (!recipe) return false
+  const linkedCategory = categories.find((category) => category.id === recipe.menu_category_id)
+  const slug = linkedCategory?.slug?.trim().toLowerCase()
+  if (slug) return slug === 'bocadillos-frios' || slug === 'bocadillos-calientes'
+
+  const label = (recipe.category ?? '')
+    .trim().normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+  return label === 'bocadillos - frios' || label === 'bocadillos - calientes'
+}
+
 /** Valor en query `cat` (slug menú, `id:<uuid>` si falta slug, o `__none__`). */
 export function menuCategoryToUrlParam(row: MenuCategoryRow): string {
   const s = row.slug?.trim()

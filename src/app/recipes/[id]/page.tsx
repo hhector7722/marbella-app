@@ -29,7 +29,7 @@ import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLay
 import { CatalogSquare } from '@/components/catalog/CatalogTile';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
-import { groupRecipeIngredients } from '@/lib/recipe-ingredient-grouping';
+import { groupRecipeIngredients, isNonCulinaryRecipeMaterial } from '@/lib/recipe-ingredient-grouping';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
@@ -37,6 +37,7 @@ import {
     type MenuCategoryRow,
     denormalizedRecipeCategoryName,
     isMenusPackCategory,
+    isHalfPortionSandwichCategory,
     labelMenuCategoryForRecipesEs,
     menuCategoryFromUrlParam,
     sortMenuCategoriesForRecipes,
@@ -276,6 +277,18 @@ function RecipeDetailContent() {
         [recipe, menusPackCategoryId],
     );
 
+    const canSelectHalf = useMemo(
+        () => isHalfPortionSandwichCategory(recipe, menuCategoryRows),
+        [recipe, menuCategoryRows],
+    );
+    const activePortion: 'full' | 'half' = canSelectHalf ? view.size : 'full';
+
+    useEffect(() => {
+        if (!canSelectHalf && view.size === 'half') {
+            setView((previous) => previous.size === 'half' ? { ...previous, size: 'full' } : previous);
+        }
+    }, [canSelectHalf, view.size]);
+
     const currentQueryString = searchParams.toString();
     const buildDetailHref = (id: string) => (currentQueryString ? `/recipes/${id}?${currentQueryString}` : `/recipes/${id}`);
 
@@ -286,7 +299,7 @@ function RecipeDetailContent() {
     };
 
     recipeRef.current = recipe;
-    viewSizeRef.current = view.size;
+    viewSizeRef.current = activePortion;
 
     const rememberSubrecipes = (lines: RecipeSubrecipeLine[]) => {
         subrecipesRef.current = lines;
@@ -436,7 +449,7 @@ function RecipeDetailContent() {
 
     const getCurrentPrice = () => {
         if (!recipe) return 0;
-        if (view.size === 'full') {
+        if (activePortion === 'full') {
             return view.location === 'pvp' ? recipe.sale_price : recipe.sales_price_pavello;
         } else {
             return view.location === 'pvp' ? recipe.sale_price_half : recipe.sale_price_half_pavello;
@@ -479,12 +492,12 @@ function RecipeDetailContent() {
     useEffect(() => {
         if (!recipeId || !recipe || !subrecipesLoaded) return;
         void refreshSheetCost();
-    }, [recipeId, view.size, recipe?.is_sellable, subrecipes.length, subrecipesLoaded]);
+    }, [recipeId, activePortion, recipe?.is_sellable, subrecipes.length, subrecipesLoaded]);
 
     // --- 4. LÓGICA DE NEGOCIO ---
 
     const getIngredientQuantity = (ing: RecipeIngredientRow) => {
-        return view.size === 'full' ? (ing.quantity_gross || 0) : (ing.quantity_half || 0);
+        return activePortion === 'full' ? (ing.quantity_gross || 0) : (ing.quantity_half || 0);
     };
 
     const ingredientPackBridge = (ing: RecipeIngredientRow): IngredientPackBridgeContext | undefined => {
@@ -510,7 +523,7 @@ function RecipeDetailContent() {
         ? sheetCostSource({
             isSellable: recipe.is_sellable !== false,
             hasSubrecipes: subrecipes.length > 0,
-            portion: view.size,
+            portion: activePortion,
         })
         : null;
     const sheetCostEur: number | null = (() => {
@@ -532,7 +545,7 @@ function RecipeDetailContent() {
         if (isRestricted) return 0;
         let n = 0;
         for (const ing of ingredients) {
-            const qty = view.size === 'full' ? ing.quantity_gross || 0 : ing.quantity_half || 0;
+            const qty = activePortion === 'full' ? ing.quantity_gross || 0 : ing.quantity_half || 0;
             if (!Number.isFinite(qty) || qty <= 0) continue;
             const st = getRecipeIngredientLineCostAnalysis(
                 qty,
@@ -544,7 +557,7 @@ function RecipeDetailContent() {
             if (st !== 'ok') n += 1;
         }
         return n;
-    }, [ingredients, isRestricted, view.size]);
+    }, [ingredients, isRestricted, activePortion]);
     const VAT_RATE = 1.10;
     const currentPrice = getCurrentPrice() || 0;
     const basePrice = currentPrice > 0 ? currentPrice / VAT_RATE : 0;
@@ -618,7 +631,7 @@ function RecipeDetailContent() {
         if (isNaN(num)) return;
         setSavingPrice(true);
         let field = 'sale_price';
-        if (view.size === 'full') field = view.location === 'pvp' ? 'sale_price' : 'sales_price_pavello';
+        if (activePortion === 'full') field = view.location === 'pvp' ? 'sale_price' : 'sales_price_pavello';
         else field = view.location === 'pvp' ? 'sale_price_half' : 'sale_price_half_pavello';
 
         try {
@@ -655,7 +668,7 @@ function RecipeDetailContent() {
     };
 
     const handleQuantityChange = async (ingredientId: string, newQuantity: number) => {
-        const column = view.size === 'full' ? 'quantity_gross' : 'quantity_half';
+        const column = activePortion === 'full' ? 'quantity_gross' : 'quantity_half';
         await supabase.from('recipe_ingredients').update({ [column]: newQuantity }).eq('id', ingredientId);
         setIngredients(ingredients.map(ing => ing.id === ingredientId ? { ...ing, [column]: newQuantity } : ing));
         void refreshSheetCost();
@@ -680,7 +693,7 @@ function RecipeDetailContent() {
     const applySimulatedPrice = async () => {
         setApplyingSimulation(true);
         let field = 'sale_price';
-        if (view.size === 'full') field = view.location === 'pvp' ? 'sale_price' : 'sales_price_pavello';
+        if (activePortion === 'full') field = view.location === 'pvp' ? 'sale_price' : 'sales_price_pavello';
         else field = view.location === 'pvp' ? 'sale_price_half' : 'sale_price_half_pavello';
         await updateRecipeField(field, simulatedPrice);
         setApplyingSimulation(false);
@@ -896,7 +909,7 @@ function RecipeDetailContent() {
         : { color: 'text-gray-400', label: '', bg: '' };
     const simulatedHealthIndicator = getHealthIndicator(simulatedFoodCost);
 
-    const priceScopeLabel = `${view.location === 'pvp' ? 'PVP' : 'Pabellón'} · ${view.size === 'full' ? 'Entero' : 'Medio'}`;
+    const priceScopeLabel = `${view.location === 'pvp' ? 'PVP' : 'Pabellón'} · ${activePortion === 'full' ? 'Entero' : 'Medio'}`;
 
     const filteredIngredients = availableIngredients.filter(ing => ing.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -1119,6 +1132,7 @@ function RecipeDetailContent() {
                                                 { value: 'pavello', label: 'Pabellón' },
                                             ]}
                                         />
+                                        {canSelectHalf ? (
                                         <PetroleumSegmented
                                             instance="recipe-price-size"
                                             density="compact"
@@ -1135,6 +1149,7 @@ function RecipeDetailContent() {
                                                 { value: 'half', label: 'Medio' },
                                             ]}
                                         />
+                                        ) : null}
                                     </div>
                                     {sheetCostMode === 'unavailable' ? (
                                         <p className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-[10px] font-bold leading-snug text-amber-900" role="status">
@@ -1296,8 +1311,9 @@ function RecipeDetailContent() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {groupedRecipeIngredients.ordered.map((ing, index) => {
+                                    {groupedRecipeIngredients.ordered.map((ing) => {
                                         const qty = getIngredientQuantity(ing);
+                                        const isPackaging = isNonCulinaryRecipeMaterial(ing.ingredients);
                                         const costAnalysis = getRecipeIngredientLineCostAnalysis(
                                             qty,
                                             ing.unit ?? 'kg',
@@ -1311,17 +1327,15 @@ function RecipeDetailContent() {
                                             ? directIngredientLineCost(elaborationCost?.components, ing.id)
                                             : null;
                                         return (
-                                            <tr key={ing.id} className={cn(
-                                                "transition-colors hover:bg-gray-50/80",
-                                                index === groupedRecipeIngredients.separatorIndex && "border-t border-zinc-200"
-                                            )}>
+                                            <tr key={ing.id} className="transition-colors hover:bg-gray-50/80">
                                                 <td className="py-1 pe-2">
                                                     {!isRestricted && ing.ingredients ? (
                                                         <button
                                                             type="button"
                                                             onClick={() => setRecipeIngredientEditTarget(ing.ingredients as Ingredient)}
                                                             className={cn(
-                                                                'w-full py-0.5 text-left text-[10px] font-bold leading-tight text-[#36606F] underline-offset-2 hover:underline',
+                                                                'w-full py-0.5 text-left text-[10px] font-bold leading-tight underline-offset-2 hover:underline',
+                                                                isPackaging ? 'text-zinc-500' : 'text-[#36606F]',
                                                                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25 focus-visible:ring-offset-1',
                                                             )}
                                                             title="Ver / editar ingrediente"
@@ -1329,7 +1343,7 @@ function RecipeDetailContent() {
                                                             {ing.ingredients?.name}
                                                         </button>
                                                     ) : (
-                                                        <span className="text-[10px] font-bold leading-tight text-gray-800">{ing.ingredients?.name}</span>
+                                                        <span className={cn('text-[10px] font-bold leading-tight', isPackaging ? 'text-zinc-500' : 'text-gray-800')}>{ing.ingredients?.name}</span>
                                                     )}
                                                 </td>
                                                 <td className="px-0.5 py-1 text-center align-middle">
@@ -1399,7 +1413,7 @@ function RecipeDetailContent() {
                                         </tr>
                                     ) : null}
                                     {subrecipes.map((line) => {
-                                        const fullPortion = internalRecipe || view.size === 'full';
+                                        const fullPortion = internalRecipe || activePortion === 'full';
                                         const lineCost = fullPortion && sheetCostMode === 'recursive'
                                             ? directSubrecipeLineCost(elaborationCost?.components, line.id)
                                             : { status: '', costEur: null };
