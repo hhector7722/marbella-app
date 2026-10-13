@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   AlertTriangle,
@@ -13,7 +13,6 @@ import {
   Filter,
   BookOpen,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import {
   getIngredientMovements,
   getInventoryCountSessions,
@@ -25,7 +24,6 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchField } from '@/components/ui/SearchField'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { CatalogTileUnificado } from '@/components/catalog/CatalogTile'
-import { TABLE_COMPONENT_ID } from '@/lib/design-system'
 import { formatMadridHmFromIso } from '@/lib/madrid-date-bounds'
 import Link from 'next/link'
 
@@ -146,7 +144,7 @@ function formatQuantity(qty: number, type: string) {
   const negative = isOutflow(type, n)
   const sign = negative ? '-' : '+'
   const val = Math.abs(n).toFixed(2)
-  const colorClass = negative ? 'text-red-600' : 'text-green-600'
+  const colorClass = negative ? 'text-rose-300' : 'text-emerald-300'
   return (
     <span className={cn('font-bold', colorClass)}>
       {sign}
@@ -171,16 +169,16 @@ function ReadOnlyStockBox({
     <div
       className={cn(
         'flex items-stretch justify-between min-w-0',
-        'bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm min-h-[48px]',
+        'bg-white/10 border border-white/15 rounded-xl overflow-hidden min-h-[48px]',
         className,
       )}
     >
       <div className="flex-1 flex items-center justify-center px-2 min-w-0">
-        <span className="text-center font-black tabular-nums text-sm text-zinc-800">
+        <span className="text-center font-black tabular-nums text-sm text-white">
           {waiting ? 'Pendiente' : empty ? '0' : String(n)}
         </span>
       </div>
-      <span className="pr-3 flex items-center text-[10px] font-black text-zinc-500 uppercase tracking-wide shrink-0 border-l border-zinc-100">
+      <span className="pr-3 flex items-center text-[10px] font-black text-white/65 uppercase tracking-wide shrink-0 border-l border-white/10">
         {unit}
       </span>
     </div>
@@ -210,9 +208,9 @@ function formatCountQuantity(value: number): string {
 
 function displayReference(ref: string | null) {
   const t = ref?.trim()
-  if (!t) return <span className="text-xs text-gray-400">&nbsp;</span>
+  if (!t) return <span className="text-xs text-white/45">&nbsp;</span>
   return (
-    <p className="text-xs text-gray-500 font-mono mt-1" title={t}>
+    <p className="text-xs text-white/55 font-mono mt-1 break-all" title={t}>
       {t}
     </p>
   )
@@ -250,6 +248,8 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
   const [selectedIng, setSelectedIng] = useState<Ingredient | null>(null)
   const [movements, setMovements] = useState<Movement[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [movementError, setMovementError] = useState<string | null>(null)
+  const movementRequestId = useRef(0)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [history, setHistory] = useState<InventoryCountSession[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
@@ -305,17 +305,30 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
   }, [visibleIngredients, search, category])
 
   const handleSelect = async (ing: Ingredient) => {
+    const requestId = ++movementRequestId.current
     setSelectedIng(ing)
+    setMovements([])
+    setMovementError(null)
     setIsLoading(true)
     try {
       const data = await getIngredientMovements(ing.id)
+      if (movementRequestId.current !== requestId) return
       setMovements((data as Movement[]) || [])
     } catch (error) {
+      if (movementRequestId.current !== requestId) return
       console.error(error)
-      toast.error(error instanceof Error ? error.message : 'Error al cargar movimientos')
+      setMovementError(error instanceof Error ? error.message : 'No se pudieron cargar los movimientos.')
     } finally {
-      setIsLoading(false)
+      if (movementRequestId.current === requestId) setIsLoading(false)
     }
+  }
+
+  const handleCloseMovements = () => {
+    ++movementRequestId.current
+    setSelectedIng(null)
+    setMovements([])
+    setMovementError(null)
+    setIsLoading(false)
   }
 
   const handleOpenHistory = async () => {
@@ -426,8 +439,8 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
         </div>
       }
     >
-    <div className="flex flex-col xl:flex-row gap-4 items-stretch min-h-0 flex-1">
-      <div className="w-full xl:w-[min(100%,640px)] xl:max-w-[52%] shrink-0 flex flex-col gap-3 min-h-0">
+    <div className="flex flex-col gap-3 min-h-0 flex-1">
+      <div className="w-full flex flex-col gap-3 min-h-0">
         <div className="flex-1 min-h-[min(480px,55vh)] max-h-[min(640px,70vh)] overflow-y-auto pr-0.5">
           {Object.keys(grouped).length === 0 ? (
             <EmptyState
@@ -457,33 +470,47 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
         </div>
       </div>
 
-      <div className="w-full flex-1 min-w-0 rounded-xl border border-zinc-100 bg-zinc-50/80 min-h-[min(520px,55vh)] flex flex-col">
+    </div>
+
+    <Modal
+      open={selectedIng !== null}
+      onClose={handleCloseMovements}
+      variant="standard"
+      layer="base"
+      scheme="dark"
+      instance="inventory-ledger-product-movements"
+      usageId="inventory-ledger-product-movements"
+      usageLabel="Movimientos de stock por producto"
+      title={selectedIng?.name ?? 'Movimientos de stock'}
+      subtitle="Historial de movimientos"
+    >
+      <div className="w-full min-w-0 rounded-xl border border-white/10 bg-white/10/5 flex flex-col">
         {!selectedIng ? (
-          <div className="flex-1 flex items-center justify-center text-zinc-400 font-medium px-6 py-16 text-center text-sm">
+          <div className="flex-1 flex items-center justify-center text-white/55 font-medium px-6 py-16 text-center text-sm">
             Selecciona un ingrediente para ver sus movimientos
           </div>
         ) : (
           <>
-            <div className="p-4 sm:p-6 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center gap-4 justify-between bg-zinc-50/50 shrink-0">
+            <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center gap-4 justify-between bg-white/10/5 shrink-0">
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="shrink-0 h-14 w-14 rounded-xl bg-white border border-zinc-100 flex items-center justify-center">
+                <div className="shrink-0 h-14 w-14 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
                   {selectedIng.image_url ? (
                     <img src={selectedIng.image_url} alt="" className="h-12 w-12 object-contain" />
                   ) : (
-                    <Package className="w-8 h-8 text-zinc-200" strokeWidth={1.5} />
+                    <Package className="w-8 h-8 text-white/30" strokeWidth={1.5} />
                   )}
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate" title={selectedIng.name}>
+                  <h2 className="text-lg sm:text-xl font-bold text-white truncate" title={selectedIng.name}>
                     {selectedIng.name}
                   </h2>
-                  <p className="text-xs font-bold uppercase tracking-wide text-zinc-500 mt-0.5 truncate">
+                  <p className="text-xs font-bold uppercase tracking-wide text-white/60 mt-0.5 truncate">
                     {selectedIng.category}
                   </p>
                 </div>
               </div>
               <div className="shrink-0 w-full sm:w-auto sm:max-w-[220px]">
-                <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500 mb-1 sm:text-right">
+                <p className="text-[10px] font-black uppercase tracking-wider text-white/60 mb-1 sm:text-right">
                   Stock desde inventario
                 </p>
                 <ReadOnlyStockBox
@@ -494,31 +521,31 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               </div>
             </div>
 
-            <div className="p-0 overflow-y-auto flex-1 min-h-[240px]">
+            <div className="p-0 overflow-y-auto flex-1 min-h-[200px]">
               {isLoading ? (
                 <div className="flex justify-center p-10">
-                  <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+                  <Loader2 className="w-8 h-8 animate-spin text-white/55" />
                 </div>
               ) : movements.length === 0 ? (
-                <div className="p-10 text-center text-gray-500">No hay movimientos registrados.</div>
+                <div className="p-10 text-center text-white/60">No hay movimientos posteriores al inventario inicial.</div>
               ) : (
-                <table data-component={TABLE_COMPONENT_ID} data-instance="inventory-ledger-movements" className="w-full text-left">
-                  <thead className="sticky top-0 z-10">
+                <table data-instance="inventory-ledger-movements" className="w-full text-left text-white">
+                  <thead className="sticky top-0 z-10 bg-[var(--color-envolvente-bajo)] text-xs text-white/70">
                     <tr>
-                      <th>Fecha / Ref</th>
-                      <th>Tipo</th>
-                      <th className="text-right">Impacto</th>
+                      <th className="px-3 py-2">Fecha / Ref</th>
+                      <th className="px-3 py-2">Tipo</th>
+                      <th className="px-3 py-2 text-right">Impacto</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-50">
+                  <tbody className="divide-y divide-white/10">
                     {movements.map((mov) => {
                       const conf = movementRowStyle(mov)
                       const Icon = conf.icon
 
                       return (
-                        <tr key={mov.id} className="hover:bg-zinc-50/50 transition-colors">
-                          <td className="p-4 align-top w-2/5">
-                            <p className="text-sm font-medium text-gray-900">
+                        <tr key={mov.id} className="hover:bg-white/10/5 transition-colors">
+                          <td className="p-2 sm:p-4 align-top w-2/5">
+                            <p className="text-sm font-medium text-white">
                               {new Date(mov.movement_date).toLocaleString('es-ES', {
                                 day: '2-digit',
                                 month: '2-digit',
@@ -529,14 +556,14 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                             {displayReference(mov.reference_doc)}
                             {mov.original_description ? (
                               <p
-                                className="text-xs text-gray-400 mt-1 line-clamp-1"
+                                className="text-xs text-white/50 mt-1 line-clamp-1"
                                 title={mov.original_description}
                               >
                                 {mov.original_description}
                               </p>
                             ) : null}
                           </td>
-                          <td className="p-4 align-top w-1/4">
+                          <td className="p-2 sm:p-4 align-top w-1/4">
                             <span
                               className={cn(
                                 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium',
@@ -548,11 +575,11 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
                               {conf.label}
                             </span>
                           </td>
-                          <td className="p-4 align-top text-right w-1/4">
+                          <td className="p-2 sm:p-4 align-top text-right w-1/4">
                             <div className="text-base flex justify-end">
                               {formatQuantity(mov.quantity, mov.movement_type)}
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">{mov.unit}</p>
+                            <p className="text-xs text-white/60 mt-1">{mov.unit}</p>
                           </td>
                         </tr>
                       )
@@ -564,8 +591,11 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
           </>
         )}
       </div>
-    </div>
 
+      {movementError && !isLoading ? (
+        <div role="alert" className="p-4 text-sm text-rose-200">{movementError}</div>
+      ) : null}
+    </Modal>
     <Modal
       open={historyOpen}
       onClose={handleCloseHistory}
