@@ -1334,8 +1334,8 @@ function RecipeDetailContent() {
                                                             type="button"
                                                             onClick={() => setRecipeIngredientEditTarget(ing.ingredients as Ingredient)}
                                                             className={cn(
-                                                                'w-full py-0.5 text-left text-[10px] font-bold leading-tight underline-offset-2 hover:underline',
-                                                                isPackaging ? 'text-zinc-500' : 'text-[#36606F]',
+                                                                'w-full py-0.5 text-left text-[10px] leading-tight underline-offset-2 hover:underline',
+                                                                isPackaging ? 'font-normal text-zinc-500' : 'font-bold text-[#36606F]',
                                                                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25 focus-visible:ring-offset-1',
                                                             )}
                                                             title="Ver / editar ingrediente"
@@ -1343,7 +1343,7 @@ function RecipeDetailContent() {
                                                             {ing.ingredients?.name}
                                                         </button>
                                                     ) : (
-                                                        <span className={cn('text-[10px] font-bold leading-tight', isPackaging ? 'text-zinc-500' : 'text-gray-800')}>{ing.ingredients?.name}</span>
+                                                        <span className={cn('text-[10px] leading-tight', isPackaging ? 'font-normal text-zinc-500' : 'font-bold text-gray-800')}>{ing.ingredients?.name}</span>
                                                     )}
                                                 </td>
                                                 <td className="px-0.5 py-1 text-center align-middle">
