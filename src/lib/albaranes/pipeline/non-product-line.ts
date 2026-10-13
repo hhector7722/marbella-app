@@ -24,6 +24,9 @@ export function isAdministrativeNonProductRow(evidence: AdministrativeRowEvidenc
   const administrative = /^TANCAT$/.test(label)
     || /^NO HI HA DINERS$/.test(label)
     || /^FILTEMP\.?\s*\/\s*RECOLLIDA$/.test(label)
+    // OCR de capturas de pantalla: botones, teclas y rótulos fiscales
+    // aislados nunca son artículos si carecen de toda evidencia económica.
+    || /^(?:←|→|ESC|FNLOCAL|F[1-5]|2%|21%|ENVASES:\s*0)$/.test(label)
   if (!administrative) return false
   return ![
     evidence.supplierProductCode,
