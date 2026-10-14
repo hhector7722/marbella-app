@@ -688,3 +688,38 @@ describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Ot
         assert.match(shortcuts, /else onAction\(item\.action\)/);
     });
 });
+
+describe('Master escritorio: ajustes de Ventas, Último cierre, Asistencia y accesos', () => {
+    const desktopCss = () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const start = css.indexOf('Ajustes finos Master escritorio: accesos legibles y widgets compactos');
+        assert.ok(start > 0, 'bloque exclusivo de Master escritorio');
+        return css.slice(start);
+    };
+
+    it('acerca botones Ventas/Cierres al borde y baja los tres KPI de ventas', () => {
+        const css = desktopCss();
+        assert.match(css, /@media \(min-width: 1024px\)/);
+        assert.match(css, /\[data-instance='dashboard-ventas'\][\s\S]*?\[data-element='header'\] \{\s*margin-inline: -3px;/);
+        assert.match(css, /\[data-instance='dashboard-ventas'\][\s\S]*?\[data-element='header'\] > :first-child \{\s*margin-right: auto;/);
+        assert.match(css, /\[data-instance='dashboard-ventas'\][\s\S]*?\[data-element='header'\] > :last-child \{\s*margin-left: auto;/);
+        assert.match(css, /\[data-instance='dashboard-ventas'\][\s\S]*?\[data-element='kpis'\] \{\s*margin-top: clamp\(9px, 1\.4vh, 15px\);/);
+    });
+
+    it('pasa la fecha y los datos del último cierre a una fila inferior', () => {
+        const css = desktopCss();
+        assert.match(css, /\[data-instance='master-ultimo-cierre'\][\s\S]*?\[data-element='header'\] \{\s*display: grid;/);
+        assert.match(css, /\[data-instance='master-ultimo-cierre'\][\s\S]*?\[data-element='header'\] > div \{\s*grid-row: 2;/);
+        assert.match(css, /padding-top: 5px;/);
+    });
+
+    it('Asistencia tiene anchura de icono y tipografía compacta; todos los accesos muestran el nombre', () => {
+        const css = desktopCss();
+        assert.match(css, /\[data-instance='master-asistencia'\] \{\s*container-type: size;/);
+        assert.match(css, /\[data-instance='master-asistencia'\] > \[data-element='body'\] \{[\s\S]*?width: var\(--home-icon-size\);[\s\S]*?height: var\(--home-icon-size\);/);
+        assert.match(css, /\[data-instance='master-asistencia'\][\s\S]*?font-size: 6px;/);
+        assert.match(css, /--home-shortcut-label-band: calc\(var\(--espacio-1\) \+ 23px\);/);
+        assert.match(css, /\[data-component='DashboardShortcut'\]\[data-variant='icon-card-text-outside'\][\s\S]*?\[data-element='text'\] \{[\s\S]*?overflow: visible;[\s\S]*?-webkit-line-clamp: unset;/);
+        assert.match(css, /\[data-element='name'\] \{[\s\S]*?-webkit-line-clamp: unset;/);
+    });
+});
