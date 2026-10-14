@@ -509,8 +509,8 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
     });
 
     it('Compra: la X del plano y del desglose cierra solo el paso secundario', () => {
-        const modal = readFileSync(join(SRC_ROOT, 'components/ui/modal.tsx'), 'utf8');
-        const compra = readFileSync(join(SRC_ROOT, 'components/PurchaseMultiSourceForm.tsx'), 'utf8');
+        const modal = readFileSync(join(process.cwd(), 'src/components/ui/modal.tsx'), 'utf8');
+        const compra = readFileSync(join(process.cwd(), 'src/components/PurchaseMultiSourceForm.tsx'), 'utf8');
         assert.match(modal, /dismissScope === 'self'[\s\S]*?requestModalClose\(surfaceId\)/);
         assert.match(compra, /instance="purchase-box-picker"\s+dismissScope="self"/);
         assert.match(compra, /instance="purchase-source-breakdown"\s+dismissScope="self"/);
