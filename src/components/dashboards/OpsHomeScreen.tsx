@@ -17,6 +17,8 @@ export type OpsHomeScreenProps = {
     iconRecetas: ReactNode;
     iconAlbaranes: ReactNode;
     iconIngredientes: ReactNode;
+    /** Accesos del modal Otros, solo visibles en escritorio. */
+    desktopMoreShortcuts?: ReactNode;
 };
 
 /**
@@ -38,6 +40,7 @@ export function OpsHomeScreen({
     iconRecetas,
     iconAlbaranes,
     iconIngredientes,
+    desktopMoreShortcuts,
 }: OpsHomeScreenProps) {
     return (
         <HomeScreen layout="ops-admin">
@@ -80,6 +83,7 @@ export function OpsHomeScreen({
             <HomeScreenSlot size="icon" instance="admin-ingredientes" column={4}>
                 {iconIngredientes}
             </HomeScreenSlot>
+            {desktopMoreShortcuts}
         </HomeScreen>
     );
 }
