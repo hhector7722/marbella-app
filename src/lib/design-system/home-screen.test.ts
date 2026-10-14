@@ -596,7 +596,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
 describe('Dashboard Admin y Master escritorio: cuadrículas de ocho columnas y accesos de Otros', () => {
     it('mantiene móvil y distribuye escritorio en ocho columnas y seis pistas', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        const marker = css.indexOf('Home Admin/Master escritorio: widgets 2 + 2 + 4 columnas');
+        const marker = css.indexOf('Home Admin/Master escritorio: cuadrícula común de ocho columnas');
         assert.ok(marker !== -1);
         const desktop = css.slice(marker);
         assert.match(desktop, /@media \(min-width: 1024px\)/);
@@ -649,7 +649,7 @@ describe('Dashboard Admin y Master escritorio: cuadrículas de ocho columnas y a
     it('Master escritorio: asistencia 1×1, acceso a Asistencia y Horarios en lugar de Otros', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         const master = readFileSync(join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'), 'utf8');
-        const desktop = css.slice(css.indexOf('Home Admin/Master escritorio: widgets 2 + 2 + 4 columnas'));
+        const desktop = css.slice(css.indexOf('Home Admin/Master escritorio: cuadrícula común de ocho columnas'));
         const areas = [...desktop.matchAll(/grid-template-areas:\s*([^;]+);/g)].slice(0, 2);
         assert.equal(areas.length, 2);
         const masterRows = [...areas[1]![1]!.matchAll(/'([^']+)'/g)]
@@ -688,7 +688,7 @@ describe('Dashboard Admin y Master escritorio: cuadrículas de ocho columnas y a
         assert.match(iconCss, /\[data-display='desktop'\] \{\s*display: block;/);
     });
 
-    it('escala proporcionalmente textos y conserva composición de los widgets 2×2', () => {
+    it('mantiene la escala compacta del dashboard Master 2×2', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         const scaled = css.slice(css.indexOf('Los widgets ahora son estrechos') > 0
             ? css.indexOf('Los widgets ahora son estrechos')
