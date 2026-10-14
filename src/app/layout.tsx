@@ -13,6 +13,7 @@ import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticatedTracker";
 import { StudioPreviewClient } from "@/components/studio/StudioPreviewClient";
 import { ChromeScrollProvider } from "@/components/chrome/ChromeScrollProvider";
+import { DesktopSidebarProvider } from "@/components/chrome/DesktopSidebarProvider";
 import { MasterViewAsProvider } from "@/components/master/MasterViewAsProvider";
 import { catalogTitleFont } from "@/lib/fonts/catalog-title";
 import { cn } from "@/lib/utils";
@@ -87,6 +88,7 @@ export default function RootLayout({
           <StudioPreviewClient>
             <MasterViewAsProvider>
             <ChromeScrollProvider>
+            <DesktopSidebarProvider>
             <Navbar />
             <MainWrapper>{children}</MainWrapper>
             <BottomNavWrapper />
@@ -94,6 +96,7 @@ export default function RootLayout({
 
             {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
             <ChatMarbellaLazy />
+            </DesktopSidebarProvider>
             </ChromeScrollProvider>
             </MasterViewAsProvider>
           </StudioPreviewClient>
