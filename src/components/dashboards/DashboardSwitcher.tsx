@@ -479,7 +479,7 @@ export default function DashboardSwitcher({
 
             {/* Los puntos conservan su selector; el botón solo aparece en escritorio.
                 El portal evita recortes por los contenedores de los dashboards. */}
-            {dotsPortalMounted && !isEmbeddedFrame &&
+            {dotsPortalMounted &&
                 createPortal(
                     <>
                         <div
@@ -513,15 +513,17 @@ export default function DashboardSwitcher({
                                     ))}
                                 </div>
                             )}
-                            <button
-                                type="button"
-                                onClick={() => setSplitOpen(true)}
-                                className="dashboard-split-button pointer-events-auto hidden lg:inline-flex min-h-8 items-center justify-center rounded-lg border border-white bg-transparent px-4 py-1 text-xs font-semibold text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                            >
-                                Dividir pantalla
-                            </button>
+                            {!isEmbeddedFrame && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSplitOpen(true)}
+                                    className="dashboard-split-button pointer-events-auto hidden lg:inline-flex min-h-8 items-center justify-center rounded-lg border border-white bg-transparent px-4 py-1 text-xs font-semibold text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                >
+                                    Dividir pantalla
+                                </button>
+                            )}
                         </div>
-                        {splitOpen && (
+                        {!isEmbeddedFrame && splitOpen && (
                             <DashboardSplitWorkspace initialPath={pathname} onClose={closeSplit} />
                         )}
                     </>,
