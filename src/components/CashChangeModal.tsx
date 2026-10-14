@@ -1050,8 +1050,7 @@ export const CashChangeModal = ({
                                         <div
                                             aria-hidden
                                             className={cn(
-                                                'pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 origin-center transition-[opacity,transform] duration-200',
-                                                isSelected ? 'scale-[1.06]' : 'scale-100',
+                                                'pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-200',
                                                 shouldDim ? 'opacity-25' : 'opacity-100',
                                             )}
                                             style={{
@@ -1066,7 +1065,10 @@ export const CashChangeModal = ({
                                                 width={size.width}
                                                 height={size.height}
                                                 unoptimized
-                                                className="h-auto w-full select-none object-contain"
+                                                className={cn(
+                                                    "h-auto w-full select-none object-contain transition-transform duration-200",
+                                                    isSelected ? "scale-[1.06]" : "scale-100",
+                                                )}
                                             />
                                             <span
                                                 data-element="cash-change-plan-label"
