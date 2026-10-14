@@ -6500,3 +6500,80 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
 [data-component='PageScreen'].month-cal-shell .month-cal-week[data-past-activities-week='true'] .month-cal-chips > * {
   flex-shrink: 0 !important;
 }
+
+
+/* Home Admin/Master escritorio: widgets 2 + 2 + 4 columnas y catálogo Otros a la vista. */
+/* Los accesos añadidos no alteran el mosaico 4×6 de smartphone/tablet. */
+[data-component='HomeScreen'] > [data-element='slot'].home-desktop-extra {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout='ops-admin'],
+  [data-component='HomeScreen'][data-layout='master'],
+  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+    grid-auto-rows: unset;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin'] {
+    grid-template-areas:
+      'ventas ventas cierre cierre horarios horarios horarios horarios'
+      'ventas ventas cierre cierre horarios horarios horarios horarios'
+      'cinicial plant mobra stock horarios horarios horarios horarios'
+      'recetas albaranes asis cajascambio horarios horarios horarios horarios'
+      'ingredientes acarta apedidos aconsumo acambio acierre areservas apropinas'
+      'aweb arent ainfo acompra ahorarios mas . .';
+  }
+
+  [data-component='HomeScreen'][data-layout='master'],
+  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
+    grid-template-areas:
+      'ventas ventas ultcierre ultcierre horario horario horario horario'
+      'ventas ventas ultcierre ultcierre horario horario horario horario'
+      'asis asis caja ingred horario horario horario horario'
+      'reservas recetas albaran cajascambio horario horario horario horario'
+      'cambio plantilla mstock mweb mcarta mconsumo mmobra mcompra'
+      'mcierre mpropinas muso mrent minfo maltas mvitrina otros';
+  }
+
+  [data-component='HomeScreen'] > [data-element='slot'].home-desktop-extra {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  /* Albaranes mantiene su acceso visible también en el mosaico Master de escritorio. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='albaranes'] {
+    display: flex;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-carta'] { grid-area: acarta; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-staff-pedidos'] { grid-area: apedidos; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-consumo'] { grid-area: aconsumo; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-cambio'] { grid-area: acambio; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-horarios'] { grid-area: ahorarios; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-staff-cierre'] { grid-area: acierre; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-reservas'] { grid-area: areservas; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-propinas'] { grid-area: apropinas; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-web'] { grid-area: aweb; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-rentabilidad'] { grid-area: arent; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-staff-info'] { grid-area: ainfo; }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-staff-compra'] { grid-area: acompra; }
+
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-stock'] { grid-area: mstock; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-web'] { grid-area: mweb; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-carta'] { grid-area: mcarta; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-consumo'] { grid-area: mconsumo; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-m-obra'] { grid-area: mmobra; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-compra'] { grid-area: mcompra; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-cierre'] { grid-area: mcierre; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-propinas'] { grid-area: mpropinas; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-uso-app'] { grid-area: muso; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-rentabilidad'] { grid-area: mrent; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-info'] { grid-area: minfo; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-altas'] { grid-area: maltas; }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-extra-vitrina'] { grid-area: mvitrina; }
+
+}
