@@ -601,12 +601,45 @@ describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Ot
         const desktop = css.slice(marker);
         assert.match(desktop, /@media \(min-width: 1024px\)/);
         assert.match(desktop, /grid-template-rows: repeat\(6, minmax\(0, 1fr\)\)/);
-        assert.match(desktop, /'ventas ventas cierre cierre horarios horarios horarios horarios'/);
-        assert.match(desktop, /'ventas ventas ultcierre ultcierre horario horario horario horario'/);
-        assert.match(desktop, /'mcierre mpropinas muso mrent minfo maltas mvitrina otros'/);
-        assert.match(desktop, /'aweb arent ainfo acompra ahorarios mas \. \.'/);
+        // Las zonas no se solapan: widgets 2×2 arriba y calendario 4×4 debajo.
+        const grids = [...desktop.matchAll(/grid-template-areas:\s*([^;]+);/g)].slice(0, 2);
+        assert.equal(grids.length, 2, 'ambas plantillas de escritorio tienen grid definido');
+        const getRows = (match: RegExpMatchArray) =>
+            [...match[1]!.matchAll(/'([^']+)'/g)].map(row => row[1]!.trim().split(/\s+/));
+        const checkBox = (rows: string[][], name: string, startRow: number, startCol: number, rowSpan: number, colSpan: number) => {
+            const coords = rows.flatMap((row, r) => row.flatMap((area, c) => area === name ? [[r, c]] : []));
+            assert.equal(coords.length, rowSpan * colSpan, name + ': tamaño correcto');
+            assert.deepEqual(coords[0], [startRow, startCol], name + ': origen correcto');
+            for (let r = startRow; r < startRow + rowSpan; r++) {
+                for (let c = startCol; c < startCol + colSpan; c++) {
+                    assert.equal(rows[r]?.[c], name, name + ': rectángulo continuo');
+                }
+            }
+        };
+        for (const [index, match] of grids.entries()) {
+            const rows = getRows(match);
+            assert.equal(rows.length, 6);
+            assert.ok(rows.every(row => row.length === 8));
+            checkBox(rows, 'ventas', 0, 0, 2, 2);
+            checkBox(rows, index === 0 ? 'cierre' : 'ultcierre', 0, 2, 2, 2);
+            checkBox(rows, index === 0 ? 'horarios' : 'horario', 2, 0, 4, 4);
+            assert.equal(rows.flat().length, 48);
+        }
+        assert.match(desktop, /'mcierre mpropinas muso mrent'/);
+        assert.match(desktop, /'horarios horarios horarios horarios ahorarios mas \. \.'/);
         assert.match(css, /\.home-desktop-extra \{\s*display: none;/);
         assert.match(desktop, /\.home-desktop-extra \{\s*display: flex;/);
+    });
+
+    it('escala proporcionalmente textos y conserva composición de los widgets 2×2', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const scaled = css.slice(css.indexOf('Los widgets ahora son estrechos') > 0
+            ? css.indexOf('Los widgets ahora son estrechos')
+            : css.indexOf('Ventas y Último cierre se reducen'));
+        assert.match(scaled, /\[data-element='header'\] \{\s*display: flex;/, 'Ventas mantiene cabecera horizontal');
+        assert.match(scaled, /\[data-component='KpiStat'\] \[data-element='value'\] \{\s*font-size: clamp\(10px, 1vw, 14px\)/);
+        assert.match(scaled, /\[data-element='primary-kpis'\] span\.font-bold \{\s*font-size: clamp\(10px, 1vw, 14px\)/);
+        assert.match(scaled, /\[data-element='secondary-kpis'\] span\.font-bold \{\s*font-size: clamp\(9px, 0\.85vw, 11px\)/);
     });
 
     it('genera accesos de escritorio desde los mismos catálogos del modal Otros', () => {
