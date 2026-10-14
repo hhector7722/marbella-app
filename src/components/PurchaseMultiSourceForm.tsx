@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { DENOMINATIONS } from '@/lib/constants';
 import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
@@ -74,12 +75,227 @@ const calculateTotal = (c: Record<number, number>) =>
 /** Inicial y Cambio 1 usan los recortes limpios; el resto conserva su imagen configurada. */
 function resolveBoxImage(source: PaymentSourceOption): string {
     const label = `${source.name} ${source.shortLabel}`.toLowerCase();
-    if (label.includes('cambio 1') || label.includes('cambio1')) return '/icons/cambio-1.png';
-    if (label.includes('inicial')) return '/icons/inicial.png';
-    if (source.image_url) return source.image_url;
-    if (source.kind === 'tpv') return '/icons/tpv.png';
-    if (label.includes('cambio 2') || label.includes('cambio2')) return '/icons/cambio-2.png';
-    return '/icons/inicial.png';
+    if (label.includes('cambio 1') || label.includes('cambio1')) return '/images/cash-change/cambio1.avif';
+    if (label.includes('inicial')) return '/images/cash-change/inicial.avif';
+    if (label.includes('cambio 2') || label.includes('cambio2')) return '/images/cash-change/cambio2.avif';
+    if (source.kind === 'tpv') return '/images/cash-change/tpv.avif';
+    return source.image_url || '/images/cash-change/inicial.avif';
+}
+
+
+type PurchasePlanKey = 'tpv1' | 'tpv2' | 'cambio1' | 'cambio2' | 'inicial';
+type PurchasePlanPoint = { x: number; y: number };
+type PurchasePlanView = PurchasePlanPoint & { zoom: number };
+
+/** El mismo plano, posiciones, imágenes y rótulos del modal Cambio. */
+const PURCHASE_BOX_PLAN: Record<PurchasePlanKey, {
+    x: number; y: number; width: number; image: string; imageWidth: number; imageHeight: number; label: string;
+}> = {
+    tpv1: { x: 58.5, y: 36.5, width: 8.8, image: '/images/cash-change/tpv.avif', imageWidth: 591, imageHeight: 600, label: 'TPV 1' },
+    tpv2: { x: 58.5, y: 71.7, width: 8.8, image: '/images/cash-change/tpv.avif', imageWidth: 591, imageHeight: 600, label: 'TPV 2' },
+    cambio1: { x: 10.4, y: 24.1, width: 6.5, image: '/images/cash-change/cambio1.avif', imageWidth: 550, imageHeight: 492, label: 'Cambio 1' },
+    cambio2: { x: 33, y: 15.4, width: 8, image: '/images/cash-change/cambio2.avif', imageWidth: 535, imageHeight: 550, label: 'Cambio 2' },
+    inicial: { x: 21, y: 15.4, width: 5.8, image: '/images/cash-change/inicial.avif', imageWidth: 550, imageHeight: 529, label: 'Inicial' },
+};
+
+function purchasePlanKey(source: PaymentSourceOption): PurchasePlanKey | null {
+    const name = (source.name + source.shortLabel).toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    if (source.id === 'tpv1' || name.includes('tpv1')) return 'tpv1';
+    if (source.id === 'tpv2' || name.includes('tpv2')) return 'tpv2';
+    if (name.includes('cambio1')) return 'cambio1';
+    if (name.includes('cambio2')) return 'cambio2';
+    if (name.includes('inicial') || name.includes('cajaoperativa') || name.includes('operativa')) return 'inicial';
+    return null;
+}
+
+function clampPurchasePlanView(view: PurchasePlanView, width: number, height: number): PurchasePlanView {
+    const zoom = Math.min(3, Math.max(1, view.zoom));
+    return {
+        zoom,
+        x: Math.min(0, Math.max(width * (1 - zoom), view.x)),
+        y: Math.min(0, Math.max(height * (1 - zoom), view.y)),
+    };
+}
+
+function zoomPurchasePlanAt(view: PurchasePlanView, zoom: number, point: PurchasePlanPoint, width: number, height: number): PurchasePlanView {
+    const nextZoom = Math.min(3, Math.max(1, zoom));
+    const ratio = nextZoom / view.zoom;
+    return clampPurchasePlanView({
+        zoom: nextZoom,
+        x: point.x - (point.x - view.x) * ratio,
+        y: point.y - (point.y - view.y) * ratio,
+    }, width, height);
+}
+
+function PurchaseBoxPlanPicker({
+    paymentSources,
+    selectedBoxIds,
+    replacingSourceId,
+    onSelect,
+}: {
+    paymentSources: PaymentSourceOption[];
+    selectedBoxIds: string[];
+    replacingSourceId: string | null;
+    onSelect: (sourceId: string) => void;
+}) {
+    const [view, setView] = useState<PurchasePlanView>({ zoom: 1, x: 0, y: 0 });
+    const viewportRef = useRef<HTMLDivElement>(null);
+    const viewRef = useRef(view);
+    const pointersRef = useRef(new Map<number, PurchasePlanPoint>());
+    const startsRef = useRef(new Map<number, PurchasePlanPoint>());
+    const draggedRef = useRef(false);
+    const setPlanView = (next: PurchasePlanView) => { viewRef.current = next; setView(next); };
+
+    useEffect(() => {
+        const viewport = viewportRef.current;
+        if (!viewport) return;
+        const onWheel = (event: WheelEvent) => {
+            event.preventDefault();
+            const rect = viewport.getBoundingClientRect();
+            setPlanView(zoomPurchasePlanAt(viewRef.current, viewRef.current.zoom * Math.exp(-event.deltaY * 0.0015),
+                { x: event.clientX - rect.left, y: event.clientY - rect.top }, rect.width, rect.height));
+        };
+        viewport.addEventListener('wheel', onWheel, { passive: false });
+        return () => viewport.removeEventListener('wheel', onWheel);
+    }, []);
+
+    const positioned = paymentSources
+        .map(source => ({ source, key: purchasePlanKey(source) }))
+        .filter((item): item is { source: PaymentSourceOption; key: PurchasePlanKey } => item.key !== null);
+
+    return (
+        <div
+            ref={viewportRef}
+            data-element="purchase-box-plan"
+            className="relative mx-auto aspect-[2048/1084] w-full max-w-[1136px] touch-none overflow-hidden rounded-ds-superficie border border-white/70 bg-zinc-100"
+            role="region"
+            tabIndex={0}
+            aria-label="Selecciona una caja en el plano. Pellizca o usa la rueda para ampliar."
+            onKeyDown={event => {
+                if (event.target !== event.currentTarget) return;
+                const rect = event.currentTarget.getBoundingClientRect();
+                const center = { x: rect.width / 2, y: rect.height / 2 };
+                if (event.key === '+' || event.key === '=') {
+                    event.preventDefault();
+                    setPlanView(zoomPurchasePlanAt(viewRef.current, viewRef.current.zoom * 1.2, center, rect.width, rect.height));
+                } else if (event.key === '-') {
+                    event.preventDefault();
+                    setPlanView(zoomPurchasePlanAt(viewRef.current, viewRef.current.zoom / 1.2, center, rect.width, rect.height));
+                } else if (event.key.startsWith('Arrow') && viewRef.current.zoom > 1) {
+                    event.preventDefault();
+                    const delta = 48;
+                    setPlanView(clampPurchasePlanView({
+                        ...viewRef.current,
+                        x: viewRef.current.x + (event.key === 'ArrowLeft' ? delta : event.key === 'ArrowRight' ? -delta : 0),
+                        y: viewRef.current.y + (event.key === 'ArrowUp' ? delta : event.key === 'ArrowDown' ? -delta : 0),
+                    }, rect.width, rect.height));
+                }
+            }}
+            onPointerDown={event => {
+                draggedRef.current = false;
+                const point = { x: event.clientX, y: event.clientY };
+                pointersRef.current.set(event.pointerId, point);
+                startsRef.current.set(event.pointerId, point);
+                if (pointersRef.current.size === 2) event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerMove={event => {
+                const pointers = pointersRef.current;
+                const previous = pointers.get(event.pointerId);
+                if (!previous) return;
+                const current = { x: event.clientX, y: event.clientY };
+                pointers.set(event.pointerId, current);
+                const rect = event.currentTarget.getBoundingClientRect();
+                if (pointers.size === 2) {
+                    const other = [...pointers.entries()].find(([id]) => id !== event.pointerId)?.[1];
+                    if (!other) return;
+                    const oldDistance = Math.hypot(previous.x - other.x, previous.y - other.y);
+                    if (oldDistance < 1) return;
+                    const newDistance = Math.hypot(current.x - other.x, current.y - other.y);
+                    const oldMid = { x: (previous.x + other.x) / 2 - rect.left, y: (previous.y + other.y) / 2 - rect.top };
+                    const newMid = { x: (current.x + other.x) / 2 - rect.left, y: (current.y + other.y) / 2 - rect.top };
+                    const next = zoomPurchasePlanAt(viewRef.current, viewRef.current.zoom * newDistance / oldDistance, oldMid, rect.width, rect.height);
+                    setPlanView(clampPurchasePlanView({ ...next, x: next.x + newMid.x - oldMid.x, y: next.y + newMid.y - oldMid.y }, rect.width, rect.height));
+                    draggedRef.current = true;
+                    return;
+                }
+                if (viewRef.current.zoom <= 1) return;
+                const start = startsRef.current.get(event.pointerId);
+                if (!draggedRef.current && start && Math.hypot(current.x - start.x, current.y - start.y) < 4) return;
+                draggedRef.current = true;
+                if (!event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);
+                setPlanView(clampPurchasePlanView({
+                    ...viewRef.current,
+                    x: viewRef.current.x + current.x - previous.x,
+                    y: viewRef.current.y + current.y - previous.y,
+                }, rect.width, rect.height));
+            }}
+            onPointerUp={event => {
+                pointersRef.current.delete(event.pointerId);
+                startsRef.current.delete(event.pointerId);
+                if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+            onPointerCancel={event => {
+                pointersRef.current.delete(event.pointerId);
+                startsRef.current.delete(event.pointerId);
+                if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+            onClickCapture={event => {
+                if (draggedRef.current) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    draggedRef.current = false;
+                }
+            }}
+        >
+            <div className="absolute inset-0 origin-top-left" style={{
+                transform: 'translate(' + view.x + 'px, ' + view.y + 'px) scale(' + view.zoom + ')',
+            }}>
+                <Image src="/images/cash-change-plan.avif" alt="Plano de cajas" fill priority unoptimized
+                    sizes="(max-width: 1200px) calc(100vw - 1rem), 1136px"
+                    className="select-none object-cover opacity-90"
+                />
+                {positioned.map(({ source, key }) => {
+                    const item = PURCHASE_BOX_PLAN[key];
+                    const isSelected = selectedBoxIds.includes(source.id);
+                    const isAlreadyUsed = isSelected && source.id !== replacingSourceId;
+                    return (
+                        <div key={source.id + '-asset'}
+                            aria-hidden
+                            className={cn(
+                                'pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-200',
+                                isAlreadyUsed && replacingSourceId ? 'opacity-25' : 'opacity-100',
+                            )}
+                            style={{ left: item.x + '%', top: item.y + '%', width: item.width + '%' }}
+                        >
+                            <Image src={item.image} alt="" width={item.imageWidth} height={item.imageHeight}
+                                unoptimized className="h-auto w-full select-none object-contain" />
+                            <span data-element="purchase-box-plan-label"
+                                className={cn(
+                                    'absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white shadow-sm',
+                                    key === 'inicial' ? 'bottom-full mb-1' : 'top-full mt-1',
+                                )}
+                            >{item.label}</span>
+                        </div>
+                    );
+                })}
+                {positioned.map(({ source, key }) => {
+                    const item = PURCHASE_BOX_PLAN[key];
+                    const isAlreadyUsed = selectedBoxIds.includes(source.id) && source.id !== replacingSourceId;
+                    return (
+                        <button key={source.id} type="button" data-plan-box={key}
+                            aria-label={isAlreadyUsed ? source.shortLabel + ' ya añadida' : 'Seleccionar ' + source.shortLabel}
+                            aria-pressed={selectedBoxIds.includes(source.id)}
+                            disabled={isAlreadyUsed}
+                            onClick={() => onSelect(source.id)}
+                            className="absolute z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-xl border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed sm:h-20 sm:w-24"
+                            style={{ left: item.x + '%', top: item.y + '%' }}
+                        />
+                    );
+                })}
+            </div>
+        </div>
+    );
 }
 
 /**
@@ -115,6 +331,7 @@ function BoxCard({
     showAmount = true,
     showSelectionRing = false,
     tone = 'dark',
+    actionLabel,
 }: {
     source: PaymentSourceOption;
     amount: number;
@@ -123,6 +340,7 @@ function BoxCard({
     showAmount?: boolean;
     showSelectionRing?: boolean;
     tone?: 'dark' | 'light';
+    actionLabel?: string;
 }) {
     const hasAmount = amount > 0.005;
     const isInitial = `${source.name} ${source.shortLabel}`.toLowerCase().includes('inicial');
@@ -132,7 +350,7 @@ function BoxCard({
             data-design-exception="native-business-button:seleccion-de-caja-compra"
             onClick={onClick}
             aria-pressed={selected}
-            aria-label={`${showAmount ? 'Desglosar' : 'Seleccionar'} ${source.shortLabel}`}
+            aria-label={actionLabel ?? `${showAmount ? 'Desglosar' : 'Seleccionar'} ${source.shortLabel}`}
             className={cn(
                 'flex min-h-ds-tactil min-w-0 flex-col items-center justify-start gap-0.5 bg-transparent px-0.5 py-1 transition-transform hover:scale-105',
                 tone === 'light' ? 'text-ds-texto-fuerte' : 'text-white'
@@ -183,6 +401,9 @@ export function PurchaseMultiSourceForm({
     const [internalDate] = useState(nowStr);
     const selectedDate = selectedDateProp ?? internalDate;
     const [sources, setSources] = useState<SourceEntry[]>([]);
+    const [selectedBoxIds, setSelectedBoxIds] = useState<string[]>([]);
+    const [boxPickerOpen, setBoxPickerOpen] = useState(false);
+    const [boxPickerReplaceId, setBoxPickerReplaceId] = useState<string | null>(null);
     const [breakdownEditorSourceId, setBreakdownEditorSourceId] = useState<string | null>(null);
     const [breakdownDraft, setBreakdownDraft] = useState<Record<number, number>>({});
     const [changeDestinationBoxId, setChangeDestinationBoxId] = useState<string | null>(null);
@@ -269,7 +490,7 @@ export function PurchaseMultiSourceForm({
     };
 
     const buildSourcesForPayload = (): SourceEntry[] =>
-        paymentSources
+        paymentSources.filter(src => selectedBoxIds.includes(src.id))
             .map(src => {
                 const entry = getSourceEntry(src.id);
                 const amount = Object.keys(entry.breakdown).length > 0 ? calculateTotal(entry.breakdown) : entry.amount;
@@ -299,6 +520,34 @@ export function PurchaseMultiSourceForm({
         }
     };
 
+    const openBoxPicker = (replacingSourceId: string | null = null) => {
+        setBoxPickerReplaceId(replacingSourceId);
+        setBoxPickerOpen(true);
+    };
+
+    const chooseBox = (chosenId: string) => {
+        const isAlreadyUsedElsewhere = selectedBoxIds.includes(chosenId) && chosenId !== boxPickerReplaceId;
+        if (isAlreadyUsedElsewhere) return;
+        if (boxPickerReplaceId && chosenId !== boxPickerReplaceId) {
+            setSelectedBoxIds(prev => prev.map(id => id === boxPickerReplaceId ? chosenId : id));
+            // Los billetes de una caja no se asignan silenciosamente a otra.
+            setSources(prev => prev.filter(entry => entry.sourceId !== boxPickerReplaceId));
+            setChangeBreakdown({});
+            setChangeDestinationBoxId(null);
+        } else if (!boxPickerReplaceId) {
+            setSelectedBoxIds(prev => prev.includes(chosenId) ? prev : [...prev, chosenId]);
+        }
+        setBoxPickerOpen(false);
+        setBoxPickerReplaceId(null);
+    };
+
+    const removeBox = (sourceId: string) => {
+        setSelectedBoxIds(prev => prev.filter(id => id !== sourceId));
+        setSources(prev => prev.filter(entry => entry.sourceId !== sourceId));
+        setChangeBreakdown({});
+        setChangeDestinationBoxId(null);
+    };
+
     const changeDestinationLabel = effectiveChangeDestinationId
         ? paymentSources.find(s => s.id === effectiveChangeDestinationId)?.shortLabel ?? 'Caja'
         : null;
@@ -306,6 +555,35 @@ export function PurchaseMultiSourceForm({
     return (
         <div className={cn('relative flex h-full flex-col overflow-hidden bg-transparent', !embedded && 'rounded-2xl')}>
             <QuickCashTools calculator breakdown />
+
+            {boxPickerOpen ? (
+                <Modal
+                    open
+                    onClose={() => setBoxPickerOpen(false)}
+                    variant="work"
+                    layer="derived"
+                    parentInstance={parentInstance}
+                    instance="purchase-box-picker"
+                    usageId="purchase-box-picker"
+                    usageLabel="Selección de caja para compra"
+                    title="Seleccionar caja"
+                    scheme="dark"
+                    scrollContent={false}
+                    fullBleedBody
+                >
+                    <div className="flex h-full min-h-0 w-full flex-col justify-center gap-2 px-ds-2 pb-ds-2">
+                        <PurchaseBoxPlanPicker
+                            paymentSources={paymentSources}
+                            selectedBoxIds={selectedBoxIds}
+                            replacingSourceId={boxPickerReplaceId}
+                            onSelect={chooseBox}
+                        />
+                        <p className="m-0 text-center text-[10px] leading-[14px] text-zinc-400">
+                            Toca una caja para seleccionarla. Puedes ampliar el plano con dos dedos.
+                        </p>
+                    </div>
+                </Modal>
+            ) : null}
 
             {breakdownEditorSource ? (
                 <Modal
@@ -452,16 +730,48 @@ export function PurchaseMultiSourceForm({
                 </div>
 
                 <PurchaseFieldRow title="Caja" compactLabel>
-                    <div className="grid w-full grid-cols-5 gap-1">
-                        {paymentSources.map(src => (
-                            <BoxCard
-                                key={src.id}
-                                source={src}
-                                amount={getDisplayAmount(src)}
-                                selected={getDisplayAmount(src) > 0.005}
-                                onClick={() => openBreakdown(src.id)}
-                            />
-                        ))}
+                    <div data-element="purchase-box-action" className="flex w-full flex-col items-center gap-2">
+                        {selectedBoxIds.length > 0 ? (
+                            <div className="flex w-full flex-wrap items-start justify-center gap-x-4 gap-y-2">
+                                {selectedBoxIds.map(sourceId => {
+                                    const source = paymentSources.find(src => src.id === sourceId);
+                                    if (!source) return null;
+                                    const amount = getDisplayAmount(source);
+                                    return (
+                                        <div key={source.id} className="relative flex flex-col items-center gap-1">
+                                            <BoxCard
+                                                source={source}
+                                                amount={amount}
+                                                selected={true}
+                                                onClick={() => openBoxPicker(source.id)}
+                                                actionLabel={'Cambiar ' + source.shortLabel}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="primary"
+                                                instance={'purchase-add-amount-' + source.id}
+                                                onClick={() => openBreakdown(source.id)}
+                                            >
+                                                Añadir cantidad
+                                            </Button>
+                                            <button type="button"
+                                                aria-label={'Quitar ' + source.shortLabel}
+                                                onClick={() => removeBox(source.id)}
+                                                className="absolute -right-3 top-0 flex h-6 w-6 items-center justify-center rounded-full border border-white/50 text-sm text-white/85"
+                                            >×</button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : null}
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="purchase-add-box"
+                            onClick={() => openBoxPicker()}
+                        >
+                            Añadir caja
+                        </Button>
                     </div>
                 </PurchaseFieldRow>
 
