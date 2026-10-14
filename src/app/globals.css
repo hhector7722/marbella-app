@@ -6585,46 +6585,142 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
 
 
 @media (min-width: 1024px) {
-  /* Los widgets ahora son estrechos (2 columnas): apilar navegación de Ventas. */
+  /*
+   * Ventas y Último cierre se reducen de los antiguos 3×2 a 2×2.
+   * Mantienen la misma composición interior, con escala de tipografía,
+   * iconos, márgenes y espacios cercana a dos tercios.
+   */
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    display: flex;
+    flex-wrap: nowrap;
     align-items: center;
-    column-gap: var(--espacio-1);
-    row-gap: 0;
-  }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
-  > [data-element='slot'][data-instance='dashboard-ventas']
-  [data-element='header'] > :first-child {
-    justify-self: start;
+    justify-content: space-between;
+    gap: 2px;
+    min-height: 0;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] > :nth-child(2) {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-self: center;
-    width: 100%;
     min-width: 0;
+    flex: 1 1 auto;
+    width: auto;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] > :first-child,
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] > :last-child {
-    grid-column: 2;
-    grid-row: 1;
-    justify-self: end;
+    flex: 0 0 auto;
+    padding: 2px 4px;
+    font-size: 7px;
+    line-height: 1.15;
   }
-  /* Las cifras de Último cierre mantienen dos/tres columnas internas, sin desbordar. */
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] button[aria-label='Día anterior'],
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] button[aria-label='Día siguiente'] {
+    min-width: 19px;
+    padding: 0;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] button svg {
+    width: 14px;
+    height: 14px;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] button span {
+    font-size: 8px;
+    line-height: 1.15;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] .inline-flex {
+    gap: 2px;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  > [data-element='body'] > [data-component='Surface'][data-instance='dashboard-ventas'] {
+    gap: 3px;
+    padding: 4px 3px;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='metrics'] {
+    gap: 2px;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='metrics'] svg {
+    max-height: 20px;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='kpis'] {
+    gap: 3px;
+    padding: 3px 4px;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-component='KpiStat'] [data-element='value'] {
+    font-size: clamp(10px, 1vw, 14px);
+    height: auto;
+    min-height: 0;
+    line-height: 1.1;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-component='KpiStat'] [data-element='label'] {
+    font-size: 8px;
+    line-height: 1.1;
+    margin-top: 2px;
+  }
+
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='header'] {
+    gap: 3px;
+    padding: 4px 5px 0;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='header'] > div {
+    gap: 2px 4px;
+    font-size: 7px;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='metrics'] {
+    padding: 3px 5px 6px;
+  }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='master-ultimo-cierre']
   [data-element='primary-kpis'] span.font-bold {
-    font-size: clamp(0.75rem, 1.2vw, 1.1rem);
+    font-size: clamp(10px, 1vw, 14px);
+    line-height: 1.1;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='master-ultimo-cierre']
   [data-element='secondary-kpis'] span.font-bold {
-    font-size: clamp(0.625rem, 0.95vw, 0.875rem);
+    font-size: clamp(9px, 0.85vw, 11px);
+    line-height: 1.1;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='primary-kpis'] span:not(.font-bold) {
+    font-size: 8px;
+    margin-top: 2px;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='secondary-kpis'] span:not(.font-bold) {
+    font-size: 7px;
+    margin-top: 2px;
   }
 }
