@@ -6597,8 +6597,9 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
-    gap: 2px;
-    min-height: 0;
+    gap: 3px;
+    min-height: 26px;
+    width: 100%;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
@@ -6614,9 +6615,11 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] > :last-child {
     flex: 0 0 auto;
-    padding: 2px 4px;
-    font-size: 7px;
+    padding: 3px 4px;
+    font-size: clamp(10px, 0.85vw, 12px);
+    font-weight: 600;
     line-height: 1.15;
+    white-space: nowrap;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
@@ -6624,20 +6627,25 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] button[aria-label='Día siguiente'] {
-    min-width: 19px;
-    padding: 0;
+    min-width: 23px;
+    padding: 1px 0;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] button svg {
-    width: 14px;
-    height: 14px;
+    width: 17px;
+    height: 17px;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] button span {
-    font-size: 8px;
+    font-size: clamp(10px, 0.8vw, 11px);
     line-height: 1.15;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] button span.text-zinc-400 {
+    font-size: 9px;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
@@ -6646,14 +6654,21 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] > :nth-child(2) button:not([aria-label]) {
+    padding-inline: 1px;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  > [data-element='slot'][data-instance='dashboard-ventas']
   > [data-element='body'] > [data-component='Surface'][data-instance='dashboard-ventas'] {
+    justify-content: flex-start;
     gap: 3px;
-    padding: 4px 3px;
+    padding: 2px 4px 4px;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='metrics'] {
     gap: 2px;
+    margin-block: auto;
   }
   [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
   > [data-element='slot'][data-instance='dashboard-ventas']
