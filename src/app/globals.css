@@ -6751,3 +6751,140 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     margin-top: 2px;
   }
 }
+
+/* Ajustes finos Master escritorio: accesos legibles y widgets compactos (14-10-2026). */
+@media (min-width: 1024px) {
+  /* Ventas: acercar los botones de acceso a los lados del cristal. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] {
+    margin-inline: -3px;
+    width: calc(100% + 6px);
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] > :first-child {
+    margin-right: auto;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='header'] > :last-child {
+    margin-left: auto;
+  }
+  /* Dejar mayor separación bajo la curva antes de Ventas/Venta Neta/Ticket Medio. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas']
+  [data-element='kpis'] {
+    margin-top: clamp(9px, 1.4vh, 15px);
+  }
+
+  /* Último cierre: la línea de fecha, tiempo y tickets va debajo del título. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='header'] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    row-gap: 3px;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='header'] > a {
+    grid-row: 1;
+    justify-self: start;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='header'] > div {
+    grid-row: 2;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    padding-top: 5px;
+    line-height: 1.15;
+  }
+
+  /* El widget Asistencia 1x1 debe medir lo mismo que un squircle. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] {
+    container-type: size;
+    --home-icon-size: min(100cqi, calc(100cqb - var(--home-shortcut-label-band)));
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] > [data-element='body'] {
+    inset: auto;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--home-icon-size);
+    max-width: var(--home-icon-size);
+    height: var(--home-icon-size);
+    max-height: var(--home-icon-size);
+    overflow: hidden;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] {
+    width: 100%;
+    min-width: 0;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .truncate {
+    min-width: 0;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-gradient-to-b button {
+    padding: 1px 2px;
+    min-height: 0;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-gradient-to-b span {
+    font-size: 7px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-white .m-auto {
+    margin-block: auto;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-white .m-auto > button {
+    gap: 1px;
+    padding: 1px 2px;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-white .m-auto > button > span {
+    font-size: 6px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-white .m-auto > button > span:last-child {
+    flex-shrink: 0;
+    gap: 0;
+    font-size: 5.5px;
+    letter-spacing: -0.035em;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-component='EmptyState'] {
+    font-size: 7px;
+  }
+
+  /*
+   * Accesos: reservar alto para dos líneas y dejar que los nombres enteros
+   * puedan partirse en lugar de quedar truncados por line-clamp.
+   */
+  [data-component='HomeScreen'][data-layout='master'] {
+    --home-shortcut-label-band: calc(var(--espacio-1) + 2 * 10px * 1.15);
+  }
+  [data-component='HomeScreen'][data-layout='master'] [data-component='DashboardShortcut'][data-variant='icon-card-text-outside']
+  [data-element='text'] {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: initial;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    padding-inline: 0;
+    font-size: clamp(8px, 0.75vw, 10px);
+    line-height: 1.15;
+    text-align: center;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'] > [data-element='name'] {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: initial;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    font-size: clamp(8px, 0.75vw, 10px);
+    line-height: 1.15;
+  }
+  /* El título del widget Asistencia continúa oculto: la franja roja es su cabecera. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] > [data-element='name'] {
+    display: none;
+  }
+}
