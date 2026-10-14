@@ -6517,25 +6517,30 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     grid-auto-rows: unset;
   }
 
+  /*
+   * Ventas y Último cierre: 2 columnas × 2 filas. El calendario ocupa
+   * 4 columnas × 4 filas justo debajo; no puede compartir las filas 1–2
+   * con los dos widgets anteriores. Los accesos rellenan la mitad derecha.
+   */
   [data-component='HomeScreen'][data-layout='ops-admin'] {
     grid-template-areas:
-      'ventas ventas cierre cierre horarios horarios horarios horarios'
-      'ventas ventas cierre cierre horarios horarios horarios horarios'
-      'cinicial plant mobra stock horarios horarios horarios horarios'
-      'recetas albaranes asis cajascambio horarios horarios horarios horarios'
-      'ingredientes acarta apedidos aconsumo acambio acierre areservas apropinas'
-      'aweb arent ainfo acompra ahorarios mas . .';
+      'ventas ventas cierre cierre cinicial plant mobra stock'
+      'ventas ventas cierre cierre recetas albaranes asis cajascambio'
+      'horarios horarios horarios horarios ingredientes acarta apedidos aconsumo'
+      'horarios horarios horarios horarios acambio acierre areservas apropinas'
+      'horarios horarios horarios horarios aweb arent ainfo acompra'
+      'horarios horarios horarios horarios ahorarios mas . .';
   }
 
   [data-component='HomeScreen'][data-layout='master'],
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-areas:
-      'ventas ventas ultcierre ultcierre horario horario horario horario'
-      'ventas ventas ultcierre ultcierre horario horario horario horario'
-      'asis asis caja ingred horario horario horario horario'
-      'reservas recetas albaran cajascambio horario horario horario horario'
-      'cambio plantilla mstock mweb mcarta mconsumo mmobra mcompra'
-      'mcierre mpropinas muso mrent minfo maltas mvitrina otros';
+      'ventas ventas ultcierre ultcierre asis asis caja ingred'
+      'ventas ventas ultcierre ultcierre reservas recetas albaran cajascambio'
+      'horario horario horario horario cambio plantilla mstock mweb'
+      'horario horario horario horario mcarta mconsumo mmobra mcompra'
+      'horario horario horario horario mcierre mpropinas muso mrent'
+      'horario horario horario horario minfo maltas mvitrina otros';
   }
 
   [data-component='HomeScreen'] > [data-element='slot'].home-desktop-extra {
