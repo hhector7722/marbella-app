@@ -11,6 +11,7 @@ import {
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
+  reconcileVerifiedTotalWeightUnitPrice,
   reconcileUnadjustedNetUnitPrice,
   verifiedAmountColumn,
   verifiedTotalWeightColumn,
@@ -270,7 +271,8 @@ async function supersedeK5ProposalWithMapping(params: {
   const verifiedTotalWeightMath = Boolean(
     sourceLine.success
     && sameExactDecimal(verifiedTotalWeightColumn(sourceLine.data), lineQuantity)
-    && sameExactDecimal(sourceCheck?.unitPrice, observedUnitPrice)
+    && (sameExactDecimal(sourceCheck?.unitPrice, observedUnitPrice)
+      || sameExactDecimal(reconcileVerifiedTotalWeightUnitPrice(sourceLine.data), observedUnitPrice))
     && sameExactDecimal(sourceCheck?.lineTotal, lineTotal)
     && text(params.lineBillingUnit).toLowerCase() === 'kg'
     && text(params.lineContentUnit).toLowerCase() === 'kg'

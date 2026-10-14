@@ -273,6 +273,16 @@ export function verifiedTotalWeightColumn(line: CanonicalDocument['lines'][numbe
     && near(weight * price, total) ? weight : null
 }
 
+/** Precio efectivo guardado cuando el peso total y el precio impreso producen
+ * un importe redondeado al céntimo. La evidencia del peso y del importe debe
+ * haber superado primero la comprobación estricta anterior. */
+export function reconcileVerifiedTotalWeightUnitPrice(line: CanonicalDocument['lines'][number]): number | null {
+  const weight = verifiedTotalWeightColumn(line)
+  const total = parseObservedDecimal(line.line_total_raw)
+  if (weight == null || total == null) return null
+  return Number((total / weight).toFixed(4))
+}
+
 /** El impuesto de envases Ibee puede llegar en la columna OCR de descuento.
  * Solo se descarta esa interpretación si el importe impreso es bruto y cuadra. */
 export function isVerifiedIbeeCharge(line: CanonicalDocument['lines'][number]): boolean {

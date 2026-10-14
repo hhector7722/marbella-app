@@ -5,6 +5,7 @@ import {
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
+  reconcileVerifiedTotalWeightUnitPrice,
   reconcileUnadjustedNetUnitPrice,
   validateObservedDocument,
   validateObservedLine,
@@ -263,6 +264,12 @@ test('Videla: varios bultos con peso total impreso solo se aceptan si el importe
     content_per_unit_raw: '15,60', content_unit_raw: 'KG',
     unit_price_raw: '9,75', line_total_raw: '152,10' })
   assert.equal(verifiedTotalWeightColumn(evidence), 15.6)
+  assert.equal(reconcileVerifiedTotalWeightUnitPrice(evidence), 9.75)
+  const rounded = { ...evidence, billing_unit_raw: 'CJ', content_per_unit_raw: '7,50',
+    unit_price_raw: '5,95', line_total_raw: '44,63' }
+  assert.equal(verifiedTotalWeightColumn(rounded), 7.5)
+  assert.equal(reconcileVerifiedTotalWeightUnitPrice(rounded), 5.9507)
+  assert.equal(reconcileVerifiedTotalWeightUnitPrice({ ...rounded, line_total_raw: '45,63' }), null)
   assert.equal(verifiedTotalWeightColumn({ ...evidence, content_per_unit_raw: '5,20' }), null)
   assert.equal(verifiedTotalWeightColumn({ ...evidence, line_total_raw: '151,10' }), null)
   assert.equal(verifiedTotalWeightColumn({ ...evidence, discount_raw: '1' }), null)
