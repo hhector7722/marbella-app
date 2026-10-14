@@ -631,6 +631,26 @@ describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Ot
         assert.match(desktop, /\.home-desktop-extra \{\s*display: flex;/);
     });
 
+    it('Master escritorio: asistencia 1×1, acceso a Asistencia y Horarios en lugar de Otros', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const master = readFileSync(join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'), 'utf8');
+        const desktop = css.slice(css.indexOf('Home Admin/Master escritorio: widgets 2 + 2 + 4 columnas'));
+        const areas = [...desktop.matchAll(/grid-template-areas:\s*([^;]+);/g)].slice(0, 2);
+        assert.equal(areas.length, 2);
+        const masterRows = [...areas[1]![1]!.matchAll(/'([^']+)'/g)]
+            .map(match => match[1]!.trim().split(/\s+/));
+        assert.equal(masterRows.length, 6);
+        assert.ok(masterRows.every(row => row.length === 8));
+        assert.deepEqual(masterRows[0]!.slice(4), ['asis', 'asisaccess', 'caja', 'ingred']);
+        assert.equal(masterRows[5]![7], 'horariosaccess');
+        assert.equal(masterRows.flat().filter(area => area === 'asis').length, 1);
+        assert.equal(masterRows.flat().filter(area => area === 'otros').length, 0);
+        assert.match(master, /instance="master-desktop-asistencia"[\s\S]*?label="Asistencia"[\s\S]*?router\.push\('\/staff\/history'\)/);
+        assert.match(master, /instance="master-desktop-horarios"[\s\S]*?label="Horarios"[\s\S]*?router\.push\('\/horario'\)/);
+        assert.match(desktop, /\[data-instance='master-otros'\] \{\s*display: none;/);
+        assert.match(css, /\.home-desktop-extra \{\s*display: none;/, 'los accesos solo se muestran en escritorio');
+    });
+
     it('escala proporcionalmente textos y conserva composición de los widgets 2×2', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         const scaled = css.slice(css.indexOf('Los widgets ahora son estrechos') > 0
