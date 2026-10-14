@@ -758,7 +758,10 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 onClose={() => setIsProductModalOpen(false)}
                 onBack={() => {
                     setIsProductModalOpen(false);
-                    setIsMoreFunctionsModalOpen(true);
+                    // En escritorio los accesos están en la página: no reabrir Otros.
+                    if (window.matchMedia('(max-width: 1023px)').matches) {
+                        setIsMoreFunctionsModalOpen(true);
+                    }
                 }}
                 usagePrefix="master"
             />
@@ -766,7 +769,11 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             <InfoMenuModals
                 open={isInfoModalOpen}
                 onClose={() => setIsInfoModalOpen(false)}
-                onBack={() => setIsMoreFunctionsModalOpen(true)}
+                onBack={() => {
+                    if (window.matchMedia('(max-width: 1023px)').matches) {
+                        setIsMoreFunctionsModalOpen(true);
+                    }
+                }}
                 usagePrefix="master"
             />
 
