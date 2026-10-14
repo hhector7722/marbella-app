@@ -6952,3 +6952,20 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     --shell-sidebar-width: var(--desktop-nav-width);
   }
 }
+
+/* Master: mismo cuadrado que los iconos, incluso cuando el slot tiene nombre.
+ * La variante [data-named] debe superar la antigua regla que lo expandía a 100%.
+ */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'][data-named='true'] > [data-element='body'] {
+    inset: auto;
+    top: 0;
+    left: 50%;
+    bottom: auto;
+    transform: translateX(-50%);
+    width: var(--home-icon-size);
+    max-width: var(--home-icon-size);
+    height: var(--home-icon-size);
+    max-height: var(--home-icon-size);
+  }
+}
