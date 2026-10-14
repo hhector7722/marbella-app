@@ -11,6 +11,7 @@ import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionMod
 import { useVisualViewportBottomPin } from '@/hooks/useVisualViewportBottomPin';
 import { useTabBarOverSurface } from '@/hooks/useTabBarOverSurface';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
+import { useDesktopSidebar } from '@/components/chrome/DesktopSidebarProvider';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
 type NavAction = 'scheduleModal' | 'supplierModal' | 'home';
@@ -38,6 +39,7 @@ export default function StaffBottomNav() {
   const { identity } = useMasterViewAs();
   const navRef = useRef<HTMLElement>(null);
   const { tabMode } = useChromeScroll();
+  const { close: closeDesktopSidebar } = useDesktopSidebar();
   const overSurface = useTabBarOverSurface(navRef);
   const hidden = tabMode === 'hidden';
 
@@ -129,6 +131,7 @@ export default function StaffBottomNav() {
   return (
     <>
       <nav
+        id="marbella-desktop-sidebar"
         ref={navRef}
         data-component="TabBar"
         data-mode={tabMode}
@@ -153,6 +156,7 @@ export default function StaffBottomNav() {
               data-active={active ? 'true' : undefined}
               aria-current={active ? 'page' : undefined}
               onClick={(e) => {
+                closeDesktopSidebar();
                 if (item.action === 'scheduleModal') {
                   e.preventDefault();
                   trackUsageTabSwitch(effectivePathname, scheduleHref, item.name);
