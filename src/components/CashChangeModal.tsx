@@ -49,7 +49,7 @@ const CASH_CHANGE_PLAN_POSITIONS = {
     tpv1: { x: 58.5, y: 36.5 },
     tpv2: { x: 58.5, y: 71.7 },
     cambio1: { x: 10.4, y: 24.1 },
-    cambio2: { x: 34.5, y: 15.4 },
+    cambio2: { x: 33, y: 15.4 },
     inicial: { x: 21, y: 15.4 },
 } satisfies Record<string, PlanPoint>;
 
@@ -1072,7 +1072,7 @@ export const CashChangeModal = ({
                                                 data-element="cash-change-plan-label"
                                                 className={cn(
                                                     'absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white shadow-sm',
-                                                    key === 'inicial' ? 'bottom-full mb-1' : key === 'cambio1' ? 'top-full -mt-0.5' : 'top-full mt-1',
+                                                    key === 'inicial' ? 'bottom-full mb-1' : 'top-full mt-1',
                                                 )}
                                             >
                                                 {cashChangePlanDisplayLabel(option)}
