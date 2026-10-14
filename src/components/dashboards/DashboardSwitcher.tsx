@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
@@ -14,6 +14,7 @@ const DASHBOARD_DOTS_BOTTOM =
 import StaffDashboardView from './StaffDashboardView';
 import AdminDashboardView from './AdminDashboardView';
 import MasterDashboardView from './MasterDashboardView';
+import DashboardSplitWorkspace from './DashboardSplitWorkspace';
 
 export type DashboardView = 'admin' | 'master' | 'staff';
 
@@ -83,6 +84,7 @@ export default function DashboardSwitcher({
     initialData,
 }: DashboardSwitcherProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const { identity } = useMasterViewAs();
 
     const resolvedRole = identity?.isViewingAs ? identity.effectiveRole : userRole;
@@ -113,6 +115,9 @@ export default function DashboardSwitcher({
     const wheelIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const wheelCooldownUntilRef = useRef(0);
     const [dotsPortalMounted, setDotsPortalMounted] = useState(false);
+    const [isEmbeddedFrame, setIsEmbeddedFrame] = useState(false);
+    const [splitOpen, setSplitOpen] = useState(false);
+    const closeSplit = useCallback(() => setSplitOpen(false), []);
     // La pista solo puede animarse después de una interacción explícita. Así el
     // margen inicial de cada ruta se pinta de forma estática durante la hidratación.
     const [canAnimateTrack, setCanAnimateTrack] = useState(false);
@@ -126,6 +131,9 @@ export default function DashboardSwitcher({
     }, [initialView]);
 
     useEffect(() => {
+        // En cada mitad de la pantalla dividida ya existe una app completa:
+        // no mostrar otro botón que pueda abrir subdivisiones recursivas.
+        setIsEmbeddedFrame(window.self !== window.top);
         setDotsPortalMounted(true);
         return () => {
             if (dragMountTimerRef.current) {
@@ -466,16 +474,24 @@ export default function DashboardSwitcher({
                         ))}
                     </div>
 
-                    {/* Escritorio: portal a body (evita clip por overflow) + encima del bottom nav */}
-                    {dotsPortalMounted &&
-                        createPortal(
-                            <div
-                                className="fixed left-0 right-0 z-[96] hidden md:flex justify-center pointer-events-none print:hidden"
-                                style={{ bottom: DASHBOARD_DOTS_BOTTOM }}
-                                role="tablist"
-                                aria-label="Selector de panel del dashboard"
-                            >
-                                <div className="flex justify-center gap-1 pointer-events-auto">
+                </>
+            )}
+
+            {/* Los puntos conservan su selector; el botón solo aparece en escritorio.
+                El portal evita recortes por los contenedores de los dashboards. */}
+            {dotsPortalMounted && !isEmbeddedFrame &&
+                createPortal(
+                    <>
+                        <div
+                            data-component="DashboardSplitControls"
+                            className="dashboard-split-controls fixed left-0 right-0 z-[96] hidden md:flex flex-col items-center justify-center pointer-events-none print:hidden"
+                        >
+                            {isManager && (
+                                <div
+                                    className="flex justify-center gap-1 pointer-events-auto"
+                                    role="tablist"
+                                    aria-label="Selector de panel del dashboard"
+                                >
                                     {panelDots.map((panel) => (
                                         <button
                                             key={panel}
@@ -496,11 +512,21 @@ export default function DashboardSwitcher({
                                         </button>
                                     ))}
                                 </div>
-                            </div>,
-                            document.body
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setSplitOpen(true)}
+                                className="dashboard-split-button pointer-events-auto hidden lg:inline-flex min-h-8 items-center justify-center rounded-lg border border-white bg-transparent px-4 py-1 text-xs font-semibold text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                            >
+                                Dividir pantalla
+                            </button>
+                        </div>
+                        {splitOpen && (
+                            <DashboardSplitWorkspace initialPath={pathname} onClose={closeSplit} />
                         )}
-                </>
-            )}
+                    </>,
+                    document.body
+                )}
         </div>
     );
 }
