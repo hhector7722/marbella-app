@@ -174,6 +174,8 @@ export type ModalProps = {
     zIndexClass?: string;
     /** Clic en backdrop cierra. Default true. */
     closeOnBackdrop?: boolean;
+    /** X, Escape y backdrop: por defecto cierran el flujo; 'self' solo este modal. */
+    dismissScope?: 'chain' | 'self';
 };
 
 function headerActionClassName(
@@ -424,6 +426,7 @@ export function Modal({
     disableUsageTracking = false,
     zIndexClass,
     closeOnBackdrop = true,
+    dismissScope = 'chain',
 }: ModalProps) {
     const titleId = useId();
     const surfaceId = useId();
@@ -470,9 +473,10 @@ export function Modal({
     };
     const requestDismiss = () => {
         setRestoredOpen(false);
-        if (!participatesInHistory || !requestModalDismiss(surfaceId)) {
-            onCloseRef.current();
-        }
+        const closedByHistory = participatesInHistory && (dismissScope === 'self'
+            ? requestModalClose(surfaceId)
+            : requestModalDismiss(surfaceId));
+        if (!closedByHistory) onCloseRef.current();
     };
     const requestCloseRef = useRef(requestClose);
     const requestDismissRef = useRef(requestDismiss);
