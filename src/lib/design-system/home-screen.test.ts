@@ -642,6 +642,17 @@ describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Ot
         assert.match(scaled, /\[data-element='secondary-kpis'\] span\.font-bold \{\s*font-size: clamp\(9px, 0\.85vw, 11px\)/);
     });
 
+    it('sube y amplía solo la cabecera de Ventas en escritorio', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const widget = css.slice(css.indexOf('Ventas y Último cierre se reducen'));
+        assert.match(widget, /\[data-element='header'\] \{[\s\S]*?min-height: 26px/);
+        assert.match(widget, /\[data-element='header'\] > :last-child \{[\s\S]*?font-size: clamp\(10px, 0\.85vw, 12px\)/);
+        assert.match(widget, /\[data-element='header'\] button svg \{\s*width: 17px;\s*height: 17px;/);
+        assert.match(widget, /\[data-element='header'\] button span \{\s*font-size: clamp\(10px, 0\.8vw, 11px\)/);
+        assert.match(widget, /\[data-component='Surface'\]\[data-instance='dashboard-ventas'\] \{\s*justify-content: flex-start;[\s\S]*?padding: 2px 4px 4px;/);
+        assert.match(widget, /\[data-element='metrics'\] \{\s*gap: 2px;\s*margin-block: auto;/);
+    });
+
     it('genera accesos de escritorio desde los mismos catálogos del modal Otros', () => {
         const admin = readFileSync(join(SRC_ROOT, 'components/dashboards/AdminDashboardView.tsx'), 'utf8');
         const master = readFileSync(join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'), 'utf8');
