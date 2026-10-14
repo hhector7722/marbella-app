@@ -672,6 +672,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
     });
 
+    it('horario compacta únicamente semanas completas pasadas en Actividades y oculta chips incompletos', () => {
+        const horario = readFileSync(join(SRC_ROOT, 'app/horario/page.tsx'), 'utf8');
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(horario, /viewMode === 'actividades' && isBefore\(week\[6\]!, today\)/);
+        assert.match(horario, /data-past-activities-week=\{compactPastWeek \? 'true' : undefined\}/);
+        assert.match(horario, /const needed = \(child as HTMLElement\)\.getBoundingClientRect\(\)\.height/);
+        assert.match(horario, /hidden = compact && i >= visibleCount/);
+        assert.match(css, /\.month-cal-week\[data-past-activities-week='true'\] \{[\s\S]*?height: var\(--month-cal-cell-min-h\)/);
+    });
+
     it('calendarios mensuales de gestión usan el mismo cromo P3 dentro de PageScreen', () => {
         const calendars = [
             'app/dashboard/labor/page.tsx',
