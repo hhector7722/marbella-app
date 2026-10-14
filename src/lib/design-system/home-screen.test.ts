@@ -651,6 +651,28 @@ describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Ot
         assert.match(css, /\.home-desktop-extra \{\s*display: none;/, 'los accesos solo se muestran en escritorio');
     });
 
+    it('Master: Registros conserva el contenido interactivo de Asistencia pero hereda el mismo squircle y el mismo rótulo de los iconos', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const master = readFileSync(join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'), 'utf8');
+        const slot = readFileSync(join(SRC_ROOT, 'components/dashboards/HomeScreen.tsx'), 'utf8');
+        const attendance = readFileSync(join(SRC_ROOT, 'components/dashboards/MasterTodayAttendanceWidget.tsx'), 'utf8');
+        const iconCss = css.slice(css.indexOf('Icono vivo Registros (solo Master escritorio)'));
+        const masterTile = master.match(/<HomeScreenSlot[\s\S]*?instance="master-asistencia"[\s\S]*?<\/HomeScreenSlot>/)?.[0];
+        assert.ok(masterTile, 'la ficha de Asistencia sigue montada en el mismo hueco');
+        assert.match(masterTile, /desktopLabel="Registros"/, 'Registros solo en escritorio');
+        assert.match(masterTile, /label=\{attendanceExpanded \? undefined : 'Asistencia'\}/, 'móvil mantiene Asistencia');
+        assert.match(masterTile, /<MasterTodayAttendanceWidget/, 'conserva los fichajes y sus acciones');
+        assert.match(attendance, /<DaySummaryModal/, 'no reemplaza el widget por una imagen estática');
+        assert.match(slot, /desktopLabel\?: string/, 'el slot admite un rótulo adaptado');
+        assert.match(slot, /data-display="desktop"/);
+        assert.match(iconCss, /--shortcut-silhouette: url\("data:image\/svg\+xml/);
+        assert.match(iconCss, /rx='22' ry='22'/, 'usa exactamente la curva de los demás iconos');
+        assert.match(iconCss, /width: var\(--home-icon-size\);[\s\S]*?height: var\(--home-icon-size\)/);
+        assert.match(iconCss, /-webkit-mask-image: var\(--shortcut-silhouette\)/);
+        assert.match(iconCss, /\[data-display='mobile'\] \{\s*display: none;/);
+        assert.match(iconCss, /\[data-display='desktop'\] \{\s*display: block;/);
+    });
+
     it('escala proporcionalmente textos y conserva composición de los widgets 2×2', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         const scaled = css.slice(css.indexOf('Los widgets ahora son estrechos') > 0
