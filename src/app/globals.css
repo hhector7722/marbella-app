@@ -6888,3 +6888,67 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     display: none;
   }
 }
+
+/*
+ * Menú de navegación escritorio: oculto al cargar cualquier página.
+ * El botón de la cabecera abre/cierra el panel; solo cuando está abierto
+ * se reserva su ancho. Smartphone conserva intacta la barra inferior.
+ */
+.desktop-sidebar-toggle {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --desktop-nav-width: 5.5rem;
+    --shell-sidebar-width: 0px;
+  }
+
+  html[data-desktop-sidebar='open'] {
+    --shell-sidebar-width: var(--desktop-nav-width);
+  }
+
+  .marbella-fixed-topbar [data-element='desktop-menu-toggle'] {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radio-control);
+    cursor: pointer;
+  }
+
+  [data-component='TabBar'].marbella-fixed-bottombar {
+    width: var(--desktop-nav-width);
+    max-width: var(--desktop-nav-width);
+    visibility: hidden;
+    transform: translateX(-105%) !important;
+    -webkit-transform: translateX(-105%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: transform 180ms ease, opacity 180ms ease, visibility 180ms ease;
+  }
+
+  html[data-desktop-sidebar='open'] [data-component='TabBar'].marbella-fixed-bottombar {
+    visibility: visible;
+    transform: translateX(0) !important;
+    -webkit-transform: translateX(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --desktop-nav-width: 6.25rem;
+    --shell-sidebar-width: 0px;
+  }
+
+  html[data-desktop-sidebar='open'] {
+    --shell-sidebar-width: var(--desktop-nav-width);
+  }
+}
