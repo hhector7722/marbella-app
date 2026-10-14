@@ -625,7 +625,7 @@ describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Ot
             checkBox(rows, index === 0 ? 'horarios' : 'horario', 2, 0, 4, 4);
             assert.equal(rows.flat().length, 48);
         }
-        assert.match(desktop, /'mcierre mpropinas muso mrent'/);
+        assert.match(desktop, /'horario horario horario horario mcierre mpropinas muso mrent'/);
         assert.match(desktop, /'horarios horarios horarios horarios ahorarios mas \. \.'/);
         assert.match(css, /\.home-desktop-extra \{\s*display: none;/);
         assert.match(desktop, /\.home-desktop-extra \{\s*display: flex;/);
