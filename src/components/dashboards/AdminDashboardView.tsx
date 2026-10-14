@@ -17,7 +17,8 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { AlbaranesOptionsModal } from './AlbaranesOptionsModal';
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
-import { AdminMoreFunctionsModal } from '@/components/modals/AdminMoreFunctionsModal';
+import { AdminMoreFunctionsModal, ADMIN_MORE_FUNCTIONS_ITEMS } from '@/components/modals/AdminMoreFunctionsModal';
+import { DesktopMoreShortcuts } from '@/components/dashboards/DesktopMoreShortcuts';
 import { InfoMenuModals } from '@/components/modals/InfoMenuModals';
 import Link from 'next/link';
 import { StaffSelectionModal, type PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
@@ -725,6 +726,22 @@ const AdminDashboardView = ({
                     label="Ingredientes"
                     img="/icons/ingrediente.png"
                     onClick={() => router.push('/ingredients')}
+                />
+            }
+            desktopMoreShortcuts={
+                <DesktopMoreShortcuts
+                    namespace="admin"
+                    items={ADMIN_MORE_FUNCTIONS_ITEMS}
+                    onAction={(action) => {
+                        switch (action) {
+                            case 'pedidos': setIsSupplierModalOpen(true); break;
+                            case 'cambio': setCashModalMode('swap'); break;
+                            case 'cierre': setIsClosingModalOpen(true); break;
+                            case 'info': setIsInfoModalOpen(true); break;
+                            case 'compra': handleOpenCompra(); break;
+                            case 'web': window.open('https://marbella-web.vercel.app', '_blank', 'noopener,noreferrer'); break;
+                        }
+                    }}
                 />
             }
         />
