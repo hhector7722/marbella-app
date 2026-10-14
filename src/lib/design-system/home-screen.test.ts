@@ -593,7 +593,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
 });
 
 
-describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Otros', () => {
+describe('Dashboard Admin y Master escritorio: cuadrículas de ocho columnas y accesos de Otros', () => {
     it('mantiene móvil y distribuye escritorio en ocho columnas y seis pistas', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         const marker = css.indexOf('Home Admin/Master escritorio: widgets 2 + 2 + 4 columnas');
@@ -601,7 +601,7 @@ describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Ot
         const desktop = css.slice(marker);
         assert.match(desktop, /@media \(min-width: 1024px\)/);
         assert.match(desktop, /grid-template-rows: repeat\(6, minmax\(0, 1fr\)\)/);
-        // Las zonas no se solapan: widgets 2×2 arriba y calendario 4×4 debajo.
+        // Las zonas no se solapan: Admin 4×2 + 4×2 arriba, Horario 4×3; Master conserva 2×2 + 2×2 y Horario 4×4.
         const grids = [...desktop.matchAll(/grid-template-areas:\s*([^;]+);/g)].slice(0, 2);
         assert.equal(grids.length, 2, 'ambas plantillas de escritorio tienen grid definido');
         const getRows = (match: RegExpMatchArray) =>
@@ -620,13 +620,28 @@ describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Ot
             const rows = getRows(match);
             assert.equal(rows.length, 6);
             assert.ok(rows.every(row => row.length === 8));
-            checkBox(rows, 'ventas', 0, 0, 2, 2);
-            checkBox(rows, index === 0 ? 'cierre' : 'ultcierre', 0, 2, 2, 2);
-            checkBox(rows, index === 0 ? 'horarios' : 'horario', 2, 0, 4, 4);
+            if (index === 0) {
+                checkBox(rows, 'ventas', 0, 0, 2, 4);
+                checkBox(rows, 'cierre', 0, 4, 2, 4);
+                checkBox(rows, 'horarios', 2, 0, 3, 4);
+                assert.deepEqual(rows[5], ['acambio', 'acierre', 'areservas', 'apropinas', 'aweb', 'arent', 'ainfo', 'acompra']);
+                assert.equal(rows.flat().filter(area => !['ventas', 'cierre', 'horarios'].includes(area)).length, 20,
+                    'hay exactamente veinte accesos 1×1 en el esquema Admin');
+                assert.equal(new Set(rows.flat()).size, 23, 'cada acceso tiene una zona propia');
+                assert.ok(!rows.flat().includes('mas') && !rows.flat().includes('ahorarios'),
+                    'el dashboard no duplica Otros ni Horarios');
+            } else {
+                checkBox(rows, 'ventas', 0, 0, 2, 2);
+                checkBox(rows, 'ultcierre', 0, 2, 2, 2);
+                checkBox(rows, 'horario', 2, 0, 4, 4);
+            }
             assert.equal(rows.flat().length, 48);
         }
         assert.match(desktop, /'horario horario horario horario mcierre mpropinas muso mrent'/);
-        assert.match(desktop, /'horarios horarios horarios horarios ahorarios mas \. \.'/);
+        assert.match(desktop, /'horarios horarios horarios horarios ingredientes acarta apedidos aconsumo'/);
+        assert.match(desktop, /\[data-instance='admin-mas-funciones'\],[\s\S]*?\[data-instance='admin-extra-horarios'\] \{\s*display: none;/);
+        assert.match(desktop, /\[data-component='HomeScreen'\]\[data-layout='master'\]/,
+            'las reglas de tamaño reducido se limitan a Master');
         assert.match(css, /\.home-desktop-extra \{\s*display: none;/);
         assert.match(desktop, /\.home-desktop-extra \{\s*display: flex;/);
     });
