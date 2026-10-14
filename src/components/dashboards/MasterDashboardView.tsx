@@ -586,6 +586,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     size={attendanceExpanded ? 'tall' : 'tile'}
                     instance="master-asistencia"
                     label={attendanceExpanded ? undefined : 'Asistencia'}
+                    desktopLabel="Registros"
                 >
                     <MasterTodayAttendanceWidget
                         userRole={userRole}
