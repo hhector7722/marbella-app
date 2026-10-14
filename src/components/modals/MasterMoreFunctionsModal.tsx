@@ -32,7 +32,7 @@ type MoreFunctionsItem = {
     | { action: 'cierre' | 'web' | 'stock' | 'compra' | 'info' }
 );
 
-const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
+export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/suplier.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
@@ -64,8 +64,8 @@ export function MasterMoreFunctionsModal({
     const suppressClick = useRef(false);
 
     const pages: MoreFunctionsItem[][] = [];
-    for (let index = 0; index < MORE_FUNCTIONS_ITEMS.length; index += PAGE_SIZE) {
-        pages.push(MORE_FUNCTIONS_ITEMS.slice(index, index + PAGE_SIZE));
+    for (let index = 0; index < MASTER_MORE_FUNCTIONS_ITEMS.length; index += PAGE_SIZE) {
+        pages.push(MASTER_MORE_FUNCTIONS_ITEMS.slice(index, index + PAGE_SIZE));
     }
     const pageCount = pages.length;
     const activePage = Math.min(page, pageCount - 1);
