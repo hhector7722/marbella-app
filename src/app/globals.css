@@ -266,6 +266,12 @@
     0 1px 2px rgb(0 0 0 / 0.35);
 }
 
+/* Compra: el botón Añadir caja mantiene el sistema Button con relleno blanco explícito. */
+[data-element='purchase-box-action'] [data-component='Button'][data-instance='purchase-add-box']::before {
+  background-color: #ffffff;
+  background-image: none;
+}
+
 /* Cambio: «Añadir cantidad» conserva la receta de Calculadora rápida,
    pero compacta ligeramente el texto para compensar su etiqueta más larga. */
 [data-element='cash-change-add-action'] [data-component='Button'] {
