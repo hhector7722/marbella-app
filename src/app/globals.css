@@ -6922,7 +6922,7 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     cursor: pointer;
   }
 
-  [data-component='TabBar'].marbella-fixed-bottombar {
+  html:not([data-desktop-sidebar='open']) [data-component='TabBar'].marbella-fixed-bottombar {
     width: var(--desktop-nav-width);
     max-width: var(--desktop-nav-width);
     visibility: hidden;
