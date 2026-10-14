@@ -745,3 +745,40 @@ describe('Master escritorio: ajustes de Ventas, Último cierre, Asistencia y acc
         assert.match(css, /\[data-element='name'\] \{[\s\S]*?-webkit-line-clamp: unset;/);
     });
 });
+
+describe('Pantalla dividida en dashboards escritorio', () => {
+    it('los tres dashboards comparten el selector con botón Dividir pantalla bajo los puntos', () => {
+        const dashboard = readFileSync(join(SRC_ROOT, 'components/dashboards/DashboardSwitcher.tsx'), 'utf8');
+        for (const path of [
+            'app/master/dashboard/page.tsx',
+            'app/dashboard/page.tsx',
+            'app/staff/dashboard/page.tsx',
+        ]) {
+            const page = readFileSync(join(SRC_ROOT, path), 'utf8');
+            assert.match(page, /<DashboardSwitcher/, path + ' monta el selector común');
+        }
+        assert.match(dashboard, /data-component="DashboardSplitControls"/);
+        assert.match(dashboard, /Dividir pantalla/);
+        assert.match(dashboard, /dashboard-split-button[^"]*hidden lg:inline-flex/, 'solo escritorio');
+        assert.match(dashboard, /createPortal\(/, 'no se recorta por los contenedores del dashboard');
+        assert.match(dashboard, /DashboardSplitWorkspace initialPath=\{pathname\} onClose=\{closeSplit\}/);
+        assert.match(dashboard, /window\.self !== window\.top/, 'evita divisiones anidadas en cada mitad');
+        assert.match(dashboard, /dotsPortalMounted && !isEmbeddedFrame/);
+    });
+
+    it('cada mitad tiene su propio documento y navegación; salir restaura el dashboard sin perder la ruta', () => {
+        const split = readFileSync(join(SRC_ROOT, 'components/dashboards/DashboardSplitWorkspace.tsx'), 'utf8');
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(split, /data-component="DashboardSplitWorkspace"/);
+        assert.match(split, /grid-cols-2/);
+        assert.match(split, /title="La Marbella — pantalla izquierda"/);
+        assert.match(split, /title="La Marbella — pantalla derecha"/);
+        assert.equal((split.match(/src=\{initialPath\}/g) || []).length, 2, 'dos frames de la misma aplicación');
+        assert.match(split, /onClick=\{onClose\}/);
+        assert.match(split, /Unir pantalla/);
+        assert.match(split, /window\.matchMedia\('\(min-width: 1024px\)'\)/, 'se cierra si la vista deja de ser escritorio');
+        assert.match(css, /\.dashboard-split-controls \{\s*bottom: calc\(var\(--shell-bottom-inset\) \+ 0\.5rem\);/);
+        assert.match(css, /@media \(min-width: 1024px\) \{\s*\.dashboard-split-controls \{\s*bottom: 6px;/);
+        assert.match(css, /--home-desktop-indicator-reserve: calc\(var\(--tactil-minimo\) \+ var\(--espacio-8\) \+ var\(--espacio-4\)\)/);
+    });
+});
