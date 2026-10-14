@@ -13,6 +13,7 @@ import {
   reconcileRoundedDisplayedUnitPrice,
   reconcileUnadjustedNetUnitPrice,
   verifiedAmountColumn,
+  verifiedTotalWeightColumn,
 } from '@/lib/albaranes/pipeline/validate'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
@@ -266,6 +267,16 @@ async function supersedeK5ProposalWithMapping(params: {
       lineTotal
     )
   )
+  const verifiedTotalWeightMath = Boolean(
+    sourceLine.success
+    && sameExactDecimal(verifiedTotalWeightColumn(sourceLine.data), lineQuantity)
+    && sameExactDecimal(sourceCheck?.unitPrice, observedUnitPrice)
+    && sameExactDecimal(sourceCheck?.lineTotal, lineTotal)
+    && text(params.lineBillingUnit).toLowerCase() === 'kg'
+    && text(params.lineContentUnit).toLowerCase() === 'kg'
+    && sameExactDecimal(params.lineContentQty, 1)
+    && sameExactDecimal(params.conversionFactor, 1)
+  )
   const verifiedIbeeCharge = Boolean(
     sourceLine.success && isVerifiedIbeeCharge(sourceLine.data)
     && sourceCheck?.priceBasis === 'billing_quantity'
@@ -369,7 +380,7 @@ async function supersedeK5ProposalWithMapping(params: {
     quantity: quantityNumber,
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
-    verifiedObservedMath: verifiedEmbeddedKgMath || verifiedRoundedUnitMath
+    verifiedObservedMath: verifiedEmbeddedKgMath || verifiedTotalWeightMath || verifiedRoundedUnitMath
       || verifiedAmountColumnMath
       || verifiedUnadjustedNet || verifiedPercentDiscount,
     verifiedFixedDiscountMath: verifiedFixedDiscount,

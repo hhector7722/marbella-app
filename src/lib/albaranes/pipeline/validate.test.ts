@@ -8,6 +8,7 @@ import {
   reconcileUnadjustedNetUnitPrice,
   validateObservedDocument,
   validateObservedLine,
+  verifiedTotalWeightColumn,
 } from './validate.ts'
 import type { CanonicalDocument } from '../extractors/canonical.ts'
 
@@ -255,6 +256,16 @@ test('Videla: un bulto con 10 kg impresos en la unidad se factura por peso', () 
   assert.ok(validateObservedLine(row({ quantity_raw: '2', billing_unit_raw: 'BU 10,00 KG',
     unit_price_raw: '5,56', line_total_raw: '111,20' })).reasons
     .includes('cantidad_precio_importe_no_reconcilian'))
+})
+
+test('Videla: varios bultos con peso total impreso solo se aceptan si el importe cuadra', () => {
+  const evidence = row({ quantity_raw: '3,00', billing_unit_raw: 'BU',
+    content_per_unit_raw: '15,60', content_unit_raw: 'KG',
+    unit_price_raw: '9,75', line_total_raw: '152,10' })
+  assert.equal(verifiedTotalWeightColumn(evidence), 15.6)
+  assert.equal(verifiedTotalWeightColumn({ ...evidence, content_per_unit_raw: '5,20' }), null)
+  assert.equal(verifiedTotalWeightColumn({ ...evidence, line_total_raw: '151,10' }), null)
+  assert.equal(verifiedTotalWeightColumn({ ...evidence, discount_raw: '1' }), null)
 })
 
 test('Santa Teresa: Importe es el total y Pre+Iva el precio de una unidad', () => {

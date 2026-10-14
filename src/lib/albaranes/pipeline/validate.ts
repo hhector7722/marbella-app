@@ -256,6 +256,23 @@ export function verifiedAmountColumn(line: CanonicalDocument['lines'][number], q
   return amount
 }
 
+/** En facturas de peso variable, «3 BU / 15,60 KG» expresa tres bultos
+ * cuyo peso total es 15,60 kg. Solo se admite el peso si él mismo concilia
+ * con el precio por kg y el importe impresos; no se infiere un peso por bulto. */
+export function verifiedTotalWeightColumn(line: CanonicalDocument['lines'][number]): number | null {
+  if (!/^(?:BU|BULTOS?|CJ|CAJAS?)$/i.test((line.billing_unit_raw ?? '').trim())
+    || !/^KG$/i.test((line.content_unit_raw ?? '').trim())
+    || line.discount_raw?.trim() || line.net_unit_price_raw?.trim()
+    || line.other_charge_raw?.trim()) return null
+  const bundles = parseObservedDecimal(line.quantity_raw)
+  const weight = parseObservedDecimal(line.content_per_unit_raw)
+  const price = parseObservedDecimal(line.unit_price_raw)
+  const total = parseObservedDecimal(line.line_total_raw)
+  return bundles != null && bundles > 1 && weight != null && weight > 0
+    && price != null && price > 0 && total != null && total > 0
+    && near(weight * price, total) ? weight : null
+}
+
 /** El impuesto de envases Ibee puede llegar en la columna OCR de descuento.
  * Solo se descarta esa interpretación si el importe impreso es bruto y cuadra. */
 export function isVerifiedIbeeCharge(line: CanonicalDocument['lines'][number]): boolean {

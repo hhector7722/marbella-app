@@ -204,6 +204,8 @@ Los patrones observados en albaranes reales de los proveedores habituales. Los e
 
 **El error más frecuente** es introducir piezas donde el proveedor factura peso. En una línea de peso variable, la cantidad es el peso, no el número de piezas.
 
+Si la factura muestra varios bultos y, en otra columna, el **peso total en kg**, K4 solo puede levantar el descuadre tras una corrección humana que guarde ese peso como cantidad facturada en kg. La validación exige que peso total × precio por kg coincida con el importe original; no deduce el peso de cada bulto.
+
 En la revisión de una línea facturada por masa o volumen, si la unidad del
 albarán y la unidad de compra del ingrediente pertenecen a la misma familia,
 la conversión se calcula sin pedir el contenido de una caja. «QUILOS» se
