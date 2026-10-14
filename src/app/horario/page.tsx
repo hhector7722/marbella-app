@@ -10,7 +10,6 @@ import {
   isBefore,
   isSameDay,
   isSameMonth,
-  startOfDay,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -271,7 +270,8 @@ export default function HorarioPage() {
     if (distance < -minSwipeDistance) setViewMonth((m) => subMonths(m, 1));
   };
 
-  const today = useMemo(() => startOfDay(new Date()), []);
+  // Comparar fechas según el día del negocio (Barcelona), no según la zona horaria del navegador.
+  const today = useMemo(() => parseLocalSafe(madridTodayIso()), []);
   const monthStart = useMemo(() => startOfMonth(viewMonth), [viewMonth]);
   const monthEnd = useMemo(() => endOfMonth(viewMonth), [viewMonth]);
   const gridStart = useMemo(() => startOfWeek(monthStart, { weekStartsOn: 1 }), [monthStart]);
