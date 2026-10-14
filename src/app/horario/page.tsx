@@ -520,7 +520,8 @@ export default function HorarioPage() {
                       isToday && isViewMonthDay && 'bg-blue-50/20',
                       isSelected && 'ring-2 ring-inset ring-[var(--color-envolvente)]/40',
                       'hover:bg-blue-50/40 active:bg-blue-50/60 transition-colors',
-                      !isViewMonthDay && 'opacity-40',
+                      // Gris claro uniforme: pasado dentro o fuera del mes; otros meses siguen atenuados.
+                      (isPastDay || !isViewMonthDay) && 'opacity-40',
                     );
 
                     const dayNumCls = cn(
