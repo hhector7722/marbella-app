@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   addMonths,
   eachDayOfInterval,
@@ -139,6 +139,96 @@ function madridTodayIso(): string {
 function parseLocalSafe(dateStr: string): Date {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d);
+}
+
+
+type GroupedActivity = ReturnType<typeof groupActivities>[number];
+
+/** Mantiene íntegras las primeras actividades que caben bajo la fecha de una semana ya terminada. */
+function CalendarActivityChips({
+  activities,
+  compact,
+  isPastDay,
+}: {
+  activities: GroupedActivity[];
+  compact: boolean;
+  isPastDay: boolean;
+}) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(activities.length);
+
+  useLayoutEffect(() => {
+    if (!compact) return;
+    const list = listRef.current;
+    const cell = list?.parentElement;
+    if (!list || !cell) return;
+
+    const measure = () => {
+      const bottom = cell.getBoundingClientRect().bottom;
+      const top = list.getBoundingClientRect().top;
+      const padding = parseFloat(getComputedStyle(cell).paddingBottom) || 0;
+      const gap = parseFloat(getComputedStyle(list).rowGap) || 0;
+      const available = Math.max(0, bottom - top - padding);
+      let height = 0;
+      let count = 0;
+      for (const child of Array.from(list.children)) {
+        const needed = (child as HTMLElement).getBoundingClientRect().height + (count ? gap : 0);
+        if (height + needed > available + 0.5) break;
+        height += needed;
+        count++;
+      }
+      setVisibleCount(previous => previous === count ? previous : count);
+    };
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(cell);
+    observer.observe(list);
+    for (const child of Array.from(list.children)) observer.observe(child);
+    measure();
+    return () => observer.disconnect();
+  }, [activities, compact]);
+
+  return (
+    <div ref={listRef} className={cn('mt-0.5 flex w-full flex-col gap-0.5 month-cal-chips', compact && 'shrink-0')}>
+      {activities.map((act, i) => {
+        const bgColor = act.activityColor || stringToHslColor(act.activityName);
+        const hasParticipants = act.totalParticipants != null || (act.categories && act.categories.length > 0);
+        const hidden = compact && i >= visibleCount;
+        return (
+          <div
+            key={i}
+            aria-hidden={hidden || undefined}
+            className={cn('w-full rounded-[3px] overflow-hidden flex flex-col min-h-0', compact ? 'shrink-0' : 'shrink')}
+            style={{
+              backgroundColor: bgColor,
+              color: '#ffffff',
+              containerType: 'inline-size',
+              ...(isPastDay ? { opacity: 0.8 } : {}),
+              ...(hidden ? { visibility: 'hidden' } : {}),
+            }}
+          >
+            <div className="px-1 py-[2px] flex flex-col justify-center min-h-0">
+              <span className="whitespace-nowrap font-black leading-none opacity-90 tracking-tight text-[clamp(5px,11cqi,11px)]">
+                {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
+              </span>
+            </div>
+            <div className="px-1 py-[2px] bg-black/10 flex flex-col justify-center min-h-0">
+              <span className="break-keep font-bold leading-tight text-[clamp(6px,14cqi,14px)] truncate">
+                {act.activityName}
+              </span>
+              {hasParticipants && (
+                <span className="break-keep font-medium leading-tight opacity-90 mt-[1px] text-[clamp(5px,11cqi,11px)] truncate">
+                  {act.totalParticipants ? `${act.totalParticipants} pax` : ''}
+                  {act.totalParticipants && act.categories?.length ? ' • ' : ''}
+                  {act.categories?.join(', ')}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
@@ -423,8 +513,14 @@ export default function HorarioPage() {
               onTouchEnd={onTouchEnd}
             >
                 <div className="month-cal-weeks">
-                  {calendarWeeks.map((week) => (
-                  <div key={format(week[0]!, 'yyyy-MM-dd')} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week">
+                  {calendarWeeks.map((week) => {
+                    const compactPastWeek = viewMode === 'actividades' && isBefore(week[6]!, today);
+                    return (
+                  <div
+                    key={format(week[0]!, 'yyyy-MM-dd')}
+                    data-past-activities-week={compactPastWeek ? 'true' : undefined}
+                    className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week"
+                  >
                   {week.map((day) => {
                     const key = format(day, 'yyyy-MM-dd');
                     const shift = shiftsByDate[key];
@@ -522,49 +618,11 @@ export default function HorarioPage() {
                               const grouped = groupActivities(barActs);
                               if (grouped.length === 0) return null;
                               return (
-                                <div className="mt-0.5 flex w-full flex-col gap-0.5 month-cal-chips">
-                                  {grouped.map((act, i) => {
-                                    const bgColor = act.activityColor || stringToHslColor(act.activityName);
-                                    const hasParticipants = act.totalParticipants != null || (act.categories && act.categories.length > 0);
-
-                                    return (
-                                      <div
-                                        key={i}
-                                        className="w-full rounded-[3px] overflow-hidden flex flex-col shrink min-h-0"
-                                        style={{
-                                          backgroundColor: bgColor,
-                                          color: '#ffffff',
-                                          containerType: 'inline-size',
-                                          ...(isPastDay ? { opacity: 0.8 } : {}),
-                                        }}
-                                      >
-                                        <div className="px-1 py-[2px] flex flex-col justify-center min-h-0">
-                                          <span
-                                            className="whitespace-nowrap font-black leading-none opacity-90 tracking-tight text-[clamp(5px,11cqi,11px)]"
-                                          >
-                                            {fmtHour(act.startTime)} - {fmtHour(act.endTime)}
-                                          </span>
-                                        </div>
-                                        <div className="px-1 py-[2px] bg-black/10 flex flex-col justify-center min-h-0">
-                                          <span
-                                            className="break-keep font-bold leading-tight text-[clamp(6px,14cqi,14px)] truncate"
-                                          >
-                                            {act.activityName}
-                                          </span>
-                                          {hasParticipants && (
-                                            <span
-                                              className="break-keep font-medium leading-tight opacity-90 mt-[1px] text-[clamp(5px,11cqi,11px)] truncate"
-                                            >
-                                              {act.totalParticipants ? `${act.totalParticipants} pax` : ''}
-                                              {act.totalParticipants && act.categories?.length ? ' • ' : ''}
-                                              {act.categories?.join(', ')}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
+                                <CalendarActivityChips
+                                  activities={grouped}
+                                  compact={compactPastWeek}
+                                  isPastDay={isPastDay}
+                                />
                               );
                             })()}
                           </>
@@ -574,7 +632,8 @@ export default function HorarioPage() {
                     );
                   })}
                   </div>
-                  ))}
+                    );
+                  })}
                 </div>
             </MonthCalendarFrame>
 
