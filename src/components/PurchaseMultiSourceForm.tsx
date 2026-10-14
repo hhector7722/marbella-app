@@ -554,6 +554,7 @@ export function PurchaseMultiSourceForm({
                     layer="derived"
                     parentInstance={parentInstance}
                     instance="purchase-box-picker"
+                    dismissScope="self"
                     usageId="purchase-box-picker"
                     usageLabel="Selección de caja para compra"
                     title="Seleccionar caja"
@@ -583,6 +584,7 @@ export function PurchaseMultiSourceForm({
                     layer="derived"
                     parentInstance={parentInstance}
                     instance="purchase-source-breakdown"
+                    dismissScope="self"
                     usageId="purchase-source-breakdown"
                     usageLabel={`Desglose ${breakdownEditorSource.shortLabel}`}
                     title={`Desglose · ${breakdownEditorSource.shortLabel}`}
