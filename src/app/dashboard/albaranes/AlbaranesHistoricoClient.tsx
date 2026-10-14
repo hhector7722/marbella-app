@@ -7,6 +7,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  FileSearch,
   Loader2,
   MinusCircle,
   Pencil,
@@ -1188,7 +1189,7 @@ export default function AlbaranesHistoricoClient({
         toast.error(res.message)
         return
       }
-      toast.success('Línea marcada como portes/ajuste (sin ingrediente).')
+      toast.success('Línea excluida de la recepción de stock.')
       await refreshDetailAndStock()
     } finally {
       setLineActionBusy(false)
@@ -1915,7 +1916,7 @@ export default function AlbaranesHistoricoClient({
                                       <span className="inline-flex text-rose-600" aria-label="Sin match" title="Sin match"><X className="h-3.5 w-3.5" strokeWidth={3} /></span>
                                     ) : null}
                                     {excluded ? (
-                                      <span className="inline-flex text-zinc-400" aria-label="Portes o ajuste" title="Portes / ajuste / sin cargo"><MinusCircle className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
+                                      <span className="inline-flex text-zinc-400" aria-label="Sin recepción de stock" title="Línea excluida de la recepción de stock"><MinusCircle className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {expenseOnly ? (
                                       <span className="inline-flex text-emerald-600" aria-label="Gasto sin stock" title="Gasto contabilizable, sin stock"><Check className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
@@ -1970,6 +1971,20 @@ export default function AlbaranesHistoricoClient({
                                         title="Revisar compra"
                                       >
                                         <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
+                                      </button>
+                                    ) : null}
+                                    {isManager && !excluded && !expenseOnly && !stockApplied ? (
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation()
+                                          setLineForEvidenceModal(l.id)
+                                        }}
+                                        className="relative ml-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                                        aria-label={`Ver evidencia de ${displayName}`}
+                                        title="Ver evidencia y resolver línea sin stock"
+                                      >
+                                        <FileSearch className="h-3.5 w-3.5" strokeWidth={2.5} />
                                       </button>
                                     ) : null}
                                   </div>

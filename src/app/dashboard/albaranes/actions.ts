@@ -1253,6 +1253,9 @@ export async function excludeInvoiceLineFromMappingAction(params: {
 }): Promise<{ success: true } | { success: false; message: string }> {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
+  if (gate.role !== 'manager' && gate.role !== 'admin') {
+    return { success: false, message: 'Solo gerente o administrador puede excluir líneas' }
+  }
 
   const lineId = String(params?.lineId ?? '').trim()
   if (!lineId) return { success: false, message: 'ID de línea inválido' }

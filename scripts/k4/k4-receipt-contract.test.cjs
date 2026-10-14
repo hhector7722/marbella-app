@@ -16,6 +16,9 @@ const canonicalPriceMigration = read('supabase/migrations/20260918164000_k4_cano
 const receiptActions = read('src/app/dashboard/albaranes/receipt-actions.ts')
 const mappingModal = read('src/components/albaranes/LineMappingModal.tsx')
 const k5MappingAssistant = read('src/components/albaranes/K5MappingAssistant.tsx')
+const invoiceScreen = read('src/app/dashboard/albaranes/AlbaranesHistoricoClient.tsx')
+const evidenceModal = read('src/components/albaranes/DocumentEvidenceModal.tsx')
+const invoiceActions = read('src/app/dashboard/albaranes/actions.ts')
 
 test('K4 expone una única confirmación económica y conserva stock_movements como ledger', () => {
   assert.match(receiptMigration, /CREATE OR REPLACE FUNCTION private\.apply_receipt_line\(/)
@@ -89,4 +92,14 @@ test('la pantalla guarda y aplica en una acción con vista previa técnica K4', 
   assert.doesNotMatch(mappingModal, /Aplicar stock pendiente/)
   assert.doesNotMatch(mappingModal, /Rectificar stock/)
   assert.equal(fs.existsSync(path.join(root, 'src/app/dashboard/albaranes-precios/page.tsx')), false)
+})
+
+test('una línea sin recepción se excluye solo tras revisar evidencia y con rol de gerente', () => {
+  assert.match(invoiceScreen, /aria-label=\{`Ver evidencia de \$\{displayName\}`\}/)
+  assert.match(invoiceScreen, /isManager && !excluded && !expenseOnly && !stockApplied/)
+  assert.match(evidenceModal, /window\.confirm\('¿Excluir esta línea de la recepción de stock\?/)
+  assert.match(evidenceModal, /Excluir sin recepción/)
+  const exclusion = invoiceActions.slice(invoiceActions.indexOf('export async function excludeInvoiceLineFromMappingAction'))
+  assert.match(exclusion, /gate\.role !== 'manager' && gate\.role !== 'admin'/)
+  assert.match(exclusion, /status: INVOICE_LINE_STATUS_EXCLUDED/)
 })

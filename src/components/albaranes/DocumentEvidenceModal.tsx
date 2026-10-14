@@ -261,7 +261,7 @@ export function DocumentEvidenceModal({
 
                   {(isManager && onOpenEditor) ||
                   onOpenProduct ||
-                  (data.line && data.line.status !== 'excluded' && data.line.status !== 'expense_only' && (onExcludeFromMapping || onMarkExpenseOnly)) ||
+                  (isManager && data.line && data.line.status !== 'excluded' && data.line.status !== 'expense_only' && (onExcludeFromMapping || onMarkExpenseOnly)) ||
                   (data.line && (data.line.status === 'excluded' || data.line.status === 'expense_only') && onRestoreStatus) ? (
                     <div className="flex flex-col gap-1.5 pt-1 border-t border-zinc-100">
                       {needsManualValues ? (
@@ -295,7 +295,7 @@ export function DocumentEvidenceModal({
                         )}
                       </div>
 
-                      {data.line && data.line.status !== 'excluded' && data.line.status !== 'expense_only' && (onExcludeFromMapping || onMarkExpenseOnly) ? (
+                      {isManager && data.line && data.line.status !== 'excluded' && data.line.status !== 'expense_only' && (onExcludeFromMapping || onMarkExpenseOnly) ? (
                         <div className="flex flex-wrap items-center gap-1.5">
                           {onExcludeFromMapping && (
                             <Button
@@ -303,11 +303,12 @@ export function DocumentEvidenceModal({
                               variant="tertiary"
                               instance="albaran-document-evidence-exclude-portes"
                               onClick={() => {
+                                if (!window.confirm('¿Excluir esta línea de la recepción de stock? Úsalo solo si el original acredita que no hay mercancía recibida o que la lectura es errónea. Podrás restaurarla.')) return
                                 onExcludeFromMapping()
                                 onClose()
                               }}
                             >
-                              Portes
+                              Excluir sin recepción
                             </Button>
                           )}
                           {onMarkExpenseOnly && (
