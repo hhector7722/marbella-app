@@ -23,6 +23,8 @@ export type HomeScreenSlotProps = {
      * Nombre bajo el hueco. Si no va, el widget tiene la altura de icono + nombre.
      */
     label?: string;
+    /** Etiqueta alternativa exclusiva de escritorio, útil para widgets compactos. */
+    desktopLabel?: string;
     /**
      * Ancla el hueco a una columna (1–4).
      */
@@ -68,7 +70,7 @@ export function HomeScreen({ children, className, layout }: HomeScreenProps) {
     );
 }
 
-export function HomeScreenSlot({ size, instance, label, column, children, className }: HomeScreenSlotProps) {
+export function HomeScreenSlot({ size, instance, label, desktopLabel, column, children, className }: HomeScreenSlotProps) {
     const isIcon = size === 'icon';
     return (
         <div
@@ -84,7 +86,8 @@ export function HomeScreenSlot({ size, instance, label, column, children, classN
                     {children}
                 </div>
             )}
-            {label ? <span data-element="name">{label}</span> : null}
+            {label ? <span data-element="name" data-display={desktopLabel ? 'mobile' : undefined}>{label}</span> : null}
+            {desktopLabel ? <span data-element="name" data-display="desktop">{desktopLabel}</span> : null}
         </div>
     );
 }
