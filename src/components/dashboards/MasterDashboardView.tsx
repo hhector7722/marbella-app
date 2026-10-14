@@ -749,7 +749,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     setIsClosingModalOpen(true);
                 }}
                 onOpenStock={() => setIsProductModalOpen(true)}
-                onOpenCompra={() => handleOpenCompra()}
+                onOpenCompra={handleOpenCompra}
                 onOpenInfo={() => setIsInfoModalOpen(true)}
             />
 
