@@ -7040,3 +7040,27 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     -webkit-line-clamp: unset;
   }
 }
+
+/* Inicio escritorio: selector de paneles encima del botón de división.
+ * Sin relleno, borde blanco. Móvil/tablet mantienen sus indicadores actuales. */
+.dashboard-split-controls {
+  bottom: calc(var(--shell-bottom-inset) + 0.5rem);
+}
+
+@media (min-width: 1024px) {
+  .dashboard-split-controls {
+    bottom: 6px;
+  }
+
+  /* Puntos (48 px de área táctil) + botón (32 px) + separación inferior. */
+  .dashboard-mosaic-switcher {
+    --home-desktop-indicator-reserve: calc(var(--tactil-minimo) + var(--espacio-8) + var(--espacio-4));
+  }
+}
+
+@media print {
+  .dashboard-split-controls,
+  .dashboard-split-workspace {
+    display: none !important;
+  }
+}
