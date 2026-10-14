@@ -512,7 +512,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(master, /onOpenCompra=\{handleOpenCompra\}/);
         assert.match(master, /onOpenInfo=\{\(\) => setIsInfoModalOpen\(true\)\}/);
         assert.match(master, /<AdminProductModal[\s\S]*?onBack=\{\(\) => \{[\s\S]*?setIsMoreFunctionsModalOpen\(true\)/);
-        assert.match(master, /<InfoMenuModals[\s\S]*?onBack=\{\(\) => setIsMoreFunctionsModalOpen\(true\)\}/);
+        assert.match(master, /<InfoMenuModals[\s\S]*?onBack=\{\(\) => \{[\s\S]*?setIsMoreFunctionsModalOpen\(true\)/);
         assert.match(ops, /layout="ops-admin"/);
         assert.match(ops, /size="wide" instance="dashboard-ventas"/);
         assert.match(ops, /size="icon" instance="caja-inicial"/);
