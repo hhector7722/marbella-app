@@ -6475,3 +6475,28 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     pointer-events: auto !important;
   }
 }
+
+/*
+ * /horario → Actividades: una semana que ya terminó ocupa exactamente el
+ * alto P3 de una semana sin actividades. No modifica Horarios ni las semanas
+ * actuales/futuras; la lista mide y muestra solo las tarjetas completas.
+ */
+[data-component='PageScreen'].month-cal-shell .month-cal-week[data-past-activities-week='true'] {
+  height: var(--month-cal-cell-min-h) !important;
+  min-height: var(--month-cal-cell-min-h) !important;
+  max-height: var(--month-cal-cell-min-h) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+[data-component='PageScreen'].month-cal-shell .month-cal-week[data-past-activities-week='true'] > .month-cal-cell {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+[data-component='PageScreen'].month-cal-shell .month-cal-week[data-past-activities-week='true'] .month-cal-chips,
+[data-component='PageScreen'].month-cal-shell .month-cal-week[data-past-activities-week='true'] .month-cal-chips > * {
+  flex-shrink: 0 !important;
+}
