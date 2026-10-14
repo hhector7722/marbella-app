@@ -206,8 +206,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /--shell-sidebar-width:\s*0px/, 'sidebar desktop arranca a 0 en smartphone');
         assert.match(
             css,
-            /@media \(min-width: 1024px\) \{[\s\S]*?--shell-sidebar-width:\s*5\.5rem/,
-            'en desktop el TabBar pasa a sidebar'
+            /@media \(min-width: 1024px\) \{[\s\S]*?--desktop-nav-width:\s*5\.5rem/,
+            'en desktop el TabBar conserva su ancho al desplegarse'
         );
         assert.match(
             css,
@@ -2063,5 +2063,39 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(orders, /supplier_has_dispatched_order_today/);
         assert.match(orders, /onDispatched=\{handleDispatched\}/);
         assert.match(success, /onDispatched\?\.\(\)/);
+    });
+});
+
+describe('Menú lateral desktop cerrado por defecto', () => {
+    it('no reserva margen, se abre desde la esquina superior izquierda y se cierra en cada ruta', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const provider = readFileSync(join(SRC_ROOT, 'components/chrome/DesktopSidebarProvider.tsx'), 'utf8');
+        const layout = readFileSync(join(SRC_ROOT, 'app/layout.tsx'), 'utf8');
+        const navbar = readFileSync(join(SRC_ROOT, 'components/Navbar.tsx'), 'utf8');
+        const nav = readFileSync(join(SRC_ROOT, 'components/StaffBottomNav.tsx'), 'utf8');
+        const desktopCss = css.slice(css.indexOf('Menú de navegación escritorio: oculto al cargar'));
+        assert.ok(desktopCss.includes('@media (min-width: 1024px)'));
+        assert.match(desktopCss, /--shell-sidebar-width: 0px;/);
+        assert.match(desktopCss, /html\[data-desktop-sidebar='open'\] \{[\s\S]*?--shell-sidebar-width: var\(--desktop-nav-width\)/);
+        assert.match(desktopCss, /visibility: hidden;[\s\S]*?translateX\(-105%\)/);
+        assert.match(desktopCss, /html\[data-desktop-sidebar='open'\] \[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?visibility: visible;/);
+        assert.match(provider, /useState\(false\)/);
+        assert.match(provider, /setIsOpen\(false\)/);
+        assert.match(provider, /dataset\.desktopSidebar = isOpen \? 'open' : 'closed'/);
+        assert.match(layout, /<DesktopSidebarProvider>/);
+        assert.match(navbar, /aria-controls="marbella-desktop-sidebar"/);
+        assert.match(navbar, /onClick=\{toggleSidebar\}/);
+        assert.match(nav, /id="marbella-desktop-sidebar"/);
+        assert.match(nav, /closeDesktopSidebar\(\)/);
+    });
+
+    it('Master: el widget de Asistencia se mantiene en fila 1, columna 5 con tamaño de icono', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const desktopCss = css.slice(css.indexOf('Home Admin/Master escritorio: widgets 2 + 2 + 4 columnas'));
+        assert.match(desktopCss, /'ventas ventas ultcierre ultcierre asis asisaccess caja ingred'/);
+        const square = css.slice(css.indexOf('Master: mismo cuadrado que los iconos, incluso'));
+        assert.match(square, /\[data-instance='master-asistencia'\]\[data-named='true'\] > \[data-element='body'\]/);
+        assert.match(square, /width: var\(--home-icon-size\)/);
+        assert.match(square, /height: var\(--home-icon-size\)/);
     });
 });
