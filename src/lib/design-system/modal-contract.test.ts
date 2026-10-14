@@ -508,6 +508,24 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
         assert.equal(getModalHistorySnapshot().length, 0);
     });
 
+    it('Compra: la X del plano y del desglose cierra solo el paso secundario', () => {
+        const modal = readFileSync(join(SRC_ROOT, 'components/ui/modal.tsx'), 'utf8');
+        const compra = readFileSync(join(SRC_ROOT, 'components/PurchaseMultiSourceForm.tsx'), 'utf8');
+        assert.match(modal, /dismissScope === 'self'[\s\S]*?requestModalClose\(surfaceId\)/);
+        assert.match(compra, /instance="purchase-box-picker"\s+dismissScope="self"/);
+        assert.match(compra, /instance="purchase-source-breakdown"\s+dismissScope="self"/);
+
+        for (const child of ['purchase-box-picker', 'purchase-source-breakdown']) {
+            const events: string[] = [];
+            resetModalHistoryForTests();
+            registerNav({ surfaceId: 'purchase', instance: 'purchase', events });
+            registerNav({ surfaceId: child, instance: child, parentInstance: 'purchase', layer: 'derived', events });
+            requestModalClose(child);
+            assert.deepEqual(events, [`dismiss:${child}`]);
+            assert.deepEqual(getModalHistorySnapshot().map(entry => entry.surfaceId), ['purchase']);
+        }
+    });
+
     it('6. Escape hijo = cerrar toda la cadena', () => {
         const events: string[] = [];
         registerNav({ surfaceId: 'a', instance: 'a', events });
