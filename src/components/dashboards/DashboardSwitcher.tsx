@@ -517,7 +517,7 @@ export default function DashboardSwitcher({
                                 <button
                                     type="button"
                                     onClick={() => setSplitOpen(true)}
-                                    className="dashboard-split-button pointer-events-auto hidden lg:inline-flex min-h-8 items-center justify-center rounded-lg border border-white bg-transparent px-4 py-1 text-xs font-semibold text-white hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                    className="dashboard-split-button pointer-events-auto hidden lg:inline-flex w-fit h-fit min-w-0 min-h-0 shrink-0 items-center justify-center self-center whitespace-nowrap rounded-[5px] border border-white/30 bg-transparent px-1.5 py-[2px] text-[11px] font-normal leading-none text-white/55 hover:border-white/50 hover:text-white/75 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/60"
                                 >
                                     Dividir pantalla
                                 </button>
