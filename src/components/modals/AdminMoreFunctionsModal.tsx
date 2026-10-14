@@ -29,7 +29,7 @@ type MoreFunctionsItem = {
     | { action: 'pedidos' | 'cambio' | 'cierre' | 'info' | 'compra' | 'web' }
 );
 
-const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
+export const ADMIN_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
     { label: 'Pedidos', instance: 'staff-pedidos', action: 'pedidos', img: '/icons/shipment.png' },
     { label: 'Consumo', instance: 'consumo', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },
@@ -93,7 +93,7 @@ export function AdminMoreFunctionsModal({
         >
             <div className="relative overflow-y-auto">
                 <AccessShortcutGrid>
-                    {MORE_FUNCTIONS_ITEMS.map((item) => {
+                    {ADMIN_MORE_FUNCTIONS_ITEMS.map((item) => {
                         if ('href' in item) {
                             return (
                                 <DashboardShortcut
