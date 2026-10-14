@@ -17,7 +17,8 @@ import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { MasterTodayAttendanceWidget } from '@/components/dashboards/MasterTodayAttendanceWidget';
 import { MasterLastClosingWidget } from '@/components/dashboards/MasterLastClosingWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
-import { MasterMoreFunctionsModal } from '@/components/modals/MasterMoreFunctionsModal';
+import { MasterMoreFunctionsModal, MASTER_MORE_FUNCTIONS_ITEMS } from '@/components/modals/MasterMoreFunctionsModal';
+import { DesktopMoreShortcuts } from '@/components/dashboards/DesktopMoreShortcuts';
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import { InfoMenuModals } from '@/components/modals/InfoMenuModals';
 import { AlbaranesOptionsModal } from '@/components/dashboards/AlbaranesOptionsModal';
@@ -449,12 +450,12 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
         setShowPurchaseMultiSourceModal(true);
     };
 
-    const handleOpenCompra = () => {
+    const handleOpenCompra = (fromOtros = true) => {
         if (!boxes.some((box) => box.type === 'operational' || box.type === 'change' || box.type === 'tpv')) {
             toast.error('No hay cajas configuradas');
             return;
         }
-        setPurchaseFromOtros(true);
+        setPurchaseFromOtros(fromOtros);
         void openPurchaseMultiSourceModal();
     };
 
@@ -626,6 +627,22 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     onOpenAlbaranes={() => setIsAlbaranesModalOpen(true)}
                     pendingReservationsCount={pendingReservationsCount}
                 />
+                <DesktopMoreShortcuts
+                    namespace="master"
+                    items={MASTER_MORE_FUNCTIONS_ITEMS}
+                    onAction={(action) => {
+                        switch (action) {
+                            case 'stock': setIsProductModalOpen(true); break;
+                            case 'web': window.open('https://marbella-web.vercel.app', '_blank', 'noopener,noreferrer'); break;
+                            case 'cierre':
+                                setClosingFromOtros(false);
+                                setIsClosingModalOpen(true);
+                                break;
+                            case 'compra': handleOpenCompra(false); break;
+                            case 'info': setIsInfoModalOpen(true); break;
+                        }
+                    }}
+                />
             </HomeScreen>
 
             <StaffSelectionModal
@@ -732,7 +749,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     setIsClosingModalOpen(true);
                 }}
                 onOpenStock={() => setIsProductModalOpen(true)}
-                onOpenCompra={handleOpenCompra}
+                onOpenCompra={() => handleOpenCompra()}
                 onOpenInfo={() => setIsInfoModalOpen(true)}
             />
 
