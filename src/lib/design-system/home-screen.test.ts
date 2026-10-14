@@ -775,6 +775,10 @@ describe('Pantalla dividida en dashboards escritorio', () => {
         assert.match(dashboard, /data-component="DashboardSplitControls"/);
         assert.match(dashboard, /Dividir pantalla/);
         assert.match(dashboard, /dashboard-split-button[^"]*hidden lg:inline-flex/, 'solo escritorio');
+        assert.match(dashboard, /dashboard-split-button[^"]*w-fit h-fit min-w-0 min-h-0/, 'el contorno se ajusta al contenido');
+        assert.match(dashboard, /dashboard-split-button[^"]*border-white\/30 bg-transparent px-1\.5 py-\[2px\]/, 'borde tenue y padding mínimo');
+        assert.match(dashboard, /dashboard-split-button[^"]*text-white\/55/, 'etiqueta secundaria, sin protagonismo');
+        assert.doesNotMatch(dashboard, /dashboard-split-button[^"]*min-h-8/, 'no fuerza altura de botón grande');
         assert.match(dashboard, /createPortal\(/, 'no se recorta por los contenedores del dashboard');
         assert.match(dashboard, /DashboardSplitWorkspace initialPath=\{pathname\} onClose=\{closeSplit\}/);
         assert.match(dashboard, /window\.self !== window\.top/, 'evita divisiones anidadas en cada mitad');
