@@ -687,6 +687,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(horario, /useState<'horarios' \| 'actividades'>\('actividades'\)/, 'la vista inicial es Actividades');
         assert.doesNotMatch(horario, /ACTIVIDADES_EMAILS/, 'el modo inicial no depende del usuario');
         assert.match(horario, /const bgColor = isPastDay \? '#71717a' : \(act\.activityColor \|\| stringToHslColor\(act\.activityName\)\)/);
+        assert.match(horario, /\(isPastDay \|\| !isViewMonthDay\) && 'opacity-40'/, 'todos los días anteriores a hoy usan el mismo gris claro que los días de otro mes');
         assert.match(horario, /<PavilionDayModal/, 'los detalles mantienen el modal de actividades original');
     });
 
