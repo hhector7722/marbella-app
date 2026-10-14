@@ -6856,7 +6856,7 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
    * puedan partirse en lugar de quedar truncados por line-clamp.
    */
   [data-component='HomeScreen'][data-layout='master'] {
-    --home-shortcut-label-band: calc(var(--espacio-1) + 2 * 10px * 1.15);
+    --home-shortcut-label-band: calc(var(--espacio-1) + 23px);
   }
   [data-component='HomeScreen'][data-layout='master'] [data-component='DashboardShortcut'][data-variant='icon-card-text-outside']
   [data-element='text'] {
