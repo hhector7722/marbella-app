@@ -19,6 +19,7 @@ import { MasterLastClosingWidget } from '@/components/dashboards/MasterLastClosi
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
 import { MasterMoreFunctionsModal, MASTER_MORE_FUNCTIONS_ITEMS } from '@/components/modals/MasterMoreFunctionsModal';
 import { DesktopMoreShortcuts } from '@/components/dashboards/DesktopMoreShortcuts';
+import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import { InfoMenuModals } from '@/components/modals/InfoMenuModals';
 import { AlbaranesOptionsModal } from '@/components/dashboards/AlbaranesOptionsModal';
@@ -627,6 +628,30 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     onOpenAlbaranes={() => setIsAlbaranesModalOpen(true)}
                     pendingReservationsCount={pendingReservationsCount}
                 />
+                <HomeScreenSlot
+                    size="icon"
+                    instance="master-desktop-asistencia"
+                    className="home-desktop-extra"
+                >
+                    <DashboardShortcut
+                        instance="master-attendance-access"
+                        label="Asistencia"
+                        img="/icons/calendar.png"
+                        onClick={() => router.push('/staff/history')}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot
+                    size="icon"
+                    instance="master-desktop-horarios"
+                    className="home-desktop-extra"
+                >
+                    <DashboardShortcut
+                        instance="master-schedules-access"
+                        label="Horarios"
+                        img="/icons/schedule.png"
+                        onClick={() => router.push('/horario')}
+                    />
+                </HomeScreenSlot>
                 <DesktopMoreShortcuts
                     namespace="master"
                     items={MASTER_MORE_FUNCTIONS_ITEMS}
