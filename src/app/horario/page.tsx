@@ -37,14 +37,6 @@ import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 import { Toaster } from 'sonner';
 
 
-const ACTIVIDADES_EMAILS = [
-  'hhector7722@gmail.com',
-  'fogotorrat@gmail.com',
-  'pereboladeres@gmail.com',
-  'albamasia.opos@gmail.com',
-  'hernang6799@gmail.com',
-];
-
 /* ── Exact copy of helpers from /staff/actividades ───────────────────────── */
 
 function fmtHour(time: string): string {
@@ -191,7 +183,7 @@ function CalendarActivityChips({
   return (
     <div ref={listRef} className={cn('mt-0.5 flex w-full flex-col gap-0.5 month-cal-chips', compact && 'shrink-0')}>
       {activities.map((act, i) => {
-        const bgColor = act.activityColor || stringToHslColor(act.activityName);
+        const bgColor = isPastDay ? '#71717a' : (act.activityColor || stringToHslColor(act.activityName));
         const hasParticipants = act.totalParticipants != null || (act.categories && act.categories.length > 0);
         const hidden = compact && i >= visibleCount;
         return (
@@ -203,7 +195,6 @@ function CalendarActivityChips({
               backgroundColor: bgColor,
               color: '#ffffff',
               containerType: 'inline-size',
-              ...(isPastDay ? { opacity: 0.8 } : {}),
               ...(hidden ? { visibility: 'hidden' } : {}),
             }}
           >
@@ -244,7 +235,7 @@ export default function HorarioPage() {
   const [loading, setLoading] = useState(true);
 
   // View mode toggle
-  const [viewMode, setViewMode] = useState<'horarios' | 'actividades'>('horarios');
+  const [viewMode, setViewMode] = useState<'horarios' | 'actividades'>('actividades');
 
   // User's shifts per date
   const [shiftsByDate, setShiftsByDate] = useState<Record<string, DayShift>>({});
@@ -306,9 +297,6 @@ export default function HorarioPage() {
         const r = identity.effectiveRole as string;
         if (r === 'manager' || r === 'supervisor') setUserRole(r);
         setSelectedEmployeeId(null);
-        if (ACTIVIDADES_EMAILS.includes(identity.effectiveEmail)) {
-          setViewMode('actividades');
-        }
         return;
       }
 
@@ -329,10 +317,6 @@ export default function HorarioPage() {
         if (r === 'manager' || r === 'supervisor') setUserRole(r);
       }
 
-      const email = profile?.email ?? user.email ?? '';
-      if (!cancelled && ACTIVIDADES_EMAILS.includes(email)) {
-        setViewMode('actividades');
-      }
     }
     void init();
     return () => { cancelled = true; };
