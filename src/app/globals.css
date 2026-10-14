@@ -6502,7 +6502,7 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
 }
 
 
-/* Home Admin/Master escritorio: widgets 2 + 2 + 4 columnas y catálogo Otros a la vista. */
+/* Home Admin/Master escritorio: cuadrícula común de ocho columnas y catálogo Otros a la vista. */
 /* Los accesos añadidos no alteran el mosaico 4×6 de smartphone/tablet. */
 [data-component='HomeScreen'] > [data-element='slot'].home-desktop-extra {
   display: none;
@@ -6606,9 +6606,9 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
 
 @media (min-width: 1024px) {
   /*
-   * Ventas y Último cierre se reducen de los antiguos 3×2 a 2×2.
-   * Mantienen la misma composición interior, con escala de tipografía,
-   * iconos, márgenes y espacios cercana a dos tercios.
+   * En Master, Ventas y Último cierre siguen en 2×2:
+   * mantener escala tipográfica compacta solo en ese dashboard.
+   * Admin recupera su escala normal porque los widgets son 4×2.
    */
   [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
