@@ -591,3 +591,36 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.equal(resolveHomeWidgetScheme('#5B8FB9', { prefersDark: true }), 'dark');
     });
 });
+
+
+describe('Dashboard Admin y Master escritorio: widgets 2 + 2 + 4 y accesos de Otros', () => {
+    it('mantiene móvil y distribuye escritorio en ocho columnas y seis pistas', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const marker = css.indexOf('Home Admin/Master escritorio: widgets 2 + 2 + 4 columnas');
+        assert.ok(marker !== -1);
+        const desktop = css.slice(marker);
+        assert.match(desktop, /@media \(min-width: 1024px\)/);
+        assert.match(desktop, /grid-template-rows: repeat\(6, minmax\(0, 1fr\)\)/);
+        assert.match(desktop, /'ventas ventas cierre cierre horarios horarios horarios horarios'/);
+        assert.match(desktop, /'ventas ventas ultcierre ultcierre horario horario horario horario'/);
+        assert.match(desktop, /'mcierre mpropinas muso mrent minfo maltas mvitrina otros'/);
+        assert.match(desktop, /'aweb arent ainfo acompra ahorarios mas \. \.'/);
+        assert.match(css, /\.home-desktop-extra \{\s*display: none;/);
+        assert.match(desktop, /\.home-desktop-extra \{\s*display: flex;/);
+    });
+
+    it('genera accesos de escritorio desde los mismos catálogos del modal Otros', () => {
+        const admin = readFileSync(join(SRC_ROOT, 'components/dashboards/AdminDashboardView.tsx'), 'utf8');
+        const master = readFileSync(join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'), 'utf8');
+        const shortcuts = readFileSync(join(SRC_ROOT, 'components/dashboards/DesktopMoreShortcuts.tsx'), 'utf8');
+        const adminModal = readFileSync(join(SRC_ROOT, 'components/modals/AdminMoreFunctionsModal.tsx'), 'utf8');
+        const masterModal = readFileSync(join(SRC_ROOT, 'components/modals/MasterMoreFunctionsModal.tsx'), 'utf8');
+        assert.match(admin, /items=\{ADMIN_MORE_FUNCTIONS_ITEMS\}/);
+        assert.match(master, /items=\{MASTER_MORE_FUNCTIONS_ITEMS\}/);
+        assert.match(adminModal, /export const ADMIN_MORE_FUNCTIONS_ITEMS/);
+        assert.match(masterModal, /export const MASTER_MORE_FUNCTIONS_ITEMS/);
+        assert.match(shortcuts, /className="home-desktop-extra"/);
+        assert.match(shortcuts, /if \('href' in item\) router\.push\(item\.href\)/);
+        assert.match(shortcuts, /else onAction\(item\.action\)/);
+    });
+});
