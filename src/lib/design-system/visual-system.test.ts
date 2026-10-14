@@ -1549,7 +1549,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
 
     it('la compra mantiene visible Cambio y no marca cajas con importe', () => {
         const form = readFileSync(join(SRC_ROOT, 'components/PurchaseMultiSourceForm.tsx'), 'utf8');
-        assert.match(form, /<PurchaseFieldRow title="Caja" compactLabel>[\s\S]*?<PurchaseFieldRow title="Cambio">/, 'Cambio es la cuarta fila fija');
+        assert.match(form, /<PurchaseFieldRow title="Caja">[\s\S]*?<PurchaseFieldRow title="Cambio">/, 'Cambio es la cuarta fila fija y Caja usa la misma alineación');
+        assert.match(form, /openBreakdown\(chosenId\)/, 'seleccionar una caja abre directamente el desglose');
+        assert.doesNotMatch(form, /purchase-add-amount-/, 'no hay botón intermedio Añadir cantidad');
+        assert.doesNotMatch(form, /const removeBox =/, 'la caja seleccionada no muestra cruz de eliminación');
         assert.match(form, /disabled=\{!changeNeeded\}/, 'el botón se desactiva si no hay cambio');
         assert.match(form, /showSelectionRing && selected && 'rounded-lg ring-2 ring-white\/80'/, 'el aro solo se usa para elegir destino');
         assert.match(form, /whitespace-nowrap/, 'los nombres de caja permanecen en una línea');
