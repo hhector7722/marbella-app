@@ -305,17 +305,12 @@ function PurchaseBoxPlanPicker({
 function PurchaseFieldRow({
     title,
     children,
-    compactLabel = false,
 }: {
     title?: string;
     children: React.ReactNode;
-    compactLabel?: boolean;
 }) {
     return (
-        <div className={cn(
-            'grid items-center',
-            compactLabel ? 'grid-cols-[2.5rem_minmax(0,1fr)] gap-x-1' : 'grid-cols-[6rem_minmax(0,1fr)] gap-x-3'
-        )}>
+        <div className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-x-3">
             <span aria-hidden={!title} className="text-[10px] font-black uppercase tracking-widest text-white/85">{title}</span>
             <div className="flex min-w-0 items-center justify-center">{children}</div>
         </div>
@@ -539,13 +534,8 @@ export function PurchaseMultiSourceForm({
         }
         setBoxPickerOpen(false);
         setBoxPickerReplaceId(null);
-    };
-
-    const removeBox = (sourceId: string) => {
-        setSelectedBoxIds(prev => prev.filter(id => id !== sourceId));
-        setSources(prev => prev.filter(entry => entry.sourceId !== sourceId));
-        setChangeBreakdown({});
-        setChangeDestinationBoxId(null);
+        // Seleccionar una caja lleva directamente al desglose, sin acción intermedia.
+        openBreakdown(chosenId);
     };
 
     const changeDestinationLabel = effectiveChangeDestinationId
@@ -729,7 +719,7 @@ export function PurchaseMultiSourceForm({
                     </PurchaseFieldRow>
                 </div>
 
-                <PurchaseFieldRow title="Caja" compactLabel>
+                <PurchaseFieldRow title="Caja">
                     <div data-element="purchase-box-action" className="flex w-full flex-col items-center gap-2">
                         {selectedBoxIds.length > 0 ? (
                             <div className="flex w-full flex-wrap items-start justify-center gap-x-4 gap-y-2">
@@ -738,7 +728,7 @@ export function PurchaseMultiSourceForm({
                                     if (!source) return null;
                                     const amount = getDisplayAmount(source);
                                     return (
-                                        <div key={source.id} className="relative flex flex-col items-center gap-1">
+                                        <div key={source.id} className="flex flex-col items-center">
                                             <BoxCard
                                                 source={source}
                                                 amount={amount}
@@ -746,19 +736,6 @@ export function PurchaseMultiSourceForm({
                                                 onClick={() => openBoxPicker(source.id)}
                                                 actionLabel={'Cambiar ' + source.shortLabel}
                                             />
-                                            <Button
-                                                type="button"
-                                                variant="primary"
-                                                instance={'purchase-add-amount-' + source.id}
-                                                onClick={() => openBreakdown(source.id)}
-                                            >
-                                                Añadir cantidad
-                                            </Button>
-                                            <button type="button"
-                                                aria-label={'Quitar ' + source.shortLabel}
-                                                onClick={() => removeBox(source.id)}
-                                                className="absolute -right-3 top-0 flex h-6 w-6 items-center justify-center rounded-full border border-white/50 text-sm text-white/85"
-                                            >×</button>
                                         </div>
                                     );
                                 })}
