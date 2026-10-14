@@ -6535,18 +6535,30 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   [data-component='HomeScreen'][data-layout='master'],
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-areas:
-      'ventas ventas ultcierre ultcierre asis asis caja ingred'
+      'ventas ventas ultcierre ultcierre asis asisaccess caja ingred'
       'ventas ventas ultcierre ultcierre reservas recetas albaran cajascambio'
       'horario horario horario horario cambio plantilla mstock mweb'
       'horario horario horario horario mcarta mconsumo mmobra mcompra'
       'horario horario horario horario mcierre mpropinas muso mrent'
-      'horario horario horario horario minfo maltas mvitrina otros';
+      'horario horario horario horario minfo maltas mvitrina horariosaccess';
   }
 
   [data-component='HomeScreen'] > [data-element='slot'].home-desktop-extra {
     display: flex;
     align-items: flex-start;
     justify-content: center;
+  }
+
+  /* Master escritorio: asistencia en una celda; su acceso a la derecha.
+   * «Horarios» sustituye al antiguo icono de «Otros» sin alterar el móvil. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-desktop-asistencia'] {
+    grid-area: asisaccess;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-desktop-horarios'] {
+    grid-area: horariosaccess;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-otros'] {
+    display: none;
   }
 
   /* Albaranes mantiene su acceso visible también en el mosaico Master de escritorio. */
