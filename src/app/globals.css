@@ -6518,18 +6518,26 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   }
 
   /*
-   * Ventas y Último cierre: 2 columnas × 2 filas. El calendario ocupa
-   * 4 columnas × 4 filas justo debajo; no puede compartir las filas 1–2
-   * con los dos widgets anteriores. Los accesos rellenan la mitad derecha.
+   * /dashboard: distribución según el plano 8×6 de escritorio.
+   * Ventas 4×2 a la izquierda, Cierre 4×2 a la derecha;
+   * Horarios 4×3 debajo y veinte accesos de tamaño 1×1.
    */
   [data-component='HomeScreen'][data-layout='ops-admin'] {
     grid-template-areas:
-      'ventas ventas cierre cierre cinicial plant mobra stock'
-      'ventas ventas cierre cierre recetas albaranes asis cajascambio'
+      'ventas ventas ventas ventas cierre cierre cierre cierre'
+      'ventas ventas ventas ventas cierre cierre cierre cierre'
+      'horarios horarios horarios horarios cinicial plant mobra stock'
+      'horarios horarios horarios horarios recetas albaranes asis cajascambio'
       'horarios horarios horarios horarios ingredientes acarta apedidos aconsumo'
-      'horarios horarios horarios horarios acambio acierre areservas apropinas'
-      'horarios horarios horarios horarios aweb arent ainfo acompra'
-      'horarios horarios horarios horarios ahorarios mas . .';
+      'acambio acierre areservas apropinas aweb arent ainfo acompra';
+  }
+
+  /* El espacio se ocupa con accesos directos: el menú Otros ya no es
+     necesario en escritorio, ni duplicar Horarios junto a su widget.
+     Ambos siguen disponibles en móvil. */
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-mas-funciones'],
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-horarios'] {
+    display: none;
   }
 
   [data-component='HomeScreen'][data-layout='master'],
@@ -6602,7 +6610,7 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
    * Mantienen la misma composición interior, con escala de tipografía,
    * iconos, márgenes y espacios cercana a dos tercios.
    */
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] {
     display: flex;
@@ -6613,17 +6621,17 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     min-height: 26px;
     width: 100%;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] > :nth-child(2) {
     min-width: 0;
     flex: 1 1 auto;
     width: auto;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] > :first-child,
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] > :last-child {
     flex: 0 0 auto;
@@ -6633,67 +6641,67 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     line-height: 1.15;
     white-space: nowrap;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] button[aria-label='Día anterior'],
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] button[aria-label='Día siguiente'] {
     min-width: 23px;
     padding: 1px 0;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] button svg {
     width: 17px;
     height: 17px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] button span {
     font-size: clamp(10px, 0.8vw, 11px);
     line-height: 1.15;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] button span.text-zinc-400 {
     font-size: 9px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] .inline-flex {
     gap: 2px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='header'] > :nth-child(2) button:not([aria-label]) {
     padding-inline: 1px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   > [data-element='body'] > [data-component='Surface'][data-instance='dashboard-ventas'] {
     justify-content: flex-start;
     gap: 3px;
     padding: 2px 4px 4px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='metrics'] {
     gap: 2px;
     margin-block: auto;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='metrics'] svg {
     max-height: 20px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-element='kpis'] {
     gap: 3px;
     padding: 3px 4px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-component='KpiStat'] [data-element='value'] {
     font-size: clamp(10px, 1vw, 14px);
@@ -6701,7 +6709,7 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     min-height: 0;
     line-height: 1.1;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='dashboard-ventas']
   [data-component='KpiStat'] [data-element='label'] {
     font-size: 8px;
@@ -6709,42 +6717,42 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     margin-top: 2px;
   }
 
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='master-ultimo-cierre']
   [data-element='header'] {
     gap: 3px;
     padding: 4px 5px 0;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='master-ultimo-cierre']
   [data-element='header'] > div {
     gap: 2px 4px;
     font-size: 7px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='master-ultimo-cierre']
   [data-element='metrics'] {
     padding: 3px 5px 6px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='master-ultimo-cierre']
   [data-element='primary-kpis'] span.font-bold {
     font-size: clamp(10px, 1vw, 14px);
     line-height: 1.1;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='master-ultimo-cierre']
   [data-element='secondary-kpis'] span.font-bold {
     font-size: clamp(9px, 0.85vw, 11px);
     line-height: 1.1;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='master-ultimo-cierre']
   [data-element='primary-kpis'] span:not(.font-bold) {
     font-size: 8px;
     margin-top: 2px;
   }
-  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+  [data-component='HomeScreen'][data-layout='master']
   > [data-element='slot'][data-instance='master-ultimo-cierre']
   [data-element='secondary-kpis'] span:not(.font-bold) {
     font-size: 7px;
