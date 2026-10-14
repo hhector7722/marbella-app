@@ -352,7 +352,7 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
         tarjeta: tpvData.cardSales,
         efectivoContado: totalCounted,
     });
-    const cashToWithdraw = totalCounted; // Se retira TODO el efectivo contado
+    const cashToWithdraw = userCounted; // Solo efectivo físico retirado; las compras TPV2 son movimientos separados
     const cashLeft = 0; // No queda nada en caja por defecto
 
     // --- HANDLERS ---
@@ -484,17 +484,12 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
             // Calculate Net Sales (Excluding 10% IVA as expected by Dashboard)
             const netSalesCalculated = totalSalesGross / 1.10;
 
-            // Prepare breakdown for the new unified treasury logic.
-            // Incluye el desglose de Tpv 2 retirado para compras de urgencia.
+            // CLOSE_ENTRY recibe únicamente los billetes físicos del cierre.
+            // El gasto de TPV2 conserva su propio OUT y no se ingresa otra vez.
             const breakdownJson: Record<string, number> = {};
             Object.entries(counts).forEach(([denomination, count]) => {
                 if (count > 0) {
                     breakdownJson[denomination] = count;
-                }
-            });
-            Object.entries(tpv2Auto.breakdown).forEach(([denomination, count]) => {
-                if (count > 0) {
-                    breakdownJson[denomination] = (breakdownJson[denomination] ?? 0) + count;
                 }
             });
 
@@ -623,7 +618,7 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
             footer={
                 step === 'count' ? (
                     <CashCountFooter
-                        total={totalCounted}
+                        total={userCounted}
                         compactAmounts
                         instancePrefix="cash-closing-count"
                         cancelLabel="Atrás"
@@ -762,8 +757,8 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
                                     title="Tpv 2 · compras de urgencia"
                                 >
                                     <p className="text-xs font-semibold">
-                                        {tpv2Auto.total.toFixed(2)}€ retirados de Tpv 2 se suman al Efectivo,
-                                        con el mismo desglose de billetes y monedas.
+                                        {tpv2Auto.total.toFixed(2)}€ ya pagados desde Tpv 2 se suman
+                                        para cuadrar las ventas, pero no al efectivo retirado en este cierre.
                                     </p>
                                 </Notice>
                             ) : null}
@@ -790,6 +785,17 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
                             <ClosingSummaryRow title="Efectivo">
                                 <ClosingReadonlyValue value={totalCounted} showEuro />
                             </ClosingSummaryRow>
+
+                            {tpv2Auto.total > 0.005 ? (
+                                <>
+                                    <ClosingSummaryRow title="Retirado en cierre">
+                                        <ClosingReadonlyValue value={cashToWithdraw} showEuro />
+                                    </ClosingSummaryRow>
+                                    <ClosingSummaryRow title="Compras TPV 2">
+                                        <ClosingReadonlyValue value={tpv2Auto.total} showEuro />
+                                    </ClosingSummaryRow>
+                                </>
+                            ) : null}
 
                             <ClosingSummaryRow title="Pendiente">
                                 <ClosingReadonlyValue value={tpvData.pendingSales} showEuro />

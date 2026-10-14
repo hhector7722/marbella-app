@@ -689,16 +689,20 @@ export default function StaffDashboardView({
     const handlePurchaseMultiSourceSubmit = async (payload: PurchaseMultiSourcePayload) => {
         try {
             const baseNotes = payload.notes || 'Compra';
+            // Las cajas TPV tienen UUID reales; los alias tpv1/tpv2 son solo fallback.
+            const tpvNames = new Map(buildPaymentSources()
+                .filter((source) => source.kind === 'tpv')
+                .map((source) => [source.id, source.shortLabel]));
             const tpvParts = payload.sources
-                .filter(s => s.sourceId === 'tpv1' || s.sourceId === 'tpv2')
-                .filter(s => s.amount > 0.005)
-                .map(s => `${s.sourceId === 'tpv1' ? 'TPV 1' : 'TPV 2'}: ${s.amount.toFixed(2)}€`);
+                .filter((source) => tpvNames.has(source.sourceId) && source.amount > 0.005)
+                .map((source) => `${tpvNames.get(source.sourceId)}: ${source.amount.toFixed(2)}€`);
             const notesWithTpv = tpvParts.length > 0 ? `${baseNotes} | ${tpvParts.join(', ')}` : baseNotes;
             const customDate = payload.customDate;
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError || !user) throw new Error('Sesión no disponible para registrar la compra');
 
             for (const entry of payload.sources) {
-                // TPV sin caja real en BD: su importe no se puede persistir como movimiento.
-                if (entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2') continue;
+                    if (entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2') continue;
 
                 if (entry.amount < 0.005) continue;
                 const breakdownForDb: Record<string, number> = {};
@@ -708,10 +712,12 @@ export default function StaffDashboardView({
                     type: 'OUT',
                     amount: entry.amount,
                     breakdown: breakdownForDb,
-                    notes: notesWithTpv
+                    notes: notesWithTpv,
+                    user_id: user.id,
                 };
                 if (customDate) row.created_at = customDate;
-                await supabase.from('treasury_log').insert(row);
+                const { error: movementError } = await supabase.from('treasury_log').insert(row);
+                if (movementError) throw movementError;
             }
 
             if (payload.changeAmount >= 0.01 && payload.changeDestinationBoxId) {
@@ -722,10 +728,12 @@ export default function StaffDashboardView({
                     type: 'IN',
                     amount: payload.changeAmount,
                     breakdown: changeBreakdownForDb,
-                    notes: 'Cambio (compra)'
+                    notes: 'Cambio (compra)',
+                    user_id: user.id,
                 };
                 if (customDate) inRow.created_at = customDate;
-                await supabase.from('treasury_log').insert(inRow);
+                const { error: changeError } = await supabase.from('treasury_log').insert(inRow);
+                if (changeError) throw changeError;
             }
 
             setShowPurchaseMultiSourceModal(false);

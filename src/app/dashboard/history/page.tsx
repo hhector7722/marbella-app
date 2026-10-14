@@ -1236,20 +1236,24 @@ export default function HistoryPage() {
         }
         const safeQty = Math.max(0, Number.isFinite(qty) ? qty : 0);
         const newBreakdown = { ...(editData.breakdown ?? {}), [denomination]: safeQty };
-        const totalCounted = Object.entries(newBreakdown).reduce(
+        const physicallyWithdrawn = Object.entries(newBreakdown).reduce(
             (sum, [den, q]) => sum + (parseFloat(den) * (Number(q) || 0)),
             0
         );
-        const diff = totalCounted - Number(editData.cash_expected || 0);
-        const withDrawn = totalCounted;
-        const cLeft = 0;
+        // Mantener el ajuste por compras TPV2 al modificar el desglose físico.
+        const tpv2Purchases = Math.max(
+            0,
+            Number(editData.cash_counted ?? 0) - Number(editData.cash_withdrawn ?? editData.cash_counted ?? 0)
+        );
+        const reconciledCash = Math.round((physicallyWithdrawn + tpv2Purchases) * 100) / 100;
+        const diff = reconciledCash - Number(editData.cash_expected || 0);
         setEditData({
             ...editData,
             breakdown: newBreakdown,
-            cash_counted: totalCounted,
+            cash_counted: reconciledCash,
             difference: diff,
-            cash_withdrawn: withDrawn,
-            cash_left: cLeft,
+            cash_withdrawn: physicallyWithdrawn,
+            cash_left: 0,
         });
     };
 
@@ -2284,7 +2288,7 @@ export default function HistoryPage() {
                     parentInstance="history-closing-detail"
                     breakdown={isEditing ? (editData?.breakdown ?? selectedClosing.breakdown ?? {}) : (selectedClosing.breakdown ?? {})}
                     date={selectedClosing.closed_at}
-                    total={isEditing ? Number(editData?.cash_counted ?? selectedClosing.cash_counted ?? 0) : Number(selectedClosing.cash_counted ?? 0)}
+                    total={isEditing ? Number(editData?.cash_withdrawn ?? editData?.cash_counted ?? selectedClosing.cash_withdrawn ?? selectedClosing.cash_counted ?? 0) : Number(selectedClosing.cash_withdrawn ?? selectedClosing.cash_counted ?? 0)}
                     isEditing={isEditing}
                     onUpdate={handleBreakdownUpdate}
                     saving={loading}
@@ -2319,7 +2323,7 @@ export default function HistoryPage() {
                     onClose={() => setIsLastClosingCashModalOpen(false)}
                     breakdown={lastClosing.breakdown ?? {}}
                     date={lastClosing.closing_date as string}
-                    total={Number(lastClosing.cash_counted ?? 0)}
+                    total={Number(lastClosing.cash_withdrawn ?? lastClosing.cash_counted ?? 0)}
                     layer="base"
                     instance="history-last-closing-cash-breakdown"
                 />

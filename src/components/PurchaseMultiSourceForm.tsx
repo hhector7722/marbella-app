@@ -41,7 +41,7 @@ export interface PurchaseMultiSourcePayload {
 interface PurchaseMultiSourceFormProps {
     paymentSources: PaymentSourceOption[];
     inventoriesByBoxId: Record<string, Record<number, number>>;
-    onSubmit: (payload: PurchaseMultiSourcePayload) => void;
+    onSubmit: (payload: PurchaseMultiSourcePayload) => Promise<void>;
     onCancel: () => void;
     /** Host Modal aporta título/cierre. */
     embedded?: boolean;
@@ -285,7 +285,7 @@ export function PurchaseMultiSourceForm({
                 const ok = await scannerRef.current?.saveBatch() ?? false;
                 if (!ok) return;
             }
-            onSubmit({
+            await onSubmit({
                 price: priceNum,
                 notes: notes || 'Compra',
                 customDate: selectedDate ? parseDateTimeLocal(selectedDate).toISOString() : undefined,
