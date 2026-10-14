@@ -49,14 +49,9 @@ const CASH_CHANGE_PLAN_POSITIONS = {
     tpv1: { x: 58.5, y: 36.5 },
     tpv2: { x: 58.5, y: 71.7 },
     cambio1: { x: 10.4, y: 24.1 },
-    cambio2: { x: 36, y: 15.4 },
+    cambio2: { x: 34.5, y: 15.4 },
     inicial: { x: 21, y: 15.4 },
 } satisfies Record<string, PlanPoint>;
-
-const CASH_CHANGE_PLAN_TOP_LABELS = {
-    inicial: { x: 19.7, y: 23.3 },
-    cambio2: { x: 38.3, y: 23.3 },
-} satisfies Partial<Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, PlanPoint>>;
 
 const CASH_CHANGE_PLAN_WIDTHS: Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, number> = {
     tpv1: 8.8,
@@ -1050,10 +1045,6 @@ export const CashChangeModal = ({
                                 const isSelected = isA || isB;
                                 const shouldDim = Boolean(boxA && boxB && !isSelected);
                                 const size = CASH_CHANGE_PLAN_ASSET_SIZES[key];
-                                const topLabel = key === 'inicial' || key === 'cambio2'
-                                    ? CASH_CHANGE_PLAN_TOP_LABELS[key]
-                                    : null;
-
                                 return (
                                     <Fragment key={`${option.id}-asset`}>
                                         <div
@@ -1077,29 +1068,16 @@ export const CashChangeModal = ({
                                                 unoptimized
                                                 className="h-auto w-full select-none object-contain"
                                             />
-                                            {!topLabel ? (
-                                                <span
-                                                    data-element="cash-change-plan-label"
-                                                    className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-                                                >
-                                                    {cashChangePlanDisplayLabel(option)}
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                        {topLabel ? (
                                             <span
                                                 data-element="cash-change-plan-label"
-                                                aria-hidden
                                                 className={cn(
-                                                    'pointer-events-none absolute z-10 -translate-x-1/2 truncate rounded-md bg-red-500 px-0.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white shadow-sm transition-[opacity,transform] duration-200',
-                                                    isSelected ? 'scale-[1.06]' : 'scale-100',
-                                                    shouldDim ? 'opacity-25' : 'opacity-100',
+                                                    'absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white shadow-sm',
+                                                    key === 'inicial' ? 'bottom-full mb-1' : key === 'cambio1' ? 'top-full -mt-0.5' : 'top-full mt-1',
                                                 )}
-                                                style={{ left: topLabel.x + '%', top: topLabel.y + '%', maxWidth: 'calc(18% - 4px)' }}
                                             >
                                                 {cashChangePlanDisplayLabel(option)}
                                             </span>
-                                        ) : null}
+                                        </div>
                                     </Fragment>
                                 );
                             })}
