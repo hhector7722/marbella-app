@@ -763,7 +763,9 @@ describe('Pantalla dividida en dashboards escritorio', () => {
         assert.match(dashboard, /createPortal\(/, 'no se recorta por los contenedores del dashboard');
         assert.match(dashboard, /DashboardSplitWorkspace initialPath=\{pathname\} onClose=\{closeSplit\}/);
         assert.match(dashboard, /window\.self !== window\.top/, 'evita divisiones anidadas en cada mitad');
-        assert.match(dashboard, /dotsPortalMounted && !isEmbeddedFrame/);
+        assert.match(dashboard, /dotsPortalMounted &&/);
+        assert.match(dashboard, /\{!isEmbeddedFrame && \(/, 'los iframes conservan sus propios puntos, pero no el botón para subdividirlos');
+        assert.match(dashboard, /\{!isEmbeddedFrame && splitOpen && \(/);
     });
 
     it('cada mitad tiene su propio documento y navegación; salir restaura el dashboard sin perder la ruta', () => {
