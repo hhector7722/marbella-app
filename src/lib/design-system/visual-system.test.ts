@@ -682,6 +682,14 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /\.month-cal-week\[data-past-activities-week='true'\] \{[\s\S]*?height: var\(--month-cal-cell-min-h\)/);
     });
 
+    it('horario muestra Actividades por defecto a todos y pinta en gris solo las actividades pasadas del calendario', () => {
+        const horario = readFileSync(join(SRC_ROOT, 'app/horario/page.tsx'), 'utf8');
+        assert.match(horario, /useState<'horarios' \| 'actividades'>\('actividades'\)/, 'la vista inicial es Actividades');
+        assert.doesNotMatch(horario, /ACTIVIDADES_EMAILS/, 'el modo inicial no depende del usuario');
+        assert.match(horario, /const bgColor = isPastDay \? '#71717a' : \(act\.activityColor \|\| stringToHslColor\(act\.activityName\)\)/);
+        assert.match(horario, /<PavilionDayModal/, 'los detalles mantienen el modal de actividades original');
+    });
+
     it('calendarios mensuales de gestión usan el mismo cromo P3 dentro de PageScreen', () => {
         const calendars = [
             'app/dashboard/labor/page.tsx',
