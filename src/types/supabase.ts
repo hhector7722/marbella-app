@@ -4338,6 +4338,45 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_day_note_replies: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          note_id: string
+        }
+        Insert: {
+          author_id?: string
+          content: string
+          created_at?: string
+          id?: string
+          note_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_day_note_replies_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: true
+            referencedRelation: "schedule_day_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_day_note_replies_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedule_day_notes: {
         Row: {
           content: string
