@@ -814,42 +814,44 @@ describe('Pantalla dividida en dashboards escritorio', () => {
     });
 });
 
-describe('Historial de cierres escritorio: calendario selector y tres días', () => {
-    it('dispone los cierres previo, seleccionado y posterior junto a los tres widgets derechos', () => {
+describe('Historial de cierres escritorio: un único día central', () => {
+    it('sitúa Último cierre y Mensual a la izquierda, el día seleccionado en el centro y el calendario a la derecha', () => {
         const view = readFileSync(join(SRC_ROOT, 'components/dashboard/history/HistoryDesktopWorkspace.tsx'), 'utf8');
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(view, /data-component="HistoryDesktopWorkspace"/);
-        assert.match(view, /grid-rows-3/);
-        assert.match(view, /\[addDays\(selected, -1\), selected, addDays\(selected, 1\)\]/);
-        assert.match(view, /selected=\{index === 1\}/);
-        assert.match(view, /data-selected=\{selected \? 'true' : 'false'\}/);
-        assert.match(view, /opacity-\[0\.47\]/);
-        assert.match(view, /title="Mensual"/);
-        assert.match(view, /title="Último cierre"/);
-        assert.match(view, /<h2 className="text-sm font-bold">Calendario<\/h2>/);
-        assert.match(view, /aria-pressed=\{active\}/);
-        assert.match(view, /onClick=\{\(\) => onSelectDate\(iso\)\}/);
-        assert.match(css, /grid-template-columns: minmax\(0, 1\.63fr\) minmax\(0, 1fr\)/);
+        const left = view.indexOf('data-element="summary-stack"');
+        const center = view.indexOf('data-element="selected-day"');
+        const right = view.indexOf('data-element="calendar"');
+        assert.ok(left > 0 && center > left && right > center, 'orden de las tres columnas');
+        const last = view.indexOf('title="Último cierre"', left);
+        const monthly = view.indexOf('title="Mensual"', last);
+        assert.ok(last > left && monthly > last && monthly < center, 'Último cierre encima de Mensual');
+        assert.equal((view.match(/<HistoryDesktopDailyCard/g) ?? []).length, 1, 'solo se dibuja un día');
+        assert.match(view, /date=\{selectedDate\}/);
+        assert.match(view, /closing=\{getClosingForDate\(selectedDate\)\}/);
+        assert.match(view, /data-selected="true"/);
+        assert.doesNotMatch(view, /day-stack|addDays\(selected, -1\)|opacity-\[0\.47\]/);
+        assert.match(css, /grid-template-columns: minmax\(0, 0\.91fr\) minmax\(0, 1\.15fr\) minmax\(0, 1\.28fr\)/);
+        assert.match(css, /\[data-element='selected-day'\] \{\s*height: min\(100%, 545px\)/);
     });
 
-    it('mantiene los tres días a la izquierda y usa el mismo calendario rojo, blanco y negro del smartphone', () => {
+    it('conserva el calendario móvil blanco, rojo y negro como selector de fecha en la columna derecha', () => {
         const view = readFileSync(join(SRC_ROOT, 'components/dashboard/history/HistoryDesktopWorkspace.tsx'), 'utf8');
         const frame = readFileSync(join(SRC_ROOT, 'components/time/MonthCalendarFrame.tsx'), 'utf8');
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        assert.match(view, /<div data-element="day-stack" className="grid min-h-0 grid-rows-3 gap-3">/);
-        assert.match(view, /<div data-element="side-widgets" className="grid min-h-0 grid-rows-\[auto_auto_minmax\(0,1fr\)\] gap-3">/);
         assert.match(view, /<MonthCalendarFrame flush className="history-desktop-month-cal-chrome">/);
         assert.match(frame, /from-red-500 to-red-600/);
         assert.match(frame, /className=\{cn\('month-cal-chrome'/);
         assert.match(view, /bg-white text-zinc-900/);
         assert.match(view, /text-zinc-950/);
         assert.match(view, /ring-2 ring-inset ring-zinc-900/);
+        assert.match(view, /aria-pressed=\{active\}/);
         assert.match(view, /onClick=\{\(\) => onSelectDate\(iso\)\}/);
         assert.match(css, /\.history-desktop-cal-weeks \{\s*display: grid;/);
         assert.match(css, /\.history-desktop-month-cal-chrome \.month-cal-grid-wrap \{[\s\S]*?background: #fff;/);
     });
 
-    it('elige fechas reales sin abrir un modal; conserva detalle del cierre, tabla y experiencia móvil', () => {
+    it('selecciona fechas sin abrir un modal y conserva los detalles, fotografías, tabla y experiencia móvil', () => {
         const page = readFileSync(join(SRC_ROOT, 'app/dashboard/history/page.tsx'), 'utf8');
         const view = readFileSync(join(SRC_ROOT, 'components/dashboard/history/HistoryDesktopWorkspace.tsx'), 'utf8');
         assert.match(page, /viewMode === 'calendar' && \(\s*<HistoryDesktopWorkspace/);
@@ -859,9 +861,9 @@ describe('Historial de cierres escritorio: calendario selector y tres días', ()
         assert.match(page, /const selectDesktopDate = \(dateIso: string\) => \{/);
         assert.match(page, /setRangeStart\(format\(startOfMonth\(day\), 'yyyy-MM-dd'\)\)/);
         assert.match(page, /setRangeEnd\(format\(endOfMonth\(day\), 'yyyy-MM-dd'\)\)/);
-        assert.match(page, /\.lte\('closing_date', format\(addDays\(end, 1\), 'yyyy-MM-dd'\)\)/);
         assert.match(page, /onShowTable=\{\(\) => setViewMode\('table'\)\}/);
         assert.match(view, /getCashClosingPhotoUrlsAction/);
-        assert.match(view, /onOpen=\{\(\) => \{ if \(closing\) onOpenClosing\(closing\); \}\}/);
+        assert.match(view, /onOpen=\{\(\) => \{/);
+        assert.match(view, /if \(closing\) onOpenClosing\(closing\)/);
     });
 });
