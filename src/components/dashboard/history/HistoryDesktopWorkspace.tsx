@@ -239,24 +239,21 @@ export default function HistoryDesktopWorkspace({
                         expectedSales={getClosingForDate(selectedDate) ? getExpectedSales(parseISO(selectedDate)) : 0}
                     />
                 </div>
-                {/* Mismo componente y cromo del calendario móvil de Cierres:
-                        panel blanco, cabecera roja y cifras negras. Es un selector,
-                        no abre el modal hasta pulsar una de las tarjetas de la izquierda. */}
-                    <section data-element="calendar" className="flex min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-zinc-200 bg-white text-zinc-900">
-                        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 px-3 py-2">
-                            <h2 className="text-sm font-bold text-zinc-900">Calendario</h2>
-                            <div className="flex items-center gap-1">
-                                <button type="button" onClick={onPrevMonth} className="rounded-md p-1 text-zinc-700 hover:bg-zinc-100" aria-label="Mes anterior">
-                                    <ChevronLeft size={18} />
-                                </button>
-                                <span className="min-w-[112px] text-center text-[11px] font-semibold capitalize text-zinc-800">
-                                    {format(startOfMonth(viewMonth), 'MMMM yyyy', { locale: es })}
-                                </span>
-                                <button type="button" onClick={onNextMonth} className="rounded-md p-1 text-zinc-700 hover:bg-zinc-100" aria-label="Mes siguiente">
-                                    <ChevronRight size={18} />
-                                </button>
-                            </div>
-                        </div>
+                {/* Navegación de mes flotante sobre el fondo: el calendario blanco
+                    empieza directamente por su cabecera roja de días. */}
+                <div data-element="calendar-column" className="flex min-h-0 min-w-0 flex-col">
+                    <nav data-element="calendar-navigation" className="flex shrink-0 items-center justify-center gap-2 bg-transparent text-white" aria-label="Cambiar mes del historial">
+                        <button type="button" onClick={onPrevMonth} className="rounded-md p-1.5 text-white/75 hover:bg-white/10 hover:text-white" aria-label="Mes anterior">
+                            <ChevronLeft size={19} />
+                        </button>
+                        <span className="min-w-[128px] text-center text-sm font-semibold capitalize text-white">
+                            {format(startOfMonth(viewMonth), 'MMMM yyyy', { locale: es })}
+                        </span>
+                        <button type="button" onClick={onNextMonth} className="rounded-md p-1.5 text-white/75 hover:bg-white/10 hover:text-white" aria-label="Mes siguiente">
+                            <ChevronRight size={19} />
+                        </button>
+                    </nav>
+                    <section data-element="calendar" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radio-control)] border border-zinc-200 bg-white text-zinc-900">
                         <MonthCalendarFrame flush className="history-desktop-month-cal-chrome">
                             <div className="month-cal-weeks history-desktop-cal-weeks" style={{ gridTemplateRows: `repeat(${calendarWeeks.length}, minmax(0, 1fr))` }}>
                                 {calendarWeeks.map((week) => (
@@ -317,6 +314,7 @@ export default function HistoryDesktopWorkspace({
                             </div>
                         </MonthCalendarFrame>
                     </section>
+                </div>
             </div>
         </div>
     );
