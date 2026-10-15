@@ -2141,3 +2141,51 @@ describe('Reservas: primera comanda de personal notifica como reserva', () => {
         assert.ok(recipients.includes('fn_notify_first_staff_encargo_order()'));
     });
 });
+
+describe('Respuestas privadas de Héctor a las notas del horario', () => {
+    it('solo autor original y Héctor pueden leer; solo Héctor puede insertar', () => {
+        const sql = readFileSync(
+            join(REPO_ROOT, 'supabase/migrations/20261015172000_private_schedule_note_replies.sql'),
+            'utf8',
+        );
+        assert.match(sql, /CREATE TABLE IF NOT EXISTS public\.schedule_day_note_replies/);
+        assert.match(sql, /note_id uuid NOT NULL UNIQUE REFERENCES public\.schedule_day_notes\(id\) ON DELETE CASCADE/);
+        assert.match(sql, /ALTER TABLE public\.schedule_day_note_replies ENABLE ROW LEVEL SECURITY/);
+        assert.match(sql, /author_id = \(SELECT auth\.uid\(\)\)[\s\S]*?n\.user_id = \(SELECT auth\.uid\(\)\)/);
+        assert.match(sql, /lower\(trim\(p\.email\)\) = 'hhector7722@gmail\.com'/);
+        assert.match(sql, /FOR INSERT TO authenticated/);
+        assert.doesNotMatch(sql, /FOR UPDATE TO authenticated|FOR DELETE TO authenticated/);
+        assert.match(sql, /AFTER INSERT ON public\.schedule_day_note_replies/);
+        assert.match(sql, /'schedule_note_reply'/);
+        assert.match(sql, /v_note\.user_id,[\s\S]*?'schedule_note_reply'/, 'aviso dirigido únicamente al autor');
+    });
+
+    it('Héctor puede contestar desde Añadir nota, sin habilitar el botón a otros o al modo Ver como', () => {
+        const notes = readFileSync(join(SRC_ROOT, 'components/schedule/ScheduleNotesFooter.tsx'), 'utf8');
+        const action = readFileSync(join(SRC_ROOT, 'app/actions/schedule-note-replies.ts'), 'utf8');
+        assert.match(notes, /const mayReply = authEmail\?\.trim\(\)\.toLowerCase\(\) === NOTIFICATION_HECTOR_EMAIL/);
+        assert.match(notes, /&& !identity\?\.isViewingAs/);
+        assert.match(notes, /note\.user_id !== authUserId && !note\.reply/);
+        assert.match(notes, /instance="schedule-note-reply-toggle"/);
+        assert.match(notes, /data-element="schedule-note-private-reply"/);
+        assert.match(notes, /createPrivateScheduleNoteReply\(\{ noteId, content \}\)/);
+        assert.match(notes, /\.from\('schedule_day_note_replies'\)[\s\S]*?\.in\('note_id', rows\.map\(\(row\) => row\.id\)\)/);
+        assert.match(action, /normalizeNotificationEmail\(caller\?\.email\) !== NOTIFICATION_HECTOR_EMAIL/);
+        assert.match(action, /\.from\('schedule_day_note_replies'\)[\s\S]*?\.insert\(\{ note_id: noteId, author_id: user\.id, content \}\)/);
+    });
+
+    it('guarda el aviso in-app dentro de la transacción y envía push solo al autor original', () => {
+        const action = readFileSync(join(SRC_ROOT, 'app/actions/schedule-note-replies.ts'), 'utf8');
+        const sql = readFileSync(
+            join(REPO_ROOT, 'supabase/migrations/20261015172000_private_schedule_note_replies.sql'),
+            'utf8',
+        );
+        assert.match(sql, /INSERT INTO public\.user_notifications/);
+        assert.match(sql, /'\/staff\/dashboard\?scheduleDate=' \|\| v_note\.date::text/);
+        assert.match(action, /\.eq\('user_id', note\.user_id\)/);
+        assert.match(action, /webpush\.sendNotification/);
+        assert.match(action, /staffDashboardScheduleUrl\(note\.date\)/);
+        assert.match(action, /return \{ success: true, pushSent: false, pushWarning:/);
+        assert.match(action, /insertError\.code === '23505'/);
+    });
+});
