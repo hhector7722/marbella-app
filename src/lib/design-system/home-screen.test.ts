@@ -594,14 +594,14 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
 
 
 describe('Dashboard Admin y Master escritorio: cuadrículas de ocho columnas y accesos de Otros', () => {
-    it('mantiene móvil y distribuye escritorio en ocho columnas y seis pistas', () => {
+    it('mantiene móvil y distribuye ambos escritorios en ocho columnas y cinco filas', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         const marker = css.indexOf('Home Admin/Master escritorio: cuadrícula común de ocho columnas');
         assert.ok(marker !== -1);
         const desktop = css.slice(marker);
         assert.match(desktop, /@media \(min-width: 1024px\)/);
-        assert.match(desktop, /grid-template-rows: repeat\(6, minmax\(0, 1fr\)\)/);
-        // Las zonas no se solapan: Admin 4×2 + 4×2 arriba, Horario 4×3; Master conserva 2×2 + 2×2 y Horario 4×4.
+        assert.match(desktop, /grid-template-rows: repeat\(5, minmax\(0, 1fr\)\)/);
+        // Sin solapamientos: Admin Ventas 3×2/Cierre 2×2/Horarios 3×3; Master 2×2/2×2/4×3.
         const grids = [...desktop.matchAll(/grid-template-areas:\s*([^;]+);/g)].slice(0, 2);
         assert.equal(grids.length, 2, 'ambas plantillas de escritorio tienen grid definido');
         const getRows = (match: RegExpMatchArray) =>
@@ -618,35 +618,40 @@ describe('Dashboard Admin y Master escritorio: cuadrículas de ocho columnas y a
         };
         for (const [index, match] of grids.entries()) {
             const rows = getRows(match);
-            assert.equal(rows.length, 6);
+            assert.equal(rows.length, 5);
             assert.ok(rows.every(row => row.length === 8));
             if (index === 0) {
-                checkBox(rows, 'ventas', 0, 0, 2, 4);
-                checkBox(rows, 'cierre', 0, 4, 2, 4);
-                checkBox(rows, 'horarios', 2, 0, 3, 4);
-                assert.deepEqual(rows[5], ['acambio', 'acierre', 'areservas', 'apropinas', 'aweb', 'arent', 'ainfo', 'acompra']);
-                assert.equal(rows.flat().filter(area => !['ventas', 'cierre', 'horarios'].includes(area)).length, 20,
-                    'hay exactamente veinte accesos 1×1 en el esquema Admin');
-                assert.equal(new Set(rows.flat()).size, 23, 'cada acceso tiene una zona propia');
-                assert.ok(!rows.flat().includes('mas') && !rows.flat().includes('ahorarios'),
-                    'el dashboard no duplica Otros ni Horarios');
+                checkBox(rows, 'ventas', 0, 0, 2, 3);
+                checkBox(rows, 'cierre', 0, 3, 2, 2);
+                checkBox(rows, 'horarios', 2, 0, 3, 3);
+                assert.deepEqual(rows[4]!.slice(3), ['aweb', 'arent', 'ainfo', 'acompra', 'mas']);
+                assert.equal(rows.flat().filter(area => !['ventas', 'cierre', 'horarios'].includes(area)).length, 21,
+                    'hay exactamente 21 accesos 1×1 en Admin');
+                assert.equal(new Set(rows.flat()).size, 24);
+                assert.ok(rows.flat().includes('mas') && !rows.flat().includes('ahorarios'),
+                    'Otros sigue accesible sin duplicar el acceso al widget Horarios');
             } else {
                 checkBox(rows, 'ventas', 0, 0, 2, 2);
                 checkBox(rows, 'ultcierre', 0, 2, 2, 2);
-                checkBox(rows, 'horario', 2, 0, 4, 4);
+                checkBox(rows, 'horario', 2, 0, 3, 4);
+                assert.equal(rows.flat().filter(area => !['ventas', 'ultcierre', 'horario'].includes(area)).length, 20);
+                assert.equal(new Set(rows.flat()).size, 23);
+                assert.deepEqual(rows[4]!.slice(4), ['muso', 'mrent', 'minfo', 'otros']);
+                assert.ok(!['mweb', 'mvitrina', 'mconsumo', 'maltas', 'horariosaccess']
+                    .some(area => rows.flat().includes(area)));
             }
-            assert.equal(rows.flat().length, 48);
+            assert.equal(rows.flat().length, 40);
         }
-        assert.match(desktop, /'horario horario horario horario mcierre mpropinas muso mrent'/);
-        assert.match(desktop, /'horarios horarios horarios horarios ingredientes acarta apedidos aconsumo'/);
-        assert.match(desktop, /\[data-instance='admin-mas-funciones'\],[\s\S]*?\[data-instance='admin-extra-horarios'\] \{\s*display: none;/);
+        assert.match(desktop, /'horario horario horario horario mmobra mcompra mcierre mpropinas'/);
+        assert.match(desktop, /'horarios horarios horarios aconsumo acambio acierre areservas apropinas'/);
+        assert.match(desktop, /\[data-instance='admin-extra-horarios'\] \{\s*display: none;/);
         assert.match(desktop, /\[data-component='HomeScreen'\]\[data-layout='master'\]/,
             'las reglas de tamaño reducido se limitan a Master');
         assert.match(css, /\.home-desktop-extra \{\s*display: none;/);
         assert.match(desktop, /\.home-desktop-extra \{\s*display: flex;/);
     });
 
-    it('Master escritorio: asistencia 1×1, acceso a Asistencia y Horarios en lugar de Otros', () => {
+    it('Master escritorio: Registros 1×1, acceso Asistencia y Otros en la última celda', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         const master = readFileSync(join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'), 'utf8');
         const desktop = css.slice(css.indexOf('Home Admin/Master escritorio: cuadrícula común de ocho columnas'));
@@ -654,15 +659,15 @@ describe('Dashboard Admin y Master escritorio: cuadrículas de ocho columnas y a
         assert.equal(areas.length, 2);
         const masterRows = [...areas[1]![1]!.matchAll(/'([^']+)'/g)]
             .map(match => match[1]!.trim().split(/\s+/));
-        assert.equal(masterRows.length, 6);
+        assert.equal(masterRows.length, 5);
         assert.ok(masterRows.every(row => row.length === 8));
         assert.deepEqual(masterRows[0]!.slice(4), ['asis', 'asisaccess', 'caja', 'ingred']);
-        assert.equal(masterRows[5]![7], 'horariosaccess');
+        assert.equal(masterRows[4]![7], 'otros');
         assert.equal(masterRows.flat().filter(area => area === 'asis').length, 1);
-        assert.equal(masterRows.flat().filter(area => area === 'otros').length, 0);
+        assert.equal(masterRows.flat().filter(area => area === 'otros').length, 1);
         assert.match(master, /instance="master-desktop-asistencia"[\s\S]*?label="Asistencia"[\s\S]*?router\.push\('\/staff\/history'\)/);
-        assert.match(master, /instance="master-desktop-horarios"[\s\S]*?label="Horarios"[\s\S]*?router\.push\('\/horario'\)/);
-        assert.match(desktop, /\[data-instance='master-otros'\] \{\s*display: none;/);
+        assert.doesNotMatch(master, /instance="master-desktop-horarios"/);
+        assert.match(desktop, /\[data-instance='master-otros'\] \{\s*display: flex;/);
         assert.match(css, /\.home-desktop-extra \{\s*display: none;/, 'los accesos solo se muestran en escritorio');
     });
 
@@ -717,9 +722,14 @@ describe('Dashboard Admin y Master escritorio: cuadrículas de ocho columnas y a
         const adminModal = readFileSync(join(SRC_ROOT, 'components/modals/AdminMoreFunctionsModal.tsx'), 'utf8');
         const masterModal = readFileSync(join(SRC_ROOT, 'components/modals/MasterMoreFunctionsModal.tsx'), 'utf8');
         assert.match(admin, /items=\{ADMIN_MORE_FUNCTIONS_ITEMS\}/);
-        assert.match(master, /items=\{MASTER_MORE_FUNCTIONS_ITEMS\}/);
+        assert.match(master, /items=\{MASTER_DESKTOP_DIRECT_ITEMS\}/);
+        assert.match(master, /desktopShortlist=\{desktopOtherShortlist\}/);
+        assert.match(master, /setDesktopOtherShortlist\(window\.matchMedia\('\(min-width: 1024px\)'\)\.matches\)/);
         assert.match(adminModal, /export const ADMIN_MORE_FUNCTIONS_ITEMS/);
         assert.match(masterModal, /export const MASTER_MORE_FUNCTIONS_ITEMS/);
+        assert.match(masterModal, /export const MASTER_DESKTOP_OTHER_INSTANCES = \['web', 'vitrina', 'consumo', 'altas'\]/);
+        assert.match(masterModal, /export const MASTER_DESKTOP_DIRECT_ITEMS/);
+        assert.match(masterModal, /const availableItems = desktopShortlist \? MASTER_DESKTOP_OTHER_ITEMS : MASTER_MORE_FUNCTIONS_ITEMS;/);
         assert.match(shortcuts, /className="home-desktop-extra"/);
         assert.match(shortcuts, /if \('href' in item\) router\.push\(item\.href\)/);
         assert.match(shortcuts, /else onAction\(item\.action\)/);
