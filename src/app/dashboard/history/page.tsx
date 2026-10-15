@@ -1340,6 +1340,19 @@ export default function HistoryPage() {
         }
     };
 
+    // Navegar por meses conserva el día seleccionado cuando existe y,
+    // en meses más cortos, selecciona el último día posible. Así la columna
+    // de cierres y el calendario siempre se refieren al mismo periodo.
+    const navigateDesktopMonth = (offset: -1 | 1) => {
+        const target = addMonths(viewMonth, offset);
+        const day = Math.min(parseLocalSafe(selectedDate).getDate(), endOfMonth(target).getDate());
+        const nextIso = format(new Date(target.getFullYear(), target.getMonth(), day), 'yyyy-MM-dd');
+        setSelectedDate(nextIso);
+        setRangeStart(format(startOfMonth(target), 'yyyy-MM-dd'));
+        setRangeEnd(format(endOfMonth(target), 'yyyy-MM-dd'));
+        setFilterMode('range');
+    };
+
     // La primera apertura en escritorio se centra en el último cierre real
     // (normalmente ayer), no en un día de hoy todavía sin cierre.
     useEffect(() => {
@@ -1413,8 +1426,8 @@ export default function HistoryPage() {
                 getClosingForDate={(iso) => closingsByDate.get(iso) ?? historicalClosingsMap.get(iso) ?? null}
                 getExpectedSales={get8DayExpectedSales}
                 onSelectDate={selectDesktopDate}
-                onPrevMonth={handlePrevMonth}
-                onNextMonth={handleNextMonth}
+                onPrevMonth={() => navigateDesktopMonth(-1)}
+                onNextMonth={() => navigateDesktopMonth(1)}
                 onOpenClosing={(closing) => {
                     const full = closingsByDate.get(closing.closing_date)
                         ?? historicalClosingsMap.get(closing.closing_date)
