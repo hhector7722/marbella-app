@@ -129,7 +129,7 @@ function HistoryDesktopDailyCard({
                         ] as const).map(([photoKey, label, pathKey]) => (
                             <button
                                 type="button" key={photoKey} onClick={onOpen}
-                                className="flex min-w-0 flex-col items-center justify-end gap-1 overflow-hidden rounded-md bg-white/5 p-1.5 hover:bg-white/10"
+                                className="flex min-w-0 flex-col items-center justify-end gap-1 overflow-hidden bg-transparent p-0 transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/75"
                                 aria-label={`Ver ${label.toLowerCase()} del ${timeLine(date)}`}
                             >
                                 {photos[photoKey] ? (
