@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { addDays, format, isSameMonth, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CloudSun, Pencil } from 'lucide-react';
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import type { Tables } from '@/types/supabase';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { buildLastClosingMetrics, formatClosingDifference, formatClosingValue, formatCurrencySpanish } from '@/lib/cash-closing-metrics';
@@ -38,7 +39,6 @@ type Props = {
 
 const currency = (v: number | null | undefined) => formatCurrencySpanish(Number(v ?? 0));
 const timeLine = (date: string) => format(parseISO(date), "EEEE d 'de' MMMM", { locale: es });
-const MONTH_DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 function HistoryDesktopDailyCard({
     date, closing, selected, onSelect, onOpen, expectedSales,
@@ -257,44 +257,83 @@ export default function HistoryDesktopWorkspace({
                 <div data-element="side-widgets" className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3">
                     <HistoryDesktopSummary title="Mensual" subtitle={monthLabel} metrics={monthlyKpis} onClick={onMonthlySales} />
                     <HistoryDesktopSummary title="Último cierre" subtitle={lastClosing ? timeLine(lastClosing.closing_date) : undefined} metrics={lastKpis} onClick={lastClosing ? () => onOpenClosing(lastClosing) : undefined} />
-                    <section data-element="calendar" className="flex min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.63)] p-3 text-white">
-                        <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
-                            <h2 className="text-sm font-bold">Calendario</h2>
-                            <div className="flex items-center gap-2">
-                                <button type="button" onClick={onPrevMonth} className="rounded-md p-1 hover:bg-white/10" aria-label="Mes anterior"><ChevronLeft size={17} /></button>
-                                <span className="min-w-[90px] text-center text-[11px] capitalize text-white/75">{format(startOfMonth(viewMonth), 'MMMM yyyy', { locale: es })}</span>
-                                <button type="button" onClick={onNextMonth} className="rounded-md p-1 hover:bg-white/10" aria-label="Mes siguiente"><ChevronRight size={17} /></button>
+                    {/* Mismo componente y cromo del calendario móvil de Cierres:
+                        panel blanco, cabecera roja y cifras negras. Es un selector,
+                        no abre el modal hasta pulsar una de las tarjetas de la izquierda. */}
+                    <section data-element="calendar" className="flex min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-zinc-200 bg-white text-zinc-900">
+                        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 px-3 py-2">
+                            <h2 className="text-sm font-bold text-zinc-900">Calendario</h2>
+                            <div className="flex items-center gap-1">
+                                <button type="button" onClick={onPrevMonth} className="rounded-md p-1 text-zinc-700 hover:bg-zinc-100" aria-label="Mes anterior">
+                                    <ChevronLeft size={18} />
+                                </button>
+                                <span className="min-w-[112px] text-center text-[11px] font-semibold capitalize text-zinc-800">
+                                    {format(startOfMonth(viewMonth), 'MMMM yyyy', { locale: es })}
+                                </span>
+                                <button type="button" onClick={onNextMonth} className="rounded-md p-1 text-zinc-700 hover:bg-zinc-100" aria-label="Mes siguiente">
+                                    <ChevronRight size={18} />
+                                </button>
                             </div>
                         </div>
-                        <div className="grid shrink-0 grid-cols-7 gap-1 border-b border-white/15 pb-1">
-                            {MONTH_DAYS.map((d) => <span key={d} className="text-center text-[9px] font-semibold text-white/45">{d}</span>)}
-                        </div>
-                        <div className="grid min-h-0 flex-1 gap-1 py-1" style={{ gridTemplateRows: `repeat(${calendarWeeks.length}, minmax(0, 1fr))` }}>
-                            {calendarWeeks.map((week) => (
-                                <div key={format(week[0], 'yyyy-MM-dd')} className="grid min-h-0 grid-cols-7 gap-1">
-                                    {week.map((day) => {
-                                        const iso = format(day, 'yyyy-MM-dd');
-                                        const closing = getClosingForDate(iso);
-                                        const isCurrentMonth = isSameMonth(day, viewMonth);
-                                        const active = iso === selectedDate;
-                                        return (
-                                            <button
-                                                type="button"
-                                                key={iso}
-                                                aria-label={`Seleccionar ${timeLine(iso)}`}
-                                                aria-pressed={active}
-                                                onClick={() => onSelectDate(iso)}
-                                                className={cn('flex min-h-0 min-w-0 flex-col items-center justify-center rounded-md border text-[11px] transition-colors', active ? 'border-white/85 bg-white/25 font-bold text-white ring-1 ring-white/40' : 'border-white/10 bg-white/5 hover:border-white/50 hover:bg-white/10', !isCurrentMonth && 'opacity-35')}
-                                            >
-                                                <span>{format(day, 'd')}</span>
-                                                {closing ? <span className="mt-0.5 h-1 w-1 rounded-full bg-emerald-300" aria-hidden /> : null}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            ))}
-                        </div>
-                        <span className="shrink-0 pt-1 text-center text-[9px] text-white/45">Selecciona un día para actualizar los tres cierres</span>
+                        <MonthCalendarFrame flush className="history-desktop-month-cal-chrome">
+                            <div className="month-cal-weeks history-desktop-cal-weeks" style={{ gridTemplateRows: `repeat(${calendarWeeks.length}, minmax(0, 1fr))` }}>
+                                {calendarWeeks.map((week) => (
+                                    <div key={format(week[0], 'yyyy-MM-dd')} className="month-cal-week grid min-h-0 grid-cols-7 border-b border-gray-100 last:border-b-0">
+                                        {week.map((day) => {
+                                            const iso = format(day, 'yyyy-MM-dd');
+                                            const closing = getClosingForDate(iso);
+                                            const isCurrentMonth = isSameMonth(day, viewMonth);
+                                            const active = iso === selectedDate;
+                                            const past = day < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+                                            const netSales = Number(closing?.net_sales ?? 0);
+                                            const expectedSales = closing ? getExpectedSales(day) : 0;
+                                            const difference = expectedSales > 0 && netSales > 0
+                                                ? (netSales - expectedSales) / expectedSales * 100
+                                                : null;
+
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={iso}
+                                                    aria-label={`Seleccionar ${timeLine(iso)}`}
+                                                    aria-pressed={active}
+                                                    onClick={() => onSelectDate(iso)}
+                                                    className={cn(
+                                                        'month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 p-1 text-zinc-900 transition-colors last:border-r-0 hover:bg-blue-50/50',
+                                                        past ? 'bg-zinc-50/90' : 'bg-white',
+                                                        !isCurrentMonth && 'opacity-35',
+                                                        active && 'z-[1] bg-white ring-2 ring-inset ring-zinc-900'
+                                                    )}
+                                                >
+                                                    <span className={cn('absolute right-1 top-1 text-[9px] font-medium text-gray-400', active && 'font-bold text-zinc-950')}>
+                                                        {format(day, 'd')}
+                                                    </span>
+                                                    <span className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 pt-2 text-center">
+                                                        {netSales > 0 ? (
+                                                            <>
+                                                                <strong className="text-[clamp(9px,0.8vw,13px)] font-extrabold tabular-nums text-zinc-950">
+                                                                    {currency(Math.round(netSales))}
+                                                                </strong>
+                                                                {difference !== null ? (
+                                                                    <span className={cn(
+                                                                        'text-[9px] font-black tabular-nums',
+                                                                        difference > 5 ? 'text-emerald-600' :
+                                                                        difference < -5 ? 'text-rose-600' : 'text-zinc-500'
+                                                                    )}>
+                                                                        {difference > 5 ? '▲ ' : difference < -5 ? '▼ ' : ''}
+                                                                        {Math.abs(Math.round(difference))}%
+                                                                    </span>
+                                                                ) : null}
+                                                            </>
+                                                        ) : null}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                ))}
+                            </div>
+                        </MonthCalendarFrame>
                     </section>
                 </div>
             </div>
