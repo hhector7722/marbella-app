@@ -602,7 +602,7 @@ export default function ReservasClient() {
         .from('user_notifications')
         .update({ read_at: new Date().toISOString() })
         .eq('user_id', userId)
-        .eq('type', 'client_order_submitted')
+        .in('type', ['client_order_submitted', 'staff_order_created'])
         .eq('entity_id', eventId)
         .is('read_at', null)
       if (!error) await refreshUnreadNotifications()
