@@ -17,7 +17,7 @@ import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { MasterTodayAttendanceWidget } from '@/components/dashboards/MasterTodayAttendanceWidget';
 import { MasterLastClosingWidget } from '@/components/dashboards/MasterLastClosingWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
-import { MasterMoreFunctionsModal, MASTER_MORE_FUNCTIONS_ITEMS } from '@/components/modals/MasterMoreFunctionsModal';
+import { MasterMoreFunctionsModal, MASTER_DESKTOP_DIRECT_ITEMS } from '@/components/modals/MasterMoreFunctionsModal';
 import { DesktopMoreShortcuts } from '@/components/dashboards/DesktopMoreShortcuts';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
@@ -185,6 +185,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [userEmail, setUserEmail] = useState('');
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
     const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
+    const [desktopOtherShortlist, setDesktopOtherShortlist] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isAlbaranesModalOpen, setIsAlbaranesModalOpen] = useState(false);
@@ -621,7 +622,10 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     }}
                     onOpenReservas={() => router.push('/staff/reservas')}
                     onOpenCajaInicialAcciones={openCajaInicialActions}
-                    onOpenOtros={() => setIsMoreFunctionsModalOpen(true)}
+                    onOpenOtros={() => {
+                        setDesktopOtherShortlist(window.matchMedia('(min-width: 1024px)').matches);
+                        setIsMoreFunctionsModalOpen(true);
+                    }}
                     onOpenPlantilla={() => {
                         setIsStaffModalOpen(true);
                         void ensureActivePlantillaEmployees();
@@ -641,21 +645,9 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                         onClick={() => router.push('/staff/history')}
                     />
                 </HomeScreenSlot>
-                <HomeScreenSlot
-                    size="icon"
-                    instance="master-desktop-horarios"
-                    className="home-desktop-extra"
-                >
-                    <DashboardShortcut
-                        instance="master-schedules-access"
-                        label="Horarios"
-                        img="/icons/schedule.png"
-                        onClick={() => router.push('/horario')}
-                    />
-                </HomeScreenSlot>
                 <DesktopMoreShortcuts
                     namespace="master"
-                    items={MASTER_MORE_FUNCTIONS_ITEMS}
+                    items={MASTER_DESKTOP_DIRECT_ITEMS}
                     onAction={(action) => {
                         switch (action) {
                             case 'stock': setIsProductModalOpen(true); break;
@@ -769,6 +761,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
 
             <MasterMoreFunctionsModal
                 isOpen={isMoreFunctionsModalOpen}
+                desktopShortlist={desktopOtherShortlist}
                 onClose={() => setIsMoreFunctionsModalOpen(false)}
                 onOpenCierre={() => {
                     setClosingFromOtros(true);
