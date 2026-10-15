@@ -832,6 +832,23 @@ describe('Historial de cierres escritorio: calendario selector y tres días', ()
         assert.match(css, /grid-template-columns: minmax\(0, 1\.63fr\) minmax\(0, 1fr\)/);
     });
 
+    it('mantiene los tres días a la izquierda y usa el mismo calendario rojo, blanco y negro del smartphone', () => {
+        const view = readFileSync(join(SRC_ROOT, 'components/dashboard/history/HistoryDesktopWorkspace.tsx'), 'utf8');
+        const frame = readFileSync(join(SRC_ROOT, 'components/time/MonthCalendarFrame.tsx'), 'utf8');
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(view, /<div data-element="day-stack" className="grid min-h-0 grid-rows-3 gap-3">/);
+        assert.match(view, /<div data-element="side-widgets" className="grid min-h-0 grid-rows-\[auto_auto_minmax\(0,1fr\)\] gap-3">/);
+        assert.match(view, /<MonthCalendarFrame flush className="history-desktop-month-cal-chrome">/);
+        assert.match(frame, /from-red-500 to-red-600/);
+        assert.match(frame, /className=\{cn\('month-cal-chrome'/);
+        assert.match(view, /bg-white text-zinc-900/);
+        assert.match(view, /text-zinc-950/);
+        assert.match(view, /ring-2 ring-inset ring-zinc-900/);
+        assert.match(view, /onClick=\{\(\) => onSelectDate\(iso\)\}/);
+        assert.match(css, /\.history-desktop-cal-weeks \{\s*display: grid;/);
+        assert.match(css, /\.history-desktop-month-cal-chrome \.month-cal-grid-wrap \{[\s\S]*?background: #fff;/);
+    });
+
     it('elige fechas reales sin abrir un modal; conserva detalle del cierre, tabla y experiencia móvil', () => {
         const page = readFileSync(join(SRC_ROOT, 'app/dashboard/history/page.tsx'), 'utf8');
         const view = readFileSync(join(SRC_ROOT, 'components/dashboard/history/HistoryDesktopWorkspace.tsx'), 'utf8');
