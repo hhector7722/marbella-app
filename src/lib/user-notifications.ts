@@ -22,10 +22,11 @@ export type UserNotificationRow = {
   created_at: string
 }
 
-/** Tipos del icono calendario (ReservationsBell): reservas + pedidos cliente. */
+/** Avisos del icono calendario: reservas, pedidos cliente y primera comanda staff. */
 export const RESERVATION_CENTER_NOTIFICATION_TYPES = [
   'reservation_new',
   'client_order_submitted',
+  'staff_order_created',
 ] as const
 
 export type ReservationCenterNotificationType =
