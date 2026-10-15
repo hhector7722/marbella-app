@@ -42,6 +42,22 @@ function buildPushFromBody(body: {
     const record = body.record;
     if (!record || !record.id) return null;
 
+    if (body.kind === 'staff_order_created' && body.table === 'events') {
+        const name = String(record.customer_name ?? 'Cliente');
+        const dateStr = formatDateEs(
+            typeof record.event_date === 'string' ? record.event_date : undefined
+        );
+        const timeStr = formatTimeHm(
+            typeof record.event_time === 'string' ? record.event_time : undefined
+        );
+        const when = [dateStr, timeStr].filter(Boolean).join(' ');
+        return {
+            title: '🛒 Nueva comanda',
+            body: [name, when, 'Comanda creada por personal'].filter(Boolean).join(' · '),
+            url: `/staff/reservas?eventId=${record.id}`,
+        };
+    }
+
     const isClientOrder =
         body.kind === 'client_order_submitted' || body.table === 'events';
 
