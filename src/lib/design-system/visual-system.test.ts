@@ -2100,3 +2100,44 @@ describe('Menú lateral desktop cerrado por defecto', () => {
         assert.match(square, /height: var\(--home-icon-size\)/);
     });
 });
+
+describe('Reservas: primera comanda de personal notifica como reserva', () => {
+    it('la campana de reservas recoge las nuevas comandas y el webhook distingue su push', () => {
+        const types = readFileSync(join(SRC_ROOT, 'lib/user-notifications.ts'), 'utf8');
+        const bell = readFileSync(join(SRC_ROOT, 'components/ReservationsBell.tsx'), 'utf8');
+        const general = readFileSync(join(SRC_ROOT, 'contexts/UnreadNotificationsContext.tsx'), 'utf8');
+        const reservations = readFileSync(join(SRC_ROOT, 'app/staff/reservas/ReservasClient.tsx'), 'utf8');
+        const push = readFileSync(join(SRC_ROOT, 'app/api/webhooks/reservations-push/route.ts'), 'utf8');
+
+        assert.match(types, /RESERVATION_CENTER_NOTIFICATION_TYPES = \[[\s\S]*?'staff_order_created'/);
+        assert.match(bell, /includeTypes: RESERVATION_CENTER_NOTIFICATION_TYPES/);
+        assert.match(general, /excludeTypes: RESERVATION_CENTER_NOTIFICATION_TYPES/);
+        assert.match(bell, /row.type === 'staff_order_created' \? Package/);
+        assert.match(reservations, /\.in\('type', \['client_order_submitted', 'staff_order_created'\]\)/);
+        assert.ok(push.includes("body.kind === 'staff_order_created' && body.table === 'events'"));
+        assert.ok(push.includes("title: '🛒 Nueva comanda'"));
+        assert.ok(push.includes("split(/\\s+/)[0]"), 'también identifica Fernando Ariel');
+    });
+
+    it('el trigger solo avisa tras insertar la primera comanda confirmada y evita duplicados', () => {
+        const sql = readFileSync(join(REPO_ROOT, 'supabase/migrations/20261015145500_notify_first_staff_encargo_order.sql'), 'utf8');
+        const recipients = readFileSync(join(REPO_ROOT, 'supabase/migrations/20261015150100_fix_notification_first_name_matching.sql'), 'utf8');
+
+        assert.ok(sql.includes('AFTER INSERT ON public.event_orders'));
+        assert.ok(sql.includes("WHEN (NEW.status = 'confirmed')"));
+        assert.ok(sql.includes('auth.uid() IS NULL OR NOT public.can_manage_encargos()'));
+        assert.ok(sql.includes('pg_advisory_xact_lock'));
+        assert.ok(sql.includes("AND o.status = 'confirmed'"));
+        assert.ok(sql.includes('user_notifications_staff_order_once_per_event_idx'));
+        assert.ok(sql.includes('ON CONFLICT DO NOTHING'));
+        assert.ok(sql.includes("'staff_order_created'"));
+        assert.ok(sql.includes("'Nueva comanda'"));
+        assert.ok(sql.includes("'/staff/reservas?eventId='"));
+        assert.ok(sql.includes("AT TIME ZONE 'Europe/Madrid'"));
+        assert.ok(sql.includes('v_notified_count <= 0'));
+        assert.ok(sql.includes('net.http_post'));
+        assert.ok(recipients.includes('fn_notify_reservation_insert()'));
+        assert.ok(recipients.includes('save_client_event_order_by_token(uuid,jsonb,text)'));
+        assert.ok(recipients.includes('fn_notify_first_staff_encargo_order()'));
+    });
+});
