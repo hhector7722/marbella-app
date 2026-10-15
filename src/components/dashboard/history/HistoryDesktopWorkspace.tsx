@@ -70,7 +70,7 @@ function HistoryDesktopDailyCard({
         return () => { active = false; };
     }, [closing?.id, closing?.dataphone_totals_photo_path, closing?.bdp_closing_ticket_photo_path]);
 
-    const values = closing ? buildLastClosingMetrics(closing) : null;
+    const values = closing ? buildLastClosingMetrics({ ...closing }) : null;
     const metrics = values ? [
         ['Ventas', values.tpvSales],
         ['Venta neta', values.netSales],
@@ -202,7 +202,7 @@ export default function HistoryDesktopWorkspace({
         recovered: monthlyClosings.reduce((sum, row) => sum + Number(row.debt_recovered ?? 0), 0),
         difference: monthlyClosings.reduce((sum, row) => sum + Number(row.difference ?? 0), 0),
     }), [monthlyClosings]);
-    const last = buildLastClosingMetrics(lastClosing);
+    const last = buildLastClosingMetrics(lastClosing ? { ...lastClosing } : null);
     const monthlyKpis = [
         { label: 'Ventas', value: currency(summary.totalGross) },
         { label: 'Venta neta', value: currency(summary.totalNet) },
