@@ -7127,3 +7127,47 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     transition: none;
   }
 }
+
+/* Historial escritorio: calendario selector idéntico en cromo al móvil
+   (MonthCalendarFrame compartido: lunes-domingo en rojo, blanco y negro).
+   Solo la rejilla interna se comprime para caber en el panel derecho. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar']
+  .history-desktop-month-cal-chrome {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    background: #fff;
+    padding: 0;
+    gap: 0;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar']
+  .history-desktop-month-cal-chrome .month-cal-grid-wrap {
+    width: 100%;
+    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar']
+  .history-desktop-cal-weeks {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    background: #fff;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar']
+  .history-desktop-cal-weeks .month-cal-week,
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar']
+  .history-desktop-cal-weeks .month-cal-cell {
+    min-height: 0 !important;
+    height: 100%;
+    overflow: hidden;
+  }
+}
