@@ -2185,7 +2185,7 @@ describe('Respuestas privadas de Héctor a las notas del horario', () => {
         assert.match(action, /\.eq\('user_id', note\.user_id\)/);
         assert.match(action, /webpush\.sendNotification/);
         assert.match(action, /staffDashboardScheduleUrl\(note\.date\)/);
-        assert.match(action, /return \{ success: true, pushSent: false, pushWarning:/);
+        assert.match(action, /pushWarning: 'Respuesta guardada/);
         assert.match(action, /insertError\.code === '23505'/);
     });
 });
