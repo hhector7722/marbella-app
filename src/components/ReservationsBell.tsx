@@ -63,7 +63,7 @@ function NotificationCard({
   const { Icon, iconClass, critical } = getNotificationVisual(row.type, row.entity_type)
   const dateTimeLine = formatNotificationDateTimeLine(row.created_at)
   const CardIcon =
-    row.type === 'client_order_submitted' ? Package : Icon
+    row.type === 'client_order_submitted' || row.type === 'staff_order_created' ? Package : Icon
 
   return (
     <li>
