@@ -7071,3 +7071,59 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     display: none !important;
   }
 }
+
+/* Historial de cierres escritorio: 3 cierres en columna (previo, activo,
+   posterior) y, a la derecha, Mensual, Último cierre y calendario selector.
+   En móvil/tablet se mantiene el PageScreen de cierres sin modificaciones. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'] {
+    width: 100%;
+    height: calc(100dvh - var(--shell-topbar-height, 3.5rem) - 2rem);
+    min-height: 560px;
+    max-height: 1140px;
+    overflow: hidden;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] .history-desktop-board {
+    grid-template-columns: minmax(0, 1.63fr) minmax(0, 1fr);
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'] {
+    min-width: 0;
+    height: 100%;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'][data-selected='true'] {
+    border-color: rgb(255 255 255 / 0.62);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.10), 0 4px 16px rgb(0 0 0 / 0.13);
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'][data-selected='false'] {
+    filter: saturate(0.82);
+  }
+
+  [data-component='HistoryDesktopWorkspace'] .history-desktop-summary {
+    min-height: 99px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  [data-component='HistoryDesktopWorkspace'] .history-desktop-board {
+    grid-template-columns: minmax(0, 1.43fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'] > div:nth-child(2) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'] > div:nth-child(2) > div:last-child {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'] {
+    transition: none;
+  }
+}
