@@ -813,3 +813,38 @@ describe('Pantalla dividida en dashboards escritorio', () => {
         assert.match(css, /--home-desktop-indicator-reserve: calc\(var\(--tactil-minimo\) \+ var\(--espacio-8\) \+ var\(--espacio-4\)\)/);
     });
 });
+
+describe('Historial de cierres escritorio: calendario selector y tres días', () => {
+    it('dispone los cierres previo, seleccionado y posterior junto a los tres widgets derechos', () => {
+        const view = readFileSync(join(SRC_ROOT, 'components/dashboard/history/HistoryDesktopWorkspace.tsx'), 'utf8');
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(view, /data-component="HistoryDesktopWorkspace"/);
+        assert.match(view, /grid-rows-3/);
+        assert.match(view, /\[addDays\(selected, -1\), selected, addDays\(selected, 1\)\]/);
+        assert.match(view, /selected=\{index === 1\}/);
+        assert.match(view, /data-selected=\{selected \? 'true' : 'false'\}/);
+        assert.match(view, /opacity-\[0\.47\]/);
+        assert.match(view, /title="Mensual"/);
+        assert.match(view, /title="Último cierre"/);
+        assert.match(view, /<h2 className="text-sm font-bold">Calendario<\/h2>/);
+        assert.match(view, /aria-pressed=\{active\}/);
+        assert.match(view, /onClick=\{\(\) => onSelectDate\(iso\)\}/);
+        assert.match(css, /grid-template-columns: minmax\(0, 1\.63fr\) minmax\(0, 1fr\)/);
+    });
+
+    it('elige fechas reales sin abrir un modal; conserva detalle del cierre, tabla y experiencia móvil', () => {
+        const page = readFileSync(join(SRC_ROOT, 'app/dashboard/history/page.tsx'), 'utf8');
+        const view = readFileSync(join(SRC_ROOT, 'components/dashboard/history/HistoryDesktopWorkspace.tsx'), 'utf8');
+        assert.match(page, /viewMode === 'calendar' && \(\s*<HistoryDesktopWorkspace/);
+        assert.match(page, /<div className=\{viewMode === 'calendar' \? 'lg:hidden' : undefined\}>/);
+        assert.match(view, /className="history-desktop-workspace[^"]*hidden[^"]*lg:flex"/);
+        assert.match(page, /getClosingForDate=\{\(iso\) => closingsByDate\.get\(iso\) \?\? historicalClosingsMap\.get\(iso\) \?\? null\}/);
+        assert.match(page, /const selectDesktopDate = \(dateIso: string\) => \{/);
+        assert.match(page, /setRangeStart\(format\(startOfMonth\(day\), 'yyyy-MM-dd'\)\)/);
+        assert.match(page, /setRangeEnd\(format\(endOfMonth\(day\), 'yyyy-MM-dd'\)\)/);
+        assert.match(page, /\.lte\('closing_date', format\(addDays\(end, 1\), 'yyyy-MM-dd'\)\)/);
+        assert.match(page, /onShowTable=\{\(\) => setViewMode\('table'\)\}/);
+        assert.match(view, /getCashClosingPhotoUrlsAction/);
+        assert.match(view, /onOpen=\{\(\) => \{ if \(closing\) onOpenClosing\(closing\); \}\}/);
+    });
+});
