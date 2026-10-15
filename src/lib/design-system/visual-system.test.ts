@@ -2153,6 +2153,11 @@ describe('Respuestas privadas de Héctor a las notas del horario', () => {
         assert.match(sql, /ALTER TABLE public\.schedule_day_note_replies ENABLE ROW LEVEL SECURITY/);
         assert.match(sql, /author_id = \(SELECT auth\.uid\(\)\)[\s\S]*?n\.user_id = \(SELECT auth\.uid\(\)\)/);
         assert.match(sql, /lower\(trim\(p\.email\)\) = 'hhector7722@gmail\.com'/);
+        const locked = readFileSync(
+            join(REPO_ROOT, 'supabase/migrations/20261015173000_lock_private_schedule_reply_to_hector_identity.sql'),
+            'utf8',
+        );
+        assert.match(locked, /author_id = 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6'::uuid/);
         assert.match(sql, /FOR INSERT TO authenticated/);
         assert.doesNotMatch(sql, /FOR UPDATE TO authenticated|FOR DELETE TO authenticated/);
         assert.match(sql, /AFTER INSERT ON public\.schedule_day_note_replies/);
@@ -2171,6 +2176,7 @@ describe('Respuestas privadas de Héctor a las notas del horario', () => {
         assert.match(notes, /createPrivateScheduleNoteReply\(\{ noteId, content \}\)/);
         assert.match(notes, /\.from\('schedule_day_note_replies'\)[\s\S]*?\.in\('note_id', rows\.map\(\(row\) => row\.id\)\)/);
         assert.match(action, /normalizeNotificationEmail\(caller\?\.email\) !== NOTIFICATION_HECTOR_EMAIL/);
+        assert.match(action, /user\.id !== HECTOR_AUTH_UID/);
         assert.match(action, /\.from\('schedule_day_note_replies'\)[\s\S]*?\.insert\(\{ note_id: noteId, author_id: user\.id, content \}\)/);
     });
 
