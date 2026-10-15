@@ -22,6 +22,7 @@ import { canonicalLineSchema } from '@/lib/albaranes/extractors/canonical'
 import { validateObservedLine } from '@/lib/albaranes/pipeline/validate'
 import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
 import { explainReceiptProposalMismatch } from '@/lib/albaranes/k5/receipt-mismatch'
+import { verifiedReviewedWeightQuantity } from '@/lib/albaranes/k5/reviewed-weight-quantity'
 
 type PricingReview = {
   grossUnitPrice: number
@@ -370,6 +371,26 @@ async function supersedeK5ProposalWithMapping(params: {
     && savedQuantity && savedPrice && savedTotal
     && withinExactTolerance(multiplyExact(savedQuantity, savedPrice), savedTotal, parseExactDecimal('0.03')!)
   )
+  const priorManualCorrection = Boolean(
+    current.provenance && typeof current.provenance === 'object'
+    && (current.provenance as Record<string, unknown>).manual_line_override === true
+  )
+  const verifiedCorrectedWeightMath = sourceLine.success && verifiedReviewedWeightQuantity({
+    reviewed: humanLineOverride || priorManualCorrection,
+    sourceQuantityRaw: sourceLine.data.quantity_raw,
+    correctedQuantity: lineQuantity,
+    sourceUnitPriceRaw: sourceLine.data.unit_price_raw,
+    effectiveUnitPrice: observedUnitPrice,
+    sourceLineTotalRaw: sourceLine.data.line_total_raw,
+    correctedLineTotal: lineTotal,
+    hasAdjustments: Boolean(
+      sourceLine.data.discount_raw || sourceLine.data.net_unit_price_raw || sourceLine.data.other_charge_raw
+    ),
+    lineBillingUnit: params.lineBillingUnit,
+    lineContentUnit: params.lineContentUnit,
+    lineContentQty: params.lineContentQty,
+    conversionFactor: params.conversionFactor,
+  })
   // La revisión humana puede completar datos que el OCR dejó vacíos. Esos
   // valores quedan versionados en la propuesta sucesora; la evidencia original
   // no se modifica y K4 seguirá revalidando antes de cualquier efecto económico.
@@ -383,6 +404,7 @@ async function supersedeK5ProposalWithMapping(params: {
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
     verifiedObservedMath: verifiedEmbeddedKgMath || verifiedTotalWeightMath || verifiedRoundedUnitMath
+      || verifiedCorrectedWeightMath
       || verifiedAmountColumnMath
       || verifiedUnadjustedNet || verifiedPercentDiscount,
     verifiedFixedDiscountMath: verifiedFixedDiscount,
@@ -426,6 +448,7 @@ async function supersedeK5ProposalWithMapping(params: {
     purchase_unit: snapshot?.purchaseUnit ?? null,
     normalized_unit_price: snapshot?.normalizedUnitPrice ?? null,
     pricing_review: reviewedPricing,
+    reviewed_weight_quantity: verifiedCorrectedWeightMath,
   })
 
   const { data: existing, error: existingError } = await params.supabase
@@ -491,7 +514,8 @@ async function supersedeK5ProposalWithMapping(params: {
       provenance: {
         ...(current.provenance && typeof current.provenance === 'object' ? current.provenance : {}),
         revision: 'human_mapping_selection',
-        manual_line_override: humanLineOverride,
+        manual_line_override: humanLineOverride || priorManualCorrection,
+        ...(verifiedCorrectedWeightMath ? { reviewed_weight_quantity: true } : {}),
         ...(reviewedPricing ? { manual_discount_review: true } : {}),
         ...(params.variableWeightKg != null
           ? {
