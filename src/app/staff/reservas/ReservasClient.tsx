@@ -576,7 +576,7 @@ export default function ReservasClient() {
     const set = new Set<string>()
     for (const row of unreadNotifications) {
       if (
-        row.type === 'client_order_submitted' &&
+        (row.type === 'client_order_submitted' || row.type === 'staff_order_created') &&
         row.entity_id &&
         !row.read_at
       ) {
