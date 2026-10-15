@@ -7072,9 +7072,10 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   }
 }
 
-/* Historial de cierres escritorio: 3 cierres en columna (previo, activo,
-   posterior) y, a la derecha, Mensual, Último cierre y calendario selector.
-   En móvil/tablet se mantiene el PageScreen de cierres sin modificaciones. */
+/* Historial de cierres escritorio: referencias en tres columnas.
+   Izquierda: Último cierre + Mensual; centro: un único cierre seleccionado;
+   derecha: calendario como selector. Sin tarjetas de días adyacentes.
+   La versión móvil y tablet mantiene su distribución original. */
 @media (min-width: 1024px) {
   [data-component='HistoryDesktopWorkspace'] {
     width: 100%;
@@ -7085,46 +7086,64 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   }
 
   [data-component='HistoryDesktopWorkspace'] .history-desktop-board {
-    grid-template-columns: minmax(0, 1.63fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 0.91fr) minmax(0, 1.15fr) minmax(0, 1.28fr);
+    align-items: start;
+    column-gap: clamp(12px, 2.1vw, 32px);
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'] {
+    width: 100%;
+    min-width: 0;
+    padding-top: 8px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'] > :first-child {
+    min-height: 116px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'] > :nth-child(2) {
+    min-height: 175px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] .history-desktop-summary {
+    min-width: 0;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] .history-desktop-summary > .grid {
+    row-gap: 11px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
+    height: min(100%, 545px);
+    min-width: 0;
   }
 
   [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'] {
     min-width: 0;
     height: 100%;
+    border-color: rgb(255 255 255 / 0.46);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
   }
 
-  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'][data-selected='true'] {
-    border-color: rgb(255 255 255 / 0.62);
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.10), 0 4px 16px rgb(0 0 0 / 0.13);
-  }
-
-  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'][data-selected='false'] {
-    filter: saturate(0.82);
-  }
-
-  [data-component='HistoryDesktopWorkspace'] .history-desktop-summary {
-    min-height: 99px;
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar'] {
+    height: min(100%, 485px);
+    min-width: 0;
+    margin-top: 16px;
   }
 }
 
 @media (min-width: 1024px) and (max-width: 1199px) {
   [data-component='HistoryDesktopWorkspace'] .history-desktop-board {
-    grid-template-columns: minmax(0, 1.43fr) minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.17fr) minmax(0, 1.22fr);
+    column-gap: 10px;
   }
 
-  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'] > div:nth-child(2) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
+    height: min(100%, 505px);
   }
 
-  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'] > div:nth-child(2) > div:last-child {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-component='HistoryDesktopWorkspace'] [data-component='HistoryDesktopDayCard'] {
-    transition: none;
+  [data-component='HistoryDesktopWorkspace'] .history-desktop-summary {
+    padding-inline: 8px;
   }
 }
 
