@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { addDays, format, isSameMonth, parseISO, startOfMonth } from 'date-fns';
+import { format, isSameMonth, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CloudSun, Pencil } from 'lucide-react';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
@@ -41,12 +41,10 @@ const currency = (v: number | null | undefined) => formatCurrencySpanish(Number(
 const timeLine = (date: string) => format(parseISO(date), "EEEE d 'de' MMMM", { locale: es });
 
 function HistoryDesktopDailyCard({
-    date, closing, selected, onSelect, onOpen, expectedSales,
+    date, closing, onOpen, expectedSales,
 }: {
     date: string;
     closing: HistoryDesktopClosing | null;
-    selected: boolean;
-    onSelect: () => void;
     onOpen: () => void;
     expectedSales: number;
 }) {
@@ -83,73 +81,63 @@ function HistoryDesktopDailyCard({
     return (
         <article
             data-component="HistoryDesktopDayCard"
-            data-selected={selected ? 'true' : 'false'}
-            className={cn('history-desktop-day relative flex min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border transition-opacity', selected ? 'border-white/55 bg-[rgb(6_20_49/0.72)] opacity-100' : 'border-white/15 bg-[rgb(5_17_44/0.55)] opacity-[0.47] hover:opacity-80')}
+            data-selected="true"
+            className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/45 bg-[rgb(6_20_49/0.8)] text-white"
         >
-            <div className="flex min-h-[29px] shrink-0 items-center justify-between gap-2 border-b border-white/15 bg-[rgb(8_26_60/0.72)] px-3 py-1 text-white">
-                <button
-                    type="button"
-                    className="min-w-0 truncate text-left text-[10px] font-bold uppercase tracking-wide text-white"
-                    onClick={onSelect}
-                    aria-current={selected ? 'date' : undefined}
-                    aria-label={`Seleccionar ${timeLine(date)}`}
-                >
+            <header className="flex min-h-[32px] shrink-0 items-center justify-between gap-2 border-b border-white/15 bg-[rgb(8_26_60/0.8)] px-3 py-1.5">
+                <div className="min-w-0 truncate text-[10px] font-bold uppercase tracking-wide">
                     {timeLine(date)}
                     <span className="ml-2 text-[8px] font-normal normal-case text-white/50">Detalle de cierre</span>
-                </button>
-                <div className="flex shrink-0 items-center gap-2 text-[9px] text-white/55">
-                    {closing?.weather ? <span className="inline-flex items-center gap-1"><CloudSun size={12} />{closing.weather}</span> : null}
-                    {values ? <span>{values.tickets} tickets</span> : null}
-                    {values && values.avgTicket > 0 ? <span>{currency(values.avgTicket)} ticket medio</span> : null}
-                    {closing ? (
-                        <button type="button" onClick={onOpen} className="rounded p-1 text-white/70 hover:bg-white/10 hover:text-white" aria-label={`Abrir detalle completo del ${timeLine(date)}`} title="Abrir detalle completo">
-                            <Pencil size={14} aria-hidden />
-                        </button>
-                    ) : null}
                 </div>
-            </div>
+                {closing && (
+                    <button type="button" onClick={onOpen} className="shrink-0 rounded p-1 text-white/75 hover:bg-white/10 hover:text-white" aria-label={`Abrir detalle completo del ${timeLine(date)}`} title="Abrir detalle completo">
+                        <Pencil size={15} aria-hidden />
+                    </button>
+                )}
+            </header>
             {closing && values ? (
-                <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(105px,0.78fr)] gap-2 px-3 py-2 text-white">
-                    <div className="flex min-w-0 flex-col justify-center gap-1">
-                        {metrics.slice(0, 4).map(([name, val]) => (
-                            <div key={name} className="flex items-baseline justify-between gap-2 border-b border-white/10 pb-0.5">
-                                <span className="truncate text-[9px] font-semibold uppercase text-white/75">{name}</span>
-                                <strong className="shrink-0 text-[11px] tabular-nums">{currency(val)}</strong>
-                            </div>
-                        ))}
+                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
+                    <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[9px] text-white/60">
+                        {closing.weather ? <span className="inline-flex items-center gap-1"><CloudSun size={12} />{closing.weather}</span> : null}
+                        <span>{values.tickets} tickets</span>
+                        {values.avgTicket > 0 ? <span>{currency(values.avgTicket)} ticket medio</span> : null}
                     </div>
-                    <div className="flex min-w-0 flex-col justify-center gap-1">
-                        {metrics.slice(4).map(([name, val]) => (
-                            <div key={name} className="flex items-baseline justify-between gap-2 border-b border-white/10 pb-0.5">
-                                <span className="truncate text-[9px] font-semibold uppercase text-white/75">{name}</span>
-                                <strong className="shrink-0 text-[11px] tabular-nums">{currency(val)}</strong>
+                    <div className="flex shrink-0 flex-col divide-y divide-white/10">
+                        {metrics.map(([name, value]) => (
+                            <div key={name} className="grid min-h-[29px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-1">
+                                <span className="min-w-0 text-[10px] font-semibold uppercase leading-tight text-white/85">{name}</span>
+                                <strong className="text-right text-xs font-bold tabular-nums">{currency(value)}</strong>
                             </div>
                         ))}
-                        <div className="flex items-baseline justify-between gap-2 border-b border-white/10 pb-0.5">
-                            <span className="text-[9px] font-semibold uppercase text-white/75">Diferencia</span>
-                            <strong className={cn('text-[11px] tabular-nums', values.difference > 0 ? 'text-emerald-300' : values.difference < 0 ? 'text-rose-300' : '')}>{currency(values.difference)}</strong>
+                        <div className="grid min-h-[29px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-1">
+                            <span className="text-[10px] font-semibold uppercase text-white/85">Diferencia</span>
+                            <strong className={cn('text-xs font-bold tabular-nums', values.difference > 0 ? 'text-emerald-300' : values.difference < 0 ? 'text-rose-300' : '')}>{currency(values.difference)}</strong>
                         </div>
-                        {expectedSales > 0 ? (
-                            <div className="pt-1 text-center text-[8px] text-white/50">
-                                Esperado: {currency(expectedSales)}
-                                <span className="ml-1">· {((values.netSales - expectedSales) / expectedSales * 100).toFixed(0)}%</span>
-                            </div>
-                        ) : null}
                     </div>
-                    <div className="grid min-h-0 grid-cols-2 gap-2">
+                    {expectedSales > 0 ? (
+                        <div className="shrink-0 text-center text-[9px] leading-snug text-white/60">
+                            <div>Esperado: <strong className="text-white/85">{currency(expectedSales)}</strong></div>
+                            <div>Rendimiento: <strong className={values.netSales >= expectedSales ? 'text-emerald-300' : 'text-rose-300'}>
+                                {((values.netSales - expectedSales) / expectedSales * 100).toFixed(0)}%
+                            </strong></div>
+                        </div>
+                    ) : null}
+                    <div className="mt-auto grid min-h-[100px] shrink-0 grid-cols-2 gap-3 pt-2">
                         {([
-                            ['bdpUrl', 'Informe TPV', 'bdp_closing_ticket_photo_path'],
                             ['dataphoneUrl', 'Totales datáfonos', 'dataphone_totals_photo_path'],
+                            ['bdpUrl', 'Informe TPV', 'bdp_closing_ticket_photo_path'],
                         ] as const).map(([photoKey, label, pathKey]) => (
                             <button
                                 type="button" key={photoKey} onClick={onOpen}
-                                className="flex min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-md bg-white/5 p-1.5 hover:bg-white/10"
+                                className="flex min-w-0 flex-col items-center justify-end gap-1 overflow-hidden rounded-md bg-white/5 p-1.5 hover:bg-white/10"
                                 aria-label={`Ver ${label.toLowerCase()} del ${timeLine(date)}`}
                             >
                                 {photos[photoKey] ? (
-                                    <img src={photos[photoKey]!} alt="" loading="lazy" className="max-h-[75px] min-h-0 w-full flex-1 object-contain" />
+                                    <img src={photos[photoKey]!} alt="" loading="lazy" className="max-h-[140px] min-h-0 w-full flex-1 object-contain" />
                                 ) : (
-                                    <span className="flex flex-1 items-center text-center text-[9px] text-white/45">{closing[pathKey] ? 'Cargando imagen…' : 'Sin imagen'}</span>
+                                    <span className="flex min-h-[68px] flex-1 items-center text-center text-[9px] text-white/45">
+                                        {closing[pathKey] ? 'Cargando imagen…' : 'Sin imagen'}
+                                    </span>
                                 )}
                                 <span className="text-center text-[8px] font-bold uppercase leading-tight text-white/65">{label}</span>
                             </button>
@@ -157,9 +145,9 @@ function HistoryDesktopDailyCard({
                     </div>
                 </div>
             ) : (
-                <button type="button" onClick={onSelect} className="flex min-h-0 flex-1 items-center justify-center text-[12px] text-white/55">
-                    Sin cierre registrado · Seleccionar este día
-                </button>
+                <div className="flex min-h-0 flex-1 items-center justify-center p-5 text-center text-xs text-white/55">
+                    No hay cierre registrado para este día
+                </div>
             )}
         </article>
     );
@@ -193,8 +181,6 @@ export default function HistoryDesktopWorkspace({
     onSelectDate, onPrevMonth, onNextMonth, onOpenClosing, onMonthlySales,
     onPeriodPerformance, onShowTable,
 }: Props) {
-    const selected = useMemo(() => parseISO(selectedDate), [selectedDate]);
-    const days = useMemo(() => [addDays(selected, -1), selected, addDays(selected, 1)], [selected]);
     const monthly = useMemo(() => ({
         card: monthlyClosings.reduce((sum, row) => sum + Number(row.sales_card ?? 0), 0),
         cash: monthlyClosings.reduce((sum, row) => sum + Number(row.cash_counted ?? 0), 0),
@@ -236,28 +222,24 @@ export default function HistoryDesktopWorkspace({
                     <button type="button" className="rounded-md border border-white/35 px-3 py-1 text-xs text-white hover:bg-white/10" onClick={onShowTable}>Tabla</button>
                 </div>
             </div>
-            <div className="history-desktop-board grid min-h-0 flex-1 gap-4">
-                <div data-element="day-stack" className="grid min-h-0 grid-rows-3 gap-3">
-                    {days.map((day, index) => {
-                        const dayIso = format(day, 'yyyy-MM-dd');
-                        const closing = getClosingForDate(dayIso);
-                        return (
-                            <HistoryDesktopDailyCard
-                                key={dayIso}
-                                date={dayIso}
-                                closing={closing}
-                                selected={index === 1}
-                                onSelect={() => onSelectDate(dayIso)}
-                                onOpen={() => { if (closing) onOpenClosing(closing); }}
-                                expectedSales={closing ? getExpectedSales(day) : 0}
-                            />
-                        );
-                    })}
-                </div>
-                <div data-element="side-widgets" className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3">
-                    <HistoryDesktopSummary title="Mensual" subtitle={monthLabel} metrics={monthlyKpis} onClick={onMonthlySales} />
+            <div className="history-desktop-board grid min-h-0 flex-1 items-start gap-4">
+                <div data-element="summary-stack" className="flex min-h-0 min-w-0 flex-col gap-4">
                     <HistoryDesktopSummary title="Último cierre" subtitle={lastClosing ? timeLine(lastClosing.closing_date) : undefined} metrics={lastKpis} onClick={lastClosing ? () => onOpenClosing(lastClosing) : undefined} />
-                    {/* Mismo componente y cromo del calendario móvil de Cierres:
+                    <HistoryDesktopSummary title="Mensual" subtitle={monthLabel} metrics={monthlyKpis} onClick={onMonthlySales} />
+                </div>
+                <div data-element="selected-day" className="min-h-0 min-w-0">
+                    <HistoryDesktopDailyCard
+                        key={selectedDate}
+                        date={selectedDate}
+                        closing={getClosingForDate(selectedDate)}
+                        onOpen={() => {
+                            const closing = getClosingForDate(selectedDate);
+                            if (closing) onOpenClosing(closing);
+                        }}
+                        expectedSales={getClosingForDate(selectedDate) ? getExpectedSales(parseISO(selectedDate)) : 0}
+                    />
+                </div>
+                {/* Mismo componente y cromo del calendario móvil de Cierres:
                         panel blanco, cabecera roja y cifras negras. Es un selector,
                         no abre el modal hasta pulsar una de las tarjetas de la izquierda. */}
                     <section data-element="calendar" className="flex min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-zinc-200 bg-white text-zinc-900">
@@ -335,7 +317,6 @@ export default function HistoryDesktopWorkspace({
                             </div>
                         </MonthCalendarFrame>
                     </section>
-                </div>
             </div>
         </div>
     );
