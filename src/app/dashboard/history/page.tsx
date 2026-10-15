@@ -32,6 +32,7 @@ import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { Button } from '@/components/ui/button';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import HistoryDesktopWorkspace from '@/components/dashboard/history/HistoryDesktopWorkspace';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { useAutoHideScrollbar } from '@/hooks/useAutoHideScrollbar';
@@ -727,6 +728,7 @@ export default function HistoryPage() {
     const [isManager, setIsManager] = useState(false);
 
     const searchParams = useSearchParams();
+    const defaultDesktopDateInitialized = useRef(false);
 
     const [closings, setClosings] = useState<CashClosing[]>([]);
     const [historicalClosings, setHistoricalClosings] = useState<CashClosing[]>([]);
@@ -874,7 +876,7 @@ export default function HistoryPage() {
     useEffect(() => {
         checkUserRole();
         fetchHistory();
-    }, [rangeStart, rangeEnd, selectedDate, filterMode]);
+    }, [rangeStart, rangeEnd, filterMode, filterMode === 'single' ? selectedDate : null]);
 
     const deepLinkClosingId = searchParams.get('closingId')?.trim() ?? null;
     const [syncedDeepLinkClosingId, setSyncedDeepLinkClosingId] = useState<string | null>(null);
@@ -1017,7 +1019,9 @@ export default function HistoryPage() {
                 .from('cash_closings')
                 .select('*')
                 .gte('closing_date', histStartISO)
-                .lte('closing_date', endISO);
+                // El día siguiente puede quedar en el mes posterior: mostrarlo
+                // también en el panel triple del escritorio.
+                .lte('closing_date', format(addDays(end, 1), 'yyyy-MM-dd'));
 
             const lastClosingPromise = supabase
                 .from('cash_closings')
@@ -1324,6 +1328,28 @@ export default function HistoryPage() {
         }
     };
 
+    // El selector del calendario controla los tres cierres de escritorio,
+    // sin convertir la consulta del mes en una consulta de un solo día.
+    const selectDesktopDate = (dateIso: string) => {
+        setSelectedDate(dateIso);
+        const day = parseLocalSafe(dateIso);
+        if (filterMode !== 'range' || !isSameMonth(day, viewMonth)) {
+            setRangeStart(format(startOfMonth(day), 'yyyy-MM-dd'));
+            setRangeEnd(format(endOfMonth(day), 'yyyy-MM-dd'));
+            setFilterMode('range');
+        }
+    };
+
+    // La primera apertura en escritorio se centra en el último cierre real
+    // (normalmente ayer), no en un día de hoy todavía sin cierre.
+    useEffect(() => {
+        if (defaultDesktopDateInitialized.current || !lastClosing) return;
+        if (searchParams.get('closingId')) return;
+        if (!window.matchMedia('(min-width: 1024px)').matches) return;
+        defaultDesktopDateInitialized.current = true;
+        selectDesktopDate(lastClosing.closing_date);
+    }, [lastClosing, searchParams]);
+
     const lastClosingKpis = [
         {
             label: 'Ventas',
@@ -1374,6 +1400,35 @@ export default function HistoryPage() {
 
     return (
         <>
+        {viewMode === 'calendar' && (
+            <HistoryDesktopWorkspace
+                selectedDate={selectedDate}
+                viewMonth={viewMonth}
+                calendarWeeks={calendarWeeks}
+                monthLabel={monthNavLabel}
+                monthlyClosings={closings}
+                summary={summary}
+                percentChange={popPercent}
+                lastClosing={lastClosing}
+                getClosingForDate={(iso) => closingsByDate.get(iso) ?? historicalClosingsMap.get(iso) ?? null}
+                getExpectedSales={get8DayExpectedSales}
+                onSelectDate={selectDesktopDate}
+                onPrevMonth={handlePrevMonth}
+                onNextMonth={handleNextMonth}
+                onOpenClosing={openClosingDetail}
+                onMonthlySales={() => {
+                    const start = rangeStart ?? format(startOfMonth(viewMonth), 'yyyy-MM-dd');
+                    const end = rangeEnd ?? format(endOfMonth(viewMonth), 'yyyy-MM-dd');
+                    setSalesModalMode('monthly');
+                    setSalesModalDate(monthNavLabel);
+                    void fetchMonthlySalesData(start, end);
+                    setIsSalesModalOpen(true);
+                }}
+                onPeriodPerformance={() => setShowPeriodPerformanceModal(true)}
+                onShowTable={() => setViewMode('table')}
+            />
+        )}
+        <div className={viewMode === 'calendar' ? 'lg:hidden' : undefined}>
         <DashboardDetailLayout
             title="Cierres"
             showBackButton={false}
@@ -1803,6 +1858,7 @@ export default function HistoryPage() {
                             )}
                         </div>
         </DashboardDetailLayout>
+        </div>
 
             {selectedClosing && !(showCashDetails && isEditing) ? (
                 <QuickCashTools calculator breakdown />
