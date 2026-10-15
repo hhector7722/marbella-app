@@ -10,6 +10,7 @@ import { isSandboxRequest } from '@/lib/sandbox/server';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_REPLY_LENGTH = 1000;
+const HECTOR_AUTH_UID = 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6';
 
 export type ScheduleNoteReplyResult = {
     success: boolean;
@@ -54,7 +55,8 @@ export async function createPrivateScheduleNoteReply(input: {
         .select('email')
         .eq('id', user.id)
         .maybeSingle();
-    if (normalizeNotificationEmail(caller?.email) !== NOTIFICATION_HECTOR_EMAIL) {
+    if (user.id !== HECTOR_AUTH_UID
+        || normalizeNotificationEmail(caller?.email) !== NOTIFICATION_HECTOR_EMAIL) {
         return { success: false, error: 'Solo Héctor puede responder a las notas.' };
     }
 
