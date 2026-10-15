@@ -879,7 +879,7 @@ describe('Historial de cierres escritorio: un único día central', () => {
         const photoButtons = view.match(/className="flex min-w-0 flex-col items-center justify-end gap-1 overflow-hidden ([^"]+)"/g) ?? [];
         assert.equal(photoButtons.length, 1, 'las dos fotos comparten estilo');
         assert.match(photoButtons[0]!, /bg-transparent p-0/);
-        assert.doesNotMatch(photoButtons[0]!, /bg-white\\/5|rounded-md|p-1\\.5|hover:bg-white/, 'las fotos no tienen una tarjeta de otro color');
+        assert.ok(!['bg-white/5', 'rounded-md', 'p-1.5', 'hover:bg-white'].some(cls => photoButtons[0]!.includes(cls)), 'las fotos no tienen una tarjeta de otro color');
         assert.match(view, /onOpen=\{\(\) => \{/);
         assert.match(view, /if \(closing\) onOpenClosing\(closing\)/);
     });
