@@ -21,6 +21,8 @@ interface MasterMoreFunctionsModalProps {
     onOpenStock: () => void;
     onOpenCompra: () => void;
     onOpenInfo: () => void;
+    /** En escritorio, el botón Otros solo agrupa accesos retirados del mosaico. */
+    desktopShortlist?: boolean;
 }
 
 type MoreFunctionsItem = {
@@ -48,6 +50,17 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Vitrina', instance: 'vitrina', href: '/master/carta', img: '/icons/menu2.png' },
 ];
 
+/** Accesos exclusivos del modal Otros en /master/dashboard escritorio. */
+export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas'] as const;
+
+const desktopOtherIds = new Set<string>(MASTER_DESKTOP_OTHER_INSTANCES);
+export const MASTER_DESKTOP_OTHER_ITEMS = MASTER_MORE_FUNCTIONS_ITEMS.filter(
+    (item) => desktopOtherIds.has(item.instance)
+);
+export const MASTER_DESKTOP_DIRECT_ITEMS = MASTER_MORE_FUNCTIONS_ITEMS.filter(
+    (item) => !desktopOtherIds.has(item.instance)
+);
+
 export function MasterMoreFunctionsModal({
     isOpen,
     onClose,
@@ -55,6 +68,7 @@ export function MasterMoreFunctionsModal({
     onOpenStock,
     onOpenCompra,
     onOpenInfo,
+    desktopShortlist = false,
 }: MasterMoreFunctionsModalProps) {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
@@ -63,9 +77,10 @@ export function MasterMoreFunctionsModal({
     const gesture = useRef<{ x: number; y: number; axis: 'x' | 'y' | null } | null>(null);
     const suppressClick = useRef(false);
 
+    const availableItems = desktopShortlist ? MASTER_DESKTOP_OTHER_ITEMS : MASTER_MORE_FUNCTIONS_ITEMS;
     const pages: MoreFunctionsItem[][] = [];
-    for (let index = 0; index < MASTER_MORE_FUNCTIONS_ITEMS.length; index += PAGE_SIZE) {
-        pages.push(MASTER_MORE_FUNCTIONS_ITEMS.slice(index, index + PAGE_SIZE));
+    for (let index = 0; index < availableItems.length; index += PAGE_SIZE) {
+        pages.push(availableItems.slice(index, index + PAGE_SIZE));
     }
     const pageCount = pages.length;
     const activePage = Math.min(page, pageCount - 1);
