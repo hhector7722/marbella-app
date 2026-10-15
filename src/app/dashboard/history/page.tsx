@@ -1415,7 +1415,12 @@ export default function HistoryPage() {
                 onSelectDate={selectDesktopDate}
                 onPrevMonth={handlePrevMonth}
                 onNextMonth={handleNextMonth}
-                onOpenClosing={openClosingDetail}
+                onOpenClosing={(closing) => {
+                    const full = closingsByDate.get(closing.closing_date)
+                        ?? historicalClosingsMap.get(closing.closing_date)
+                        ?? (lastClosing?.id === closing.id ? lastClosing : null);
+                    if (full) openClosingDetail(full);
+                }}
                 onMonthlySales={() => {
                     const start = rangeStart ?? format(startOfMonth(viewMonth), 'yyyy-MM-dd');
                     const end = rangeEnd ?? format(endOfMonth(viewMonth), 'yyyy-MM-dd');
