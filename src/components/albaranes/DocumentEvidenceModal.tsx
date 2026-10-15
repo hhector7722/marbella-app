@@ -72,6 +72,7 @@ export function DocumentEvidenceModal({
   const [confirming, setConfirming] = useState(false)
   const [confirmError, setConfirmError] = useState<string | null>(null)
   const [localRefresh, setLocalRefresh] = useState(0)
+  const [confirmExclude, setConfirmExclude] = useState(false)
 
   useEffect(() => {
     if (!open || !lineId) return
@@ -85,6 +86,7 @@ export function DocumentEvidenceModal({
       setLoading(true)
       setError(null)
       setConfirmError(null)
+      setConfirmExclude(false)
 
       try {
         const res = await getInvoiceLineEvidenceAction(lineId)
@@ -302,11 +304,7 @@ export function DocumentEvidenceModal({
                               type="button"
                               variant="tertiary"
                               instance="albaran-document-evidence-exclude-portes"
-                              onClick={() => {
-                                if (!window.confirm('¿Excluir esta línea de la recepción de stock? Úsalo solo si el original acredita que no hay mercancía recibida o que la lectura es errónea. Podrás restaurarla.')) return
-                                onExcludeFromMapping()
-                                onClose()
-                              }}
+                              onClick={() => setConfirmExclude(true)}
                             >
                               Excluir sin recepción
                             </Button>
@@ -324,6 +322,16 @@ export function DocumentEvidenceModal({
                               Otros · gasto sin stock
                             </Button>
                           )}
+                        </div>
+                      ) : null}
+
+                      {confirmExclude && onExcludeFromMapping ? (
+                        <div role="alertdialog" aria-label="Confirmar exclusión sin recepción" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+                          <p>Esta línea no generará entrada de stock. Confírmalo solo si el original acredita que no se recibió mercancía o que la lectura es errónea. Podrás restaurarla.</p>
+                          <div className="mt-2 flex gap-2">
+                            <Button type="button" variant="secondary" instance="albaran-document-evidence-cancel-exclude" onClick={() => setConfirmExclude(false)}>Cancelar</Button>
+                            <Button type="button" variant="primary" instance="albaran-document-evidence-confirm-exclude" onClick={() => { onExcludeFromMapping(); onClose() }}>Confirmar exclusión</Button>
+                          </div>
                         </div>
                       ) : null}
 

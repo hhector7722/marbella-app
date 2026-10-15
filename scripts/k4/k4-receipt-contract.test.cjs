@@ -97,7 +97,9 @@ test('la pantalla guarda y aplica en una acción con vista previa técnica K4', 
 test('una línea sin recepción se excluye solo tras revisar evidencia y con rol de gerente', () => {
   assert.match(invoiceScreen, /aria-label=\{`Ver evidencia de \$\{displayName\}`\}/)
   assert.match(invoiceScreen, /isManager && !excluded && !expenseOnly && !stockApplied/)
-  assert.match(evidenceModal, /window\.confirm\('¿Excluir esta línea de la recepción de stock\?/)
+  assert.match(evidenceModal, /setConfirmExclude\(true\)/)
+  assert.match(evidenceModal, /role="alertdialog" aria-label="Confirmar exclusión sin recepción"/)
+  assert.match(evidenceModal, /onClick=\{\(\) => \{ onExcludeFromMapping\(\); onClose\(\) \}\}/)
   assert.match(evidenceModal, /Excluir sin recepción/)
   const exclusion = invoiceActions.slice(invoiceActions.indexOf('export async function excludeInvoiceLineFromMappingAction'))
   assert.match(exclusion, /gate\.role !== 'manager' && gate\.role !== 'admin'/)
