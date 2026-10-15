@@ -140,7 +140,7 @@ export async function POST(req: Request) {
                 (m) =>
                     m.first_name &&
                     ALLOWED_FIRST_NAMES.includes(
-                        m.first_name.trim().toLowerCase() as (typeof ALLOWED_FIRST_NAMES)[number]
+                        m.first_name.trim().toLowerCase().split(/\s+/)[0] as (typeof ALLOWED_FIRST_NAMES)[number]
                     )
             )
             .map((m) => m.id);
