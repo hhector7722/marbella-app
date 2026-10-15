@@ -6513,42 +6513,41 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   [data-component='HomeScreen'][data-layout='master'],
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-columns: repeat(8, minmax(0, 1fr));
-    grid-template-rows: repeat(6, minmax(0, 1fr));
+    grid-template-rows: repeat(5, minmax(0, 1fr));
     grid-auto-rows: unset;
   }
 
   /*
-   * /dashboard: distribución según el plano 8×6 de escritorio.
-   * Ventas 4×2 a la izquierda, Cierre 4×2 a la derecha;
-   * Horarios 4×3 debajo y veinte accesos de tamaño 1×1.
+   * /dashboard · 8 columnas × 5 filas (referencia adjunta):
+   * Ventas 3×2, Último cierre 2×2, Horarios 3×3.
+   * Quedan 21 celdas de acceso; el botón Otros completa la última.
    */
   [data-component='HomeScreen'][data-layout='ops-admin'] {
     grid-template-areas:
-      'ventas ventas ventas ventas cierre cierre cierre cierre'
-      'ventas ventas ventas ventas cierre cierre cierre cierre'
-      'horarios horarios horarios horarios cinicial plant mobra stock'
-      'horarios horarios horarios horarios recetas albaranes asis cajascambio'
-      'horarios horarios horarios horarios ingredientes acarta apedidos aconsumo'
-      'acambio acierre areservas apropinas aweb arent ainfo acompra';
+      'ventas ventas ventas cierre cierre cinicial plant mobra'
+      'ventas ventas ventas cierre cierre stock recetas albaranes'
+      'horarios horarios horarios asis cajascambio ingredientes acarta apedidos'
+      'horarios horarios horarios aconsumo acambio acierre areservas apropinas'
+      'horarios horarios horarios aweb arent ainfo acompra mas';
   }
 
-  /* El espacio se ocupa con accesos directos: el menú Otros ya no es
-     necesario en escritorio, ni duplicar Horarios junto a su widget.
-     Ambos siguen disponibles en móvil. */
-  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-mas-funciones'],
+  /* Horarios ya es un widget; no repetir su acceso en el mosaico escritorio.
+     El modal Otros sigue estando operativo y la disposición móvil no cambia. */
   [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-extra-horarios'] {
     display: none;
   }
 
+  /* /master/dashboard · Ventas 2×2, Último cierre 2×2,
+     Horarios 4×3 y 20 accesos. Otros sustituye a Horarios como acceso.
+     Web, Vitrina, Consumo y Altas solo se ofrecen dentro de Otros. */
   [data-component='HomeScreen'][data-layout='master'],
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-areas:
       'ventas ventas ultcierre ultcierre asis asisaccess caja ingred'
       'ventas ventas ultcierre ultcierre reservas recetas albaran cajascambio'
-      'horario horario horario horario cambio plantilla mstock mweb'
-      'horario horario horario horario mcarta mconsumo mmobra mcompra'
-      'horario horario horario horario mcierre mpropinas muso mrent'
-      'horario horario horario horario minfo maltas mvitrina horariosaccess';
+      'horario horario horario horario cambio plantilla mstock mcarta'
+      'horario horario horario horario mmobra mcompra mcierre mpropinas'
+      'horario horario horario horario muso mrent minfo otros';
   }
 
   [data-component='HomeScreen'] > [data-element='slot'].home-desktop-extra {
@@ -6557,16 +6556,16 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     justify-content: center;
   }
 
-  /* Master escritorio: asistencia en una celda; su acceso a la derecha.
-   * «Horarios» sustituye al antiguo icono de «Otros» sin alterar el móvil. */
+  /* El icono Registros sigue en fila 1, columna 5; Asistencia en la 6.
+     Otros ocupa la última celda y abre los cuatro accesos agrupados. */
   [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-desktop-asistencia'] {
     grid-area: asisaccess;
   }
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-desktop-horarios'] {
-    grid-area: horariosaccess;
-  }
   [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-otros'] {
-    display: none;
+    display: flex;
+    grid-area: otros;
+    align-items: flex-start;
+    justify-content: center;
   }
 
   /* Albaranes mantiene su acceso visible también en el mosaico Master de escritorio. */
