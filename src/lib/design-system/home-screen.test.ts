@@ -832,7 +832,11 @@ describe('Historial de cierres escritorio: un único día central', () => {
         assert.match(view, /data-selected="true"/);
         assert.doesNotMatch(view, /day-stack|addDays\(selected, -1\)|opacity-\[0\.47\]/);
         assert.match(css, /grid-template-columns: minmax\(0, 0\.91fr\) minmax\(0, 1\.15fr\) minmax\(0, 1\.28fr\)/);
-        assert.match(css, /\[data-element='selected-day'\] \{\s*height: min\(100%, 545px\)/);
+        assert.match(css, /\[data-element='summary-stack'\],\s*\[data-component='HistoryDesktopWorkspace'\] \[data-element='selected-day'\] \{\s*height: min\(100%, 545px\)/);
+        assert.match(css, /\[data-element='summary-stack'\] > :nth-child\(2\) \{\s*flex: 1 1 0;/,
+            'Mensual llena el espacio restante sin alterar Último cierre');
+        assert.match(css, /\(max-width: 1199px\)[\s\S]*?\[data-element='summary-stack'\],\s*\[data-component='HistoryDesktopWorkspace'\] \[data-element='selected-day'\] \{\s*height: min\(100%, 505px\)/,
+            'ambos bloques conservan la misma altura también en escritorios pequeños');
     });
 
     it('conserva el calendario móvil blanco, rojo y negro como selector de fecha en la columna derecha', () => {
@@ -840,6 +844,15 @@ describe('Historial de cierres escritorio: un único día central', () => {
         const frame = readFileSync(join(SRC_ROOT, 'components/time/MonthCalendarFrame.tsx'), 'utf8');
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(view, /<MonthCalendarFrame flush className="history-desktop-month-cal-chrome">/);
+        const monthNav = view.indexOf('data-element="calendar-navigation"');
+        const calendarCard = view.indexOf('data-element="calendar"');
+        assert.ok(monthNav > 0 && monthNav < calendarCard, 'la navegación de mes flota fuera del calendario blanco');
+        assert.match(view, /<nav data-element="calendar-navigation"[^>]*bg-transparent text-white/);
+        assert.match(view, /<section data-element="calendar"[^>]*bg-white text-zinc-900/);
+        assert.equal((view.match(/format\(startOfMonth\(viewMonth\), 'MMMM yyyy'/g) ?? []).length, 1,
+            'el nombre del mes aparece una sola vez, en el exterior');
+        assert.match(css, /\[data-element='calendar-navigation'\] \{\s*height: 38px;/);
+        assert.match(css, /\[data-element='calendar-column'\] \{\s*height: min\(100%, 520px\)/);
         assert.match(frame, /from-red-500 to-red-600/);
         assert.match(frame, /className=\{cn\('month-cal-chrome'/);
         assert.match(view, /bg-white text-zinc-900/);
