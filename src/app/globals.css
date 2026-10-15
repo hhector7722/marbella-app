@@ -7091,18 +7091,27 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     column-gap: clamp(12px, 2.1vw, 32px);
   }
 
+  /* Mismo alto exterior que el detalle central. La card mensual absorbe
+     el espacio sobrante para poder añadirle contenido más adelante. */
+  [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'],
+  [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
+    height: min(100%, 545px);
+  }
+
   [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'] {
     width: 100%;
     min-width: 0;
-    padding-top: 8px;
+    padding-top: 0;
   }
 
   [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'] > :first-child {
+    flex: 0 0 116px;
     min-height: 116px;
   }
 
   [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'] > :nth-child(2) {
-    min-height: 175px;
+    flex: 1 1 0;
+    min-height: 0;
   }
 
   [data-component='HistoryDesktopWorkspace'] .history-desktop-summary {
@@ -7114,7 +7123,6 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   }
 
   [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
-    height: min(100%, 545px);
     min-width: 0;
   }
 
@@ -7125,10 +7133,24 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
   }
 
-  [data-component='HistoryDesktopWorkspace'] [data-element='calendar'] {
-    height: min(100%, 485px);
+  /* Mes y flechas fuera del marco blanco, flotando sobre el fondo azul.
+     La tarjeta empieza directamente por la franja roja lunes-domingo. */
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar-column'] {
+    height: min(100%, 520px);
     min-width: 0;
-    margin-top: 16px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar-navigation'] {
+    height: 38px;
+    min-height: 38px;
+    margin-bottom: 12px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar'] {
+    min-width: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: 0;
   }
 }
 
@@ -7138,6 +7160,7 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     column-gap: 10px;
   }
 
+  [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'],
   [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
     height: min(100%, 505px);
   }
