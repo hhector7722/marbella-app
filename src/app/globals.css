@@ -7080,7 +7080,8 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   [data-component='HistoryDesktopWorkspace'] {
     width: 100%;
     max-width: none;
-    padding-inline: 0;
+    /* El tablero conserva márgenes iguales a izquierda y derecha. */
+    padding-inline: clamp(16px, 1.8vw, 32px);
     height: calc(100dvh - var(--shell-topbar-height, 3.5rem) - 2rem);
     min-height: 560px;
     max-height: 1140px;
