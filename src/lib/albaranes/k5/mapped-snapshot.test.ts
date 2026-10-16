@@ -18,6 +18,21 @@ test('rollo de 300 metros factura 23,64 € y registra 300 m a 0,0788 €/m', ()
   })
 })
 
+test('una caja de mil unidades regalada suma stock y normaliza coste cero', () => {
+  const snapshot = buildExactMappedSnapshot({
+    lineQuantity: '1', observedUnitPrice: '0',
+    mapping: { conversionFactor: '1000', lineContentQty: '1000',
+      lineContentUnit: 'ud', purchaseUnit: 'ud', baseUnit: 'ud' },
+  })
+  assert.deepEqual(snapshot, { physicalQuantity: '1000', baseUnit: 'ud',
+    purchaseQuantity: '1000', purchaseUnit: 'ud', normalizedUnitPrice: '0' })
+  assert.equal(buildExactMappedSnapshot({
+    lineQuantity: '1', observedUnitPrice: '-0.01',
+    mapping: { conversionFactor: '1000', lineContentQty: '1000',
+      lineContentUnit: 'ud', purchaseUnit: 'ud', baseUnit: 'ud' },
+  }), null)
+})
+
 test('el metro nunca se interpreta como kilogramo', () => {
   const snapshot = buildExactMappedSnapshot({
     lineQuantity: '1', observedUnitPrice: '23.64',

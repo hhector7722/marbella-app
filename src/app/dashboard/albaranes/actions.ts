@@ -503,7 +503,7 @@ export async function getPurchaseInvoiceDetailAction(
       line.printed_unit_price_raw = typeof proposal?.observed?.unit_price_raw === 'string'
         ? proposal.observed.unit_price_raw : null
       const printedNet = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
-      line.printed_net_unit_price = printedNet != null && printedNet > 0 ? printedNet : null
+      line.printed_net_unit_price = printedNet != null && printedNet >= 0 ? printedNet : null
       line.printed_has_adjustments = Boolean(
         String(proposal?.observed?.discount_raw ?? '').trim()
         || String(proposal?.observed?.other_charge_raw ?? '').trim()
@@ -516,7 +516,7 @@ export async function getPurchaseInvoiceDetailAction(
         const net = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
         line.printed_unit_price = gross != null && gross > 0 ? gross : null
         line.printed_fixed_discount_eur = discount != null && discount > 0 ? discount : null
-        line.printed_net_unit_price = net != null && net > 0 ? net : null
+        line.printed_net_unit_price = net != null && net >= 0 ? net : null
       }
       if (Number((data as any).supplier_id) !== 2
         && line.printed_fixed_discount_eur == null
@@ -527,7 +527,7 @@ export async function getPurchaseInvoiceDetailAction(
         const header = String(original.discount_header_raw ?? '')
         const isPercent = /%|percent|por\s*ciento/i.test(header)
           || (!header.trim() && reconcilePercentageDiscountedUnitPrice(original) != null)
-        if (isPercent && discount != null && discount > 0 && discount < 100
+        if (isPercent && discount != null && discount > 0 && discount <= 100
           && price != null && price > 0
           && reconcilePercentageDiscountedUnitPrice(original) != null) {
           line.printed_discount_percent = discount
@@ -539,7 +539,7 @@ export async function getPurchaseInvoiceDetailAction(
         const observedDiscount = reviewed?.discountPercent != null
           ? Number(reviewed.discountPercent)
           : parseObservedDecimal(proposal?.observed?.discount_raw ?? null)
-        line.printed_discount_percent = observedDiscount != null && observedDiscount >= 0 && observedDiscount < 100
+        line.printed_discount_percent = observedDiscount != null && observedDiscount >= 0 && observedDiscount <= 100
           ? observedDiscount : null
         const printedPrice = reviewed?.grossUnitPrice != null
           ? Number(reviewed.grossUnitPrice)

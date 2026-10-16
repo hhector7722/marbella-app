@@ -116,6 +116,15 @@ test('Ametller: la lectura duplicada del importe resuelve solo el aviso de neto 
   ])
 })
 
+test('regalo verificado con importe cero resuelve bloqueos económicos', () => {
+  const prior = ['importe_ausente_o_invalido', 'descuento_sin_porcentaje_verificado',
+    'cantidad_precio_importe_no_reconcilian', 'presentacion_sin_validar']
+  const input = { previousReasons: prior, hasResolvedName: true, hasMappedSnapshot: true,
+    humanLineOverride: true, quantity: 1, unitPrice: 0, lineTotal: 0 }
+  assert.deepEqual(resolveMappingReviewReasons(input), prior.slice(0, 3))
+  assert.deepEqual(resolveMappingReviewReasons({ ...input, verifiedZeroCost: true }), [])
+})
+
 test('SHERS: el DTO fijo verificado resuelve bloqueos anteriores sin ocultar avisos documentales', () => {
   const reasons = resolveMappingReviewReasons({
     previousReasons: [
