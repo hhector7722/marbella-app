@@ -152,8 +152,9 @@ export function ImageLightbox({
               <PinchZoomViewport
                 resetKey={currentSlide.src}
                 minScale={0.5}
-                maxScale={5}
+                maxScale={8}
                 captureGestures
+                trackpadGestures
                 className="flex-1 overflow-hidden"
               >
                 <div className="flex min-h-[min(72dvh,calc(100svh-11rem))] w-full items-center justify-center sm:min-h-[min(78vh,calc(100vh-11rem))]">
