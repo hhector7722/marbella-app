@@ -1078,7 +1078,7 @@ function RecipeDetailContent() {
             >
 
                 <div className="grid grid-cols-1 content-start gap-4 p-4 md:grid-cols-2 md:p-5">
-                    {!isRestricted && (
+                    {!isStaffView && (userRole === 'manager' || userRole === 'supervisor') && (
                         <PlatoMarbellaEscandalloPanel recipeId={recipeId} onResolved={onMarbellaCostResolved} />
                     )}
                     {/* Misma puerta que el panel Precio: la vista restringida no ve importes. No se abre el coste a staff. */}
