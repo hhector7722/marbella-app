@@ -23,6 +23,8 @@ import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight
 import { canonicalLineSchema } from '@/lib/albaranes/extractors/canonical'
 import { validateObservedLine } from '@/lib/albaranes/pipeline/validate'
 import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
+import { calculateManualDiscount, type ManualDiscountReview } from '@/lib/albaranes/k5/manual-discount'
+import { parseObservedDecimal } from '@/lib/albaranes/pipeline/validate'
 import { explainReceiptProposalMismatch } from '@/lib/albaranes/k5/receipt-mismatch'
 import { verifiedReviewedWeightQuantity } from '@/lib/albaranes/k5/reviewed-weight-quantity'
 
@@ -167,6 +169,7 @@ async function supersedeK5ProposalWithMapping(params: {
   variableWeightKg?: number | null
   variablePieceCount?: number | null
   pricingReview?: PricingReview | null
+  manualDiscountReview?: ManualDiscountReview | null
 }): Promise<K5MappingRevision | null> {
   const currentProposalId = text(params.line.interpretation_proposal_id)
   if (!currentProposalId) return null
@@ -226,10 +229,21 @@ async function supersedeK5ProposalWithMapping(params: {
     quantity: quantityNumber,
     ...params.pricingReview,
   })
+  const reviewedManualDiscount = params.manualDiscountReview == null ? null : calculateManualDiscount({
+    quantity: quantityNumber,
+    baseUnitPrice: params.manualDiscountReview.baseUnitPrice,
+    discountPerUnit: params.manualDiscountReview.discountPerUnit,
+  })
+  if (params.manualDiscountReview != null && (!reviewedManualDiscount
+    || !sameExactDecimal(observedUnitPrice, reviewedManualDiscount.finalUnitPrice)
+    || !sameExactDecimal(lineTotal, reviewedManualDiscount.lineTotal))) {
+    throw new Error('El descuento manual no coincide con el precio y total finales de la línea.')
+  }
   if (params.pricingReview != null && (
     Number(current.supplier_id) !== 2 || !reviewedPricing
     || !sameExactDecimal(lineTotal, reviewedPricing.lineTotal)
-    || !sameExactDecimal(observedUnitPrice, Number(reviewedPricing.effectiveUnitPrice.toFixed(4)))
+    || !sameExactDecimal(reviewedManualDiscount?.baseUnitPrice ?? observedUnitPrice,
+      Number(reviewedPricing.effectiveUnitPrice.toFixed(4)))
   )) throw new Error('El precio, el descuento y el importe revisados no coinciden con la línea.')
   const humanLineOverride = Boolean(
     hasResolvedName
@@ -261,6 +275,23 @@ async function supersedeK5ProposalWithMapping(params: {
     : []
   const sourceLine = canonicalLineSchema.safeParse(current.observed)
   const sourceCheck = sourceLine.success ? validateObservedLine(sourceLine.data) : null
+  if (reviewedManualDiscount) {
+    if (!sourceLine.success) throw new Error('Falta evidencia original para el descuento manual.')
+    const source = sourceLine.data
+    const possibleBasePrices = [
+      reviewedPricing?.effectiveUnitPrice,
+      reconcileFixedDiscountedUnitPrice(source),
+      reconcileFreeFixedDiscountedUnitPrice(source),
+      reconcilePercentageDiscountedUnitPrice(source),
+      reconcileUnadjustedNetUnitPrice(source),
+      reconcileRoundedDisplayedUnitPrice(source.quantity_raw, source.unit_price_raw, source.line_total_raw),
+      parseObservedDecimal(source.unit_price_raw),
+    ]
+    if (!possibleBasePrices.some((price) =>
+      price != null && sameExactDecimal(price, reviewedManualDiscount.baseUnitPrice))) {
+      throw new Error('El precio previo al descuento manual no coincide con la evidencia original.')
+    }
+  }
   const verifiedAmountColumnMath = Boolean(
     sourceLine.success && sourceCheck?.priceBasis === 'billing_quantity'
     && sameExactDecimal(sourceCheck.quantity, lineQuantity)
@@ -426,10 +457,11 @@ async function supersedeK5ProposalWithMapping(params: {
       || verifiedAmountColumnMath
       || verifiedUnadjustedNet || verifiedPercentDiscount,
     verifiedZeroCost: verifiedFreeFixedDiscount
-      || (reviewedPricing?.discountPercent === 100 && reviewedPricing.lineTotal === 0),
+      || (reviewedPricing?.discountPercent === 100 && reviewedPricing.lineTotal === 0)
+      || (reviewedManualDiscount?.finalUnitPrice === 0),
     verifiedFixedDiscountMath: verifiedFixedDiscount,
     verifiedPercentDiscountMath: verifiedPercentDiscount,
-    verifiedReviewedPricing: Boolean(reviewedPricing),
+    verifiedReviewedPricing: Boolean(reviewedPricing || reviewedManualDiscount),
     verifiedMisreadNetAmount,
     verifiedIbeeCharge,
     verifiedTaxInclusiveUnitPrice,
@@ -468,7 +500,9 @@ async function supersedeK5ProposalWithMapping(params: {
     purchase_quantity: snapshot?.purchaseQuantity ?? null,
     purchase_unit: snapshot?.purchaseUnit ?? null,
     normalized_unit_price: snapshot?.normalizedUnitPrice ?? null,
-    pricing_review: reviewedPricing,
+    pricing_review: reviewedManualDiscount
+      ? { auto: reviewedPricing, manual: reviewedManualDiscount }
+      : reviewedPricing,
     reviewed_weight_quantity: verifiedCorrectedWeightMath,
   })
 
@@ -514,10 +548,13 @@ async function supersedeK5ProposalWithMapping(params: {
       observed: current.observed ?? {},
       interpreted: current.interpreted ?? {},
       normalized,
-      pricing: reviewedPricing
-        ? { ...(current.pricing && typeof current.pricing === 'object' ? current.pricing : {}),
-            human_review: { ...reviewedPricing, reviewer_id: params.userId } }
-        : current.pricing ?? {},
+      pricing: {
+        ...(current.pricing && typeof current.pricing === 'object' ? current.pricing : {}),
+        ...(reviewedPricing ? { human_review: { ...reviewedPricing, reviewer_id: params.userId } } : {}),
+        ...(reviewedManualDiscount ? { manual_discount_review: {
+          ...reviewedManualDiscount, reviewer_id: params.userId, reviewed_at: new Date().toISOString(),
+        } } : {}),
+      },
       proposed_allocations: current.proposed_allocations ?? [],
       review_reasons: reviewReasons,
       warnings: current.warnings ?? [],
@@ -537,7 +574,8 @@ async function supersedeK5ProposalWithMapping(params: {
         revision: 'human_mapping_selection',
         manual_line_override: humanLineOverride || priorManualCorrection,
         ...(verifiedCorrectedWeightMath ? { reviewed_weight_quantity: true } : {}),
-        ...(reviewedPricing ? { manual_discount_review: true } : {}),
+        ...(reviewedPricing ? { manual_percentage_review: true } : {}),
+        ...(reviewedManualDiscount ? { manual_discount_review: true } : {}),
         ...(params.variableWeightKg != null
           ? {
               variable_weight_kg: params.variableWeightKg,
@@ -566,6 +604,7 @@ export async function saveReceiptMappingProposalAction(params: {
   lineContentQty: number
   lineContentUnit: string
   pricingReview?: PricingReview | null
+  manualDiscountReview?: ManualDiscountReview | null
 }): Promise<
   | {
       success: true
@@ -586,6 +625,7 @@ export async function saveReceiptMappingProposalAction(params: {
   const lineContentQty = decimal(params?.lineContentQty)
   const lineContentUnit = text(params?.lineContentUnit)
   const pricingReview = params?.pricingReview ?? null
+  const manualDiscountReview = params?.manualDiscountReview ?? null
   if (!invoiceId || !lineId || !ingredientId || conversionFactor == null || conversionFactor <= 0) {
     return { success: false, message: 'Faltan el ingrediente o el factor de conversión válido.' }
   }
@@ -635,7 +675,11 @@ export async function saveReceiptMappingProposalAction(params: {
       && sameExactDecimal(source.data.quantity_raw, line.quantity)
     const reviewedGift = pricingReview?.discountPercent === 100
       && reviewDiscountedLine({ quantity: decimal(line.quantity), ...pricingReview })?.effectiveUnitPrice === 0
-    if (decimal(line.total_price) !== 0 || (!fixedGift && !reviewedGift)) {
+    const explicitManualGift = manualDiscountReview != null
+      && calculateManualDiscount({ quantity: decimal(line.quantity),
+        baseUnitPrice: manualDiscountReview.baseUnitPrice,
+        discountPerUnit: manualDiscountReview.discountPerUnit })?.finalUnitPrice === 0
+    if (decimal(line.total_price) !== 0 || (!fixedGift && !reviewedGift && !explicitManualGift)) {
       return { success: false, message: 'El coste cero exige un descuento total verificable y un importe de línea de 0 €.' }
     }
   }
@@ -801,6 +845,7 @@ export async function saveReceiptMappingProposalAction(params: {
       lineContentQty: effectiveLineContentQty,
       lineContentUnit: effectiveLineContentUnit,
       pricingReview,
+      manualDiscountReview,
       variableWeightKg,
       variablePieceCount,
     })
