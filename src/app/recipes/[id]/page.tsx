@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef, useMemo } from 'react';
+import { useState, useEffect, Suspense, useRef, useMemo, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Pencil, PlayCircle, AlertCircle } from 'lucide-react';
@@ -17,6 +17,7 @@ import {
     type IngredientPackBridgeContext,
 } from '@/lib/recipe-cost';
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
+import { PlatoMarbellaEscandalloPanel } from '@/components/recipes/PlatoMarbellaEscandalloPanel';
 import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
 import { IngredientCreateForm } from '@/components/ingredients/IngredientCreateForm';
 import { IngredientCanonicalEditModal, type Ingredient } from '@/components/ingredients/IngredientCanonicalEditModal';
@@ -173,6 +174,10 @@ function RecipeDetailContent() {
 
     const [backendCost, setBackendCost] = useState<{ total_cost: number; lines: { line_id: string; ingredient_name: string; line_cost: number }[] } | null>(null);
     const [elaborationCost, setElaborationCost] = useState<RecipeCostV2View | null>(null);
+    const [marbellaPricing, setMarbellaPricing] = useState<{ recipeId: string; isPlate: boolean; maximum: number | null } | null>(null);
+    const onMarbellaCostResolved = useCallback((id: string, isPlate: boolean, maximum: number | null) => {
+        setMarbellaPricing({ recipeId: id, isPlate, maximum });
+    }, []);
     const [subrecipes, setSubrecipes] = useState<RecipeSubrecipeLine[]>([]);
     const [subrecipesLoaded, setSubrecipesLoaded] = useState(false);
     const [componentKind, setComponentKind] = useState<'ingredient' | 'elaboration'>('ingredient');
@@ -538,8 +543,16 @@ function RecipeDetailContent() {
         }
         return null;
     })();
+    // En el Plato Marbella el precio depende de sus opciones, no solo de su receta base.
+    const isMarbellaPlate = marbellaPricing?.recipeId === recipeId
+        ? marbellaPricing.isPlate
+        : recipe?.name.trim().toLowerCase() === 'plato marbella';
+    const priceCostEur: number | null = isMarbellaPlate
+        ? (marbellaPricing?.recipeId === recipeId ? marbellaPricing.maximum : null)
+        : sheetCostEur;
+    const priceCostKnown = priceCostEur != null;
     const sheetCostKnown = sheetCostEur != null;
-    const totalCost = sheetCostEur ?? 0;
+    const totalCost = priceCostEur ?? 0;
 
     const recipeIngredientCostIssueCount = useMemo(() => {
         if (isRestricted) return 0;
@@ -904,7 +917,7 @@ function RecipeDetailContent() {
         return { color: 'text-red-600', label: '● Crítico', bg: 'bg-red-50' };
     };
 
-    const healthIndicator = sheetCostKnown
+    const healthIndicator = priceCostKnown
         ? getHealthIndicator(foodCost)
         : { color: 'text-gray-400', label: '', bg: '' };
     const simulatedHealthIndicator = getHealthIndicator(simulatedFoodCost);
@@ -1038,7 +1051,7 @@ function RecipeDetailContent() {
                                         imageSrc={recipe.photo_url}
                                         imageAlt={recipe.name}
                                         price={internalRecipe ? null : recipe.sale_price}
-                                        priceClassName={!isRestricted && !internalRecipe && sheetCostKnown ? healthIndicator.color : undefined}
+                                        priceClassName={!isRestricted && !internalRecipe && priceCostKnown ? healthIndicator.color : undefined}
                                     />
                                 </button>
                             ) : (
@@ -1046,7 +1059,7 @@ function RecipeDetailContent() {
                                     imageAlt={recipe.name}
                                     fallback={<Camera className="h-8 w-8 text-gray-300 md:h-10 md:w-10" />}
                                     price={internalRecipe ? null : recipe.sale_price}
-                                    priceClassName={!isRestricted && !internalRecipe && sheetCostKnown ? healthIndicator.color : undefined}
+                                    priceClassName={!isRestricted && !internalRecipe && priceCostKnown ? healthIndicator.color : undefined}
                                 />
                             )}
                         </div>
@@ -1065,6 +1078,9 @@ function RecipeDetailContent() {
             >
 
                 <div className="grid grid-cols-1 content-start gap-4 p-4 md:grid-cols-2 md:p-5">
+                    {!isRestricted && (
+                        <PlatoMarbellaEscandalloPanel recipeId={recipeId} onResolved={onMarbellaCostResolved} />
+                    )}
                     {/* Misma puerta que el panel Precio: la vista restringida no ve importes. No se abre el coste a staff. */}
                     {!isRestricted && internalRecipe && (
                         <div data-element="recipe-panel" className="h-full flex flex-col">
@@ -1172,7 +1188,7 @@ function RecipeDetailContent() {
                                             <div data-element="field-label">Precio</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
-                                            <div className={cn('text-sm font-black tabular-nums', healthIndicator.color)}>{sheetCostKnown ? `${(foodCost || 0).toFixed(0)}%` : '—'}</div>
+                                            <div className={cn('text-sm font-black tabular-nums', healthIndicator.color)}>{priceCostKnown ? `${(foodCost || 0).toFixed(0)}%` : '—'}</div>
                                             <div data-element="field-label">FC</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
@@ -1180,7 +1196,7 @@ function RecipeDetailContent() {
                                             <div data-element="field-label">Base</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
-                                            <div className="text-sm font-black tabular-nums text-gray-800">{sheetCostKnown ? `${(margin || 0).toFixed(2)}€` : '—'}</div>
+                                            <div className="text-sm font-black tabular-nums text-gray-800">{priceCostKnown ? `${(margin || 0).toFixed(2)}€` : '—'}</div>
                                             <div data-element="field-label">Margen</div>
                                         </div>
                                     </div>
@@ -1190,7 +1206,7 @@ function RecipeDetailContent() {
                                             Recomendado ({activeTargetFC}%)
                                         </span>
                                         <span className="shrink-0 text-xs font-black tabular-nums text-blue-600">
-                                            {sheetCostKnown ? `${(recommendedPrice || 0).toFixed(2)}€` : '—'}
+                                            {priceCostKnown ? `${(recommendedPrice || 0).toFixed(2)}€` : '—'}
                                         </span>
                                         <Button
                                             type="button"
@@ -1251,7 +1267,7 @@ function RecipeDetailContent() {
                                                         FC
                                                     </div>
                                                     <div className="text-lg font-black text-white">
-                                                        {sheetCostKnown ? `${(simulatedFoodCost || 0).toFixed(0)}%` : '—'}
+                                                        {priceCostKnown ? `${(simulatedFoodCost || 0).toFixed(0)}%` : '—'}
                                                     </div>
                                                 </div>
                                                 <div>
@@ -1267,7 +1283,7 @@ function RecipeDetailContent() {
                                                         Margen
                                                     </div>
                                                     <div className="text-lg font-black text-white">
-                                                        {sheetCostKnown ? `${(simulatedMargin || 0).toFixed(2)}€` : '—'}
+                                                        {priceCostKnown ? `${(simulatedMargin || 0).toFixed(2)}€` : '—'}
                                                     </div>
                                                 </div>
                                             </div>
@@ -1523,7 +1539,7 @@ function RecipeDetailContent() {
                                             </td>
                                             <td className="px-2 py-1.5 text-right text-[#5B8FB9]">
                                                 {sheetCostKnown
-                                                    ? (sheetCostMode === 'legacy' ? `${totalCost.toFixed(2)}€` : formatElaborationCostEur(sheetCostEur))
+                                                    ? (sheetCostMode === 'legacy' ? `${(sheetCostEur ?? 0).toFixed(2)}€` : formatElaborationCostEur(sheetCostEur))
                                                     : '—'}
                                             </td>
                                             <td></td>
