@@ -920,6 +920,9 @@ describe('Historial mensual: datos completos sin paginación de tickets', () => 
         assert.doesNotMatch(monthly, /\.from\('tickets_marbella'\)|\.limit\(|\.range\(/);
         assert.match(monthly, /report\.products\.map/);
         assert.match(monthly, /report\.hours\.map/);
+        assert.match(monthly, /\{ length: 24 \}/, 'las 24 horas se agregan, no solo el horario comercial');
+        assert.match(page, /salesModalMode === 'monthly'\s*\? salesChartData\s*:\s*salesChartData\.slice\(BUSINESS_HOURS\.start/,
+            'la gráfica mensual no descarta ventas fuera de horario');
         assert.match(monthly, /report\.summary\.count/);
         assert.match(monthly, /report\.summary\.totalSales/);
         assert.match(monthly, /format\(startOfMonth\(viewMonth\), 'yyyy-MM-dd'\)/);
