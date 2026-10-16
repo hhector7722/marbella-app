@@ -1,0 +1,28 @@
+name: Escandallo Plato Marbella
+
+on:
+  pull_request:
+    paths:
+      - 'src/lib/plato-marbella-escandallo*'
+      - 'src/lib/carta-plato-marbella.ts'
+      - '.github/workflows/plato-marbella-escandallo.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/plato-marbella-escandallo*'
+      - 'src/lib/carta-plato-marbella.ts'
+      - '.github/workflows/plato-marbella-escandallo.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Probar máximo, media, factor TPV y escandallos incompletos
+        run: node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/plato-marbella-escandallo.test.ts
