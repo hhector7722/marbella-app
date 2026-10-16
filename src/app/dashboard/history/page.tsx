@@ -681,9 +681,12 @@ export default function HistoryPage() {
             }
 
             setSalesProducts(report.products.map((item, index) => ({ ...item, rank: index + 1 })));
-            const byHour = new Map(report.hours.map(item => [
-                Number(item.hour), { count: Number(item.count) || 0, total: Number(item.total) || 0 },
-            ]));
+            const byHour = new Map<number, { count: number; total: number }>(
+                report.hours.map(item => [
+                    Number(item.hour),
+                    { count: Number(item.count) || 0, total: Number(item.total) || 0 },
+                ] as const),
+            );
             setSalesChartData(Array.from({ length: 24 }, (_, hour) => ({
                 hora: hour,
                 total: byHour.get(hour)?.total ?? 0,
