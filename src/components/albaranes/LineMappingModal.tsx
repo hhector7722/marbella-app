@@ -39,6 +39,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { explainReviewReason } from '@/lib/albaranes/k5/review-reason-labels'
 import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
+import { calculateManualDiscount } from '@/lib/albaranes/k5/manual-discount'
 import {
   reconcileFixedDiscountedUnitPrice,
   reconcileFreeFixedDiscountedUnitPrice,
@@ -138,6 +139,7 @@ export function LineMappingModal({
   const [dimensional, setDimensional] = useState<LineDimensionalDraft>(EMPTY_DIMENSIONAL)
   const [observedUnitPriceDraft, setObservedUnitPriceDraft] = useState('')
   const [discountDraft, setDiscountDraft] = useState('')
+  const [manualDiscountDraft, setManualDiscountDraft] = useState('')
   const [lineTotalDraft, setLineTotalDraft] = useState('')
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -356,6 +358,7 @@ export function LineMappingModal({
     if (resolveSyncKey) {
       setLoading(true)
       setExpenseMode(false)
+      setManualDiscountDraft('')
       setSearchQuery('')
       setSearchResults([])
       // Si K5 guardó un precio efectivo más preciso, el campo sigue mostrando
@@ -437,7 +440,7 @@ export function LineMappingModal({
   const isPanabad = supplierId === 2
   const isShersFixedDiscount = !isPanabad && line?.printed_fixed_discount_eur != null
   const shersEffectiveUnitPrice = isShersFixedDiscount && grossUnitPrice != null
-    && line?.quantity != null && line.printed_net_unit_price != null
+    && line?.quantity != null
     ? reconcileFixedDiscountedUnitPrice({
         quantity_raw: String(line.quantity),
         unit_price_raw: String(grossUnitPrice),
@@ -496,13 +499,29 @@ export function LineMappingModal({
         String(line.quantity), observedUnitPriceDraft, String(line.total_price)
       ))
     : null
-  const observedUnitPrice = isPanabad
+  const automaticallyDiscountedUnitPrice = isPanabad
     ? reviewedDiscount == null ? null : Number(reviewedDiscount.effectiveUnitPrice.toFixed(4))
     : isShersFixedDiscount
       ? shersEffectiveUnitPrice == null ? null : Number(shersEffectiveUnitPrice)
       : isOtherPercentDiscount
         ? otherPercentEffectiveUnitPrice == null ? null : Number(otherPercentEffectiveUnitPrice)
         : roundedUnitPrice == null ? grossUnitPrice : Number(roundedUnitPrice)
+
+  // La revisión manual se aplica después del cálculo OCR, que permanece intacto.
+  const manualDiscountActive = manualDiscountDraft.trim() !== ''
+  const manualDiscount = useMemo(() => {
+    if (!manualDiscountActive) return null
+    const raw = manualDiscountDraft.trim().replace(',', '.')
+    if (!/^\d+(?:\.\d{1,4})?$/.test(raw)) return null
+    return calculateManualDiscount({
+      quantity: line?.quantity,
+      baseUnitPrice: automaticallyDiscountedUnitPrice ?? grossUnitPrice,
+      discountPerUnit: Number(raw),
+    })
+  }, [manualDiscountActive, manualDiscountDraft, automaticallyDiscountedUnitPrice, grossUnitPrice, line?.quantity])
+  const observedUnitPrice = manualDiscountActive
+    ? manualDiscount?.finalUnitPrice ?? null
+    : automaticallyDiscountedUnitPrice
 
   const purchaseUnitForPresentation = useMemo(
     () =>
@@ -645,6 +664,7 @@ export function LineMappingModal({
   ])
 
   const canSave = useMemo(() => {
+    if (manualDiscountActive && !manualDiscount) return false
     if (!ingredientId || !invoiceId || supplierId == null || observedUnitPrice == null) return false
     if (isVariableWeightMode) return true
     if (automaticDimensional) {
@@ -660,6 +680,8 @@ export function LineMappingModal({
     invoiceId,
     supplierId,
     observedUnitPrice,
+    manualDiscountActive,
+    manualDiscount,
     dimensionalParsed,
     presentationEconomics,
     isVariableWeightMode,
@@ -737,12 +759,13 @@ export function LineMappingModal({
     setSaving(true)
     try {
       const storedPrice = line.unit_price == null ? null : Number(line.unit_price)
+      const updatedTotal = manualDiscount?.lineTotal ?? (isPanabad ? reviewedDiscount?.lineTotal : null)
       if (storedPrice == null || Math.abs(storedPrice - observedUnitPrice) > 0.00000001
-        || (isPanabad && reviewedDiscount && Math.abs(Number(line.total_price) - reviewedDiscount.lineTotal) > 0.00000001)) {
+        || (updatedTotal != null && Math.abs(Number(line.total_price) - updatedTotal) > 0.00000001)) {
         const priceUpdate = await updatePurchaseInvoiceLineAction({
           lineId: line.id,
           patch: { unit_price: observedUnitPrice,
-            ...(isPanabad && reviewedDiscount ? { total_price: reviewedDiscount.lineTotal } : {}) },
+            ...(updatedTotal != null ? { total_price: updatedTotal } : {}) },
         })
         if (!priceUpdate.success) {
           reject(priceUpdate.message)
@@ -763,6 +786,7 @@ export function LineMappingModal({
           discountPercent: reviewedDiscount.discountPercent,
           lineTotal: reviewedDiscount.lineTotal,
         } : null,
+        manualDiscountReview: manualDiscount,
       })
 
       if (!res.success) {
@@ -901,7 +925,7 @@ export function LineMappingModal({
 
   if (!open || !line) return null
 
-  const headerTitle = `${line.original_name || 'Sin nombre'} — ${formatLineTotal(isPanabad && reviewedDiscount ? reviewedDiscount.lineTotal : line.total_price)}`
+  const headerTitle = `${line.original_name || 'Sin nombre'} — ${formatLineTotal(manualDiscount?.lineTotal ?? (isPanabad && reviewedDiscount ? reviewedDiscount.lineTotal : line.total_price))}`
 
   return (
     <>
@@ -1225,6 +1249,45 @@ export function LineMappingModal({
                       Es el precio que figura en el albarán. Si la lectura lo interpretó mal, corrígelo aquí.
                     </p>
                   )}
+                </section>
+              ) : null}
+
+              {ingredientId ? (
+                <section className="rounded-lg border border-zinc-200 bg-white p-3 flex flex-col gap-2">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
+                    Descuento manual adicional
+                  </p>
+                  <p className="text-xs text-zinc-600">
+                    Se aplica después del descuento automático, sin modificarlo.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      aria-label="Descuento manual adicional por unidad facturada"
+                      inputMode="decimal"
+                      value={manualDiscountDraft}
+                      onChange={(e) => setManualDiscountDraft(e.target.value)}
+                      placeholder="0,00"
+                      className="min-h-11 w-28 rounded-lg border border-zinc-200 bg-white px-2 text-sm tabular-nums text-zinc-900 outline-none focus:border-[#36606F]/50"
+                    />
+                    <span className="text-xs font-semibold text-zinc-700">€ por {billingUnitForDisplay}</span>
+                  </div>
+                  {manualDiscountActive ? manualDiscount ? (
+                    <p aria-live="polite" className="text-sm font-semibold text-zinc-900">
+                      Total final: {manualDiscount.lineTotal.toLocaleString('es-ES', {
+                        minimumFractionDigits: 2, maximumFractionDigits: 2,
+                      })} € · {manualDiscount.finalUnitPrice.toLocaleString('es-ES', {
+                        minimumFractionDigits: 2, maximumFractionDigits: 4,
+                      })} € por {billingUnitForDisplay}
+                    </p>
+                  ) : (
+                    <p role="alert" className="text-xs font-semibold text-amber-800">
+                      El descuento debe ser positivo y no superar el precio después del descuento automático.
+                    </p>
+                  ) : automaticallyDiscountedUnitPrice === 0 ? (
+                    <p className="text-xs text-emerald-700">
+                      El descuento automático ya deja esta línea en 0,00 €.
+                    </p>
+                  ) : null}
                 </section>
               ) : null}
 
