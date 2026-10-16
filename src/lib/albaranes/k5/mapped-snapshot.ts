@@ -75,7 +75,9 @@ export function buildExactMappedSnapshot(params: {
   const observedUnitPrice = parseExactDecimal(params.observedUnitPrice)
   const factor = parseExactDecimal(params.mapping.conversionFactor)
   const content = parseExactDecimal(params.mapping.lineContentQty)
-  if (!isPositiveExact(lineQuantity) || !isPositiveExact(observedUnitPrice) || !isPositiveExact(factor) || !isPositiveExact(content)) return null
+  if (!isPositiveExact(lineQuantity) || observedUnitPrice == null
+    || observedUnitPrice.numerator < BigInt(0)
+    || !isPositiveExact(factor) || !isPositiveExact(content)) return null
 
   const contentInPurchaseUnit = convert(content, params.mapping.lineContentUnit, params.mapping.purchaseUnit)
   if (!contentInPurchaseUnit) return null

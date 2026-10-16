@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   isMisreadNetAmount,
   reconcileFixedDiscountedUnitPrice,
+  reconcileFreeFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
   reconcileVerifiedTotalWeightUnitPrice,
@@ -354,4 +355,29 @@ test('impide recepción automática sin importe de control y compara subtotal au
   assert.ok(validateObservedDocument({ ...doc, subtotal_raw: '6' }).reasons
     .includes('lineas_subtotal_no_reconcilian'))
   assert.deepEqual(validateObservedDocument({ ...doc, subtotal_raw: '5' }).reasons, [])
+})
+
+test('BONKA: regalo con descuento fijo íntegro exige revisión humana cuando no hay neto impreso', () => {
+  const gift = row({ quantity_raw: '1', unit_price_raw: '15,43',
+    discount_raw: '15,43', discount_header_raw: 'DTO.',
+    net_unit_price_raw: null, line_total_raw: null })
+  assert.equal(reconcileFreeFixedDiscountedUnitPrice(gift), '0')
+  assert.equal(reconcileFixedDiscountedUnitPrice(gift), null)
+  assert.ok(validateObservedLine(gift).reasons.includes('importe_ausente_o_invalido'))
+  assert.equal(reconcileFreeFixedDiscountedUnitPrice({ ...gift, discount_raw: '15,42' }), null)
+  assert.equal(reconcileFreeFixedDiscountedUnitPrice({ ...gift, line_total_raw: '0,01' }), null)
+  assert.equal(reconcileFreeFixedDiscountedUnitPrice({ ...gift, net_unit_price_raw: '0,01' }), null)
+  assert.equal(reconcileFreeFixedDiscountedUnitPrice({ ...gift, other_charge_raw: '0,01' }), null)
+  assert.equal(reconcileFreeFixedDiscountedUnitPrice({ ...gift, discount_header_raw: '% DTO.' }), null)
+})
+
+test('descuento porcentual del 100 % con neto 0 reconcilia; otros no', () => {
+  const gift = row({ quantity_raw: '2', unit_price_raw: '5,00',
+    discount_raw: '100', discount_header_raw: '% DTO.',
+    net_unit_price_raw: '0,00', line_total_raw: '0,00' })
+  assert.equal(reconcilePercentageDiscountedUnitPrice(gift), '0')
+  assert.deepEqual(validateObservedLine(gift).reasons, [])
+  assert.equal(validateObservedLine(gift).priceBasis, 'billing_quantity')
+  assert.equal(reconcilePercentageDiscountedUnitPrice({ ...gift, discount_raw: '99' }), null)
+  assert.equal(reconcilePercentageDiscountedUnitPrice({ ...gift, line_total_raw: '0,01' }), null)
 })

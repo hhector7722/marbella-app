@@ -21,6 +21,15 @@ test('1 caja de 125 g a 2,49 € normaliza a 19,92 €/kg', () => {
   assert.equal(result.purchaseUnit, 'kg')
 })
 
+test('regalo recibido en caja de 1000 unidades mantiene coste cero', () => {
+  assert.deepEqual(deriveReceiptPresentationEconomics({
+    contentQty: 1000, contentUnit: 'ud', purchaseUnit: 'ud', observedUnitPrice: 0,
+  }), { conversionFactor: 1000, normalizedUnitPrice: 0, purchaseUnit: 'ud' })
+  assert.equal(deriveReceiptPresentationEconomics({
+    contentQty: 1000, contentUnit: 'ud', purchaseUnit: 'ud', observedUnitPrice: null,
+  }), null)
+})
+
 test('una unidad contable mantiene factor y precio 1:1', () => {
   const result = deriveReceiptPresentationEconomics({
     contentQty: 1,

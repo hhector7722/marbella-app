@@ -14,6 +14,7 @@ type MappingReviewInput = {
   unitPrice: number | null
   lineTotal: number | null
   verifiedObservedMath?: boolean
+  verifiedZeroCost?: boolean
   verifiedFixedDiscountMath?: boolean
   verifiedPercentDiscountMath?: boolean
   verifiedReviewedPricing?: boolean
@@ -51,14 +52,16 @@ export function resolveMappingReviewReasons(input: MappingReviewInput): string[]
 
     if (['missing_product', 'product_missing'].includes(reason) && input.hasResolvedName) return false
     if (['missing_quantity', 'cantidad_ausente_o_invalida'].includes(reason) && input.quantity != null && input.quantity > 0) return false
-    if (['missing_unit_price', 'precio_ausente_o_invalido'].includes(reason) && input.unitPrice != null && input.unitPrice > 0) return false
-    if (['missing_line_amount', 'importe_ausente_o_invalido'].includes(reason) && input.lineTotal != null && input.lineTotal > 0) return false
+    if (['missing_unit_price', 'precio_ausente_o_invalido'].includes(reason) && input.unitPrice != null
+      && (input.unitPrice > 0 || (input.unitPrice === 0 && input.verifiedZeroCost))) return false
+    if (['missing_line_amount', 'importe_ausente_o_invalido'].includes(reason) && input.lineTotal != null
+      && (input.lineTotal > 0 || (input.lineTotal === 0 && input.verifiedZeroCost))) return false
     if (reason === 'cantidad_precio_importe_no_reconcilian'
-      && (input.verifiedObservedMath || input.verifiedFixedDiscountMath
+      && (input.verifiedObservedMath || input.verifiedZeroCost || input.verifiedFixedDiscountMath
         || input.verifiedPercentDiscountMath || input.verifiedReviewedPricing)) return false
     // Solo la aritmética comprobada sobre el original resuelve un bloqueo
     // histórico de descuento, tanto por unidad fija como porcentual.
-    if ((input.verifiedFixedDiscountMath || input.verifiedPercentDiscountMath) && [
+    if ((input.verifiedZeroCost || input.verifiedFixedDiscountMath || input.verifiedPercentDiscountMath) && [
       'descuento_sin_porcentaje_verificado',
       'precio_neto_contradictorio',
       'discount_not_interpretable',

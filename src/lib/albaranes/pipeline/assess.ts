@@ -109,7 +109,7 @@ export function assessDocument(params: {
         else numericEconomicQuantity *= unitsPerPackage
       }
       const observedUnitPrice = check.lineTotal / numericEconomicQuantity
-      if (Number.isFinite(observedUnitPrice) && observedUnitPrice > 0) {
+      if (Number.isFinite(observedUnitPrice) && observedUnitPrice >= 0) {
         // K4 persiste cantidad con 3 decimales y precio con 4. La propuesta
         // debe calcular exactamente a esa escala para que el preview coincida.
         if (Math.abs(numericEconomicQuantity - Number(numericEconomicQuantity.toFixed(3))) > 0.00000001) {

@@ -41,6 +41,7 @@ import { explainReviewReason } from '@/lib/albaranes/k5/review-reason-labels'
 import { reviewDiscountedLine } from '@/lib/albaranes/k5/discounted-line'
 import {
   reconcileFixedDiscountedUnitPrice,
+  reconcileFreeFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
   reconcileUnadjustedNetUnitPrice,
@@ -443,6 +444,14 @@ export function LineMappingModal({
         discount_raw: String(line.printed_fixed_discount_eur),
         discount_header_raw: 'DTO.',
         net_unit_price_raw: String(line.printed_net_unit_price),
+        line_total_raw: lineTotalDraft,
+      }) ?? reconcileFreeFixedDiscountedUnitPrice({
+        quantity_raw: String(line.quantity),
+        unit_price_raw: String(grossUnitPrice),
+        discount_raw: String(line.printed_fixed_discount_eur),
+        discount_header_raw: 'DTO.',
+        net_unit_price_raw: line.printed_net_unit_price == null
+          ? null : String(line.printed_net_unit_price),
         line_total_raw: lineTotalDraft,
       })
     : null

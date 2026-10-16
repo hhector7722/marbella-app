@@ -191,6 +191,36 @@ export function reconcileFixedDiscountedUnitPrice(line: {
 }
 
 /**
+ * Entrega gratuita con descuento fijo íntegro. El OCR puede omitir las
+ * columnas neto e importe, pero si las imprime deben ser exactamente cero.
+ * La ausencia del importe sigue requiriendo revisión humana.
+ */
+export function reconcileFreeFixedDiscountedUnitPrice(line: {
+  quantity_raw: string | null
+  unit_price_raw: string | null
+  discount_raw: string | null
+  discount_header_raw: string | null
+  net_unit_price_raw: string | null
+  line_total_raw: string | null
+  other_charge_raw?: string | null
+}): string | null {
+  if (!/dto|discount|descuento/i.test(line.discount_header_raw ?? '')
+    || /%|por\s*ciento|percent/i.test(line.discount_header_raw ?? '')
+    || line.other_charge_raw?.trim()) return null
+  const quantity = parseExactDecimal(line.quantity_raw)
+  const gross = parseExactDecimal(line.unit_price_raw)
+  const discount = parseExactDecimal(line.discount_raw)
+  const printedNet = parseExactDecimal(line.net_unit_price_raw)
+  const total = parseExactDecimal(line.line_total_raw)
+  const zero = ratio(BigInt(0))
+  if (!isPositiveExact(quantity) || !isPositiveExact(gross) || !isPositiveExact(discount)
+    || compareExact(gross, discount) !== 0
+    || (line.net_unit_price_raw?.trim() && (!printedNet || compareExact(printedNet, zero) !== 0))
+    || (line.line_total_raw?.trim() && (!total || compareExact(total, zero) !== 0))) return null
+  return '0'
+}
+
+/**
  * Descuento porcentual: comprueba a escala de céntimos por unidad
  * sin depender del volumen del pedido. La factura conserva el total
  * y el precio de K4 se calcula a cuatro decimales.
@@ -209,13 +239,15 @@ export function reconcilePercentageDiscountedUnitPrice(line: {
   const discount = parseExactDecimal(line.discount_raw)
   const total = parseExactDecimal(line.line_total_raw)
   if (!isPositiveExact(quantity) || !isPositiveExact(gross)
-    || !isPositiveExact(discount) || !isPositiveExact(total)
-    || compareExact(discount, ratio(BigInt(100))) >= 0) return null
+    || !isPositiveExact(discount) || total == null || compareExact(total, ratio(BigInt(0))) < 0
+    || compareExact(discount, ratio(BigInt(100))) > 0
+    || (compareExact(discount, ratio(BigInt(100))) === 0 && compareExact(total, ratio(BigInt(0))) !== 0)
+    || (compareExact(total, ratio(BigInt(0))) === 0 && compareExact(discount, ratio(BigInt(100))) !== 0)) return null
   const multiplier = divideExact(subtractExact(ratio(BigInt(100)), discount), ratio(BigInt(100)))!
   const calculated = multiplyExact(gross, multiplier)
   const actual = divideExact(total, quantity)!
   const maxDeviation = parseExactDecimal('0.005')!
-  if (!isPositiveExact(actual)
+  if (compareExact(actual, ratio(BigInt(0))) < 0
     || !withinExactTolerance(actual, calculated, maxDeviation)) return null
   const net = parseExactDecimal(line.net_unit_price_raw)
   if (net && compareExact(parseExactDecimal(roundExactToScale(actual, 2))!, net) !== 0) return null
@@ -342,12 +374,12 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
     const declaresDiscount = /dto|discount|descuento/.test(header)
     const percentMatchesAmount = quantity != null && quantity > 0
       && unitPrice != null && unitPrice > 0 && lineTotal != null
-      && discount < 100 && reconcilePercentageDiscountedUnitPrice(line) != null
+      && discount <= 100 && reconcilePercentageDiscountedUnitPrice(line) != null
     const verifiedFixedDiscountPrice = declaresDiscount
       ? reconcileFixedDiscountedUnitPrice(line) : null
     const fixedDiscountMatchesNetPrice = verifiedFixedDiscountPrice != null
 
-    if (declaresPercent && discount < 100) discountPercent = discount
+    if (declaresPercent && discount <= 100) discountPercent = discount
     // Algunos proveedores no preservan la cabecera "% DTO" en la lectura.
     // Solo aceptamos el porcentaje si la ecuación impresa lo demuestra.
     else if (!header.trim() && percentMatchesAmount) discountPercent = discount
@@ -393,7 +425,7 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
       const expectedNet = fixedDiscountPerUnit == null
         ? unitPrice * multiplier
         : unitPrice - fixedDiscountPerUnit
-      if (netUnitPrice <= 0 || (!near(netUnitPrice, expectedNet)
+      if (netUnitPrice < 0 || (!near(netUnitPrice, expectedNet)
         && !isVerifiedTaxInclusiveUnitPrice(line))) reasons.push('precio_neto_contradictorio')
     }
   }

@@ -10,6 +10,7 @@ import {
   isVerifiedIbeeCharge,
   isVerifiedTaxInclusiveUnitPrice,
   reconcileFixedDiscountedUnitPrice,
+  reconcileFreeFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
   reconcileVerifiedTotalWeightUnitPrice,
@@ -354,6 +355,15 @@ async function supersedeK5ProposalWithMapping(params: {
       observedUnitPrice
     )
   )
+  // DTO íntegro: el OCR puede omitir neto e importe, pero el original
+  // y la línea materializada deben demostrar coste cero.
+  const verifiedFreeFixedDiscount = Boolean(
+    sourceLine.success
+    && sameExactDecimal(lineTotal, 0)
+    && sameExactDecimal(observedUnitPrice, 0)
+    && sameExactDecimal(sourceCheck?.quantity, lineQuantity)
+    && reconcileFreeFixedDiscountedUnitPrice(sourceLine.data) === '0'
+  )
   // Recalcular también bloqueos heredados de porcentajes redondeados,
   // pero exclusivamente a partir de la evidencia original verificable.
   const verifiedPercentDiscount = Boolean(
@@ -415,6 +425,8 @@ async function supersedeK5ProposalWithMapping(params: {
       || verifiedCorrectedWeightMath
       || verifiedAmountColumnMath
       || verifiedUnadjustedNet || verifiedPercentDiscount,
+    verifiedZeroCost: verifiedFreeFixedDiscount
+      || (reviewedPricing?.discountPercent === 100 && reviewedPricing.lineTotal === 0),
     verifiedFixedDiscountMath: verifiedFixedDiscount,
     verifiedPercentDiscountMath: verifiedPercentDiscount,
     verifiedReviewedPricing: Boolean(reviewedPricing),
@@ -596,7 +608,7 @@ export async function saveReceiptMappingProposalAction(params: {
   }
   const { data: sourceProposal, error: sourceProposalError } = await gate.supabase
     .from('purchase_interpretation_proposals')
-    .select('normalizer_version')
+    .select('normalizer_version,observed')
     .eq('id', k5ProposalId).maybeSingle()
   if (sourceProposalError || sourceProposal?.normalizer_version !== 'mistral-pipeline-v3') {
     return { success: false, message: 'La propuesta histórica no admite nuevos mapeos; reprocesa con Mistral.' }
@@ -610,10 +622,22 @@ export async function saveReceiptMappingProposalAction(params: {
       decimal(line.quantity) == null
       || decimal(line.quantity)! <= 0
       || decimal(line.unit_price) == null
-      || decimal(line.unit_price)! <= 0
+      || decimal(line.unit_price)! < 0
     )
   ) {
     return { success: false, message: 'Completa primero cantidad y precio unitario antes de mapear.' }
+  }
+
+  if (decimal(line.unit_price) === 0) {
+    const source = canonicalLineSchema.safeParse(sourceProposal.observed)
+    const fixedGift = source.success
+      && reconcileFreeFixedDiscountedUnitPrice(source.data) === '0'
+      && sameExactDecimal(source.data.quantity_raw, line.quantity)
+    const reviewedGift = pricingReview?.discountPercent === 100
+      && reviewDiscountedLine({ quantity: decimal(line.quantity), ...pricingReview })?.effectiveUnitPrice === 0
+    if (decimal(line.total_price) !== 0 || (!fixedGift && !reviewedGift)) {
+      return { success: false, message: 'El coste cero exige un descuento total verificable y un importe de línea de 0 €.' }
+    }
   }
 
   let effectiveConversionFactor = conversionFactor

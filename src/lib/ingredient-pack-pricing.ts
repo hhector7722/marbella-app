@@ -163,14 +163,14 @@ export function deriveReceiptPresentationEconomics(args: {
   const observed = Number(args.observedUnitPrice)
   const purchaseUnit = norm(args.purchaseUnit)
   if (!Number.isFinite(qty) || qty <= 0) return null
-  if (!Number.isFinite(observed) || observed <= 0) return null
+  if (args.observedUnitPrice == null || !Number.isFinite(observed) || observed < 0) return null
   if (!purchaseUnit) return null
 
   const conversionFactor = convertPricingQtyNumeric(qty, args.contentUnit, purchaseUnit)
   if (conversionFactor == null || !Number.isFinite(conversionFactor) || conversionFactor <= 0) return null
 
   const normalizedUnitPrice = observed / conversionFactor
-  if (!Number.isFinite(normalizedUnitPrice) || normalizedUnitPrice <= 0) return null
+  if (!Number.isFinite(normalizedUnitPrice) || normalizedUnitPrice < 0) return null
 
   return { conversionFactor, normalizedUnitPrice, purchaseUnit }
 }
