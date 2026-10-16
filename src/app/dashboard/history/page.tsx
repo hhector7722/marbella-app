@@ -73,6 +73,12 @@ type SalesProduct = ProductSalesRanking & { rank: number };
 type HourlySalesRow = Database['public']['Functions']['get_hourly_sales']['Returns'][number];
 type TicketHourRow = Pick<Tables<'tickets_marbella'>, 'hora_cierre' | 'fecha' | 'total_documento'>;
 type HourAggregate = { label: string; cant: number; media: number; total: number };
+/** Un único JSON devuelto por PostgreSQL: cada cifra agrega TODOS los tickets del periodo. */
+type FullPeriodTicketSalesDetail = {
+    summary: { totalSales: number; count: number; avgTicket: number };
+    hours: { hour: number; count: number; total: number }[];
+    products: ProductSalesRanking[];
+};
 
 interface RendimientoScale {
     level: 1 | 2 | 3 | 4 | 5;
@@ -655,45 +661,72 @@ export default function HistoryPage() {
         }
     };
 
-    // Para el modal mensual: carga todos los tickets del mes y agrega
+    // Se agrupa en PostgreSQL, no en el navegador: PostgREST limita las
+    // filas de cada consulta pero el RPC recorre TODOS los tickets, sus líneas
+    // y horas de un mes, incluido el día actual aunque la caja no se haya cerrado.
     const fetchMonthlySalesData = async (startDate: string, endDate: string) => {
         setSalesModalLoading(true);
         try {
-            const { data: productsData, error: productsError } = await supabase.rpc('get_product_sales_ranking', {
+            const { data, error } = await supabase.rpc('get_full_period_ticket_sales_detail', {
                 p_start_date: startDate,
                 p_end_date: endDate,
-                p_start_time: null,
-                p_end_time: null,
             });
-            if (productsError) console.error('Error fetching products ranking:', productsError);
-            const ranking = (productsData || []).map((p: ProductSalesRanking, idx: number) => ({ ...p, rank: idx + 1 }));
-            setSalesProducts(ranking);
+            if (error) throw error;
+            if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                throw new Error('El informe mensual no devolvió datos válidos.');
+            }
+            const report = data as unknown as FullPeriodTicketSalesDetail;
+            if (!report.summary || !Array.isArray(report.hours) || !Array.isArray(report.products)) {
+                throw new Error('El informe mensual está incompleto.');
+            }
 
-            const { data: ticketsData, error: ticketsError } = await supabase
-                .from('tickets_marbella')
-                .select('hora_cierre, total_documento, fecha')
-                .gte('fecha', startDate)
-                .lte('fecha', endDate);
-            if (ticketsError) console.error('Error fetching tickets:', ticketsError);
-
-            const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
-            const ticketsList = ticketsData || [];
-            ticketsList.forEach((t: TicketHourRow) => {
-                const hour = getBusinessHourFromTicket(t);
-                hourly[hour].total += Number(t.total_documento) || 0;
+            setSalesProducts(report.products.map((item, index) => ({ ...item, rank: index + 1 })));
+            const byHour = new Map(report.hours.map(item => [
+                Number(item.hour), { count: Number(item.count) || 0, total: Number(item.total) || 0 },
+            ]));
+            setSalesChartData(Array.from({ length: 24 }, (_, hour) => ({
+                hora: hour,
+                total: byHour.get(hour)?.total ?? 0,
+            })));
+            setTopHours(Array.from(
+                { length: BUSINESS_HOURS.end - BUSINESS_HOURS.start + 1 },
+                (_, index) => {
+                    const hour = BUSINESS_HOURS.start + index;
+                    const { count, total } = byHour.get(hour) ?? { count: 0, total: 0 };
+                    return {
+                        label: hourToSlotLabel(hour) ?? `${hour}:00`,
+                        cant: count,
+                        media: count > 0 ? total / count : 0,
+                        total,
+                    };
+                },
+            ));
+            setSalesSummary({
+                totalSales: Number(report.summary.totalSales) || 0,
+                count: Number(report.summary.count) || 0,
+                avgTicket: Number(report.summary.avgTicket) || 0,
             });
-            setSalesChartData(hourly);
-
-            setTopHours(buildAllHourRows(ticketsList));
-
-            const totalSales = ticketsList.reduce((acc: number, t: TicketHourRow) => acc + (Number(t.total_documento) || 0), 0);
-            setSalesSummary({ totalSales, count: ticketsList.length, avgTicket: ticketsList.length > 0 ? totalSales / ticketsList.length : 0 });
         } catch (err) {
-            console.error('Error fetching monthly sales data:', err);
-            toast.error('Error al cargar ventas del mes');
+            console.error('Error fetching complete monthly sales data:', err);
+            toast.error('No se ha podido cargar el detalle completo del mes');
         } finally {
             setSalesModalLoading(false);
         }
+    };
+
+    // «Mensual» siempre abarca el mes completo visible en el calendario,
+    // incluso cuando el día seleccionado aún no dispone de cierre.
+    const openMonthlySalesDetails = () => {
+        const start = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
+        const end = format(endOfMonth(viewMonth), 'yyyy-MM-dd');
+        setSalesModalMode('monthly');
+        setSalesModalDate(format(viewMonth, 'MMMM yyyy', { locale: es }));
+        setSalesSummary({ totalSales: 0, count: 0, avgTicket: 0 });
+        setSalesProducts([]);
+        setSalesChartData([]);
+        setTopHours([]);
+        void fetchMonthlySalesData(start, end);
+        setIsSalesModalOpen(true);
     };
 
     const calendarDays = useMemo(() => {
@@ -1434,14 +1467,7 @@ export default function HistoryPage() {
                         ?? (lastClosing?.id === closing.id ? lastClosing : null);
                     if (full) openClosingDetail(full);
                 }}
-                onMonthlySales={() => {
-                    const start = rangeStart ?? format(startOfMonth(viewMonth), 'yyyy-MM-dd');
-                    const end = rangeEnd ?? format(endOfMonth(viewMonth), 'yyyy-MM-dd');
-                    setSalesModalMode('monthly');
-                    setSalesModalDate(monthNavLabel);
-                    void fetchMonthlySalesData(start, end);
-                    setIsSalesModalOpen(true);
-                }}
+                onMonthlySales={openMonthlySalesDetails}
                 onPeriodPerformance={() => setShowPeriodPerformanceModal(true)}
                 onShowTable={() => setViewMode('table')}
             />
@@ -1539,18 +1565,10 @@ export default function HistoryPage() {
                                 </span>
                             </div>
                             <div
-                                onClick={() => {
-                                    const start = rangeStart ?? format(startOfMonth(new Date()), 'yyyy-MM-dd');
-                                    const end = rangeEnd ?? format(endOfMonth(new Date()), 'yyyy-MM-dd');
-                                    const label = monthNavLabel;
-                                    setSalesModalMode('monthly');
-                                    setSalesModalDate(label);
-                                    void fetchMonthlySalesData(start, end);
-                                    setIsSalesModalOpen(true);
-                                }}
+                                onClick={openMonthlySalesDetails}
                                 role="button"
                                 tabIndex={0}
-                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const start = rangeStart ?? format(startOfMonth(new Date()), 'yyyy-MM-dd'); const end = rangeEnd ?? format(endOfMonth(new Date()), 'yyyy-MM-dd'); setSalesModalMode('monthly'); setSalesModalDate(monthNavLabel); void fetchMonthlySalesData(start, end); setIsSalesModalOpen(true); } }}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMonthlySalesDetails(); } }}
                                 className="relative flex flex-col items-center justify-center text-center cursor-pointer hover:opacity-70 active:scale-[0.97] transition-all before:absolute before:inset-0 before:-my-3 before:min-h-[var(--tactil-minimo)] before:content-['']"
                             >
                                 <div className="flex items-center justify-center leading-none">
