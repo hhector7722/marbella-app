@@ -19,6 +19,7 @@ type MappingReviewInput = {
   verifiedReviewedPricing?: boolean
   verifiedMisreadNetAmount?: boolean
   verifiedIbeeCharge?: boolean
+  verifiedTaxInclusiveUnitPrice?: boolean
 }
 
 /** Resolve only facts explicitly supplied by the reviewer; keep economic and
@@ -69,6 +70,7 @@ export function resolveMappingReviewReasons(input: MappingReviewInput): string[]
       'discount_not_interpretable',
       'discount_requires_review',
     ].includes(reason)) return false
+    if (reason === 'precio_neto_contradictorio' && input.verifiedTaxInclusiveUnitPrice) return false
     if (input.verifiedReviewedPricing && [
       'descuento_sin_porcentaje_verificado',
       'precio_neto_contradictorio',

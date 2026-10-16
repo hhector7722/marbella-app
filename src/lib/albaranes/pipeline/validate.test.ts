@@ -236,6 +236,22 @@ test('Ibee en columna OCR de descuento no bloquea si el importe bruto cuadra', (
     .includes('descuento_sin_porcentaje_verificado'))
 })
 
+test('Santa Teresa: Pre+Iva no se interpreta como precio neto ni Ibee como descuento', () => {
+  const evidence = row({ quantity_raw: '24', unit_price_raw: '0.92',
+    net_unit_price_raw: '1.11', discount_raw: '0.90', discount_header_raw: 'Ibee',
+    line_total_raw: '22.08' })
+  assert.deepEqual(validateObservedLine(evidence).reasons, [])
+  assert.equal(validateObservedLine(evidence).lineTotal, 22.08)
+  assert.ok(validateObservedLine({ ...evidence, net_unit_price_raw: '1.12' }).reasons
+    .includes('precio_neto_contradictorio'))
+  assert.ok(validateObservedLine({ ...evidence, line_total_raw: '21.08' }).reasons
+    .includes('cantidad_precio_importe_no_reconcilian'))
+  const olives = row({ quantity_raw: '18', unit_price_raw: '6.95',
+    net_unit_price_raw: '7.65', discount_raw: '0.00', discount_header_raw: 'Ibee',
+    line_total_raw: '125.10' })
+  assert.deepEqual(validateObservedLine(olives).reasons, [])
+})
+
 test('bloquea filas impresas sin cantidad entregada', () => {
   assert.ok(validateObservedLine(row({ unit_price_raw: '1', line_total_raw: '1' }))
     .reasons.includes('cantidad_ausente_o_invalida'))

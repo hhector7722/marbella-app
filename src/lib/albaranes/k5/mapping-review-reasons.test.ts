@@ -201,3 +201,18 @@ test('solo una comprobación nueva de la evidencia resuelve el aviso aritmético
     verifiedObservedMath: true,
   }), ['lineas_subtotal_no_reconcilian'])
 })
+
+test('Santa Teresa: una igualdad verificada de Pre+Iva resuelve solo el falso neto', () => {
+  const input = {
+    previousReasons: ['precio_neto_contradictorio', 'cantidad_precio_importe_no_reconcilian'],
+    hasResolvedName: true,
+    hasMappedSnapshot: true,
+    humanLineOverride: false,
+    quantity: 24,
+    unitPrice: 0.92,
+    lineTotal: 22.08,
+  }
+  assert.deepEqual(resolveMappingReviewReasons({ ...input, verifiedTaxInclusiveUnitPrice: true }),
+    ['cantidad_precio_importe_no_reconcilian'])
+  assert.deepEqual(resolveMappingReviewReasons(input), input.previousReasons)
+})

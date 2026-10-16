@@ -122,10 +122,13 @@ revisión.
 
 Si la columna observada lleva la cabecera exacta «Ibee», se trata como cargo
 de envases y no como descuento únicamente cuando cantidad × precio concilia
-con el importe bruto de la línea, el precio neto observado no contradice al
-unitario y no queda otro cargo sin interpretar. La revisión puede retirar un
-bloqueo heredado de descuento solo si esos datos originales coinciden con la
-línea guardada; un descuadre de importe conserva su bloqueo.
+con el importe bruto de la línea, no queda otro cargo sin interpretar y la
+segunda columna de precio coincide con el unitario o, en Santa Teresa, con
+«Pre+Iva» redondeado a céntimos usando una tasa compatible del 4 %,
+10 % o 21 %. Ese «Pre+Iva» no es un segundo precio neto de compra. La revisión
+puede retirar los bloqueos heredados de descuento y de falso precio neto solo
+si las igualdades originales coinciden con la línea guardada; un descuadre de
+importe conserva su bloqueo.
 
 En la revisión humana de Ametller, una columna leída como «precio neto» puede
 ser en realidad una copia OCR del importe total. Solo se descarta ese aviso si

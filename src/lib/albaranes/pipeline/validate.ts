@@ -295,9 +295,27 @@ export function isVerifiedIbeeCharge(line: CanonicalDocument['lines'][number]): 
   const amount = verifiedAmount ?? parseObservedDecimal(line.line_total_raw)
   return quantity != null && quantity > 0 && unitPrice != null && unitPrice > 0
     && charge != null && charge > 0 && amount != null && amount > 0
-    && (netUnitPrice == null || near(netUnitPrice, unitPrice))
+    && (netUnitPrice == null || near(netUnitPrice, unitPrice) || isVerifiedTaxInclusiveUnitPrice(line))
     && (!line.other_charge_raw || verifiedAmount != null)
     && near(quantity * unitPrice, amount)
+}
+
+/** Santa Teresa prints "Pre+Iva" after Importe. Mistral can place that
+ * tax-inclusive display price in net_unit_price_raw. Accept that reading only
+ * when a printed net amount independently reconciles and a legal VAT rate
+ * rounds the displayed price to the exact printed cents. */
+export function isVerifiedTaxInclusiveUnitPrice(line: CanonicalDocument['lines'][number]): boolean {
+  if ((line.discount_header_raw ?? '').trim().toLocaleLowerCase('es') !== 'ibee'
+    || line.other_charge_raw?.trim()) return false
+  const quantity = parseExactDecimal(line.quantity_raw)
+  const unitPrice = parseExactDecimal(line.unit_price_raw)
+  const total = parseExactDecimal(line.line_total_raw)
+  const priceWithTax = parseExactDecimal(line.net_unit_price_raw)
+  if (!isPositiveExact(quantity) || !isPositiveExact(unitPrice)
+    || !isPositiveExact(total) || !isPositiveExact(priceWithTax)
+    || !withinExactTolerance(multiplyExact(quantity, unitPrice), total, parseExactDecimal('0.03')!)) return false
+  return ['1.04', '1.10', '1.21'].some((rate) =>
+    compareExact(parseExactDecimal(roundExactToScale(multiplyExact(unitPrice, parseExactDecimal(rate)!), 2))!, priceWithTax) === 0)
 }
 
 export function validateObservedLine(line: CanonicalDocument['lines'][number]): LineCheck {
@@ -375,7 +393,8 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
       const expectedNet = fixedDiscountPerUnit == null
         ? unitPrice * multiplier
         : unitPrice - fixedDiscountPerUnit
-      if (netUnitPrice <= 0 || !near(netUnitPrice, expectedNet)) reasons.push('precio_neto_contradictorio')
+      if (netUnitPrice <= 0 || (!near(netUnitPrice, expectedNet)
+        && !isVerifiedTaxInclusiveUnitPrice(line))) reasons.push('precio_neto_contradictorio')
     }
   }
   if (line.other_charge_raw && !line.other_charge_header_raw) reasons.push('cargo_adicional_sin_concepto')

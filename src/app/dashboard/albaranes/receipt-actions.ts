@@ -8,6 +8,7 @@ import { resolveMappingReviewReasons } from '@/lib/albaranes/k5/mapping-review-r
 import {
   isMisreadNetAmount,
   isVerifiedIbeeCharge,
+  isVerifiedTaxInclusiveUnitPrice,
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
@@ -287,6 +288,13 @@ async function supersedeK5ProposalWithMapping(params: {
     && sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
     && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
   )
+  const verifiedTaxInclusiveUnitPrice = Boolean(
+    sourceLine.success && isVerifiedTaxInclusiveUnitPrice(sourceLine.data)
+    && sourceCheck?.priceBasis === 'billing_quantity'
+    && sameExactDecimal(sourceCheck.quantity, lineQuantity)
+    && sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
+    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+  )
   const verifiedEmbeddedKgMath = Boolean(
     sourceLine.success
     && /^\s*(?:BU|BULTOS?|CJ|CAJAS?)\s+\d+(?:[.,]\d+)?\s*(?:KG|KILOS?|QUILOS?)\s*$/i
@@ -412,6 +420,7 @@ async function supersedeK5ProposalWithMapping(params: {
     verifiedReviewedPricing: Boolean(reviewedPricing),
     verifiedMisreadNetAmount,
     verifiedIbeeCharge,
+    verifiedTaxInclusiveUnitPrice,
   })
   const reviewReasons: string[] = [...new Set(snapshot
     ? semanticReasons
