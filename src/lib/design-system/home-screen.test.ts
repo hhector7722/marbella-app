@@ -836,7 +836,7 @@ describe('Historial de cierres escritorio: un único día central', () => {
         assert.equal(historyColumns.length, 2);
         assert.ok(historyColumns.every(([, columns]) => columns === 'repeat(3, minmax(0, 1fr))'),
             'las tres columnas son idénticas en ambos tamaños de escritorio');
-        assert.match(desktopHistoryCss, /\[data-component='HistoryDesktopWorkspace'\] \{\s*width: 100%;\s*max-width: none;\s*padding-inline: 0;/);
+        assert.match(desktopHistoryCss, /\[data-component='HistoryDesktopWorkspace'\] \{\s*width: 100%;\s*max-width: none;[\s\S]*?padding-inline: clamp\(16px, 1\.8vw, 32px\);/);
         assert.match(desktopHistoryCss, /\.history-desktop-board \{\s*width: 100%;/);
         assert.match(desktopHistoryCss, /\[data-element='summary-stack'\],\s*\[data-component='HistoryDesktopWorkspace'\] \[data-element='selected-day'\] \{\s*height: min\(100%, 545px\)/);
         assert.match(desktopHistoryCss, /\[data-element='summary-stack'\] \{\s*display: grid;[\s\S]*?grid-template-rows: repeat\(2, minmax\(0, 1fr\)\);\s*row-gap: 16px;/,
@@ -905,5 +905,40 @@ describe('Historial de cierres escritorio: un único día central', () => {
         assert.ok(!['bg-white/5', 'rounded-md', 'p-1.5', 'hover:bg-white'].some(cls => photoButtons[0]!.includes(cls)), 'las fotos no tienen una tarjeta de otro color');
         assert.match(view, /onOpen=\{\(\) => \{/);
         assert.match(view, /if \(closing\) onOpenClosing\(closing\)/);
+    });
+});
+
+describe('Historial mensual: datos completos sin paginación de tickets', () => {
+    it('consulta un solo agregado SQL del mes visible para importes, horas y productos', () => {
+        const page = readFileSync(join(SRC_ROOT, 'app/dashboard/history/page.tsx'), 'utf8');
+        const monthly = page.slice(page.indexOf('// Se agrupa en PostgreSQL'), page.indexOf('const calendarDays = useMemo'));
+        const migration = readFileSync(
+            join(process.cwd(), 'supabase/migrations/20261016193000_full_month_ticket_sales_detail.sql'),
+            'utf8',
+        );
+        assert.match(monthly, /supabase\.rpc\('get_full_period_ticket_sales_detail'/);
+        assert.doesNotMatch(monthly, /\.from\('tickets_marbella'\)|\.limit\(|\.range\(/);
+        assert.match(monthly, /report\.products\.map/);
+        assert.match(monthly, /report\.hours\.map/);
+        assert.match(monthly, /report\.summary\.count/);
+        assert.match(monthly, /report\.summary\.totalSales/);
+        assert.match(monthly, /format\(startOfMonth\(viewMonth\), 'yyyy-MM-dd'\)/);
+        assert.match(monthly, /format\(endOfMonth\(viewMonth\), 'yyyy-MM-dd'\)/);
+        assert.match(page, /onMonthlySales=\{openMonthlySalesDetails\}/);
+        assert.match(page, /onClick=\{openMonthlySalesDetails\}/);
+        assert.match(migration, /SECURITY INVOKER/);
+        assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.get_full_period_ticket_sales_detail\(date, date\)/);
+        assert.match(migration, /FROM public\.tickets_marbella t/);
+        assert.match(migration, /FROM public\.ticket_lines_marbella tl/);
+        assert.match(migration, /'summary'.*jsonb_build_object|SELECT jsonb_build_object\(/);
+        assert.doesNotMatch(migration, /LIMIT\s+\d+|OFFSET\s+\d+/i);
+    });
+
+    it('respeta el espacio lateral izquierdo y derecho de escritorio y las imágenes ya redondeadas', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const view = readFileSync(join(SRC_ROOT, 'components/dashboard/history/HistoryDesktopWorkspace.tsx'), 'utf8');
+        const region = css.slice(css.indexOf('Historial de cierres escritorio: referencias en tres columnas.'));
+        assert.match(region, /padding-inline: clamp\(16px, 1\.8vw, 32px\)/);
+        assert.match(view, /max-h-\[140px\][^"]*rounded-xl object-contain/);
     });
 });
