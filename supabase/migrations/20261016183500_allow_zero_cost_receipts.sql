@@ -1,5 +1,4 @@
 -- Recepciones gratuitas verificadas con stock, sin alterar el precio de referencia.
-BEGIN;
 ALTER TABLE public.purchase_interpretation_proposals DROP CONSTRAINT k5_ready_snapshot_complete;
 ALTER TABLE public.purchase_interpretation_proposals ADD CONSTRAINT k5_ready_snapshot_complete CHECK (((status <> 'ready_for_review'::purchase_interpretation_proposal_status) OR ((mapping_version_id IS NOT NULL) AND (ingredient_id IS NOT NULL) AND (source_item_name IS NOT NULL) AND (btrim(source_item_name) <> ''::text) AND (line_quantity IS NOT NULL) AND (line_quantity > (0)::numeric) AND (line_unit IS NOT NULL) AND (btrim(line_unit) <> ''::text) AND (observed_unit_price IS NOT NULL) AND (observed_unit_price >= (0)::numeric) AND (physical_quantity IS NOT NULL) AND (physical_quantity > (0)::numeric) AND (base_unit IS NOT NULL) AND (btrim(base_unit) <> ''::text) AND (purchase_quantity IS NOT NULL) AND (purchase_quantity > (0)::numeric) AND (purchase_unit IS NOT NULL) AND (btrim(purchase_unit) <> ''::text) AND (normalized_unit_price IS NOT NULL) AND (normalized_unit_price >= (0)::numeric) AND (cardinality(review_reasons) = 0))));
 ALTER TABLE public.purchase_receipt_confirmations DROP CONSTRAINT purchase_receipt_confirmations_normalized_unit_price_check;
@@ -413,6 +412,4 @@ BEGIN
     'allocation_count', v_effective_allocation_count
   );
 END;
-$function$
-
-COMMIT;
+$function$;
