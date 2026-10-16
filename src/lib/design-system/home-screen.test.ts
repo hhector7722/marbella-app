@@ -831,12 +831,19 @@ describe('Historial de cierres escritorio: un único día central', () => {
         assert.match(view, /closing=\{getClosingForDate\(selectedDate\)\}/);
         assert.match(view, /data-selected="true"/);
         assert.doesNotMatch(view, /day-stack|addDays\(selected, -1\)|opacity-\[0\.47\]/);
-        assert.match(css, /grid-template-columns: minmax\(0, 0\.91fr\) minmax\(0, 1\.15fr\) minmax\(0, 1\.28fr\)/);
-        assert.match(css, /\[data-element='summary-stack'\],\s*\[data-component='HistoryDesktopWorkspace'\] \[data-element='selected-day'\] \{\s*height: min\(100%, 545px\)/);
-        assert.match(css, /\[data-element='summary-stack'\] > :nth-child\(2\) \{\s*flex: 1 1 0;/,
-            'Mensual llena el espacio restante sin alterar Último cierre');
-        assert.match(css, /\(max-width: 1199px\)[\s\S]*?\[data-element='summary-stack'\],\s*\[data-component='HistoryDesktopWorkspace'\] \[data-element='selected-day'\] \{\s*height: min\(100%, 505px\)/,
-            'ambos bloques conservan la misma altura también en escritorios pequeños');
+        const desktopHistoryCss = css.slice(css.indexOf('Historial de cierres escritorio: referencias en tres columnas.'));
+        const historyColumns = [...desktopHistoryCss.matchAll(/grid-template-columns: ([^;]+);/g)].slice(0, 2);
+        assert.equal(historyColumns.length, 2);
+        assert.ok(historyColumns.every(([, columns]) => columns === 'repeat(3, minmax(0, 1fr))'),
+            'las tres columnas son idénticas en ambos tamaños de escritorio');
+        assert.match(desktopHistoryCss, /\[data-component='HistoryDesktopWorkspace'\] \{\s*width: 100%;\s*max-width: none;\s*padding-inline: 0;/);
+        assert.match(desktopHistoryCss, /\.history-desktop-board \{\s*width: 100%;/);
+        assert.match(desktopHistoryCss, /\[data-element='summary-stack'\],\s*\[data-component='HistoryDesktopWorkspace'\] \[data-element='selected-day'\] \{\s*height: min\(100%, 545px\)/);
+        assert.match(desktopHistoryCss, /\[data-element='summary-stack'\] \{\s*display: grid;[\s\S]*?grid-template-rows: repeat\(2, minmax\(0, 1fr\)\);\s*row-gap: 16px;/,
+            'Último cierre y Mensual ocupan mitades iguales, descontando el espacio intermedio');
+        assert.match(desktopHistoryCss, /\.history-desktop-summary \{\s*display: flex;\s*flex-direction: column;[\s\S]*?height: 100%;/);
+        assert.doesNotMatch(desktopHistoryCss, /\[data-element='summary-stack'\] > :first-child \{\s*flex: 0 0 116px;/);
+        assert.match(desktopHistoryCss, /\(max-width: 1199px\)[\s\S]*?\[data-element='summary-stack'\],\s*\[data-component='HistoryDesktopWorkspace'\] \[data-element='selected-day'\] \{\s*height: min\(100%, 505px\)/);
     });
 
     it('conserva el calendario móvil blanco, rojo y negro como selector de fecha en la columna derecha', () => {
@@ -862,6 +869,20 @@ describe('Historial de cierres escritorio: un único día central', () => {
         assert.match(view, /onClick=\{\(\) => onSelectDate\(iso\)\}/);
         assert.match(css, /\.history-desktop-cal-weeks \{\s*display: grid;/);
         assert.match(css, /\.history-desktop-month-cal-chrome \.month-cal-grid-wrap \{[\s\S]*?background: #fff;/);
+    });
+
+    it('abre solo la fotografía pulsada con zoom libre de touchpad, no el modal del cierre', () => {
+        const view = readFileSync(join(SRC_ROOT, 'components/dashboard/history/HistoryDesktopWorkspace.tsx'), 'utf8');
+        const lightbox = readFileSync(join(SRC_ROOT, 'components/ui/ImageLightbox.tsx'), 'utf8');
+        const pinch = readFileSync(join(SRC_ROOT, 'components/ui/PinchZoomViewport.tsx'), 'utf8');
+        assert.match(view, /\['dataphoneUrl', 'Totales datáfonos'/);
+        assert.match(view, /\['bdpUrl', 'Informe TPV'/);
+        assert.match(view, /onClick=\{\(\) => \{\s*const src = photos\[photoKey\];\s*if \(src\) setOpenPhoto\(\{ src, alt: label \}\);/);
+        assert.match(view, /<ImageLightbox[\s\S]*?open=\{openPhoto !== null\}[\s\S]*?src=\{openPhoto\?\.src\}[\s\S]*?zoomable/);
+        assert.match(view, /instance="history-desktop-photo-preview"/);
+        assert.match(lightbox, /maxScale=\{8\}[\s\S]*?captureGestures\s*trackpadGestures/);
+        assert.match(pinch, /const isPinch = event\.ctrlKey \|\| event\.metaKey/);
+        assert.match(pinch, /node\.addEventListener\('wheel', onWheel, \{ passive: false \}\)/);
     });
 
     it('selecciona fechas sin abrir un modal y conserva los detalles, fotografías, tabla y experiencia móvil', () => {
