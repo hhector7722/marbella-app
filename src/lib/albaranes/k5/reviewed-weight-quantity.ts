@@ -1,7 +1,7 @@
 import { compareExact, multiplyExact, parseExactDecimal, withinExactTolerance } from './exact-decimal.ts'
 import { reconcileRoundedDisplayedUnitPrice } from '../pipeline/validate.ts'
 
-/** A manager corrected a misread weight against the original document.
+/** A manager corrected a misread weight or item count against the original document.
  * Keep the OCR observation untouched and accept only arithmetic supported by
  * the original printed unit price and line amount. K4 still validates the
  * resulting versioned proposal before any economic effect. */
@@ -19,9 +19,12 @@ export function verifiedReviewedWeightQuantity(input: {
   lineContentQty: number
   conversionFactor: number
 }): boolean {
+  const billingUnit = input.lineBillingUnit.trim().toLowerCase()
+  const contentUnit = input.lineContentUnit.trim().toLowerCase()
+  const compatibleSimpleUnit = (billingUnit === 'kg' && contentUnit === 'kg')
+    || (['uni', 'ud', 'unidad'].includes(billingUnit) && contentUnit === 'ud')
   if (!input.reviewed || input.hasAdjustments
-    || input.lineBillingUnit.toLowerCase() !== 'kg'
-    || input.lineContentUnit.toLowerCase() !== 'kg'
+    || !compatibleSimpleUnit
     || input.lineContentQty !== 1 || input.conversionFactor !== 1) return false
 
   const sourceQuantity = parseExactDecimal(input.sourceQuantityRaw)

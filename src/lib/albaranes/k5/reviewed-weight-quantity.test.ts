@@ -40,3 +40,23 @@ test('rejects unreviewed, contradictory and non-weight corrections', () => {
   assert.equal(verifiedReviewedWeightQuantity({ ...base, lineBillingUnit: 'CA' }), false)
   assert.equal(verifiedReviewedWeightQuantity({ ...base, lineContentQty: 2 }), false)
 })
+
+test('accepts a reviewed OCR item-count correction only when printed price and total reconcile', () => {
+  const ticket = {
+    ...base,
+    sourceQuantityRaw: '2',
+    correctedQuantity: '1',
+    sourceUnitPriceRaw: '2.29',
+    effectiveUnitPrice: '2.29',
+    sourceLineTotalRaw: '2.29',
+    correctedLineTotal: '2.29',
+    lineBillingUnit: 'uni',
+    lineContentUnit: 'ud',
+  }
+  assert.equal(verifiedReviewedWeightQuantity(ticket), true)
+  assert.equal(verifiedReviewedWeightQuantity({ ...ticket, reviewed: false }), false)
+  assert.equal(verifiedReviewedWeightQuantity({ ...ticket, correctedQuantity: '2' }), false)
+  assert.equal(verifiedReviewedWeightQuantity({ ...ticket, correctedLineTotal: '4.58' }), false)
+  assert.equal(verifiedReviewedWeightQuantity({ ...ticket, lineContentQty: 4 }), false)
+  assert.equal(verifiedReviewedWeightQuantity({ ...ticket, hasAdjustments: true }), false)
+})
