@@ -5,6 +5,7 @@ import { format, isSameMonth, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CloudSun, Pencil } from 'lucide-react';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import type { Tables } from '@/types/supabase';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { buildLastClosingMetrics, formatClosingDifference, formatClosingValue, formatCurrencySpanish } from '@/lib/cash-closing-metrics';
@@ -51,6 +52,7 @@ function HistoryDesktopDailyCard({
     const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({
         dataphoneUrl: null, bdpUrl: null,
     });
+    const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
 
     useEffect(() => {
         let active = true;
@@ -128,8 +130,14 @@ function HistoryDesktopDailyCard({
                             ['bdpUrl', 'Informe TPV', 'bdp_closing_ticket_photo_path'],
                         ] as const).map(([photoKey, label, pathKey]) => (
                             <button
-                                type="button" key={photoKey} onClick={onOpen}
-                                className="flex min-w-0 flex-col items-center justify-end gap-1 overflow-hidden bg-transparent p-0 transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/75"
+                                type="button"
+                                key={photoKey}
+                                disabled={!photos[photoKey]}
+                                onClick={() => {
+                                    const src = photos[photoKey];
+                                    if (src) setOpenPhoto({ src, alt: label });
+                                }}
+                                className="flex min-w-0 flex-col items-center justify-end gap-1 overflow-hidden bg-transparent p-0 transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/75 disabled:cursor-default disabled:hover:opacity-100"
                                 aria-label={`Ver ${label.toLowerCase()} del ${timeLine(date)}`}
                             >
                                 {photos[photoKey] ? (
@@ -149,6 +157,16 @@ function HistoryDesktopDailyCard({
                     No hay cierre registrado para este día
                 </div>
             )}
+            <ImageLightbox
+                open={openPhoto !== null}
+                onClose={() => setOpenPhoto(null)}
+                src={openPhoto?.src}
+                alt={openPhoto?.alt}
+                scheme="dark"
+                variant="work"
+                zoomable
+                instance="history-desktop-photo-preview"
+            />
         </article>
     );
 }
