@@ -6653,6 +6653,10 @@ export type Database = {
         Returns: Json
       }
       get_manager_ledger_balance: { Args: never; Returns: number }
+      get_full_period_ticket_sales_detail: {
+        Args: { p_start_date: string; p_end_date: string }
+        Returns: Json
+      }
       get_monthly_timesheet: {
         Args: { p_month: number; p_user_id: string; p_year: number }
         Returns: Json
