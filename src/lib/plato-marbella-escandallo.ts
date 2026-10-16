@@ -116,13 +116,16 @@ export function buildPlatoMarbellaEscandallo(
   fixedCostPayload: RecipeCostPayload | null,
 ): MarbellaEscandallo {
   const grouped = groupPlatoMarbellaItems(rows)
+  // El agrupador de carta expone su tipo base; recuperamos aquí la fila enriquecida por articulo_id.
+  const rowsByArticulo = new Map(rows.map((row) => [row.articulo_id, row]))
   const slots = {} as Record<PlatoMarbellaSlot, MarbellaSlotCost>
   const missing: MarbellaCostOption[] = []
   const maximumChoices: Partial<Record<PlatoMarbellaSlot, MarbellaCostOption>> = {}
   let combinations = 1
   let hasEverySlot = true
   for (const slot of PLATO_MARBELLA_SLOTS) {
-    const options = grouped.sections[slot].map((row) => {
+    const options = grouped.sections[slot].map((baseRow) => {
+      const row = rowsByArticulo.get(baseRow.articulo_id)!
       const option = costForMarbellaOption(row, row.recipe_id ? costs.get(row.recipe_id) : null)
       if (option.costEur === null) missing.push(option)
       return option
