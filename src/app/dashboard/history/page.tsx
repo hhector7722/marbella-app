@@ -691,10 +691,11 @@ export default function HistoryPage() {
                 hora: hour,
                 total: byHour.get(hour)?.total ?? 0,
             })));
+            // Mostrar las 24 horas: incluso tickets fuera del horario habitual
+            // cuentan en la tabla horaria y la gráfica mensual.
             setTopHours(Array.from(
-                { length: BUSINESS_HOURS.end - BUSINESS_HOURS.start + 1 },
-                (_, index) => {
-                    const hour = BUSINESS_HOURS.start + index;
+                { length: 24 },
+                (_, hour) => {
                     const { count, total } = byHour.get(hour) ?? { count: 0, total: 0 };
                     return {
                         label: hourToSlotLabel(hour) ?? `${hour}:00`,
@@ -2468,7 +2469,9 @@ export default function HistoryPage() {
 
                             {/* Gráfico horario */}
                             {(() => {
-                                const rangeData = salesChartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
+                                const rangeData = salesModalMode === 'monthly'
+                                    ? salesChartData
+                                    : salesChartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
                                 const maxMain = Math.max(...rangeData.map(d => d.total), 0);
                                 const scaleMax = Math.max(maxMain, 1);
                                 const hasData = maxMain > 0;
@@ -2498,7 +2501,7 @@ export default function HistoryPage() {
                                             </svg>
                                         </div>
                                         <div className="flex justify-between px-0 text-[8px] font-mono text-white/60 leading-none select-none pointer-events-none mt-0.5">
-                                            <span>7h</span>
+                                            <span>{salesModalMode === 'monthly' ? '0h' : '7h'}</span>
                                             <span>23h</span>
                                         </div>
                                     </div>
