@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-10-17
+
+- **Se concilian cuatro errores de lectura heredados con la evidencia Mistral ya completada.** Ametller 15/09, Sant Aniol 10/09, Sanilec 10/09 y Santa Teresa 09/09 conservaban el fallo anterior de Gemini pese a tener todas sus hojas extraídas correctamente y líneas activas vinculadas. Una reparación de datos verificada retira solo la marca de error y devuelve las fichas a revisión; no confirma líneas ni crea movimientos de stock.
+
 ## 2026-10-13
 
 - **La revisión de Ametller distingue un importe copiado como precio neto.** Cuando el OCR duplica el importe en esa columna y la cantidad por el precio impreso concilia sin descuentos ni cargos, la revisión humana puede resolver el aviso. K4 conserva el bloqueo ante cualquier diferencia real y sigue validando antes de recibir.
