@@ -138,7 +138,7 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
                     </div>
                 ) : <p className="text-[9px] text-white/40">Sin productos</p>}
             </div>
-            <div className={cn("min-w-0", fillHeight && "flex min-h-0 flex-col")}>
+            <div className={cn("history-hour-column min-w-0", fillHeight && "flex min-h-0 flex-col")}>
                 <div className="mb-2 flex h-4 min-w-0 items-center gap-2">
                     <h3 className="shrink-0 text-xs font-bold uppercase text-white/85">Horas</h3>
                     <svg aria-label="Evolución de ventas por hora" role="img" viewBox="0 0 120 20" preserveAspectRatio="none" className="h-3 min-w-0 flex-1 text-white">
