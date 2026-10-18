@@ -111,7 +111,7 @@ function HistorySalesBreakdown({ report, loading, failed }: {
                         {report.products.map((item, index) => (
                             <div key={`${item.nombre_articulo}-${index}`} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[11px]">
                                 <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
-                                <span className="shrink-0 text-[10px] tabular-nums text-white/60">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
+                                <span className="shrink-0 text-[10px] tabular-nums text-white/60">{Number(item.cantidad_total).toLocaleString('es-ES')} u</span>
                                 <strong className="shrink-0 tabular-nums">{currency(item.total_ingresos)}</strong>
                             </div>
                         ))}
