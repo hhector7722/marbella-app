@@ -99,7 +99,10 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
         if (!products || !hourList) return;
         const measure = () => {
             // Each row is exactly 24px: keep only whole rows visible.
-            const available = Math.min(products.parentElement?.clientHeight ?? 0, hourList.parentElement?.clientHeight ?? 0) - 24;
+            const available = Math.min(...[products, hourList].map(list => {
+                const parent = list.parentElement;
+                return parent ? parent.getBoundingClientRect().bottom - list.getBoundingClientRect().top : 0;
+            }));
             const next = Math.max(0, Math.floor(available / 24) * 24);
             setFittedHeight(previous => previous === next ? previous : next);
         };
@@ -155,7 +158,7 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
                     <h3 className="text-xs font-bold uppercase text-white/85">Productos</h3>
                 </div>
                 {report.products.length ? (
-                    <div ref={productsListRef} style={fillHeight && fittedHeight !== null ? { height: fittedHeight } : undefined} className={cn("history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5", fillHeight && "!h-auto min-h-0")}>
+                    <div ref={productsListRef} style={fillHeight && fittedHeight !== null ? { height: fittedHeight } : undefined} className={cn("history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5", fillHeight && "min-h-0")}>
                         {report.products.map((item, index) => (
                             <div key={`${item.nombre_articulo}-${index}`} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[11px]">
                                 <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
@@ -235,7 +238,7 @@ function HistoryDesktopDailyCard({
         <article
             data-component="HistoryDesktopDayCard"
             data-selected="true"
-            className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/45 text-white"
+            className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border text-white"\n            style={{ backgroundColor: "var(--color-envolvente-bajo)", borderColor: "var(--chrome-glass-fill)", boxShadow: "var(--chrome-glass-shadow)" }}
         >
             <header className="flex min-h-[32px] shrink-0 items-center justify-between gap-2 border-b border-white/15 bg-[rgb(8_26_60/0.8)] px-3 py-1.5">
                 <div className="min-w-0 truncate text-[10px] font-bold uppercase tracking-wide">
@@ -338,7 +341,7 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
     failed: boolean;
 }) {
     return (
-        <section className="history-desktop-summary rounded-[var(--radio-control)] border border-white/25 px-3 pb-6 pt-2 text-white">
+        <section className="history-desktop-summary rounded-[var(--radio-control)] border px-3 pb-6 pt-2 text-white"\n            style={{ backgroundColor: "rgb(255 255 255 / 0.1)", borderColor: "var(--chrome-glass-fill)", boxShadow: "var(--chrome-glass-shadow)" }}>
             <div className="mb-4 flex shrink-0 items-center justify-between gap-2">
                 <h2 className="text-sm font-bold">{title}</h2>
                 <div className="flex min-w-0 items-center gap-2">
