@@ -230,7 +230,9 @@ function HistoryDesktopDailyCard({
                                 aria-label={`Ver ${label.toLowerCase()} del ${timeLine(date)}`}
                             >
                                 {photos[photoKey] ? (
-                                    <img src={photos[photoKey]!} alt="" loading="lazy" className="max-h-[140px] min-h-0 w-full flex-1 rounded-xl object-contain" />
+                                    <span className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-xl bg-white/5">
+                                        <img src={photos[photoKey]!} alt="" loading="lazy" className="max-h-[140px] min-h-0 h-full w-full rounded-xl object-contain" />
+                                    </span>
                                 ) : (
                                     <span className="flex min-h-[68px] flex-1 items-center text-center text-[9px] text-white/45">
                                         {closing[pathKey] ? 'Cargando imagen…' : 'Sin imagen'}
