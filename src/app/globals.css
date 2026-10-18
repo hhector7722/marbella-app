@@ -7219,3 +7219,14 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     overflow: hidden;
   }
 }
+
+/* Historial: ocultar datos secundarios antes de que se solapen en cards estrechas. */
+[data-component='HistoryDesktopWorkspace'] .history-hour-column {
+  container-type: inline-size;
+}
+@container (max-width: 250px) {
+  .history-hour-average { display: none; }
+}
+@container (max-width: 162px) {
+  .history-hour-tickets { display: none; }
+}
