@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, isSameMonth, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CloudSun, Pencil } from 'lucide-react';
@@ -92,6 +92,27 @@ function HistorySalesBreakdown({ report, loading, failed }: {
         .map(row => ({ hour: Number(row.hour), count: Number(row.count) || 0, total: Number(row.total) || 0 }))
         .sort((a, b) => a.hour - b.hour), [report]);
     const topHours = useMemo(() => [...hours].filter(h => h.total > 0).sort((a, b) => b.total - a.total), [hours]);
+    const productListRef = useRef<HTMLDivElement>(null);
+    const [visibleProducts, setVisibleProducts] = useState(1);
+
+    useEffect(() => {
+        const list = productListRef.current;
+        const card = list?.closest<HTMLElement>('.history-desktop-summary');
+        if (!list || !card || !report) return;
+
+        const measure = () => {
+            const firstRow = list.firstElementChild as HTMLElement | null;
+            const rowHeight = firstRow?.getBoundingClientRect().height || 14;
+            const gap = 4; // space-y-1 = 4px
+            const remaining = Math.max(0, card.getBoundingClientRect().bottom - list.getBoundingClientRect().top - 10);
+            const fit = Math.max(0, Math.floor((remaining + gap) / (rowHeight + gap)));
+            setVisibleProducts(prev => prev === fit ? prev : fit);
+        };
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(card);
+        return () => observer.disconnect();
+    }, [report]);
     if (loading) return <p className="py-4 text-center text-[10px] text-white/50">Cargando ventas…</p>;
     if (failed) return <p className="py-4 text-center text-[10px] text-rose-200">No se ha podido cargar el desglose.</p>;
     if (!report) return null;
@@ -100,8 +121,8 @@ function HistorySalesBreakdown({ report, loading, failed }: {
             <div className="min-w-0">
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Productos más vendidos</h3>
                 {report.products.length ? (
-                    <div className="space-y-1">
-                        {report.products.slice(0, 5).map((item, index) => (
+                    <div ref={productListRef} className="space-y-1">
+                        {report.products.slice(0, Math.max(1, visibleProducts)).map((item, index) => (
                             <div key={`${item.nombre_articulo}-${index}`} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2 text-[9px]">
                                 <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
                                 <span className="shrink-0 text-[8px] tabular-nums text-white/50">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
