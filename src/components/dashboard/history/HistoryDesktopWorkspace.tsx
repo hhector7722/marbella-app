@@ -270,6 +270,7 @@ function HistoryDesktopDailyCard({
                 variant="work"
                 zoomable
                 zoomControls
+                imageOnly
                 instance="history-desktop-photo-preview"
             />
         </article>
