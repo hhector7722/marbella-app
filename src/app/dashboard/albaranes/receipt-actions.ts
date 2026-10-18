@@ -27,6 +27,7 @@ import { calculateManualDiscount, type ManualDiscountReview } from '@/lib/albara
 import { parseObservedDecimal } from '@/lib/albaranes/pipeline/validate'
 import { explainReceiptProposalMismatch } from '@/lib/albaranes/k5/receipt-mismatch'
 import { verifiedReviewedWeightQuantity } from '@/lib/albaranes/k5/reviewed-weight-quantity'
+import { verifiedCorrectedOcrAmount } from '@/lib/albaranes/k5/verified-ocr-amount'
 
 type PricingReview = {
   grossUnitPrice: number
@@ -170,6 +171,7 @@ async function supersedeK5ProposalWithMapping(params: {
   variablePieceCount?: number | null
   pricingReview?: PricingReview | null
   manualDiscountReview?: ManualDiscountReview | null
+  verifiedOcrAmount?: boolean
 }): Promise<K5MappingRevision | null> {
   const currentProposalId = text(params.line.interpretation_proposal_id)
   if (!currentProposalId) return null
@@ -424,6 +426,18 @@ async function supersedeK5ProposalWithMapping(params: {
     current.provenance && typeof current.provenance === 'object'
     && (current.provenance as Record<string, unknown>).manual_line_override === true
   )
+  const verifiedOcrAmount = verifiedCorrectedOcrAmount({
+    attested: params.verifiedOcrAmount === true,
+    priorReasons: previousReasons,
+    priorManualCorrection: humanLineOverride || priorManualCorrection,
+    observed: sourceLine.success ? sourceLine.data : {},
+    quantity: lineQuantity,
+    unitPrice: observedUnitPrice,
+    correctedTotal: lineTotal,
+  })
+  if (params.verifiedOcrAmount && !verifiedOcrAmount) {
+    throw new Error('La corrección del importe no cumple las condiciones de revisión del OCR.')
+  }
   const verifiedCorrectedWeightMath = sourceLine.success && verifiedReviewedWeightQuantity({
     reviewed: humanLineOverride || priorManualCorrection,
     sourceQuantityRaw: sourceLine.data.quantity_raw,
@@ -452,7 +466,7 @@ async function supersedeK5ProposalWithMapping(params: {
     quantity: quantityNumber,
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
-    verifiedObservedMath: verifiedEmbeddedKgMath || verifiedTotalWeightMath || verifiedRoundedUnitMath
+    verifiedObservedMath: verifiedOcrAmount || verifiedEmbeddedKgMath || verifiedTotalWeightMath || verifiedRoundedUnitMath
       || verifiedCorrectedWeightMath
       || verifiedAmountColumnMath
       || verifiedUnadjustedNet || verifiedPercentDiscount,
@@ -504,6 +518,7 @@ async function supersedeK5ProposalWithMapping(params: {
       ? { auto: reviewedPricing, manual: reviewedManualDiscount }
       : reviewedPricing,
     reviewed_weight_quantity: verifiedCorrectedWeightMath,
+    reviewed_ocr_amount: verifiedOcrAmount,
   })
 
   const { data: existing, error: existingError } = await params.supabase
@@ -573,6 +588,12 @@ async function supersedeK5ProposalWithMapping(params: {
         ...(current.provenance && typeof current.provenance === 'object' ? current.provenance : {}),
         revision: 'human_mapping_selection',
         manual_line_override: humanLineOverride || priorManualCorrection,
+        ...(verifiedOcrAmount ? { reviewed_ocr_amount: {
+          ocr_amount: sourceLine.success ? sourceLine.data.line_total_raw : null,
+          corrected_amount: lineTotal,
+          reviewer_id: params.userId,
+          reviewed_at: new Date().toISOString(),
+        } } : {}),
         ...(verifiedCorrectedWeightMath ? { reviewed_weight_quantity: true } : {}),
         ...(reviewedPricing ? { manual_percentage_review: true } : {}),
         ...(reviewedManualDiscount ? { manual_discount_review: true } : {}),
@@ -605,6 +626,7 @@ export async function saveReceiptMappingProposalAction(params: {
   lineContentUnit: string
   pricingReview?: PricingReview | null
   manualDiscountReview?: ManualDiscountReview | null
+  verifiedOcrAmount?: boolean
 }): Promise<
   | {
       success: true
@@ -846,6 +868,7 @@ export async function saveReceiptMappingProposalAction(params: {
       lineContentUnit: effectiveLineContentUnit,
       pricingReview,
       manualDiscountReview,
+      verifiedOcrAmount: params.verifiedOcrAmount,
       variableWeightKg,
       variablePieceCount,
     })

@@ -337,6 +337,8 @@ export type PurchaseInvoiceLine = {
   printed_net_unit_price: number | null
   /** Precio literal del documento, independiente del precio efectivo recibido. */
   printed_unit_price_raw: string | null
+  printed_line_total_raw: string | null
+  proposal_review_reasons: string[]
   /** Evita inferir redondeo si el documento declara descuentos o cargos. */
   printed_has_adjustments: boolean
 }
@@ -484,6 +486,8 @@ export async function getPurchaseInvoiceDetailAction(
     printed_fixed_discount_eur: null as number | null,
     printed_net_unit_price: null as number | null,
     printed_unit_price_raw: null as string | null,
+    printed_line_total_raw: null as string | null,
+    proposal_review_reasons: [] as string[],
     printed_has_adjustments: false,
   })) as PurchaseInvoiceLine[]
 
@@ -491,7 +495,7 @@ export async function getPurchaseInvoiceDetailAction(
   if (proposalIds.length > 0) {
     const { data: proposalRows, error: proposalError } = await gate.supabase
       .from('purchase_interpretation_proposals')
-      .select('id,observed,pricing,observed_unit_price,line_total')
+      .select('id,observed,pricing,observed_unit_price,line_total,review_reasons')
       .in('id', proposalIds)
     if (proposalError) return { success: false, message: proposalError.message }
 
@@ -502,6 +506,10 @@ export async function getPurchaseInvoiceDetailAction(
       const rawCells = Array.isArray(proposal?.observed?.raw_cells) ? proposal.observed.raw_cells : []
       line.printed_unit_price_raw = typeof proposal?.observed?.unit_price_raw === 'string'
         ? proposal.observed.unit_price_raw : null
+      line.printed_line_total_raw = typeof proposal?.observed?.line_total_raw === 'string'
+        ? proposal.observed.line_total_raw : null
+      line.proposal_review_reasons = Array.isArray(proposal?.review_reasons)
+        ? proposal.review_reasons.map(String) : []
       const printedNet = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
       line.printed_net_unit_price = printedNet != null && printedNet >= 0 ? printedNet : null
       line.printed_has_adjustments = Boolean(

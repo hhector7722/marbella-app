@@ -46,6 +46,7 @@ import {
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
   reconcileUnadjustedNetUnitPrice,
+  parseObservedDecimal,
 } from '@/lib/albaranes/pipeline/validate'
 import { IngredientCanonicalEditModal } from '@/components/ingredients/IngredientCanonicalEditModal'
 type LineDimensionalDraft = {
@@ -141,6 +142,7 @@ export function LineMappingModal({
   const [discountDraft, setDiscountDraft] = useState('')
   const [manualDiscountDraft, setManualDiscountDraft] = useState('')
   const [lineTotalDraft, setLineTotalDraft] = useState('')
+  const [verifiedOcrAmount, setVerifiedOcrAmount] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<IngredientMappingSearchItem[]>([])
@@ -359,6 +361,7 @@ export function LineMappingModal({
       setLoading(true)
       setExpenseMode(false)
       setManualDiscountDraft('')
+      setVerifiedOcrAmount(false)
       setSearchQuery('')
       setSearchResults([])
       // Si K5 guardó un precio efectivo más preciso, el campo sigue mostrando
@@ -787,6 +790,7 @@ export function LineMappingModal({
           lineTotal: reviewedDiscount.lineTotal,
         } : null,
         manualDiscountReview: manualDiscount,
+        verifiedOcrAmount,
       })
 
       if (!res.success) {
@@ -1251,6 +1255,25 @@ export function LineMappingModal({
                   )}
                 </section>
               ) : null}
+
+              {ingredientId && line?.proposal_review_reasons.includes('cantidad_precio_importe_no_reconcilian')
+                && line.printed_line_total_raw != null && line.total_price != null
+                && parseObservedDecimal(line.printed_line_total_raw) !== Number(line.total_price)
+                && !line.printed_has_adjustments ? (
+                  <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-zinc-800">
+                    <input
+                      type="checkbox"
+                      checked={verifiedOcrAmount}
+                      onChange={(event) => setVerifiedOcrAmount(event.target.checked)}
+                      aria-label="He cotejado el importe corregido con el original"
+                      className="mt-0.5 size-4 shrink-0"
+                    />
+                    <span>He cotejado el original: el importe es {Number(line.total_price).toLocaleString('es-ES', {
+                      minimumFractionDigits: 2, maximumFractionDigits: 2,
+                    })} €, y la lectura automática indicó {line.printed_line_total_raw} € por error. Solo se corregirá
+                      esta lectura; la evidencia anterior quedará registrada.</span>
+                  </label>
+                ) : null}
 
               {ingredientId ? (
                 <section className="rounded-lg border border-zinc-200 bg-white p-3 flex flex-col gap-2">
