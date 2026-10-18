@@ -151,6 +151,7 @@ function HistoryDesktopDailyCard({
         dataphoneUrl: null, bdpUrl: null,
     });
     const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
+    const dailyReport = useTicketPeriodReport(closing?.closing_date ?? null, closing?.closing_date ?? null);
 
     useEffect(() => {
         let active = true;
@@ -196,7 +197,7 @@ function HistoryDesktopDailyCard({
                 )}
             </header>
             {closing && values ? (
-                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
+                <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 py-2">
                     <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[9px] text-white/60">
                         {closing.weather ? <span className="inline-flex items-center gap-1"><CloudSun size={12} />{closing.weather}</span> : null}
                         <span>{values.tickets} tickets</span>
@@ -215,14 +216,14 @@ function HistoryDesktopDailyCard({
                         </div>
                     </div>
                     {expectedSales > 0 ? (
-                        <div className="shrink-0 text-center text-[9px] leading-snug text-white/60">
-                            <div>Esperado: <strong className="text-white/85">{currency(expectedSales)}</strong></div>
-                            <div>Rendimiento: <strong className={values.netSales >= expectedSales ? 'text-emerald-300' : 'text-rose-300'}>
+                        <div className="flex shrink-0 items-center justify-center gap-4 text-center text-[9px] leading-snug text-white/60">
+                            <span>Esperado: <strong className="text-white/85">{currency(expectedSales)}</strong></span>
+                            <span>Rendimiento: <strong className={values.netSales >= expectedSales ? 'text-emerald-300' : 'text-rose-300'}>
                                 {((values.netSales - expectedSales) / expectedSales * 100).toFixed(0)}%
-                            </strong></div>
+                            </strong></span>
                         </div>
                     ) : null}
-                    <div className="mt-auto grid min-h-[100px] shrink-0 grid-cols-2 gap-3 pt-2">
+                    <div className="grid shrink-0 grid-cols-2 items-start gap-3 pt-1">
                         {([
                             ['dataphoneUrl', 'Totales datáfonos', 'dataphone_totals_photo_path'],
                             ['bdpUrl', 'Informe TPV', 'bdp_closing_ticket_photo_path'],
@@ -235,13 +236,11 @@ function HistoryDesktopDailyCard({
                                     const src = photos[photoKey];
                                     if (src) setOpenPhoto({ src, alt: label });
                                 }}
-                                className="flex min-w-0 flex-col items-center justify-end gap-1 overflow-hidden bg-transparent p-0 transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/75 disabled:cursor-default disabled:hover:opacity-100"
+                                className="flex min-w-0 flex-col items-center justify-start gap-1 bg-transparent p-0 transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/75 disabled:cursor-default disabled:hover:opacity-100"
                                 aria-label={`Ver ${label.toLowerCase()} del ${timeLine(date)}`}
                             >
                                 {photos[photoKey] ? (
-                                    <span className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-xl bg-white/5">
-                                        <img src={photos[photoKey]!} alt="" loading="lazy" className="max-h-[140px] min-h-0 h-full w-full rounded-xl object-contain" />
-                                    </span>
+                                    <img src={photos[photoKey]!} alt="" loading="lazy" className="block h-auto max-h-[100px] w-auto max-w-full rounded-xl object-contain" />
                                 ) : (
                                     <span className="flex min-h-[68px] flex-1 items-center text-center text-[9px] text-white/45">
                                         {closing[pathKey] ? 'Cargando imagen…' : 'Sin imagen'}
@@ -250,6 +249,9 @@ function HistoryDesktopDailyCard({
                                 <span className="text-center text-[8px] font-bold uppercase leading-tight text-white/65">{label}</span>
                             </button>
                         ))}
+                    </div>
+                    <div className="min-h-0">
+                        <HistorySalesBreakdown report={dailyReport.report} loading={dailyReport.loading} failed={dailyReport.failed} />
                     </div>
                 </div>
             ) : (
@@ -265,6 +267,7 @@ function HistoryDesktopDailyCard({
                 scheme="dark"
                 variant="work"
                 zoomable
+                zoomControls
                 instance="history-desktop-photo-preview"
             />
         </article>
