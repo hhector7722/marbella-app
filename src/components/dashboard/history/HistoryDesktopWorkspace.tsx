@@ -92,7 +92,6 @@ function HistorySalesBreakdown({ report, loading, failed }: {
         .map(row => ({ hour: Number(row.hour), count: Number(row.count) || 0, total: Number(row.total) || 0 }))
         .sort((a, b) => a.hour - b.hour), [report]);
     const topHours = useMemo(() => [...hours].filter(h => h.total > 0).sort((a, b) => b.total - a.total), [hours]);
-    const max = Math.max(1, ...hours.map(h => h.total));
     if (loading) return <p className="py-4 text-center text-[10px] text-white/50">Cargando ventas…</p>;
     if (failed) return <p className="py-4 text-center text-[10px] text-rose-200">No se ha podido cargar el desglose.</p>;
     if (!report) return null;
@@ -100,21 +99,21 @@ function HistorySalesBreakdown({ report, loading, failed }: {
         <div className="space-y-3 border-t border-white/15 pt-2">
             <div>
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Ventas por hora</h3>
-                <div className="flex h-[52px] items-end gap-[2px]" aria-label="Gráfica de ventas por hora">
+                <div className="grid grid-cols-6 gap-x-2 gap-y-1 text-[8px]">
                     {Array.from({ length: 24 }, (_, hour) => {
                         const value = hours.find(h => h.hour === hour)?.total ?? 0;
-                        return <div key={hour} className="group relative flex min-w-0 flex-1 flex-col justify-end" title={`${hour}:00 — ${currency(value)}`}>
-                            <div className="w-full rounded-t-sm bg-sky-400/80" style={{ height: `${Math.max(0, value / max * 52)}px` }} />
+                        return <div key={hour} className="flex flex-col text-center" title={`${String(hour).padStart(2, '0')}:00 — ${currency(value)}`}>
+                            <span className="text-white/45">{String(hour).padStart(2, '0')} h</span>
+                            <strong className="truncate tabular-nums">{Math.round(value).toLocaleString('es-ES')}€</strong>
                         </div>;
                     })}
                 </div>
-                <div className="mt-1 flex justify-between text-[8px] text-white/45"><span>00 h</span><span>06 h</span><span>12 h</span><span>18 h</span><span>23 h</span></div>
             </div>
             <div>
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Productos más vendidos</h3>
                 {report.products.length ? (
                     <div className="space-y-1">
-                        {report.products.map((item, index) => (
+                        {report.products.slice(0, 5).map((item, index) => (
                             <div key={`${item.nombre_articulo}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 text-[9px]">
                                 <span className="truncate text-white/80">{index + 1}. {item.nombre_articulo}</span>
                                 <span className="tabular-nums text-white/60">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
@@ -126,7 +125,7 @@ function HistorySalesBreakdown({ report, loading, failed }: {
             </div>
             <div>
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Horas con más ventas</h3>
-                {topHours.length ? topHours.map(row => (
+                {topHours.length ? topHours.slice(0, 5).map(row => (
                     <div key={row.hour} className="grid grid-cols-[1fr_auto_auto] gap-2 py-0.5 text-[9px]">
                         <span>{String(row.hour).padStart(2, '0')}:00</span>
                         <span className="text-white/60">{row.count} tickets</span>
@@ -282,7 +281,7 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
     footer?: string;
 }) {
     return (
-        <section className="history-desktop-summary overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.65)] px-3 py-2 text-white">
+        <section className="history-desktop-summary rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.65)] px-3 py-2 text-white">
             <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
                 <h2 className="text-sm font-bold">{title}</h2>
                 <div className="flex min-w-0 items-center gap-2">
@@ -292,7 +291,7 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
                     {report ? <span className="shrink-0 text-[9px] text-white/70">TM <strong className="text-white">{currency(report.summary.avgTicket)}</strong></span> : null}
                 </div>
             </div>
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+            <div className="flex-1 space-y-2">
                 <div className="grid grid-cols-4 gap-x-2 gap-y-2">
                     {metrics.map(({ label, value }) => (
                         <div key={label} className="flex min-w-0 flex-col items-center justify-center text-center">
