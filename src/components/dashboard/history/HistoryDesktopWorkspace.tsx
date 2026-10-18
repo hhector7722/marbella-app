@@ -57,23 +57,29 @@ function useTicketPeriodReport(startDate: string | null, endDate: string | null)
         setFailed(false);
         setLoading(true);
         const supabase = createClient();
-        void supabase.rpc('get_full_period_ticket_sales_detail', {
-            p_start_date: startDate,
-            p_end_date: endDate,
-        }).then(({ data, error }) => {
-            if (!alive) return;
-            if (error || !data || typeof data !== 'object' || Array.isArray(data)) {
-                setFailed(true);
-                return;
+        void (async () => {
+            try {
+                const { data, error } = await supabase.rpc('get_full_period_ticket_sales_detail', {
+                    p_start_date: startDate,
+                    p_end_date: endDate,
+                });
+                if (!alive) return;
+                if (error || !data || typeof data !== 'object' || Array.isArray(data)) {
+                    setFailed(true);
+                    return;
+                }
+                const value = data as unknown as TicketPeriodReport;
+                if (!value.summary || !Array.isArray(value.hours) || !Array.isArray(value.products)) {
+                    setFailed(true);
+                    return;
+                }
+                setReport(value);
+            } catch {
+                if (alive) setFailed(true);
+            } finally {
+                if (alive) setLoading(false);
             }
-            const value = data as unknown as TicketPeriodReport;
-            if (!value.summary || !Array.isArray(value.hours) || !Array.isArray(value.products)) {
-                setFailed(true);
-                return;
-            }
-            setReport(value);
-        }).catch(() => { if (alive) setFailed(true); })
-          .finally(() => { if (alive) setLoading(false); });
+        })();
         return () => { alive = false; };
     }, [startDate, endDate]);
     return { report, loading, failed };
