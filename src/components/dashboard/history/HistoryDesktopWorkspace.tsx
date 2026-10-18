@@ -114,15 +114,11 @@ function HistorySalesBreakdown({ report, loading, failed }: {
             <div className="min-w-0">
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Ventas por hora</h3>
                 {topHours.length ? topHours.map(row => (
-                    <div key={row.hour} className="border-b border-white/5 pb-1 text-[9px] last:border-0">
-                        <div className="flex items-baseline justify-between gap-1">
-                            <span className="font-mono font-bold">{`${String(row.hour).padStart(2, '0')}:00–${String((row.hour + 1) % 24).padStart(2, '0')}:00`}</span>
-                            <strong className="tabular-nums">{currency(row.total)}</strong>
-                        </div>
-                        <div className="flex flex-wrap justify-between gap-x-1 text-[8px] text-white/50">
-                            <span>{row.count} tickets</span>
-                            <span className="tabular-nums">Media {currency(row.count > 0 ? row.total / row.count : 0)}</span>
-                        </div>
+                    <div key={row.hour} className="grid min-w-0 grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-x-1 whitespace-nowrap py-0.5 text-[8px]">
+                        <span className="min-w-0 font-mono font-bold">{`${String(row.hour).padStart(2, '0')}:00–${String((row.hour + 1) % 24).padStart(2, '0')}:00`}</span>
+                        <span className="tabular-nums text-white/60">{row.count} t.</span>
+                        <span className="tabular-nums text-white/55">M {currency(row.count > 0 ? row.total / row.count : 0)}</span>
+                        <strong className="text-right tabular-nums">{currency(row.total)}</strong>
                     </div>
                 )) : <p className="text-[9px] text-white/40">Sin ventas positivas</p>}
             </div>
