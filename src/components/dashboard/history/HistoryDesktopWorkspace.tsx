@@ -96,18 +96,16 @@ function HistorySalesBreakdown({ report, loading, failed }: {
     if (failed) return <p className="py-4 text-center text-[10px] text-rose-200">No se ha podido cargar el desglose.</p>;
     if (!report) return null;
     return (
-        <div className="grid grid-cols-2 gap-3 border-t border-white/15 pt-2">
+        <div className="grid grid-cols-2 gap-6 pt-2">
             <div className="min-w-0">
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Productos más vendidos</h3>
                 {report.products.length ? (
                     <div className="space-y-1">
                         {report.products.slice(0, 5).map((item, index) => (
-                            <div key={`${item.nombre_articulo}-${index}`} className="min-w-0 border-b border-white/5 pb-1 text-[9px] last:border-0">
-                                <div className="flex min-w-0 items-baseline justify-between gap-1">
-                                    <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
-                                    <strong className="shrink-0 tabular-nums">{currency(item.total_ingresos)}</strong>
-                                </div>
-                                <span className="text-[8px] tabular-nums text-white/50">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
+                            <div key={`${item.nombre_articulo}-${index}`} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2 text-[9px]">
+                                <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
+                                <span className="shrink-0 text-[8px] tabular-nums text-white/50">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
+                                <strong className="shrink-0 tabular-nums">{currency(item.total_ingresos)}</strong>
                             </div>
                         ))}
                     </div>
