@@ -7224,9 +7224,5 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
 [data-component='HistoryDesktopWorkspace'] .history-hour-column {
   container-type: inline-size;
 }
-@container (max-width: 250px) {
-  .history-hour-average { display: none; }
-}
-@container (max-width: 162px) {
-  .history-hour-tickets { display: none; }
-}
+/* La visibilidad de ticket medio y número de tickets se calcula según
+   el ancho real de los textos, no con umbrales fijos. */
