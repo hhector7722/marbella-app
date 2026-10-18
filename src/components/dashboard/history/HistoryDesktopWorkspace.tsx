@@ -124,8 +124,8 @@ function HistorySalesBreakdown({ report, loading, failed }: {
                     </svg>
                 </div>
                 {topHours.length ? <div className="custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-1">{topHours.map(row => (
-                    <div key={row.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-x-1 whitespace-nowrap text-[10px]">
-                        <span className="min-w-0 font-mono font-bold">{`${String(row.hour).padStart(2, '0')}:00–${String((row.hour + 1) % 24).padStart(2, '0')}:00`}</span>
+                    <div key={row.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-x-1 whitespace-nowrap text-[11px]">
+                        <span className="min-w-0 font-semibold">{`${String(row.hour).padStart(2, '0')}:00–${String((row.hour + 1) % 24).padStart(2, '0')}:00`}</span>
                         <span className="tabular-nums text-white/60">{row.count} t.</span>
                         <span className="tabular-nums text-white/55">M {currency(row.count > 0 ? row.total / row.count : 0)}</span>
                         <strong className="text-right tabular-nums">{currency(row.total)}</strong>
@@ -274,7 +274,7 @@ function HistoryDesktopDailyCard({
 function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, loading, failed }: {
     title: string;
     subtitle?: string;
-    metrics: { label: string; value: string }[];
+    metrics: { label: string; value: string; trend?: number | null }[];
     weather?: string | null;
     report: TicketPeriodReport | null;
     loading: boolean;
@@ -293,9 +293,11 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
             </div>
             <div className="flex-1 space-y-2">
                 <div className="grid grid-cols-4 gap-x-2 gap-y-2">
-                    {metrics.map(({ label, value }) => (
+                    {metrics.map(({ label, value, trend }) => (
                         <div key={label} className="flex min-w-0 flex-col items-center justify-center text-center">
-                            <strong className="max-w-full truncate text-[clamp(10px,0.9vw,15px)] font-black tabular-nums">{value}</strong>
+                            <strong className={cn("flex max-w-full items-center justify-center gap-1 truncate text-[clamp(10px,0.9vw,15px)] font-black tabular-nums", trend !== undefined && trend !== null && (trend >= 0 ? "text-emerald-400" : "text-rose-400"))}>
+                                {trend !== undefined && trend !== null ? <span aria-hidden="true">{trend >= 0 ? '▲' : '▼'}</span> : null}{value}
+                            </strong>
                             <span className="text-[8px] font-semibold uppercase leading-tight text-white/60">{label}</span>
                         </div>
                     ))}
@@ -324,10 +326,15 @@ export default function HistoryDesktopWorkspace({
     const monthEnd = format(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0), 'yyyy-MM-dd');
     const monthlyReport = useTicketPeriodReport(monthStart, monthEnd);
     const lastReport = useTicketPeriodReport(lastClosing?.closing_date ?? null, lastClosing?.closing_date ?? null);
+    const lastExpected = lastClosing ? getExpectedSales(parseISO(lastClosing.closing_date)) : 0;
+    const lastPerformance = lastClosing && lastExpected > 0
+        ? ((Number(lastClosing.net_sales ?? 0) - lastExpected) / lastExpected) * 100
+        : null;
+    const performanceValue = (value: number | null) => value === null ? '—' : `${Math.abs(value).toFixed(1)}%`;
     const monthlyKpis = [
         { label: 'Ventas', value: currency(monthlyReport.report?.summary.totalSales ?? summary.totalGross) },
         { label: 'Venta neta', value: currency(summary.totalNet) },
-        { label: 'Rendimiento', value: `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(1)}%` },
+        { label: 'Rendimiento', value: performanceValue(percentChange), trend: percentChange },
         { label: 'Tarjeta', value: currency(monthly.card) },
         { label: 'Efectivo', value: currency(monthly.cash) },
         { label: 'Pendiente', value: currency(monthly.pending) },
@@ -337,6 +344,7 @@ export default function HistoryDesktopWorkspace({
     const lastKpis = [
         { label: 'Ventas', value: formatClosingValue(last.tpvSales, 'tpv_sales') },
         { label: 'Venta neta', value: formatClosingValue(last.netSales, 'net_sales') },
+        { label: 'Rendimiento', value: performanceValue(lastPerformance), trend: lastPerformance },
         { label: 'Tarjeta', value: formatClosingValue(last.salesCard, 'tpv_sales') },
         { label: 'Efectivo', value: formatClosingValue(last.cashCounted, 'cash_counted') },
         { label: 'Pendiente', value: formatClosingValue(last.salesPending, 'tpv_sales') },
