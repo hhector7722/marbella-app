@@ -46,6 +46,7 @@ type PinchZoomViewportProps = {
   /** Pellizco de touchpad (Ctrl/Meta+rueda) y desplazamiento a zoom > 1. */
   trackpadGestures?: boolean
   /** Conserva el paso entre hojas con un dedo cuando no hay zoom. */
+  zoomStep?: number
   onSwipeAtRest?: (direction: 'prev' | 'next') => void
 }
 
@@ -61,6 +62,7 @@ export function PinchZoomViewport({
   captureGestures = false,
   trackpadGestures = false,
   onSwipeAtRest,
+  zoomStep = 0,
 }: PinchZoomViewportProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -155,6 +157,17 @@ export function PinchZoomViewport({
     },
     [pan.x, pan.y],
   )
+
+  useEffect(() => {
+    if (zoomStep === 0) return
+    const viewport = scrollRef.current?.getBoundingClientRect()
+    if (!viewport) return
+    const next = clampScale(scaleRef.current * (zoomStep > 0 ? 1.4 : 1 / 1.4))
+    const nextPan = panForScaleAroundFocal(next, viewport.left + viewport.width / 2, viewport.top + viewport.height / 2)
+    syncRefs(next, nextPan)
+  // zoomStep is an event counter; the current zoom state lives in refs.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoomStep])
 
   const isTransformed = useCallback(() => {
     const base = initialScaleRef.current
