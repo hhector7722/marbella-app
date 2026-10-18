@@ -235,7 +235,7 @@ function HistoryDesktopDailyCard({
         <article
             data-component="HistoryDesktopDayCard"
             data-selected="true"
-            className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/45 bg-[rgb(6_20_49/0.8)] text-white"
+            className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/45 text-white"
         >
             <header className="flex min-h-[32px] shrink-0 items-center justify-between gap-2 border-b border-white/15 bg-[rgb(8_26_60/0.8)] px-3 py-1.5">
                 <div className="min-w-0 truncate text-[10px] font-bold uppercase tracking-wide">
@@ -338,7 +338,7 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
     failed: boolean;
 }) {
     return (
-        <section className="history-desktop-summary rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.65)] px-3 pb-6 pt-2 text-white">
+        <section className="history-desktop-summary rounded-[var(--radio-control)] border border-white/25 px-3 pb-6 pt-2 text-white">
             <div className="mb-4 flex shrink-0 items-center justify-between gap-2">
                 <h2 className="text-sm font-bold">{title}</h2>
                 <div className="flex min-w-0 items-center gap-2">
