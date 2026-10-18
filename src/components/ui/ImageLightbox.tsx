@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Minus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Minus, X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { Modal } from '@/components/ui/modal'
 import type { ModalLayer, ModalVariant } from '@/lib/design-system'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
@@ -31,6 +32,8 @@ type ImageLightboxProps = {
   /** Activa pinch-to-zoom libre y desplazamiento táctil sin mostrar controles de zoom. */
   zoomable?: boolean
   zoomControls?: boolean
+  /** Abre la imagen directamente sobre el fondo, sin marco de Modal. */
+  imageOnly?: boolean
 }
 
 const SWIPE_THRESHOLD_PX = 48
@@ -50,6 +53,7 @@ export function ImageLightbox({
   parentInstance,
   zoomable = false,
   zoomControls = false,
+  imageOnly = false,
 }: ImageLightboxProps) {
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const [internalIndex, setInternalIndex] = useState(activeIndex)
@@ -112,6 +116,60 @@ export function ImageLightbox({
   const canPrev = !dark && slideCount > 1 && currentIndex > 0
   const canNext = !dark && slideCount > 1 && currentIndex < slideCount - 1
   const resolvedLayer = parentInstance ? 'derived' : layer
+
+  useEffect(() => {
+    if (!open || !imageOnly) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open, imageOnly, onClose])
+
+  if (imageOnly) {
+    if (!open || !currentSlide || typeof document === 'undefined') return null
+    return createPortal(
+      <div role="dialog" aria-modal="true" aria-label={currentSlide.alt || 'Imagen ampliada'}
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-4"
+        onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
+        <div className="relative flex max-h-[90dvh] max-w-[94vw] items-center justify-center">
+          <PinchZoomViewport
+            resetKey={currentSlide.src}
+            minScale={0.5}
+            maxScale={8}
+            captureGestures
+            trackpadGestures
+            zoomStep={zoomStep}
+            className="max-h-[88dvh] max-w-[94vw] overflow-hidden"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={currentSlide.src} alt={currentSlide.alt} draggable={false}
+              className="block max-h-[88dvh] max-w-[94vw] rounded-xl object-contain" />
+          </PinchZoomViewport>
+          <div className="absolute right-2 top-2 z-20 flex items-center gap-1 rounded-lg bg-black/55 p-1 text-white">
+            <button type="button" onClick={() => setZoomStep(n => -(Math.abs(n) + 1))}
+              aria-label="Alejar imagen" title="Alejar" className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-white/20">
+              <Minus size={19} />
+            </button>
+            <button type="button" onClick={() => setZoomStep(n => Math.abs(n) + 1)}
+              aria-label="Ampliar imagen" title="Ampliar" className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-white/20">
+              <Plus size={19} />
+            </button>
+            <button type="button" onClick={onClose}
+              aria-label="Cerrar imagen" title="Cerrar" className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-white/20">
+              <X size={19} />
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body,
+    )
+  }
 
   return (
     <Modal
