@@ -91,6 +91,7 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
     const productsListRef = useRef<HTMLDivElement>(null);
     const hoursListRef = useRef<HTMLDivElement>(null);
     const [fittedHeight, setFittedHeight] = useState<number | null>(null);
+    const [hourDetails, setHourDetails] = useState({ average: true, tickets: true });
     useEffect(() => {
         if (!fillHeight || !report) return;
         const products = productsListRef.current;
@@ -108,6 +109,33 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
         observer.observe(hourList.parentElement!);
         return () => observer.disconnect();
     }, [fillHeight, report]);
+    useEffect(() => {
+        const list = hoursListRef.current;
+        if (!report || !list) return;
+        const measure = () => {
+            const rows = Array.from(list.children).filter((node): node is HTMLElement => node instanceof HTMLElement);
+            if (!rows.length) return;
+            const available = list.clientWidth - 4;
+            // Measure real rendered text including amounts, without relying on fixed viewport breakpoints.
+            const required = (showAverage: boolean, showTickets: boolean) => Math.max(...rows.map(row => {
+                const clone = row.cloneNode(true) as HTMLElement;
+                clone.style.cssText = 'position:absolute;visibility:hidden;width:max-content;min-width:max-content;pointer-events:none;';
+                clone.querySelectorAll<HTMLElement>('.history-hour-average').forEach(el => { el.style.display = showAverage ? 'inline' : 'none'; });
+                clone.querySelectorAll<HTMLElement>('.history-hour-tickets').forEach(el => { el.style.display = showTickets ? 'inline' : 'none'; });
+                list.appendChild(clone);
+                const width = clone.getBoundingClientRect().width;
+                clone.remove();
+                return width;
+            }));
+            const average = required(true, true) <= available;
+            const tickets = average || required(false, true) <= available;
+            setHourDetails(previous => previous.average === average && previous.tickets === tickets ? previous : { average, tickets });
+        };
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(list);
+        return () => observer.disconnect();
+    }, [report]);
     const hours = useMemo(() => [...(report?.hours ?? [])]
         .map(row => ({ hour: Number(row.hour), count: Number(row.count) || 0, total: Number(row.total) || 0 }))
         .sort((a, b) => a.hour - b.hour), [report]);
@@ -149,8 +177,8 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
                     <div key={row.hour} className="flex h-6 min-w-0 snap-start snap-always items-center gap-2 whitespace-nowrap text-[11px]">
                         <span className="shrink-0 font-semibold">{`${row.hour}-${(row.hour + 1) % 24}`}</span>
                         <span className="flex min-w-0 flex-1 items-center justify-center gap-2">
-                            <span className="history-hour-tickets text-[10px] tabular-nums text-white/60">{row.count} tick</span>
-                            <span className="history-hour-average text-[10px] tabular-nums text-white/55">{currency(row.count > 0 ? row.total / row.count : 0)} med</span>
+                            <span className="history-hour-tickets text-[10px] tabular-nums text-white/60" style={!hourDetails.tickets ? { display: "none" } : undefined}>{row.count} tick</span>
+                            <span className="history-hour-average text-[10px] tabular-nums text-white/55" style={!hourDetails.average ? { display: "none" } : undefined}>{currency(row.count > 0 ? row.total / row.count : 0)} med</span>
                         </span>
                         <strong className="shrink-0 text-right tabular-nums">{currency(row.total)}</strong>
                     </div>
