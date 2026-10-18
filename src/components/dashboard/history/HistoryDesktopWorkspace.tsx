@@ -127,7 +127,7 @@ function HistorySalesBreakdown({ report, loading, failed }: {
                 </div>
                 {topHours.length ? <div className="history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5">{topHours.map(row => (
                     <div key={row.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-x-1 whitespace-nowrap text-[11px]">
-                        <span className="min-w-0 font-semibold">{`${String(row.hour).padStart(2, '0')}:00–${String((row.hour + 1) % 24).padStart(2, '0')}:00`}</span>
+                        <span className="min-w-0 font-semibold">{`${row.hour}-${(row.hour + 1) % 24}`}</span>
                         <span className="tabular-nums text-white/60">{row.count} t.</span>
                         <span className="tabular-nums text-white/55">M {currency(row.count > 0 ? row.total / row.count : 0)}</span>
                         <strong className="text-right tabular-nums">{currency(row.total)}</strong>
