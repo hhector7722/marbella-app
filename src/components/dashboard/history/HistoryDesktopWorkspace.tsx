@@ -288,7 +288,7 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
 }) {
     return (
         <section className="history-desktop-summary rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.65)] px-3 pb-6 pt-2 text-white [&_.history-sales-list]:h-[150px]">
-            <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
+            <div className="mb-4 flex shrink-0 items-center justify-between gap-2">
                 <h2 className="text-sm font-bold">{title}</h2>
                 <div className="flex min-w-0 items-center gap-2">
                     {subtitle ? <span className="truncate text-[9px] text-white/50">{subtitle}</span> : null}
@@ -297,7 +297,7 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
                     {report ? <span className="shrink-0 text-[9px] text-white/70">TM <strong className="text-white">{currency(report.summary.avgTicket)}</strong></span> : null}
                 </div>
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-4">
                 <div className="grid grid-cols-4 gap-x-2 gap-y-2">
                     {metrics.map(({ label, value, trend }) => (
                         <div key={label} className="flex min-w-0 flex-col items-center justify-center text-center">
