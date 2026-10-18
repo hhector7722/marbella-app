@@ -101,11 +101,13 @@ function HistorySalesBreakdown({ report, loading, failed }: {
     if (failed) return <p className="py-4 text-center text-[10px] text-rose-200">No se ha podido cargar el desglose.</p>;
     if (!report) return null;
     return (
-        <div className="grid min-h-0 grid-cols-2 gap-6 pt-2">
+        <div className="grid min-h-0 grid-cols-2 gap-5 pt-2">
             <div className="min-w-0">
-                <h3 className="mb-2 text-xs font-bold uppercase text-white/85">Productos</h3>
+                <div className="mb-2 flex h-4 min-w-0 items-center">
+                    <h3 className="text-xs font-bold uppercase text-white/85">Productos</h3>
+                </div>
                 {report.products.length ? (
-                    <div className="history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-1">
+                    <div className="history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5">
                         {report.products.map((item, index) => (
                             <div key={`${item.nombre_articulo}-${index}`} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[11px]">
                                 <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
@@ -117,13 +119,13 @@ function HistorySalesBreakdown({ report, loading, failed }: {
                 ) : <p className="text-[9px] text-white/40">Sin productos</p>}
             </div>
             <div className="min-w-0">
-                <div className="mb-2 flex min-w-0 items-center gap-2">
+                <div className="mb-2 flex h-4 min-w-0 items-center gap-2">
                     <h3 className="shrink-0 text-xs font-bold uppercase text-white/85">Horas</h3>
                     <svg aria-label="Evolución de ventas por hora" role="img" viewBox="0 0 120 20" preserveAspectRatio="none" className="h-3 min-w-0 flex-1 text-white">
                         <path d={timeline} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" />
                     </svg>
                 </div>
-                {topHours.length ? <div className="history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-1">{topHours.map(row => (
+                {topHours.length ? <div className="history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5">{topHours.map(row => (
                     <div key={row.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-x-1 whitespace-nowrap text-[11px]">
                         <span className="min-w-0 font-semibold">{`${String(row.hour).padStart(2, '0')}:00–${String((row.hour + 1) % 24).padStart(2, '0')}:00`}</span>
                         <span className="tabular-nums text-white/60">{row.count} t.</span>
