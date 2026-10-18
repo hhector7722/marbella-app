@@ -300,8 +300,8 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
                 <div className="grid grid-cols-4 gap-x-2 gap-y-2">
                     {metrics.map(({ label, value, trend }) => (
                         <div key={label} className="flex min-w-0 flex-col items-center justify-center text-center">
-                            <strong className={cn("flex max-w-full items-center justify-center gap-1 truncate text-[clamp(10px,0.9vw,15px)] font-black tabular-nums", trend !== undefined && trend !== null && (trend >= 0 ? "text-emerald-400" : "text-rose-400"))}>
-                                {trend !== undefined && trend !== null ? <span aria-hidden="true">{trend >= 0 ? '▲' : '▼'}</span> : null}{value}
+                            <strong className="flex max-w-full items-center justify-center gap-1 truncate text-[clamp(10px,0.9vw,15px)] font-black tabular-nums text-white">
+                                {trend !== undefined && trend !== null ? <span aria-hidden="true" className={trend >= 0 ? "text-emerald-400" : "text-rose-400"}>{trend >= 0 ? '▲' : '▼'}</span> : null}{value}
                             </strong>
                             <span className="text-[8px] font-semibold uppercase leading-tight text-white/60">{label}</span>
                         </div>
