@@ -128,8 +128,8 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
                 {topHours.length ? <div className={cn("history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5", fillHeight && "!h-auto min-h-0 flex-1")}>{topHours.map(row => (
                     <div key={row.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-x-1 whitespace-nowrap text-[11px]">
                         <span className="min-w-0 font-semibold">{`${row.hour}-${(row.hour + 1) % 24}`}</span>
-                        <span className="tabular-nums text-white/60">{row.count} t.</span>
-                        <span className="tabular-nums text-white/55">M {currency(row.count > 0 ? row.total / row.count : 0)}</span>
+                        <span className="text-[10px] tabular-nums text-white/60">{row.count} tick</span>
+                        <span className="text-[10px] tabular-nums text-white/55">{currency(row.count > 0 ? row.total / row.count : 0)} med</span>
                         <strong className="text-right tabular-nums">{currency(row.total)}</strong>
                     </div>
                 ))}</div> : <p className="text-[10px] text-white/40">Sin ventas positivas</p>}
