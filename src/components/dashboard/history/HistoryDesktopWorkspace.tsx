@@ -10,6 +10,7 @@ import type { Tables } from '@/types/supabase';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { buildLastClosingMetrics, formatClosingDifference, formatClosingValue, formatCurrencySpanish } from '@/lib/cash-closing-metrics';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/utils/supabase/client';
 
 export type HistoryDesktopClosing = Pick<Tables<'cash_closings'>,
     'id' | 'closing_date' | 'closed_at' | 'tpv_sales' | 'net_sales' |
@@ -37,6 +38,105 @@ type Props = {
     onPeriodPerformance: () => void;
     onShowTable: () => void;
 };
+
+
+type TicketPeriodReport = {
+    summary: { totalSales: number; count: number; avgTicket: number };
+    hours: { hour: number; count: number; total: number }[];
+    products: { nombre_articulo: string; cantidad_total: number; precio_medio: number; total_ingresos: number }[];
+};
+
+function useTicketPeriodReport(startDate: string | null, endDate: string | null) {
+    const [report, setReport] = useState<TicketPeriodReport | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [failed, setFailed] = useState(false);
+    useEffect(() => {
+        if (!startDate || !endDate) { setReport(null); return; }
+        let alive = true;
+        setReport(null);
+        setFailed(false);
+        setLoading(true);
+        const supabase = createClient();
+        void supabase.rpc('get_full_period_ticket_sales_detail', {
+            p_start_date: startDate,
+            p_end_date: endDate,
+        }).then(({ data, error }) => {
+            if (!alive) return;
+            if (error || !data || typeof data !== 'object' || Array.isArray(data)) {
+                setFailed(true);
+                return;
+            }
+            const value = data as unknown as TicketPeriodReport;
+            if (!value.summary || !Array.isArray(value.hours) || !Array.isArray(value.products)) {
+                setFailed(true);
+                return;
+            }
+            setReport(value);
+        }).catch(() => { if (alive) setFailed(true); })
+          .finally(() => { if (alive) setLoading(false); });
+        return () => { alive = false; };
+    }, [startDate, endDate]);
+    return { report, loading, failed };
+}
+
+function HistorySalesBreakdown({ report, loading, failed }: {
+    report: TicketPeriodReport | null; loading: boolean; failed: boolean;
+}) {
+    const hours = useMemo(() => [...(report?.hours ?? [])]
+        .map(row => ({ hour: Number(row.hour), count: Number(row.count) || 0, total: Number(row.total) || 0 }))
+        .sort((a, b) => a.hour - b.hour), [report]);
+    const topHours = useMemo(() => [...hours].filter(h => h.total > 0).sort((a, b) => b.total - a.total).slice(0, 5), [hours]);
+    const max = Math.max(1, ...hours.map(h => h.total));
+    if (loading) return <p className="py-4 text-center text-[10px] text-white/50">Cargando ventas…</p>;
+    if (failed) return <p className="py-4 text-center text-[10px] text-rose-200">No se ha podido cargar el desglose.</p>;
+    if (!report) return null;
+    return (
+        <div className="space-y-3 border-t border-white/15 pt-2">
+            <div className="flex items-center justify-between gap-2 text-[10px]">
+                <span className="font-bold uppercase text-white/70">Tickets</span>
+                <strong className="tabular-nums">{Number(report.summary.count).toLocaleString('es-ES')}</strong>
+                <span className="font-bold uppercase text-white/70">Ticket medio</span>
+                <strong className="tabular-nums">{currency(report.summary.avgTicket)}</strong>
+            </div>
+            <div>
+                <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Ventas por hora</h3>
+                <div className="flex h-[52px] items-end gap-[2px]" aria-label="Gráfica de ventas por hora">
+                    {Array.from({ length: 24 }, (_, hour) => {
+                        const value = hours.find(h => h.hour === hour)?.total ?? 0;
+                        return <div key={hour} className="group relative flex min-w-0 flex-1 flex-col justify-end" title={`${hour}:00 — ${currency(value)}`}>
+                            <div className="w-full rounded-t-sm bg-sky-400/80" style={{ height: `${Math.max(0, value / max * 52)}px` }} />
+                        </div>;
+                    })}
+                </div>
+                <div className="mt-1 flex justify-between text-[8px] text-white/45"><span>00 h</span><span>06 h</span><span>12 h</span><span>18 h</span><span>23 h</span></div>
+            </div>
+            <div>
+                <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Productos más vendidos</h3>
+                {report.products.length ? (
+                    <div className="space-y-1">
+                        {report.products.slice(0, 5).map((item, index) => (
+                            <div key={`${item.nombre_articulo}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 text-[9px]">
+                                <span className="truncate text-white/80">{index + 1}. {item.nombre_articulo}</span>
+                                <span className="tabular-nums text-white/60">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
+                                <strong className="tabular-nums">{currency(item.total_ingresos)}</strong>
+                            </div>
+                        ))}
+                    </div>
+                ) : <p className="text-[9px] text-white/40">Sin productos</p>}
+            </div>
+            <div>
+                <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Horas con más ventas</h3>
+                {topHours.length ? topHours.map(row => (
+                    <div key={row.hour} className="grid grid-cols-[1fr_auto_auto] gap-2 py-0.5 text-[9px]">
+                        <span>{String(row.hour).padStart(2, '0')}:00</span>
+                        <span className="text-white/60">{row.count} tickets</span>
+                        <strong className="tabular-nums">{currency(row.total)}</strong>
+                    </div>
+                )) : <p className="text-[9px] text-white/40">Sin ventas</p>}
+            </div>
+        </div>
+    );
+}
 
 const currency = (v: number | null | undefined) => formatCurrencySpanish(Number(v ?? 0));
 const timeLine = (date: string) => format(parseISO(date), "EEEE d 'de' MMMM", { locale: es });
@@ -171,23 +271,36 @@ function HistoryDesktopDailyCard({
     );
 }
 
-function HistoryDesktopSummary({ title, subtitle, metrics, onClick }: {
-    title: string; subtitle?: string; metrics: { label: string; value: string }[]; onClick?: () => void;
+function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, loading, failed, footer }: {
+    title: string;
+    subtitle?: string;
+    metrics: { label: string; value: string }[];
+    weather?: string | null;
+    report: TicketPeriodReport | null;
+    loading: boolean;
+    failed: boolean;
+    footer?: string;
 }) {
     return (
-        <section className="history-desktop-summary rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.65)] px-4 py-3 text-white">
-            <div className="mb-2 flex items-baseline justify-between gap-3">
+        <section className="history-desktop-summary overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.65)] px-3 py-2 text-white">
+            <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
                 <h2 className="text-sm font-bold">{title}</h2>
-                {subtitle ? <span className="truncate text-[9px] text-white/50">{subtitle}</span> : null}
-                {onClick ? <button type="button" onClick={onClick} className="ml-auto text-[10px] text-white/65 underline-offset-2 hover:text-white hover:underline">Ver detalle</button> : null}
+                <div className="flex min-w-0 items-center gap-2">
+                    {subtitle ? <span className="truncate text-[9px] text-white/50">{subtitle}</span> : null}
+                    {weather ? <span className="inline-flex shrink-0 items-center gap-1 text-[9px] text-white/75"><CloudSun size={13} />{weather}</span> : null}
+                </div>
             </div>
-            <div className="grid grid-cols-4 gap-2">
-                {metrics.map(({ label, value }) => (
-                    <div key={label} className="flex min-w-0 flex-col items-center justify-center text-center">
-                        <strong className="max-w-full truncate text-[clamp(10px,0.9vw,15px)] font-black tabular-nums">{value}</strong>
-                        <span className="text-[8px] font-semibold uppercase leading-tight text-white/60">{label}</span>
-                    </div>
-                ))}
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+                <div className="grid grid-cols-4 gap-x-2 gap-y-2">
+                    {metrics.map(({ label, value }) => (
+                        <div key={label} className="flex min-w-0 flex-col items-center justify-center text-center">
+                            <strong className="max-w-full truncate text-[clamp(10px,0.9vw,15px)] font-black tabular-nums">{value}</strong>
+                            <span className="text-[8px] font-semibold uppercase leading-tight text-white/60">{label}</span>
+                        </div>
+                    ))}
+                </div>
+                {footer ? <p className="text-[9px] text-white/50">{footer}</p> : null}
+                <HistorySalesBreakdown report={report} loading={loading} failed={failed} />
             </div>
         </section>
     );
@@ -207,8 +320,12 @@ export default function HistoryDesktopWorkspace({
         difference: monthlyClosings.reduce((sum, row) => sum + Number(row.difference ?? 0), 0),
     }), [monthlyClosings]);
     const last = buildLastClosingMetrics(lastClosing ? { ...lastClosing } : null);
+    const monthStart = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
+    const monthEnd = format(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0), 'yyyy-MM-dd');
+    const monthlyReport = useTicketPeriodReport(monthStart, monthEnd);
+    const lastReport = useTicketPeriodReport(lastClosing?.closing_date ?? null, lastClosing?.closing_date ?? null);
     const monthlyKpis = [
-        { label: 'Ventas', value: currency(summary.totalGross) },
+        { label: 'Ventas', value: currency(monthlyReport.report?.summary.totalSales ?? summary.totalGross) },
         { label: 'Venta neta', value: currency(summary.totalNet) },
         { label: 'Rendimiento', value: `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(1)}%` },
         { label: 'Tarjeta', value: currency(monthly.card) },
@@ -235,15 +352,14 @@ export default function HistoryDesktopWorkspace({
                     <span className="text-xs capitalize text-white/60">{monthLabel}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button type="button" className="rounded-md border border-white/20 px-2 py-1 text-xs text-white/70 hover:bg-white/10" onClick={onMonthlySales}>Ventas del mes</button>
                     <button type="button" className="rounded-md border border-white/20 px-2 py-1 text-xs text-white/70 hover:bg-white/10" onClick={onPeriodPerformance}>Rendimiento</button>
                     <button type="button" className="rounded-md border border-white/35 px-3 py-1 text-xs text-white hover:bg-white/10" onClick={onShowTable}>Tabla</button>
                 </div>
             </div>
             <div className="history-desktop-board grid min-h-0 flex-1 items-start gap-4">
                 <div data-element="summary-stack" className="flex min-h-0 min-w-0 flex-col gap-4">
-                    <HistoryDesktopSummary title="Último cierre" subtitle={lastClosing ? timeLine(lastClosing.closing_date) : undefined} metrics={lastKpis} onClick={lastClosing ? () => onOpenClosing(lastClosing) : undefined} />
-                    <HistoryDesktopSummary title="Mensual" subtitle={monthLabel} metrics={monthlyKpis} onClick={onMonthlySales} />
+                    <HistoryDesktopSummary title="Último cierre" subtitle={lastClosing ? timeLine(lastClosing.closing_date) : undefined} metrics={lastKpis} weather={lastClosing?.weather} report={lastReport.report} loading={lastReport.loading} failed={lastReport.failed} />
+                    <HistoryDesktopSummary title="Mensual" subtitle={monthLabel} metrics={monthlyKpis} report={monthlyReport.report} loading={monthlyReport.loading} failed={monthlyReport.failed} footer="Ventas y tickets incluyen hoy; el resto de importes corresponde a cierres registrados." />
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <HistoryDesktopDailyCard
