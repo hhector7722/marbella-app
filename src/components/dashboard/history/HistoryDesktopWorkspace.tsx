@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, isSameMonth, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, CloudSun, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CloudSun, Pencil, X, Download, Printer } from 'lucide-react';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import type { Tables } from '@/types/supabase';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { buildLastClosingMetrics, formatClosingDifference, formatClosingValue, formatCurrencySpanish } from '@/lib/cash-closing-metrics';
 import { cn } from '@/lib/utils';
+import { createPortal } from 'react-dom';
 import { createClient } from '@/utils/supabase/client';
 
 export type HistoryDesktopClosing = Pick<Tables<'cash_closings'>,
@@ -35,8 +36,6 @@ type Props = {
     onNextMonth: () => void;
     onOpenClosing: (closing: HistoryDesktopClosing) => void;
     onMonthlySales: () => void;
-    onPeriodPerformance: () => void;
-    onShowTable: () => void;
 };
 
 
@@ -374,8 +373,8 @@ export default function HistoryDesktopWorkspace({
     selectedDate, viewMonth, calendarWeeks, monthLabel, monthlyClosings,
     summary, percentChange, lastClosing, getClosingForDate, getExpectedSales,
     onSelectDate, onPrevMonth, onNextMonth, onOpenClosing, onMonthlySales,
-    onPeriodPerformance, onShowTable,
 }: Props) {
+    const [tableOpen, setTableOpen] = useState(false);
     const monthly = useMemo(() => ({
         card: monthlyClosings.reduce((sum, row) => sum + Number(row.sales_card ?? 0), 0),
         cash: monthlyClosings.reduce((sum, row) => sum + Number(row.cash_counted ?? 0), 0),
@@ -414,6 +413,41 @@ export default function HistoryDesktopWorkspace({
         { label: 'Diferencia', value: formatClosingDifference(last.difference) },
     ];
 
+    const tableRows = useMemo(() => [...monthlyClosings].sort((a, b) => b.closing_date.localeCompare(a.closing_date)), [monthlyClosings]);
+    const tableHeaders = ['Fecha', 'Ventas', 'Neta', 'Tickets', 'Medio', 'Efectivo', 'Tarjeta', 'Pendiente', 'Cobros', 'Diferencia'];
+    const tableData = tableRows.map(c => [
+        format(parseISO(c.closing_date), 'dd/MM/yyyy'),
+        currency(c.tpv_sales), currency(c.net_sales),
+        String(c.tickets_count ?? 0),
+        currency((Number(c.tpv_sales ?? 0)) / Math.max(1, Number(c.tickets_count ?? 0))),
+        currency(c.cash_counted), currency(c.sales_card), currency(c.sales_pending),
+        currency(c.debt_recovered), currency(c.difference)
+    ]);
+    const downloadTablePdf = async () => {
+        const { jsPDF } = await import('jspdf');
+        const { default: autoTable } = await import('jspdf-autotable');
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        pdf.setFontSize(14);
+        pdf.text(`Cierres - ${monthLabel}`, 14, 16);
+        autoTable(pdf, { head: [tableHeaders], body: tableData, startY: 22, styles: { fontSize: 8 }, theme: 'grid' });
+        pdf.save(`cierres-${format(viewMonth, 'yyyy-MM')}.pdf`);
+    };
+    const printTable = () => {
+        const printable = document.getElementById('history-desktop-print-table');
+        if (!printable) return;
+        const win = window.open('', '_blank');
+        if (!win) return;
+        win.document.write(`<!doctype html><html><head><title>Cierres - ${monthLabel}</title><style>body{font-family:Arial,sans-serif;padding:16px}table{border-collapse:collapse;width:100%;font-size:10px}th,td{border:1px solid #ccc;padding:5px;text-align:right}th:first-child,td:first-child{text-align:left}@page{size:A4 landscape;margin:12mm}</style></head><body><h2>Cierres - ${monthLabel}</h2>${printable.outerHTML}</body></html>`);
+        win.document.close();
+        win.focus();
+        win.print();
+    };
+    useEffect(() => {
+        if (!tableOpen) return;
+        const onEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') setTableOpen(false); };
+        document.addEventListener('keydown', onEscape);
+        return () => document.removeEventListener('keydown', onEscape);
+    }, [tableOpen]);
     return (
         <div data-component="HistoryDesktopWorkspace" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
             <div className="mb-3 flex shrink-0 items-center justify-between gap-4 text-white">
@@ -422,8 +456,7 @@ export default function HistoryDesktopWorkspace({
                     <span className="text-xs capitalize text-white/60">{monthLabel}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button type="button" className="rounded-md border border-white/20 px-2 py-1 text-xs text-white/70 hover:bg-white/10" onClick={onPeriodPerformance}>Rendimiento</button>
-                    <button type="button" className="rounded-md border border-white/35 px-3 py-1 text-xs text-white hover:bg-white/10" onClick={onShowTable}>Tabla</button>
+                    <button type="button" className="rounded-md border border-white/35 px-3 py-1 text-xs text-white hover:bg-white/10" onClick={() => setTableOpen(true)}>Tabla</button>
                 </div>
             </div>
             <div className="history-desktop-board grid min-h-0 flex-1 items-start gap-4">
@@ -520,6 +553,30 @@ export default function HistoryDesktopWorkspace({
                     </section>
                 </div>
             </div>
+            {tableOpen && typeof document !== 'undefined' ? createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4" onMouseDown={e => { if (e.target === e.currentTarget) setTableOpen(false); }}>
+                    <div role="dialog" aria-modal="true" aria-label="Tabla de cierres" className="flex w-fit max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-white/25 bg-white text-zinc-900 shadow-2xl">
+                        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-200 px-4 py-3">
+                            <div className="flex items-center gap-2">
+                                <button type="button" onClick={onPrevMonth} aria-label="Mes anterior" className="rounded p-1 hover:bg-zinc-100"><ChevronLeft size={19}/></button>
+                                <strong className="min-w-[135px] text-center text-sm capitalize">{monthLabel}</strong>
+                                <button type="button" onClick={onNextMonth} aria-label="Mes siguiente" className="rounded p-1 hover:bg-zinc-100"><ChevronRight size={19}/></button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button type="button" onClick={() => void downloadTablePdf()} className="inline-flex items-center gap-1 rounded border border-zinc-200 px-2 py-1 text-xs hover:bg-zinc-100"><Download size={15}/> Descargar PDF</button>
+                                <button type="button" onClick={printTable} className="inline-flex items-center gap-1 rounded border border-zinc-200 px-2 py-1 text-xs hover:bg-zinc-100"><Printer size={15}/> Imprimir</button>
+                                <button type="button" onClick={() => setTableOpen(false)} aria-label="Cerrar tabla" className="rounded p-1 hover:bg-zinc-100"><X size={18}/></button>
+                            </div>
+                        </div>
+                        <div className="max-h-[75vh] overflow-auto">
+                            <table id="history-desktop-print-table" className="w-max min-w-full border-collapse text-[11px]">
+                                <thead className="sticky top-0 bg-zinc-100"><tr>{tableHeaders.map(h => <th key={h} className="whitespace-nowrap border-b border-zinc-300 px-2 py-2 text-right first:text-left">{h}</th>)}</tr></thead>
+                                <tbody>{tableData.length ? tableData.map((row, i) => <tr key={tableRows[i].id} className="border-b border-zinc-100">{row.map((cell, j) => <td key={j} className="whitespace-nowrap px-2 py-1.5 text-right first:text-left">{cell}</td>)}</tr>) : <tr><td colSpan={tableHeaders.length} className="p-6 text-center text-zinc-500">Sin cierres este mes</td></tr>}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>, document.body
+            ) : null}
         </div>
     );
 }
