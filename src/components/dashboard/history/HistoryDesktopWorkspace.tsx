@@ -148,9 +148,11 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
                 {topHours.length ? <div ref={hoursListRef} style={fillHeight && fittedHeight !== null ? { height: fittedHeight } : undefined} className={cn("history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5", fillHeight && "!h-auto min-h-0")}>{topHours.map(row => (
                     <div key={row.hour} className="flex h-6 min-w-0 snap-start snap-always items-center gap-2 whitespace-nowrap text-[11px]">
                         <span className="shrink-0 font-semibold">{`${row.hour}-${(row.hour + 1) % 24}`}</span>
-                        <span className="history-hour-tickets text-[10px] tabular-nums text-white/60">{row.count} tick</span>
-                        <span className="history-hour-average text-[10px] tabular-nums text-white/55">{currency(row.count > 0 ? row.total / row.count : 0)} med</span>
-                        <strong className="ml-auto shrink-0 text-right tabular-nums">{currency(row.total)}</strong>
+                        <span className="flex min-w-0 flex-1 items-center justify-center gap-2">
+                            <span className="history-hour-tickets text-[10px] tabular-nums text-white/60">{row.count} tick</span>
+                            <span className="history-hour-average text-[10px] tabular-nums text-white/55">{currency(row.count > 0 ? row.total / row.count : 0)} med</span>
+                        </span>
+                        <strong className="shrink-0 text-right tabular-nums">{currency(row.total)}</strong>
                     </div>
                 ))}</div> : <p className="text-[10px] text-white/40">Sin ventas positivas</p>}
             </div>
