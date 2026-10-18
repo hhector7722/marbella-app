@@ -237,7 +237,8 @@ function HistoryDesktopDailyCard({
         <article
             data-component="HistoryDesktopDayCard"
             data-selected="true"
-            className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border text-white"\n            style={{ backgroundColor: "var(--color-envolvente-bajo)", borderColor: "var(--chrome-glass-fill)", boxShadow: "var(--chrome-glass-shadow)" }}
+            className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border text-white"
+            style={{ backgroundColor: "var(--color-envolvente-bajo)", borderColor: "var(--chrome-glass-fill)", boxShadow: "var(--chrome-glass-shadow)" }}
         >
             <header className="flex min-h-[32px] shrink-0 items-center justify-between gap-2 border-b border-white/15 bg-[rgb(8_26_60/0.8)] px-3 py-1.5">
                 <div className="min-w-0 truncate text-[10px] font-bold uppercase tracking-wide">
@@ -340,7 +341,8 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
     failed: boolean;
 }) {
     return (
-        <section className="history-desktop-summary rounded-[var(--radio-control)] border px-3 pb-6 pt-2 text-white"\n            style={{ backgroundColor: "rgb(255 255 255 / 0.1)", borderColor: "var(--chrome-glass-fill)", boxShadow: "var(--chrome-glass-shadow)" }}>
+        <section className="history-desktop-summary rounded-[var(--radio-control)] border px-3 pb-6 pt-2 text-white"
+            style={{ backgroundColor: "rgb(255 255 255 / 0.1)", borderColor: "var(--chrome-glass-fill)", boxShadow: "var(--chrome-glass-shadow)" }}>
             <div className="mb-4 flex shrink-0 items-center justify-between gap-2">
                 <h2 className="text-sm font-bold">{title}</h2>
                 <div className="flex min-w-0 items-center gap-2">
