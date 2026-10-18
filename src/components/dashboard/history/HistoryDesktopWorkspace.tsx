@@ -99,15 +99,14 @@ function HistorySalesBreakdown({ report, loading, failed }: {
         <div className="space-y-3 border-t border-white/15 pt-2">
             <div>
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Ventas por hora</h3>
-                <div className="grid grid-cols-6 gap-x-2 gap-y-1 text-[8px]">
-                    {Array.from({ length: 24 }, (_, hour) => {
-                        const value = hours.find(h => h.hour === hour)?.total ?? 0;
-                        return <div key={hour} className="flex flex-col text-center" title={`${String(hour).padStart(2, '0')}:00 — ${currency(value)}`}>
-                            <span className="text-white/45">{String(hour).padStart(2, '0')} h</span>
-                            <strong className="truncate tabular-nums">{Math.round(value).toLocaleString('es-ES')}€</strong>
-                        </div>;
-                    })}
-                </div>
+                {topHours.length ? topHours.map(row => (
+                    <div key={row.hour} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 py-0.5 text-[9px]">
+                        <span className="font-mono font-bold">{String(row.hour).padStart(2, '0')}:00</span>
+                        <span className="text-white/60">{row.count} tickets</span>
+                        <span className="tabular-nums text-white/55">{currency(row.count > 0 ? row.total / row.count : 0)} media</span>
+                        <strong className="tabular-nums">{currency(row.total)}</strong>
+                    </div>
+                )) : <p className="text-[9px] text-white/40">Sin ventas positivas</p>}
             </div>
             <div>
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Productos más vendidos</h3>
@@ -123,16 +122,7 @@ function HistorySalesBreakdown({ report, loading, failed }: {
                     </div>
                 ) : <p className="text-[9px] text-white/40">Sin productos</p>}
             </div>
-            <div>
-                <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Horas con más ventas</h3>
-                {topHours.length ? topHours.slice(0, 5).map(row => (
-                    <div key={row.hour} className="grid grid-cols-[1fr_auto_auto] gap-2 py-0.5 text-[9px]">
-                        <span>{String(row.hour).padStart(2, '0')}:00</span>
-                        <span className="text-white/60">{row.count} tickets</span>
-                        <strong className="tabular-nums">{currency(row.total)}</strong>
-                    </div>
-                )) : <p className="text-[9px] text-white/40">Sin ventas</p>}
-            </div>
+
         </div>
     );
 }
