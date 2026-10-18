@@ -1472,8 +1472,6 @@ export default function HistoryPage() {
                     if (full) openClosingDetail(full);
                 }}
                 onMonthlySales={openMonthlySalesDetails}
-                onPeriodPerformance={() => setShowPeriodPerformanceModal(true)}
-                onShowTable={() => setViewMode('table')}
             />
         )}
         <div className={viewMode === 'calendar' ? 'lg:hidden' : undefined}>
