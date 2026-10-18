@@ -317,7 +317,7 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
                     {subtitle ? <span className="truncate text-[9px] text-white/50">{subtitle}</span> : null}
                     {weather ? <span className="inline-flex shrink-0 items-center gap-1 text-[9px] text-white/75"><CloudSun size={13} />{weather}</span> : null}
                     {report ? <span className="shrink-0 text-[9px] text-white/70"><strong className="text-white">{Number(report.summary.count).toLocaleString('es-ES')}</strong> tickets</span> : null}
-                    {report ? <span className="shrink-0 text-[9px] text-white/70">TM <strong className="text-white">{currency(report.summary.avgTicket)}</strong></span> : null}
+                    {report ? <span className="shrink-0 text-[9px] text-white/70"><strong className="text-white">{currency(report.summary.avgTicket)}</strong> medio</span> : null}
                 </div>
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-4">
