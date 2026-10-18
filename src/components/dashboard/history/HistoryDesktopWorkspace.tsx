@@ -190,8 +190,14 @@ function HistoryDesktopDailyCard({
             <header className="flex min-h-[32px] shrink-0 items-center justify-between gap-2 border-b border-white/15 bg-[rgb(8_26_60/0.8)] px-3 py-1.5">
                 <div className="min-w-0 truncate text-[10px] font-bold uppercase tracking-wide">
                     {timeLine(date)}
-                    <span className="ml-2 text-[8px] font-normal normal-case text-white/50">Detalle de cierre</span>
                 </div>
+                {closing && values ? (
+                    <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 text-[9px] text-white/60">
+                        {closing.weather ? <span className="inline-flex items-center gap-1 whitespace-nowrap"><CloudSun size={12} />{closing.weather}</span> : null}
+                        <span className="whitespace-nowrap">{values.tickets} tickets</span>
+                        {values.avgTicket > 0 ? <span className="whitespace-nowrap">{currency(values.avgTicket)} ticket medio</span> : null}
+                    </div>
+                ) : null}
                 {closing && (
                     <button type="button" onClick={onOpen} className="shrink-0 rounded p-1 text-white/75 hover:bg-white/10 hover:text-white" aria-label={`Abrir detalle completo del ${timeLine(date)}`} title="Abrir detalle completo">
                         <Pencil size={15} aria-hidden />
@@ -200,11 +206,6 @@ function HistoryDesktopDailyCard({
             </header>
             {closing && values ? (
                 <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-3 pb-6 pt-2">
-                    <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[9px] text-white/60">
-                        {closing.weather ? <span className="inline-flex items-center gap-1"><CloudSun size={12} />{closing.weather}</span> : null}
-                        <span>{values.tickets} tickets</span>
-                        {values.avgTicket > 0 ? <span>{currency(values.avgTicket)} ticket medio</span> : null}
-                    </div>
                     <div className="flex shrink-0 flex-col divide-y divide-white/10">
                         {metrics.map(([name, value]) => (
                             <div key={name} className="grid min-h-[29px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-1">
