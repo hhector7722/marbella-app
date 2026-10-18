@@ -122,7 +122,7 @@ function HistorySalesBreakdown({ report, loading, failed }: {
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Productos más vendidos</h3>
                 {report.products.length ? (
                     <div ref={productListRef} className="space-y-1">
-                        {report.products.slice(0, Math.max(1, visibleProducts)).map((item, index) => (
+                        {report.products.slice(0, visibleProducts).map((item, index) => (
                             <div key={`${item.nombre_articulo}-${index}`} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2 text-[9px]">
                                 <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
                                 <span className="shrink-0 text-[8px] tabular-nums text-white/50">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
