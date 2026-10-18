@@ -85,19 +85,13 @@ function HistorySalesBreakdown({ report, loading, failed }: {
     const hours = useMemo(() => [...(report?.hours ?? [])]
         .map(row => ({ hour: Number(row.hour), count: Number(row.count) || 0, total: Number(row.total) || 0 }))
         .sort((a, b) => a.hour - b.hour), [report]);
-    const topHours = useMemo(() => [...hours].filter(h => h.total > 0).sort((a, b) => b.total - a.total).slice(0, 5), [hours]);
+    const topHours = useMemo(() => [...hours].filter(h => h.total > 0).sort((a, b) => b.total - a.total), [hours]);
     const max = Math.max(1, ...hours.map(h => h.total));
     if (loading) return <p className="py-4 text-center text-[10px] text-white/50">Cargando ventas…</p>;
     if (failed) return <p className="py-4 text-center text-[10px] text-rose-200">No se ha podido cargar el desglose.</p>;
     if (!report) return null;
     return (
         <div className="space-y-3 border-t border-white/15 pt-2">
-            <div className="flex items-center justify-between gap-2 text-[10px]">
-                <span className="font-bold uppercase text-white/70">Tickets</span>
-                <strong className="tabular-nums">{Number(report.summary.count).toLocaleString('es-ES')}</strong>
-                <span className="font-bold uppercase text-white/70">Ticket medio</span>
-                <strong className="tabular-nums">{currency(report.summary.avgTicket)}</strong>
-            </div>
             <div>
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Ventas por hora</h3>
                 <div className="flex h-[52px] items-end gap-[2px]" aria-label="Gráfica de ventas por hora">
@@ -114,7 +108,7 @@ function HistorySalesBreakdown({ report, loading, failed }: {
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Productos más vendidos</h3>
                 {report.products.length ? (
                     <div className="space-y-1">
-                        {report.products.slice(0, 5).map((item, index) => (
+                        {report.products.map((item, index) => (
                             <div key={`${item.nombre_articulo}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 text-[9px]">
                                 <span className="truncate text-white/80">{index + 1}. {item.nombre_articulo}</span>
                                 <span className="tabular-nums text-white/60">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
@@ -288,6 +282,8 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
                 <div className="flex min-w-0 items-center gap-2">
                     {subtitle ? <span className="truncate text-[9px] text-white/50">{subtitle}</span> : null}
                     {weather ? <span className="inline-flex shrink-0 items-center gap-1 text-[9px] text-white/75"><CloudSun size={13} />{weather}</span> : null}
+                    {report ? <span className="shrink-0 text-[9px] text-white/70"><strong className="text-white">{Number(report.summary.count).toLocaleString('es-ES')}</strong> tickets</span> : null}
+                    {report ? <span className="shrink-0 text-[9px] text-white/70">TM <strong className="text-white">{currency(report.summary.avgTicket)}</strong></span> : null}
                 </div>
             </div>
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
