@@ -96,33 +96,38 @@ function HistorySalesBreakdown({ report, loading, failed }: {
     if (failed) return <p className="py-4 text-center text-[10px] text-rose-200">No se ha podido cargar el desglose.</p>;
     if (!report) return null;
     return (
-        <div className="space-y-3 border-t border-white/15 pt-2">
-            <div>
-                <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Ventas por hora</h3>
-                {topHours.length ? topHours.map(row => (
-                    <div key={row.hour} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 py-0.5 text-[9px]">
-                        <span className="font-mono font-bold">{String(row.hour).padStart(2, '0')}:00</span>
-                        <span className="text-white/60">{row.count} tickets</span>
-                        <span className="tabular-nums text-white/55">{currency(row.count > 0 ? row.total / row.count : 0)} media</span>
-                        <strong className="tabular-nums">{currency(row.total)}</strong>
-                    </div>
-                )) : <p className="text-[9px] text-white/40">Sin ventas positivas</p>}
-            </div>
-            <div>
+        <div className="grid grid-cols-2 gap-3 border-t border-white/15 pt-2">
+            <div className="min-w-0">
                 <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Productos más vendidos</h3>
                 {report.products.length ? (
                     <div className="space-y-1">
                         {report.products.slice(0, 5).map((item, index) => (
-                            <div key={`${item.nombre_articulo}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 text-[9px]">
-                                <span className="truncate text-white/80">{index + 1}. {item.nombre_articulo}</span>
-                                <span className="tabular-nums text-white/60">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
-                                <strong className="tabular-nums">{currency(item.total_ingresos)}</strong>
+                            <div key={`${item.nombre_articulo}-${index}`} className="min-w-0 border-b border-white/5 pb-1 text-[9px] last:border-0">
+                                <div className="flex min-w-0 items-baseline justify-between gap-1">
+                                    <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
+                                    <strong className="shrink-0 tabular-nums">{currency(item.total_ingresos)}</strong>
+                                </div>
+                                <span className="text-[8px] tabular-nums text-white/50">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
                             </div>
                         ))}
                     </div>
                 ) : <p className="text-[9px] text-white/40">Sin productos</p>}
             </div>
-
+            <div className="min-w-0">
+                <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Ventas por hora</h3>
+                {topHours.length ? topHours.map(row => (
+                    <div key={row.hour} className="border-b border-white/5 pb-1 text-[9px] last:border-0">
+                        <div className="flex items-baseline justify-between gap-1">
+                            <span className="font-mono font-bold">{String(row.hour).padStart(2, '0')}:00</span>
+                            <strong className="tabular-nums">{currency(row.total)}</strong>
+                        </div>
+                        <div className="flex flex-wrap justify-between gap-x-1 text-[8px] text-white/50">
+                            <span>{row.count} tickets</span>
+                            <span className="tabular-nums">Media {currency(row.count > 0 ? row.total / row.count : 0)}</span>
+                        </div>
+                    </div>
+                )) : <p className="text-[9px] text-white/40">Sin ventas positivas</p>}
+            </div>
         </div>
     );
 }
@@ -262,7 +267,7 @@ function HistoryDesktopDailyCard({
     );
 }
 
-function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, loading, failed, footer }: {
+function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, loading, failed }: {
     title: string;
     subtitle?: string;
     metrics: { label: string; value: string }[];
@@ -270,7 +275,6 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
     report: TicketPeriodReport | null;
     loading: boolean;
     failed: boolean;
-    footer?: string;
 }) {
     return (
         <section className="history-desktop-summary rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.65)] px-3 py-2 text-white">
@@ -292,7 +296,6 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
                         </div>
                     ))}
                 </div>
-                {footer ? <p className="text-[9px] text-white/50">{footer}</p> : null}
                 <HistorySalesBreakdown report={report} loading={loading} failed={failed} />
             </div>
         </section>
@@ -352,7 +355,7 @@ export default function HistoryDesktopWorkspace({
             <div className="history-desktop-board grid min-h-0 flex-1 items-start gap-4">
                 <div data-element="summary-stack" className="flex min-h-0 min-w-0 flex-col gap-4">
                     <HistoryDesktopSummary title="Último cierre" subtitle={lastClosing ? timeLine(lastClosing.closing_date) : undefined} metrics={lastKpis} weather={lastClosing?.weather} report={lastReport.report} loading={lastReport.loading} failed={lastReport.failed} />
-                    <HistoryDesktopSummary title="Mensual" subtitle={monthLabel} metrics={monthlyKpis} report={monthlyReport.report} loading={monthlyReport.loading} failed={monthlyReport.failed} footer="Ventas y tickets incluyen hoy; el resto de importes corresponde a cierres registrados." />
+                    <HistoryDesktopSummary title="Mensual" subtitle={monthLabel} metrics={monthlyKpis} report={monthlyReport.report} loading={monthlyReport.loading} failed={monthlyReport.failed} />
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <HistoryDesktopDailyCard
