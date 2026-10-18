@@ -7101,7 +7101,7 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
      el espacio sobrante para poder añadirle contenido más adelante. */
   [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'],
   [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
-    height: min(100%, 545px);
+    height: min(100%, 690px);
   }
 
   /* Mismo alto para Último cierre y Mensual; el gap se descuenta de
@@ -7124,9 +7124,8 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   }
 
   [data-component='HistoryDesktopWorkspace'] .history-desktop-summary > .grid {
-    flex: 1 1 auto;
-    align-content: center;
-    row-gap: 11px;
+    align-content: start;
+    row-gap: 5px;
   }
 
   [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
