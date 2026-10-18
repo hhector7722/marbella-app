@@ -126,7 +126,7 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
                     </svg>
                 </div>
                 {topHours.length ? <div className={cn("history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5", fillHeight && "!h-auto min-h-0 flex-1")}>{topHours.map(row => (
-                    <div key={row.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-x-1 whitespace-nowrap text-[11px]">
+                    <div key={row.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 whitespace-nowrap text-[11px]">
                         <span className="min-w-0 font-semibold">{`${row.hour}-${(row.hour + 1) % 24}`}</span>
                         <span className="text-[10px] tabular-nums text-white/60">{row.count} tick</span>
                         <span className="text-[10px] tabular-nums text-white/55">{currency(row.count > 0 ? row.total / row.count : 0)} med</span>
@@ -288,7 +288,7 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
     failed: boolean;
 }) {
     return (
-        <section className="history-desktop-summary rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.65)] px-3 pb-6 pt-2 text-white [&_.history-sales-list]:h-[150px]">
+        <section className="history-desktop-summary rounded-[var(--radio-control)] border border-white/25 bg-[rgb(15_40_85/0.65)] px-3 pb-6 pt-2 text-white">
             <div className="mb-4 flex shrink-0 items-center justify-between gap-2">
                 <h2 className="text-sm font-bold">{title}</h2>
                 <div className="flex min-w-0 items-center gap-2">
@@ -298,8 +298,8 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
                     {report ? <span className="shrink-0 text-[9px] text-white/70">TM <strong className="text-white">{currency(report.summary.avgTicket)}</strong></span> : null}
                 </div>
             </div>
-            <div className="flex-1 space-y-4">
-                <div className="grid grid-cols-4 gap-x-2 gap-y-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-4">
+                <div className="grid shrink-0 grid-cols-4 gap-x-2 gap-y-2">
                     {metrics.map(({ label, value, trend }) => (
                         <div key={label} className="flex min-w-0 flex-col items-center justify-center text-center">
                             <strong className="flex max-w-full items-center justify-center gap-1 truncate text-[clamp(10px,0.9vw,15px)] font-black tabular-nums text-white">
@@ -309,7 +309,9 @@ function HistoryDesktopSummary({ title, subtitle, metrics, weather, report, load
                         </div>
                     ))}
                 </div>
-                <HistorySalesBreakdown report={report} loading={loading} failed={failed} />
+                <div className="min-h-0 flex-1 overflow-hidden">
+                    <HistorySalesBreakdown report={report} loading={loading} failed={failed} fillHeight />
+                </div>
             </div>
         </section>
     );
