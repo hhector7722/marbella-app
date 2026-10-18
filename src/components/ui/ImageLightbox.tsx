@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Minus } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
 import type { ModalLayer, ModalVariant } from '@/lib/design-system'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
@@ -30,6 +30,7 @@ type ImageLightboxProps = {
   parentInstance?: string
   /** Activa pinch-to-zoom libre y desplazamiento táctil sin mostrar controles de zoom. */
   zoomable?: boolean
+  zoomControls?: boolean
 }
 
 const SWIPE_THRESHOLD_PX = 48
@@ -48,9 +49,11 @@ export function ImageLightbox({
   instance = 'image-lightbox',
   parentInstance,
   zoomable = false,
+  zoomControls = false,
 }: ImageLightboxProps) {
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const [internalIndex, setInternalIndex] = useState(activeIndex)
+  const [zoomStep, setZoomStep] = useState(0)
   const dark = scheme === 'dark'
 
   const resolvedSlides: ImageLightboxSlide[] =
@@ -155,6 +158,7 @@ export function ImageLightbox({
                 maxScale={8}
                 captureGestures
                 trackpadGestures
+                zoomStep={zoomStep}
                 className="flex-1 overflow-hidden"
               >
                 <div className="flex min-h-[min(72dvh,calc(100svh-11rem))] w-full items-center justify-center sm:min-h-[min(78vh,calc(100vh-11rem))]">
@@ -190,6 +194,19 @@ export function ImageLightbox({
               />
             </PinchZoomViewport>
           )
+        ) : null}
+
+        {dark && zoomable && zoomControls && currentSlide ? (
+          <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2 rounded-xl bg-black/70 p-1.5 text-white">
+            <button type="button" onClick={() => setZoomStep(n => -(Math.abs(n) + 1))}
+              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-white/20" aria-label="Alejar imagen" title="Alejar">
+              <Minus size={19} />
+            </button>
+            <button type="button" onClick={() => setZoomStep(n => Math.abs(n) + 1)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-white/20" aria-label="Ampliar imagen" title="Ampliar">
+              <Plus size={19} />
+            </button>
+          </div>
         ) : null}
 
         {canNext ? (
