@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format, isSameMonth, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CloudSun, Pencil } from 'lucide-react';
@@ -92,40 +92,19 @@ function HistorySalesBreakdown({ report, loading, failed }: {
         .map(row => ({ hour: Number(row.hour), count: Number(row.count) || 0, total: Number(row.total) || 0 }))
         .sort((a, b) => a.hour - b.hour), [report]);
     const topHours = useMemo(() => [...hours].filter(h => h.total > 0).sort((a, b) => b.total - a.total), [hours]);
-    const productListRef = useRef<HTMLDivElement>(null);
-    const [visibleProducts, setVisibleProducts] = useState(1);
-
-    useEffect(() => {
-        const list = productListRef.current;
-        const card = list?.closest<HTMLElement>('.history-desktop-summary');
-        if (!list || !card || !report) return;
-
-        const measure = () => {
-            const firstRow = list.firstElementChild as HTMLElement | null;
-            const rowHeight = firstRow?.getBoundingClientRect().height || 14;
-            const gap = 4; // space-y-1 = 4px
-            const remaining = Math.max(0, card.getBoundingClientRect().bottom - list.getBoundingClientRect().top - 10);
-            const fit = Math.max(0, Math.floor((remaining + gap) / (rowHeight + gap)));
-            setVisibleProducts(prev => prev === fit ? prev : fit);
-        };
-        measure();
-        const observer = new ResizeObserver(measure);
-        observer.observe(card);
-        return () => observer.disconnect();
-    }, [report]);
     if (loading) return <p className="py-4 text-center text-[10px] text-white/50">Cargando ventas…</p>;
     if (failed) return <p className="py-4 text-center text-[10px] text-rose-200">No se ha podido cargar el desglose.</p>;
     if (!report) return null;
     return (
-        <div className="grid grid-cols-2 gap-6 pt-2">
+        <div className="grid min-h-0 grid-cols-2 gap-6 pt-2">
             <div className="min-w-0">
-                <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Productos más vendidos</h3>
+                <h3 className="mb-2 text-xs font-bold uppercase text-white/85">Productos más vendidos</h3>
                 {report.products.length ? (
-                    <div ref={productListRef} className="space-y-1">
-                        {report.products.slice(0, visibleProducts).map((item, index) => (
-                            <div key={`${item.nombre_articulo}-${index}`} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2 text-[9px]">
+                    <div className="custom-scrollbar max-h-[clamp(110px,18vh,210px)] space-y-1.5 overflow-y-auto overscroll-contain pr-1">
+                        {report.products.map((item, index) => (
+                            <div key={`${item.nombre_articulo}-${index}`} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-baseline gap-2 text-[11px]">
                                 <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
-                                <span className="shrink-0 text-[8px] tabular-nums text-white/50">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
+                                <span className="shrink-0 text-[10px] tabular-nums text-white/60">{Number(item.cantidad_total).toLocaleString('es-ES')} uds.</span>
                                 <strong className="shrink-0 tabular-nums">{currency(item.total_ingresos)}</strong>
                             </div>
                         ))}
@@ -133,15 +112,15 @@ function HistorySalesBreakdown({ report, loading, failed }: {
                 ) : <p className="text-[9px] text-white/40">Sin productos</p>}
             </div>
             <div className="min-w-0">
-                <h3 className="mb-1 text-[10px] font-bold uppercase text-white/75">Ventas por hora</h3>
-                {topHours.length ? topHours.map(row => (
-                    <div key={row.hour} className="grid min-w-0 grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-x-1 whitespace-nowrap py-0.5 text-[8px]">
+                <h3 className="mb-2 text-xs font-bold uppercase text-white/85">Ventas por hora</h3>
+                {topHours.length ? <div className="custom-scrollbar max-h-[clamp(110px,18vh,210px)] overflow-y-auto overscroll-contain pr-1">{topHours.map(row => (
+                    <div key={row.hour} className="grid min-w-0 grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-x-1 whitespace-nowrap py-1 text-[10px]">
                         <span className="min-w-0 font-mono font-bold">{`${String(row.hour).padStart(2, '0')}:00–${String((row.hour + 1) % 24).padStart(2, '0')}:00`}</span>
                         <span className="tabular-nums text-white/60">{row.count} t.</span>
                         <span className="tabular-nums text-white/55">M {currency(row.count > 0 ? row.total / row.count : 0)}</span>
                         <strong className="text-right tabular-nums">{currency(row.total)}</strong>
                     </div>
-                )) : <p className="text-[9px] text-white/40">Sin ventas positivas</p>}
+                ))}</div> : <p className="text-[10px] text-white/40">Sin ventas positivas</p>}
             </div>
         </div>
     );
