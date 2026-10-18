@@ -7226,3 +7226,18 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
 }
 /* La visibilidad de ticket medio y número de tickets se calcula según
    el ancho real de los textos, no con umbrales fijos. */
+
+/* Historial desktop: superficies del mosaico de /dashboard.
+   Detalle diario = fondo de Último cierre; resúmenes = sábado/domingo de Horarios. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'] .history-desktop-day {
+    background: var(--color-envolvente-bajo);
+    border: 1px solid var(--chrome-glass-fill);
+    box-shadow: var(--chrome-glass-shadow);
+  }
+  [data-component='HistoryDesktopWorkspace'] .history-desktop-summary {
+    background: rgb(255 255 255 / 0.1);
+    border: 1px solid var(--chrome-glass-fill);
+    box-shadow: var(--chrome-glass-shadow);
+  }
+}
