@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, isSameMonth, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CloudSun, Pencil } from 'lucide-react';
@@ -88,6 +88,26 @@ function useTicketPeriodReport(startDate: string | null, endDate: string | null)
 function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: {
     report: TicketPeriodReport | null; loading: boolean; failed: boolean; fillHeight?: boolean;
 }) {
+    const productsListRef = useRef<HTMLDivElement>(null);
+    const hoursListRef = useRef<HTMLDivElement>(null);
+    const [fittedHeight, setFittedHeight] = useState<number | null>(null);
+    useEffect(() => {
+        if (!fillHeight || !report) return;
+        const products = productsListRef.current;
+        const hourList = hoursListRef.current;
+        if (!products || !hourList) return;
+        const measure = () => {
+            // Each row is exactly 24px: keep only whole rows visible.
+            const available = Math.min(products.parentElement?.clientHeight ?? 0, hourList.parentElement?.clientHeight ?? 0) - 24;
+            const next = Math.max(0, Math.floor(available / 24) * 24);
+            setFittedHeight(previous => previous === next ? previous : next);
+        };
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(products.parentElement!);
+        observer.observe(hourList.parentElement!);
+        return () => observer.disconnect();
+    }, [fillHeight, report]);
     const hours = useMemo(() => [...(report?.hours ?? [])]
         .map(row => ({ hour: Number(row.hour), count: Number(row.count) || 0, total: Number(row.total) || 0 }))
         .sort((a, b) => a.hour - b.hour), [report]);
@@ -107,7 +127,7 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
                     <h3 className="text-xs font-bold uppercase text-white/85">Productos</h3>
                 </div>
                 {report.products.length ? (
-                    <div className={cn("history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5", fillHeight && "!h-auto min-h-0 flex-1")}>
+                    <div ref={productsListRef} style={fillHeight && fittedHeight !== null ? { height: fittedHeight } : undefined} className={cn("history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5", fillHeight && "!h-auto min-h-0")}>
                         {report.products.map((item, index) => (
                             <div key={`${item.nombre_articulo}-${index}`} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[11px]">
                                 <span className="min-w-0 truncate text-white/80" title={item.nombre_articulo}>{index + 1}. {item.nombre_articulo}</span>
@@ -125,7 +145,7 @@ function HistorySalesBreakdown({ report, loading, failed, fillHeight = false }: 
                         <path d={timeline} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" />
                     </svg>
                 </div>
-                {topHours.length ? <div className={cn("history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5", fillHeight && "!h-auto min-h-0 flex-1")}>{topHours.map(row => (
+                {topHours.length ? <div ref={hoursListRef} style={fillHeight && fittedHeight !== null ? { height: fittedHeight } : undefined} className={cn("history-sales-list custom-scrollbar h-[192px] snap-y snap-mandatory overflow-y-auto overscroll-contain pr-0.5", fillHeight && "!h-auto min-h-0")}>{topHours.map(row => (
                     <div key={row.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 whitespace-nowrap text-[11px]">
                         <span className="min-w-0 font-semibold">{`${row.hour}-${(row.hour + 1) % 24}`}</span>
                         <span className="text-[10px] tabular-nums text-white/60">{row.count} tick</span>
