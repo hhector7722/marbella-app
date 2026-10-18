@@ -116,7 +116,7 @@ function HistorySalesBreakdown({ report, loading, failed }: {
                 {topHours.length ? topHours.map(row => (
                     <div key={row.hour} className="border-b border-white/5 pb-1 text-[9px] last:border-0">
                         <div className="flex items-baseline justify-between gap-1">
-                            <span className="font-mono font-bold">{String(row.hour).padStart(2, '0')}:00</span>
+                            <span className="font-mono font-bold">{`${String(row.hour).padStart(2, '0')}:00–${String((row.hour + 1) % 24).padStart(2, '0')}:00`}</span>
                             <strong className="tabular-nums">{currency(row.total)}</strong>
                         </div>
                         <div className="flex flex-wrap justify-between gap-x-1 text-[8px] text-white/50">
