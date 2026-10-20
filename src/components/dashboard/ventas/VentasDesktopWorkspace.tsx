@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
@@ -282,7 +282,7 @@ export default function VentasDesktopWorkspace() {
                     for (const doc of ids) {
                         const result = await supabase.rpc('get_ticket_lines', { p_numero_documento: doc });
                         if (!active) return;
-                        grouped[doc] = (result.data ?? []).map(l => ({
+                        grouped[doc] = (result.data ?? []).map((l: { articulo_nombre: string | null; cantidad: number | null; precio_unidad: number | null; importe_total: number | null }) => ({
                             name: String(l.articulo_nombre ?? 'Producto'), qty: Number(l.cantidad ?? 1),
                             price: Number(l.precio_unidad ?? 0), total: Number(l.importe_total ?? 0)
                         }));
