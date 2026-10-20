@@ -13,6 +13,7 @@ export function CatalogSquare({
   valueLabel,
   priceLocked = false,
   priceClassName,
+  cornerBadge,
   className,
 }: {
   imageSrc?: string | null;
@@ -22,6 +23,7 @@ export function CatalogSquare({
   valueLabel?: string;
   priceLocked?: boolean;
   priceClassName?: string;
+  cornerBadge?: ReactNode;
   className?: string;
 }) {
   const hasPrice = price != null && Number.isFinite(price);
@@ -51,6 +53,10 @@ export function CatalogSquare({
           <span className="text-gray-200">{fallback}</span>
         ) : null}
       </div>
+
+      {cornerBadge ? (
+        <span data-element="corner-badge" className="pointer-events-none absolute right-2 top-1.5 z-[2] text-[11px] font-semibold leading-none text-blue-500/80" aria-hidden="true">{cornerBadge}</span>
+      ) : null}
 
       {hasPrice || valueLabel ? (
         <div
@@ -86,6 +92,7 @@ export function CatalogTileUnificado({
   valueLabel,
   priceLocked = false,
   priceClassName,
+  cornerBadge,
   nameTone = 'default',
   selected = false,
   onClick,
@@ -99,6 +106,7 @@ export function CatalogTileUnificado({
   valueLabel?: string;
   priceLocked?: boolean;
   priceClassName?: string;
+  cornerBadge?: ReactNode;
   nameTone?: CatalogNameTone;
   selected?: boolean;
   onClick: () => void;
@@ -120,6 +128,7 @@ export function CatalogTileUnificado({
           valueLabel={valueLabel}
           priceLocked={priceLocked}
           priceClassName={priceClassName}
+          cornerBadge={cornerBadge}
           className={selected ? 'ring-2 ring-ds-marca' : undefined}
         />
 
