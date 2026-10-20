@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ChartLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import VentasDesktopWorkspace from '@/components/dashboard/ventas/VentasDesktopWorkspace';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, addDays, subDays, subMonths, isSameMonth, addMonths } from 'date-fns';
@@ -457,6 +458,8 @@ export default function VentasPage() {
 
     return (
         <>
+        <VentasDesktopWorkspace />
+        <div className="lg:hidden">
         <DashboardDetailLayout
             title="Ventas"
             showBackButton={false}
@@ -877,6 +880,7 @@ export default function VentasPage() {
                     </div>
 
         </DashboardDetailLayout>
+        </div>
 
             <TimeFilterModal
                 isOpen={isTimeFilterOpen}
