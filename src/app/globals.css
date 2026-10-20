@@ -7241,3 +7241,19 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     box-shadow: var(--chrome-glass-shadow);
   }
 }
+
+
+/* Ventas escritorio: recibos en una sola línea con muescas de papel.
+   La muesca pertenece al fondo del ticket: no dibuja iconos de productos. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'] .ventas-ticket-strip {
+    -webkit-mask-image:
+      radial-gradient(circle at left center, transparent 6.5px, #000 7px),
+      radial-gradient(circle at right center, transparent 6.5px, #000 7px);
+    mask-image:
+      radial-gradient(circle at left center, transparent 6.5px, #000 7px),
+      radial-gradient(circle at right center, transparent 6.5px, #000 7px);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+}
