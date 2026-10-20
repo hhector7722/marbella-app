@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
@@ -22,10 +22,11 @@ type CloseRow = {
     sales_pending: number | null; debt_recovered: number | null; difference: number | null;
 };
 const euro = (v: unknown) => (Number(v ?? 0)).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-const compactDoc = (id: string) => id.replace(/^(B)0+(?=\d)/i, '$1');
+const compactDoc = (id: string) => id.replace(/(B)0+(?=[1-9])/i, '$1');
+const EMPTY_ITEMS: Item[] = [];
 const PAGE_SIZE = 150;
 
-function TicketProductPreview({ items }: { items: Item[] }) {
+function TicketProductPreview({ items, onOverflowChange }: { items: Item[]; onOverflowChange: (hidden: boolean) => void }) {
     const areaRef = useRef<HTMLDivElement>(null);
     const measureRef = useRef<HTMLDivElement>(null);
     const [visible, setVisible] = useState(0);
@@ -43,14 +44,15 @@ function TicketProductPreview({ items }: { items: Item[] }) {
                 fit++;
             }
             setVisible(fit);
+            onOverflowChange(fit < items.length);
         };
         measure();
         const observer = new ResizeObserver(measure);
         observer.observe(area);
         return () => observer.disconnect();
-    }, [items]);
+    }, [items, onOverflowChange]);
     const piece = (item: Item, i: number) => (
-        <span key={i} className="inline-flex shrink-0 items-center gap-1 border-l border-[#172c61]/35 px-2.5 text-[11px] text-[#1a2854]">
+        <span key={i} className="inline-flex shrink-0 items-center gap-1 border-l border-[#172c61]/35 px-2.5 text-[10px] text-[#1a2854]">
             {item.qty !== 1 && <strong className="font-bold tabular-nums">{item.qty}</strong>}
             <span>{item.name}</span>
         </span>
@@ -66,6 +68,7 @@ function TicketProductPreview({ items }: { items: Item[] }) {
 function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     ticket: Ticket; items: Item[]; expanded: boolean; onToggle: () => void; loadingItems: boolean;
 }) {
+    const [hasHiddenProducts, setHasHiddenProducts] = useState(false);
     return (
         <div className="min-w-0">
             <button type="button" aria-expanded={expanded} onClick={onToggle}
@@ -73,12 +76,14 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
                 <strong className="w-[38px] shrink-0 text-[12px] font-extrabold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
                 <span className="shrink-0 border-l border-[#182d5f]/20 pl-2 text-[9px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
                 {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="shrink-0 rounded-md bg-[#e1eaff] px-2 py-0.5 text-[11px] font-bold tabular-nums">{ticket.mesa}</span>}
-                <TicketProductPreview items={items}/>
+                <TicketProductPreview items={items} onOverflowChange={setHasHiddenProducts}/>
+                {hasHiddenProducts && (expanded
+                    ? <ChevronUp size={13} className="shrink-0 text-[#8992a8]" aria-label="Ocultar productos" />
+                    : <ChevronDown size={13} className="shrink-0 text-[#8992a8]" aria-label="Mostrar más productos" />)}
                 <strong className="ml-auto shrink-0 text-[13px] font-extrabold tabular-nums text-emerald-500">{euro(ticket.total_documento)}</strong>
-                {expanded ? <ChevronUp size={16} className="shrink-0 text-[#6e7ba4]"/> : <ChevronRight size={16} className="shrink-0 text-[#6e7ba4]"/>}
             </button>
             {expanded && (
-                <div className="mx-3 rounded-b-lg border border-t-0 border-white/20 bg-white/10 px-3 py-2 text-[11px] text-white/90">
+                <div className="mx-3 rounded-b-lg border border-t-0 border-white/20 bg-white/10 px-3 py-2 text-[10px] text-white/90">
                     {loadingItems ? 'Cargando productos…' : items.length ? (
                         <div className="flex flex-wrap gap-x-4 gap-y-2">
                             {items.map((item, idx) => (
@@ -368,7 +373,7 @@ export default function VentasDesktopWorkspace() {
                         </div>
                         <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-2 pb-3 pt-2 custom-scrollbar">
                             {tickets.map((ticket, i) => (
-                                <SalesTicket key={ticket.numero_documento || i} ticket={ticket} items={linesByTicket[ticket.numero_documento] ?? []}
+                                <SalesTicket key={ticket.numero_documento || i} ticket={ticket} items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
                                     expanded={expandedTicket === ticket.numero_documento}
                                     onToggle={() => setExpandedTicket(current => current === ticket.numero_documento ? null : ticket.numero_documento)}
                                     loadingItems={linesLoading && !Object.prototype.hasOwnProperty.call(linesByTicket, ticket.numero_documento)}/>
