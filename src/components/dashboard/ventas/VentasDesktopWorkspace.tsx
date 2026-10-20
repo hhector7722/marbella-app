@@ -177,7 +177,8 @@ export default function VentasDesktopWorkspace() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [linesByTicket, setLinesByTicket] = useState<Record<string, Item[]>>({});
     const [linesLoading, setLinesLoading] = useState(false);
-    const [dayLoading, setDayLoading] = useState(false);
+    const [dayLoading, setDayLoading] = useState(true);
+    const [loadedDate, setLoadedDate] = useState<string | null>(null);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
@@ -200,6 +201,7 @@ export default function VentasDesktopWorkspace() {
         setSelectedDate(date);
         setMonth(startOfMonth(parseISO(date)));
         setTickets([]);
+        setLoadedDate(null);
         setLinesByTicket({});
         setExpandedTicket(null);
         setHasMore(true);
@@ -261,6 +263,7 @@ export default function VentasDesktopWorkspace() {
             }
             const batch = (data ?? []) as Ticket[];
             setTickets(prev => page === 0 ? batch : [...prev, ...batch]);
+            if (page === 0) setLoadedDate(selectedDate);
             setHasMore(batch.length === PAGE_SIZE);
             setDayLoading(false);
         };
@@ -324,13 +327,14 @@ export default function VentasDesktopWorkspace() {
 
     useEffect(() => {
         const node = loadSentinel.current;
-        if (!node || !hasMore || dayLoading) return;
+        // Never request page two before page one has actually been loaded for this date.
+        if (!node || loadedDate !== selectedDate || !hasMore || dayLoading) return;
         const observer = new IntersectionObserver(entries => {
             if (entries[0]?.isIntersecting) setPage(current => current + PAGE_SIZE);
         }, { rootMargin: '120px' });
         observer.observe(node);
         return () => observer.disconnect();
-    }, [hasMore, dayLoading, tickets.length]);
+    }, [hasMore, dayLoading, tickets.length, loadedDate, selectedDate]);
 
     const monthTotals = useMemo(() => monthClosings.reduce((a, c) => ({
         cash: a.cash + Number(c.cash_counted ?? 0), card: a.card + Number(c.sales_card ?? 0),
