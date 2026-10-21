@@ -26,6 +26,19 @@ const compactDoc = (id: string) => id.replace(/(B)0+(?=[1-9])/i, '$1');
 const EMPTY_ITEMS: Item[] = [];
 const PAGE_SIZE = 150;
 
+function HourlySalesCurve({ hours, fullWidth = false }: { hours?: TicketReport['hours']; fullWidth?: boolean }) {
+    // Same 7–22h curve and 120×20 coordinate system as /dashboard/history.
+    const data = Array.from({ length: 16 }, (_, i) => Number(hours?.find(h => Number(h.hour) === i + 7)?.total ?? 0));
+    const peak = Math.max(1, ...data);
+    const path = data.map((total, i) => `${i === 0 ? 'M' : 'L'} ${(i / (data.length - 1)) * 120},${16 - total / peak * 13}`).join(' ');
+    return (
+        <svg aria-label="Evolución de ventas por hora" role="img" viewBox="0 0 120 20" preserveAspectRatio="none"
+            className={fullWidth ? 'block h-7 w-full text-white' : 'h-3 min-w-0 flex-1 text-white'}>
+            <path d={path} fill="none" stroke="currentColor" strokeWidth={fullWidth ? '1' : '1.5'} strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" />
+        </svg>
+    );
+}
+
 function TicketProductPreview({ items, onOverflowChange }: { items: Item[]; onOverflowChange: (hidden: boolean) => void }) {
     const areaRef = useRef<HTMLDivElement>(null);
     const measureRef = useRef<HTMLDivElement>(null);
@@ -69,20 +82,26 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     ticket: Ticket; items: Item[]; expanded: boolean; onToggle: () => void; loadingItems: boolean;
 }) {
     const [hasHiddenProducts, setHasHiddenProducts] = useState(false);
+    const canExpand = hasHiddenProducts && !loadingItems;
+    useEffect(() => {
+        if (expanded && !loadingItems && !hasHiddenProducts) onToggle();
+    // Collapse if a resize makes all products visible in the single-line preview.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [expanded, hasHiddenProducts, loadingItems]);
     return (
         <div className="min-w-0">
-            <button type="button" aria-expanded={expanded} onClick={onToggle}
-                className="ventas-ticket-strip flex h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden bg-[rgb(255_255_255/0.97)] px-3 text-left text-[#1a2854] transition-colors hover:bg-white">
+            <button type="button" aria-expanded={canExpand && expanded} disabled={!canExpand} onClick={canExpand ? onToggle : undefined}
+                className={cn("ventas-ticket-strip flex h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden bg-[rgb(255_255_255/0.97)] px-3 text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
                 <strong className="w-[38px] shrink-0 text-[12px] font-extrabold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
                 <span className="shrink-0 border-l border-[#182d5f]/20 pl-2 text-[9px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
                 {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="shrink-0 rounded-md bg-[#e1eaff] px-2 py-0.5 text-[11px] font-bold tabular-nums">{ticket.mesa}</span>}
                 <TicketProductPreview items={items} onOverflowChange={setHasHiddenProducts}/>
-                {hasHiddenProducts && (expanded
+                {canExpand && (expanded
                     ? <ChevronUp size={13} className="shrink-0 text-[#8992a8]" aria-label="Ocultar productos" />
                     : <ChevronDown size={13} className="shrink-0 text-[#8992a8]" aria-label="Mostrar más productos" />)}
                 <strong className="ml-auto shrink-0 text-[13px] font-extrabold tabular-nums text-emerald-500">{euro(ticket.total_documento)}</strong>
             </button>
-            {expanded && (
+            {canExpand && expanded && (
                 <div className="mx-3 rounded-b-lg border border-t-0 border-white/20 bg-white/10 px-3 py-2 text-[10px] text-white/90">
                     {loadingItems ? 'Cargando productos…' : items.length ? (
                         <div className="flex flex-wrap gap-x-4 gap-y-2">
@@ -118,7 +137,10 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
                 </div>
             </section>
             <section className="flex min-h-0 min-w-0 flex-col">
-                <h3 className="mb-2 shrink-0 text-xs font-bold uppercase">Horas</h3>
+                <div className="mb-2 flex h-4 min-w-0 shrink-0 items-center gap-2">
+                    <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
+                    <HourlySalesCurve hours={report?.hours} />
+                </div>
                 <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
                     {hours.map(h => (
                         <div key={h.hour} className="flex h-6 items-center justify-between gap-1 text-[10px]">
@@ -374,6 +396,13 @@ export default function VentasDesktopWorkspace() {
                                     <span className="text-[9px] uppercase text-white/65">{label}</span>
                                 </div>
                             ))}
+                        </div>
+                        <div className="shrink-0 border-b border-white/10 px-3 pb-2 pt-2">
+                            <HourlySalesCurve hours={dailyReport?.hours} fullWidth />
+                            <div className="mt-0.5 flex justify-between text-[9px] font-mono text-white/65" aria-hidden="true">
+                                <span>7 h</span>
+                                <span>22 h</span>
+                            </div>
                         </div>
                         <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-2 pb-3 pt-2 custom-scrollbar">
                             {tickets.map((ticket, i) => (
