@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-15
+revisado: 2026-10-21
 caducidad: 6 meses
 supersede: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
 ---
@@ -187,6 +187,15 @@ solo por avisos documentales se versionan para permitir su confirmación humana,
 sin registrar stock ni precio durante esa preparación.
 Una identidad encontrada solo por parecido de nombre sigue pidiendo elección
 humana; la similitud por sí sola no crea un alias confirmable.
+
+Al reprocesar un albarán histórico con líneas manuales anteriores a Mistral,
+solo se sustituyen en la vista operativa si **todas** se corresponden de forma
+inequívoca, una a una, con filas del original por nombre y cantidad, y ninguna
+tiene movimiento de stock ni histórico de precio asociado. Se conservan las
+líneas antiguas y el vínculo de conciliación como evidencia. Una diferencia,
+un duplicado o cualquier efecto económico previo mantiene el bloqueo para
+revisión. Esta conciliación crea propuestas, nunca recepciones automáticas:
+un gerente o administrador debe revisarlas antes de K4.
 
 ---
 
