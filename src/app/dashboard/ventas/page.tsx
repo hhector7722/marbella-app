@@ -670,9 +670,9 @@ export default function VentasPage() {
                                             </thead>
                                             <tbody className="font-bold text-zinc-600 bg-white">
                                                 {tickets.map((ticket, idx) => {
-                                                    // Limpiamos los "0" al principio de "2TB0000X"
+                                                    // Mostrar el documento sin ceros de relleno iniciales ni después de B.
                                                     const cleanDocNumber = ticket.numero_documento
-                                                        ? ticket.numero_documento.replace(/0+/, '')
+                                                        ? ticket.numero_documento.replace(/^0+/, '').replace(/(B)0+(?=\d)/i, '$1')
                                                         : '';
 
                                                     return (
