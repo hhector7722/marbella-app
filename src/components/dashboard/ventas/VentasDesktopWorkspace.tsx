@@ -22,7 +22,7 @@ type CloseRow = {
     sales_pending: number | null; debt_recovered: number | null; difference: number | null;
 };
 const euro = (v: unknown) => (Number(v ?? 0)).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-const compactDoc = (id: string) => id.replace(/(B)0+(?=[1-9])/i, '$1');
+const compactDoc = (id: string) => id.replace(/^0+/, '').replace(/(B)0+(?=\d)/i, '$1');
 const EMPTY_ITEMS: Item[] = [];
 const PAGE_SIZE = 150;
 
