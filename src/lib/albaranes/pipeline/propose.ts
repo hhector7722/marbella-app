@@ -6,6 +6,7 @@ import { buildSupplierMemory, type IngredientUnitRow, type LegacyMappingRow,
   type ObservedCodeRow, type VersionRow } from './memory.ts'
 import { proposalMappingPair } from './proposal-pair.ts'
 import { selectReplayProposals } from './proposal-replay.ts'
+import { matchLegacyLinesToMistral, type LegacyMatchResult } from './legacy-line-match.ts'
 
 // El acceso a datos del proyecto aún no tiene tipos generados.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,7 +28,8 @@ export async function proposeMistralExtraction(params: {
   sourceHash: string
   canonical: CanonicalDocument
   correlationId: string | null
-}): Promise<{ created: number; materialized: number; ready: number; exceptions: number; skipped?: string }> {
+}): Promise<{ created: number; materialized: number; ready: number; exceptions: number;
+  skipped?: string; requiresHumanReview?: boolean }> {
   const { db } = params
   const { data: invoice, error: invoiceError } = await db.from('purchase_invoices')
     .select('id,supplier_id,created_by,status,duplicate_of_invoice_id').eq('id', params.invoiceId).maybeSingle()
@@ -43,24 +45,61 @@ export async function proposeMistralExtraction(params: {
   if (confirmed?.length) return { created: 0, materialized: 0, ready: 0, exceptions: 0, skipped: 'already_received' }
 
   const { data: invoiceLines, error: invoiceLinesError } = await db.from('purchase_invoice_lines')
-    .select('id,interpretation_proposal_id,superseded_by_extraction_id').eq('invoice_id', params.invoiceId)
+    .select('id,original_name,quantity,interpretation_proposal_id,superseded_by_extraction_id').eq('invoice_id', params.invoiceId)
   if (invoiceLinesError) throw new Error('mistral_existing_lines_unavailable')
   let oldLineIds: string[] = []
+  let legacyMatchByRow = new Map<number, LegacyMatchResult>()
+  let hasLegacyReconciliationHistory = false
   if (invoiceLines?.length) {
     const { data: ownProposals, error: ownError } = await db.from('purchase_interpretation_proposals')
-      .select('id').eq('purchase_invoice_id', params.invoiceId)
+      .select('id,provenance').eq('purchase_invoice_id', params.invoiceId)
       .like('normalizer_version', 'mistral-pipeline-%')
     if (ownError) throw new Error('mistral_existing_proposals_unavailable')
+    hasLegacyReconciliationHistory = (ownProposals ?? []).some((row) => {
+      const provenance = row.provenance as Record<string, unknown> | null
+      return provenance?.legacy_line_match != null
+    })
     const ownIds = new Set((ownProposals ?? []).map((row) => row.id))
-    if (invoiceLines.some((line) => !line.interpretation_proposal_id
-      && !line.superseded_by_extraction_id)) {
-      return { created: 0, materialized: 0, ready: 0, exceptions: 0,
-        skipped: 'manual_lines_require_review' }
+    const active = invoiceLines.filter((line) => !line.superseded_by_extraction_id)
+    const manual = active.filter((line) => !line.interpretation_proposal_id)
+    if (manual.length) {
+      // A historical line may be retired only when every line maps to one
+      // observed row and no line has caused any economic effect. This step
+      // creates proposals only; K4 remains the sole receipt writer.
+      if (invoice.status !== 'pending_mapping' || manual.length !== active.length
+          || manual.length !== params.canonical.lines.length) {
+        return { created: 0, materialized: 0, ready: 0, exceptions: 0,
+          skipped: 'manual_lines_require_review' }
+      }
+      const matches = matchLegacyLinesToMistral({
+        legacyLines: manual.map((line) => ({ id: line.id,
+          originalName: line.original_name ?? '', quantity: line.quantity == null ? null : Number(line.quantity) })),
+        mistralRows: params.canonical.lines.map((row, rowIndex) => ({ rowIndex,
+          descriptionRaw: row.description_raw, quantityRaw: row.quantity_raw,
+          supplierProductCodeRaw: row.supplier_product_code_raw })),
+      })
+      if (matches.some((match) => match.reason !== 'matched')) {
+        return { created: 0, materialized: 0, ready: 0, exceptions: 0,
+          skipped: 'manual_lines_require_review' }
+      }
+      legacyMatchByRow = new Map(matches.map((match) => [match.mistralRowIndex!, match]))
     }
     // Las líneas antiguas siguen siendo evidencia histórica. Se retiran de la
     // vista operativa solo después de materializar todas las líneas Mistral.
     oldLineIds = invoiceLines.filter((line) => !line.superseded_by_extraction_id
       && !ownIds.has(line.interpretation_proposal_id)).map((line) => line.id)
+    if (oldLineIds.length) {
+      const [legacyStock, typedStock, priceHistory] = await Promise.all([
+        db.from('stock_movements').select('id').in('reference_doc', oldLineIds.map((id) => `ALB-LINE-${id}`)).limit(1),
+        db.from('stock_movements').select('id').in('reference_id', oldLineIds).limit(1),
+        db.from('ingredient_price_history').select('id').eq('purchase_invoice_id', params.invoiceId).limit(1),
+      ])
+      if (legacyStock.error || typedStock.error || priceHistory.error) throw new Error('mistral_legacy_effects_unavailable')
+      if (legacyStock.data?.length || typedStock.data?.length || priceHistory.data?.length) {
+        return { created: 0, materialized: 0, ready: 0, exceptions: 0,
+          skipped: 'manual_lines_require_review' }
+      }
+    }
   }
 
   const supplierId = Number(invoice.supplier_id)
@@ -223,7 +262,8 @@ export async function proposeMistralExtraction(params: {
         created_by: invoice.created_by,
         provenance: { schema_version: MISTRAL_PIPELINE_VERSION, source: 'mistral_canonical',
           trigger: 'mistral_job_completion', correlation_id: params.correlationId,
-          economic_effects: false },
+          economic_effects: false,
+          legacy_line_match: legacyMatchByRow.get(rowIndex) ?? null },
       }
       const { data: inserted, error: insertError } = await db.from('purchase_interpretation_proposals')
         .insert(payload).select('id').single()
@@ -266,5 +306,6 @@ export async function proposeMistralExtraction(params: {
     if (retireError) throw new Error('mistral_prior_lines_retire_failed')
   }
   return { created, materialized, ready: assessment.readyCount,
-    exceptions: assessment.lines.length - assessment.readyCount }
+    exceptions: assessment.lines.length - assessment.readyCount,
+    requiresHumanReview: legacyMatchByRow.size > 0 || hasLegacyReconciliationHistory }
 }
