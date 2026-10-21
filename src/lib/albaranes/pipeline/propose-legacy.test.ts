@@ -32,7 +32,7 @@ const canonical: CanonicalDocument = {
 
 type QueryResult = { data: unknown; error: null }
 
-function blockedDatabase(effect: 'legacy_stock' | 'typed_stock' | 'price_history' | 'none',
+function blockedDatabase(effect: 'legacy_stock' | 'typed_stock' | 'source_stock' | 'price_history' | 'none',
   lines = legacyLines) {
   const reads: string[] = []
   const writes: string[] = []
@@ -53,8 +53,12 @@ function blockedDatabase(effect: 'legacy_stock' | 'typed_stock' | 'price_history
       if (table === 'purchase_invoices') return { data: { id: invoiceId, supplier_id: 2,
         created_by: 'manager', status: 'pending_mapping', duplicate_of_invoice_id: null }, error: null }
       if (table === 'purchase_invoice_lines') return { data: lines, error: null }
+      if (table === 'document_extractions') return { data: effect === 'source_stock'
+        ? [{ id: 'old-extraction' }] : [], error: null }
       if (table === 'stock_movements') return { data: effect === 'legacy_stock' && inColumn === 'reference_doc'
-        || effect === 'typed_stock' && inColumn === 'reference_id' ? [{ id: 'existing-stock' }] : [], error: null }
+        || effect === 'typed_stock' && inColumn === 'reference_id'
+        || effect === 'source_stock' && inColumn === 'source_document_extraction_id'
+        ? [{ id: 'existing-stock' }] : [], error: null }
       if (table === 'ingredient_price_history') return { data: effect === 'price_history'
         ? [{ id: 'existing-price' }] : [], error: null }
       return { data: [], error: null }
@@ -65,7 +69,7 @@ function blockedDatabase(effect: 'legacy_stock' | 'typed_stock' | 'price_history
 }
 
 describe('historical Mistral materialization guard', () => {
-  for (const effect of ['legacy_stock', 'typed_stock', 'price_history'] as const) {
+  for (const effect of ['legacy_stock', 'typed_stock', 'source_stock', 'price_history'] as const) {
     it(`keeps all old lines active when ${effect} already exists`, async () => {
       const { db, reads, writes } = blockedDatabase(effect)
       const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',

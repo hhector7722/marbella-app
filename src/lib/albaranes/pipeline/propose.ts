@@ -89,13 +89,23 @@ export async function proposeMistralExtraction(params: {
     oldLineIds = invoiceLines.filter((line) => !line.superseded_by_extraction_id
       && !ownIds.has(line.interpretation_proposal_id)).map((line) => line.id)
     if (oldLineIds.length) {
-      const [legacyStock, typedStock, priceHistory] = await Promise.all([
+      const { data: sourceExtractions, error: sourceError } = await db.from('document_extractions')
+        .select('id').eq('invoice_id', params.invoiceId)
+      if (sourceError) throw new Error('mistral_legacy_effects_unavailable')
+      const extractionIds = (sourceExtractions ?? []).map((row) => row.id)
+      const [legacyStock, typedStock, extractionStock, priceHistory] = await Promise.all([
         db.from('stock_movements').select('id').in('reference_doc', oldLineIds.map((id) => `ALB-LINE-${id}`)).limit(1),
         db.from('stock_movements').select('id').in('reference_id', oldLineIds).limit(1),
+        extractionIds.length
+          ? db.from('stock_movements').select('id').in('source_document_extraction_id', extractionIds).limit(1)
+          : Promise.resolve({ data: [], error: null }),
         db.from('ingredient_price_history').select('id').eq('purchase_invoice_id', params.invoiceId).limit(1),
       ])
-      if (legacyStock.error || typedStock.error || priceHistory.error) throw new Error('mistral_legacy_effects_unavailable')
-      if (legacyStock.data?.length || typedStock.data?.length || priceHistory.data?.length) {
+      if (legacyStock.error || typedStock.error || extractionStock.error || priceHistory.error) {
+        throw new Error('mistral_legacy_effects_unavailable')
+      }
+      if (legacyStock.data?.length || typedStock.data?.length
+          || extractionStock.data?.length || priceHistory.data?.length) {
         return { created: 0, materialized: 0, ready: 0, exceptions: 0,
           skipped: 'manual_lines_require_review' }
       }
