@@ -333,7 +333,7 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
                     })}
                 </RankingViewport>
             </section>
-            <section className="h-[182px] min-h-0 shrink-0 xl:h-[196px]">
+            <section className="h-[196px] min-h-0 shrink-0 xl:h-[208px]">
                 <HourlySalesTimeline hours={report?.hours} />
             </section>
         </div>
