@@ -1469,7 +1469,15 @@ export default function AlbaranesHistoricoClient({
                           </div>
                         </div>
                         <div className="shrink-0 flex items-center justify-center min-w-[1.25rem]">
-                          {st === 'processing' ? (
+                          {it.duplicate_of_invoice_id ? (
+                            <span
+                              className="inline-flex items-center rounded-md bg-zinc-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-700"
+                              aria-label="Duplicado"
+                              title="Esta captura repite un albarán anterior y no genera otra recepción"
+                            >
+                              Duplicado
+                            </span>
+                          ) : st === 'processing' ? (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-sky-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-800"
                               aria-label="Procesando"

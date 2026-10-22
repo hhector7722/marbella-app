@@ -196,6 +196,10 @@ líneas antiguas y el vínculo de conciliación como evidencia. Una diferencia,
 un duplicado o cualquier efecto económico previo mantiene el bloqueo para
 revisión. Esta conciliación crea propuestas, nunca recepciones automáticas:
 un gerente o administrador debe revisarlas antes de K4.
+Una captura identificada como copia del mismo albarán conserva su evidencia y
+se muestra como «Duplicado» en el histórico, sin presentarse como recepción
+pendiente ni generar otro movimiento de stock. El original sigue siendo la
+referencia para completar la compra.
 
 ---
 
