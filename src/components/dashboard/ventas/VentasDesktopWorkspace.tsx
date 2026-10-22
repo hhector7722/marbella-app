@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { addDays, addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
+import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ArrowLeft, CalendarRange, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
@@ -141,7 +141,7 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
     const products = report?.products ?? [];
     const hours = useMemo(() => [...(report?.hours ?? [])].filter(h => Number(h.total) > 0).sort((a, b) => Number(b.total) - Number(a.total)), [report]);
     return (
-        <div className="grid min-h-0 flex-1 grid-cols-2 gap-4 pt-3">
+        <div className="grid h-full min-h-0 flex-1 grid-cols-2 gap-4 pt-3">
             <section className="flex min-h-0 min-w-0 flex-col">
                 <h3 className="mb-2 shrink-0 text-xs font-bold uppercase">Productos</h3>
                 <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
@@ -262,6 +262,8 @@ export default function VentasDesktopWorkspace() {
         if (!keepReturn) setReturnPeriod(null);
         setMonth(startOfMonth(parseISO(next.start)));
         setTickets([]);
+        setPeriodClosings([]);
+        setDailyReport(null);
         setLoadedPeriod(null);
         setLinesByTicket({});
         setExpandedTicket(null);
@@ -431,8 +433,8 @@ export default function VentasDesktopWorkspace() {
         setPhotos({ dataphoneUrl: null, bdpUrl: null });
         if (!selectedClosing?.dataphone_totals_photo_path && !selectedClosing?.bdp_closing_ticket_photo_path) return;
         void getCashClosingPhotoUrlsAction({
-            dataphonePath: selectedClosing.dataphone_totals_photo_path,
-            bdpPath: selectedClosing.bdp_closing_ticket_photo_path
+            dataphonePath: selectedClosing.dataphone_totals_photo_path ?? null,
+            bdpPath: selectedClosing.bdp_closing_ticket_photo_path ?? null
         }).then(result => {
             if (alive && result.success) setPhotos({ dataphoneUrl: result.dataphoneUrl, bdpUrl: result.bdpUrl });
         }).catch(() => {});
