@@ -286,13 +286,13 @@ function SummaryCard({ title, dateText, report, extras }: {
     title: string; dateText: string; report: TicketReport | null;
     extras?: { cash: number; card: number; pending: number; recovered: number; net: number };
 }) {
-    const sales = Number(report?.summary.totalSales ?? 0);
-    const count = Number(report?.summary.count ?? 0);
+    const sales = report ? Number(report.summary.totalSales) : null;
+    const count = report ? Number(report.summary.count) : null;
     const values = [
-        ['Ventas', euro(sales)], ['Venta neta', extras ? euro(extras.net) : '—'],
-        ['Tickets', count.toLocaleString('es-ES')], ['Tarjeta', extras ? euro(extras.card) : '—'],
+        ['Ventas', sales !== null ? euro(sales) : '—'], ['Venta neta', extras ? euro(extras.net) : '—'],
+        ['Tickets', count !== null ? count.toLocaleString('es-ES') : '—'], ['Tarjeta', extras ? euro(extras.card) : '—'],
         ['Efectivo', extras ? euro(extras.cash) : '—'], ['Pendiente', extras ? euro(extras.pending) : '—'],
-        ['Cobros', extras ? euro(extras.recovered) : '—'], ['Ticket medio', euro(report?.summary.avgTicket)]
+        ['Cobros', extras ? euro(extras.recovered) : '—'], ['Ticket medio', report ? euro(report.summary.avgTicket) : '—']
     ];
     return (
         <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-4 pt-2 text-white">
@@ -689,7 +689,7 @@ export default function VentasDesktopWorkspace() {
             </div>
             <div className="history-desktop-board grid min-h-0 flex-1 items-start gap-4">
                 <div data-element="summary-stack" className="min-h-0 min-w-0">
-                    <SummaryCard title="Mensual" dateText={referenceLabel} report={monthReport} extras={monthTotals}/>
+                    <SummaryCard title="Mensual" dateText={referenceLabel} report={monthReport} extras={monthClosings.length ? monthTotals : undefined}/>
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
