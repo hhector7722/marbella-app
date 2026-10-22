@@ -210,6 +210,7 @@ export default function VentasDesktopWorkspace() {
     const supabase = useMemo(() => createClient(), []);
     const [month, setMonth] = useState(() => startOfMonth(new Date()));
     const [period, setPeriod] = useState<Period>(todayPeriod);
+    const [initializing, setInitializing] = useState(true);
     const [returnPeriod, setReturnPeriod] = useState<Period | null>(null);
     const [filterOpen, setFilterOpen] = useState(false);
     const [filterKind, setFilterKind] = useState<'day' | 'week' | 'month' | 'three' | 'custom'>('day');
@@ -229,6 +230,7 @@ export default function VentasDesktopWorkspace() {
     const [dayLoading, setDayLoading] = useState(true);
     const [loadedPeriod, setLoadedPeriod] = useState<string | null>(null);
     const [page, setPage] = useState(0);
+    const [visibleTicketCount, setVisibleTicketCount] = useState(7);
     const [hasMore, setHasMore] = useState(true);
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
     const [dayError, setDayError] = useState(false);
@@ -249,6 +251,7 @@ export default function VentasDesktopWorkspace() {
     const referenceLabel = format(referenceMonth, 'MMMM yyyy', { locale: es });
     const monthLabel = format(month, 'MMMM yyyy', { locale: es });
     const isSingleDay = period.start === period.end;
+    const visibleTickets = useMemo(() => isSingleDay ? tickets.slice(0, visibleTicketCount) : tickets, [tickets, visibleTicketCount, isSingleDay]);
     const calendarWeeks = useMemo(() => {
         const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
         const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
@@ -273,6 +276,7 @@ export default function VentasDesktopWorkspace() {
         setHasMore(true);
         setDayLoading(true);
         setPage(0);
+        setVisibleTicketCount(7);
     };
     const selectDate = (date: string) => {
         if (!returnPeriod && (period.start !== date || period.end !== date) && period.kind !== 'day')
@@ -305,6 +309,25 @@ export default function VentasDesktopWorkspace() {
         changePeriod(next);
         setFilterOpen(false);
     };
+    // Open at the most recent closed day, not at today's still-open trading day.
+    useEffect(() => {
+        let active = true;
+        void supabase.from('cash_closings')
+            .select('closing_date')
+            .order('closing_date', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+            .then(({ data }) => {
+                if (!active) return;
+                const lastDate = data?.closing_date ?? format(new Date(), 'yyyy-MM-dd');
+                changePeriod({ start: lastDate, end: lastDate, kind: 'day' });
+                setInitializing(false);
+            })
+            .catch(() => {
+                if (active) setInitializing(false);
+            });
+        return () => { active = false; };
+    }, [supabase]);
     useEffect(() => {
         let active = true;
         const load = async () => {
@@ -333,28 +356,52 @@ export default function VentasDesktopWorkspace() {
     }, [supabase, month]);
 
     useEffect(() => {
+        if (initializing) return;
         let active = true;
         setDailyReport(null);
         void supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: period.start, p_end_date: period.end })
             .then(({ data, error }) => { if (active) setDailyReport(error ? null : data as unknown as TicketReport); });
         return () => { active = false; };
-    }, [supabase, period.start, period.end]);
+    }, [supabase, period.start, period.end, initializing]);
 
     useEffect(() => {
+        if (initializing) return;
         let active = true;
         setDayLoading(true);
         setDayError(false);
         const load = async () => {
-            const { data, error } = await supabase.rpc('get_tickets_marbella_page', {
-                p_start_date: period.start, p_end_date: period.end, p_limit: PAGE_SIZE, p_offset: page,
-                p_start_time: null, p_end_time: null
-            });
-            if (!active) return;
-            if (error) {
-                setDayError(true);
+            if (isSingleDay) {
+                // A single trading day is small enough to fetch fully; keep the UI
+                // and product-line queries limited to seven visible tickets at a time.
+                const all: Ticket[] = [];
+                let offset = 0;
+                const chunk = 150;
+                while (active) {
+                    const { data, error } = await supabase.rpc('get_tickets_marbella_page', {
+                        p_start_date: period.start, p_end_date: period.end,
+                        p_limit: chunk, p_offset: offset, p_start_time: null, p_end_time: null
+                    });
+                    if (!active) return;
+                    if (error) { setDayError(true); setDayLoading(false); return; }
+                    const rows = (data ?? []) as Ticket[];
+                    all.push(...rows);
+                    if (rows.length < chunk) break;
+                    offset += chunk;
+                }
+                if (!active) return;
+                setTickets(all);
+                setLoadedPeriod(periodKey);
+                setHasMore(false);
                 setDayLoading(false);
                 return;
             }
+            // Multi-day selection: never pre-fetch further pages without a click.
+            const { data, error } = await supabase.rpc('get_tickets_marbella_page', {
+                p_start_date: period.start, p_end_date: period.end,
+                p_limit: PAGE_SIZE, p_offset: page, p_start_time: null, p_end_time: null
+            });
+            if (!active) return;
+            if (error) { setDayError(true); setDayLoading(false); return; }
             const batch = (data ?? []) as Ticket[];
             setTickets(prev => page === 0 ? batch : [...prev, ...batch]);
             if (page === 0) setLoadedPeriod(periodKey);
@@ -363,12 +410,12 @@ export default function VentasDesktopWorkspace() {
         };
         void load();
         return () => { active = false; };
-    }, [supabase, period.start, period.end, periodKey, page]);
+    }, [supabase, period.start, period.end, periodKey, page, isSingleDay, initializing]);
 
     // Obtener los nombres y cantidades de las líneas por lotes, no con una consulta por ticket.
     useEffect(() => {
         let active = true;
-        const missing = tickets.filter(t => !Object.prototype.hasOwnProperty.call(linesByTicket, t.numero_documento));
+        const missing = visibleTickets.filter(t => !Object.prototype.hasOwnProperty.call(linesByTicket, t.numero_documento));
         if (!missing.length) return;
         setLinesLoading(true);
         void (async () => {
@@ -417,11 +464,12 @@ export default function VentasDesktopWorkspace() {
             }
         })();
         return () => { active = false; };
-    }, [supabase, tickets]);
+    }, [supabase, visibleTickets]);
 
     // Only the first seven tickets are fetched automatically; additional batches need a user click.
-    const canLoadMore = loadedPeriod === periodKey && !dayLoading && hasMore;
+    const canLoadMore = loadedPeriod === periodKey && !dayLoading && (isSingleDay ? visibleTicketCount < tickets.length : hasMore);
     useEffect(() => {
+        if (initializing) return;
         let active = true;
         // Load daily closing totals (not tickets) for the selected period and the
         // preceding 16 same-weekday comparisons used by /dashboard/history.
@@ -436,7 +484,7 @@ export default function VentasDesktopWorkspace() {
                 setPeriodClosings(rows.filter(row => row.closing_date >= period.start));
             });
         return () => { active = false; };
-    }, [supabase, period.start, period.end]);
+    }, [supabase, period.start, period.end, initializing]);
 
     const selectedClosing = isSingleDay ? periodClosings.find(c => c.closing_date === period.start) : undefined;
     useEffect(() => {
@@ -492,6 +540,7 @@ export default function VentasDesktopWorkspace() {
         }
         return expectedSum > 0 ? (netSum - expectedSum) / expectedSum * 100 : null;
     }, [periodClosings, historicalNetByDate]);
+    if (initializing) return <div className="mx-auto hidden w-full items-center justify-center py-16 text-sm text-white/60 lg:flex">Cargando último cierre…</div>;
     return (
         <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
             <div className="mb-3 flex shrink-0 items-baseline justify-between gap-4 text-white">
