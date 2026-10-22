@@ -20,7 +20,6 @@ import {
 } from '@/lib/cash-closing-balance';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import { Notice } from '@/components/ui/Notice';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { randomId } from '@/lib/random-id';
@@ -116,12 +115,8 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
     // 2. STATE: COUNT
     const [counts, setCounts] = useState<Record<string, number>>({});
 
-    // Dinero de Tpv 2 retirado ese día para compras de urgencia. Si aún no hay
-    // cierre ese día, se suma al Efectivo con su mismo desglose de billetes/monedas.
-    const [tpv2Auto, setTpv2Auto] = useState<{ total: number; breakdown: Record<string, number> }>({
-        total: 0,
-        breakdown: {},
-    });
+    // TPV2 no mueve Caja inicial hasta confirmar el cierre.
+    const [tpv2Auto, setTpv2Auto] = useState({ total: 0 });
 
     // 3. STATE: OPENING CASH
     const [openingCash, setOpeningCash] = useState(0);
@@ -286,51 +281,21 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
                     toast.message('Sin tickets BDP para esta fecha en Supabase');
                 }
 
-                // Tpv 2 → Efectivo: dinero retirado de esa caja para compras de urgencia.
-                // Solo si no hay un cierre ya hecho ese día (evita contarlo dos veces).
-                const { data: existingClosings } = await supabase
-                    .from('cash_closings')
-                    .select('id')
-                    .eq('closing_date', dateStr)
-                    .limit(1);
-
+                // Solo compras TPV2 todavía sin liquidar en un cierre.
+                const { data: existingClosings, error: closingCheckError } = await supabase
+                    .from('cash_closings').select('id').eq('closing_date', dateStr).limit(1);
+                if (closingCheckError) throw closingCheckError;
                 if ((existingClosings?.length ?? 0) > 0) {
-                    setTpv2Auto({ total: 0, breakdown: {} });
+                    setTpv2Auto({ total: 0 });
                 } else {
-                    const { data: tpvBoxes } = await supabase
-                        .from('cash_boxes')
-                        .select('id, name')
-                        .eq('type', 'tpv');
-                    const tpv2Ids = ((tpvBoxes ?? []) as { id: string; name: string | null }[])
-                        .filter((b) => /tpv\s*2/i.test(b.name ?? ''))
-                        .map((b) => b.id);
-
-                    if (tpv2Ids.length === 0) {
-                        setTpv2Auto({ total: 0, breakdown: {} });
-                    } else {
-                        const dayStart = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 0, 0, 0);
-                        const dayEnd = new Date(dayStart);
-                        dayEnd.setDate(dayEnd.getDate() + 1);
-
-                        const { data: movements } = await supabase
-                            .from('treasury_log')
-                            .select('amount, breakdown')
-                            .in('box_id', tpv2Ids)
-                            .eq('type', 'OUT')
-                            .gte('created_at', dayStart.toISOString())
-                            .lt('created_at', dayEnd.toISOString());
-
-                        const breakdown: Record<string, number> = {};
-                        let total = 0;
-                        ((movements ?? []) as { amount: number | null; breakdown: Record<string, number> | null }[])
-                            .forEach((row) => {
-                                total += Number(row.amount ?? 0);
-                                Object.entries(row.breakdown ?? {}).forEach(([denom, qty]) => {
-                                    breakdown[denom] = (breakdown[denom] ?? 0) + Number(qty ?? 0);
-                                });
-                            });
-                        setTpv2Auto({ total, breakdown });
-                    }
+                    const { data: pendingPurchases, error: purchasesError } = await supabase
+                        .from('tpv2_pending_purchases').select('amount')
+                        .eq('purchase_date', dateStr).is('closing_id', null);
+                    if (purchasesError) throw purchasesError;
+                    const total = (pendingPurchases ?? []).reduce(
+                        (sum, row) => sum + Number(row.amount ?? 0), 0
+                    );
+                    setTpv2Auto({ total: Math.round(total * 100) / 100 });
                 }
             } catch (error) {
                 console.error('Error fetching closing breakdown:', error);
@@ -750,18 +715,6 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
                     {/* STEP 2: COUNT */}
                     {step === 'count' && (
                         <div className="space-y-3">
-                            {tpv2Auto.total > 0.005 ? (
-                                <Notice
-                                    instance="cash-closing-tpv2-auto"
-                                    variant="info"
-                                    title="Tpv 2 · compras de urgencia"
-                                >
-                                    <p className="text-xs font-semibold">
-                                        {tpv2Auto.total.toFixed(2)}€ ya pagados desde Tpv 2 se suman
-                                        para cuadrar las ventas, pero no al efectivo retirado en este cierre.
-                                    </p>
-                                </Notice>
-                            ) : null}
                             <DenominationCountGrid
                                 counts={counts}
                                 onAdjust={handleAdjustCount}
@@ -787,14 +740,9 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
                             </ClosingSummaryRow>
 
                             {tpv2Auto.total > 0.005 ? (
-                                <>
-                                    <ClosingSummaryRow title="Retirado en cierre">
-                                        <ClosingReadonlyValue value={cashToWithdraw} showEuro />
-                                    </ClosingSummaryRow>
-                                    <ClosingSummaryRow title="Compras TPV 2">
-                                        <ClosingReadonlyValue value={tpv2Auto.total} showEuro />
-                                    </ClosingSummaryRow>
-                                </>
+                                <ClosingSummaryRow title="Compras">
+                                    <ClosingReadonlyValue value={tpv2Auto.total} showEuro />
+                                </ClosingSummaryRow>
                             ) : null}
 
                             <ClosingSummaryRow title="Pendiente">
