@@ -474,6 +474,11 @@ export default function VentasDesktopWorkspace() {
     const [hasMore, setHasMore] = useState(true);
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
     const [dayError, setDayError] = useState(false);
+    const [crossSelection, setCrossSelection] = useState<CrossSelection | null>(null);
+    const [crossResult, setCrossResult] = useState<CrossResponse | null>(null);
+    const [crossPage, setCrossPage] = useState(0);
+    const [crossLoading, setCrossLoading] = useState(false);
+    const [crossError, setCrossError] = useState(false);
     const periodKey = period.start + ':' + period.end;
     const periodTitle = periodLabel(period);
     // The left card follows a single-month selection; a multi-month range retains the current month.
@@ -491,7 +496,17 @@ export default function VentasDesktopWorkspace() {
     const referenceLabel = format(referenceMonth, 'MMMM yyyy', { locale: es });
     const monthLabel = format(month, 'MMMM yyyy', { locale: es });
     const isSingleDay = period.start === period.end;
-    const visibleTickets = tickets;
+    const visibleTickets = crossSelection ? (crossResult?.tickets ?? []) : tickets;
+    const monthBreakdown = crossSelection?.scope === 'month' ? crossResult : monthReport;
+    const periodBreakdown = crossSelection?.scope === 'period' ? crossResult : dailyReport;
+    const crossScopeStart = crossSelection?.scope === 'month' ? monthStart : period.start;
+    const crossScopeEnd = crossSelection?.scope === 'month' ? monthEnd : period.end;
+    const onChooseCross = (value: CrossSelection) => {
+        setCrossSelection(current => sameCross(current, value) ? null : value);
+        setCrossResult(null);
+        setCrossPage(0);
+        setCrossError(false);
+    };
     const initialTimeFilter = useMemo<TimeFilterValue>(
         () => activeFilter ?? { kind: 'date', date: period.start },
         [activeFilter, period.start]
@@ -528,6 +543,9 @@ export default function VentasDesktopWorkspace() {
     }, [calendarClosings, calendarHistoricalNetByDate]);
 
     const changePeriod = (next: Period, keepReturn = false) => {
+        setCrossSelection(null);
+        setCrossResult(null);
+        setCrossPage(0);
         setPeriod(next);
         if (!keepReturn) setReturnPeriod(null);
         setMonth(startOfMonth(parseISO(next.start)));
@@ -599,7 +617,7 @@ export default function VentasDesktopWorkspace() {
         let active = true;
         const load = async () => {
             const [monthly, closes] = await Promise.all([
-                supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: monthStart, p_end_date: monthEnd }),
+                supabase.rpc('get_ventas_crossfilter', { p_start_date: monthStart, p_end_date: monthEnd, p_limit: 1 }),
                 supabase.from('cash_closings').select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').gte('closing_date', monthStart).lte('closing_date', monthEnd)
             ]);
             if (!active) return;
@@ -639,7 +657,7 @@ export default function VentasDesktopWorkspace() {
         if (initializing) return;
         let active = true;
         setDailyReport(null);
-        void supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: period.start, p_end_date: period.end })
+        void supabase.rpc('get_ventas_crossfilter', { p_start_date: period.start, p_end_date: period.end, p_limit: 1 })
             .then(({ data, error }) => { if (active) setDailyReport(error ? null : data as unknown as TicketReport); });
         return () => { active = false; };
     }, [supabase, period.start, period.end, initializing]);
@@ -691,6 +709,80 @@ export default function VentasDesktopWorkspace() {
         void load();
         return () => { active = false; };
     }, [supabase, period.start, period.end, periodKey, page, isSingleDay, initializing]);
+
+
+    // Cross-filtering is performed against all receipts in the selected scope,
+    // not merely the seven rendered rows. All joins stay in the database.
+    useEffect(() => {
+        if (!crossSelection || initializing) {
+            setCrossLoading(false);
+            return;
+        }
+        let alive = true;
+        setCrossLoading(true);
+        setCrossError(false);
+        const load = async () => {
+            const params = {
+                p_start_date: crossScopeStart,
+                p_end_date: crossScopeEnd,
+                p_hour: crossSelection.kind === 'hour' ? crossSelection.hour : null,
+                p_product_id: crossSelection.kind === 'product' ? crossSelection.productId : null,
+                p_payment: crossSelection.kind === 'payment' ? crossSelection.payment : null
+            };
+            const limit = crossScopeStart === crossScopeEnd ? 200 : PAGE_SIZE;
+            let offset = crossPage;
+            let result: CrossResponse | null = null;
+            const rows: Ticket[] = [];
+            do {
+                const { data, error } = await supabase.rpc('get_ventas_crossfilter', {
+                    ...params, p_offset: offset, p_limit: limit
+                });
+                if (!alive) return;
+                if (error || !data) {
+                    setCrossError(true);
+                    setCrossLoading(false);
+                    return;
+                }
+                result = data as CrossResponse;
+                rows.push(...(result.tickets ?? []));
+                if (crossScopeStart !== crossScopeEnd || !result.hasMore) break;
+                offset += limit;
+            } while (alive);
+            if (!alive || !result) return;
+            setCrossResult(previous => ({
+                ...result,
+                tickets: crossPage > 0 ? [...(previous?.tickets ?? []), ...rows] : rows
+            }));
+            setCrossLoading(false);
+        };
+        void load();
+        return () => { alive = false; };
+    }, [supabase, crossSelection, crossScopeStart, crossScopeEnd, crossPage, initializing]);
+
+    // Any click outside a selector clears only the crossfilter, preserving
+    // the existing day/week/month time filter and ticket pagination.
+    useEffect(() => {
+        if (!crossSelection) return;
+        const onPointer = (event: PointerEvent) => {
+            if (!(event.target instanceof Element)) return;
+            if (event.target.closest('[data-crossfilter-trigger]')) return;
+            setCrossSelection(null);
+            setCrossResult(null);
+            setCrossPage(0);
+        };
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            setCrossSelection(null);
+            setCrossResult(null);
+            setCrossPage(0);
+        };
+        document.addEventListener('pointerdown', onPointer);
+        document.addEventListener('keydown', onKey);
+        return () => {
+            document.removeEventListener('pointerdown', onPointer);
+            document.removeEventListener('keydown', onKey);
+        };
+    }, [crossSelection]);
 
     // Obtener los nombres y cantidades de las líneas por lotes, no con una consulta por ticket.
     useEffect(() => {
@@ -747,7 +839,9 @@ export default function VentasDesktopWorkspace() {
     }, [supabase, visibleTickets]);
 
     // Only the first seven tickets are fetched automatically; additional batches need a user click.
-    const canLoadMore = !isSingleDay && loadedPeriod === periodKey && !dayLoading && hasMore;
+    const canLoadMore = crossSelection
+        ? crossScopeStart !== crossScopeEnd && !crossLoading && !crossError && (crossResult?.hasMore ?? false)
+        : !isSingleDay && loadedPeriod === periodKey && !dayLoading && hasMore;
     useEffect(() => {
         if (initializing) return;
         let active = true;
