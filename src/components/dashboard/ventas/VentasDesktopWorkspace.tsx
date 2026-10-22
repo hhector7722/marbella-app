@@ -17,9 +17,24 @@ type Ticket = { numero_documento: string; fecha: string; hora_cierre: string; to
 type Item = { name: string; qty: number; price: number; total: number };
 type TicketReport = {
     summary: { totalSales: number; count: number; avgTicket: number };
-    products: { nombre_articulo: string; cantidad_total: number; total_ingresos: number }[];
+    products: { articulo_id?: number; nombre_articulo: string; cantidad_total: number; total_ingresos: number }[];
     hours: { hour: number; count: number; total: number }[];
 };
+type CrossScope = 'month' | 'period';
+type CrossSelection =
+    | { kind: 'hour'; hour: number; scope: CrossScope }
+    | { kind: 'product'; productId: number; productName: string; scope: CrossScope }
+    | { kind: 'payment'; payment: 'card' | 'cash' | 'pending' | 'collections'; scope: CrossScope };
+type CrossResponse = TicketReport & { tickets: Ticket[]; hasMore: boolean };
+const crossLabel = (selection: CrossSelection) =>
+    selection.kind === 'hour' ? `${selection.hour}:00–${selection.hour + 1}:00`
+        : selection.kind === 'product' ? selection.productName
+        : ({card:'Tarjeta',cash:'Efectivo',pending:'Pendiente',collections:'Cobros'})[selection.payment];
+const sameCross = (a: CrossSelection | null, b: CrossSelection) =>
+    a !== null && a.kind === b.kind && a.scope === b.scope &&
+    (a.kind === 'hour' && b.kind === 'hour' ? a.hour === b.hour
+    : a.kind === 'product' && b.kind === 'product' ? a.productId === b.productId
+    : a.kind === 'payment' && b.kind === 'payment' ? a.payment === b.payment : false);
 type CloseRow = {
     id: string; closing_date: string; closed_at?: string | null; tickets_count?: number | null;
     tpv_sales: number | null; net_sales: number | null;
@@ -105,7 +120,12 @@ const LAST_SALES_HOUR = 22;
 const SALES_HOUR_COUNT = LAST_SALES_HOUR - FIRST_SALES_HOUR + 1;
 type HourSlot = { hour: number; sales: number; tickets: number };
 
-function HourlySalesTimeline({ hours }: { hours?: TicketReport['hours'] }) {
+function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }: {
+    hours?: TicketReport['hours'];
+    onChooseHour?: (hour: number) => void;
+    selectedHour?: number | null;
+    contextLabel?: string | null;
+}) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
     const byHour = new Map((hours ?? []).map(item => [Number(item.hour), item]));
     const slots: HourSlot[] = Array.from({ length: SALES_HOUR_COUNT }, (_, index) => {
@@ -127,15 +147,18 @@ function HourlySalesTimeline({ hours }: { hours?: TicketReport['hours'] }) {
         `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
     ).join(' ');
     const area = `${path} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`;
-    const active = activeIndex === null ? null : slots[activeIndex];
+    const active = activeIndex === null ? (selectedHour == null ? null : slots[selectedHour - FIRST_SALES_HOUR]) : slots[activeIndex];
 
     return (
         <div className="flex h-full min-h-0 min-w-0 flex-col">
             <div className="mb-2 flex h-5 shrink-0 items-center justify-between gap-2">
                 <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
-                <span className="text-[9px] text-white/50">Facturación · 7–23 h</span>
+                <span className="min-w-0 max-w-[75%] truncate text-right text-[9px] text-white/50" title={contextLabel ?? undefined}>
+                    {contextLabel ?? 'Facturación · 7–23 h'}
+                </span>
             </div>
-            <div className="relative w-full shrink-0" onMouseLeave={() => setActiveIndex(null)}>
+            <div className="w-full shrink-0">
+                <div className="relative h-[82px] w-full" onMouseLeave={() => setActiveIndex(null)}>
                 <svg className="block h-[82px] w-full text-[#70b5ff]"
                     viewBox="0 0 1600 90" preserveAspectRatio="none"
                     role="img" aria-label="Evolución de facturación desde las 7 h hasta las 23 h, con datos por tramo al pasar el cursor">
@@ -150,6 +173,21 @@ function HourlySalesTimeline({ hours }: { hours?: TicketReport['hours'] }) {
                     <path d={path} fill="none" stroke="currentColor" strokeWidth="2"
                         strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>
                 </svg>
+                {/* The interaction layer ends at the chart baseline: axis labels never change color. */}
+                {slots.map((slot, index) => (
+                    <button key={slot.hour} type="button" data-crossfilter-trigger
+                        style={{ left: `${index / SALES_HOUR_COUNT * 100}%`, width: `${100 / SALES_HOUR_COUNT}%` }}
+                        className={cn('absolute inset-y-0 z-[1] cursor-pointer border-x border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-sky-300',
+                            (activeIndex === index || selectedHour === slot.hour) && 'bg-sky-200/10')}
+                        aria-pressed={selectedHour === slot.hour}
+                        aria-label={`${slot.hour} a ${slot.hour + 1} horas: ${slot.tickets} tickets, ticket medio ${euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)}, facturación ${euro(slot.sales)}`}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onFocus={() => setActiveIndex(index)}
+                        onBlur={() => setActiveIndex(null)}
+                        onClick={() => onChooseHour?.(slot.hour)}
+                    />
+                ))}
+                </div>
                 <div className="relative h-[20px] w-full border-t border-white/10">
                     {Array.from({ length: SALES_HOUR_COUNT + 1 }, (_, index) => (
                         <span key={index} style={{ left: `${index / SALES_HOUR_COUNT * 100}%` }}
@@ -162,51 +200,28 @@ function HourlySalesTimeline({ hours }: { hours?: TicketReport['hours'] }) {
                     ))}
                 </div>
 
-                {/* Full-width hit zones: each interval is between two labels. */}
-                {slots.map((slot, index) => (
-                    <button key={slot.hour} type="button"
-                        style={{ left: `${index / SALES_HOUR_COUNT * 100}%`, width: `${100 / SALES_HOUR_COUNT}%` }}
-                        className={cn(
-                            'absolute inset-y-0 z-[1] cursor-help border-x border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-sky-300',
-                            activeIndex === index && 'bg-sky-200/10'
-                        )}
-                        aria-label={`${slot.hour} a ${slot.hour + 1} horas: ${slot.tickets} tickets, ticket medio ${euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)}, facturación ${euro(slot.sales)}`}
-                        onMouseEnter={() => setActiveIndex(index)}
-                        onFocus={() => setActiveIndex(index)}
-                        onBlur={() => setActiveIndex(null)}
-                        onClick={() => setActiveIndex(index)}
-                    />
-                ))}
-
             </div>
             {/* Fixed detail strip BELOW the axis, not on top of the curve.
                 Its reserved height prevents jumping as the pointer moves
                 continuously across neighbouring hourly hit zones. */}
-            <div className="mt-2 h-[60px] w-full shrink-0 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5">
+            <div className="mt-2 h-[70px] w-full shrink-0 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5">
                 {active ? (
                     <>
                         <div className="text-[10px] font-semibold leading-none tabular-nums text-white/85">
                             {active.hour}:00–{active.hour + 1}:00
                         </div>
                         <div role="status" className="mt-1.5 grid grid-cols-3 divide-x divide-white/10 text-center">
-                            <div className="min-w-0 px-1">
-                                <span className="block truncate text-[9px] leading-none text-sky-200">Tickets</span>
-                                <strong className="mt-0.5 block truncate text-[11px] font-semibold leading-none tabular-nums text-white">
-                                    {active.tickets.toLocaleString('es-ES')}
-                                </strong>
-                            </div>
-                            <div className="min-w-0 px-1">
-                                <span className="block truncate text-[9px] leading-none text-violet-200">Ticket medio</span>
-                                <strong className="mt-0.5 block truncate text-[11px] font-semibold leading-none tabular-nums text-white">
-                                    {euro(active.tickets > 0 ? active.sales / active.tickets : 0)}
-                                </strong>
-                            </div>
-                            <div className="min-w-0 px-1">
-                                <span className="block truncate text-[9px] leading-none text-teal-200">Facturación</span>
-                                <strong className="mt-0.5 block truncate text-[11px] font-semibold leading-none tabular-nums text-white">
-                                    {euro(active.sales)}
-                                </strong>
-                            </div>
+                            {([
+                                ['Tickets', active.tickets.toLocaleString('es-ES'), 'text-sky-200'],
+                                ['Ticket medio', euro(active.tickets > 0 ? active.sales / active.tickets : 0), 'text-violet-200'],
+                                ['Facturación', euro(active.sales), 'text-teal-200'],
+                            ] as const).map(([label, value, color]) => (
+                                <div key={label} className="min-w-0 px-1">
+                                    <strong className="block truncate text-[clamp(11px,0.98vw,15px)] font-semibold leading-tight tabular-nums text-white"
+                                        title={value}>{value}</strong>
+                                    <span className={cn('mt-0.5 block truncate text-[10px] leading-tight', color)}>{label}</span>
+                                </div>
+                            ))}
                         </div>
                     </>
                 ) : (
@@ -327,7 +342,10 @@ function RankingViewport({ children }: { children: ReactNode }) {
 }
 
 // Shared product ranking and chronological hourly chart for monthly/period cards.
-function SalesBreakdown({ report }: { report: TicketReport | null }) {
+function SalesBreakdown({ report, scope, selection, onSelect }: {
+    report: TicketReport | null; scope: CrossScope;
+    selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
+}) {
     const products = report?.products ?? [];
     const maxProductSales = Math.max(1, ...products.map(p => Number(p.total_ingresos ?? 0)));
     const totalSales = Number(report?.summary?.totalSales ?? 0);
@@ -341,14 +359,25 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
             <section className="flex min-h-0 flex-1 flex-col border-b border-white/15 pb-3">
                 <div className="mb-2 flex h-4 shrink-0 items-center justify-between gap-2">
                     <h3 className="text-xs font-bold uppercase">Productos</h3>
-                    <span className="text-[9px] text-white/45">Ventas por producto</span>
+                    <span className="max-w-[68%] truncate text-right text-[9px] text-sky-200/85" title={selection?.scope === scope ? crossLabel(selection) : undefined}>
+                        {selection?.scope === scope ? crossLabel(selection) : 'Ventas por producto'}
+                    </span>
                 </div>
                 <RankingViewport>
                     {products.map((product, index) => {
                         const sales = Number(product.total_ingresos ?? 0);
                         const label = shareLabel(sales);
                         return (
-                            <div key={index} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto] items-center gap-x-2 border-b border-white/5 text-[10px]"
+                            <button key={product.articulo_id ?? index} type="button" data-crossfilter-trigger
+                                disabled={product.articulo_id == null}
+                                onClick={() => product.articulo_id != null && onSelect({
+                                    kind: 'product', productId: product.articulo_id,
+                                    productName: product.nombre_articulo, scope
+                                })}
+                                aria-pressed={selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id}
+                                className={cn('grid h-6 w-full min-w-0 snap-start snap-always grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto] items-center gap-x-2 border-b border-white/5 text-left text-[10px]',
+                                    product.articulo_id != null && 'cursor-pointer hover:bg-white/10',
+                                    selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id && 'bg-sky-200/15')}
                                 title={product.nombre_articulo + ' · ' + euro(sales) + ' · ' + label}>
                                 <span className="min-w-0 truncate text-white/85">{index + 1}. {product.nombre_articulo}</span>
                                 <span className="shrink-0 tabular-nums text-white/60">{Number(product.cantidad_total).toLocaleString('es-ES')} u</span>
@@ -356,21 +385,26 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
                                     <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: barWidth(sales, maxProductSales) }}/>
                                 </div>
                                 <strong className="min-w-[60px] shrink-0 text-right tabular-nums">{euro(sales)}</strong>
-                            </div>
+                            </button>
                         );
                     })}
                 </RankingViewport>
             </section>
             <section className="h-[206px] min-h-0 shrink-0">
-                <HourlySalesTimeline hours={report?.hours} />
+                <HourlySalesTimeline hours={report?.hours}
+                    contextLabel={selection?.scope === scope ? crossLabel(selection) : null}
+                    selectedHour={selection?.scope === scope && selection.kind === 'hour' ? selection.hour : null}
+                    onChooseHour={hour => onSelect({ kind: 'hour', hour, scope })}/>
             </section>
         </div>
     );
 }
 
-function SummaryCard({ title, dateText, report, extras }: {
+function SummaryCard({ title, dateText, report, extras, breakdownReport, scope, selection, onSelect }: {
     title: string; dateText: string; report: TicketReport | null;
     extras?: { cash: number; card: number; pending: number; recovered: number; net: number };
+    breakdownReport: TicketReport | null; scope: CrossScope;
+    selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
 }) {
     const sales = report ? Number(report.summary.totalSales) : null;
     const count = report ? Number(report.summary.count) : null;
@@ -388,14 +422,26 @@ function SummaryCard({ title, dateText, report, extras }: {
                 {report && <span className="shrink-0 text-[9px] text-white/80">{euro(report.summary.avgTicket)} medio</span>}
             </div>
             <div className="grid shrink-0 grid-cols-4 gap-x-1 gap-y-3">
-                {values.map(([label, value]) => (
-                    <div key={label} className="min-w-0 text-center">
-                        <strong className="block truncate text-[12px] font-bold tabular-nums">{value}</strong>
-                        <span className="block truncate text-[8px] uppercase text-white/65">{label}</span>
-                    </div>
-                ))}
+                {values.map(([label, value]) => {
+                    const payment = ({ Tarjeta:'card', Efectivo:'cash', Pendiente:'pending', Cobros:'collections' } as const)[label as 'Tarjeta' | 'Efectivo' | 'Pendiente' | 'Cobros'];
+                    return payment ? (
+                        <button key={label} type="button" data-crossfilter-trigger
+                            onClick={() => onSelect({kind:'payment',payment,scope})}
+                            aria-pressed={selection?.scope === scope && selection?.kind === 'payment' && selection.payment === payment}
+                            className={cn('min-w-0 text-center transition-colors hover:bg-white/10',
+                                selection?.scope === scope && selection?.kind === 'payment' && selection.payment === payment && 'rounded bg-sky-200/15')}>
+                            <strong className="block truncate text-[12px] font-bold tabular-nums">{value}</strong>
+                            <span className="block truncate text-[8px] uppercase text-white/65">{label}</span>
+                        </button>
+                    ) : (
+                        <div key={label} className="min-w-0 text-center">
+                            <strong className="block truncate text-[12px] font-bold tabular-nums">{value}</strong>
+                            <span className="block truncate text-[8px] uppercase text-white/65">{label}</span>
+                        </div>
+                    );
+                })}
             </div>
-            <SalesBreakdown report={report}/>
+            <SalesBreakdown report={breakdownReport} scope={scope} selection={selection} onSelect={onSelect}/>
         </div>
     );
 }
