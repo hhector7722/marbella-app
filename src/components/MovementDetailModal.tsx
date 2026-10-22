@@ -28,6 +28,7 @@ interface MovementDetail {
     original_type?: string | null;
     notes?: string | null;
     breakdown?: Json | null;
+    tpv2_purchase_id?: string | null;
 }
 
 interface MovementDetailModalProps {
@@ -98,7 +99,10 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const isIncome = originalType === 'IN' || originalType === 'CLOSE_ENTRY' || movement.type === 'income';
     const isAdjustment = originalType === 'ADJUSTMENT' || movement.type === 'adjustment';
     const isSwap = originalType === 'SWAP' || movement.type === 'SWAP';
-    const canEdit = !isSwap;
+    // Las compras TPV2 conciliadas se editan desde su registro de origen,
+    // no desde este asiento, para preservar saldo y desglose del cierre.
+    const isTpv2Purchase = Boolean(movement.tpv2_purchase_id);
+    const canEdit = !isSwap && !isTpv2Purchase;
 
     const breakdownValue = movement.breakdown ?? null;
     const breakdown = toCounts(breakdownValue);
@@ -273,7 +277,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             title={detailTitle}
             subtitle="Detalle de movimiento"
             footer={
-                isDeleting ? (
+                isTpv2Purchase ? null : isDeleting ? (
                     <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-rose-100 bg-rose-50 p-3">
                         <div className="flex items-center gap-3">
                             <AlertTriangle className="text-rose-500" size={20} />

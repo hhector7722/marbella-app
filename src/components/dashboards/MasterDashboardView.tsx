@@ -473,7 +473,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 .filter((source) => tpvNames.has(source.sourceId) && source.amount > 0.005)
                 .map((source) => `${tpvNames.get(source.sourceId)}: ${source.amount.toFixed(2)}€`);
             const notesWithTpv = tpvParts.length > 0 ? `${baseNotes} | ${tpvParts.join(', ')}` : baseNotes;
-            await registerMultiSourcePurchase(payload, notesWithTpv);
+            await registerMultiSourcePurchase(payload, baseNotes);
 
             setShowPurchaseMultiSourceModal(false);
             setPurchaseInventoriesByBoxId({});
