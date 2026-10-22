@@ -220,6 +220,7 @@ export default function VentasDesktopWorkspace() {
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
     const [monthReport, setMonthReport] = useState<TicketReport | null>(null);
     const [monthClosings, setMonthClosings] = useState<CloseRow[]>([]);
+    const [calendarClosings, setCalendarClosings] = useState<CloseRow[]>([]);
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [linesByTicket, setLinesByTicket] = useState<Record<string, Item[]>>({});
     const [linesLoading, setLinesLoading] = useState(false);
@@ -229,12 +230,18 @@ export default function VentasDesktopWorkspace() {
     const [hasMore, setHasMore] = useState(true);
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
     const [dayError, setDayError] = useState(false);
-    const loadSentinel = useRef<HTMLDivElement>(null);
     const periodKey = period.start + ':' + period.end;
     const periodTitle = periodLabel(period);
     // The left card follows a single-month selection; a multi-month range retains the current month.
-    const referenceMonth = isSameMonth(parseISO(period.start), parseISO(period.end))
-        ? startOfMonth(parseISO(period.start)) : startOfMonth(new Date());
+    const startDate = parseISO(period.start);
+    const endDate = parseISO(period.end);
+    const weekCrossesMonth = period.kind === 'week' && !isSameMonth(startDate, endDate);
+    const daysInFirstMonth = Math.round((endOfMonth(startDate).getTime() - startDate.getTime()) / 86400000) + 1;
+    const referenceMonth = isSameMonth(startDate, endDate)
+        ? startOfMonth(startDate)
+        : weekCrossesMonth
+            ? startOfMonth(daysInFirstMonth >= 4 ? startDate : endDate)
+            : startOfMonth(new Date());
     const monthStart = format(startOfMonth(referenceMonth), 'yyyy-MM-dd');
     const monthEnd = format(endOfMonth(referenceMonth), 'yyyy-MM-dd');
     const referenceLabel = format(referenceMonth, 'MMMM yyyy', { locale: es });
@@ -248,7 +255,7 @@ export default function VentasDesktopWorkspace() {
         for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
         return weeks;
     }, [month]);
-    const byDate = useMemo(() => new Map(monthClosings.map(c => [c.closing_date, c])), [monthClosings]);
+    const byDate = useMemo(() => new Map(calendarClosings.map(c => [c.closing_date, c])), [calendarClosings]);
 
     const changePeriod = (next: Period, keepReturn = false) => {
         setPeriod(next);
@@ -308,6 +315,17 @@ export default function VentasDesktopWorkspace() {
         void load();
         return () => { active = false; };
     }, [supabase, monthStart, monthEnd]);
+
+    useEffect(() => {
+        let active = true;
+        // Calendar navigation is independent of the selected date range.
+        void supabase.from('cash_closings')
+            .select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference')
+            .gte('closing_date', format(startOfMonth(month), 'yyyy-MM-dd'))
+            .lte('closing_date', format(endOfMonth(month), 'yyyy-MM-dd'))
+            .then(({ data }) => { if (active) setCalendarClosings((data ?? []) as CloseRow[]); });
+        return () => { active = false; };
+    }, [supabase, month]);
 
     useEffect(() => {
         let active = true;
@@ -534,7 +552,7 @@ export default function VentasDesktopWorkspace() {
                                             const closing = byDate.get(iso);
                                             const dayValue = Number(closing?.tpv_sales ?? 0);
                                             return (
-                                                <button key={iso} type="button" onClick={() => selectDate(iso)} aria-pressed={iso === selectedDate} aria-label={'Seleccionar ' + iso}
+                                                <button key={iso} type="button" onClick={() => selectDate(iso)} aria-pressed={isSingleDay && iso === period.start} aria-label={'Seleccionar ' + iso}
                                                     className={cn('month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 p-1 last:border-r-0 hover:bg-blue-50/50', !isSameMonth(day, month) && 'opacity-35', iso >= period.start && iso <= period.end && 'bg-blue-100/80', isSingleDay && iso === period.start && 'z-[1] ring-2 ring-inset ring-zinc-900')}>
                                                     <span className="absolute right-1 top-1 text-[9px] font-medium text-gray-400">{format(day, 'd')}</span>
                                                     <div className="flex min-h-0 flex-1 items-center justify-center pt-2">
@@ -550,6 +568,62 @@ export default function VentasDesktopWorkspace() {
                     </section>
                 </div>
             </div>
+            {filterOpen && (
+                <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4"
+                    onMouseDown={e => { if (e.target === e.currentTarget) setFilterOpen(false); }}>
+                    <div role="dialog" aria-modal="true" aria-label="Filtrar periodo de ventas" className="w-full max-w-[370px] rounded-xl border border-white/25 bg-[#122b57] p-4 text-white shadow-2xl">
+                        <div className="mb-4 flex items-center justify-between">
+                            <strong className="flex items-center gap-2 text-sm"><CalendarRange size={17}/> Filtrar periodo</strong>
+                            <button type="button" aria-label="Cerrar filtro" onClick={() => setFilterOpen(false)} className="rounded p-1 hover:bg-white/10"><X size={18}/></button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {([
+                                ['day','Día'], ['week','Semana'], ['month','Mes'],
+                                ['three','Últimos 3 meses'], ['custom','Personalizado']
+                            ] as const).map(([value,label]) => (
+                                <button type="button" key={value} onClick={() => setFilterKind(value)}
+                                    className={cn("rounded-md border px-2 py-2 text-xs", filterKind === value ? 'border-sky-400 bg-sky-700/60' : 'border-white/20 hover:bg-white/10')}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                        {filterKind !== 'three' && (
+                            <div className="mt-4 grid grid-cols-2 gap-2">
+                                <label className="col-span-2 flex flex-col gap-1 text-xs text-white/75">
+                                    {filterKind === 'custom' ? 'Desde' : 'Fecha de referencia'}
+                                    <input type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)}
+                                        className="rounded border border-white/25 bg-[#091b3d] px-2 py-2 text-white [color-scheme:dark]" />
+                                </label>
+                                {filterKind === 'custom' && (
+                                    <label className="col-span-2 flex flex-col gap-1 text-xs text-white/75">
+                                        Hasta
+                                        <input type="date" min={filterStart} value={filterEnd} onChange={e => setFilterEnd(e.target.value)}
+                                            className="rounded border border-white/25 bg-[#091b3d] px-2 py-2 text-white [color-scheme:dark]" />
+                                    </label>
+                                )}
+                            </div>
+                        )}
+                        <p className="mt-3 text-[11px] text-white/55">El resumen incluye todo el periodo. Los tickets se cargan de siete en siete.</p>
+                        <button type="button" onClick={applyFilter}
+                            disabled={(filterKind === 'custom' && filterEnd < filterStart) || (filterKind !== 'three' && !filterStart)}
+                            className="mt-4 w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50">
+                            Aplicar filtro
+                        </button>
+                    </div>
+                </div>
+            )}
+            <ImageLightbox
+                open={openPhoto !== null}
+                onClose={() => setOpenPhoto(null)}
+                src={openPhoto?.src}
+                alt={openPhoto?.alt}
+                scheme="dark"
+                variant="work"
+                zoomable
+                zoomControls
+                imageOnly
+                instance="ventas-consolidated-photo-preview"
+            />
         </div>
     );
 }
