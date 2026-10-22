@@ -43,6 +43,7 @@ export function TimeFilterModal({
   allowedKinds,
   initialValue,
   defaultKind,
+  quickRangePreset,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -50,6 +51,8 @@ export function TimeFilterModal({
   allowedKinds: TimeFilterKind[];
   initialValue?: TimeFilterValue;
   defaultKind?: TimeFilterKind;
+  /** Acceso opcional a un periodo habitual; conserva el mismo modal visual P7. */
+  quickRangePreset?: { label: string; value: Extract<TimeFilterValue, { kind: "range" }> };
 }) {
   const pathname = usePathname();
   const initialKind = useMemo<TimeFilterKind>(() => {
@@ -218,6 +221,19 @@ export function TimeFilterModal({
                   </button>
                 );
               })}
+            </div>
+          ) : null}
+
+          {quickRangePreset && allowedKinds.includes("range") ? (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="tertiary"
+                instance="time-filter-quick-range"
+                onClick={() => applyAndClose(quickRangePreset.value)}
+              >
+                {quickRangePreset.label}
+              </Button>
             </div>
           ) : null}
 
