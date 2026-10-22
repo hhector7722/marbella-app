@@ -457,8 +457,8 @@ export default function VentasDesktopWorkspace() {
         ]).then(([closings, history]) => {
             if (!active) return;
             setCalendarClosings(closings.error ? [] : (closings.data ?? []) as CloseRow[]);
-            setCalendarHistoricalNetByDate(new Map(
-                (history.error ? [] : history.data ?? []).map(c => [c.closing_date, Number(c.net_sales ?? 0)])
+            setCalendarHistoricalNetByDate(new Map<string, number>(
+                (history.error ? [] : history.data ?? []).map(c => [c.closing_date, Number(c.net_sales ?? 0)] as [string, number])
             ));
         });
         return () => { active = false; };
