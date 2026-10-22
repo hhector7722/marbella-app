@@ -128,7 +128,6 @@ function HourlySalesTimeline({ hours }: { hours?: TicketReport['hours'] }) {
     ).join(' ');
     const area = `${path} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`;
     const active = activeIndex === null ? null : slots[activeIndex];
-    const activePoint = activeIndex === null ? null : points[activeIndex];
 
     return (
         <div className="flex h-full min-h-0 min-w-0 flex-col">
@@ -136,7 +135,7 @@ function HourlySalesTimeline({ hours }: { hours?: TicketReport['hours'] }) {
                 <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
                 <span className="text-[9px] text-white/50">Facturación · 7–23 h</span>
             </div>
-            <div className="relative min-h-0 w-full flex-1" onMouseLeave={() => setActiveIndex(null)}>
+            <div className="relative w-full shrink-0" onMouseLeave={() => setActiveIndex(null)}>
                 <svg className="block h-[82px] w-full text-[#70b5ff]"
                     viewBox="0 0 1600 90" preserveAspectRatio="none"
                     role="img" aria-label="Evolución de facturación desde las 7 h hasta las 23 h, con datos por tramo al pasar el cursor">
@@ -179,28 +178,40 @@ function HourlySalesTimeline({ hours }: { hours?: TicketReport['hours'] }) {
                     />
                 ))}
 
-                {active && activePoint && activeIndex !== null && (
-                    <div role="status" className="pointer-events-none absolute top-0 z-[3] w-[164px] rounded-md border border-sky-300/30 bg-[#10234a] px-2.5 py-2 text-[10px] text-white shadow-xl"
-                        style={{
-                            left: activeIndex < 4 ? 0 : activeIndex > 11 ? 'auto' : `${(activeIndex + 0.5) * 100 / SALES_HOUR_COUNT}%`,
-                            right: activeIndex > 11 ? 0 : 'auto',
-                            transform: activeIndex >= 4 && activeIndex <= 11 ? 'translateX(-50%)' : undefined
-                        }}>
-                        <strong className="block border-b border-white/15 pb-1 font-semibold tabular-nums">
+            </div>
+            {/* Fixed detail strip BELOW the axis, not on top of the curve.
+                Its reserved height prevents jumping as the pointer moves
+                continuously across neighbouring hourly hit zones. */}
+            <div className="mt-2 h-[60px] w-full shrink-0 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5">
+                {active ? (
+                    <>
+                        <div className="text-[10px] font-semibold leading-none tabular-nums text-white/85">
                             {active.hour}:00–{active.hour + 1}:00
-                        </strong>
-                        <div className="mt-1.5 flex items-center justify-between gap-2">
-                            <span className="text-sky-200">Tickets</span>
-                            <strong className="tabular-nums">{active.tickets.toLocaleString('es-ES')}</strong>
                         </div>
-                        <div className="mt-1 flex items-center justify-between gap-2">
-                            <span className="text-violet-200">Ticket medio</span>
-                            <strong className="tabular-nums">{euro(active.tickets > 0 ? active.sales / active.tickets : 0)}</strong>
+                        <div role="status" className="mt-1.5 grid grid-cols-3 divide-x divide-white/10 text-center">
+                            <div className="min-w-0 px-1">
+                                <span className="block truncate text-[9px] leading-none text-sky-200">Tickets</span>
+                                <strong className="mt-0.5 block truncate text-[11px] font-semibold leading-none tabular-nums text-white">
+                                    {active.tickets.toLocaleString('es-ES')}
+                                </strong>
+                            </div>
+                            <div className="min-w-0 px-1">
+                                <span className="block truncate text-[9px] leading-none text-violet-200">Ticket medio</span>
+                                <strong className="mt-0.5 block truncate text-[11px] font-semibold leading-none tabular-nums text-white">
+                                    {euro(active.tickets > 0 ? active.sales / active.tickets : 0)}
+                                </strong>
+                            </div>
+                            <div className="min-w-0 px-1">
+                                <span className="block truncate text-[9px] leading-none text-teal-200">Facturación</span>
+                                <strong className="mt-0.5 block truncate text-[11px] font-semibold leading-none tabular-nums text-white">
+                                    {euro(active.sales)}
+                                </strong>
+                            </div>
                         </div>
-                        <div className="mt-1 flex items-center justify-between gap-2">
-                            <span className="text-teal-200">Facturación</span>
-                            <strong className="tabular-nums">{euro(active.sales)}</strong>
-                        </div>
+                    </>
+                ) : (
+                    <div className="flex h-full items-center justify-center text-center text-[10px] text-white/50">
+                        Pasa el cursor por una hora para consultar sus datos
                     </div>
                 )}
             </div>
@@ -350,7 +361,7 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
                     })}
                 </RankingViewport>
             </section>
-            <section className="h-[138px] min-h-0 shrink-0">
+            <section className="h-[206px] min-h-0 shrink-0">
                 <HourlySalesTimeline hours={report?.hours} />
             </section>
         </div>
