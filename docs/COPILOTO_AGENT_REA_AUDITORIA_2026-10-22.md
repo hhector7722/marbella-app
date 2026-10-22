@@ -53,6 +53,8 @@ Validación estática: `tsc --noEmit` y ESLint de los archivos cambiados sin err
 ## Preparación del despliegue Preview (22/10/2026, revisión posterior)
 Vercel había creado automáticamente un despliegue Preview READY del commit `7fb8ff28`, pero la clave `OPENAI_API_KEY` estaba configurada únicamente para Production. Para evitar copiar credenciales a otros entornos, se migraron la ruta de texto a un ID de modelo de AI Gateway (`openai/gpt-5.4-mini`) y la transcripción al proveedor `gateway.transcriptionModel("openai/gpt-4o-mini-transcribe")` de AI SDK 6 con OIDC nativo de Vercel. Ambos modelos se comprobaron contra el catálogo del Gateway vigente (486 modelos), y se consultaron los ejemplos publicados dentro del paquete instalado. Esto evita claves específicas de OpenAI en Preview y limita su exposición. **Requiere verificar funcionamiento real, disponibilidad de saldo del equipo y credenciales de la sesión de usuario.**
 
+El primer despliegue de esta revisión (`f77a100a`) falló porque el paquete `@ai-sdk/gateway` estaba presente en el `node_modules` local pero no declarado en el manifiesto. Se corrigió fijando `@ai-sdk/gateway@3.0.211` en `package.json` y regenerando `pnpm-lock.yaml`. Este fallo solo afectó Preview; Production no cambió.
+
 ## Limitaciones y pendientes
 - **No se ha implementado todavía** la operación de añadir un producto mediante chat a un borrador. No afirmar lo contrario.
 - No se modificó ninguna fila real de pedidos, productos o ventas en Supabase.
