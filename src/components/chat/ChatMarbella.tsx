@@ -117,9 +117,17 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       if (typeof opts?.body === 'string') {
         try {
           const j = JSON.parse(opts.body) as Record<string, unknown>;
+          const supplierName =
+            window.location.pathname === '/orders/new'
+              ? new URLSearchParams(window.location.search).get('supplier')
+              : null;
           mergedBody = JSON.stringify({
             ...j,
             sessionId: getActiveSessionId(),
+            // Contexto de la pantalla, nunca una credencial de autorización.
+            pageContext: supplierName
+              ? { kind: 'supplier_draft', supplier: supplierName.slice(0, 120) }
+              : null,
           });
         } catch {
           mergedBody = opts.body;
