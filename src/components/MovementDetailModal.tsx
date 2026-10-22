@@ -29,6 +29,7 @@ interface MovementDetail {
     notes?: string | null;
     breakdown?: Json | null;
     tpv2_purchase_id?: string | null;
+    tpv2_purchase_occurred_at?: string | null;
 }
 
 interface MovementDetailModalProps {
@@ -71,19 +72,21 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const supabase = createClient();
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [editTotal, setEditTotal] = useState(0);
     const [editDate, setEditDate] = useState(formatCashCountDateInput);
     const [syncedMovementKey, setSyncedMovementKey] = useState<string | null>(null);
 
     const movementSyncKey = movement
-        ? `${movement.id}|${movement.created_at ?? ''}|${movement.amount ?? ''}`
+        ? `${movement.id}|${movement.created_at ?? ''}|${movement.amount ?? ''}|${movement.tpv2_purchase_occurred_at ?? ''}`
         : null;
     if (movementSyncKey !== syncedMovementKey) {
         setSyncedMovementKey(movementSyncKey);
         if (movement) {
             setIsEditing(false);
             setIsDeleting(false);
-            const d = movement.created_at ? new Date(movement.created_at) : new Date();
+            const d = movement.tpv2_purchase_occurred_at || movement.created_at
+                ? new Date(movement.tpv2_purchase_occurred_at ?? movement.created_at ?? '') : new Date();
             setEditDate(Number.isNaN(d.getTime()) ? formatCashCountDateInput() : formatCashCountDateInput(d));
             setEditTotal(Number(movement.amount ?? 0));
         }
@@ -99,10 +102,10 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const isIncome = originalType === 'IN' || originalType === 'CLOSE_ENTRY' || movement.type === 'income';
     const isAdjustment = originalType === 'ADJUSTMENT' || movement.type === 'adjustment';
     const isSwap = originalType === 'SWAP' || movement.type === 'SWAP';
-    // Las compras TPV2 conciliadas se editan desde su registro de origen,
-    // no desde este asiento, para preservar saldo y desglose del cierre.
+    // Compra conciliada: editar/eliminar su registro y recalcular el cierre
+    // mediante la transacción RPC, nunca directamente el asiento contable.
     const isTpv2Purchase = Boolean(movement.tpv2_purchase_id);
-    const canEdit = !isSwap && !isTpv2Purchase;
+    const canEdit = !isSwap;
 
     const breakdownValue = movement.breakdown ?? null;
     const breakdown = toCounts(breakdownValue);
@@ -111,40 +114,74 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const hasBreakdown = isJsonRecord(breakdownValue) && Object.keys(breakdownValue).length > 0;
 
     const handleDelete = async () => {
+        if (isSaving) return;
+        setIsSaving(true);
         try {
-            const { error } = await supabase.from('treasury_log').delete().eq('id', movement.id);
-            if (error) throw error;
-            toast.success('Movimiento eliminado correctamente');
+            if (isTpv2Purchase) {
+                const { error } = await supabase.rpc('mutate_settled_tpv2_purchase', {
+                    p_purchase_id: movement.tpv2_purchase_id!,
+                    p_action: 'delete',
+                });
+                if (error) throw error;
+            } else {
+                const { error } = await supabase.from('treasury_log').delete().eq('id', movement.id);
+                if (error) throw error;
+            }
+            toast.success(isTpv2Purchase
+                ? 'Compra eliminada y cierre de caja recalculado'
+                : 'Movimiento eliminado correctamente');
             onClose();
             await onAfterMutation?.();
         } catch (error: unknown) {
             console.error(error);
-            toast.error(`Error al eliminar movimiento: ${errorMessage(error)}`);
+            toast.error(`Error al eliminar: ${errorMessage(error)}`);
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleUpdate = async (total: number, newBreakdown: Record<number, number>, newNotes: string, newDate?: string) => {
+        if (isSaving) return;
+        setIsSaving(true);
         try {
-            const updatePayload: {
-                amount: number;
-                breakdown: Json;
-                notes: string;
-                created_at?: string;
-            } = {
-                amount: total,
-                breakdown: newBreakdown as unknown as Json,
-                notes: newNotes,
-            };
-            if (newDate) updatePayload.created_at = newDate;
-
-            const { error } = await supabase.from('treasury_log').update(updatePayload).eq('id', movement.id);
-            if (error) throw error;
-            toast.success('Movimiento actualizado');
+            if (isTpv2Purchase) {
+                if (total <= 0 || !newNotes.trim()) {
+                    toast.error('La compra necesita un concepto y un desglose positivo');
+                    return;
+                }
+                const { error } = await supabase.rpc('mutate_settled_tpv2_purchase', {
+                    p_purchase_id: movement.tpv2_purchase_id!,
+                    p_action: 'update',
+                    p_notes: newNotes.trim(),
+                    p_breakdown: newBreakdown,
+                    p_occurred_at: newDate ?? movement.tpv2_purchase_occurred_at ?? undefined,
+                });
+                if (error) throw error;
+            } else {
+                const updatePayload: {
+                    amount: number;
+                    breakdown: Json;
+                    notes: string;
+                    created_at?: string;
+                } = {
+                    amount: total,
+                    breakdown: newBreakdown as unknown as Json,
+                    notes: newNotes,
+                };
+                if (newDate) updatePayload.created_at = newDate;
+                const { error } = await supabase.from('treasury_log').update(updatePayload).eq('id', movement.id);
+                if (error) throw error;
+            }
+            toast.success(isTpv2Purchase
+                ? 'Compra y cierre de caja actualizados'
+                : 'Movimiento actualizado');
             onClose();
             await onAfterMutation?.();
         } catch (error: unknown) {
             console.error(error);
-            toast.error(`Error al actualizar movimiento: ${errorMessage(error)}`);
+            toast.error(`Error al actualizar: ${errorMessage(error)}`);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -205,10 +242,10 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                     <CashDenominationForm
                         variant="embedded"
                         type={isAdjustment ? 'audit' : (isIncome ? 'in' : 'out')}
-                        boxName="Editando Movimiento"
+                        boxName={isTpv2Purchase ? "Editando compra TPV2" : "Editando Movimiento"}
                         initialCounts={toNumericCounts(breakdown)}
                         initialNotes={movement.notes ?? undefined}
-                        initialDate={movement.created_at ?? undefined}
+                        initialDate={movement.tpv2_purchase_occurred_at ?? movement.created_at ?? undefined}
                         submitLabel="Guardar Cambios"
                         onSubmit={handleUpdate}
                         onCancel={() => setIsEditing(false)}
@@ -277,13 +314,13 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             title={detailTitle}
             subtitle="Detalle de movimiento"
             footer={
-                isTpv2Purchase ? null : isDeleting ? (
+                isDeleting ? (
                     <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-rose-100 bg-rose-50 p-3">
                         <div className="flex items-center gap-3">
                             <AlertTriangle className="text-rose-500" size={20} />
                             <div>
-                                <p className="text-[10px] font-black text-rose-600 uppercase tracking-wider">¿Eliminar movimiento?</p>
-                                <p className="text-[9px] text-rose-400 font-bold">Esta acción es irreversible</p>
+                                <p className="text-[10px] font-black text-rose-600 uppercase tracking-wider">{isTpv2Purchase ? '¿Eliminar compra?' : '¿Eliminar movimiento?'}</p>
+                                <p className="text-[9px] text-rose-400 font-bold">{isTpv2Purchase ? 'Se actualizarán también el efectivo y el desglose del cierre' : 'Esta acción es irreversible'}</p>
                             </div>
                         </div>
                         <div data-element="footer-actions">
@@ -302,6 +339,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                                 layout="hug"
                                 instance="treasury-movement-delete-confirm"
                                 onClick={handleDelete}
+                                disabled={isSaving}
                             >
                                 Confirmar
                             </Button>
@@ -314,6 +352,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                             variant="destructive"
                             instance="treasury-movement-delete"
                             onClick={() => setIsDeleting(true)}
+                            disabled={isSaving}
                         >
                             Eliminar
                         </Button>
@@ -323,6 +362,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                                 variant="tertiary"
                                 instance="treasury-movement-edit"
                                 onClick={() => setIsEditing(true)}
+                                disabled={isSaving}
                             >
                                 Editar
                             </Button>
