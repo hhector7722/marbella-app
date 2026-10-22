@@ -67,13 +67,13 @@ function historicalExpectedNet(dateYmd: string, netByDate: Map<string, number>):
 }
 
 /** Escala cromática orientativa: el porcentaje no cambia de fórmula. */
-function performanceColors(percentage: number | null): { cell: string; text: string } | null {
+function performanceColors(percentage: number | null): string | null {
     if (percentage === null) return null;
-    if (percentage >= 15) return { cell: 'bg-teal-50/80', text: 'bg-teal-100 text-teal-800' };
-    if (percentage > 0) return { cell: 'bg-sky-50/80', text: 'bg-sky-100 text-sky-800' };
-    if (percentage >= -5) return { cell: 'bg-amber-50/80', text: 'bg-amber-100 text-amber-800' };
-    if (percentage >= -15) return { cell: 'bg-orange-50/80', text: 'bg-orange-100 text-orange-800' };
-    return { cell: 'bg-rose-50/80', text: 'bg-rose-100 text-rose-800' };
+    if (percentage >= 15) return 'text-teal-700';
+    if (percentage > 0) return 'text-sky-700';
+    if (percentage >= -5) return 'text-amber-700';
+    if (percentage >= -15) return 'text-orange-700';
+    return 'text-rose-700';
 }
 
 function HourlySalesCurve({ hours, fullWidth = false }: { hours?: TicketReport['hours']; fullWidth?: boolean }) {
@@ -141,7 +141,7 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     return (
         <div className="min-w-0 shrink-0">
             <button type="button" aria-expanded={canExpand && expanded} disabled={!canExpand} onClick={canExpand ? onToggle : undefined}
-                className={cn("ventas-ticket-strip flex h-[28px] w-full min-w-0 items-center gap-1.5 overflow-hidden bg-[rgb(255_255_255/0.97)] px-2 text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
+                className={cn("ventas-ticket-strip flex h-[28px] w-full min-w-0 items-center gap-1.5 overflow-hidden bg-[rgb(255_255_255/0.97)] pl-[18px] pr-[18px] text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
                 <strong className="w-[32px] shrink-0 text-[10px] font-semibold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
                 <span className="shrink-0 border-l border-[#182d5f]/20 pl-1.5 text-[8px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
                 {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="shrink-0 rounded bg-[#e1eaff] px-1.5 py-0.5 text-[9px] font-semibold tabular-nums">{ticket.mesa}</span>}
@@ -728,30 +728,27 @@ export default function VentasDesktopWorkspace() {
                                             const dayPerformance = calendarPerformanceByDate.get(iso) ?? null;
                                             const tone = performanceColors(dayPerformance);
                                             const selected = isSingleDay && iso === period.start;
-                                            const isWeekend = [0, 6].includes(day.getDay());
                                             return (
                                                 <button key={iso} type="button" onClick={() => selectDate(iso)}
                                                     aria-pressed={selected}
                                                     aria-label={`Seleccionar ${iso}${net !== null ? ', venta neta ' + euro(net) : ''}${dayPerformance !== null ? ', rendimiento ' + dayPerformance.toFixed(1) + '%' : ''}`}
                                                     className={cn(
-                                                        'month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 p-0.5 last:border-r-0 transition-colors hover:bg-indigo-50',
+                                                        'month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-white p-0.5 last:border-r-0 transition-colors hover:bg-zinc-50',
                                                         !isSameMonth(day, month) && 'opacity-35',
-                                                        !selected && isWeekend && !tone && 'bg-violet-50/60',
-                                                        !selected && tone?.cell,
-                                                        !selected && iso >= period.start && iso <= period.end && 'ring-1 ring-inset ring-indigo-200',
-                                                        selected && 'z-[1] bg-indigo-100 ring-2 ring-inset ring-indigo-500'
+                                                        !selected && iso >= period.start && iso <= period.end && 'ring-1 ring-inset ring-zinc-300',
+                                                        selected && 'z-[1] ring-2 ring-inset ring-zinc-900'
                                                     )}>
-                                                    <span className={cn("absolute right-1 top-0.5 text-[9px] font-medium tabular-nums", selected ? "text-indigo-700" : "text-slate-400")}>{format(day, 'd')}</span>
+                                                    <span className={cn("absolute right-1 top-0.5 text-[9px] font-medium tabular-nums", selected ? "text-zinc-700" : "text-slate-400")}>{format(day, 'd')}</span>
                                                     {net !== null && Number.isFinite(net) ? (
                                                         <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-px pt-2 text-center">
-                                                            <span title={euro(net)} className="max-w-full truncate text-[clamp(8px,0.75vw,11px)] font-normal leading-none tracking-tight text-indigo-800 tabular-nums">
+                                                            <span title={euro(net)} className="max-w-full truncate text-[clamp(8px,0.75vw,11px)] font-normal leading-none tracking-tight text-zinc-800 tabular-nums">
                                                                 {Math.round(net).toLocaleString('es-ES')}€
                                                             </span>
                                                             <span className="text-[7px] font-medium leading-none tracking-[0.06em] text-slate-500">V NETA</span>
                                                             {dayPerformance !== null && tone ? (
-                                                                <span className={cn("inline-flex max-w-full items-center justify-center gap-0.5 rounded px-1 py-px text-[clamp(8px,0.7vw,10px)] font-medium leading-none tabular-nums", tone.text)}
+                                                                <span className={cn("inline-flex max-w-full items-center justify-center gap-0.5 px-1 py-px text-[clamp(8px,0.7vw,10px)] font-medium leading-none tabular-nums", tone)}
                                                                     title="Rendimiento respecto a cierres anteriores del mismo día de la semana">
-                                                                    <span aria-hidden="true">{dayPerformance >= 0 ? '↗' : '↘'}</span>
+                                                                    <span aria-hidden="true">{dayPerformance >= 0 ? '▲' : '▼'}</span>
                                                                     {Math.abs(dayPerformance).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
                                                                 </span>
                                                             ) : null}
