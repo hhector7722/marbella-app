@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths } from 'date-fns';
+import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, CalendarRange, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, X } from 'lucide-react';
+import { ArrowLeft, CalendarRange, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
@@ -23,6 +23,7 @@ type CloseRow = {
     sales_card: number | null; cash_counted: number | null;
     sales_pending: number | null; debt_recovered: number | null; difference: number | null;
     dataphone_totals_photo_path?: string | null; bdp_closing_ticket_photo_path?: string | null;
+    weather?: string | null;
 };
 const euro = (v: unknown) => (Number(v ?? 0)).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const compactDoc = (id: string) => id.replace(/^0+/, '').replace(/(B)0+(?=\d)/i, '$1');
@@ -215,6 +216,7 @@ export default function VentasDesktopWorkspace() {
     const [filterStart, setFilterStart] = useState(() => format(new Date(), 'yyyy-MM-dd'));
     const [filterEnd, setFilterEnd] = useState(() => format(new Date(), 'yyyy-MM-dd'));
     const [periodClosings, setPeriodClosings] = useState<CloseRow[]>([]);
+    const [historicalNetByDate, setHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
     const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
     const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
@@ -263,6 +265,7 @@ export default function VentasDesktopWorkspace() {
         setMonth(startOfMonth(parseISO(next.start)));
         setTickets([]);
         setPeriodClosings([]);
+        setHistoricalNetByDate(new Map());
         setDailyReport(null);
         setLoadedPeriod(null);
         setLinesByTicket({});
@@ -420,10 +423,18 @@ export default function VentasDesktopWorkspace() {
     const canLoadMore = loadedPeriod === periodKey && !dayLoading && hasMore;
     useEffect(() => {
         let active = true;
+        // Load daily closing totals (not tickets) for the selected period and the
+        // preceding 16 same-weekday comparisons used by /dashboard/history.
+        const comparisonStart = format(subWeeks(parseISO(period.start), 16), 'yyyy-MM-dd');
         void supabase.from('cash_closings')
-            .select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
-            .gte('closing_date', period.start).lte('closing_date', period.end).limit(4000)
-            .then(({ data }) => { if (active) setPeriodClosings((data ?? []) as CloseRow[]); });
+            .select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,weather,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
+            .gte('closing_date', comparisonStart).lte('closing_date', period.end).limit(4000)
+            .then(({ data, error }) => {
+                if (!active) return;
+                const rows = error ? [] : (data ?? []) as CloseRow[];
+                setHistoricalNetByDate(new Map(rows.map(row => [row.closing_date, Number(row.net_sales ?? 0)])));
+                setPeriodClosings(rows.filter(row => row.closing_date >= period.start));
+            });
         return () => { active = false; };
     }, [supabase, period.start, period.end]);
 
@@ -456,6 +467,31 @@ export default function VentasDesktopWorkspace() {
         recovered: closingSum(periodClosings, 'debt_recovered'),
         difference: closingSum(periodClosings, 'difference')
     }), [periodClosings]);
+    // "Rendimiento" follows the existing history definition: net sales
+    // compared with the mean of up to eight prior same-weekday closings.
+    // This is not accounting profitability; that would require product costs.
+    const periodPerformance = useMemo(() => {
+        let expectedSum = 0;
+        let netSum = 0;
+        for (const closing of periodClosings) {
+            let historicalSum = 0;
+            let seen = 0;
+            let attempts = 0;
+            const date = parseISO(closing.closing_date);
+            for (let weeks = 1; weeks <= 16 && seen + attempts < 8; weeks++) {
+                const comparisonDate = subWeeks(date, weeks);
+                if (comparisonDate.getMonth() === 7) continue; // history excludes August
+                const net = historicalNetByDate.get(format(comparisonDate, 'yyyy-MM-dd'));
+                if (net !== undefined && net > 0) { historicalSum += net; seen++; }
+                else attempts++;
+            }
+            if (seen > 0) {
+                expectedSum += historicalSum / seen;
+                netSum += Number(closing.net_sales ?? 0);
+            }
+        }
+        return expectedSum > 0 ? (netSum - expectedSum) / expectedSum * 100 : null;
+    }, [periodClosings, historicalNetByDate]);
     return (
         <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
             <div className="mb-3 flex shrink-0 items-baseline justify-between gap-4 text-white">
@@ -471,20 +507,28 @@ export default function VentasDesktopWorkspace() {
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
                         <header className="flex min-h-[36px] shrink-0 items-center justify-between gap-2 border-b border-white/15 px-3">
-                            <strong className="min-w-0 truncate text-[11px] font-bold uppercase">{periodTitle}</strong>
+                            <strong className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase">{periodTitle}</strong>
                             {returnPeriod && (
-                                <button type="button" onClick={restorePeriod} className="inline-flex max-w-[52%] shrink-0 items-center gap-1 truncate rounded border border-sky-400/35 px-2 py-1 text-[10px] text-sky-200 hover:bg-white/10" title={'Volver a ' + periodLabel(returnPeriod)}>
+                                <button type="button" onClick={restorePeriod} className="inline-flex max-w-[25%] shrink-0 items-center gap-1 truncate rounded border border-sky-400/35 px-2 py-1 text-[10px] text-sky-200 hover:bg-white/10" title={'Volver a ' + periodLabel(returnPeriod)}>
                                     <ArrowLeft size={13} className="shrink-0"/>
-                                    <span className="truncate">Volver a {periodLabel(returnPeriod)}</span>
+                                    <span className="truncate">Volver al periodo</span>
                                 </button>
                             )}
+                            <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 whitespace-nowrap text-[9px] text-white/70">
+                                {isSingleDay && selectedClosing?.weather ? (
+                                    <span className="inline-flex items-center gap-1" title="Clima del cierre">
+                                        <CloudSun size={12}/> <span className="max-w-[80px] truncate">{selectedClosing.weather}</span>
+                                    </span>
+                                ) : null}
+                                <span className="tabular-nums"><strong className="font-semibold text-white">{dailyReport?.summary.count != null ? Number(dailyReport.summary.count).toLocaleString('es-ES') : '—'}</strong> tickets</span>
+                                <span className="tabular-nums"><strong className="font-semibold text-white">{dailyReport?.summary.avgTicket != null ? euro(dailyReport.summary.avgTicket) : '—'}</strong> medio</span>
+                            </div>
                         </header>
                         <div className="grid shrink-0 grid-cols-3 gap-x-2 gap-y-2 border-b border-white/10 px-3 py-3 sm:grid-cols-4">
                             {([
                                 ['Ventas TPV', hasClosingData ? euro(periodTotals.sales) : euro(dailyReport?.summary.totalSales)],
                                 ['Venta neta', hasClosingData ? euro(periodTotals.net) : '—'],
-                                ['Tickets', (dailyReport?.summary.count ?? 0).toLocaleString('es-ES')],
-                                ['Ticket medio', euro(dailyReport?.summary.avgTicket)],
+                                ['Rendimiento', periodPerformance !== null ? `${Math.abs(periodPerformance).toFixed(1)}%` : '—'],
                                 ['Tarjeta', hasClosingData ? euro(periodTotals.card) : '—'],
                                 ['Efectivo', hasClosingData ? euro(periodTotals.cash) : '—'],
                                 ['Pendiente', hasClosingData ? euro(periodTotals.pending) : '—'],
@@ -492,7 +536,7 @@ export default function VentasDesktopWorkspace() {
                                 ['Diferencia', hasClosingData ? euro(periodTotals.difference) : '—']
                             ] as [string, string][]).map(([label, value]) => (
                                 <div key={label} className="min-w-0 text-center">
-                                    <strong className={cn("block truncate text-[12px] font-bold tabular-nums", label === 'Diferencia' && periodTotals.difference > 0 && 'text-emerald-400')}>{value}</strong>
+                                    <strong className={cn("block truncate text-[12px] font-bold tabular-nums", label === 'Diferencia' && periodTotals.difference > 0 && 'text-emerald-400', label === 'Rendimiento' && periodPerformance !== null && (periodPerformance >= 0 ? 'text-emerald-400' : 'text-rose-400'))}>{label === 'Rendimiento' && periodPerformance !== null ? (periodPerformance >= 0 ? '▲ ' : '▼ ') : ''}{value}</strong>
                                     <span className="block truncate text-[8px] uppercase text-white/60">{label}</span>
                                 </div>
                             ))}
