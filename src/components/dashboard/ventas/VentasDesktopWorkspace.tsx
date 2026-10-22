@@ -915,7 +915,10 @@ export default function VentasDesktopWorkspace() {
             </div>
             <div className="history-desktop-board grid min-h-0 flex-1 items-start gap-4">
                 <div data-element="summary-stack" className="min-h-0 min-w-0">
-                    <SummaryCard title="Mensual" dateText={referenceLabel} report={monthReport} extras={monthClosings.length ? monthTotals : undefined}/>
+                    <SummaryCard title="Mensual" dateText={referenceLabel} report={monthReport}
+                        breakdownReport={monthBreakdown}
+                        extras={monthClosings.length ? monthTotals : undefined}
+                        scope="month" selection={crossSelection} onSelect={onChooseCross}/>
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
@@ -948,7 +951,22 @@ export default function VentasDesktopWorkspace() {
                                 ['Cobros', hasClosingData ? euro(periodTotals.recovered) : '—'],
                                 ['Diferencia', hasClosingData ? euro(periodTotals.difference) : '—']
                             ] as [string, string][]).map(([label, value]) => (
-                                <div key={label} className="min-w-0 text-center">
+                                <div key={label} data-crossfilter-trigger={['Tarjeta', 'Efectivo', 'Pendiente', 'Cobros'].includes(label) ? true : undefined}
+                                    role={['Tarjeta', 'Efectivo', 'Pendiente', 'Cobros'].includes(label) ? 'button' : undefined}
+                                    tabIndex={['Tarjeta', 'Efectivo', 'Pendiente', 'Cobros'].includes(label) ? 0 : undefined}
+                                    onClick={() => {
+                                        const payment = ({ Tarjeta:'card', Efectivo:'cash', Pendiente:'pending', Cobros:'collections' } as Record<string,'card'|'cash'|'pending'|'collections'>)[label];
+                                        if (payment) onChooseCross({ kind:'payment', payment, scope:'period' });
+                                    }}
+                                    onKeyDown={event => {
+                                        if (event.key !== 'Enter' && event.key !== ' ') return;
+                                        const payment = ({ Tarjeta:'card', Efectivo:'cash', Pendiente:'pending', Cobros:'collections' } as Record<string,'card'|'cash'|'pending'|'collections'>)[label];
+                                        if (payment) { event.preventDefault(); onChooseCross({ kind:'payment', payment, scope:'period' }); }
+                                    }}
+                                    className={cn('min-w-0 text-center',
+                                        ['Tarjeta','Efectivo','Pendiente','Cobros'].includes(label) && 'cursor-pointer rounded hover:bg-white/10',
+                                        crossSelection?.scope === 'period' && crossSelection.kind === 'payment' &&
+                                        ({Tarjeta:'card',Efectivo:'cash',Pendiente:'pending',Cobros:'collections'} as Record<string,string>)[label] === crossSelection.payment && 'bg-sky-200/15')}>
                                     <strong className={cn("block truncate text-[12px] font-bold tabular-nums", label === 'Diferencia' && periodTotals.difference > 0 && 'text-emerald-400', label === 'Rendimiento' && periodPerformance !== null && (periodPerformance >= 0 ? 'text-emerald-400' : 'text-rose-400'))}>{label === 'Rendimiento' && periodPerformance !== null ? (periodPerformance >= 0 ? '▲ ' : '▼ ') : ''}{value}</strong>
                                     <span className="block truncate text-[8px] uppercase text-white/60">{label}</span>
                                 </div>
@@ -967,7 +985,8 @@ export default function VentasDesktopWorkspace() {
                             </div>
                         )}
                         <div className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
-                            <SalesBreakdown report={dailyReport}/>
+                            <SalesBreakdown report={periodBreakdown} scope="period"
+                                selection={crossSelection} onSelect={onChooseCross}/>
                         </div>
                     </section>
                 </div>
@@ -1041,7 +1060,18 @@ export default function VentasDesktopWorkspace() {
                     <section data-element="invoices" className="sales-desktop-invoices mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-2 pt-2 text-white">
                         <div className="mb-2 flex shrink-0 items-center justify-between gap-2 px-1">
                             <strong className="text-[11px] font-bold">Facturas simplificadas</strong>
-                            <span className="shrink-0 text-[10px] text-white/60">{visibleTickets.length.toLocaleString('es-ES')} de {(dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES')}</span>
+                            {crossSelection && (
+                                <span className="min-w-0 flex-1 truncate text-right text-[10px] text-sky-200"
+                                    title={`${crossScopeStart} – ${crossScopeEnd} · ${crossLabel(crossSelection)}`}>
+                                    {crossScopeStart !== crossScopeEnd ? format(parseISO(crossScopeStart),'dd/MM') + '–' + format(parseISO(crossScopeEnd),'dd/MM') + ' · ' : ''}
+                                    {crossLabel(crossSelection)}
+                                </span>
+                            )}
+                            <span className="shrink-0 text-[10px] text-white/60">
+                                {visibleTickets.length.toLocaleString('es-ES')} de {crossSelection
+                                    ? (crossResult?.summary.count ?? 0).toLocaleString('es-ES')
+                                    : (dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES')}
+                            </span>
                         </div>
                         <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-1">
                             {visibleTickets.map((ticket, i) => (
@@ -1050,15 +1080,27 @@ export default function VentasDesktopWorkspace() {
                                     onToggle={() => setExpandedTicket(current => current === ticket.numero_documento ? null : ticket.numero_documento)}
                                     loadingItems={linesLoading && !Object.prototype.hasOwnProperty.call(linesByTicket, ticket.numero_documento)} />
                             ))}
-                            {dayError && <p className="py-3 text-center text-xs text-rose-300">No se pudieron cargar las facturas simplificadas.</p>}
-                            {!dayLoading && !dayError && loadedPeriod === periodKey && tickets.length === 0 && (
-                                <p className="py-3 text-center text-xs text-white/55">No hay facturas simplificadas en este periodo.</p>
+                            {(crossSelection ? crossError : dayError) && (
+                                <p className="py-3 text-center text-xs text-rose-300">No se pudieron cargar las facturas simplificadas.</p>
                             )}
-                            {dayLoading && <p className="py-3 text-center text-[10px] text-white/50">Cargando facturas simplificadas…</p>}
+                            {crossSelection?.kind === 'payment' && crossSelection.payment === 'collections' && !crossLoading && (
+                                <p className="py-3 text-center text-[11px] leading-relaxed text-amber-200">
+                                    Los cobros de deudas son movimientos de caja sin identificador de factura.
+                                    No pueden asignarse con precisión a productos, horas ni tickets.
+                                </p>
+                            )}
+                            {crossSelection ? (!crossLoading && !crossError && crossResult && !visibleTickets.length &&
+                                !(crossSelection.kind === 'payment' && crossSelection.payment === 'collections') &&
+                                <p className="py-3 text-center text-xs text-white/55">No hay facturas para esta selección.</p>)
+                                : (!dayLoading && !dayError && loadedPeriod === periodKey && tickets.length === 0 &&
+                                    <p className="py-3 text-center text-xs text-white/55">No hay facturas simplificadas en este periodo.</p>)}
+                            {(crossSelection ? crossLoading : dayLoading) && <p className="py-3 text-center text-[10px] text-white/50">Cargando facturas simplificadas…</p>}
                         </div>
                         {canLoadMore && (
                             <button type="button"
-                                onClick={() => setPage(current => current + PAGE_SIZE)}
+                                onClick={() => crossSelection
+                                    ? setCrossPage(current => current + PAGE_SIZE)
+                                    : setPage(current => current + PAGE_SIZE)}
                                 className="mt-1 shrink-0 rounded-md border border-white/25 px-3 py-1.5 text-center text-[11px] text-white/85 hover:bg-white/10">
                                 <ChevronDown size={13} className="mr-1 inline-block"/> Ver más
                             </button>
