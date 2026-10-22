@@ -602,28 +602,8 @@ export default function VentasDesktopWorkspace() {
                                 </button>
                             </div>
                         )}
-                        <div className="h-[190px] min-h-0 shrink-0 overflow-hidden border-b border-white/10 px-3 pb-3">
+                        <div className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
                             <SalesBreakdown report={dailyReport}/>
-                        </div>
-                        <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-2 pb-3 pt-2 custom-scrollbar">
-                            <div className="flex shrink-0 items-center justify-between gap-2 px-1">
-                                <strong className="text-[10px] uppercase">Tickets del periodo</strong>
-                                <span className="text-[10px] text-white/50">{tickets.length.toLocaleString('es-ES')} de {(dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES')} cargados</span>
-                            </div>
-                            {tickets.map((ticket, i) => (
-                                <SalesTicket key={ticket.numero_documento || i} ticket={ticket} items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
-                                    expanded={expandedTicket === ticket.numero_documento}
-                                    onToggle={() => setExpandedTicket(current => current === ticket.numero_documento ? null : ticket.numero_documento)}
-                                    loadingItems={linesLoading && !Object.prototype.hasOwnProperty.call(linesByTicket, ticket.numero_documento)}/>
-                            ))}
-                            {dayError && <p className="py-2 text-center text-xs text-rose-300">No se pudieron cargar los tickets.</p>}
-                            {!dayLoading && !dayError && loadedPeriod === periodKey && tickets.length === 0 && <p className="py-4 text-center text-xs text-white/55">Sin tickets en este periodo.</p>}
-                            {dayLoading && <p className="py-2 text-center text-[10px] text-white/50">Cargando siete tickets…</p>}
-                            {canLoadMore && (
-                                <button type="button" onClick={() => setPage(current => current + PAGE_SIZE)} className="shrink-0 rounded border border-white/25 px-3 py-1.5 text-center text-[11px] text-white/85 hover:bg-white/10">
-                                    <ChevronDown size={13} className="mr-1 inline-block"/> Ver 7 tickets más
-                                </button>
-                            )}
                         </div>
                     </section>
                 </div>
@@ -660,6 +640,32 @@ export default function VentasDesktopWorkspace() {
                                 ))}
                             </div>
                         </MonthCalendarFrame>
+                    </section>
+                    <section data-element="invoices" className="sales-desktop-invoices mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-2 pt-2 text-white">
+                        <div className="mb-2 flex shrink-0 items-center justify-between gap-2 px-1">
+                            <strong className="text-[11px] font-bold">Facturas simplificadas</strong>
+                            <span className="shrink-0 text-[10px] text-white/60">{visibleTickets.length.toLocaleString('es-ES')} de {(dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES')}</span>
+                        </div>
+                        <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pb-1">
+                            {visibleTickets.map((ticket, i) => (
+                                <SalesTicket key={ticket.numero_documento || i} ticket={ticket} items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
+                                    expanded={expandedTicket === ticket.numero_documento}
+                                    onToggle={() => setExpandedTicket(current => current === ticket.numero_documento ? null : ticket.numero_documento)}
+                                    loadingItems={linesLoading && !Object.prototype.hasOwnProperty.call(linesByTicket, ticket.numero_documento)} />
+                            ))}
+                            {dayError && <p className="py-3 text-center text-xs text-rose-300">No se pudieron cargar las facturas simplificadas.</p>}
+                            {!dayLoading && !dayError && loadedPeriod === periodKey && tickets.length === 0 && (
+                                <p className="py-3 text-center text-xs text-white/55">No hay facturas simplificadas en este periodo.</p>
+                            )}
+                            {dayLoading && <p className="py-3 text-center text-[10px] text-white/50">Cargando facturas simplificadas…</p>}
+                        </div>
+                        {canLoadMore && (
+                            <button type="button"
+                                onClick={() => isSingleDay ? setVisibleTicketCount(count => count + 7) : setPage(current => current + PAGE_SIZE)}
+                                className="mt-1 shrink-0 rounded-md border border-white/25 px-3 py-1.5 text-center text-[11px] text-white/85 hover:bg-white/10">
+                                <ChevronDown size={13} className="mr-1 inline-block"/> Ver más
+                            </button>
+                        )}
                     </section>
                 </div>
             </div>
@@ -698,7 +704,7 @@ export default function VentasDesktopWorkspace() {
                                 )}
                             </div>
                         )}
-                        <p className="mt-3 text-[11px] text-white/55">El resumen incluye todo el periodo. Los tickets se cargan de siete en siete.</p>
+                        <p className="mt-3 text-[11px] text-white/55">El resumen incluye todo el periodo. Las facturas se muestran de siete en siete.</p>
                         <button type="button" onClick={applyFilter}
                             disabled={(filterKind === 'custom' && filterEnd < filterStart) || (filterKind !== 'three' && !filterStart)}
                             className="mt-4 w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50">
