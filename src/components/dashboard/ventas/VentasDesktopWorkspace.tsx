@@ -1097,7 +1097,7 @@ export default function VentasDesktopWorkspace() {
                             {(crossSelection ? crossLoading : dayLoading) && <p className="py-3 text-center text-[10px] text-white/50">Cargando facturas simplificadas…</p>}
                         </div>
                         {canLoadMore && (
-                            <button type="button"
+                            <button type="button" data-crossfilter-trigger={crossSelection ? true : undefined}
                                 onClick={() => crossSelection
                                     ? setCrossPage(current => current + PAGE_SIZE)
                                     : setPage(current => current + PAGE_SIZE)}
