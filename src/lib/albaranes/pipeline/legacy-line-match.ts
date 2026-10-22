@@ -43,6 +43,21 @@ function splitTrailingCode(value: string): { name: string; code: string | null }
   return match ? { name: match[1]!, code: match[2]! } : { name: normalized, code: null }
 }
 
+function oneOcrCharacterApart(left: string, right: string): boolean {
+  if (left.length < 12 || right.length < 12 || Math.abs(left.length - right.length) > 1) return false
+  let i = 0
+  let j = 0
+  let edits = 0
+  while (i < left.length && j < right.length) {
+    if (left[i] === right[j]) { i++; j++; continue }
+    if (++edits > 1) return false
+    if (left.length > right.length) i++
+    else if (right.length > left.length) j++
+    else { i++; j++ }
+  }
+  return edits + Number(i < left.length || j < right.length) === 1
+}
+
 export function parseQuantity(raw: string | null): number | null {
   const match = raw?.trim().match(/^(\d+(?:[,.]\d+)?)(?:\s*(?:U|UD|UDS|CAJA|CAJAS)\.?)?$/i)
   if (!match) return null
@@ -63,11 +78,13 @@ export function matchLegacyLinesToMistral(params: {
     ...splitTrailingCode(row.descriptionRaw),
     quantity: parseQuantity(row.quantityRaw),
   }))
-  const candidates = legacy.map((line) => rows.filter((row) =>
-    line.name.length > 0 && line.name === row.name
-    && line.quantity != null && Number.isFinite(line.quantity) && line.quantity > 0
-    && row.quantity === line.quantity
-    && (!line.code || !row.code || line.code === row.code)))
+  const candidates = legacy.map((line) => {
+    const comparable = rows.filter((row) =>
+      line.name.length > 0 && line.quantity != null && Number.isFinite(line.quantity) && line.quantity > 0
+      && row.quantity === line.quantity && (!line.code || !row.code || line.code === row.code))
+    const exact = comparable.filter((row) => line.name === row.name)
+    return exact.length ? exact : comparable.filter((row) => oneOcrCharacterApart(line.name, row.name))
+  })
   const demand = new Map<number, number>()
   for (const matches of candidates) {
     if (matches.length === 1) {
