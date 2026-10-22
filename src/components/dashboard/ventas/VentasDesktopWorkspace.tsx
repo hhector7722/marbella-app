@@ -45,6 +45,37 @@ const periodLabel = (p: Period) => {
 const closingSum = (rows: CloseRow[], key: keyof CloseRow) =>
     rows.reduce((sum, row) => sum + Number(row[key] ?? 0), 0);
 
+/** Misma referencia que el rendimiento del detalle: hasta ocho cierres previos
+ * del mismo día de la semana, mirando 16 semanas atrás y excluyendo agosto. */
+function historicalExpectedNet(dateYmd: string, netByDate: Map<string, number>): number | null {
+    const day = parseISO(dateYmd);
+    let total = 0;
+    let seen = 0;
+    let attempts = 0;
+    for (let weeks = 1; weeks <= 16 && seen + attempts < 8; weeks++) {
+        const previous = subWeeks(day, weeks);
+        if (previous.getMonth() === 7) continue;
+        const net = netByDate.get(format(previous, 'yyyy-MM-dd'));
+        if (net !== undefined && net > 0) {
+            total += net;
+            seen++;
+        } else {
+            attempts++;
+        }
+    }
+    return seen > 0 ? total / seen : null;
+}
+
+/** Escala cromática orientativa: el porcentaje no cambia de fórmula. */
+function performanceColors(percentage: number | null): { cell: string; text: string } | null {
+    if (percentage === null) return null;
+    if (percentage >= 15) return { cell: 'bg-teal-50/80', text: 'bg-teal-100 text-teal-800' };
+    if (percentage > 0) return { cell: 'bg-sky-50/80', text: 'bg-sky-100 text-sky-800' };
+    if (percentage >= -5) return { cell: 'bg-amber-50/80', text: 'bg-amber-100 text-amber-800' };
+    if (percentage >= -15) return { cell: 'bg-orange-50/80', text: 'bg-orange-100 text-orange-800' };
+    return { cell: 'bg-rose-50/80', text: 'bg-rose-100 text-rose-800' };
+}
+
 function HourlySalesCurve({ hours, fullWidth = false }: { hours?: TicketReport['hours']; fullWidth?: boolean }) {
     // Same 7–22h curve and 120×20 coordinate system as /dashboard/history.
     const data = Array.from({ length: 16 }, (_, i) => Number(hours?.find(h => Number(h.hour) === i + 7)?.total ?? 0));
@@ -52,7 +83,7 @@ function HourlySalesCurve({ hours, fullWidth = false }: { hours?: TicketReport['
     const path = data.map((total, i) => `${i === 0 ? 'M' : 'L'} ${(i / (data.length - 1)) * 120},${16 - total / peak * 13}`).join(' ');
     return (
         <svg aria-label="Evolución de ventas por hora" role="img" viewBox="0 0 120 20" preserveAspectRatio="none"
-            className={fullWidth ? 'block h-7 w-full text-white' : 'h-3 min-w-0 flex-1 text-white'}>
+            className={fullWidth ? 'block h-7 w-full text-[#76b8ff]' : 'h-3 min-w-0 flex-1 text-[#76b8ff]'}>
             <path d={path} fill="none" stroke="currentColor" strokeWidth={fullWidth ? '1' : '1.5'} strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" />
         </svg>
     );
@@ -84,7 +115,7 @@ function TicketProductPreview({ items, onOverflowChange }: { items: Item[]; onOv
         return () => observer.disconnect();
     }, [items, onOverflowChange]);
     const piece = (item: Item, i: number) => (
-        <span key={i} className="inline-flex shrink-0 items-center gap-1 border-l border-[#172c61]/35 px-2.5 text-[10px] text-[#1a2854]">
+        <span key={i} className="inline-flex shrink-0 items-center gap-0.5 border-l border-[#172c61]/30 px-1.5 text-[9px] text-[#1a2854]">
             {item.qty !== 1 && <strong className="font-bold tabular-nums">{item.qty}</strong>}
             <span>{item.name}</span>
         </span>
@@ -110,15 +141,15 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     return (
         <div className="min-w-0 shrink-0">
             <button type="button" aria-expanded={canExpand && expanded} disabled={!canExpand} onClick={canExpand ? onToggle : undefined}
-                className={cn("ventas-ticket-strip flex h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden bg-[rgb(255_255_255/0.97)] px-3 text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
-                <strong className="w-[38px] shrink-0 text-[12px] font-extrabold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
-                <span className="shrink-0 border-l border-[#182d5f]/20 pl-2 text-[9px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
-                {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="shrink-0 rounded-md bg-[#e1eaff] px-2 py-0.5 text-[11px] font-bold tabular-nums">{ticket.mesa}</span>}
+                className={cn("ventas-ticket-strip flex h-[28px] w-full min-w-0 items-center gap-1.5 overflow-hidden bg-[rgb(255_255_255/0.97)] px-2 text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
+                <strong className="w-[32px] shrink-0 text-[10px] font-semibold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
+                <span className="shrink-0 border-l border-[#182d5f]/20 pl-1.5 text-[8px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
+                {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="shrink-0 rounded bg-[#e1eaff] px-1.5 py-0.5 text-[9px] font-semibold tabular-nums">{ticket.mesa}</span>}
                 <TicketProductPreview items={items} onOverflowChange={setHasHiddenProducts}/>
                 {canExpand && (expanded
                     ? <ChevronUp size={13} className="shrink-0 text-[#8992a8]" aria-label="Ocultar productos" />
                     : <ChevronDown size={13} className="shrink-0 text-[#8992a8]" aria-label="Mostrar más productos" />)}
-                <strong className="ml-auto shrink-0 text-[13px] font-extrabold tabular-nums text-emerald-500">{euro(ticket.total_documento)}</strong>
+                <strong className={cn("ml-auto shrink-0 text-[11px] font-semibold tabular-nums", Number(ticket.total_documento) >= 0 ? "text-emerald-700" : "text-rose-700")}>{euro(ticket.total_documento)}</strong>
             </button>
             {canExpand && expanded && (
                 <div className="mx-3 rounded-b-lg border border-t-0 border-white/20 bg-white/10 px-3 py-2 text-[10px] text-white/90">
@@ -175,7 +206,6 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
         [report]
     );
     const maxProductSales = Math.max(1, ...products.map(p => Number(p.total_ingresos ?? 0)));
-    const maxHourlySales = Math.max(1, ...hours.map(h => Number(h.total ?? 0)));
     const totalSales = Number(report?.summary?.totalSales ?? 0);
     const shareLabel = (sales: number) => totalSales > 0
         ? (sales / totalSales * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + '% del total'
@@ -216,14 +246,12 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
                     {hours.map(hour => {
                         const sales = Number(hour.total ?? 0);
                         return (
-                            <div key={hour.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(36px,0.5fr)_auto_minmax(50px,1fr)_auto] items-center gap-x-2 border-b border-white/5 text-[10px]"
-                                title={`${hour.hour}–${(hour.hour + 1) % 24} · ${hour.count} tickets · ${euro(sales)}`}>
-                                <strong className="min-w-0 shrink-0 tabular-nums">{hour.hour}-{(hour.hour + 1) % 24}</strong>
-                                <span className="shrink-0 tabular-nums text-white/60">{hour.count} tick</span>
-                                <div role="img" aria-label={euro(sales)} className="h-[8px] min-w-0 overflow-hidden rounded-sm bg-white/10">
-                                    <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: barWidth(sales, maxHourlySales) }}/>
-                                </div>
-                                <strong className="min-w-[60px] shrink-0 text-right tabular-nums">{euro(sales)}</strong>
+                            <div key={hour.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(31px,0.55fr)_minmax(42px,0.75fr)_minmax(60px,1fr)_minmax(63px,1fr)] items-center gap-x-1.5 border-b border-white/5 text-[10px]"
+                                title={`${hour.hour}–${(hour.hour + 1) % 24} · ${hour.count} tickets · ${euro(hour.count > 0 ? sales / hour.count : 0)} de ticket medio · ${euro(sales)}`}>
+                                <strong className="min-w-0 tabular-nums text-white/90">{hour.hour}-{(hour.hour + 1) % 24}</strong>
+                                <span className="min-w-0 text-center text-[9px] tabular-nums text-sky-200">{hour.count} tick</span>
+                                <span className="min-w-0 text-center text-[9px] tabular-nums text-violet-200">{euro(hour.count > 0 ? sales / hour.count : 0)} med</span>
+                                <strong className="min-w-0 text-right tabular-nums text-teal-100">{euro(sales)}</strong>
                             </div>
                         );
                     })}
@@ -277,6 +305,7 @@ export default function VentasDesktopWorkspace() {
     const [filterEnd, setFilterEnd] = useState(() => format(new Date(), 'yyyy-MM-dd'));
     const [periodClosings, setPeriodClosings] = useState<CloseRow[]>([]);
     const [historicalNetByDate, setHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
+    const [calendarHistoricalNetByDate, setCalendarHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
     const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
     const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
@@ -319,6 +348,16 @@ export default function VentasDesktopWorkspace() {
         return weeks;
     }, [month]);
     const byDate = useMemo(() => new Map(calendarClosings.map(c => [c.closing_date, c])), [calendarClosings]);
+    const calendarPerformanceByDate = useMemo(() => {
+        const result = new Map<string, number>();
+        for (const closing of calendarClosings) {
+            const expected = historicalExpectedNet(closing.closing_date, calendarHistoricalNetByDate);
+            if (expected !== null && expected > 0 && closing.net_sales != null) {
+                result.set(closing.closing_date, (Number(closing.net_sales) - expected) / expected * 100);
+            }
+        }
+        return result;
+    }, [calendarClosings, calendarHistoricalNetByDate]);
 
     const changePeriod = (next: Period, keepReturn = false) => {
         setPeriod(next);
@@ -403,12 +442,25 @@ export default function VentasDesktopWorkspace() {
 
     useEffect(() => {
         let active = true;
-        // Calendar navigation is independent of the selected date range.
-        void supabase.from('cash_closings')
-            .select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference')
-            .gte('closing_date', format(startOfMonth(month), 'yyyy-MM-dd'))
-            .lte('closing_date', format(endOfMonth(month), 'yyyy-MM-dd'))
-            .then(({ data }) => { if (active) setCalendarClosings((data ?? []) as CloseRow[]); });
+        // Navegación independiente del filtro. Cargar cierres del mes y sus
+        // comparables de los mismos días de semana, sin consultas por celda.
+        const start = format(startOfMonth(month), 'yyyy-MM-dd');
+        const end = format(endOfMonth(month), 'yyyy-MM-dd');
+        const firstComparable = format(subWeeks(startOfMonth(month), 16), 'yyyy-MM-dd');
+        void Promise.all([
+            supabase.from('cash_closings')
+                .select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference')
+                .gte('closing_date', start).lte('closing_date', end),
+            supabase.from('cash_closings')
+                .select('closing_date,net_sales')
+                .gte('closing_date', firstComparable).lte('closing_date', end).limit(1500),
+        ]).then(([closings, history]) => {
+            if (!active) return;
+            setCalendarClosings(closings.error ? [] : (closings.data ?? []) as CloseRow[]);
+            setCalendarHistoricalNetByDate(new Map<string, number>(
+                (history.error ? [] : history.data ?? []).map(c => [c.closing_date, Number(c.net_sales ?? 0)] as [string, number])
+            ));
+        });
         return () => { active = false; };
     }, [supabase, month]);
 
@@ -579,19 +631,9 @@ export default function VentasDesktopWorkspace() {
         let expectedSum = 0;
         let netSum = 0;
         for (const closing of periodClosings) {
-            let historicalSum = 0;
-            let seen = 0;
-            let attempts = 0;
-            const date = parseISO(closing.closing_date);
-            for (let weeks = 1; weeks <= 16 && seen + attempts < 8; weeks++) {
-                const comparisonDate = subWeeks(date, weeks);
-                if (comparisonDate.getMonth() === 7) continue; // history excludes August
-                const net = historicalNetByDate.get(format(comparisonDate, 'yyyy-MM-dd'));
-                if (net !== undefined && net > 0) { historicalSum += net; seen++; }
-                else attempts++;
-            }
-            if (seen > 0) {
-                expectedSum += historicalSum / seen;
+            const expected = historicalExpectedNet(closing.closing_date, historicalNetByDate);
+            if (expected !== null) {
+                expectedSum += expected;
                 netSum += Number(closing.net_sales ?? 0);
             }
         }
@@ -682,14 +724,39 @@ export default function VentasDesktopWorkspace() {
                                         {week.map(day => {
                                             const iso = format(day, 'yyyy-MM-dd');
                                             const closing = byDate.get(iso);
-                                            const dayValue = Number(closing?.tpv_sales ?? 0);
+                                            const net = closing?.net_sales == null ? null : Number(closing.net_sales);
+                                            const dayPerformance = calendarPerformanceByDate.get(iso) ?? null;
+                                            const tone = performanceColors(dayPerformance);
+                                            const selected = isSingleDay && iso === period.start;
+                                            const isWeekend = [0, 6].includes(day.getDay());
                                             return (
-                                                <button key={iso} type="button" onClick={() => selectDate(iso)} aria-pressed={isSingleDay && iso === period.start} aria-label={'Seleccionar ' + iso}
-                                                    className={cn('month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 p-1 last:border-r-0 hover:bg-blue-50/50', !isSameMonth(day, month) && 'opacity-35', iso >= period.start && iso <= period.end && 'bg-blue-100/80', isSingleDay && iso === period.start && 'z-[1] ring-2 ring-inset ring-zinc-900')}>
-                                                    <span className="absolute right-1 top-1 text-[9px] font-medium text-gray-400">{format(day, 'd')}</span>
-                                                    <div className="flex min-h-0 flex-1 items-center justify-center pt-2">
-                                                        {dayValue !== 0 && <strong className="text-[clamp(9px,0.8vw,13px)] font-extrabold tabular-nums">{Math.round(dayValue)}€</strong>}
-                                                    </div>
+                                                <button key={iso} type="button" onClick={() => selectDate(iso)}
+                                                    aria-pressed={selected}
+                                                    aria-label={`Seleccionar ${iso}${net !== null ? ', venta neta ' + euro(net) : ''}${dayPerformance !== null ? ', rendimiento ' + dayPerformance.toFixed(1) + '%' : ''}`}
+                                                    className={cn(
+                                                        'month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 p-0.5 last:border-r-0 transition-colors hover:bg-indigo-50',
+                                                        !isSameMonth(day, month) && 'opacity-35',
+                                                        !selected && isWeekend && !tone && 'bg-violet-50/60',
+                                                        !selected && tone?.cell,
+                                                        !selected && iso >= period.start && iso <= period.end && 'ring-1 ring-inset ring-indigo-200',
+                                                        selected && 'z-[1] bg-indigo-100 ring-2 ring-inset ring-indigo-500'
+                                                    )}>
+                                                    <span className={cn("absolute right-1 top-0.5 text-[9px] font-medium tabular-nums", selected ? "text-indigo-700" : "text-slate-400")}>{format(day, 'd')}</span>
+                                                    {net !== null && Number.isFinite(net) ? (
+                                                        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-px pt-2 text-center">
+                                                            <span title={euro(net)} className="max-w-full truncate text-[clamp(8px,0.75vw,11px)] font-normal leading-none tracking-tight text-indigo-800 tabular-nums">
+                                                                {Math.round(net).toLocaleString('es-ES')}€
+                                                            </span>
+                                                            <span className="text-[7px] font-medium leading-none tracking-[0.06em] text-slate-500">V NETA</span>
+                                                            {dayPerformance !== null && tone ? (
+                                                                <span className={cn("inline-flex max-w-full items-center justify-center gap-0.5 rounded px-1 py-px text-[clamp(8px,0.7vw,10px)] font-medium leading-none tabular-nums", tone.text)}
+                                                                    title="Rendimiento respecto a cierres anteriores del mismo día de la semana">
+                                                                    <span aria-hidden="true">{dayPerformance >= 0 ? '↗' : '↘'}</span>
+                                                                    {Math.abs(dayPerformance).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                    ) : null}
                                                 </button>
                                             );
                                         })}
@@ -703,7 +770,7 @@ export default function VentasDesktopWorkspace() {
                             <strong className="text-[11px] font-bold">Facturas simplificadas</strong>
                             <span className="shrink-0 text-[10px] text-white/60">{visibleTickets.length.toLocaleString('es-ES')} de {(dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES')}</span>
                         </div>
-                        <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pb-1">
+                        <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-1">
                             {visibleTickets.map((ticket, i) => (
                                 <SalesTicket key={ticket.numero_documento || i} ticket={ticket} items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
                                     expanded={expandedTicket === ticket.numero_documento}

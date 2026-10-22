@@ -7318,8 +7318,9 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     min-width: 0;
     min-height: 0;
   }
+  /* Más facturas visibles por pantalla sin recortar el contenido de una línea. */
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] .ventas-ticket-strip {
-    height: 32px;
+    height: 28px;
   }
 }
 @media (min-width: 1024px) and (max-width: 1199px) {
