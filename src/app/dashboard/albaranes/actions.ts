@@ -123,6 +123,7 @@ export type PurchaseInvoiceListItem = {
   invoice_date: string | null
   total_amount: number | null
   file_path: string | null
+  duplicate_of_invoice_id: string | null
   is_fully_processed: boolean
 }
 
@@ -138,6 +139,7 @@ const PURCHASE_INVOICE_LIST_SELECT = `
       invoice_date,
       total_amount,
       file_path,
+      duplicate_of_invoice_id,
       suppliers(name,image_url)
     `
 
@@ -156,6 +158,7 @@ function mapPurchaseInvoiceRows(data: unknown[]): PurchaseInvoiceListItem[] {
     invoice_date: r.invoice_date ?? null,
     total_amount: r.total_amount ?? null,
     file_path: r.file_path ?? null,
+    duplicate_of_invoice_id: r.duplicate_of_invoice_id ?? null,
     // El tick de stock se resuelve al abrir el detalle, no en el listado:
     // cruzar 200 albaranes con stock_movements colgaba el SSR y pintaba lista vacía.
     is_fully_processed: false,

@@ -169,3 +169,12 @@ precio) a partir de `purchase_receipt_confirmations`. Es `SECURITY INVOKER`, no
 concede nada a `anon` y solo la ejecutan `authenticated` y `service_role`. La
 migración también crea un índice por `(ingredient_id, confirmed_at DESC)`. No
 escribe precios, stock ni confirmaciones.
+
+## 20261022143930 · Capturas duplicadas de albaranes
+
+`20261022143930_block_duplicate_purchase_receipt.sql` añade al punto de entrada
+K4 una comprobación de `duplicate_of_invoice_id` antes de cualquier efecto
+económico. Dos fotografías del mismo papel tienen líneas e identificadores
+distintos: la idempotencia de cada línea no impide por sí sola una segunda
+recepción. La captura duplicada conserva su evidencia para auditoría y K4
+devuelve `duplicate_invoice` tanto en vista previa como en aplicación.
