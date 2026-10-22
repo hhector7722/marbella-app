@@ -9,7 +9,9 @@ import {
   ChevronRight,
   FileSearch,
   Loader2,
+  Minus,
   MinusCircle,
+  Plus,
   Pencil,
   RefreshCw,
   RotateCcw,
@@ -256,6 +258,7 @@ export default function AlbaranesHistoricoClient({
   /** Visor carrusel (varias hojas), mismo patrón que el borrador del escáner. */
   const [invoiceImageViewerOpen, setInvoiceImageViewerOpen] = useState(false)
   const [invoiceCarouselIndex, setInvoiceCarouselIndex] = useState(0)
+  const [invoiceZoomStep, setInvoiceZoomStep] = useState(0)
   const invoiceCarouselRef = useRef<HTMLDivElement>(null)
   const invoiceCarouselIndexRef = useRef(0)
   const invoiceImageViewerOpenRef = useRef(false)
@@ -331,6 +334,7 @@ export default function AlbaranesHistoricoClient({
     const i = Math.min(Math.max(0, index), n - 1)
     el.scrollTo({ left: i * w, behavior })
     setInvoiceCarouselIndex(i)
+    setInvoiceZoomStep(0)
   }
 
   const onInvoiceCarouselScroll = () => {
@@ -340,7 +344,10 @@ export default function AlbaranesHistoricoClient({
     const w = el.clientWidth
     if (w <= 0) return
     const i = Math.min(Math.max(0, Math.round(el.scrollLeft / w)), n - 1)
-    setInvoiceCarouselIndex(i)
+    if (i !== invoiceCarouselIndexRef.current) {
+      setInvoiceCarouselIndex(i)
+      setInvoiceZoomStep(0)
+    }
   }
 
   useEffect(() => {
@@ -1712,6 +1719,7 @@ export default function AlbaranesHistoricoClient({
                               setIngredientCreateOpen(false)
                               setInvoiceCarouselIndex(0)
                               invoiceCarouselIndexRef.current = 0
+                              setInvoiceZoomStep(0)
                               setInvoiceImageViewerOpen(true)
                             }}
                           >
@@ -2258,8 +2266,18 @@ export default function AlbaranesHistoricoClient({
           </Button>
         }
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-1 min-w-0 max-w-full bg-zinc-950 text-white">
+        <div className="flex min-h-0 flex-1 flex-col gap-1 min-w-0 max-w-full bg-transparent text-zinc-800">
                 <div className="relative min-h-0 shrink-0 overflow-visible">
+                  <div className="absolute right-2 top-2 z-30">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      instance="albaran-invoice-image-close-floating"
+                      icon={<X className="h-5 w-5" />}
+                      aria-label="Cerrar imagen original"
+                      onClick={() => setInvoiceImageViewerOpen(false)}
+                    />
+                  </div>
                   {invoiceImageSheetOptions.length > 1 ? (
                     <>
                       <div
@@ -2303,7 +2321,7 @@ export default function AlbaranesHistoricoClient({
                     onScroll={invoiceImageSheetOptions.length > 1 ? onInvoiceCarouselScroll : undefined}
                     className={cn(
                       'flex w-full bg-transparent',
-                      'min-h-[10rem] h-[min(72dvh,calc(100svh-10rem))] md:h-[min(70vh,calc(100vh-12rem))]',
+                      'min-h-[10rem] h-[min(78dvh,calc(100dvh-7rem))]',
                       invoiceImageSheetOptions.length > 1
                         ? 'touch-pan-x snap-x snap-mandatory overflow-x-auto overflow-y-visible [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
                         : 'flex-col overflow-hidden'
@@ -2323,8 +2341,9 @@ export default function AlbaranesHistoricoClient({
                           resetKey={`${opt.key}-${invoiceCarouselIndex}`}
                           captureGestures
                           trackpadGestures
-                          minScale={1}
-                          maxScale={8}
+                          minScale={0.2}
+                          maxScale={32}
+                          zoomStep={invoiceZoomStep}
                           className="flex-1 overflow-hidden"
                           onSwipeAtRest={invoiceImageSheetOptions.length > 1
                             ? (direction) => scrollInvoiceCarouselToIndex(
@@ -2332,16 +2351,36 @@ export default function AlbaranesHistoricoClient({
                               )
                             : undefined}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={opt.url}
-                            alt={opt.label}
-                            draggable={false}
-                            className="block h-auto max-h-[min(58dvh,calc(100svh-18rem))] w-auto max-w-[min(100vw,100%)] select-none rounded-xl object-contain shadow-lg ring-1 ring-white/10 md:max-h-[min(60vh,calc(100vh-18rem))]"
-                          />
+                          <div className="flex min-h-[min(78dvh,calc(100dvh-7rem))] w-full items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={opt.url}
+                              alt={opt.label}
+                              draggable={false}
+                              className="block h-auto max-h-[min(72dvh,calc(100dvh-9rem))] w-auto max-w-[min(90vw,100%)] select-none rounded-xl object-contain shadow-lg ring-1 ring-zinc-300/50"
+                            />
+                          </div>
                         </PinchZoomViewport>
                       </div>
                     ))}
+                  </div>
+                  <div className="absolute bottom-1 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-xl bg-white/95 p-1 shadow-lg ring-1 ring-zinc-200">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      instance="albaran-invoice-image-zoom-out"
+                      icon={<Minus className="h-5 w-5" />}
+                      aria-label="Alejar imagen"
+                      onClick={() => setInvoiceZoomStep((step) => -(Math.abs(step) + 1))}
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      instance="albaran-invoice-image-zoom-in"
+                      icon={<Plus className="h-5 w-5" />}
+                      aria-label="Ampliar imagen"
+                      onClick={() => setInvoiceZoomStep((step) => Math.abs(step) + 1)}
+                    />
                   </div>
                 </div>
 
@@ -2357,7 +2396,7 @@ export default function AlbaranesHistoricoClient({
                           <span
                             className={cn(
                               'block h-1.5 w-1.5 rounded-full transition-colors',
-                              i === invoiceCarouselIndex ? 'bg-white' : 'bg-current'
+                              i === invoiceCarouselIndex ? 'bg-zinc-800' : 'bg-current'
                             )}
                           />
                         }
@@ -2369,7 +2408,7 @@ export default function AlbaranesHistoricoClient({
                   </div>
                 ) : null}
 
-                <p className="shrink-0 pb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                <p className="shrink-0 pb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-zinc-600">
                   {invoiceImageSheetOptions.length > 1
                     ? 'Desliza para cambiar de hoja · Pellizca con dos dedos para zoom'
                     : 'Pellizca con dos dedos para zoom'}
