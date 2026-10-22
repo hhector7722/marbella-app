@@ -284,7 +284,7 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [expanded, hasHiddenProducts, loadingItems]);
     return (
-        <div className="min-w-0 shrink-0">
+        <div className="min-w-0 shrink-0" data-crossfilter-trigger>
             <button type="button" aria-expanded={canExpand && expanded} disabled={!canExpand} onClick={canExpand ? onToggle : undefined}
                 className={cn("ventas-ticket-strip flex h-[28px] w-full min-w-0 items-center gap-1.5 overflow-hidden bg-[rgb(255_255_255/0.97)] pl-[18px] pr-[18px] text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
                 <strong className="w-[32px] shrink-0 text-[10px] font-semibold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
@@ -342,13 +342,17 @@ function RankingViewport({ children }: { children: ReactNode }) {
 }
 
 // Shared product ranking and chronological hourly chart for monthly/period cards.
-function SalesBreakdown({ report, scope, selection, onSelect }: {
-    report: TicketReport | null; scope: CrossScope;
+function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
+    report: TicketReport | null; baseReport: TicketReport | null; scope: CrossScope;
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
 }) {
-    const products = report?.products ?? [];
+    // Clicking a product filters the *other* sections but must never reorder,
+    // hide, or resize the product ranking the user selected from.
+    const productRankingReport = selection?.scope === scope && selection.kind === 'product'
+        ? baseReport : report;
+    const products = productRankingReport?.products ?? [];
     const maxProductSales = Math.max(1, ...products.map(p => Number(p.total_ingresos ?? 0)));
-    const totalSales = Number(report?.summary?.totalSales ?? 0);
+    const totalSales = Number(productRankingReport?.summary?.totalSales ?? 0);
     const shareLabel = (sales: number) => totalSales > 0
         ? (sales / totalSales * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + '% del total'
         : 'Sin total de ventas disponible';
@@ -441,7 +445,7 @@ function SummaryCard({ title, dateText, report, extras, breakdownReport, scope, 
                     );
                 })}
             </div>
-            <SalesBreakdown report={breakdownReport} scope={scope} selection={selection} onSelect={onSelect}/>
+            <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope} selection={selection} onSelect={onSelect}/>
         </div>
     );
 }
@@ -985,7 +989,7 @@ export default function VentasDesktopWorkspace() {
                             </div>
                         )}
                         <div className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
-                            <SalesBreakdown report={periodBreakdown} scope="period"
+                            <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
                                 selection={crossSelection} onSelect={onChooseCross}/>
                         </div>
                     </section>
