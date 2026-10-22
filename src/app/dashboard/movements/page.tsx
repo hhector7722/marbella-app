@@ -45,6 +45,7 @@ interface Movement {
     notes: string;
     running_balance: number;
     breakdown?: Json;
+    tpv2_purchase_id?: string | null;
     original_type?: string;
 }
 
@@ -397,6 +398,7 @@ export default function MovementsPage() {
                         (m.type === 'OUT' ? 'expense' : 'adjustment'),
                     notes: m.notes ?? '',
                     breakdown: m.breakdown ?? undefined,
+                    tpv2_purchase_id: m.tpv2_purchase_id ?? null,
                     original_type: m.type ?? undefined,
                     running_balance: parseNumericToCents(m.running_balance || 0) / 100
                 }));
