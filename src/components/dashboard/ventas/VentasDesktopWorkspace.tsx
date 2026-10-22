@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths } from 'date-fns';
+import { addDays, addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { ArrowLeft, CalendarRange, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { cn } from '@/lib/utils';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 
 type Ticket = { numero_documento: string; fecha: string; hora_cierre: string; total_documento: number; mesa: number | null };
 type Item = { name: string; qty: number; price: number; total: number };
@@ -20,11 +22,27 @@ type CloseRow = {
     id: string; closing_date: string; tpv_sales: number | null; net_sales: number | null;
     sales_card: number | null; cash_counted: number | null;
     sales_pending: number | null; debt_recovered: number | null; difference: number | null;
+    dataphone_totals_photo_path?: string | null; bdp_closing_ticket_photo_path?: string | null;
 };
 const euro = (v: unknown) => (Number(v ?? 0)).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const compactDoc = (id: string) => id.replace(/^0+/, '').replace(/(B)0+(?=\d)/i, '$1');
 const EMPTY_ITEMS: Item[] = [];
-const PAGE_SIZE = 150;
+const PAGE_SIZE = 7;
+type Period = { start: string; end: string; kind: 'day' | 'week' | 'month' | 'range' };
+const todayPeriod = (): Period => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    return { start: today, end: today, kind: 'day' };
+};
+const periodLabel = (p: Period) => {
+    if (p.start === p.end) return format(parseISO(p.start), "EEEE d 'de' MMMM yyyy", { locale: es });
+    const start = parseISO(p.start);
+    const end = parseISO(p.end);
+    if (p.start === format(startOfMonth(start), 'yyyy-MM-dd') && p.end === format(endOfMonth(start), 'yyyy-MM-dd'))
+        return format(start, 'MMMM yyyy', { locale: es });
+    return format(start, 'd MMM yyyy', { locale: es }) + ' – ' + format(end, 'd MMM yyyy', { locale: es });
+};
+const closingSum = (rows: CloseRow[], key: keyof CloseRow) =>
+    rows.reduce((sum, row) => sum + Number(row[key] ?? 0), 0);
 
 function HourlySalesCurve({ hours, fullWidth = false }: { hours?: TicketReport['hours']; fullWidth?: boolean }) {
     // Same 7–22h curve and 120×20 coordinate system as /dashboard/history.
@@ -190,25 +208,38 @@ function SummaryCard({ title, dateText, report, extras }: {
 export default function VentasDesktopWorkspace() {
     const supabase = useMemo(() => createClient(), []);
     const [month, setMonth] = useState(() => startOfMonth(new Date()));
-    const [selectedDate, setSelectedDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [period, setPeriod] = useState<Period>(todayPeriod);
+    const [returnPeriod, setReturnPeriod] = useState<Period | null>(null);
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [filterKind, setFilterKind] = useState<'day' | 'week' | 'month' | 'three' | 'custom'>('day');
+    const [filterStart, setFilterStart] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [filterEnd, setFilterEnd] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [periodClosings, setPeriodClosings] = useState<CloseRow[]>([]);
+    const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
+    const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
     const [monthReport, setMonthReport] = useState<TicketReport | null>(null);
-    const [lastReport, setLastReport] = useState<TicketReport | null>(null);
-    const [lastClosing, setLastClosing] = useState<CloseRow | null>(null);
     const [monthClosings, setMonthClosings] = useState<CloseRow[]>([]);
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [linesByTicket, setLinesByTicket] = useState<Record<string, Item[]>>({});
     const [linesLoading, setLinesLoading] = useState(false);
     const [dayLoading, setDayLoading] = useState(true);
-    const [loadedDate, setLoadedDate] = useState<string | null>(null);
+    const [loadedPeriod, setLoadedPeriod] = useState<string | null>(null);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
     const [dayError, setDayError] = useState(false);
     const loadSentinel = useRef<HTMLDivElement>(null);
-    const monthStart = format(startOfMonth(month), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(month), 'yyyy-MM-dd');
+    const periodKey = period.start + ':' + period.end;
+    const periodTitle = periodLabel(period);
+    // The left card follows a single-month selection; a multi-month range retains the current month.
+    const referenceMonth = isSameMonth(parseISO(period.start), parseISO(period.end))
+        ? startOfMonth(parseISO(period.start)) : startOfMonth(new Date());
+    const monthStart = format(startOfMonth(referenceMonth), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(referenceMonth), 'yyyy-MM-dd');
+    const referenceLabel = format(referenceMonth, 'MMMM yyyy', { locale: es });
     const monthLabel = format(month, 'MMMM yyyy', { locale: es });
+    const isSingleDay = period.start === period.end;
     const calendarWeeks = useMemo(() => {
         const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
         const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
@@ -219,54 +250,72 @@ export default function VentasDesktopWorkspace() {
     }, [month]);
     const byDate = useMemo(() => new Map(monthClosings.map(c => [c.closing_date, c])), [monthClosings]);
 
-    const selectDate = (date: string) => {
-        setSelectedDate(date);
-        setMonth(startOfMonth(parseISO(date)));
+    const changePeriod = (next: Period, keepReturn = false) => {
+        setPeriod(next);
+        if (!keepReturn) setReturnPeriod(null);
+        setMonth(startOfMonth(parseISO(next.start)));
         setTickets([]);
-        setLoadedDate(null);
+        setLoadedPeriod(null);
         setLinesByTicket({});
         setExpandedTicket(null);
         setHasMore(true);
+        setDayLoading(true);
         setPage(0);
     };
-    const navigateMonth = (delta: number) => {
-        const next = delta < 0 ? subMonths(month, 1) : addMonths(month, 1);
-        selectDate(format(startOfMonth(next), 'yyyy-MM-dd'));
+    const selectDate = (date: string) => {
+        if (!returnPeriod && (period.start !== date || period.end !== date) && period.kind !== 'day')
+            setReturnPeriod(period);
+        changePeriod({ start: date, end: date, kind: 'day' }, true);
     };
-
+    const restorePeriod = () => {
+        if (returnPeriod) changePeriod(returnPeriod);
+    };
+    const navigateMonth = (delta: number) => setMonth(current => delta < 0 ? subMonths(current, 1) : addMonths(current, 1));
+    const applyFilter = () => {
+        const anchor = parseISO(filterStart);
+        let next: Period;
+        if (filterKind === 'day') next = { start: filterStart, end: filterStart, kind: 'day' };
+        else if (filterKind === 'week') next = {
+            start: format(startOfWeek(anchor, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+            end: format(endOfWeek(anchor, { weekStartsOn: 1 }), 'yyyy-MM-dd'), kind: 'week'
+        };
+        else if (filterKind === 'month') next = {
+            start: format(startOfMonth(anchor), 'yyyy-MM-dd'),
+            end: format(endOfMonth(anchor), 'yyyy-MM-dd'), kind: 'month'
+        };
+        else if (filterKind === 'three') {
+            const lastComplete = subMonths(startOfMonth(new Date()), 1);
+            next = { start: format(subMonths(startOfMonth(lastComplete), 2), 'yyyy-MM-dd'), end: format(endOfMonth(lastComplete), 'yyyy-MM-dd'), kind: 'range' };
+        } else {
+            if (filterEnd < filterStart) return;
+            next = { start: filterStart, end: filterEnd, kind: filterStart === filterEnd ? 'day' : 'range' };
+        }
+        changePeriod(next);
+        setFilterOpen(false);
+    };
     useEffect(() => {
         let active = true;
         const load = async () => {
-            const [monthly, closes, latest] = await Promise.all([
+            const [monthly, closes] = await Promise.all([
                 supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: monthStart, p_end_date: monthEnd }),
-                supabase.from('cash_closings').select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').gte('closing_date', monthStart).lte('closing_date', monthEnd),
-                supabase.from('cash_closings').select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').order('closing_date', { ascending: false }).limit(1).maybeSingle()
+                supabase.from('cash_closings').select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').gte('closing_date', monthStart).lte('closing_date', monthEnd)
             ]);
             if (!active) return;
             setMonthReport(monthly.error ? null : monthly.data as unknown as TicketReport);
             setMonthClosings((closes.data ?? []) as CloseRow[]);
-            const last = latest.data as CloseRow | null;
-            setLastClosing(last);
+
         };
         void load();
         return () => { active = false; };
     }, [supabase, monthStart, monthEnd]);
 
     useEffect(() => {
-        if (!lastClosing) return;
-        let active = true;
-        void supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: lastClosing.closing_date, p_end_date: lastClosing.closing_date })
-            .then(({ data, error }) => { if (active) setLastReport(error ? null : data as unknown as TicketReport); });
-        return () => { active = false; };
-    }, [supabase, lastClosing]);
-
-    useEffect(() => {
         let active = true;
         setDailyReport(null);
-        void supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: selectedDate, p_end_date: selectedDate })
+        void supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: period.start, p_end_date: period.end })
             .then(({ data, error }) => { if (active) setDailyReport(error ? null : data as unknown as TicketReport); });
         return () => { active = false; };
-    }, [supabase, selectedDate]);
+    }, [supabase, period.start, period.end]);
 
     useEffect(() => {
         let active = true;
@@ -274,7 +323,7 @@ export default function VentasDesktopWorkspace() {
         setDayError(false);
         const load = async () => {
             const { data, error } = await supabase.rpc('get_tickets_marbella_page', {
-                p_start_date: selectedDate, p_end_date: selectedDate, p_limit: PAGE_SIZE, p_offset: page,
+                p_start_date: period.start, p_end_date: period.end, p_limit: PAGE_SIZE, p_offset: page,
                 p_start_time: null, p_end_time: null
             });
             if (!active) return;
@@ -285,13 +334,13 @@ export default function VentasDesktopWorkspace() {
             }
             const batch = (data ?? []) as Ticket[];
             setTickets(prev => page === 0 ? batch : [...prev, ...batch]);
-            if (page === 0) setLoadedDate(selectedDate);
+            if (page === 0) setLoadedPeriod(periodKey);
             setHasMore(batch.length === PAGE_SIZE);
             setDayLoading(false);
         };
         void load();
         return () => { active = false; };
-    }, [supabase, selectedDate, page]);
+    }, [supabase, period.start, period.end, periodKey, page]);
 
     // Obtener los nombres y cantidades de las líneas por lotes, no con una consulta por ticket.
     useEffect(() => {
@@ -347,27 +396,46 @@ export default function VentasDesktopWorkspace() {
         return () => { active = false; };
     }, [supabase, tickets]);
 
+    // Only the first seven tickets are fetched automatically; additional batches need a user click.
+    const canLoadMore = loadedPeriod === periodKey && !dayLoading && hasMore;
     useEffect(() => {
-        const node = loadSentinel.current;
-        // Never request page two before page one has actually been loaded for this date.
-        if (!node || loadedDate !== selectedDate || !hasMore || dayLoading) return;
-        const observer = new IntersectionObserver(entries => {
-            if (entries[0]?.isIntersecting) setPage(current => current + PAGE_SIZE);
-        }, { rootMargin: '120px' });
-        observer.observe(node);
-        return () => observer.disconnect();
-    }, [hasMore, dayLoading, tickets.length, loadedDate, selectedDate]);
+        let active = true;
+        void supabase.from('cash_closings')
+            .select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
+            .gte('closing_date', period.start).lte('closing_date', period.end).limit(4000)
+            .then(({ data }) => { if (active) setPeriodClosings((data ?? []) as CloseRow[]); });
+        return () => { active = false; };
+    }, [supabase, period.start, period.end]);
+
+    const selectedClosing = isSingleDay ? periodClosings.find(c => c.closing_date === period.start) : undefined;
+    useEffect(() => {
+        let alive = true;
+        setPhotos({ dataphoneUrl: null, bdpUrl: null });
+        if (!selectedClosing?.dataphone_totals_photo_path && !selectedClosing?.bdp_closing_ticket_photo_path) return;
+        void getCashClosingPhotoUrlsAction({
+            dataphonePath: selectedClosing.dataphone_totals_photo_path,
+            bdpPath: selectedClosing.bdp_closing_ticket_photo_path
+        }).then(result => {
+            if (alive && result.success) setPhotos({ dataphoneUrl: result.dataphoneUrl, bdpUrl: result.bdpUrl });
+        }).catch(() => {});
+        return () => { alive = false; };
+    }, [selectedClosing?.id, selectedClosing?.dataphone_totals_photo_path, selectedClosing?.bdp_closing_ticket_photo_path]);
 
     const monthTotals = useMemo(() => monthClosings.reduce((a, c) => ({
         cash: a.cash + Number(c.cash_counted ?? 0), card: a.card + Number(c.sales_card ?? 0),
         pending: a.pending + Number(c.sales_pending ?? 0), recovered: a.recovered + Number(c.debt_recovered ?? 0),
         net: a.net + Number(c.net_sales ?? 0)
     }), { cash: 0, card: 0, pending: 0, recovered: 0, net: 0 }), [monthClosings]);
-    const lastTotals = lastClosing ? {
-        cash: Number(lastClosing.cash_counted ?? 0), card: Number(lastClosing.sales_card ?? 0),
-        pending: Number(lastClosing.sales_pending ?? 0), recovered: Number(lastClosing.debt_recovered ?? 0),
-        net: Number(lastClosing.net_sales ?? 0)
-    } : undefined;
+    const hasClosingData = periodClosings.length > 0;
+    const periodTotals = useMemo(() => ({
+        sales: closingSum(periodClosings, 'tpv_sales'),
+        net: closingSum(periodClosings, 'net_sales'),
+        cash: closingSum(periodClosings, 'cash_counted'),
+        card: closingSum(periodClosings, 'sales_card'),
+        pending: closingSum(periodClosings, 'sales_pending'),
+        recovered: closingSum(periodClosings, 'debt_recovered'),
+        difference: closingSum(periodClosings, 'difference')
+    }), [periodClosings]);
     return (
         <div data-component="HistoryDesktopWorkspace" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
             <div className="mb-3 flex shrink-0 items-baseline gap-4 text-white">
