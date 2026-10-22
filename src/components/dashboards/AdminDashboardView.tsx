@@ -51,6 +51,7 @@ import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
+import { registerMultiSourcePurchase } from '@/lib/treasury/register-multi-source-purchase';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
@@ -527,43 +528,7 @@ const AdminDashboardView = ({
                 .filter((source) => tpvNames.has(source.sourceId) && source.amount > 0.005)
                 .map((source) => `${tpvNames.get(source.sourceId)}: ${source.amount.toFixed(2)}€`);
             const notesWithTpv = tpvParts.length > 0 ? `${baseNotes} | ${tpvParts.join(', ')}` : baseNotes;
-            const customDate = payload.customDate;
-            const { data: { user }, error: authError } = await supabase.auth.getUser();
-            if (authError || !user) throw new Error('Sesión no disponible para registrar la compra');
-
-            for (const entry of payload.sources) {
-                if (entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2') continue;
-                if (entry.amount < 0.005) continue;
-                const breakdownForDb: Record<string, number> = {};
-                Object.entries(entry.breakdown).forEach(([k, v]) => { if (v !== 0) breakdownForDb[String(k)] = v; });
-                const row: TreasuryLogInsert = {
-                    box_id: entry.sourceId,
-                    type: 'OUT',
-                    amount: entry.amount,
-                    breakdown: breakdownForDb,
-                    notes: notesWithTpv,
-                    user_id: user.id,
-                };
-                if (customDate) row.created_at = customDate;
-                const { error: movementError } = await supabase.from('treasury_log').insert(row);
-                if (movementError) throw movementError;
-            }
-
-            if (payload.changeAmount >= 0.01 && payload.changeDestinationBoxId) {
-                const changeBreakdownForDb: Record<string, number> = {};
-                Object.entries(payload.changeBreakdown).forEach(([k, v]) => { if (v !== 0) changeBreakdownForDb[String(k)] = v; });
-                const inRow: TreasuryLogInsert = {
-                    box_id: payload.changeDestinationBoxId,
-                    type: 'IN',
-                    amount: payload.changeAmount,
-                    breakdown: changeBreakdownForDb,
-                    notes: 'Cambio (compra)',
-                    user_id: user.id,
-                };
-                if (customDate) inRow.created_at = customDate;
-                const { error: changeError } = await supabase.from('treasury_log').insert(inRow);
-                if (changeError) throw changeError;
-            }
+            await registerMultiSourcePurchase(payload, notesWithTpv);
 
             setShowPurchaseMultiSourceModal(false);
             setPurchaseInventoriesByBoxId({});

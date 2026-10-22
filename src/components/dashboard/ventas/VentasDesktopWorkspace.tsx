@@ -1,13 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths } from 'date-fns';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import { timeFilterBounds, type TimeFilterValue } from '@/components/time/time-filter-types';
 import { cn } from '@/lib/utils';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 
 type Ticket = { numero_documento: string; fecha: string; hora_cierre: string; total_documento: number; mesa: number | null };
 type Item = { name: string; qty: number; price: number; total: number };
@@ -17,25 +21,173 @@ type TicketReport = {
     hours: { hour: number; count: number; total: number }[];
 };
 type CloseRow = {
-    id: string; closing_date: string; tpv_sales: number | null; net_sales: number | null;
+    id: string; closing_date: string; closed_at?: string | null; tickets_count?: number | null;
+    tpv_sales: number | null; net_sales: number | null;
     sales_card: number | null; cash_counted: number | null;
     sales_pending: number | null; debt_recovered: number | null; difference: number | null;
+    dataphone_totals_photo_path?: string | null; bdp_closing_ticket_photo_path?: string | null;
+    weather?: string | null;
 };
 const euro = (v: unknown) => (Number(v ?? 0)).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const compactDoc = (id: string) => id.replace(/^0+/, '').replace(/(B)0+(?=\d)/i, '$1');
 const EMPTY_ITEMS: Item[] = [];
-const PAGE_SIZE = 150;
+const PAGE_SIZE = 7;
+type Period = { start: string; end: string; kind: 'day' | 'week' | 'month' | 'range' };
+const todayPeriod = (): Period => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    return { start: today, end: today, kind: 'day' };
+};
+const periodLabel = (p: Period) => {
+    if (p.start === p.end) return format(parseISO(p.start), "EEEE d 'de' MMMM yyyy", { locale: es });
+    const start = parseISO(p.start);
+    const end = parseISO(p.end);
+    if (p.start === format(startOfMonth(start), 'yyyy-MM-dd') && p.end === format(endOfMonth(start), 'yyyy-MM-dd'))
+        return format(start, 'MMMM yyyy', { locale: es });
+    return format(start, 'd MMM yyyy', { locale: es }) + ' – ' + format(end, 'd MMM yyyy', { locale: es });
+};
+const closingSum = (rows: CloseRow[], key: keyof CloseRow) =>
+    rows.reduce((sum, row) => sum + Number(row[key] ?? 0), 0);
 
-function HourlySalesCurve({ hours, fullWidth = false }: { hours?: TicketReport['hours']; fullWidth?: boolean }) {
-    // Same 7–22h curve and 120×20 coordinate system as /dashboard/history.
-    const data = Array.from({ length: 16 }, (_, i) => Number(hours?.find(h => Number(h.hour) === i + 7)?.total ?? 0));
-    const peak = Math.max(1, ...data);
-    const path = data.map((total, i) => `${i === 0 ? 'M' : 'L'} ${(i / (data.length - 1)) * 120},${16 - total / peak * 13}`).join(' ');
+/** Dos filas de cierre con la misma fecha, hora de cierre y todas las cifras
+ * idénticas representan el mismo cierre registrado dos veces. No tocamos los
+ * registros en Supabase: solo impedimos que inflen los acumulados de Ventas.
+ * Si hay dos cierres distintos para un día, se conservan ambos. */
+function distinctCashClosings(rows: CloseRow[]): CloseRow[] {
+    const seen = new Set<string>();
+    return rows.filter(row => {
+        const signature = JSON.stringify([
+            row.closing_date, row.closed_at, row.tpv_sales, row.net_sales,
+            row.sales_card, row.cash_counted, row.sales_pending,
+            row.debt_recovered, row.difference, row.tickets_count
+        ]);
+        if (seen.has(signature)) return false;
+        seen.add(signature);
+        return true;
+    });
+}
+
+/** Misma referencia que el rendimiento del detalle: hasta ocho cierres previos
+ * del mismo día de la semana, mirando 16 semanas atrás y excluyendo agosto. */
+function historicalExpectedNet(dateYmd: string, netByDate: Map<string, number>): number | null {
+    const day = parseISO(dateYmd);
+    let total = 0;
+    let seen = 0;
+    let attempts = 0;
+    for (let weeks = 1; weeks <= 16 && seen + attempts < 8; weeks++) {
+        const previous = subWeeks(day, weeks);
+        if (previous.getMonth() === 7) continue;
+        const net = netByDate.get(format(previous, 'yyyy-MM-dd'));
+        if (net !== undefined && net > 0) {
+            total += net;
+            seen++;
+        } else {
+            attempts++;
+        }
+    }
+    return seen > 0 ? total / seen : null;
+}
+
+/** Escala cromática orientativa: el porcentaje no cambia de fórmula. */
+function performanceColors(percentage: number | null): string | null {
+    if (percentage === null) return null;
+    if (percentage >= 15) return 'text-teal-700';
+    if (percentage > 0) return 'text-sky-700';
+    if (percentage >= -5) return 'text-amber-700';
+    if (percentage >= -15) return 'text-orange-700';
+    return 'text-rose-700';
+}
+
+// Fixed business-hour axis: the curve and every numeric column scroll as one.
+const FIRST_SALES_HOUR = 7;
+const LAST_SALES_HOUR = 22;
+const SALES_HOUR_COLUMN = 80;
+
+function HourlySalesTimeline({ hours }: { hours?: TicketReport['hours'] }) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const byHour = new Map((hours ?? []).map(item => [Number(item.hour), item]));
+    const slots = Array.from({ length: LAST_SALES_HOUR - FIRST_SALES_HOUR + 1 }, (_, index) => {
+        const hour = FIRST_SALES_HOUR + index;
+        const source = byHour.get(hour);
+        return { hour, sales: Number(source?.total ?? 0), tickets: Number(source?.count ?? 0) };
+    });
+    const width = slots.length * SALES_HOUR_COLUMN;
+    const maxSales = Math.max(0, ...slots.map(slot => slot.sales));
+    const peak = Math.max(1, maxSales);
+    const baseline = 76;
+    const points = slots.map((slot, index) => ({
+        x: (index + 0.5) * SALES_HOUR_COLUMN,
+        y: baseline - Math.max(0, slot.sales) / peak * 55
+    }));
+    const curve = points.map((point, index) =>
+        `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
+    ).join(' ');
+    const area = `${curve} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`;
+
     return (
-        <svg aria-label="Evolución de ventas por hora" role="img" viewBox="0 0 120 20" preserveAspectRatio="none"
-            className={fullWidth ? 'block h-7 w-full text-white' : 'h-3 min-w-0 flex-1 text-white'}>
-            <path d={path} fill="none" stroke="currentColor" strokeWidth={fullWidth ? '1' : '1.5'} strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" />
-        </svg>
+        <div className="flex h-full min-h-0 min-w-0 flex-col">
+            <div className="mb-1 flex h-5 shrink-0 items-center justify-between gap-2">
+                <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] text-white/50">Ventas por hora</span>
+                    <button type="button" aria-label="Ver horas anteriores"
+                        className="rounded p-0.5 text-sky-200 hover:bg-white/10"
+                        onClick={() => scrollRef.current?.scrollBy({ left: -3 * SALES_HOUR_COLUMN, behavior: 'smooth' })}>
+                        <ChevronLeft size={13}/>
+                    </button>
+                    <button type="button" aria-label="Ver horas siguientes"
+                        className="rounded p-0.5 text-sky-200 hover:bg-white/10"
+                        onClick={() => scrollRef.current?.scrollBy({ left: 3 * SALES_HOUR_COLUMN, behavior: 'smooth' })}>
+                        <ChevronRight size={13}/>
+                    </button>
+                </div>
+            </div>
+            <div ref={scrollRef}
+                className="custom-scrollbar min-h-0 w-full flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-1"
+                aria-label="Horas de 7 a 23, en orden cronológico. Desplázate horizontalmente para verlas todas.">
+                <div style={{ width }} className="min-w-max">
+                    <svg viewBox={`0 0 ${width} 86`} width={width} height={86}
+                        role="img" aria-label="Curva de facturación alineada con las horas"
+                        className="block max-w-none text-[#70b5ff]">
+                        <path d={`M 0 ${baseline} H ${width}`} stroke="currentColor" strokeOpacity=".25" strokeWidth="1" />
+                        <path d={`M 0 49 H ${width}`} stroke="currentColor" strokeOpacity=".1" strokeDasharray="3 6" />
+                        {points.map((point, index) => (
+                            <path key={slots[index].hour}
+                                d={`M ${point.x} 12 V ${baseline}`}
+                                stroke="currentColor" strokeOpacity=".1" strokeWidth="1" />
+                        ))}
+                        <path d={area} fill="currentColor" fillOpacity=".12" />
+                        <path d={curve} fill="none" stroke="currentColor" strokeWidth="2"
+                            strokeLinecap="round" strokeLinejoin="round" />
+                        {points.map((point, index) => (
+                            <circle key={slots[index].hour} cx={point.x} cy={point.y}
+                                r={maxSales > 0 && slots[index].sales === maxSales ? 4 : 2.7}
+                                fill={maxSales > 0 && slots[index].sales === maxSales ? '#65e8d2' : '#98ceff'}
+                                stroke="#172b58" strokeWidth="1">
+                                <title>{`${slots[index].hour}–${slots[index].hour + 1} h: ${euro(slots[index].sales)}`}</title>
+                            </circle>
+                        ))}
+                    </svg>
+                    <div className="flex border-t border-white/10">
+                        {slots.map(slot => (
+                            <div key={slot.hour} style={{ width: SALES_HOUR_COLUMN }}
+                                className="flex shrink-0 flex-col items-center gap-[5px] border-r border-white/10 px-1 pt-1.5 text-center last:border-r-0"
+                                title={`${slot.hour}–${slot.hour + 1} · ${slot.tickets} tickets · ${euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)} de ticket medio · ${euro(slot.sales)} de facturación`}>
+                                <strong className="text-[10px] font-semibold tabular-nums text-white">{slot.hour}–{slot.hour + 1}</strong>
+                                <span className="whitespace-nowrap text-[9px] tabular-nums text-sky-200">
+                                    {slot.tickets.toLocaleString('es-ES')} <span className="text-sky-200/70">tick</span>
+                                </span>
+                                <span className="whitespace-nowrap text-[9px] tabular-nums text-violet-200">
+                                    {euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)} <span className="text-violet-200/70">med</span>
+                                </span>
+                                <strong className="whitespace-nowrap text-[9px] font-semibold tabular-nums text-teal-100">
+                                    {euro(slot.sales)}
+                                </strong>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -65,7 +217,7 @@ function TicketProductPreview({ items, onOverflowChange }: { items: Item[]; onOv
         return () => observer.disconnect();
     }, [items, onOverflowChange]);
     const piece = (item: Item, i: number) => (
-        <span key={i} className="inline-flex shrink-0 items-center gap-1 border-l border-[#172c61]/35 px-2.5 text-[10px] text-[#1a2854]">
+        <span key={i} className="inline-flex shrink-0 items-center gap-0.5 border-l border-[#172c61]/30 px-1.5 text-[9px] text-[#1a2854]">
             {item.qty !== 1 && <strong className="font-bold tabular-nums">{item.qty}</strong>}
             <span>{item.name}</span>
         </span>
@@ -89,17 +241,17 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [expanded, hasHiddenProducts, loadingItems]);
     return (
-        <div className="min-w-0">
+        <div className="min-w-0 shrink-0">
             <button type="button" aria-expanded={canExpand && expanded} disabled={!canExpand} onClick={canExpand ? onToggle : undefined}
-                className={cn("ventas-ticket-strip flex h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden bg-[rgb(255_255_255/0.97)] px-3 text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
-                <strong className="w-[38px] shrink-0 text-[12px] font-extrabold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
-                <span className="shrink-0 border-l border-[#182d5f]/20 pl-2 text-[9px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
-                {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="shrink-0 rounded-md bg-[#e1eaff] px-2 py-0.5 text-[11px] font-bold tabular-nums">{ticket.mesa}</span>}
+                className={cn("ventas-ticket-strip flex h-[28px] w-full min-w-0 items-center gap-1.5 overflow-hidden bg-[rgb(255_255_255/0.97)] pl-[18px] pr-[18px] text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
+                <strong className="w-[32px] shrink-0 text-[10px] font-semibold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
+                <span className="shrink-0 border-l border-[#182d5f]/20 pl-1.5 text-[8px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
+                {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="shrink-0 rounded bg-[#e1eaff] px-1.5 py-0.5 text-[9px] font-semibold tabular-nums">{ticket.mesa}</span>}
                 <TicketProductPreview items={items} onOverflowChange={setHasHiddenProducts}/>
                 {canExpand && (expanded
                     ? <ChevronUp size={13} className="shrink-0 text-[#8992a8]" aria-label="Ocultar productos" />
                     : <ChevronDown size={13} className="shrink-0 text-[#8992a8]" aria-label="Mostrar más productos" />)}
-                <strong className="ml-auto shrink-0 text-[13px] font-extrabold tabular-nums text-emerald-500">{euro(ticket.total_documento)}</strong>
+                <strong className={cn("ml-auto shrink-0 text-[11px] font-semibold tabular-nums", Number(ticket.total_documento) >= 0 ? "text-emerald-700" : "text-rose-700")}>{euro(ticket.total_documento)}</strong>
             </button>
             {canExpand && expanded && (
                 <div className="mx-3 rounded-b-lg border border-t-0 border-white/20 bg-white/10 px-3 py-2 text-[10px] text-white/90">
@@ -119,37 +271,70 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     );
 }
 
+// Round the scroll viewport down to full 24px rows: no partially visible
+// product/hour lines when the browser or dashboard is resized.
+function RankingViewport({ children }: { children: ReactNode }) {
+    const viewportRef = useRef<HTMLDivElement>(null);
+    const [fittedHeight, setFittedHeight] = useState<number | null>(null);
+    useEffect(() => {
+        const holder = viewportRef.current;
+        if (!holder) return;
+        const measure = () => {
+            const next = Math.max(0, Math.floor(holder.clientHeight / 24) * 24);
+            setFittedHeight(old => old === next ? old : next);
+        };
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(holder);
+        return () => observer.disconnect();
+    }, []);
+    return (
+        <div ref={viewportRef} className="min-h-0 flex-1 overflow-hidden">
+            <div className="custom-scrollbar min-w-0 snap-y snap-mandatory overflow-y-auto overscroll-contain"
+                style={{ height: fittedHeight === null ? '100%' : fittedHeight }}>
+                {children}
+            </div>
+        </div>
+    );
+}
+
+// Shared product ranking and chronological hourly chart for monthly/period cards.
 function SalesBreakdown({ report }: { report: TicketReport | null }) {
     const products = report?.products ?? [];
-    const hours = useMemo(() => [...(report?.hours ?? [])].filter(h => Number(h.total) > 0).sort((a, b) => Number(b.total) - Number(a.total)), [report]);
+    const maxProductSales = Math.max(1, ...products.map(p => Number(p.total_ingresos ?? 0)));
+    const totalSales = Number(report?.summary?.totalSales ?? 0);
+    const shareLabel = (sales: number) => totalSales > 0
+        ? (sales / totalSales * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + '% del total'
+        : 'Sin total de ventas disponible';
+    const barWidth = (sales: number, maximum: number) => Math.max(0, Math.min(100, sales / maximum * 100)) + '%';
+
     return (
-        <div className="grid min-h-0 flex-1 grid-cols-2 gap-4 pt-3">
-            <section className="flex min-h-0 min-w-0 flex-col">
-                <h3 className="mb-2 shrink-0 text-xs font-bold uppercase">Productos</h3>
-                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-                    {products.map((p, i) => (
-                        <div key={i} className="grid h-6 min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 text-[10px]">
-                            <span className="truncate text-white/85">{i + 1}. {p.nombre_articulo}</span>
-                            <span className="tabular-nums text-white/55">{Number(p.cantidad_total).toLocaleString('es-ES')} u</span>
-                            <strong className="shrink-0 tabular-nums">{euro(p.total_ingresos)}</strong>
-                        </div>
-                    ))}
+        <div className="flex h-full min-h-0 flex-1 flex-col gap-3 pt-3">
+            <section className="flex min-h-0 flex-1 flex-col border-b border-white/15 pb-3">
+                <div className="mb-2 flex h-4 shrink-0 items-center justify-between gap-2">
+                    <h3 className="text-xs font-bold uppercase">Productos</h3>
+                    <span className="text-[9px] text-white/45">Ventas por producto</span>
                 </div>
+                <RankingViewport>
+                    {products.map((product, index) => {
+                        const sales = Number(product.total_ingresos ?? 0);
+                        const label = shareLabel(sales);
+                        return (
+                            <div key={index} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto] items-center gap-x-2 border-b border-white/5 text-[10px]"
+                                title={product.nombre_articulo + ' · ' + euro(sales) + ' · ' + label}>
+                                <span className="min-w-0 truncate text-white/85">{index + 1}. {product.nombre_articulo}</span>
+                                <span className="shrink-0 tabular-nums text-white/60">{Number(product.cantidad_total).toLocaleString('es-ES')} u</span>
+                                <div role="img" aria-label={label} className="h-[8px] min-w-0 overflow-hidden rounded-sm bg-white/10">
+                                    <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: barWidth(sales, maxProductSales) }}/>
+                                </div>
+                                <strong className="min-w-[60px] shrink-0 text-right tabular-nums">{euro(sales)}</strong>
+                            </div>
+                        );
+                    })}
+                </RankingViewport>
             </section>
-            <section className="flex min-h-0 min-w-0 flex-col">
-                <div className="mb-2 flex h-4 min-w-0 shrink-0 items-center gap-2">
-                    <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
-                    <HourlySalesCurve hours={report?.hours} />
-                </div>
-                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-                    {hours.map(h => (
-                        <div key={h.hour} className="flex h-6 items-center justify-between gap-1 text-[10px]">
-                            <strong className="shrink-0 tabular-nums">{h.hour}-{(h.hour + 1) % 24}</strong>
-                            <span className="truncate tabular-nums text-white/50">{h.count} tick</span>
-                            <strong className="shrink-0 tabular-nums">{euro(h.total)}</strong>
-                        </div>
-                    ))}
-                </div>
+            <section className="h-[196px] min-h-0 shrink-0 xl:h-[208px]">
+                <HourlySalesTimeline hours={report?.hours} />
             </section>
         </div>
     );
@@ -159,16 +344,16 @@ function SummaryCard({ title, dateText, report, extras }: {
     title: string; dateText: string; report: TicketReport | null;
     extras?: { cash: number; card: number; pending: number; recovered: number; net: number };
 }) {
-    const sales = Number(report?.summary.totalSales ?? 0);
-    const count = Number(report?.summary.count ?? 0);
+    const sales = report ? Number(report.summary.totalSales) : null;
+    const count = report ? Number(report.summary.count) : null;
     const values = [
-        ['Ventas', euro(sales)], ['Venta neta', extras ? euro(extras.net) : '—'],
-        ['Tickets', count.toLocaleString('es-ES')], ['Tarjeta', extras ? euro(extras.card) : '—'],
+        ['Ventas', sales !== null ? euro(sales) : '—'], ['Venta neta', extras ? euro(extras.net) : '—'],
+        ['Tickets', count !== null ? count.toLocaleString('es-ES') : '—'], ['Tarjeta', extras ? euro(extras.card) : '—'],
         ['Efectivo', extras ? euro(extras.cash) : '—'], ['Pendiente', extras ? euro(extras.pending) : '—'],
-        ['Cobros', extras ? euro(extras.recovered) : '—'], ['Ticket medio', euro(report?.summary.avgTicket)]
+        ['Cobros', extras ? euro(extras.recovered) : '—'], ['Ticket medio', report ? euro(report.summary.avgTicket) : '—']
     ];
     return (
-        <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-5 pt-2 text-white">
+        <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-4 pt-2 text-white">
             <div className="mb-4 flex min-w-0 shrink-0 items-center justify-between gap-2">
                 <strong className="min-w-0 text-sm font-bold">{title}</strong>
                 <span className="min-w-0 truncate text-[9px] text-white/55">{dateText}</span>
@@ -190,25 +375,64 @@ function SummaryCard({ title, dateText, report, extras }: {
 export default function VentasDesktopWorkspace() {
     const supabase = useMemo(() => createClient(), []);
     const [month, setMonth] = useState(() => startOfMonth(new Date()));
-    const [selectedDate, setSelectedDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [period, setPeriod] = useState<Period>(todayPeriod);
+    const [initializing, setInitializing] = useState(true);
+    const [returnPeriod, setReturnPeriod] = useState<Period | null>(null);
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<TimeFilterValue | null>(null);
+    const [lastClosingDate, setLastClosingDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [returnFilter, setReturnFilter] = useState<TimeFilterValue | null>(null);
+    const [periodClosings, setPeriodClosings] = useState<CloseRow[]>([]);
+    const [historicalNetByDate, setHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
+    const [calendarHistoricalNetByDate, setCalendarHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
+    const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
+    const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
     const [monthReport, setMonthReport] = useState<TicketReport | null>(null);
-    const [lastReport, setLastReport] = useState<TicketReport | null>(null);
-    const [lastClosing, setLastClosing] = useState<CloseRow | null>(null);
     const [monthClosings, setMonthClosings] = useState<CloseRow[]>([]);
+    const [calendarClosings, setCalendarClosings] = useState<CloseRow[]>([]);
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [linesByTicket, setLinesByTicket] = useState<Record<string, Item[]>>({});
     const [linesLoading, setLinesLoading] = useState(false);
     const [dayLoading, setDayLoading] = useState(true);
-    const [loadedDate, setLoadedDate] = useState<string | null>(null);
+    const [loadedPeriod, setLoadedPeriod] = useState<string | null>(null);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
     const [dayError, setDayError] = useState(false);
-    const loadSentinel = useRef<HTMLDivElement>(null);
-    const monthStart = format(startOfMonth(month), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(month), 'yyyy-MM-dd');
+    const periodKey = period.start + ':' + period.end;
+    const periodTitle = periodLabel(period);
+    // The left card follows a single-month selection; a multi-month range retains the current month.
+    const startDate = parseISO(period.start);
+    const endDate = parseISO(period.end);
+    const weekCrossesMonth = period.kind === 'week' && !isSameMonth(startDate, endDate);
+    const daysInFirstMonth = Math.round((endOfMonth(startDate).getTime() - startDate.getTime()) / 86400000) + 1;
+    const referenceMonth = isSameMonth(startDate, endDate)
+        ? startOfMonth(startDate)
+        : weekCrossesMonth
+            ? startOfMonth(daysInFirstMonth >= 4 ? startDate : endDate)
+            : startOfMonth(new Date());
+    const monthStart = format(startOfMonth(referenceMonth), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(referenceMonth), 'yyyy-MM-dd');
+    const referenceLabel = format(referenceMonth, 'MMMM yyyy', { locale: es });
     const monthLabel = format(month, 'MMMM yyyy', { locale: es });
+    const isSingleDay = period.start === period.end;
+    const visibleTickets = tickets;
+    const initialTimeFilter = useMemo<TimeFilterValue>(
+        () => activeFilter ?? { kind: 'date', date: period.start },
+        [activeFilter, period.start]
+    );
+    const lastThreeMonthsPreset = useMemo(() => {
+        const lastComplete = subMonths(startOfMonth(new Date()), 1);
+        return {
+            label: 'Últimos 3 meses',
+            value: {
+                kind: 'range' as const,
+                startDate: format(subMonths(startOfMonth(lastComplete), 2), 'yyyy-MM-dd'),
+                endDate: format(endOfMonth(lastComplete), 'yyyy-MM-dd')
+            }
+        };
+    }, []);
     const calendarWeeks = useMemo(() => {
         const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
         const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
@@ -217,86 +441,187 @@ export default function VentasDesktopWorkspace() {
         for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
         return weeks;
     }, [month]);
-    const byDate = useMemo(() => new Map(monthClosings.map(c => [c.closing_date, c])), [monthClosings]);
+    const byDate = useMemo(() => new Map(calendarClosings.map(c => [c.closing_date, c])), [calendarClosings]);
+    const calendarPerformanceByDate = useMemo(() => {
+        const result = new Map<string, number>();
+        for (const closing of calendarClosings) {
+            const expected = historicalExpectedNet(closing.closing_date, calendarHistoricalNetByDate);
+            if (expected !== null && expected > 0 && closing.net_sales != null) {
+                result.set(closing.closing_date, (Number(closing.net_sales) - expected) / expected * 100);
+            }
+        }
+        return result;
+    }, [calendarClosings, calendarHistoricalNetByDate]);
 
-    const selectDate = (date: string) => {
-        setSelectedDate(date);
-        setMonth(startOfMonth(parseISO(date)));
+    const changePeriod = (next: Period, keepReturn = false) => {
+        setPeriod(next);
+        if (!keepReturn) setReturnPeriod(null);
+        setMonth(startOfMonth(parseISO(next.start)));
         setTickets([]);
-        setLoadedDate(null);
+        setPeriodClosings([]);
+        setHistoricalNetByDate(new Map());
+        setDailyReport(null);
+        setLoadedPeriod(null);
         setLinesByTicket({});
         setExpandedTicket(null);
         setHasMore(true);
+        setDayLoading(true);
         setPage(0);
     };
-    const navigateMonth = (delta: number) => {
-        const next = delta < 0 ? subMonths(month, 1) : addMonths(month, 1);
-        selectDate(format(startOfMonth(next), 'yyyy-MM-dd'));
+    const selectDate = (date: string) => {
+        if (!returnPeriod && (period.start !== date || period.end !== date) && period.kind !== 'day') {
+            setReturnPeriod(period);
+            setReturnFilter(activeFilter);
+        }
+        setActiveFilter({ kind: 'date', date });
+        changePeriod({ start: date, end: date, kind: 'day' }, true);
     };
-
+    const restorePeriod = () => {
+        if (returnPeriod) {
+            setActiveFilter(returnFilter);
+            changePeriod(returnPeriod);
+            setReturnFilter(null);
+        }
+    };
+    const navigateMonth = (delta: number) => setMonth(current => delta < 0 ? subMonths(current, 1) : addMonths(current, 1));
+    const applyFilter = (value: TimeFilterValue) => {
+        const bounds = timeFilterBounds(value);
+        if (!bounds) return;
+        setActiveFilter(value);
+        setReturnFilter(null);
+        changePeriod({
+            start: bounds.startDate, end: bounds.endDate,
+            kind: value.kind === 'month' ? 'month' : value.kind === 'week' ? 'week' : bounds.startDate === bounds.endDate ? 'day' : 'range',
+        });
+        setFilterOpen(false);
+    };
+    const clearAllFilters = () => {
+        setActiveFilter(null);
+        setReturnFilter(null);
+        setFilterOpen(false);
+        changePeriod({ start: lastClosingDate, end: lastClosingDate, kind: 'day' });
+    };
+    // Open at the most recent closed day, not at today's still-open trading day.
+    useEffect(() => {
+        let active = true;
+        void (async () => {
+            try {
+                const { data } = await supabase.from('cash_closings')
+                    .select('closing_date')
+                    .order('closing_date', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                if (!active) return;
+                const lastDate = data?.closing_date ?? format(new Date(), 'yyyy-MM-dd');
+                setLastClosingDate(lastDate);
+                changePeriod({ start: lastDate, end: lastDate, kind: 'day' });
+            } finally {
+                if (active) setInitializing(false);
+            }
+        })();
+        return () => { active = false; };
+    }, [supabase]);
     useEffect(() => {
         let active = true;
         const load = async () => {
-            const [monthly, closes, latest] = await Promise.all([
+            const [monthly, closes] = await Promise.all([
                 supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: monthStart, p_end_date: monthEnd }),
-                supabase.from('cash_closings').select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').gte('closing_date', monthStart).lte('closing_date', monthEnd),
-                supabase.from('cash_closings').select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').order('closing_date', { ascending: false }).limit(1).maybeSingle()
+                supabase.from('cash_closings').select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').gte('closing_date', monthStart).lte('closing_date', monthEnd)
             ]);
             if (!active) return;
             setMonthReport(monthly.error ? null : monthly.data as unknown as TicketReport);
-            setMonthClosings((closes.data ?? []) as CloseRow[]);
-            const last = latest.data as CloseRow | null;
-            setLastClosing(last);
+            setMonthClosings(distinctCashClosings((closes.data ?? []) as CloseRow[]));
+
         };
         void load();
         return () => { active = false; };
     }, [supabase, monthStart, monthEnd]);
 
     useEffect(() => {
-        if (!lastClosing) return;
         let active = true;
-        void supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: lastClosing.closing_date, p_end_date: lastClosing.closing_date })
-            .then(({ data, error }) => { if (active) setLastReport(error ? null : data as unknown as TicketReport); });
+        // Navegación independiente del filtro. Cargar cierres del mes y sus
+        // comparables de los mismos días de semana, sin consultas por celda.
+        const start = format(startOfMonth(month), 'yyyy-MM-dd');
+        const end = format(endOfMonth(month), 'yyyy-MM-dd');
+        const firstComparable = format(subWeeks(startOfMonth(month), 16), 'yyyy-MM-dd');
+        void Promise.all([
+            supabase.from('cash_closings')
+                .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference')
+                .gte('closing_date', start).lte('closing_date', end),
+            supabase.from('cash_closings')
+                .select('closing_date,net_sales')
+                .gte('closing_date', firstComparable).lte('closing_date', end).limit(1500),
+        ]).then(([closings, history]) => {
+            if (!active) return;
+            setCalendarClosings(distinctCashClosings(closings.error ? [] : (closings.data ?? []) as CloseRow[]));
+            setCalendarHistoricalNetByDate(new Map<string, number>(
+                (history.error ? [] : history.data ?? []).map(c => [c.closing_date, Number(c.net_sales ?? 0)] as [string, number])
+            ));
+        });
         return () => { active = false; };
-    }, [supabase, lastClosing]);
+    }, [supabase, month]);
 
     useEffect(() => {
+        if (initializing) return;
         let active = true;
         setDailyReport(null);
-        void supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: selectedDate, p_end_date: selectedDate })
+        void supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: period.start, p_end_date: period.end })
             .then(({ data, error }) => { if (active) setDailyReport(error ? null : data as unknown as TicketReport); });
         return () => { active = false; };
-    }, [supabase, selectedDate]);
+    }, [supabase, period.start, period.end, initializing]);
 
     useEffect(() => {
+        if (initializing) return;
         let active = true;
         setDayLoading(true);
         setDayError(false);
         const load = async () => {
-            const { data, error } = await supabase.rpc('get_tickets_marbella_page', {
-                p_start_date: selectedDate, p_end_date: selectedDate, p_limit: PAGE_SIZE, p_offset: page,
-                p_start_time: null, p_end_time: null
-            });
-            if (!active) return;
-            if (error) {
-                setDayError(true);
+            if (isSingleDay) {
+                // A single trading day is small enough to fetch fully; keep the UI
+                // and product-line queries limited to seven visible tickets at a time.
+                const all: Ticket[] = [];
+                let offset = 0;
+                const chunk = 150;
+                while (active) {
+                    const { data, error } = await supabase.rpc('get_tickets_marbella_page', {
+                        p_start_date: period.start, p_end_date: period.end,
+                        p_limit: chunk, p_offset: offset, p_start_time: null, p_end_time: null
+                    });
+                    if (!active) return;
+                    if (error) { setDayError(true); setDayLoading(false); return; }
+                    const rows = (data ?? []) as Ticket[];
+                    all.push(...rows);
+                    if (rows.length < chunk) break;
+                    offset += chunk;
+                }
+                if (!active) return;
+                setTickets(all);
+                setLoadedPeriod(periodKey);
+                setHasMore(false);
                 setDayLoading(false);
                 return;
             }
+            // Multi-day selection: never pre-fetch further pages without a click.
+            const { data, error } = await supabase.rpc('get_tickets_marbella_page', {
+                p_start_date: period.start, p_end_date: period.end,
+                p_limit: PAGE_SIZE, p_offset: page, p_start_time: null, p_end_time: null
+            });
+            if (!active) return;
+            if (error) { setDayError(true); setDayLoading(false); return; }
             const batch = (data ?? []) as Ticket[];
             setTickets(prev => page === 0 ? batch : [...prev, ...batch]);
-            if (page === 0) setLoadedDate(selectedDate);
+            if (page === 0) setLoadedPeriod(periodKey);
             setHasMore(batch.length === PAGE_SIZE);
             setDayLoading(false);
         };
         void load();
         return () => { active = false; };
-    }, [supabase, selectedDate, page]);
+    }, [supabase, period.start, period.end, periodKey, page, isSingleDay, initializing]);
 
     // Obtener los nombres y cantidades de las líneas por lotes, no con una consulta por ticket.
     useEffect(() => {
         let active = true;
-        const missing = tickets.filter(t => !Object.prototype.hasOwnProperty.call(linesByTicket, t.numero_documento));
+        const missing = visibleTickets.filter(t => !Object.prototype.hasOwnProperty.call(linesByTicket, t.numero_documento));
         if (!missing.length) return;
         setLinesLoading(true);
         void (async () => {
@@ -345,84 +670,159 @@ export default function VentasDesktopWorkspace() {
             }
         })();
         return () => { active = false; };
-    }, [supabase, tickets]);
+    }, [supabase, visibleTickets]);
 
+    // Only the first seven tickets are fetched automatically; additional batches need a user click.
+    const canLoadMore = !isSingleDay && loadedPeriod === periodKey && !dayLoading && hasMore;
     useEffect(() => {
-        const node = loadSentinel.current;
-        // Never request page two before page one has actually been loaded for this date.
-        if (!node || loadedDate !== selectedDate || !hasMore || dayLoading) return;
-        const observer = new IntersectionObserver(entries => {
-            if (entries[0]?.isIntersecting) setPage(current => current + PAGE_SIZE);
-        }, { rootMargin: '120px' });
-        observer.observe(node);
-        return () => observer.disconnect();
-    }, [hasMore, dayLoading, tickets.length, loadedDate, selectedDate]);
+        if (initializing) return;
+        let active = true;
+        // Load daily closing totals (not tickets) for the selected period and the
+        // preceding 16 same-weekday comparisons used by /dashboard/history.
+        const comparisonStart = format(subWeeks(parseISO(period.start), 16), 'yyyy-MM-dd');
+        void supabase.from('cash_closings')
+            .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,weather,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
+            .gte('closing_date', comparisonStart).lte('closing_date', period.end).limit(4000)
+            .then(({ data, error }) => {
+                if (!active) return;
+                const rows = distinctCashClosings(error ? [] : (data ?? []) as CloseRow[]);
+                setHistoricalNetByDate(new Map(rows.map(row => [row.closing_date, Number(row.net_sales ?? 0)])));
+                setPeriodClosings(rows.filter(row => row.closing_date >= period.start));
+            });
+        return () => { active = false; };
+    }, [supabase, period.start, period.end, initializing]);
+
+    const selectedClosing = isSingleDay ? periodClosings.find(c => c.closing_date === period.start) : undefined;
+    useEffect(() => {
+        let alive = true;
+        setPhotos({ dataphoneUrl: null, bdpUrl: null });
+        if (!selectedClosing?.dataphone_totals_photo_path && !selectedClosing?.bdp_closing_ticket_photo_path) return;
+        void getCashClosingPhotoUrlsAction({
+            dataphonePath: selectedClosing.dataphone_totals_photo_path ?? null,
+            bdpPath: selectedClosing.bdp_closing_ticket_photo_path ?? null
+        }).then(result => {
+            if (alive && result.success) setPhotos({ dataphoneUrl: result.dataphoneUrl, bdpUrl: result.bdpUrl });
+        }).catch(() => {});
+        return () => { alive = false; };
+    }, [selectedClosing?.id, selectedClosing?.dataphone_totals_photo_path, selectedClosing?.bdp_closing_ticket_photo_path]);
 
     const monthTotals = useMemo(() => monthClosings.reduce((a, c) => ({
         cash: a.cash + Number(c.cash_counted ?? 0), card: a.card + Number(c.sales_card ?? 0),
         pending: a.pending + Number(c.sales_pending ?? 0), recovered: a.recovered + Number(c.debt_recovered ?? 0),
         net: a.net + Number(c.net_sales ?? 0)
     }), { cash: 0, card: 0, pending: 0, recovered: 0, net: 0 }), [monthClosings]);
-    const lastTotals = lastClosing ? {
-        cash: Number(lastClosing.cash_counted ?? 0), card: Number(lastClosing.sales_card ?? 0),
-        pending: Number(lastClosing.sales_pending ?? 0), recovered: Number(lastClosing.debt_recovered ?? 0),
-        net: Number(lastClosing.net_sales ?? 0)
-    } : undefined;
+    const hasClosingData = periodClosings.length > 0;
+    const periodTotals = useMemo(() => ({
+        sales: closingSum(periodClosings, 'tpv_sales'),
+        net: closingSum(periodClosings, 'net_sales'),
+        cash: closingSum(periodClosings, 'cash_counted'),
+        card: closingSum(periodClosings, 'sales_card'),
+        pending: closingSum(periodClosings, 'sales_pending'),
+        recovered: closingSum(periodClosings, 'debt_recovered'),
+        difference: closingSum(periodClosings, 'difference')
+    }), [periodClosings]);
+    // "Rendimiento" follows the existing history definition: net sales
+    // compared with the mean of up to eight prior same-weekday closings.
+    // This is not accounting profitability; that would require product costs.
+    const periodPerformance = useMemo(() => {
+        let expectedSum = 0;
+        let netSum = 0;
+        for (const closing of periodClosings) {
+            const expected = historicalExpectedNet(closing.closing_date, historicalNetByDate);
+            if (expected !== null) {
+                expectedSum += expected;
+                netSum += Number(closing.net_sales ?? 0);
+            }
+        }
+        return expectedSum > 0 ? (netSum - expectedSum) / expectedSum * 100 : null;
+    }, [periodClosings, historicalNetByDate]);
+    if (initializing) return <div className="mx-auto hidden w-full items-center justify-center py-16 text-sm text-white/60 lg:flex">Cargando último cierre…</div>;
     return (
-        <div data-component="HistoryDesktopWorkspace" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
-            <div className="mb-3 flex shrink-0 items-baseline gap-4 text-white">
-                <h1 className="text-xl font-black">Ventas</h1>
-                <span className="text-xs capitalize text-white/60">{monthLabel}</span>
+        <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
+            <div className="mb-3 flex shrink-0 items-baseline justify-between gap-4 text-white">
+                <div className="flex min-w-0 items-baseline gap-4">
+                    <h1 className="text-xl font-black">Ventas y cierres</h1>
+                    <span className="truncate text-xs capitalize text-white/60">{periodTitle}</span>
+                </div>
             </div>
             <div className="history-desktop-board grid min-h-0 flex-1 items-start gap-4">
                 <div data-element="summary-stack" className="min-h-0 min-w-0">
-                    <SummaryCard title="Último cierre" dateText={lastClosing ? format(parseISO(lastClosing.closing_date), "EEEE d 'de' MMMM", { locale: es }) : '—'} report={lastReport} extras={lastTotals}/>
-                    <SummaryCard title="Mensual" dateText={monthLabel} report={monthReport} extras={monthTotals}/>
+                    <SummaryCard title="Mensual" dateText={referenceLabel} report={monthReport} extras={monthClosings.length ? monthTotals : undefined}/>
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
-                        <header className="flex min-h-[34px] shrink-0 items-center justify-between gap-2 border-b border-white/15 px-3">
-                            <strong className="truncate text-[10px] font-bold uppercase">{format(parseISO(selectedDate), "EEEE d 'de' MMMM", { locale: es })}</strong>
-                            <span className="shrink-0 text-[10px] text-white/65">{dailyReport?.summary.count ?? 0} tickets</span>
+                        <header className="flex min-h-[36px] shrink-0 items-center justify-between gap-2 border-b border-white/15 px-3">
+                            <strong className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase">{periodTitle}</strong>
+                            {returnPeriod && (
+                                <button type="button" onClick={restorePeriod} className="inline-flex max-w-[25%] shrink-0 items-center gap-1 truncate rounded border border-sky-400/35 px-2 py-1 text-[10px] text-sky-200 hover:bg-white/10" title={'Volver a ' + periodLabel(returnPeriod)}>
+                                    <ArrowLeft size={13} className="shrink-0"/>
+                                    <span className="truncate">Volver al periodo</span>
+                                </button>
+                            )}
+                            <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 whitespace-nowrap text-[9px] text-white/70">
+                                {isSingleDay && selectedClosing?.weather ? (
+                                    <span className="inline-flex items-center gap-1" title="Clima del cierre">
+                                        <CloudSun size={12}/> <span className="max-w-[80px] truncate">{selectedClosing.weather}</span>
+                                    </span>
+                                ) : null}
+                                <span className="tabular-nums"><strong className="font-semibold text-white">{dailyReport?.summary.count != null ? Number(dailyReport.summary.count).toLocaleString('es-ES') : '—'}</strong> tickets</span>
+                                <span className="tabular-nums"><strong className="font-semibold text-white">{dailyReport?.summary.avgTicket != null ? euro(dailyReport.summary.avgTicket) : '—'}</strong> medio</span>
+                            </div>
                         </header>
-                        <div className="grid shrink-0 grid-cols-3 gap-2 border-b border-white/10 px-3 py-3 text-center">
-                            {[
-                                ['Ventas', euro(dailyReport?.summary.totalSales)],
-                                ['Tickets', String(dailyReport?.summary.count ?? 0)],
-                                ['Ticket medio', euro(dailyReport?.summary.avgTicket)]
-                            ].map(([label, value]) => (
-                                <div key={label} className="min-w-0">
-                                    <strong className="block truncate text-sm font-bold tabular-nums">{value}</strong>
-                                    <span className="text-[9px] uppercase text-white/65">{label}</span>
+                        <div className="grid shrink-0 grid-cols-3 gap-x-2 gap-y-2 border-b border-white/10 px-3 py-3 sm:grid-cols-4">
+                            {([
+                                ['Ventas', dailyReport ? euro(dailyReport.summary.totalSales) : '—'],
+                                ['Venta neta', hasClosingData ? euro(periodTotals.net) : '—'],
+                                ['Rendimiento', periodPerformance !== null ? `${Math.abs(periodPerformance).toFixed(1)}%` : '—'],
+                                ['Tarjeta', hasClosingData ? euro(periodTotals.card) : '—'],
+                                ['Efectivo', hasClosingData ? euro(periodTotals.cash) : '—'],
+                                ['Pendiente', hasClosingData ? euro(periodTotals.pending) : '—'],
+                                ['Cobros', hasClosingData ? euro(periodTotals.recovered) : '—'],
+                                ['Diferencia', hasClosingData ? euro(periodTotals.difference) : '—']
+                            ] as [string, string][]).map(([label, value]) => (
+                                <div key={label} className="min-w-0 text-center">
+                                    <strong className={cn("block truncate text-[12px] font-bold tabular-nums", label === 'Diferencia' && periodTotals.difference > 0 && 'text-emerald-400', label === 'Rendimiento' && periodPerformance !== null && (periodPerformance >= 0 ? 'text-emerald-400' : 'text-rose-400'))}>{label === 'Rendimiento' && periodPerformance !== null ? (periodPerformance >= 0 ? '▲ ' : '▼ ') : ''}{value}</strong>
+                                    <span className="block truncate text-[8px] uppercase text-white/60">{label}</span>
                                 </div>
                             ))}
                         </div>
-                        <div className="shrink-0 border-b border-white/10 px-3 pb-2 pt-2">
-                            <HourlySalesCurve hours={dailyReport?.hours} fullWidth />
-                            <div className="mt-0.5 flex justify-between text-[9px] font-mono text-white/65" aria-hidden="true">
-                                <span>7 h</span>
-                                <span>22 h</span>
+                        {isSingleDay && selectedClosing && (
+                            <div className="flex shrink-0 items-center justify-center gap-2 border-b border-white/10 px-3 py-2">
+                                <button type="button" disabled={!photos.bdpUrl} onClick={() => photos.bdpUrl && setOpenPhoto({ src: photos.bdpUrl, alt: 'Informe TPV' })}
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-[10px] text-white/80 enabled:hover:bg-white/10 disabled:opacity-40">
+                                    <FileText size={14}/> Ver informe TPV
+                                </button>
+                                <button type="button" disabled={!photos.dataphoneUrl} onClick={() => photos.dataphoneUrl && setOpenPhoto({ src: photos.dataphoneUrl, alt: 'Totales datáfonos' })}
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-[10px] text-white/80 enabled:hover:bg-white/10 disabled:opacity-40">
+                                    <CreditCard size={14}/> Ver totales datáfonos
+                                </button>
                             </div>
-                        </div>
-                        <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-2 pb-3 pt-2 custom-scrollbar">
-                            {tickets.map((ticket, i) => (
-                                <SalesTicket key={ticket.numero_documento || i} ticket={ticket} items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
-                                    expanded={expandedTicket === ticket.numero_documento}
-                                    onToggle={() => setExpandedTicket(current => current === ticket.numero_documento ? null : ticket.numero_documento)}
-                                    loadingItems={linesLoading && !Object.prototype.hasOwnProperty.call(linesByTicket, ticket.numero_documento)}/>
-                            ))}
-                            {!dayLoading && tickets.length === 0 && <p className="py-8 text-center text-xs text-white/55">Sin tickets en este día.</p>}
-                            {dayError && <p className="text-center text-xs text-rose-300">No se pudieron cargar los tickets.</p>}
-                            <div ref={loadSentinel} className="shrink-0 text-center text-[10px] text-white/50">{dayLoading ? 'Cargando tickets…' : hasMore ? 'Cargar más tickets' : ''}</div>
-                            {hasMore && !dayLoading && <button type="button" onClick={() => setPage(current => current + PAGE_SIZE)} className="text-center text-[10px] text-white/70 underline">Cargar más</button>}
+                        )}
+                        <div className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
+                            <SalesBreakdown report={dailyReport}/>
                         </div>
                     </section>
                 </div>
                 <div data-element="calendar-column" className="flex min-h-0 min-w-0 flex-col">
-                    <nav data-element="calendar-navigation" className="flex shrink-0 items-center justify-center gap-2 text-white" aria-label="Cambiar mes de ventas">
+                    <nav data-element="calendar-navigation" className="relative flex shrink-0 items-center justify-center gap-2 text-white" aria-label="Cambiar mes de ventas">
                         <button type="button" onClick={() => navigateMonth(-1)} aria-label="Mes anterior" className="rounded p-1.5 hover:bg-white/10"><ChevronLeft size={19}/></button>
                         <strong className="min-w-[128px] text-center text-sm font-semibold capitalize">{monthLabel}</strong>
                         <button type="button" onClick={() => navigateMonth(1)} aria-label="Mes siguiente" className="rounded p-1.5 hover:bg-white/10"><ChevronRight size={19}/></button>
+                        <div className="absolute right-0 top-0 inline-flex pr-2 pt-1">
+                            <button type="button" onClick={() => setFilterOpen(true)}
+                                className="inline-flex items-center gap-1 rounded border border-white/30 px-2 py-1 text-[11px] hover:bg-white/10"
+                                aria-label="Filtrar por fecha">
+                                <Filter size={13}/> Filtro
+                            </button>
+                            {activeFilter !== null && (
+                                <button type="button" onClick={clearAllFilters}
+                                    className="absolute right-0 top-0 z-10 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-white bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700"
+                                    title="Quitar todos los filtros"
+                                    aria-label="Quitar todos los filtros">
+                                    <X size={11} strokeWidth={3}/>
+                                </button>
+                            )}
+                        </div>
                     </nav>
                     <section data-element="calendar" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radio-control)] border border-zinc-200 bg-white text-zinc-900">
                         <MonthCalendarFrame flush className="history-desktop-month-cal-chrome">
@@ -432,14 +832,36 @@ export default function VentasDesktopWorkspace() {
                                         {week.map(day => {
                                             const iso = format(day, 'yyyy-MM-dd');
                                             const closing = byDate.get(iso);
-                                            const dayValue = iso === selectedDate ? Number(dailyReport?.summary.totalSales ?? closing?.tpv_sales ?? 0) : Number(closing?.tpv_sales ?? 0);
+                                            const net = closing?.net_sales == null ? null : Number(closing.net_sales);
+                                            const dayPerformance = calendarPerformanceByDate.get(iso) ?? null;
+                                            const tone = performanceColors(dayPerformance);
+                                            const selected = isSingleDay && iso === period.start;
                                             return (
-                                                <button key={iso} type="button" onClick={() => selectDate(iso)} aria-pressed={iso === selectedDate} aria-label={'Seleccionar ' + iso}
-                                                    className={cn('month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 p-1 last:border-r-0 hover:bg-blue-50/50', !isSameMonth(day, month) && 'opacity-35', iso === selectedDate && 'z-[1] ring-2 ring-inset ring-zinc-900')}>
-                                                    <span className="absolute right-1 top-1 text-[9px] font-medium text-gray-400">{format(day, 'd')}</span>
-                                                    <div className="flex min-h-0 flex-1 items-center justify-center pt-2">
-                                                        {dayValue !== 0 && <strong className="text-[clamp(9px,0.8vw,13px)] font-extrabold tabular-nums">{Math.round(dayValue)}€</strong>}
-                                                    </div>
+                                                <button key={iso} type="button" onClick={() => selectDate(iso)}
+                                                    aria-pressed={selected}
+                                                    aria-label={`Seleccionar ${iso}${net !== null ? ', venta neta ' + euro(net) : ''}${dayPerformance !== null ? ', rendimiento ' + dayPerformance.toFixed(1) + '%' : ''}`}
+                                                    className={cn(
+                                                        'month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-white p-0.5 last:border-r-0 transition-colors hover:bg-zinc-50',
+                                                        !isSameMonth(day, month) && 'opacity-35',
+                                                        !selected && iso >= period.start && iso <= period.end && 'ring-1 ring-inset ring-zinc-300',
+                                                        selected && 'z-[1] ring-2 ring-inset ring-zinc-900'
+                                                    )}>
+                                                    <span className={cn("absolute right-1 top-0.5 text-[9px] font-medium tabular-nums", selected ? "text-zinc-700" : "text-slate-400")}>{format(day, 'd')}</span>
+                                                    {net !== null && Number.isFinite(net) ? (
+                                                        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-px pt-2 text-center">
+                                                            <span title={euro(net)} className="max-w-full truncate text-[clamp(8px,0.75vw,11px)] font-normal leading-none tracking-tight text-zinc-800 tabular-nums">
+                                                                {Math.round(net).toLocaleString('es-ES')}€
+                                                            </span>
+                                                            <span className="text-[7px] font-medium leading-none tracking-[0.06em] text-slate-500">V NETA</span>
+                                                            {dayPerformance !== null && tone ? (
+                                                                <span className={cn("inline-flex max-w-full items-center justify-center gap-0.5 px-1 py-px text-[clamp(8px,0.7vw,10px)] font-medium leading-none tabular-nums", tone)}
+                                                                    title="Rendimiento respecto a cierres anteriores del mismo día de la semana">
+                                                                    <span aria-hidden="true">{dayPerformance >= 0 ? '▲' : '▼'}</span>
+                                                                    {Math.abs(dayPerformance).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                    ) : null}
                                                 </button>
                                             );
                                         })}
@@ -448,8 +870,55 @@ export default function VentasDesktopWorkspace() {
                             </div>
                         </MonthCalendarFrame>
                     </section>
+                    <section data-element="invoices" className="sales-desktop-invoices mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-2 pt-2 text-white">
+                        <div className="mb-2 flex shrink-0 items-center justify-between gap-2 px-1">
+                            <strong className="text-[11px] font-bold">Facturas simplificadas</strong>
+                            <span className="shrink-0 text-[10px] text-white/60">{visibleTickets.length.toLocaleString('es-ES')} de {(dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES')}</span>
+                        </div>
+                        <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-1">
+                            {visibleTickets.map((ticket, i) => (
+                                <SalesTicket key={ticket.numero_documento || i} ticket={ticket} items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
+                                    expanded={expandedTicket === ticket.numero_documento}
+                                    onToggle={() => setExpandedTicket(current => current === ticket.numero_documento ? null : ticket.numero_documento)}
+                                    loadingItems={linesLoading && !Object.prototype.hasOwnProperty.call(linesByTicket, ticket.numero_documento)} />
+                            ))}
+                            {dayError && <p className="py-3 text-center text-xs text-rose-300">No se pudieron cargar las facturas simplificadas.</p>}
+                            {!dayLoading && !dayError && loadedPeriod === periodKey && tickets.length === 0 && (
+                                <p className="py-3 text-center text-xs text-white/55">No hay facturas simplificadas en este periodo.</p>
+                            )}
+                            {dayLoading && <p className="py-3 text-center text-[10px] text-white/50">Cargando facturas simplificadas…</p>}
+                        </div>
+                        {canLoadMore && (
+                            <button type="button"
+                                onClick={() => setPage(current => current + PAGE_SIZE)}
+                                className="mt-1 shrink-0 rounded-md border border-white/25 px-3 py-1.5 text-center text-[11px] text-white/85 hover:bg-white/10">
+                                <ChevronDown size={13} className="mr-1 inline-block"/> Ver más
+                            </button>
+                        )}
+                    </section>
                 </div>
             </div>
+            <TimeFilterModal
+                isOpen={filterOpen}
+                onClose={() => setFilterOpen(false)}
+                allowedKinds={['date', 'range', 'week', 'month', 'year']}
+                initialValue={initialTimeFilter}
+                defaultKind={activeFilter?.kind ?? 'date'}
+                quickRangePreset={lastThreeMonthsPreset}
+                onApply={applyFilter}
+            />
+            <ImageLightbox
+                open={openPhoto !== null}
+                onClose={() => setOpenPhoto(null)}
+                src={openPhoto?.src}
+                alt={openPhoto?.alt}
+                scheme="dark"
+                variant="work"
+                zoomable
+                zoomControls
+                imageOnly
+                instance="ventas-consolidated-photo-preview"
+            />
         </div>
     );
 }

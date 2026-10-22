@@ -20,6 +20,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
+import { WeekendPublicScheduleNote } from '@/components/schedule/WeekendPublicScheduleNote';
 import { fetchBarActivitiesForRangeClient, type BarActivity } from '@/lib/pavilion/bar-activities-range';
 import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 
@@ -673,6 +674,12 @@ export const StaffScheduleModal = ({
                 ) : (
                     // VISTA B: TABLA IDÉNTICA AL EDITOR — SÓLO LECTURA
                     <div className="flex flex-col flex-1 overflow-hidden min-h-0 day-modal-body">
+                        {[0, 6].includes(selectedDate.getDay()) ? (
+                            <WeekendPublicScheduleNote
+                                key={format(selectedDate, 'yyyy-MM-dd')}
+                                date={format(selectedDate, 'yyyy-MM-dd')}
+                            />
+                        ) : null}
                         {!dayShellReady ? (
                             <div className="flex-1 flex items-center justify-center py-20">
                                 <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />

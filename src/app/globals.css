@@ -7257,3 +7257,78 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     mask-composite: intersect;
   }
 }
+
+/* Ventas y cierres unificados: la columna izquierda es una sola ficha mensual
+   de altura completa, no dos cierres apilados. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] [data-element='summary-stack'] {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] .history-desktop-summary > .grid {
+    align-content: stretch;
+  }
+}
+
+/* Albaranes: imagen original flotante sobre el modal, sin fondo ni velo oscuro,
+   centrada en todas las resoluciones. No altera el contrato de los demás modales. */
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-modal-backdrop='elevated'] {
+  background: transparent;
+}
+
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='frame'] {
+  max-width: none;
+}
+
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='container'] {
+  overflow: visible;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='header'],
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='footer'] {
+  display: none;
+}
+
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='body'] {
+  overflow: visible;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
+  [data-component='Modal'][data-instance='albaran-detail'] [data-subordinate='true'] {
+  filter: none;
+  opacity: 1;
+}
+
+/* Ventas y cierres: resumen del cierre en el centro; calendario e invoices
+   comparten la columna derecha como en el diseño aprobado. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] [data-element='calendar-column'] {
+    height: min(100%, 690px);
+    overflow: hidden;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] [data-element='calendar'] {
+    flex: 0 0 49%;
+    height: 49%;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] [data-element='invoices'] {
+    min-width: 0;
+    min-height: 0;
+  }
+  /* Más facturas visibles por pantalla sin recortar el contenido de una línea. */
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] .ventas-ticket-strip {
+    height: 28px;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] [data-element='calendar-column'] {
+    height: min(100%, 505px);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] [data-element='calendar'] {
+    flex-basis: 45%;
+    height: 45%;
+  }
+}
