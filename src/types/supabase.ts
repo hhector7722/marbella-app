@@ -6130,6 +6130,7 @@ export type Database = {
           notes: string | null
           running_balance: number | null
           tpv2_purchase_id: string | null
+          tpv2_purchase_occurred_at: string | null
           type: string | null
           user_id: string | null
         }
