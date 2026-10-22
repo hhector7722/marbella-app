@@ -50,6 +50,9 @@ Se ha añadido una nueva ruta experimental de chat en `/api/copiloto/v2`, basada
 
 Validación estática: `tsc --noEmit` y ESLint de los archivos cambiados sin errores. NO se han ejecutado pruebas de extremo a extremo con sesión autenticada ni pruebas reales de audio contra OpenAI; `OPENAI_API_KEY` figura en metadatos de Vercel para Production pero no se ha validado su funcionamiento y no consta configurada para Preview. No se ha hecho despliegue.
 
+## Preparación del despliegue Preview (22/10/2026, revisión posterior)
+Vercel había creado automáticamente un despliegue Preview READY del commit `7fb8ff28`, pero la clave `OPENAI_API_KEY` estaba configurada únicamente para Production. Para evitar copiar credenciales a otros entornos, se migraron la ruta de texto a un ID de modelo de AI Gateway (`openai/gpt-5.4-mini`) y la transcripción al proveedor `gateway.transcriptionModel("openai/gpt-4o-mini-transcribe")` de AI SDK 6 con OIDC nativo de Vercel. Ambos modelos se comprobaron contra el catálogo del Gateway vigente (486 modelos), y se consultaron los ejemplos publicados dentro del paquete instalado. Esto evita claves específicas de OpenAI en Preview y limita su exposición. **Requiere verificar funcionamiento real, disponibilidad de saldo del equipo y credenciales de la sesión de usuario.**
+
 ## Limitaciones y pendientes
 - **No se ha implementado todavía** la operación de añadir un producto mediante chat a un borrador. No afirmar lo contrario.
 - No se modificó ninguna fila real de pedidos, productos o ventas en Supabase.

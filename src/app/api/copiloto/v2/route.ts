@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { convertToModelMessages, stepCountIs, streamText, tool, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { ACTION_SCHEMA, type CopilotAction } from "@/lib/copilot/actions";
@@ -36,9 +35,6 @@ export async function POST(request: Request) {
   const input = lastText(body.messages);
   if (!input || input.length > 5000) {
     return NextResponse.json({ error: "Mensaje vacío o demasiado largo." }, { status: 400 });
-  }
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json({ error: "El servicio de IA no está configurado." }, { status: 503 });
   }
 
   const supabase = await createClient();
@@ -108,7 +104,8 @@ ${supplier ? `El navegador declara abierto un borrador de compra del proveedor $
 Contesta en español claro, conciso y útil.`;
 
   const result = streamText({
-    model: openai("gpt-5.4-mini"),
+    // AI Gateway utiliza el OIDC que Vercel proporciona a Preview y Production.
+    model: "openai/gpt-5.4-mini",
     system,
     messages: await convertToModelMessages(body.messages),
     tools,
