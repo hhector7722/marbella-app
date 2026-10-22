@@ -32,6 +32,15 @@ describe('historical line reconciliation', () => {
     assert.equal(result[0]!.mistralRowIndex, 0)
   })
 
+  it('reconciles one OCR character only when the matching row is unique', () => {
+    const legacyLines = [{ id: 'cookie', originalName: 'GALETA TRES XCOLATE', quantity: 1 }]
+    const rows = [{ rowIndex: 0, descriptionRaw: 'GALETA TRES XOCOLATE', quantityRaw: '1', supplierProductCodeRaw: null }]
+    assert.equal(matchLegacyLinesToMistral({ legacyLines, mistralRows: rows })[0]!.reason, 'matched')
+    assert.equal(matchLegacyLinesToMistral({ legacyLines, mistralRows: [...rows,
+      { ...rows[0]!, rowIndex: 1, descriptionRaw: 'GALETA TRES XCOLATEE' }] })[0]!.reason,
+    'ambiguous_mistral_rows')
+  })
+
   it('blocks duplicate rows and duplicate legacy lines instead of assigning one row twice', () => {
     const duplicateRow = matchLegacyLinesToMistral({
       legacyLines: [panabadLegacy[0]!],
