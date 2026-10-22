@@ -7268,3 +7268,37 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     align-content: stretch;
   }
 }
+
+/* Albaranes: imagen original flotante sobre el modal, sin fondo ni velo oscuro,
+   centrada en todas las resoluciones. No altera el contrato de los demás modales. */
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-modal-backdrop='elevated'] {
+  background: transparent;
+}
+
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='frame'] {
+  max-width: none;
+}
+
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='container'] {
+  overflow: visible;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='header'],
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='footer'] {
+  display: none;
+}
+
+[data-component='Modal'][data-instance='albaran-invoice-image'] [data-element='body'] {
+  overflow: visible;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
+  [data-component='Modal'][data-instance='albaran-detail'] [data-subordinate='true'] {
+  filter: none;
+  opacity: 1;
+}
