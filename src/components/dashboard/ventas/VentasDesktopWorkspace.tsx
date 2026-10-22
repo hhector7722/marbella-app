@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, CalendarRange, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import { timeFilterBounds, type TimeFilterValue } from '@/components/time/time-filter-types';
 import { cn } from '@/lib/utils';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
@@ -19,7 +21,8 @@ type TicketReport = {
     hours: { hour: number; count: number; total: number }[];
 };
 type CloseRow = {
-    id: string; closing_date: string; tpv_sales: number | null; net_sales: number | null;
+    id: string; closing_date: string; closed_at?: string | null; tickets_count?: number | null;
+    tpv_sales: number | null; net_sales: number | null;
     sales_card: number | null; cash_counted: number | null;
     sales_pending: number | null; debt_recovered: number | null; difference: number | null;
     dataphone_totals_photo_path?: string | null; bdp_closing_ticket_photo_path?: string | null;
@@ -44,6 +47,24 @@ const periodLabel = (p: Period) => {
 };
 const closingSum = (rows: CloseRow[], key: keyof CloseRow) =>
     rows.reduce((sum, row) => sum + Number(row[key] ?? 0), 0);
+
+/** Dos filas de cierre con la misma fecha, hora de cierre y todas las cifras
+ * idénticas representan el mismo cierre registrado dos veces. No tocamos los
+ * registros en Supabase: solo impedimos que inflen los acumulados de Ventas.
+ * Si hay dos cierres distintos para un día, se conservan ambos. */
+function distinctCashClosings(rows: CloseRow[]): CloseRow[] {
+    const seen = new Set<string>();
+    return rows.filter(row => {
+        const signature = JSON.stringify([
+            row.closing_date, row.closed_at, row.tpv_sales, row.net_sales,
+            row.sales_card, row.cash_counted, row.sales_pending,
+            row.debt_recovered, row.difference, row.tickets_count
+        ]);
+        if (seen.has(signature)) return false;
+        seen.add(signature);
+        return true;
+    });
+}
 
 /** Misma referencia que el rendimiento del detalle: hasta ocho cierres previos
  * del mismo día de la semana, mirando 16 semanas atrás y excluyendo agosto. */
@@ -300,9 +321,9 @@ export default function VentasDesktopWorkspace() {
     const [initializing, setInitializing] = useState(true);
     const [returnPeriod, setReturnPeriod] = useState<Period | null>(null);
     const [filterOpen, setFilterOpen] = useState(false);
-    const [filterKind, setFilterKind] = useState<'day' | 'week' | 'month' | 'three' | 'custom'>('day');
-    const [filterStart, setFilterStart] = useState(() => format(new Date(), 'yyyy-MM-dd'));
-    const [filterEnd, setFilterEnd] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [activeFilter, setActiveFilter] = useState<TimeFilterValue | null>(null);
+    const [lastClosingDate, setLastClosingDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [returnFilter, setReturnFilter] = useState<TimeFilterValue | null>(null);
     const [periodClosings, setPeriodClosings] = useState<CloseRow[]>([]);
     const [historicalNetByDate, setHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
     const [calendarHistoricalNetByDate, setCalendarHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
@@ -339,6 +360,21 @@ export default function VentasDesktopWorkspace() {
     const monthLabel = format(month, 'MMMM yyyy', { locale: es });
     const isSingleDay = period.start === period.end;
     const visibleTickets = tickets;
+    const initialTimeFilter = useMemo<TimeFilterValue>(
+        () => activeFilter ?? { kind: 'date', date: period.start },
+        [activeFilter, period.start]
+    );
+    const lastThreeMonthsPreset = useMemo(() => {
+        const lastComplete = subMonths(startOfMonth(new Date()), 1);
+        return {
+            label: 'Últimos 3 meses',
+            value: {
+                kind: 'range' as const,
+                startDate: format(subMonths(startOfMonth(lastComplete), 2), 'yyyy-MM-dd'),
+                endDate: format(endOfMonth(lastComplete), 'yyyy-MM-dd')
+            }
+        };
+    }, []);
     const calendarWeeks = useMemo(() => {
         const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
         const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
@@ -375,35 +411,37 @@ export default function VentasDesktopWorkspace() {
         setPage(0);
     };
     const selectDate = (date: string) => {
-        if (!returnPeriod && (period.start !== date || period.end !== date) && period.kind !== 'day')
+        if (!returnPeriod && (period.start !== date || period.end !== date) && period.kind !== 'day') {
             setReturnPeriod(period);
+            setReturnFilter(activeFilter);
+        }
+        setActiveFilter({ kind: 'date', date });
         changePeriod({ start: date, end: date, kind: 'day' }, true);
     };
     const restorePeriod = () => {
-        if (returnPeriod) changePeriod(returnPeriod);
+        if (returnPeriod) {
+            setActiveFilter(returnFilter);
+            changePeriod(returnPeriod);
+            setReturnFilter(null);
+        }
     };
     const navigateMonth = (delta: number) => setMonth(current => delta < 0 ? subMonths(current, 1) : addMonths(current, 1));
-    const applyFilter = () => {
-        const anchor = parseISO(filterStart);
-        let next: Period;
-        if (filterKind === 'day') next = { start: filterStart, end: filterStart, kind: 'day' };
-        else if (filterKind === 'week') next = {
-            start: format(startOfWeek(anchor, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
-            end: format(endOfWeek(anchor, { weekStartsOn: 1 }), 'yyyy-MM-dd'), kind: 'week'
-        };
-        else if (filterKind === 'month') next = {
-            start: format(startOfMonth(anchor), 'yyyy-MM-dd'),
-            end: format(endOfMonth(anchor), 'yyyy-MM-dd'), kind: 'month'
-        };
-        else if (filterKind === 'three') {
-            const lastComplete = subMonths(startOfMonth(new Date()), 1);
-            next = { start: format(subMonths(startOfMonth(lastComplete), 2), 'yyyy-MM-dd'), end: format(endOfMonth(lastComplete), 'yyyy-MM-dd'), kind: 'range' };
-        } else {
-            if (filterEnd < filterStart) return;
-            next = { start: filterStart, end: filterEnd, kind: filterStart === filterEnd ? 'day' : 'range' };
-        }
-        changePeriod(next);
+    const applyFilter = (value: TimeFilterValue) => {
+        const bounds = timeFilterBounds(value);
+        if (!bounds) return;
+        setActiveFilter(value);
+        setReturnFilter(null);
+        changePeriod({
+            start: bounds.startDate, end: bounds.endDate,
+            kind: value.kind === 'month' ? 'month' : value.kind === 'week' ? 'week' : bounds.startDate === bounds.endDate ? 'day' : 'range',
+        });
         setFilterOpen(false);
+    };
+    const clearAllFilters = () => {
+        setActiveFilter(null);
+        setReturnFilter(null);
+        setFilterOpen(false);
+        changePeriod({ start: lastClosingDate, end: lastClosingDate, kind: 'day' });
     };
     // Open at the most recent closed day, not at today's still-open trading day.
     useEffect(() => {
@@ -417,6 +455,7 @@ export default function VentasDesktopWorkspace() {
                     .maybeSingle();
                 if (!active) return;
                 const lastDate = data?.closing_date ?? format(new Date(), 'yyyy-MM-dd');
+                setLastClosingDate(lastDate);
                 changePeriod({ start: lastDate, end: lastDate, kind: 'day' });
             } finally {
                 if (active) setInitializing(false);
@@ -429,11 +468,11 @@ export default function VentasDesktopWorkspace() {
         const load = async () => {
             const [monthly, closes] = await Promise.all([
                 supabase.rpc('get_full_period_ticket_sales_detail', { p_start_date: monthStart, p_end_date: monthEnd }),
-                supabase.from('cash_closings').select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').gte('closing_date', monthStart).lte('closing_date', monthEnd)
+                supabase.from('cash_closings').select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').gte('closing_date', monthStart).lte('closing_date', monthEnd)
             ]);
             if (!active) return;
             setMonthReport(monthly.error ? null : monthly.data as unknown as TicketReport);
-            setMonthClosings((closes.data ?? []) as CloseRow[]);
+            setMonthClosings(distinctCashClosings((closes.data ?? []) as CloseRow[]));
 
         };
         void load();
@@ -449,14 +488,14 @@ export default function VentasDesktopWorkspace() {
         const firstComparable = format(subWeeks(startOfMonth(month), 16), 'yyyy-MM-dd');
         void Promise.all([
             supabase.from('cash_closings')
-                .select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference')
+                .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference')
                 .gte('closing_date', start).lte('closing_date', end),
             supabase.from('cash_closings')
                 .select('closing_date,net_sales')
                 .gte('closing_date', firstComparable).lte('closing_date', end).limit(1500),
         ]).then(([closings, history]) => {
             if (!active) return;
-            setCalendarClosings(closings.error ? [] : (closings.data ?? []) as CloseRow[]);
+            setCalendarClosings(distinctCashClosings(closings.error ? [] : (closings.data ?? []) as CloseRow[]));
             setCalendarHistoricalNetByDate(new Map<string, number>(
                 (history.error ? [] : history.data ?? []).map(c => [c.closing_date, Number(c.net_sales ?? 0)] as [string, number])
             ));
@@ -584,11 +623,11 @@ export default function VentasDesktopWorkspace() {
         // preceding 16 same-weekday comparisons used by /dashboard/history.
         const comparisonStart = format(subWeeks(parseISO(period.start), 16), 'yyyy-MM-dd');
         void supabase.from('cash_closings')
-            .select('id,closing_date,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,weather,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
+            .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,weather,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
             .gte('closing_date', comparisonStart).lte('closing_date', period.end).limit(4000)
             .then(({ data, error }) => {
                 if (!active) return;
-                const rows = error ? [] : (data ?? []) as CloseRow[];
+                const rows = distinctCashClosings(error ? [] : (data ?? []) as CloseRow[]);
                 setHistoricalNetByDate(new Map(rows.map(row => [row.closing_date, Number(row.net_sales ?? 0)])));
                 setPeriodClosings(rows.filter(row => row.closing_date >= period.start));
             });
@@ -674,7 +713,7 @@ export default function VentasDesktopWorkspace() {
                         </header>
                         <div className="grid shrink-0 grid-cols-3 gap-x-2 gap-y-2 border-b border-white/10 px-3 py-3 sm:grid-cols-4">
                             {([
-                                ['Ventas TPV', hasClosingData ? euro(periodTotals.sales) : euro(dailyReport?.summary.totalSales)],
+                                ['Ventas', dailyReport ? euro(dailyReport.summary.totalSales) : '—'],
                                 ['Venta neta', hasClosingData ? euro(periodTotals.net) : '—'],
                                 ['Rendimiento', periodPerformance !== null ? `${Math.abs(periodPerformance).toFixed(1)}%` : '—'],
                                 ['Tarjeta', hasClosingData ? euro(periodTotals.card) : '—'],
@@ -711,10 +750,21 @@ export default function VentasDesktopWorkspace() {
                         <button type="button" onClick={() => navigateMonth(-1)} aria-label="Mes anterior" className="rounded p-1.5 hover:bg-white/10"><ChevronLeft size={19}/></button>
                         <strong className="min-w-[128px] text-center text-sm font-semibold capitalize">{monthLabel}</strong>
                         <button type="button" onClick={() => navigateMonth(1)} aria-label="Mes siguiente" className="rounded p-1.5 hover:bg-white/10"><ChevronRight size={19}/></button>
-                        <button type="button" onClick={() => { setFilterKind(isSingleDay ? 'day' : 'custom'); setFilterStart(period.start); setFilterEnd(period.end); setFilterOpen(true); }}
-                            className="absolute right-0 inline-flex items-center gap-1 rounded border border-white/30 px-2 py-1 text-[11px] hover:bg-white/10" aria-label="Filtrar por fecha">
-                            <Filter size={13}/> Filtro
-                        </button>
+                        <div className="absolute right-0 inline-flex">
+                            <button type="button" onClick={() => setFilterOpen(true)}
+                                className="inline-flex items-center gap-1 rounded border border-white/30 px-2 py-1 text-[11px] hover:bg-white/10"
+                                aria-label="Filtrar por fecha">
+                                <Filter size={13}/> Filtro
+                            </button>
+                            {activeFilter !== null && (
+                                <button type="button" onClick={clearAllFilters}
+                                    className="absolute -right-1.5 -top-1.5 z-10 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-white bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700"
+                                    title="Quitar todos los filtros"
+                                    aria-label="Quitar todos los filtros">
+                                    <X size={11} strokeWidth={3}/>
+                                </button>
+                            )}
+                        </div>
                     </nav>
                     <section data-element="calendar" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radio-control)] border border-zinc-200 bg-white text-zinc-900">
                         <MonthCalendarFrame flush className="history-desktop-month-cal-chrome">
@@ -790,50 +840,15 @@ export default function VentasDesktopWorkspace() {
                     </section>
                 </div>
             </div>
-            {filterOpen && (
-                <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4"
-                    onMouseDown={e => { if (e.target === e.currentTarget) setFilterOpen(false); }}>
-                    <div role="dialog" aria-modal="true" aria-label="Filtrar periodo de ventas" className="w-full max-w-[370px] rounded-xl border border-white/25 bg-[#122b57] p-4 text-white shadow-2xl">
-                        <div className="mb-4 flex items-center justify-between">
-                            <strong className="flex items-center gap-2 text-sm"><CalendarRange size={17}/> Filtrar periodo</strong>
-                            <button type="button" aria-label="Cerrar filtro" onClick={() => setFilterOpen(false)} className="rounded p-1 hover:bg-white/10"><X size={18}/></button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            {([
-                                ['day','Día'], ['week','Semana'], ['month','Mes'],
-                                ['three','Últimos 3 meses'], ['custom','Personalizado']
-                            ] as const).map(([value,label]) => (
-                                <button type="button" key={value} onClick={() => setFilterKind(value)}
-                                    className={cn("rounded-md border px-2 py-2 text-xs", filterKind === value ? 'border-sky-400 bg-sky-700/60' : 'border-white/20 hover:bg-white/10')}>
-                                    {label}
-                                </button>
-                            ))}
-                        </div>
-                        {filterKind !== 'three' && (
-                            <div className="mt-4 grid grid-cols-2 gap-2">
-                                <label className="col-span-2 flex flex-col gap-1 text-xs text-white/75">
-                                    {filterKind === 'custom' ? 'Desde' : 'Fecha de referencia'}
-                                    <input type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)}
-                                        className="rounded border border-white/25 bg-[#091b3d] px-2 py-2 text-white [color-scheme:dark]" />
-                                </label>
-                                {filterKind === 'custom' && (
-                                    <label className="col-span-2 flex flex-col gap-1 text-xs text-white/75">
-                                        Hasta
-                                        <input type="date" min={filterStart} value={filterEnd} onChange={e => setFilterEnd(e.target.value)}
-                                            className="rounded border border-white/25 bg-[#091b3d] px-2 py-2 text-white [color-scheme:dark]" />
-                                    </label>
-                                )}
-                            </div>
-                        )}
-                        <p className="mt-3 text-[11px] text-white/55">El resumen incluye todo el periodo. Las facturas se muestran de siete en siete.</p>
-                        <button type="button" onClick={applyFilter}
-                            disabled={(filterKind === 'custom' && filterEnd < filterStart) || (filterKind !== 'three' && !filterStart)}
-                            className="mt-4 w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50">
-                            Aplicar filtro
-                        </button>
-                    </div>
-                </div>
-            )}
+            <TimeFilterModal
+                isOpen={filterOpen}
+                onClose={() => setFilterOpen(false)}
+                allowedKinds={['date', 'range', 'week', 'month', 'year']}
+                initialValue={initialTimeFilter}
+                defaultKind={activeFilter?.kind ?? 'date'}
+                quickRangePreset={lastThreeMonthsPreset}
+                onApply={applyFilter}
+            />
             <ImageLightbox
                 open={openPhoto !== null}
                 onClose={() => setOpenPhoto(null)}
