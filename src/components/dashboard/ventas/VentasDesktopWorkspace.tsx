@@ -312,20 +312,20 @@ export default function VentasDesktopWorkspace() {
     // Open at the most recent closed day, not at today's still-open trading day.
     useEffect(() => {
         let active = true;
-        void supabase.from('cash_closings')
-            .select('closing_date')
-            .order('closing_date', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-            .then(({ data }) => {
+        void (async () => {
+            try {
+                const { data } = await supabase.from('cash_closings')
+                    .select('closing_date')
+                    .order('closing_date', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
                 if (!active) return;
                 const lastDate = data?.closing_date ?? format(new Date(), 'yyyy-MM-dd');
                 changePeriod({ start: lastDate, end: lastDate, kind: 'day' });
-                setInitializing(false);
-            })
-            .catch(() => {
+            } finally {
                 if (active) setInitializing(false);
-            });
+            }
+        })();
         return () => { active = false; };
     }, [supabase]);
     useEffect(() => {
