@@ -157,7 +157,11 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const { messages, sendMessage, status, error } = useChat({
     transport,
     onError: (err: Error) => {
-      toast.error(`Error: ${err.message}`);
+      const restricted = /free tier users do not have access|restrictedmodels|créditos actuales|no_providers_available/i.test(err.message);
+      toast.error(restricted
+        ? 'El modelo de IA no está disponible con los créditos actuales de Vercel.'
+        : 'El servicio de IA no ha podido responder. Comprueba la configuración del proveedor.',
+      );
     },
   });
 
@@ -239,8 +243,10 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           </div>
         )}
         {error && (
-          <div className="mx-auto bg-red-50 text-red-600 px-4 py-2 rounded-2xl text-xs border border-red-100">
-            Error de conexión.
+          <div role="alert" className="mx-auto bg-red-50 text-red-600 px-4 py-2 rounded-2xl text-xs border border-red-100">
+            {/free tier users do not have access|restrictedmodels|créditos actuales|no_providers_available/i.test(error.message)
+              ? 'El modelo no está habilitado para los créditos actuales de Vercel.'
+              : 'No se ha podido obtener respuesta del servicio de IA. No significa que tu Internet haya fallado.'}
           </div>
         )}
       </div>

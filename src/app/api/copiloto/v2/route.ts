@@ -105,7 +105,9 @@ Contesta en español claro, conciso y útil.`;
 
   const result = streamText({
     // AI Gateway utiliza el OIDC que Vercel proporciona a Preview y Production.
-    model: "openai/gpt-5.4-mini",
+    // GPT-5.4 mini requiere créditos de pago en AI Gateway Hobby.
+    // GPT-4o mini ofrece herramientas y garantías de no entrenamiento con coste inferior.
+    model: "openai/gpt-4o-mini",
     system,
     messages: await convertToModelMessages(body.messages),
     tools,
@@ -123,8 +125,18 @@ Contesta en español claro, conciso y útil.`;
   return result.toUIMessageStreamResponse({
     headers: { "X-Session-Id": sessionId },
     onError: (error) => {
-      console.error("[Copiloto] Error IA:", error);
-      return "No he podido responder por un problema con el servicio de IA. Inténtalo de nuevo.";
+      const code = typeof error === "object" && error !== null && "statusCode" in error
+        ? Number(error.statusCode) : null;
+      const description = error instanceof Error ? error.message : String(error);
+      // Evitar registrar el error completo: algunas SDK incluyen prompts y datos del negocio.
+      console.error("[Copiloto] Fallo del proveedor de IA:", { statusCode: code, type: error instanceof Error ? error.name : "unknown" });
+      if (code === 403 || /free tier users do not have access|restrictedmodels|no_providers_available/i.test(description)) {
+        return "Vercel AI Gateway no permite utilizar este modelo con los créditos actuales. Hay que habilitar un modelo compatible o configurar créditos de IA.";
+      }
+      if (code === 429 || /rate limit|too many requests/i.test(description)) {
+        return "El servicio de IA ha alcanzado su límite de peticiones. Vuelve a intentarlo más tarde.";
+      }
+      return "El servicio de IA no ha podido responder. No es un problema con tu conexión a Internet.";
     },
   });
 }
