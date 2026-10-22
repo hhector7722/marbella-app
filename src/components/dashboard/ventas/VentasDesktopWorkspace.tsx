@@ -437,60 +437,92 @@ export default function VentasDesktopWorkspace() {
         difference: closingSum(periodClosings, 'difference')
     }), [periodClosings]);
     return (
-        <div data-component="HistoryDesktopWorkspace" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
-            <div className="mb-3 flex shrink-0 items-baseline gap-4 text-white">
-                <h1 className="text-xl font-black">Ventas</h1>
-                <span className="text-xs capitalize text-white/60">{monthLabel}</span>
+        <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
+            <div className="mb-3 flex shrink-0 items-baseline justify-between gap-4 text-white">
+                <div className="flex min-w-0 items-baseline gap-4">
+                    <h1 className="text-xl font-black">Ventas y cierres</h1>
+                    <span className="truncate text-xs capitalize text-white/60">{periodTitle}</span>
+                </div>
             </div>
             <div className="history-desktop-board grid min-h-0 flex-1 items-start gap-4">
                 <div data-element="summary-stack" className="min-h-0 min-w-0">
-                    <SummaryCard title="Último cierre" dateText={lastClosing ? format(parseISO(lastClosing.closing_date), "EEEE d 'de' MMMM", { locale: es }) : '—'} report={lastReport} extras={lastTotals}/>
-                    <SummaryCard title="Mensual" dateText={monthLabel} report={monthReport} extras={monthTotals}/>
+                    <SummaryCard title="Mensual" dateText={referenceLabel} report={monthReport} extras={monthTotals}/>
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
-                        <header className="flex min-h-[34px] shrink-0 items-center justify-between gap-2 border-b border-white/15 px-3">
-                            <strong className="truncate text-[10px] font-bold uppercase">{format(parseISO(selectedDate), "EEEE d 'de' MMMM", { locale: es })}</strong>
-                            <span className="shrink-0 text-[10px] text-white/65">{dailyReport?.summary.count ?? 0} tickets</span>
+                        <header className="flex min-h-[36px] shrink-0 items-center justify-between gap-2 border-b border-white/15 px-3">
+                            <strong className="min-w-0 truncate text-[11px] font-bold uppercase">{periodTitle}</strong>
+                            {returnPeriod && (
+                                <button type="button" onClick={restorePeriod} className="inline-flex max-w-[52%] shrink-0 items-center gap-1 truncate rounded border border-sky-400/35 px-2 py-1 text-[10px] text-sky-200 hover:bg-white/10" title={'Volver a ' + periodLabel(returnPeriod)}>
+                                    <ArrowLeft size={13} className="shrink-0"/>
+                                    <span className="truncate">Volver a {periodLabel(returnPeriod)}</span>
+                                </button>
+                            )}
                         </header>
-                        <div className="grid shrink-0 grid-cols-3 gap-2 border-b border-white/10 px-3 py-3 text-center">
-                            {[
-                                ['Ventas', euro(dailyReport?.summary.totalSales)],
-                                ['Tickets', String(dailyReport?.summary.count ?? 0)],
-                                ['Ticket medio', euro(dailyReport?.summary.avgTicket)]
-                            ].map(([label, value]) => (
-                                <div key={label} className="min-w-0">
-                                    <strong className="block truncate text-sm font-bold tabular-nums">{value}</strong>
-                                    <span className="text-[9px] uppercase text-white/65">{label}</span>
+                        <div className="grid shrink-0 grid-cols-3 gap-x-2 gap-y-2 border-b border-white/10 px-3 py-3 sm:grid-cols-4">
+                            {([
+                                ['Ventas TPV', hasClosingData ? euro(periodTotals.sales) : euro(dailyReport?.summary.totalSales)],
+                                ['Venta neta', hasClosingData ? euro(periodTotals.net) : '—'],
+                                ['Tickets', (dailyReport?.summary.count ?? 0).toLocaleString('es-ES')],
+                                ['Ticket medio', euro(dailyReport?.summary.avgTicket)],
+                                ['Tarjeta', hasClosingData ? euro(periodTotals.card) : '—'],
+                                ['Efectivo', hasClosingData ? euro(periodTotals.cash) : '—'],
+                                ['Pendiente', hasClosingData ? euro(periodTotals.pending) : '—'],
+                                ['Cobros', hasClosingData ? euro(periodTotals.recovered) : '—'],
+                                ['Diferencia', hasClosingData ? euro(periodTotals.difference) : '—']
+                            ] as [string, string][]).map(([label, value]) => (
+                                <div key={label} className="min-w-0 text-center">
+                                    <strong className={cn("block truncate text-[12px] font-bold tabular-nums", label === 'Diferencia' && periodTotals.difference > 0 && 'text-emerald-400')}>{value}</strong>
+                                    <span className="block truncate text-[8px] uppercase text-white/60">{label}</span>
                                 </div>
                             ))}
                         </div>
-                        <div className="shrink-0 border-b border-white/10 px-3 pb-2 pt-2">
-                            <HourlySalesCurve hours={dailyReport?.hours} fullWidth />
-                            <div className="mt-0.5 flex justify-between text-[9px] font-mono text-white/65" aria-hidden="true">
-                                <span>7 h</span>
-                                <span>22 h</span>
+                        {isSingleDay && selectedClosing && (
+                            <div className="flex shrink-0 items-center justify-center gap-2 border-b border-white/10 px-3 py-2">
+                                <button type="button" disabled={!photos.bdpUrl} onClick={() => photos.bdpUrl && setOpenPhoto({ src: photos.bdpUrl, alt: 'Informe TPV' })}
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-[10px] text-white/80 enabled:hover:bg-white/10 disabled:opacity-40">
+                                    <FileText size={14}/> Ver informe TPV
+                                </button>
+                                <button type="button" disabled={!photos.dataphoneUrl} onClick={() => photos.dataphoneUrl && setOpenPhoto({ src: photos.dataphoneUrl, alt: 'Totales datáfonos' })}
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-[10px] text-white/80 enabled:hover:bg-white/10 disabled:opacity-40">
+                                    <CreditCard size={14}/> Ver totales datáfonos
+                                </button>
                             </div>
+                        )}
+                        <div className="h-[190px] min-h-0 shrink-0 overflow-hidden border-b border-white/10 px-3 pb-3">
+                            <SalesBreakdown report={dailyReport}/>
                         </div>
                         <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-2 pb-3 pt-2 custom-scrollbar">
+                            <div className="flex shrink-0 items-center justify-between gap-2 px-1">
+                                <strong className="text-[10px] uppercase">Tickets del periodo</strong>
+                                <span className="text-[10px] text-white/50">{tickets.length.toLocaleString('es-ES')} de {(dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES')} cargados</span>
+                            </div>
                             {tickets.map((ticket, i) => (
                                 <SalesTicket key={ticket.numero_documento || i} ticket={ticket} items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
                                     expanded={expandedTicket === ticket.numero_documento}
                                     onToggle={() => setExpandedTicket(current => current === ticket.numero_documento ? null : ticket.numero_documento)}
                                     loadingItems={linesLoading && !Object.prototype.hasOwnProperty.call(linesByTicket, ticket.numero_documento)}/>
                             ))}
-                            {!dayLoading && tickets.length === 0 && <p className="py-8 text-center text-xs text-white/55">Sin tickets en este día.</p>}
-                            {dayError && <p className="text-center text-xs text-rose-300">No se pudieron cargar los tickets.</p>}
-                            <div ref={loadSentinel} className="shrink-0 text-center text-[10px] text-white/50">{dayLoading ? 'Cargando tickets…' : hasMore ? 'Cargar más tickets' : ''}</div>
-                            {hasMore && !dayLoading && <button type="button" onClick={() => setPage(current => current + PAGE_SIZE)} className="text-center text-[10px] text-white/70 underline">Cargar más</button>}
+                            {dayError && <p className="py-2 text-center text-xs text-rose-300">No se pudieron cargar los tickets.</p>}
+                            {!dayLoading && !dayError && loadedPeriod === periodKey && tickets.length === 0 && <p className="py-4 text-center text-xs text-white/55">Sin tickets en este periodo.</p>}
+                            {dayLoading && <p className="py-2 text-center text-[10px] text-white/50">Cargando siete tickets…</p>}
+                            {canLoadMore && (
+                                <button type="button" onClick={() => setPage(current => current + PAGE_SIZE)} className="shrink-0 rounded border border-white/25 px-3 py-1.5 text-center text-[11px] text-white/85 hover:bg-white/10">
+                                    <ChevronDown size={13} className="mr-1 inline-block"/> Ver 7 tickets más
+                                </button>
+                            )}
                         </div>
                     </section>
                 </div>
                 <div data-element="calendar-column" className="flex min-h-0 min-w-0 flex-col">
-                    <nav data-element="calendar-navigation" className="flex shrink-0 items-center justify-center gap-2 text-white" aria-label="Cambiar mes de ventas">
+                    <nav data-element="calendar-navigation" className="relative flex shrink-0 items-center justify-center gap-2 text-white" aria-label="Cambiar mes de ventas">
                         <button type="button" onClick={() => navigateMonth(-1)} aria-label="Mes anterior" className="rounded p-1.5 hover:bg-white/10"><ChevronLeft size={19}/></button>
                         <strong className="min-w-[128px] text-center text-sm font-semibold capitalize">{monthLabel}</strong>
                         <button type="button" onClick={() => navigateMonth(1)} aria-label="Mes siguiente" className="rounded p-1.5 hover:bg-white/10"><ChevronRight size={19}/></button>
+                        <button type="button" onClick={() => { setFilterKind(isSingleDay ? 'day' : 'custom'); setFilterStart(period.start); setFilterEnd(period.end); setFilterOpen(true); }}
+                            className="absolute right-0 inline-flex items-center gap-1 rounded border border-white/30 px-2 py-1 text-[11px] hover:bg-white/10" aria-label="Filtrar por fecha">
+                            <Filter size={13}/> Filtro
+                        </button>
                     </nav>
                     <section data-element="calendar" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radio-control)] border border-zinc-200 bg-white text-zinc-900">
                         <MonthCalendarFrame flush className="history-desktop-month-cal-chrome">
@@ -500,10 +532,10 @@ export default function VentasDesktopWorkspace() {
                                         {week.map(day => {
                                             const iso = format(day, 'yyyy-MM-dd');
                                             const closing = byDate.get(iso);
-                                            const dayValue = iso === selectedDate ? Number(dailyReport?.summary.totalSales ?? closing?.tpv_sales ?? 0) : Number(closing?.tpv_sales ?? 0);
+                                            const dayValue = Number(closing?.tpv_sales ?? 0);
                                             return (
                                                 <button key={iso} type="button" onClick={() => selectDate(iso)} aria-pressed={iso === selectedDate} aria-label={'Seleccionar ' + iso}
-                                                    className={cn('month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 p-1 last:border-r-0 hover:bg-blue-50/50', !isSameMonth(day, month) && 'opacity-35', iso === selectedDate && 'z-[1] ring-2 ring-inset ring-zinc-900')}>
+                                                    className={cn('month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 p-1 last:border-r-0 hover:bg-blue-50/50', !isSameMonth(day, month) && 'opacity-35', iso >= period.start && iso <= period.end && 'bg-blue-100/80', isSingleDay && iso === period.start && 'z-[1] ring-2 ring-inset ring-zinc-900')}>
                                                     <span className="absolute right-1 top-1 text-[9px] font-medium text-gray-400">{format(day, 'd')}</span>
                                                     <div className="flex min-h-0 flex-1 items-center justify-center pt-2">
                                                         {dayValue !== 0 && <strong className="text-[clamp(9px,0.8vw,13px)] font-extrabold tabular-nums">{Math.round(dayValue)}€</strong>}
