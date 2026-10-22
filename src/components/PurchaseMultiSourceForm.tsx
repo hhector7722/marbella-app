@@ -12,6 +12,7 @@ import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { Button } from '@/components/ui/button';
 import { eligiblePurchaseChangeSources, resolvePurchaseChangeDestination } from '@/lib/purchase-change';
+import { randomId } from '@/lib/random-id';
 
 export interface PaymentSourceOption {
     id: string;
@@ -30,6 +31,7 @@ export interface SourceEntry {
 }
 
 export interface PurchaseMultiSourcePayload {
+    requestId: string;
     price: number;
     notes: string;
     customDate?: string;
@@ -91,8 +93,8 @@ type PurchasePlanView = PurchasePlanPoint & { zoom: number };
 const PURCHASE_BOX_PLAN: Record<PurchasePlanKey, {
     x: number; y: number; width: number; image: string; imageWidth: number; imageHeight: number; label: string;
 }> = {
-    tpv1: { x: 58.5, y: 36.5, width: 8.8, image: '/images/cash-change/tpv.avif', imageWidth: 591, imageHeight: 600, label: 'TPV 1' },
-    tpv2: { x: 58.5, y: 71.7, width: 8.8, image: '/images/cash-change/tpv.avif', imageWidth: 591, imageHeight: 600, label: 'TPV 2' },
+    tpv1: { x: 58.5, y: 71.7, width: 8.8, image: '/images/cash-change/tpv.avif', imageWidth: 591, imageHeight: 600, label: 'TPV 1' },
+    tpv2: { x: 58.5, y: 36.5, width: 8.8, image: '/images/cash-change/tpv.avif', imageWidth: 591, imageHeight: 600, label: 'TPV 2' },
     cambio1: { x: 10.4, y: 24.1, width: 6.5, image: '/images/cash-change/cambio1.avif', imageWidth: 550, imageHeight: 492, label: 'Cambio 1' },
     cambio2: { x: 33, y: 15.4, width: 8, image: '/images/cash-change/cambio2.avif', imageWidth: 535, imageHeight: 550, label: 'Cambio 2' },
     inicial: { x: 21, y: 15.4, width: 5.8, image: '/images/cash-change/inicial.avif', imageWidth: 550, imageHeight: 529, label: 'Inicial' },
@@ -391,6 +393,7 @@ export function PurchaseMultiSourceForm({
     selectedDate: selectedDateProp,
     parentInstance,
 }: PurchaseMultiSourceFormProps) {
+    const purchaseRequestId = useRef(randomId());
     const [price, setPrice] = useState<number | ''>('');
     const [notes, setNotes] = useState('');
     const [internalDate] = useState(nowStr);
@@ -502,6 +505,7 @@ export function PurchaseMultiSourceForm({
                 if (!ok) return;
             }
             await onSubmit({
+                requestId: purchaseRequestId.current,
                 price: priceNum,
                 notes: notes || 'Compra',
                 customDate: selectedDate ? parseDateTimeLocal(selectedDate).toISOString() : undefined,
