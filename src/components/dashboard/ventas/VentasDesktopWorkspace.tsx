@@ -97,16 +97,97 @@ function performanceColors(percentage: number | null): string | null {
     return 'text-rose-700';
 }
 
-function HourlySalesCurve({ hours, fullWidth = false }: { hours?: TicketReport['hours']; fullWidth?: boolean }) {
-    // Same 7–22h curve and 120×20 coordinate system as /dashboard/history.
-    const data = Array.from({ length: 16 }, (_, i) => Number(hours?.find(h => Number(h.hour) === i + 7)?.total ?? 0));
-    const peak = Math.max(1, ...data);
-    const path = data.map((total, i) => `${i === 0 ? 'M' : 'L'} ${(i / (data.length - 1)) * 120},${16 - total / peak * 13}`).join(' ');
+// Fixed business-hour axis: the curve and every numeric column scroll as one.
+const FIRST_SALES_HOUR = 7;
+const LAST_SALES_HOUR = 22;
+const SALES_HOUR_COLUMN = 80;
+
+function HourlySalesTimeline({ hours }: { hours?: TicketReport['hours'] }) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const byHour = new Map((hours ?? []).map(item => [Number(item.hour), item]));
+    const slots = Array.from({ length: LAST_SALES_HOUR - FIRST_SALES_HOUR + 1 }, (_, index) => {
+        const hour = FIRST_SALES_HOUR + index;
+        const source = byHour.get(hour);
+        return { hour, sales: Number(source?.total ?? 0), tickets: Number(source?.count ?? 0) };
+    });
+    const width = slots.length * SALES_HOUR_COLUMN;
+    const maxSales = Math.max(0, ...slots.map(slot => slot.sales));
+    const peak = Math.max(1, maxSales);
+    const baseline = 76;
+    const points = slots.map((slot, index) => ({
+        x: (index + 0.5) * SALES_HOUR_COLUMN,
+        y: baseline - Math.max(0, slot.sales) / peak * 55
+    }));
+    const curve = points.map((point, index) =>
+        `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
+    ).join(' ');
+    const area = `${curve} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`;
+
     return (
-        <svg aria-label="Evolución de ventas por hora" role="img" viewBox="0 0 120 20" preserveAspectRatio="none"
-            className={fullWidth ? 'block h-7 w-full text-[#76b8ff]' : 'h-3 min-w-0 flex-1 text-[#76b8ff]'}>
-            <path d={path} fill="none" stroke="currentColor" strokeWidth={fullWidth ? '1' : '1.5'} strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" />
-        </svg>
+        <div className="flex h-full min-h-0 min-w-0 flex-col">
+            <div className="mb-1 flex h-5 shrink-0 items-center justify-between gap-2">
+                <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] text-white/50">Ventas por hora</span>
+                    <button type="button" aria-label="Ver horas anteriores"
+                        className="rounded p-0.5 text-sky-200 hover:bg-white/10"
+                        onClick={() => scrollRef.current?.scrollBy({ left: -3 * SALES_HOUR_COLUMN, behavior: 'smooth' })}>
+                        <ChevronLeft size={13}/>
+                    </button>
+                    <button type="button" aria-label="Ver horas siguientes"
+                        className="rounded p-0.5 text-sky-200 hover:bg-white/10"
+                        onClick={() => scrollRef.current?.scrollBy({ left: 3 * SALES_HOUR_COLUMN, behavior: 'smooth' })}>
+                        <ChevronRight size={13}/>
+                    </button>
+                </div>
+            </div>
+            <div ref={scrollRef}
+                className="custom-scrollbar min-h-0 w-full flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-1"
+                aria-label="Horas de 7 a 23, en orden cronológico. Desplázate horizontalmente para verlas todas.">
+                <div style={{ width }} className="min-w-max">
+                    <svg viewBox={`0 0 ${width} 86`} width={width} height={86}
+                        role="img" aria-label="Curva de facturación alineada con las horas"
+                        className="block max-w-none text-[#70b5ff]">
+                        <path d={`M 0 ${baseline} H ${width}`} stroke="currentColor" strokeOpacity=".25" strokeWidth="1" />
+                        <path d={`M 0 49 H ${width}`} stroke="currentColor" strokeOpacity=".1" strokeDasharray="3 6" />
+                        {points.map((point, index) => (
+                            <path key={slots[index].hour}
+                                d={`M ${point.x} 12 V ${baseline}`}
+                                stroke="currentColor" strokeOpacity=".1" strokeWidth="1" />
+                        ))}
+                        <path d={area} fill="currentColor" fillOpacity=".12" />
+                        <path d={curve} fill="none" stroke="currentColor" strokeWidth="2"
+                            strokeLinecap="round" strokeLinejoin="round" />
+                        {points.map((point, index) => (
+                            <circle key={slots[index].hour} cx={point.x} cy={point.y}
+                                r={maxSales > 0 && slots[index].sales === maxSales ? 4 : 2.7}
+                                fill={maxSales > 0 && slots[index].sales === maxSales ? '#65e8d2' : '#98ceff'}
+                                stroke="#172b58" strokeWidth="1">
+                                <title>{`${slots[index].hour}–${slots[index].hour + 1} h: ${euro(slots[index].sales)}`}</title>
+                            </circle>
+                        ))}
+                    </svg>
+                    <div className="flex border-t border-white/10">
+                        {slots.map(slot => (
+                            <div key={slot.hour} style={{ width: SALES_HOUR_COLUMN }}
+                                className="flex shrink-0 flex-col items-center gap-[5px] border-r border-white/10 px-1 pt-1.5 text-center last:border-r-0"
+                                title={`${slot.hour}–${slot.hour + 1} · ${slot.tickets} tickets · ${euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)} de ticket medio · ${euro(slot.sales)} de facturación`}>
+                                <strong className="text-[10px] font-semibold tabular-nums text-white">{slot.hour}–{slot.hour + 1}</strong>
+                                <span className="whitespace-nowrap text-[9px] tabular-nums text-sky-200">
+                                    {slot.tickets.toLocaleString('es-ES')} <span className="text-sky-200/70">tick</span>
+                                </span>
+                                <span className="whitespace-nowrap text-[9px] tabular-nums text-violet-200">
+                                    {euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)} <span className="text-violet-200/70">med</span>
+                                </span>
+                                <strong className="whitespace-nowrap text-[9px] font-semibold tabular-nums text-teal-100">
+                                    {euro(slot.sales)}
+                                </strong>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -217,15 +298,9 @@ function RankingViewport({ children }: { children: ReactNode }) {
     );
 }
 
-// Stacked, full-width product impact and hourly sales rankings, shared by
-// both the monthly card and the selected period's detail card.
+// Shared product ranking and chronological hourly chart for monthly/period cards.
 function SalesBreakdown({ report }: { report: TicketReport | null }) {
     const products = report?.products ?? [];
-    const hours = useMemo(
-        () => [...(report?.hours ?? [])].filter(h => Number(h.total) > 0)
-            .sort((a, b) => Number(b.total) - Number(a.total)),
-        [report]
-    );
     const maxProductSales = Math.max(1, ...products.map(p => Number(p.total_ingresos ?? 0)));
     const totalSales = Number(report?.summary?.totalSales ?? 0);
     const shareLabel = (sales: number) => totalSales > 0
@@ -235,7 +310,7 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
 
     return (
         <div className="flex h-full min-h-0 flex-1 flex-col gap-3 pt-3">
-            <section className="flex min-h-0 flex-[11] flex-col border-b border-white/15 pb-3">
+            <section className="flex min-h-0 flex-1 flex-col border-b border-white/15 pb-3">
                 <div className="mb-2 flex h-4 shrink-0 items-center justify-between gap-2">
                     <h3 className="text-xs font-bold uppercase">Productos</h3>
                     <span className="text-[9px] text-white/45">Ventas por producto</span>
@@ -258,25 +333,8 @@ function SalesBreakdown({ report }: { report: TicketReport | null }) {
                     })}
                 </RankingViewport>
             </section>
-            <section className="flex min-h-0 flex-[10] flex-col">
-                <div className="mb-2 flex h-4 shrink-0 items-center gap-2">
-                    <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
-                    <HourlySalesCurve hours={report?.hours} />
-                </div>
-                <RankingViewport>
-                    {hours.map(hour => {
-                        const sales = Number(hour.total ?? 0);
-                        return (
-                            <div key={hour.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(31px,0.55fr)_minmax(42px,0.75fr)_minmax(60px,1fr)_minmax(63px,1fr)] items-center gap-x-1.5 border-b border-white/5 text-[10px]"
-                                title={`${hour.hour}–${(hour.hour + 1) % 24} · ${hour.count} tickets · ${euro(hour.count > 0 ? sales / hour.count : 0)} de ticket medio · ${euro(sales)}`}>
-                                <strong className="min-w-0 tabular-nums text-white/90">{hour.hour}-{(hour.hour + 1) % 24}</strong>
-                                <span className="min-w-0 text-center text-[9px] tabular-nums text-sky-200">{hour.count} tick</span>
-                                <span className="min-w-0 text-center text-[9px] tabular-nums text-violet-200">{euro(hour.count > 0 ? sales / hour.count : 0)} med</span>
-                                <strong className="min-w-0 text-right tabular-nums text-teal-100">{euro(sales)}</strong>
-                            </div>
-                        );
-                    })}
-                </RankingViewport>
+            <section className="h-[196px] min-h-0 shrink-0 xl:h-[208px]">
+                <HourlySalesTimeline hours={report?.hours} />
             </section>
         </div>
     );
@@ -750,7 +808,7 @@ export default function VentasDesktopWorkspace() {
                         <button type="button" onClick={() => navigateMonth(-1)} aria-label="Mes anterior" className="rounded p-1.5 hover:bg-white/10"><ChevronLeft size={19}/></button>
                         <strong className="min-w-[128px] text-center text-sm font-semibold capitalize">{monthLabel}</strong>
                         <button type="button" onClick={() => navigateMonth(1)} aria-label="Mes siguiente" className="rounded p-1.5 hover:bg-white/10"><ChevronRight size={19}/></button>
-                        <div className="absolute right-0 inline-flex">
+                        <div className="absolute right-0 top-0 inline-flex pr-2 pt-1">
                             <button type="button" onClick={() => setFilterOpen(true)}
                                 className="inline-flex items-center gap-1 rounded border border-white/30 px-2 py-1 text-[11px] hover:bg-white/10"
                                 aria-label="Filtrar por fecha">
@@ -758,7 +816,7 @@ export default function VentasDesktopWorkspace() {
                             </button>
                             {activeFilter !== null && (
                                 <button type="button" onClick={clearAllFilters}
-                                    className="absolute -right-1.5 -top-1.5 z-10 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-white bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700"
+                                    className="absolute right-0 top-0 z-10 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-white bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700"
                                     title="Quitar todos los filtros"
                                     aria-label="Quitar todos los filtros">
                                     <X size={11} strokeWidth={3}/>
