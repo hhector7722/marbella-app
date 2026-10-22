@@ -35,7 +35,6 @@ export function useVoiceRecorder() {
       mediaRecorderRef.current = null;
       chunksRef.current = [];
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function startRecording() {
@@ -44,15 +43,18 @@ export function useVoiceRecorder() {
 
     if (typeof window === 'undefined') return;
     if (!navigator.mediaDevices || typeof window.MediaRecorder === 'undefined') {
-      setError('Este navegador no soporta grabación de audio (MediaRecorder).');
+      const message = 'Este navegador no soporta grabación de audio (MediaRecorder).';
+      setError(message);
       setStatus('error');
-      return;
+      throw new Error(message);
     }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg']
+        .find((candidate) => MediaRecorder.isTypeSupported(candidate));
+      const mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       mediaRecorderRef.current = mr;
       chunksRef.current = [];
 
@@ -74,14 +76,15 @@ export function useVoiceRecorder() {
       };
 
       mr.start();
-    } catch (e: any) {
-      const msg =
-        e?.name === 'NotAllowedError'
-          ? 'Permiso de micrófono denegado.'
-          : e?.message || 'Error solicitando micrófono.';
+    } catch (error: unknown) {
+      const e = error instanceof Error ? error : null;
+      const msg = e?.name === 'NotAllowedError'
+        ? 'Permiso de micrófono denegado.'
+        : e?.message || 'Error solicitando micrófono.';
       setError(msg);
       setStatus('error');
       stopTracks();
+      throw new Error(msg);
     }
   }
 
@@ -97,7 +100,7 @@ export function useVoiceRecorder() {
         clearTimer();
         setDurationMs(0);
 
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
         chunksRef.current = [];
         mediaRecorderRef.current = null;
         stopTracks();

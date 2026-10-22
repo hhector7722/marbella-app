@@ -43,6 +43,13 @@ Chat integrado que permita: (1) preguntas sobre ventas, recetas, inventario y ma
 - Error explícito de herramienta (HTTP 501) ante RPC que devuelve `no_implementada`; HTTP 502 cuando falla el RPC. Previamente algunos errores podían pasar como resultado satisfactorio.
 - Pruebas locales con cliente Supabase simulado: caso stub, error del RPC y ejecución correcta, los tres aprobados. TypeScript `--noEmit` aprobado.
 
+## Corrección posterior al diagnóstico del usuario: asistente preexistente no funcional
+El chatbot existente NO se considerará una implementación operativa. Los fallos relatados fueron: respuestas deficientes, grabaciones de audio sin respuesta y llamadas en directo fallidas. Se han identificado como causas técnicas plausibles —no verificadas mediante una sesión de usuario final— las dependencias del chat en Ollama local desde un despliegue de Vercel, el flujo de transcripción que únicamente rellenaba la caja de texto, y la dependencia de un modelo Realtime retirado (gpt-4o-realtime-preview-2024-12-17, fin de servicio 2026-05-07).
+
+Se ha añadido una nueva ruta experimental de chat en `/api/copiloto/v2`, basada en Vercel AI SDK 6 y un proveedor OpenAI con `gpt-5.4-mini`. Se reutilizan sesión Supabase, comprobación de rol y un conjunto restringido de herramientas de consulta; no hay escrituras de negocio. El componente de chat apunta a esta ruta. Los audios grabados utilizan selección del formato compatible en navegador, transcripción con `gpt-transcribe` y envío automático del texto reconocido al chatbot. El endpoint comprueba autenticación, tamaño y tipo. La llamada antigua se oculta temporalmente hasta migrar a Realtime GA y probarla, sin prometer que funciona.
+
+Validación estática: `tsc --noEmit` y ESLint de los archivos cambiados sin errores. NO se han ejecutado pruebas de extremo a extremo con sesión autenticada ni pruebas reales de audio contra OpenAI; `OPENAI_API_KEY` figura en metadatos de Vercel para Production pero no se ha validado su funcionamiento y no consta configurada para Preview. No se ha hecho despliegue.
+
 ## Limitaciones y pendientes
 - **No se ha implementado todavía** la operación de añadir un producto mediante chat a un borrador. No afirmar lo contrario.
 - No se modificó ninguna fila real de pedidos, productos o ventas en Supabase.

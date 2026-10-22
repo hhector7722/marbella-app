@@ -148,7 +148,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: '/api/copiloto',
+        api: '/api/copiloto/v2',
         fetch: fetchWithSession,
       }),
     [fetchWithSession]
@@ -171,14 +171,15 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     const toastId = toast.loading('Transcribiendo...');
     try {
       const formData = new FormData();
-      formData.append('file', audioBlob, 'audio.webm');
+      const extension = audioBlob.type.includes('mp4') ? 'm4a'
+        : audioBlob.type.includes('ogg') ? 'ogg' : 'webm';
+      formData.append('file', audioBlob, `audio.${extension}`);
       const res = await fetch('/api/copiloto/transcribe', { method: 'POST', body: formData });
       const data = await res.json();
-      if (data.text) {
-        setInput((prev) => (prev ? prev + ' ' + data.text : data.text));
-        toast.success('Listo', { id: toastId });
+      if (typeof data.text === 'string' && data.text.trim()) {
+        sendMessage({ text: data.text.trim() }, { body: { sessionId: getActiveSessionId() } });
+        toast.success('Audio enviado', { id: toastId });
         setShowBigMic(false);
-        setTimeout(() => textareaRef.current?.focus(), 100);
       } else {
         throw new Error(data.error || 'Sin texto');
       }
@@ -313,15 +314,15 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             <Mic size={18} />
           </button>
 
-          {/* Phone button */}
-          <button
+          {/* La llamada en directo está desactivada hasta migrar y verificar Realtime GA. */}
+          {false && <button
             type="button"
             onClick={onCallOpen}
             className="h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all shadow-sm"
             title="Llamada de voz"
           >
             <Phone size={18} className="text-white" />
-          </button>
+          </button>}
         </div>
       </div>
 
