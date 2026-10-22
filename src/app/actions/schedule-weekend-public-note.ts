@@ -39,9 +39,21 @@ export async function saveWeekendPublicScheduleNote(date: string, rawContent: st
     }
     const supabase = await authorize();
     if (!supabase) return { success: false, error: 'Solo Héctor puede editar la nota general.' };
-    const { error } = await supabase
+    // La columna de fecha no es editable por diseño. Evita que el upsert
+    // intente actualizar también la clave primaria en una nota existente.
+    const { data: existing, error: lookupError } = await supabase
         .from('schedule_weekend_public_notes')
-        .upsert({ note_date: date, content, updated_at: new Date().toISOString() }, { onConflict: 'note_date' });
+        .select('note_date')
+        .eq('note_date', date)
+        .maybeSingle();
+    if (lookupError) return { success: false, error: 'No se ha podido consultar la nota.' };
+    const request = existing
+        ? supabase.from('schedule_weekend_public_notes')
+            .update({ content, updated_at: new Date().toISOString() })
+            .eq('note_date', date)
+        : supabase.from('schedule_weekend_public_notes')
+            .insert({ note_date: date, content });
+    const { error } = await request;
     if (error) {
         console.error('Cannot save weekend public schedule note:', error);
         return { success: false, error: 'No se ha podido guardar la nota.' };
