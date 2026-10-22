@@ -7257,3 +7257,14 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     mask-composite: intersect;
   }
 }
+
+/* Ventas y cierres unificados: la columna izquierda es una sola ficha mensual
+   de altura completa, no dos cierres apilados. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] [data-element='summary-stack'] {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] .history-desktop-summary > .grid {
+    align-content: stretch;
+  }
+}
