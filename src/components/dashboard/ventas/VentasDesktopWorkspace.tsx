@@ -1045,7 +1045,7 @@ export default function VentasDesktopWorkspace() {
                                                             </span>
                                                             <span className="text-[7px] font-medium leading-none tracking-[0.06em] text-slate-500">V NETA</span>
                                                             {dayPerformance !== null && tone ? (
-                                                                <span className={cn("inline-flex max-w-full items-center justify-center gap-0.5 px-1 py-px text-[clamp(8px,0.7vw,10px)] font-medium leading-none tabular-nums", tone)}
+                                                                <span className={cn("mt-1.5 inline-flex max-w-full items-center justify-center gap-0.5 px-1 py-px text-[clamp(8px,0.7vw,10px)] font-medium leading-none tabular-nums", tone)}
                                                                     title="Rendimiento respecto a cierres anteriores del mismo día de la semana">
                                                                     <span aria-hidden="true">{dayPerformance >= 0 ? '▲' : '▼'}</span>
                                                                     {Math.abs(dayPerformance).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
