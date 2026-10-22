@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ArrowLeft, CalendarRange, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, X } from 'lucide-react';
@@ -108,7 +108,7 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [expanded, hasHiddenProducts, loadingItems]);
     return (
-        <div className="min-w-0">
+        <div className="min-w-0 shrink-0">
             <button type="button" aria-expanded={canExpand && expanded} disabled={!canExpand} onClick={canExpand ? onToggle : undefined}
                 className={cn("ventas-ticket-strip flex h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden bg-[rgb(255_255_255/0.97)] px-3 text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
                 <strong className="w-[38px] shrink-0 text-[12px] font-extrabold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
@@ -138,37 +138,96 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     );
 }
 
+// Round the scroll viewport down to full 24px rows: no partially visible
+// product/hour lines when the browser or dashboard is resized.
+function RankingViewport({ children }: { children: ReactNode }) {
+    const viewportRef = useRef<HTMLDivElement>(null);
+    const [fittedHeight, setFittedHeight] = useState<number | null>(null);
+    useEffect(() => {
+        const holder = viewportRef.current;
+        if (!holder) return;
+        const measure = () => {
+            const next = Math.max(0, Math.floor(holder.clientHeight / 24) * 24);
+            setFittedHeight(old => old === next ? old : next);
+        };
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(holder);
+        return () => observer.disconnect();
+    }, []);
+    return (
+        <div ref={viewportRef} className="min-h-0 flex-1 overflow-hidden">
+            <div className="custom-scrollbar min-w-0 snap-y snap-mandatory overflow-y-auto overscroll-contain"
+                style={{ height: fittedHeight === null ? '100%' : fittedHeight }}>
+                {children}
+            </div>
+        </div>
+    );
+}
+
+// Stacked, full-width product impact and hourly sales rankings, shared by
+// both the monthly card and the selected period's detail card.
 function SalesBreakdown({ report }: { report: TicketReport | null }) {
     const products = report?.products ?? [];
-    const hours = useMemo(() => [...(report?.hours ?? [])].filter(h => Number(h.total) > 0).sort((a, b) => Number(b.total) - Number(a.total)), [report]);
+    const hours = useMemo(
+        () => [...(report?.hours ?? [])].filter(h => Number(h.total) > 0)
+            .sort((a, b) => Number(b.total) - Number(a.total)),
+        [report]
+    );
+    const maxProductSales = Math.max(1, ...products.map(p => Number(p.total_ingresos ?? 0)));
+    const maxHourlySales = Math.max(1, ...hours.map(h => Number(h.total ?? 0)));
+    const totalSales = Number(report?.summary?.totalSales ?? 0);
+    const shareLabel = (sales: number) => totalSales > 0
+        ? (sales / totalSales * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + '% del total'
+        : 'Sin total de ventas disponible';
+    const barWidth = (sales: number, maximum: number) => Math.max(0, Math.min(100, sales / maximum * 100)) + '%';
+
     return (
-        <div className="grid h-full min-h-0 flex-1 grid-cols-2 gap-4 pt-3">
-            <section className="flex min-h-0 min-w-0 flex-col">
-                <h3 className="mb-2 shrink-0 text-xs font-bold uppercase">Productos</h3>
-                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-                    {products.map((p, i) => (
-                        <div key={i} className="grid h-6 min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 text-[10px]">
-                            <span className="truncate text-white/85">{i + 1}. {p.nombre_articulo}</span>
-                            <span className="tabular-nums text-white/55">{Number(p.cantidad_total).toLocaleString('es-ES')} u</span>
-                            <strong className="shrink-0 tabular-nums">{euro(p.total_ingresos)}</strong>
-                        </div>
-                    ))}
+        <div className="flex h-full min-h-0 flex-1 flex-col gap-3 pt-3">
+            <section className="flex min-h-0 flex-[11] flex-col border-b border-white/15 pb-3">
+                <div className="mb-2 flex h-4 shrink-0 items-center justify-between gap-2">
+                    <h3 className="text-xs font-bold uppercase">Productos</h3>
+                    <span className="text-[9px] text-white/45">Ventas por producto</span>
                 </div>
+                <RankingViewport>
+                    {products.map((product, index) => {
+                        const sales = Number(product.total_ingresos ?? 0);
+                        const label = shareLabel(sales);
+                        return (
+                            <div key={index} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto] items-center gap-x-2 border-b border-white/5 text-[10px]"
+                                title={product.nombre_articulo + ' · ' + euro(sales) + ' · ' + label}>
+                                <span className="min-w-0 truncate text-white/85">{index + 1}. {product.nombre_articulo}</span>
+                                <span className="shrink-0 tabular-nums text-white/60">{Number(product.cantidad_total).toLocaleString('es-ES')} u</span>
+                                <div role="img" aria-label={label} className="h-[8px] min-w-0 overflow-hidden rounded-sm bg-white/10">
+                                    <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: barWidth(sales, maxProductSales) }}/>
+                                </div>
+                                <strong className="min-w-[60px] shrink-0 text-right tabular-nums">{euro(sales)}</strong>
+                            </div>
+                        );
+                    })}
+                </RankingViewport>
             </section>
-            <section className="flex min-h-0 min-w-0 flex-col">
-                <div className="mb-2 flex h-4 min-w-0 shrink-0 items-center gap-2">
+            <section className="flex min-h-0 flex-[10] flex-col">
+                <div className="mb-2 flex h-4 shrink-0 items-center gap-2">
                     <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
                     <HourlySalesCurve hours={report?.hours} />
                 </div>
-                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-                    {hours.map(h => (
-                        <div key={h.hour} className="flex h-6 items-center justify-between gap-1 text-[10px]">
-                            <strong className="shrink-0 tabular-nums">{h.hour}-{(h.hour + 1) % 24}</strong>
-                            <span className="truncate tabular-nums text-white/50">{h.count} tick</span>
-                            <strong className="shrink-0 tabular-nums">{euro(h.total)}</strong>
-                        </div>
-                    ))}
-                </div>
+                <RankingViewport>
+                    {hours.map(hour => {
+                        const sales = Number(hour.total ?? 0);
+                        return (
+                            <div key={hour.hour} className="grid h-6 min-w-0 snap-start snap-always grid-cols-[minmax(36px,0.5fr)_auto_minmax(50px,1fr)_auto] items-center gap-x-2 border-b border-white/5 text-[10px]"
+                                title={`${hour.hour}–${(hour.hour + 1) % 24} · ${hour.count} tickets · ${euro(sales)}`}>
+                                <strong className="min-w-0 shrink-0 tabular-nums">{hour.hour}-{(hour.hour + 1) % 24}</strong>
+                                <span className="shrink-0 tabular-nums text-white/60">{hour.count} tick</span>
+                                <div role="img" aria-label={euro(sales)} className="h-[8px] min-w-0 overflow-hidden rounded-sm bg-white/10">
+                                    <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: barWidth(sales, maxHourlySales) }}/>
+                                </div>
+                                <strong className="min-w-[60px] shrink-0 text-right tabular-nums">{euro(sales)}</strong>
+                            </div>
+                        );
+                    })}
+                </RankingViewport>
             </section>
         </div>
     );
@@ -187,7 +246,7 @@ function SummaryCard({ title, dateText, report, extras }: {
         ['Cobros', extras ? euro(extras.recovered) : '—'], ['Ticket medio', euro(report?.summary.avgTicket)]
     ];
     return (
-        <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-5 pt-2 text-white">
+        <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-4 pt-2 text-white">
             <div className="mb-4 flex min-w-0 shrink-0 items-center justify-between gap-2">
                 <strong className="min-w-0 text-sm font-bold">{title}</strong>
                 <span className="min-w-0 truncate text-[9px] text-white/55">{dateText}</span>
@@ -230,7 +289,6 @@ export default function VentasDesktopWorkspace() {
     const [dayLoading, setDayLoading] = useState(true);
     const [loadedPeriod, setLoadedPeriod] = useState<string | null>(null);
     const [page, setPage] = useState(0);
-    const [visibleTicketCount, setVisibleTicketCount] = useState(7);
     const [hasMore, setHasMore] = useState(true);
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
     const [dayError, setDayError] = useState(false);
@@ -251,7 +309,7 @@ export default function VentasDesktopWorkspace() {
     const referenceLabel = format(referenceMonth, 'MMMM yyyy', { locale: es });
     const monthLabel = format(month, 'MMMM yyyy', { locale: es });
     const isSingleDay = period.start === period.end;
-    const visibleTickets = useMemo(() => isSingleDay ? tickets.slice(0, visibleTicketCount) : tickets, [tickets, visibleTicketCount, isSingleDay]);
+    const visibleTickets = tickets;
     const calendarWeeks = useMemo(() => {
         const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
         const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
@@ -276,7 +334,6 @@ export default function VentasDesktopWorkspace() {
         setHasMore(true);
         setDayLoading(true);
         setPage(0);
-        setVisibleTicketCount(7);
     };
     const selectDate = (date: string) => {
         if (!returnPeriod && (period.start !== date || period.end !== date) && period.kind !== 'day')
@@ -467,7 +524,7 @@ export default function VentasDesktopWorkspace() {
     }, [supabase, visibleTickets]);
 
     // Only the first seven tickets are fetched automatically; additional batches need a user click.
-    const canLoadMore = loadedPeriod === periodKey && !dayLoading && (isSingleDay ? visibleTicketCount < tickets.length : hasMore);
+    const canLoadMore = !isSingleDay && loadedPeriod === periodKey && !dayLoading && hasMore;
     useEffect(() => {
         if (initializing) return;
         let active = true;
@@ -661,7 +718,7 @@ export default function VentasDesktopWorkspace() {
                         </div>
                         {canLoadMore && (
                             <button type="button"
-                                onClick={() => isSingleDay ? setVisibleTicketCount(count => count + 7) : setPage(current => current + PAGE_SIZE)}
+                                onClick={() => setPage(current => current + PAGE_SIZE)}
                                 className="mt-1 shrink-0 rounded-md border border-white/25 px-3 py-1.5 text-center text-[11px] text-white/85 hover:bg-white/10">
                                 <ChevronDown size={13} className="mr-1 inline-block"/> Ver más
                             </button>
