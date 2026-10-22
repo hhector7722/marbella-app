@@ -47,10 +47,11 @@ WITH scoped AS MATERIALIZED (
         sum(l.importe_total)::numeric revenue
  FROM chosen_lines l GROUP BY l.articulo_id,l.name
 ), ticket_page AS (
- SELECT c.numero_documento,c.fecha,c.hora_cierre,c.mesa,c.total_documento
+ SELECT c.numero_documento,c.fecha,c.hora_cierre,c.mesa,c.total_documento,
+        public.fn_parse_ticket_hora_cierre_ts(c.fecha,c.hora_cierre,null) as sort_time
  FROM chosen c
  ORDER BY c.fecha DESC,
-    public.fn_parse_ticket_hora_cierre_ts(c.fecha,c.hora_cierre,null) DESC NULLS LAST,
+    sort_time DESC NULLS LAST,
     c.numero_documento DESC
  LIMIT greatest(1,least(coalesce(p_limit,7),200))
  OFFSET greatest(0,coalesce(p_offset,0))
@@ -67,13 +68,15 @@ SELECT jsonb_build_object(
   'hours',coalesce((SELECT jsonb_agg(jsonb_build_object(
         'hour',h.hr,'count',h.n,'total',h.revenue) ORDER BY h.hr)
      FROM hour_totals h),'[]'::jsonb),
-  'tickets',coalesce((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.fecha DESC,t.numero_documento DESC)
+  'tickets',coalesce((SELECT jsonb_agg(jsonb_build_object(
+        'numero_documento',t.numero_documento,'fecha',t.fecha::text,
+        'hora_cierre',t.hora_cierre,'mesa',t.mesa,'total_documento',t.total_documento
+    ) ORDER BY t.fecha DESC,t.sort_time DESC NULLS LAST,t.numero_documento DESC)
       FROM ticket_page t),'[]'::jsonb),
   'hasMore',(SELECT count_tickets > (greatest(0,coalesce(p_offset,0))
                                  +greatest(1,least(coalesce(p_limit,7),200))) FROM totals)
 );
-$function$
-
+$function$;
 
 REVOKE ALL ON FUNCTION public.get_ventas_crossfilter(date,date,integer,integer,text,integer,integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_ventas_crossfilter(date,date,integer,integer,text,integer,integer) TO authenticated;
