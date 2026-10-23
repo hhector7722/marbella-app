@@ -162,15 +162,15 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
 
     return (
         <div className="flex h-full min-h-0 min-w-0 flex-col">
-            <div className="mb-2 flex h-5 shrink-0 items-center justify-between gap-2">
+            <div data-element="hours-header" className="mb-2 flex h-5 shrink-0 items-center justify-between gap-2">
                 <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
                 <span className="min-w-0 max-w-[75%] truncate text-right text-[9px] text-white/50" title={contextLabel ?? undefined}>
                     {contextLabel ?? 'Facturación · 7–23 h'}
                 </span>
             </div>
             <div className="w-full shrink-0">
-                <div className="relative h-[82px] w-full" onMouseLeave={() => setActiveIndex(null)}>
-                <svg className="block h-[82px] w-full text-[#70b5ff]"
+                <div data-element="hours-plot" className="relative h-[82px] w-full" onMouseLeave={() => setActiveIndex(null)}>
+                <svg className="block h-full w-full text-[#70b5ff]"
                     viewBox="0 0 1600 90" preserveAspectRatio="none"
                     role="img" aria-label="Evolución de facturación desde las 7 h hasta las 23 h, con datos por tramo al pasar el cursor">
                     <path d={`M 0 ${baseline} H 1600`} stroke="currentColor" strokeOpacity=".28"
@@ -199,7 +199,7 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                     />
                 ))}
                 </div>
-                <div className="relative h-[20px] w-full border-t border-white/10">
+                <div data-element="hours-axis" className="relative h-[20px] w-full border-t border-white/10">
                     {Array.from({ length: SALES_HOUR_COUNT + 1 }, (_, index) => (
                         <span key={index} style={{ left: `${index / SALES_HOUR_COUNT * 100}%` }}
                             className={cn(
@@ -214,7 +214,7 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
             </div>
             {/* Fixed detail strip below the axis. Hover preserves exactly
                 three columns: previous, selected, next. No placeholders. */}
-            <div className="mt-2 h-[78px] w-full shrink-0 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5">
+            <div data-element="hours-details" className="mt-2 h-[78px] w-full shrink-0 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5">
                 <div className="grid h-full grid-cols-3" aria-live="polite"
                     aria-label={activeIndex === null ? 'Tres tramos horarios con mayor facturación' : 'Tramo señalado y tramos anterior y posterior'}>
                     {displayHours.map((slot, position) => {
@@ -378,8 +378,8 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
     const barWidth = (sales: number, maximum: number) => Math.max(0, Math.min(100, sales / maximum * 100)) + '%';
 
     return (
-        <div className="flex h-full min-h-0 flex-1 flex-col gap-3 pt-3">
-            <section className="flex min-h-0 flex-1 flex-col border-b border-white/15 pb-3">
+        <div data-element="sales-breakdown" className="flex h-full min-h-0 flex-1 flex-col gap-3 pt-3">
+            <section data-element="products-section" className="flex min-h-0 flex-1 flex-col border-b border-white/15 pb-3">
                 <div className="mb-2 flex h-4 shrink-0 items-center justify-between gap-2">
                     <h3 className="text-xs font-bold uppercase">Productos</h3>
                     <span className="max-w-[68%] truncate text-right text-[9px] text-sky-200/85" title={selection?.scope === scope ? crossLabel(selection) : undefined}>
@@ -413,7 +413,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
                     })}
                 </RankingViewport>
             </section>
-            <section className="h-[214px] min-h-0 shrink-0">
+            <section data-element="hours-section" className="h-[214px] min-h-0 shrink-0">
                 <HourlySalesTimeline hours={report?.hours}
                     contextLabel={selection?.scope === scope ? crossLabel(selection) : null}
                     selectedHour={selection?.scope === scope && selection.kind === 'hour' ? selection.hour : null}
@@ -491,12 +491,12 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
                     const selected = selection?.scope === scope && selection.kind === 'payment' && selection.payment === item.payment;
                     const content = (
                         <>
-                            <span className="min-w-0 truncate text-[clamp(11px,0.9vw,12px)] font-medium text-white/75">{item.label}</span>
-                            <strong className="shrink-0 whitespace-nowrap text-right text-[clamp(12px,1vw,14px)] font-semibold tabular-nums text-white">{item.value}</strong>
+                            <span className="w-full min-w-0 truncate text-[11px] font-medium leading-tight text-white/80" title={item.label}>{item.label}</span>
+                            <strong className="block w-full min-w-0 truncate whitespace-nowrap text-left text-[clamp(13px,1vw,16px)] font-bold leading-tight tabular-nums text-white" title={item.value}>{item.value}</strong>
                         </>
                     );
                     const rowClass = cn(
-                        'flex min-h-[35px] w-full min-w-0 items-center justify-between gap-1.5 rounded-md border px-2 text-left',
+                        'flex min-h-[42px] w-full min-w-0 flex-col items-start justify-center gap-0.5 rounded-md border px-2 py-1 text-left',
                         item.tone ?? 'border-white/15 bg-white/[0.035]',
                         item.payment && 'cursor-pointer transition-colors hover:brightness-125',
                         selected && 'ring-1 ring-inset ring-white/75'
@@ -1057,7 +1057,7 @@ export default function VentasDesktopWorkspace() {
                                 <TicketHeaderStats report={dailyReport}/>
                             </div>
                         </header>
-                        <div className="shrink-0 border-b border-white/10 px-3 py-3">
+                        <div data-element="day-financials" className="shrink-0 border-b border-white/10 px-3 py-3">
                             <FinancialKpiHeader
                                 sales={dailyReport ? euro(dailyReport.summary.totalSales) : ''}
                                 net={hasClosingData ? euro(periodTotals.net) : ''}
@@ -1076,7 +1076,7 @@ export default function VentasDesktopWorkspace() {
                                 </button>
                             </div>
                         )}
-                        <div className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
+                        <div data-element="day-breakdown" className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
                             <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
                                 selection={crossSelection} onSelect={onChooseCross}/>
                         </div>
