@@ -7428,3 +7428,49 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     overscroll-behavior-y: contain;
   }
 }
+
+/* Ventas: escritorio de altura reducida (Windows 125 %, navegador 100 %).
+ * Compactamos SOLO Horas en el detalle central. Los productos utilizan
+ * la altura liberada; no afecta al resumen mensual ni al equipo grande. */
+@media screen and (min-width: 1024px) and (max-width: 1699px) and (max-height: 820px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='day-financials'] {
+    padding-block: 8px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='day-breakdown'] {
+    padding-top: 4px;
+    padding-bottom: 8px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-breakdown'] {
+    gap: 8px;
+    padding-top: 8px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='products-section'] {
+    padding-bottom: 8px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='hours-section'] {
+    height: 140px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='hours-header'] {
+    margin-bottom: 4px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='hours-plot'] {
+    height: 38px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='hours-axis'] {
+    height: 17px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='hours-details'] {
+    margin-top: 4px;
+    height: 56px;
+    padding-block: 2px;
+  }
+}
