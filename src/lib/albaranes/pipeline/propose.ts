@@ -112,8 +112,7 @@ export async function proposeMistralExtraction(params: {
       if (legacyStock.data?.length || typedStock.data?.length) {
         // Where older rows already moved stock, leave them active. Only a
         // uniquely reconciled, stock-free row may become a new review proposal.
-        if (!hadManualLegacyLines || legacyMatches.length !== params.canonical.lines.length
-            || legacyMatches.some((match) => match.reason !== 'matched')) {
+        if (!hadManualLegacyLines || legacyMatches.length !== params.canonical.lines.length) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }
@@ -122,6 +121,13 @@ export async function proposeMistralExtraction(params: {
           ...(typedStock.data ?? []).map((row) => String(row.reference_id)),
         ])
         if ([...stockLineIds].some((id) => !oldLineIds.includes(id))) {
+          return { created: 0, materialized: 0, ready: 0, exceptions: 0,
+            skipped: 'manual_lines_require_review' }
+        }
+        // Names already received may have OCR drift: they are never touched.
+        // Demand unique source evidence only for the rows we will replace.
+        if (legacyMatches.some((match) => !stockLineIds.has(match.legacyLineId)
+            && match.reason !== 'matched')) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }

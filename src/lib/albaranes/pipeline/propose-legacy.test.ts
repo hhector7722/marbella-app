@@ -185,4 +185,16 @@ describe('historical Mistral materialization guard', () => {
     assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
     assert.equal(writes.includes('stock_movements'), false)
   })
+
+  it('does not let OCR drift in an already received row block a distinct pending row', async () => {
+    const changed = legacyLines.map((line, index) => index === 0
+      ? { ...line, original_name: 'OLD OCR NAME WITH TWO ERRORS' } : line)
+    const { db, proposals, retiredIds } = materializingDatabase('line-1', changed)
+    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+      sourceHash: 'hash', canonical, correlationId: null })
+    assert.equal(result.created, 2)
+    assert.equal(result.requiresHumanReview, true)
+    assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
+    assert.deepEqual(proposals.map((proposal) => proposal.source_row_index), [1, 2])
+  })
 })
