@@ -2,6 +2,16 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { resolveMappingReviewReasons } from './mapping-review-reasons.ts'
 
+test('solo la coincidencia verificada IVA/DTO libera el bloqueo de precio neto', () => {
+  const input = {
+    previousReasons: ['precio_neto_contradictorio', 'descuento_sin_porcentaje_verificado'],
+    hasResolvedName: true, hasMappedSnapshot: true, humanLineOverride: false,
+    quantity: 4, unitPrice: 2.19, lineTotal: 8.76,
+  }
+  assert.deepEqual(resolveMappingReviewReasons(input), input.previousReasons)
+  assert.deepEqual(resolveMappingReviewReasons({ ...input, verifiedTaxRateMisreadAsDiscount: true }), [])
+})
+
 test('un mapeo humano válido resuelve las dudas de identidad y presentación Mistral', () => {
   const reasons = resolveMappingReviewReasons({
     previousReasons: [

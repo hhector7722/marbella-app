@@ -350,7 +350,28 @@ export function isVerifiedTaxInclusiveUnitPrice(line: CanonicalDocument['lines']
     compareExact(parseExactDecimal(roundExactToScale(multiplyExact(unitPrice, parseExactDecimal(rate)!), 2))!, priceWithTax) === 0)
 }
 
+/** An OCR tax percentage can be copied into the discount column and the
+ * line amount into the net-unit-price column. Ignore those two readings only
+ * when the printed gross arithmetic independently matches the line amount. */
+export function isVerifiedTaxRateMisreadAsDiscount(line: CanonicalDocument['lines'][number]): boolean {
+  if (!/dto|descuento|discount/i.test(line.discount_header_raw ?? '')
+    || line.other_charge_raw?.trim()) return false
+  const quantity = parseExactDecimal(line.quantity_raw)
+  const price = parseExactDecimal(line.unit_price_raw)
+  const total = parseExactDecimal(line.line_total_raw)
+  const net = parseExactDecimal(line.net_unit_price_raw)
+  const discount = parseObservedDecimal(line.discount_raw?.replace('%', '') ?? null)
+  const tax = parseObservedDecimal(line.tax_rate_raw?.replace('%', '') ?? null)
+  if (!isPositiveExact(quantity) || !isPositiveExact(price) || !isPositiveExact(total)
+    || !isPositiveExact(net) || discount == null || tax == null || discount !== tax) return false
+  return compareExact(net, total) === 0
+    && withinExactTolerance(multiplyExact(quantity, price), total, parseExactDecimal('0.01')!)
+}
+
 export function validateObservedLine(line: CanonicalDocument['lines'][number]): LineCheck {
+  if (isVerifiedTaxRateMisreadAsDiscount(line)) {
+    line = { ...line, discount_raw: null, discount_header_raw: null, net_unit_price_raw: null }
+  }
   const quantity = parseObservedDecimal(line.quantity_raw)
   const unitPrice = parseObservedDecimal(line.unit_price_raw)
   const verifiedAmount = verifiedAmountColumn(line, quantity, unitPrice)
