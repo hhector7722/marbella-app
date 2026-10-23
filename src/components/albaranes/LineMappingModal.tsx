@@ -140,6 +140,7 @@ export function LineMappingModal({
   const [dimensional, setDimensional] = useState<LineDimensionalDraft>(EMPTY_DIMENSIONAL)
   const [observedUnitPriceDraft, setObservedUnitPriceDraft] = useState('')
   const [discountDraft, setDiscountDraft] = useState('')
+  const [discountKindOverride, setDiscountKindOverride] = useState<'percent' | 'fixed' | null>(null)
   const [manualDiscountDraft, setManualDiscountDraft] = useState('')
   const [lineTotalDraft, setLineTotalDraft] = useState('')
   const [verifiedOcrAmount, setVerifiedOcrAmount] = useState(false)
@@ -393,6 +394,7 @@ export function LineMappingModal({
       )
       setDiscountDraft(resolveSyncKey.line.printed_discount_percent == null
         ? '' : String(resolveSyncKey.line.printed_discount_percent))
+      setDiscountKindOverride(null)
       setLineTotalDraft(resolveSyncKey.line.total_price == null ? '' : String(resolveSyncKey.line.total_price))
     }
   }
@@ -441,34 +443,40 @@ export function LineMappingModal({
     return Number.isFinite(value) && value > 0 ? value : null
   }, [observedUnitPriceDraft])
   const isPanabad = supplierId === 2
-  const isShersFixedDiscount = !isPanabad && line?.printed_fixed_discount_eur != null
+  const sourceDiscount = line?.printed_discount_raw == null
+    ? null : Number(line.printed_discount_raw.replace(',', '.'))
+  const hasSourceDiscount = sourceDiscount != null && Number.isFinite(sourceDiscount) && sourceDiscount > 0
+  const isShersFixedDiscount = !isPanabad && hasSourceDiscount
+    && (discountKindOverride === 'fixed'
+      || (discountKindOverride == null && line?.printed_fixed_discount_eur != null))
   const shersEffectiveUnitPrice = isShersFixedDiscount && grossUnitPrice != null
     && line?.quantity != null
     ? reconcileFixedDiscountedUnitPrice({
         quantity_raw: String(line.quantity),
         unit_price_raw: String(grossUnitPrice),
-        discount_raw: String(line.printed_fixed_discount_eur),
+        discount_raw: String(sourceDiscount),
         discount_header_raw: 'DTO.',
         net_unit_price_raw: String(line.printed_net_unit_price),
         line_total_raw: lineTotalDraft,
       }) ?? reconcileFreeFixedDiscountedUnitPrice({
         quantity_raw: String(line.quantity),
         unit_price_raw: String(grossUnitPrice),
-        discount_raw: String(line.printed_fixed_discount_eur),
+        discount_raw: String(sourceDiscount),
         discount_header_raw: 'DTO.',
         net_unit_price_raw: line.printed_net_unit_price == null
           ? null : String(line.printed_net_unit_price),
         line_total_raw: lineTotalDraft,
       })
     : null
-  const isOtherPercentDiscount = !isPanabad && !isShersFixedDiscount
-    && line?.printed_discount_percent != null
+  const isOtherPercentDiscount = !isPanabad && !isShersFixedDiscount && hasSourceDiscount
+    && (discountKindOverride === 'percent'
+      || (discountKindOverride == null && line?.printed_discount_percent != null))
   const otherPercentEffectiveUnitPrice = isOtherPercentDiscount && grossUnitPrice != null
     && line?.quantity != null
     ? reconcilePercentageDiscountedUnitPrice({
         quantity_raw: String(line.quantity),
         unit_price_raw: String(grossUnitPrice),
-        discount_raw: String(line.printed_discount_percent),
+        discount_raw: String(sourceDiscount),
         net_unit_price_raw: line.printed_net_unit_price == null
           ? null : String(line.printed_net_unit_price),
         line_total_raw: lineTotalDraft,
@@ -508,6 +516,7 @@ export function LineMappingModal({
       ? shersEffectiveUnitPrice == null ? null : Number(shersEffectiveUnitPrice)
       : isOtherPercentDiscount
         ? otherPercentEffectiveUnitPrice == null ? null : Number(otherPercentEffectiveUnitPrice)
+        : hasSourceDiscount ? null
         : roundedUnitPrice == null ? grossUnitPrice : Number(roundedUnitPrice)
 
   // La revisión manual se aplica después del cálculo OCR, que permanece intacto.
@@ -619,6 +628,8 @@ export function LineMappingModal({
         ? 'El descuento fijo no concilia con el precio neto y el importe impresos.'
         : isOtherPercentDiscount
           ? 'El descuento porcentual no concilia con el importe original.'
+          : hasSourceDiscount
+            ? 'Selecciona si el descuento impreso es un porcentaje o un importe fijo.'
           : 'Indica un precio facturado válido.'
     if (isVariableWeightMode) return null
     if (!dimensionalParsed.lineBillingUnit && !automaticDimensional) {
@@ -644,6 +655,7 @@ export function LineMappingModal({
     isPanabad,
     isShersFixedDiscount,
     isOtherPercentDiscount,
+    hasSourceDiscount,
     isVariableWeightMode,
     dimensionalParsed.lineBillingUnit,
     dimensionalParsed.lineContentQty,
@@ -755,6 +767,8 @@ export function LineMappingModal({
           ? 'El descuento fijo no concilia con el precio neto y el importe impresos.'
           : isOtherPercentDiscount
             ? 'El descuento porcentual no concilia con el importe original.'
+            : hasSourceDiscount
+              ? 'Selecciona si el descuento impreso es un porcentaje o un importe fijo.'
             : 'Indica un precio facturado válido.')
       return
     }
@@ -1170,6 +1184,22 @@ export function LineMappingModal({
                       € por {billingUnitForDisplay}
                     </span>
                   </div>
+                  {!isPanabad && hasSourceDiscount ? (
+                    <label className="flex flex-wrap items-center gap-2 px-1 text-xs font-semibold text-zinc-700">
+                      Descuento impreso: {sourceDiscount?.toLocaleString('es-ES')}
+                      <select
+                        aria-label="Interpretación del descuento impreso"
+                        value={discountKindOverride ?? (line?.printed_fixed_discount_eur != null
+                          ? 'fixed' : line?.printed_discount_percent != null ? 'percent' : '')}
+                        onChange={(event) => setDiscountKindOverride(event.target.value as 'percent' | 'fixed')}
+                        className="min-h-10 rounded-lg border border-zinc-300 bg-white px-2 text-sm text-zinc-900"
+                      >
+                        <option value="" disabled>Elegir unidad</option>
+                        <option value="percent">% porcentaje</option>
+                        <option value="fixed">€ por {billingUnitForDisplay}</option>
+                      </select>
+                    </label>
+                  ) : null}
                   {isPanabad ? (
                     <>
                       <div className="flex flex-wrap items-end gap-3 px-1">
@@ -1210,7 +1240,7 @@ export function LineMappingModal({
                   ) : isShersFixedDiscount ? (
                     <div className="flex flex-col gap-1 px-1 text-xs text-zinc-700">
                       <p>Descuento fijo: <span className="font-semibold tabular-nums">
-                        {line?.printed_fixed_discount_eur?.toLocaleString('es-ES', {
+                        {sourceDiscount?.toLocaleString('es-ES', {
                           minimumFractionDigits: 2, maximumFractionDigits: 2,
                         })} € por {billingUnitForDisplay}</span>
                       </p>
@@ -1234,7 +1264,7 @@ export function LineMappingModal({
                   ) : isOtherPercentDiscount ? (
                     <div className="flex flex-col gap-1 px-1 text-xs text-zinc-700">
                       <p>Descuento: <span className="font-semibold">
-                        {line?.printed_discount_percent?.toLocaleString('es-ES')} %
+                        {sourceDiscount?.toLocaleString('es-ES')} %
                       </span></p>
                       {otherPercentEffectiveUnitPrice != null ? (
                         <p className="font-semibold text-zinc-900">
