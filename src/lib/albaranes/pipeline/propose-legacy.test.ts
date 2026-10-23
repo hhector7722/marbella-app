@@ -197,4 +197,31 @@ describe('historical Mistral materialization guard', () => {
     assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
     assert.deepEqual(proposals.map((proposal) => proposal.source_row_index), [1, 2])
   })
+
+  it('ignores a non-purchase OCR heading while reviewing a matched pending row', async () => {
+    const withHeading: CanonicalDocument = { ...canonical, lines: [
+      canonical.lines[0]!,
+      { ...canonical.lines[0]!, description_raw: 'PEDIDO CONTESTADOR.',
+        quantity_raw: null, unit_price_raw: null, line_total_raw: null },
+      ...canonical.lines.slice(1),
+    ] }
+    const { db, proposals, retiredIds } = materializingDatabase('line-1')
+    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+      sourceHash: 'hash', canonical: withHeading, correlationId: null })
+    assert.equal(result.created, 2)
+    assert.deepEqual(proposals.map((proposal) => proposal.source_row_index), [2, 3])
+    assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
+  })
+
+  it('blocks an additional economic OCR row with no corresponding stock line', async () => {
+    const withPurchase: CanonicalDocument = { ...canonical, lines: [
+      ...canonical.lines,
+      { ...canonical.lines[0]!, description_raw: 'COMPRA EXTRA SIN LÍNEA ANTERIOR' },
+    ] }
+    const { db, writes } = materializingDatabase('line-1')
+    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+      sourceHash: 'hash', canonical: withPurchase, correlationId: null })
+    assert.equal(result.skipped, 'manual_lines_require_review')
+    assert.deepEqual(writes, [])
+  })
 })

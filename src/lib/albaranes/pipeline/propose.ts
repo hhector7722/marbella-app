@@ -112,7 +112,7 @@ export async function proposeMistralExtraction(params: {
       if (legacyStock.data?.length || typedStock.data?.length) {
         // Where older rows already moved stock, leave them active. Only a
         // uniquely reconciled, stock-free row may become a new review proposal.
-        if (!hadManualLegacyLines || legacyMatches.length !== params.canonical.lines.length) {
+        if (!hadManualLegacyLines) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }
@@ -128,6 +128,19 @@ export async function proposeMistralExtraction(params: {
         // Demand unique source evidence only for the rows we will replace.
         if (legacyMatches.some((match) => !stockLineIds.has(match.legacyLineId)
             && match.reason !== 'matched')) {
+          return { created: 0, materialized: 0, ready: 0, exceptions: 0,
+            skipped: 'manual_lines_require_review' }
+        }
+        const matchedRows = new Set(legacyMatches.filter((match) => match.reason === 'matched')
+          .map((match) => match.mistralRowIndex!))
+        const unmatchedEconomicRows = params.canonical.lines.filter((row, index) =>
+          !matchedRows.has(index)
+          && (row.quantity_raw != null || row.unit_price_raw != null || row.line_total_raw != null))
+        const unmatchedStockLines = [...stockLineIds].filter((id) =>
+          !legacyMatches.some((match) => match.legacyLineId === id && match.reason === 'matched'))
+        // A non-purchase heading may add an OCR row. Every other economic row
+        // must still be accounted for by an untouched stock line.
+        if (unmatchedEconomicRows.length !== unmatchedStockLines.length) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }
