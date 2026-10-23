@@ -396,6 +396,12 @@ export default function AlbaranesHistoricoClient({
     ).length,
     [inlineReviewRows]
   )
+  const legacyPendingCount = detail?.lines.filter((line) =>
+    !line.interpretation_proposal_id
+    && !stockStatusByLineId[line.id]?.stockApplied
+    && !isInvoiceLineExcluded(line)
+    && !isInvoiceLineExpenseOnly(line)
+  ).length ?? 0
   const inlineDocumentReviewReasons = useMemo(
     () => collectDocumentReviewReasons(inlineReviewRows),
     [inlineReviewRows]
@@ -1752,6 +1758,10 @@ export default function AlbaranesHistoricoClient({
                           <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-zinc-600">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             Preparando líneas…
+                          </div>
+                        ) : legacyPendingCount > 0 ? (
+                          <div className="mt-0.5 text-xs font-black text-amber-700">
+                            {legacyPendingCount} línea{legacyPendingCount === 1 ? '' : 's'} histórica{legacyPendingCount === 1 ? '' : 's'} por releer y revisar
                           </div>
                         ) : inlineReviewPendingCount > 0 ? (
                           <div className="mt-0.5 text-xs font-black text-amber-700">

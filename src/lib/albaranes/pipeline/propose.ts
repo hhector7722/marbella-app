@@ -49,6 +49,8 @@ export async function proposeMistralExtraction(params: {
   if (invoiceLinesError) throw new Error('mistral_existing_lines_unavailable')
   let oldLineIds: string[] = []
   let legacyMatchByRow = new Map<number, LegacyMatchResult>()
+  let legacyMatches: LegacyMatchResult[] = []
+  let eligibleRowIndices: Set<number> | null = null
   let hadManualLegacyLines = false
   let hasLegacyReconciliationHistory = false
   if (invoiceLines?.length) {
@@ -73,14 +75,14 @@ export async function proposeMistralExtraction(params: {
           skipped: 'manual_lines_require_review' }
       }
       hadManualLegacyLines = true
-      const matches = matchLegacyLinesToMistral({
+      legacyMatches = matchLegacyLinesToMistral({
         legacyLines: manual.map((line) => ({ id: line.id,
           originalName: line.original_name ?? '', quantity: line.quantity == null ? null : Number(line.quantity) })),
         mistralRows: params.canonical.lines.map((row, rowIndex) => ({ rowIndex,
           descriptionRaw: row.description_raw, quantityRaw: row.quantity_raw,
           supplierProductCodeRaw: row.supplier_product_code_raw })),
       })
-      legacyMatchByRow = new Map(matches.filter((match) => match.reason === 'matched')
+      legacyMatchByRow = new Map(legacyMatches.filter((match) => match.reason === 'matched')
         .map((match) => [match.mistralRowIndex!, match]))
     }
     // Las líneas antiguas siguen siendo evidencia histórica. Se retiran de la
@@ -93,8 +95,8 @@ export async function proposeMistralExtraction(params: {
       if (sourceError) throw new Error('mistral_legacy_effects_unavailable')
       const extractionIds = (sourceExtractions ?? []).map((row) => row.id)
       const [legacyStock, typedStock, extractionStock, priceHistory] = await Promise.all([
-        db.from('stock_movements').select('id').in('reference_doc', oldLineIds.map((id) => `ALB-LINE-${id}`)).limit(1),
-        db.from('stock_movements').select('id').in('reference_id', oldLineIds).limit(1),
+        db.from('stock_movements').select('id,reference_doc').in('reference_doc', oldLineIds.map((id) => `ALB-LINE-${id}`)),
+        db.from('stock_movements').select('id,reference_id').in('reference_id', oldLineIds),
         extractionIds.length
           ? db.from('stock_movements').select('id').in('source_document_extraction_id', extractionIds).limit(1)
           : Promise.resolve({ data: [], error: null }),
@@ -103,10 +105,29 @@ export async function proposeMistralExtraction(params: {
       if (legacyStock.error || typedStock.error || extractionStock.error || priceHistory.error) {
         throw new Error('mistral_legacy_effects_unavailable')
       }
-      if (legacyStock.data?.length || typedStock.data?.length
-          || extractionStock.data?.length || priceHistory.data?.length) {
+      if (extractionStock.data?.length || priceHistory.data?.length) {
         return { created: 0, materialized: 0, ready: 0, exceptions: 0,
           skipped: 'manual_lines_require_review' }
+      }
+      if (legacyStock.data?.length || typedStock.data?.length) {
+        // Where older rows already moved stock, leave them active. Only a
+        // uniquely reconciled, stock-free row may become a new review proposal.
+        if (!hadManualLegacyLines || legacyMatches.length !== params.canonical.lines.length
+            || legacyMatches.some((match) => match.reason !== 'matched')) {
+          return { created: 0, materialized: 0, ready: 0, exceptions: 0,
+            skipped: 'manual_lines_require_review' }
+        }
+        const stockLineIds = new Set<string>([
+          ...(legacyStock.data ?? []).map((row) => String(row.reference_doc).replace(/^ALB-LINE-/, '')),
+          ...(typedStock.data ?? []).map((row) => String(row.reference_id)),
+        ])
+        if ([...stockLineIds].some((id) => !oldLineIds.includes(id))) {
+          return { created: 0, materialized: 0, ready: 0, exceptions: 0,
+            skipped: 'manual_lines_require_review' }
+        }
+        oldLineIds = oldLineIds.filter((id) => !stockLineIds.has(id))
+        eligibleRowIndices = new Set(legacyMatches.filter((match) => !stockLineIds.has(match.legacyLineId))
+          .map((match) => match.mistralRowIndex!))
       }
     }
   }
@@ -188,6 +209,7 @@ export async function proposeMistralExtraction(params: {
   let materialized = 0
   for (const assessmentLine of assessment.lines) {
     const rowIndex = assessmentLine.rowIndex
+    if (eligibleRowIndices && !eligibleRowIndices.has(rowIndex)) continue
     const observed = params.canonical.lines[rowIndex]!
     // Propuesta y línea operativa comparten exactamente el mismo dato revisable.
     const lineQuantity = assessmentLine.economicQuantity ?? assessmentLine.observedQuantity
@@ -314,7 +336,10 @@ export async function proposeMistralExtraction(params: {
       .in('id', oldLineIds)
     if (retireError) throw new Error('mistral_prior_lines_retire_failed')
   }
-  return { created, materialized, ready: assessment.readyCount,
-    exceptions: assessment.lines.length - assessment.readyCount,
+  const selectedAssessments = eligibleRowIndices
+    ? assessment.lines.filter((line) => eligibleRowIndices.has(line.rowIndex)) : assessment.lines
+  const ready = selectedAssessments.filter((line) => line.status === 'ready_for_review').length
+  return { created, materialized, ready,
+    exceptions: selectedAssessments.length - ready,
     requiresHumanReview: hadManualLegacyLines || hasLegacyReconciliationHistory }
 }

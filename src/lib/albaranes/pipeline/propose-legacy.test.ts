@@ -58,7 +58,8 @@ function blockedDatabase(effect: 'legacy_stock' | 'typed_stock' | 'source_stock'
       if (table === 'stock_movements') return { data: effect === 'legacy_stock' && inColumn === 'reference_doc'
         || effect === 'typed_stock' && inColumn === 'reference_id'
         || effect === 'source_stock' && inColumn === 'source_document_extraction_id'
-        ? [{ id: 'existing-stock' }] : [], error: null }
+        ? [{ id: 'existing-stock', reference_doc: `ALB-LINE-${lines[0]!.id}`,
+          reference_id: lines[0]!.id }] : [], error: null }
       if (table === 'ingredient_price_history') return { data: effect === 'price_history'
         ? [{ id: 'existing-price' }] : [], error: null }
       return { data: [], error: null }
@@ -68,10 +69,67 @@ function blockedDatabase(effect: 'legacy_stock' | 'typed_stock' | 'source_stock'
   return { db: { from } as unknown as Parameters<typeof proposeMistralExtraction>[0]['db'], reads, writes }
 }
 
+function materializingDatabase(stockLineId: string | null, lines = legacyLines) {
+  const proposals: Array<Record<string, unknown>> = []
+  const insertedLines: Array<Record<string, unknown>> = []
+  const retiredIds: string[] = []
+  const writes: string[] = []
+  function from(table: string) {
+    let columns = ''
+    let inColumn = ''
+    let inValues: string[] = []
+    let mutation: 'insert' | 'update' | null = null
+    let payload: Record<string, unknown> = {}
+    const query = {
+      select: (value: string) => { columns = value; return query },
+      eq: () => query,
+      like: () => query,
+      order: () => query,
+      limit: () => query,
+      in: (column: string, values: string[]) => { inColumn = column; inValues = values; return query },
+      insert: (value: Record<string, unknown>) => {
+        mutation = 'insert'; payload = value; writes.push(table)
+        if (table === 'purchase_interpretation_proposals') proposals.push(value)
+        if (table === 'purchase_invoice_lines') insertedLines.push(value)
+        return query
+      },
+      update: (value: Record<string, unknown>) => {
+        mutation = 'update'; payload = value; writes.push(table); return query
+      },
+      maybeSingle: async () => result(true),
+      single: async () => result(true),
+      then: (resolve: (value: QueryResult) => unknown) => Promise.resolve(resolve(result(false))),
+    }
+    function result(single: boolean): QueryResult {
+      if (mutation === 'insert' && table === 'purchase_interpretation_proposals') {
+        return { data: { id: `proposal-${proposals.length}` }, error: null }
+      }
+      if (mutation === 'update' && table === 'purchase_invoice_lines'
+          && inColumn === 'id' && payload.superseded_by_extraction_id) retiredIds.push(...inValues)
+      if (mutation) return { data: single ? null : [], error: null }
+      if (table === 'purchase_invoices') return { data: { id: invoiceId, supplier_id: 2,
+        created_by: 'manager', status: 'pending_mapping', duplicate_of_invoice_id: null }, error: null }
+      if (table === 'purchase_invoice_lines' && columns.includes('original_name')) {
+        return { data: lines, error: null }
+      }
+      if (table === 'stock_movements' && stockLineId && inColumn === 'reference_doc') {
+        return { data: [{ id: 'old-stock', reference_doc: `ALB-LINE-${stockLineId}` }], error: null }
+      }
+      return { data: single ? null : [], error: null }
+    }
+    return query
+  }
+  return { db: { from } as unknown as Parameters<typeof proposeMistralExtraction>[0]['db'],
+    proposals, insertedLines, retiredIds, writes }
+}
+
 describe('historical Mistral materialization guard', () => {
   for (const effect of ['legacy_stock', 'typed_stock', 'source_stock', 'price_history'] as const) {
     it(`keeps all old lines active when ${effect} already exists`, async () => {
-      const { db, reads, writes } = blockedDatabase(effect)
+      const changed = effect === 'legacy_stock' || effect === 'typed_stock'
+        ? legacyLines.map((line, index) => index === 1 ? { ...line, original_name: 'OTRO PRODUCTO' } : line)
+        : legacyLines
+      const { db, reads, writes } = blockedDatabase(effect, changed)
       const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
         sourceHash: 'hash', canonical, correlationId: null })
       assert.equal(result.skipped, 'manual_lines_require_review')
@@ -98,5 +156,33 @@ describe('historical Mistral materialization guard', () => {
     assert.equal(result.skipped, 'manual_lines_require_review')
     assert.deepEqual(writes, [])
     assert.equal(reads.includes('ingredient_price_history:'), true)
+  })
+
+  it('opens mismatched OCR rows for human review when they have no economic effects', async () => {
+    const changed = legacyLines.map((line) => ({ ...line }))
+    changed[1]!.original_name = 'OTRO PRODUCTO'
+    const { db, proposals, insertedLines, retiredIds, writes } = materializingDatabase(null, changed)
+    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+      sourceHash: 'hash', canonical, correlationId: null })
+    assert.equal(result.created, 3)
+    assert.equal(result.materialized, 3)
+    assert.equal(result.requiresHumanReview, true)
+    assert.equal(proposals.length, 3)
+    assert.equal(insertedLines.length, 3)
+    assert.deepEqual(retiredIds.sort(), changed.map((line) => line.id).sort())
+    assert.equal(writes.includes('stock_movements'), false)
+  })
+
+  it('preserves rows with stock and materializes only uniquely matched pending rows', async () => {
+    const { db, proposals, insertedLines, retiredIds, writes } = materializingDatabase('line-1')
+    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+      sourceHash: 'hash', canonical, correlationId: null })
+    assert.equal(result.created, 2)
+    assert.equal(result.materialized, 2)
+    assert.equal(result.requiresHumanReview, true)
+    assert.equal(proposals.length, 2)
+    assert.equal(insertedLines.length, 2)
+    assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
+    assert.equal(writes.includes('stock_movements'), false)
   })
 })
