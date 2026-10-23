@@ -147,7 +147,8 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
         `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
     ).join(' ');
     const area = `${path} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`;
-    const active = activeIndex === null ? (selectedHour == null ? null : slots[selectedHour - FIRST_SALES_HOUR]) : slots[activeIndex];
+    const active = activeIndex === null ? null : slots[activeIndex];
+    const bestHours = slots.filter(slot => slot.tickets > 0).sort((a, b) => b.sales - a.sales || a.hour - b.hour).slice(0, 3);
 
     return (
         <div className="flex h-full min-h-0 min-w-0 flex-col">
@@ -225,8 +226,14 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                         </div>
                     </>
                 ) : (
-                    <div className="flex h-full items-center justify-center text-center text-[10px] text-white/50">
-                        Pasa el cursor por una hora para consultar sus datos
+                    <div className="grid h-full grid-cols-3 divide-x divide-white/10" aria-label="Tres tramos horarios con mayor facturación">
+                        {bestHours.map(slot => (
+                            <div key={slot.hour} className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 text-center" title={slot.hour + ':00–' + (slot.hour + 1) + ':00'}>
+                                <span className="text-[10px] font-semibold leading-tight text-white/75 tabular-nums">{slot.hour}–{slot.hour + 1} h</span>
+                                <strong className="max-w-full truncate text-[clamp(11px,1vw,15px)] font-semibold leading-tight tabular-nums text-teal-200">{euro(slot.sales)}</strong>
+                                <span className="max-w-full truncate text-[10px] leading-tight tabular-nums text-white/70">{slot.tickets.toLocaleString('es-ES')} tick · {euro(slot.sales / slot.tickets)} med</span>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
@@ -323,7 +330,7 @@ function RankingViewport({ children }: { children: ReactNode }) {
         const holder = viewportRef.current;
         if (!holder) return;
         const measure = () => {
-            const next = Math.max(0, Math.floor(holder.clientHeight / 24) * 24);
+            const next = Math.max(0, Math.floor(holder.clientHeight / 28) * 28);
             setFittedHeight(old => old === next ? old : next);
         };
         measure();
@@ -379,16 +386,16 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
                                     productName: product.nombre_articulo, scope
                                 })}
                                 aria-pressed={selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id}
-                                className={cn('grid h-6 w-full min-w-0 snap-start snap-always grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto] items-center gap-x-2 border-b border-white/5 text-left text-[10px]',
+                                className={cn('grid h-7 w-full min-w-0 snap-start snap-always grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto] items-center gap-x-2 border-b border-white/5 text-left text-[11px]',
                                     product.articulo_id != null && 'cursor-pointer hover:bg-white/10',
                                     selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id && 'bg-sky-200/15')}
                                 title={product.nombre_articulo + ' · ' + euro(sales) + ' · ' + label}>
                                 <span className="min-w-0 truncate text-white/85">{index + 1}. {product.nombre_articulo}</span>
                                 <span className="shrink-0 tabular-nums text-white/60">{Number(product.cantidad_total).toLocaleString('es-ES')} u</span>
-                                <div role="img" aria-label={label} className="h-[8px] min-w-0 overflow-hidden rounded-sm bg-white/10">
+                                <div role="img" aria-label={label} className="h-[10px] min-w-0 overflow-hidden rounded-sm bg-white/10">
                                     <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: barWidth(sales, maxProductSales) }}/>
                                 </div>
-                                <strong className="min-w-[60px] shrink-0 text-right tabular-nums">{euro(sales)}</strong>
+                                <strong className="min-w-[66px] shrink-0 text-right text-[12px] font-semibold tabular-nums">{euro(sales)}</strong>
                             </button>
                         );
                     })}
@@ -407,9 +414,39 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
 
 type PaymentKpiType = 'card' | 'cash' | 'pending' | 'collections';
 type SummaryKpiItem = { label: string; value: string; payment?: PaymentKpiType; tone?: string };
+type FinancialExtras = { cash: number; card: number; pending: number; recovered: number; net: number; difference: number };
 
-// Both top summaries keep their original figures and cross-filter actions.
-// The highlighted revenue tiles are content-width, with no decorative graphs.
+// Keep monthly and selected-period labels, tones and cross-filter actions identical.
+// A missing financial figure is intentionally empty (not a dash).
+function financialSummaryItems(extras?: FinancialExtras, performance: number | null = null): SummaryKpiItem[] {
+    return [
+        {
+            label: 'Rendimiento',
+            value: performance === null ? '' : (performance >= 0 ? '▲ ' : '▼ ') + Math.abs(performance).toFixed(1) + '%',
+            tone: performance === null ? undefined : (performance >= 0 ? 'text-emerald-400' : 'text-rose-400')
+        },
+        { label: 'Tarjeta', value: extras ? euro(extras.card) : '', payment: 'card', tone: 'text-sky-300' },
+        { label: 'Efectivo', value: extras ? euro(extras.cash) : '', payment: 'cash', tone: 'text-emerald-300' },
+        { label: 'Pendiente', value: extras ? euro(extras.pending) : '', payment: 'pending', tone: 'text-amber-300' },
+        { label: 'Cobros', value: extras ? euro(extras.recovered) : '', payment: 'collections', tone: 'text-violet-300' },
+        { label: 'Diferencia', value: extras ? euro(extras.difference) : '', tone: extras && extras.difference > 0 ? 'text-emerald-400' : undefined }
+    ];
+}
+
+function TicketHeaderStats({ report }: { report: TicketReport | null }) {
+    return (
+        <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 whitespace-nowrap text-[10px] text-white/70">
+            {report && (
+                <>
+                    <span className="tabular-nums"><strong className="font-semibold text-white">{Number(report.summary.count).toLocaleString('es-ES')}</strong> tickets</span>
+                    <span className="tabular-nums"><strong className="font-semibold text-white">{euro(report.summary.avgTicket)}</strong> medio</span>
+                </>
+            )}
+        </div>
+    );
+}
+
+// Two compact columns of three finance metrics each, alongside the revenue tiles.
 function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
     sales: string; net: string; items: SummaryKpiItem[];
     scope: CrossScope; selection: CrossSelection | null;
@@ -431,17 +468,17 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
                     </div>
                 ))}
             </div>
-            <div className="flex min-w-0 flex-1 flex-col justify-between">
+            <div className="grid min-w-0 flex-1 grid-flow-col grid-cols-2 grid-rows-3 gap-x-3 gap-y-1">
                 {items.map(item => {
                     const selected = selection?.scope === scope && selection.kind === 'payment' && selection.payment === item.payment;
                     const content = (
                         <>
-                            <span className="min-w-0 truncate text-[10px] font-medium text-white/75">{item.label}</span>
-                            <strong className={cn('shrink-0 whitespace-nowrap text-right text-[11px] font-semibold tabular-nums text-white', item.tone)}>{item.value}</strong>
+                            <span className="min-w-0 truncate text-[clamp(11px,0.9vw,12px)] font-medium text-white/75">{item.label}</span>
+                            <strong className={cn('shrink-0 whitespace-nowrap text-right text-[clamp(12px,1vw,14px)] font-semibold tabular-nums text-white', item.tone)}>{item.value}</strong>
                         </>
                     );
                     const rowClass = cn(
-                        'flex min-h-[20px] w-full min-w-0 items-center justify-between gap-2 border-b border-white/10 px-1.5 text-left last:border-b-0',
+                        'flex min-h-[35px] w-full min-w-0 items-center justify-between gap-1.5 border-b border-white/10 px-1 text-left',
                         item.payment && 'cursor-pointer transition-colors hover:bg-white/10',
                         selected && 'rounded-sm bg-sky-200/15'
                     );
@@ -462,31 +499,24 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
 
 function SummaryCard({ title, dateText, report, extras, breakdownReport, scope, selection, onSelect }: {
     title: string; dateText: string; report: TicketReport | null;
-    extras?: { cash: number; card: number; pending: number; recovered: number; net: number };
+    extras?: FinancialExtras;
     breakdownReport: TicketReport | null; scope: CrossScope;
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
 }) {
     const sales = report ? Number(report.summary.totalSales) : null;
-    const count = report ? Number(report.summary.count) : null;
-    const remaining: SummaryKpiItem[] = [
-        { label: 'Tickets', value: count !== null ? count.toLocaleString('es-ES') : '—' },
-        { label: 'Ticket medio', value: report ? euro(report.summary.avgTicket) : '—' },
-        { label: 'Tarjeta', value: extras ? euro(extras.card) : '—', payment: 'card', tone: 'text-sky-300' },
-        { label: 'Efectivo', value: extras ? euro(extras.cash) : '—', payment: 'cash', tone: 'text-emerald-300' },
-        { label: 'Pendiente', value: extras ? euro(extras.pending) : '—', payment: 'pending', tone: 'text-amber-300' },
-        { label: 'Cobros', value: extras ? euro(extras.recovered) : '—', payment: 'collections', tone: 'text-violet-300' }
-    ];
     return (
         <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-4 pt-2 text-white">
-            <div className="mb-4 flex min-w-0 shrink-0 items-center justify-between gap-2">
-                <strong className="min-w-0 text-sm font-bold">{title}</strong>
-                <span className="min-w-0 truncate text-[9px] text-white/55">{dateText}</span>
-                {report && <span className="shrink-0 text-[9px] text-white/80">{euro(report.summary.avgTicket)} medio</span>}
+            <div className="mb-3 flex min-h-[36px] min-w-0 shrink-0 items-center justify-between gap-2 border-b border-white/15">
+                <div className="flex min-w-0 items-baseline gap-3">
+                    <strong className="shrink-0 text-sm font-bold">{title}</strong>
+                    <span className="min-w-0 truncate text-[10px] capitalize text-white/60">{dateText}</span>
+                </div>
+                <TicketHeaderStats report={report}/>
             </div>
             <FinancialKpiHeader
-                sales={sales !== null ? euro(sales) : '—'}
-                net={extras ? euro(extras.net) : '—'}
-                items={remaining} scope={scope} selection={selection} onSelect={onSelect}/>
+                sales={sales !== null ? euro(sales) : ''}
+                net={extras ? euro(extras.net) : ''}
+                items={financialSummaryItems(extras)} scope={scope} selection={selection} onSelect={onSelect}/>
             <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope} selection={selection} onSelect={onSelect}/>
         </div>
     );
@@ -923,8 +953,8 @@ export default function VentasDesktopWorkspace() {
     const monthTotals = useMemo(() => monthClosings.reduce((a, c) => ({
         cash: a.cash + Number(c.cash_counted ?? 0), card: a.card + Number(c.sales_card ?? 0),
         pending: a.pending + Number(c.sales_pending ?? 0), recovered: a.recovered + Number(c.debt_recovered ?? 0),
-        net: a.net + Number(c.net_sales ?? 0)
-    }), { cash: 0, card: 0, pending: 0, recovered: 0, net: 0 }), [monthClosings]);
+        net: a.net + Number(c.net_sales ?? 0), difference: a.difference + Number(c.difference ?? 0)
+    }), { cash: 0, card: 0, pending: 0, recovered: 0, net: 0, difference: 0 }), [monthClosings]);
     const hasClosingData = periodClosings.length > 0;
     const periodTotals = useMemo(() => ({
         sales: closingSum(periodClosings, 'tpv_sales'),
@@ -976,40 +1006,20 @@ export default function VentasDesktopWorkspace() {
                                     <span className="truncate">Volver al periodo</span>
                                 </button>
                             )}
-                            <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 whitespace-nowrap text-[9px] text-white/70">
+                            <div className="flex min-w-0 shrink-0 items-center justify-end gap-2">
                                 {isSingleDay && selectedClosing?.weather ? (
-                                    <span className="inline-flex items-center gap-1" title="Clima del cierre">
+                                    <span className="inline-flex items-center gap-1 text-[10px] text-white/70" title="Clima del cierre">
                                         <CloudSun size={12}/> <span className="max-w-[80px] truncate">{selectedClosing.weather}</span>
                                     </span>
                                 ) : null}
-                                <span className="tabular-nums"><strong className="font-semibold text-white">{dailyReport?.summary.count != null ? Number(dailyReport.summary.count).toLocaleString('es-ES') : '—'}</strong> tickets</span>
-                                <span className="tabular-nums"><strong className="font-semibold text-white">{dailyReport?.summary.avgTicket != null ? euro(dailyReport.summary.avgTicket) : '—'}</strong> medio</span>
+                                <TicketHeaderStats report={dailyReport}/>
                             </div>
                         </header>
                         <div className="shrink-0 border-b border-white/10 px-3 py-3">
                             <FinancialKpiHeader
-                                sales={dailyReport ? euro(dailyReport.summary.totalSales) : '—'}
-                                net={hasClosingData ? euro(periodTotals.net) : '—'}
-                                items={[
-                                    {
-                                        label: 'Rendimiento',
-                                        value: periodPerformance !== null
-                                            ? (periodPerformance >= 0 ? '▲ ' : '▼ ') + Math.abs(periodPerformance).toFixed(1) + '%'
-                                            : '—',
-                                        tone: periodPerformance !== null
-                                            ? (periodPerformance >= 0 ? 'text-emerald-400' : 'text-rose-400')
-                                            : undefined
-                                    },
-                                    { label: 'Tarjeta', value: hasClosingData ? euro(periodTotals.card) : '—', payment: 'card', tone: 'text-sky-300' },
-                                    { label: 'Efectivo', value: hasClosingData ? euro(periodTotals.cash) : '—', payment: 'cash', tone: 'text-emerald-300' },
-                                    { label: 'Pendiente', value: hasClosingData ? euro(periodTotals.pending) : '—', payment: 'pending', tone: 'text-amber-300' },
-                                    { label: 'Cobros', value: hasClosingData ? euro(periodTotals.recovered) : '—', payment: 'collections', tone: 'text-violet-300' },
-                                    {
-                                        label: 'Diferencia',
-                                        value: hasClosingData ? euro(periodTotals.difference) : '—',
-                                        tone: hasClosingData && periodTotals.difference > 0 ? 'text-emerald-400' : undefined
-                                    }
-                                ]}
+                                sales={dailyReport ? euro(dailyReport.summary.totalSales) : ''}
+                                net={hasClosingData ? euro(periodTotals.net) : ''}
+                                items={financialSummaryItems(hasClosingData ? periodTotals : undefined, periodPerformance)}
                                 scope="period" selection={crossSelection} onSelect={onChooseCross}/>
                         </div>
                         {isSingleDay && selectedClosing && (
