@@ -147,8 +147,17 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
         `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
     ).join(' ');
     const area = `${path} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`;
-    const active = activeIndex === null ? null : slots[activeIndex];
     const bestHours = slots.filter(slot => slot.tickets > 0).sort((a, b) => b.sales - a.sales || a.hour - b.hour).slice(0, 3);
+    // Keep the same three-column layout on hover. The hovered interval is
+    // always centered between its immediate chronological neighbours.
+    // Missing neighbours at 7 h and 22 h leave a genuinely empty column.
+    const displayHours: (HourSlot | null)[] = activeIndex === null
+        ? [bestHours[0] ?? null, bestHours[1] ?? null, bestHours[2] ?? null]
+        : [
+            activeIndex > 0 ? slots[activeIndex - 1] : null,
+            slots[activeIndex],
+            activeIndex < slots.length - 1 ? slots[activeIndex + 1] : null
+        ];
 
     return (
         <div className="flex h-full min-h-0 min-w-0 flex-col">
@@ -202,40 +211,42 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                 </div>
 
             </div>
-            {/* Fixed detail strip BELOW the axis, not on top of the curve.
-                Its reserved height prevents jumping as the pointer moves
-                continuously across neighbouring hourly hit zones. */}
+            {/* Fixed detail strip below the axis. Hover preserves exactly
+                three columns: previous, selected, next. No placeholders. */}
             <div className="mt-2 h-[78px] w-full shrink-0 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5">
-                {active ? (
-                    <>
-                        <div className="text-left text-[12px] font-semibold leading-tight tabular-nums text-white/85">
-                            {active.hour}–{active.hour + 1} h
-                        </div>
-                        <div role="status" className="mt-1.5 grid grid-cols-3 divide-x divide-white/10 text-center">
-                            {([
-                                ['Tickets', active.tickets.toLocaleString('es-ES'), 'text-sky-200'],
-                                ['Ticket medio', euro(active.tickets > 0 ? active.sales / active.tickets : 0), 'text-violet-200'],
-                                ['Facturación', euro(active.sales), 'text-teal-200'],
-                            ] as const).map(([label, value, color]) => (
-                                <div key={label} className="min-w-0 px-1">
-                                    <strong className="block truncate text-[clamp(11px,0.98vw,15px)] font-semibold leading-tight tabular-nums text-white"
-                                        title={value}>{value}</strong>
-                                    <span className={cn('mt-0.5 block truncate text-[10px] leading-tight', color)}>{label}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </>
-                ) : (
-                    <div className="grid h-full grid-cols-3 divide-x divide-white/10" aria-label="Tres tramos horarios con mayor facturación">
-                        {bestHours.map(slot => (
-                            <div key={slot.hour} className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 text-center" title={slot.hour + ':00–' + (slot.hour + 1) + ':00'}>
-                                <span className="w-full text-left text-[12px] font-semibold leading-tight text-white/85 tabular-nums">{slot.hour}–{slot.hour + 1} h</span>
-                                <strong className="max-w-full truncate text-[clamp(11px,1vw,15px)] font-semibold leading-tight tabular-nums text-teal-200">{euro(slot.sales)}</strong>
-                                <span className="mt-1.5 max-w-full truncate text-[11px] leading-tight tabular-nums text-white/75">{slot.tickets.toLocaleString('es-ES')} tick · {euro(slot.sales / slot.tickets)} med</span>
+                <div className="grid h-full grid-cols-3" aria-live="polite"
+                    aria-label={activeIndex === null ? 'Tres tramos horarios con mayor facturación' : 'Tramo señalado y tramos anterior y posterior'}>
+                    {displayHours.map((slot, position) => {
+                        if (!slot) return <div key={`empty-${position}`} aria-hidden="true" />;
+                        const isHighlighted = activeIndex !== null && position === 1;
+                        return (
+                            <div key={slot.hour}
+                                className={cn(
+                                    'flex min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 text-center',
+                                    position !== 2 && displayHours[position + 1] && 'border-r border-white/10',
+                                    isHighlighted && 'rounded-md bg-sky-300/15 ring-1 ring-inset ring-sky-300/35',
+                                    activeIndex !== null && !isHighlighted && 'opacity-75'
+                                )}
+                                title={`${slot.hour}:00–${slot.hour + 1}:00`}>
+                                <span className={cn(
+                                    'w-full text-left text-[12px] font-semibold leading-tight tabular-nums',
+                                    isHighlighted ? 'text-sky-100' : 'text-white/85'
+                                )}>
+                                    {slot.hour}–{slot.hour + 1} h
+                                </span>
+                                <strong className={cn(
+                                    'max-w-full truncate text-[clamp(11px,1vw,15px)] font-semibold leading-tight tabular-nums',
+                                    isHighlighted ? 'text-teal-100' : 'text-teal-200'
+                                )}>
+                                    {euro(slot.sales)}
+                                </strong>
+                                <span className="mt-1.5 max-w-full truncate text-[11px] leading-tight tabular-nums text-white/80">
+                                    {slot.tickets.toLocaleString('es-ES')} tick · {euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)} med
+                                </span>
                             </div>
-                        ))}
-                    </div>
-                )}
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
