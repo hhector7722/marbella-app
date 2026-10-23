@@ -917,6 +917,7 @@ export default function HistoryPage() {
 
     const deepLinkClosingId = searchParams.get('closingId')?.trim() ?? null;
     const [syncedDeepLinkClosingId, setSyncedDeepLinkClosingId] = useState<string | null>(null);
+    const autoEditDeepLinkConsumed = useRef<string | null>(null);
 
     if (!loading && deepLinkClosingId && deepLinkClosingId !== syncedDeepLinkClosingId) {
         const found = closings.find((c) => c.id === deepLinkClosingId);
@@ -951,6 +952,19 @@ export default function HistoryPage() {
             }
         })();
     }, [searchParams, closings, loading, syncedDeepLinkClosingId]);
+
+    // Reuse the existing history closing editor for deep links from Ventas.
+    // Editing is activated only after the manager role and exact closing ID
+    // have both been verified; no new write path or permission bypass.
+    useEffect(() => {
+        if (searchParams.get('edit') !== '1' || !isManager || !selectedClosing) return;
+        const requestedId = searchParams.get('closingId')?.trim();
+        if (!requestedId || requestedId !== selectedClosing.id || autoEditDeepLinkConsumed.current === requestedId) return;
+        autoEditDeepLinkConsumed.current = requestedId;
+        setEditData({ ...selectedClosing, breakdown: selectedClosing.breakdown ?? {} });
+        setIsEditing(true);
+    }, [searchParams, selectedClosing, isManager]);
+
 
 
 
