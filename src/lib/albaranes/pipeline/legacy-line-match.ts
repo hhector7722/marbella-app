@@ -32,6 +32,9 @@ export type LegacyMatchResult = {
 export function normalizeNameForMatch(value: string): string {
   return value.normalize('NFD').replace(/\p{M}/gu, '')
     .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim()
+    // Una lectura antigua de Panabad pegó «31» al final de «40 u».
+    // Solo se corrige al final del nombre y después del tamaño de caja.
+    .replace(/(\b\d+\s+)U31$/, '$1U')
     .split(/\s+/).map((token) => ['U', 'UD', 'UDS'].includes(token) ? 'UD' : token)
     .join(' ')
 }
