@@ -7332,3 +7332,167 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     height: 45%;
   }
 }
+
+
+/*
+ * Desktop adaptativo para TODA la aplicación.
+ *
+ * El 100 % de zoom del navegador no equivale al mismo ancho CSS si Windows,
+ * Linux o el monitor usan escalado de pantalla distinto. Los cortes se basan
+ * en el viewport CSS REAL (y en su altura), nunca en la resolución física.
+ *
+ * No aplicamos zoom/transform al body: reduciría la letra, alteraría ventanas
+ * modales, coordenadas táctiles e introduciría problemas de accesibilidad.
+ */
+@media (min-width: 1024px) {
+  /* Reglas base de los shells compartidos: evitan que un hijo ancho empuje
+     la página fuera del espacio útil, con independencia de la ruta. */
+  main[data-app-shell='true'],
+  main[data-app-shell='true'] > *,
+  [data-component='PageScreen'],
+  [data-component='PageScreen'] [data-element='body'],
+  [data-component='PageScreen'] [data-element='chrome'],
+  [data-component='PageScreen'] [data-element='toolbar-slot'] {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  [data-component='Surface'][data-variant='page'],
+  [data-component='Surface'][data-variant='block'] {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* Portátiles, monitores con DPI alto y ventanas que han perdido ancho CSS:
+   compactar el cromo transversal (sin empequeñecer el texto de la app).
+   Afecta a PageScreen, modales y las home además de los tableros. */
+@media (min-width: 1024px) and (max-width: 1550px) {
+  :root {
+    --espacio-4: clamp(10px, 1vw, 16px);
+    --espacio-6: clamp(16px, 1.45vw, 24px);
+    --espacio-8: clamp(24px, 2vw, 32px);
+  }
+
+  [data-component='PageScreen'] {
+    padding-inline: var(--espacio-2);
+  }
+
+  [data-component='PageScreen'] [data-element='header'],
+  [data-component='PageScreen'] [data-element='toolbar'],
+  [data-component='PageScreen'] [data-element='lead'] {
+    padding-inline: var(--espacio-2);
+  }
+
+  [data-component='HomeScreen'] {
+    column-gap: clamp(8px, 0.9vw, 16px);
+    row-gap: clamp(8px, 0.9vw, 16px);
+    padding-inline: var(--espacio-2);
+  }
+
+  /* Historial y Ventas comparten esta retícula. El antiguo umbral de 1024px
+     forzaba tres columnas de ~350px y truncaba cifras y conceptos.
+     A menor ancho disponible se usan dos columnas legibles y el
+     calendario pasa debajo; la página puede desplazarse en vertical. */
+  [data-component='HistoryDesktopWorkspace'] {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    padding-inline: var(--espacio-2);
+  }
+
+  [data-component='HistoryDesktopWorkspace'] .history-desktop-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--espacio-3);
+    row-gap: var(--espacio-3);
+    align-items: start;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'],
+  [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
+    height: 690px;
+    min-height: 0;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar-column'] {
+    grid-column: 1 / -1;
+    width: min(100%, 860px);
+    justify-self: center;
+    height: 560px;
+    min-height: 0;
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='calendar-column'] {
+    height: 690px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='calendar'] {
+    flex-basis: 49%;
+    height: 49%;
+  }
+}
+
+/* Una pantalla baja necesita un tablero desplazable, no recortar Producto,
+   Horas u otras secciones. Las zonas interiores mantienen su propio scroll. */
+@media (min-width: 1024px) and (max-height: 850px) {
+  [data-component='HistoryDesktopWorkspace'] {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'],
+  [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
+    height: 690px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'] [data-element='calendar-column'] {
+    height: 560px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='calendar-column'] {
+    height: 690px;
+  }
+
+  /* Las tres pantallas de Inicio usan mosaicos de cinco filas: si el alto
+     disponible es menor, permitir desplazamiento en lugar de esconder filas. */
+  .dashboard-mosaic-switcher {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .dashboard-mosaic-switcher > div,
+  .dashboard-mosaic-switcher > div > div,
+  .home-mosaic-page {
+    min-height: 620px;
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .dashboard-mosaic-switcher [data-component='HomeScreen'] {
+    height: 620px;
+    min-height: 620px;
+    max-height: none;
+  }
+}
+
+/* En vertical ajustado y ancho CSS estrecho, evita empujar encabezados
+   compartidos fuera del viewport; deja visible la navegación. */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  [data-component='PageScreen'] [data-element='header'] [data-element='title-block'] {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  [data-component='PageScreen'] [data-element='header'] [data-element='actions'] {
+    max-width: 55%;
+    min-width: 0;
+  }
+}
