@@ -205,11 +205,11 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
             {/* Fixed detail strip BELOW the axis, not on top of the curve.
                 Its reserved height prevents jumping as the pointer moves
                 continuously across neighbouring hourly hit zones. */}
-            <div className="mt-2 h-[70px] w-full shrink-0 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5">
+            <div className="mt-2 h-[78px] w-full shrink-0 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5">
                 {active ? (
                     <>
-                        <div className="text-[10px] font-semibold leading-none tabular-nums text-white/85">
-                            {active.hour}:00–{active.hour + 1}:00
+                        <div className="text-left text-[12px] font-semibold leading-tight tabular-nums text-white/85">
+                            {active.hour}–{active.hour + 1} h
                         </div>
                         <div role="status" className="mt-1.5 grid grid-cols-3 divide-x divide-white/10 text-center">
                             {([
@@ -228,10 +228,10 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                 ) : (
                     <div className="grid h-full grid-cols-3 divide-x divide-white/10" aria-label="Tres tramos horarios con mayor facturación">
                         {bestHours.map(slot => (
-                            <div key={slot.hour} className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 text-center" title={slot.hour + ':00–' + (slot.hour + 1) + ':00'}>
-                                <span className="text-[10px] font-semibold leading-tight text-white/75 tabular-nums">{slot.hour}–{slot.hour + 1} h</span>
+                            <div key={slot.hour} className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 text-center" title={slot.hour + ':00–' + (slot.hour + 1) + ':00'}>
+                                <span className="w-full text-left text-[12px] font-semibold leading-tight text-white/85 tabular-nums">{slot.hour}–{slot.hour + 1} h</span>
                                 <strong className="max-w-full truncate text-[clamp(11px,1vw,15px)] font-semibold leading-tight tabular-nums text-teal-200">{euro(slot.sales)}</strong>
-                                <span className="max-w-full truncate text-[10px] leading-tight tabular-nums text-white/70">{slot.tickets.toLocaleString('es-ES')} tick · {euro(slot.sales / slot.tickets)} med</span>
+                                <span className="mt-1.5 max-w-full truncate text-[11px] leading-tight tabular-nums text-white/75">{slot.tickets.toLocaleString('es-ES')} tick · {euro(slot.sales / slot.tickets)} med</span>
                             </div>
                         ))}
                     </div>
@@ -401,7 +401,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
                     })}
                 </RankingViewport>
             </section>
-            <section className="h-[206px] min-h-0 shrink-0">
+            <section className="h-[214px] min-h-0 shrink-0">
                 <HourlySalesTimeline hours={report?.hours}
                     contextLabel={selection?.scope === scope ? crossLabel(selection) : null}
                     selectedHour={selection?.scope === scope && selection.kind === 'hour' ? selection.hour : null}
@@ -1086,7 +1086,7 @@ export default function VentasDesktopWorkspace() {
                                                     <span className={cn("absolute right-1 top-0.5 text-[9px] font-medium tabular-nums", selected ? "text-zinc-700" : "text-slate-400")}>{format(day, 'd')}</span>
                                                     {net !== null && Number.isFinite(net) ? (
                                                         <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-px pt-2 text-center">
-                                                            <span title={euro(net)} className="max-w-full truncate text-[clamp(8px,0.75vw,11px)] font-normal leading-none tracking-tight text-zinc-800 tabular-nums">
+                                                            <span title={euro(net)} className="max-w-full truncate text-[clamp(9px,0.85vw,13px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums">
                                                                 {Math.round(net).toLocaleString('es-ES')}€
                                                             </span>
                                                             <span className="text-[7px] font-medium leading-none tracking-[0.06em] text-slate-500">V NETA</span>
