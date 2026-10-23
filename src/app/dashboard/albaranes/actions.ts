@@ -334,6 +334,8 @@ export type PurchaseInvoiceLine = {
   variable_piece_count: number | null
   /** Porcentaje literal reconocido en la evidencia de Panabad, si existe. */
   printed_discount_percent: number | null
+  /** Valor literal del descuento para permitir revisar su unidad en la ficha. */
+  printed_discount_raw: string | null
   printed_unit_price: number | null
   /** DTO fijo por unidad facturada SHERS, nunca porcentaje. */
   printed_fixed_discount_eur: number | null
@@ -486,6 +488,7 @@ export async function getPurchaseInvoiceDetailAction(
     variable_weight_kg: null as number | null,
     variable_piece_count: null as number | null,
     printed_discount_percent: null as number | null,
+    printed_discount_raw: null as string | null,
     printed_unit_price: null as number | null,
     printed_fixed_discount_eur: null as number | null,
     printed_net_unit_price: null as number | null,
@@ -512,6 +515,8 @@ export async function getPurchaseInvoiceDetailAction(
         ? proposal.observed.unit_price_raw : null
       line.printed_line_total_raw = typeof proposal?.observed?.line_total_raw === 'string'
         ? proposal.observed.line_total_raw : null
+      line.printed_discount_raw = typeof proposal?.observed?.discount_raw === 'string'
+        ? proposal.observed.discount_raw : null
       line.proposal_review_reasons = Array.isArray(proposal?.review_reasons)
         ? proposal.review_reasons.map(String) : []
       const printedNet = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
