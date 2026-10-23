@@ -7428,31 +7428,3 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     overscroll-behavior-y: contain;
   }
 }
-
-/* Bajo 1240 px CSS ya no son legibles tres paneles de datos simultáneos:
-   la adaptación de dos columnas queda reservada a este ancho realmente
-   estrecho, sin alterar el equipo del bar (1536 px CSS) ni la referencia. */
-@media screen and (min-width: 1024px) and (max-width: 1239px) {
-  [data-component='HistoryDesktopWorkspace'] {
-    height: auto;
-    min-height: 0;
-    max-height: none;
-    overflow: visible;
-  }
-  [data-component='HistoryDesktopWorkspace'] .history-desktop-board {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--espacio-3);
-  }
-  [data-component='HistoryDesktopWorkspace'] [data-element='summary-stack'],
-  [data-component='HistoryDesktopWorkspace'] [data-element='selected-day'] {
-    height: 690px;
-  }
-  [data-component='HistoryDesktopWorkspace'] [data-element='calendar-column'],
-  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
-    [data-element='calendar-column'] {
-    grid-column: 1 / -1;
-    justify-self: center;
-    width: min(100%, 860px);
-    height: 690px;
-  }
-}
