@@ -13,6 +13,7 @@ import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight
 import { canonicalDocumentSchema } from '@/lib/albaranes/extractors/canonical'
 import {
   parseObservedDecimal,
+  reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
 } from '@/lib/albaranes/pipeline/validate'
 import { isAdministrativeNonProductRow } from '@/lib/albaranes/pipeline/non-product-line'
@@ -521,7 +522,8 @@ export async function getPurchaseInvoiceDetailAction(
       )
       if (Number((data as any).supplier_id) !== 2
         && /dto|discount|descuento/i.test(proposal?.observed?.discount_header_raw ?? '')
-        && !/%|por\s*ciento|percent/i.test(proposal?.observed?.discount_header_raw ?? '')) {
+        && !/%|por\s*ciento|percent/i.test(proposal?.observed?.discount_header_raw ?? '')
+        && reconcileFixedDiscountedUnitPrice(proposal?.observed ?? {}) != null) {
         const gross = parseObservedDecimal(proposal?.observed?.unit_price_raw ?? null)
         const discount = parseObservedDecimal(proposal?.observed?.discount_raw ?? null)
         const net = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
@@ -537,7 +539,8 @@ export async function getPurchaseInvoiceDetailAction(
         const price = parseObservedDecimal(original.unit_price_raw)
         const header = String(original.discount_header_raw ?? '')
         const isPercent = /%|percent|por\s*ciento/i.test(header)
-          || (!header.trim() && reconcilePercentageDiscountedUnitPrice(original) != null)
+          || (!header.trim() || /dto|discount|descuento/i.test(header))
+            && reconcilePercentageDiscountedUnitPrice(original) != null
         if (isPercent && discount != null && discount > 0 && discount <= 100
           && price != null && price > 0
           && reconcilePercentageDiscountedUnitPrice(original) != null) {
