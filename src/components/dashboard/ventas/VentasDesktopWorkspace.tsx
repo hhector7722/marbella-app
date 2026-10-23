@@ -404,6 +404,62 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
     );
 }
 
+
+type PaymentKpiType = 'card' | 'cash' | 'pending' | 'collections';
+type SummaryKpiItem = { label: string; value: string; payment?: PaymentKpiType; tone?: string };
+
+// Both top summaries keep their original figures and cross-filter actions.
+// The highlighted revenue tiles are content-width, with no decorative graphs.
+function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
+    sales: string; net: string; items: SummaryKpiItem[];
+    scope: CrossScope; selection: CrossSelection | null;
+    onSelect: (value: CrossSelection) => void;
+}) {
+    return (
+        <div className="flex w-full min-w-0 shrink-0 items-stretch gap-3">
+            <div className="flex max-w-[52%] shrink-0 flex-col items-start gap-1.5">
+                {([
+                    { label: 'Ventas', value: sales, tone: 'border-sky-400/35 bg-sky-500/10' },
+                    { label: 'Venta neta', value: net, tone: 'border-emerald-400/30 bg-emerald-500/10' }
+                ] as const).map(item => (
+                    <div key={item.label}
+                        className={cn('flex min-h-[57px] w-fit max-w-full flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
+                        <span className="text-[11px] font-medium leading-tight text-white/80">{item.label}</span>
+                        <strong className="block max-w-full whitespace-nowrap text-[clamp(16px,1.75vw,25px)] font-bold leading-tight tabular-nums text-white">
+                            {item.value}
+                        </strong>
+                    </div>
+                ))}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col justify-between">
+                {items.map(item => {
+                    const selected = selection?.scope === scope && selection.kind === 'payment' && selection.payment === item.payment;
+                    const content = (
+                        <>
+                            <span className="min-w-0 truncate text-[10px] font-medium text-white/75">{item.label}</span>
+                            <strong className={cn('shrink-0 whitespace-nowrap text-right text-[11px] font-semibold tabular-nums text-white', item.tone)}>{item.value}</strong>
+                        </>
+                    );
+                    const rowClass = cn(
+                        'flex min-h-[20px] w-full min-w-0 items-center justify-between gap-2 border-b border-white/10 px-1.5 text-left last:border-b-0',
+                        item.payment && 'cursor-pointer transition-colors hover:bg-white/10',
+                        selected && 'rounded-sm bg-sky-200/15'
+                    );
+                    return item.payment ? (
+                        <button key={item.label} type="button" data-crossfilter-trigger
+                            className={rowClass} aria-pressed={selected}
+                            onClick={() => onSelect({ kind: 'payment', payment: item.payment!, scope })}>
+                            {content}
+                        </button>
+                    ) : (
+                        <div key={item.label} className={rowClass}>{content}</div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 function SummaryCard({ title, dateText, report, extras, breakdownReport, scope, selection, onSelect }: {
     title: string; dateText: string; report: TicketReport | null;
     extras?: { cash: number; card: number; pending: number; recovered: number; net: number };
@@ -412,11 +468,13 @@ function SummaryCard({ title, dateText, report, extras, breakdownReport, scope, 
 }) {
     const sales = report ? Number(report.summary.totalSales) : null;
     const count = report ? Number(report.summary.count) : null;
-    const values = [
-        ['Ventas', sales !== null ? euro(sales) : '—'], ['Venta neta', extras ? euro(extras.net) : '—'],
-        ['Tickets', count !== null ? count.toLocaleString('es-ES') : '—'], ['Tarjeta', extras ? euro(extras.card) : '—'],
-        ['Efectivo', extras ? euro(extras.cash) : '—'], ['Pendiente', extras ? euro(extras.pending) : '—'],
-        ['Cobros', extras ? euro(extras.recovered) : '—'], ['Ticket medio', report ? euro(report.summary.avgTicket) : '—']
+    const remaining: SummaryKpiItem[] = [
+        { label: 'Tickets', value: count !== null ? count.toLocaleString('es-ES') : '—' },
+        { label: 'Ticket medio', value: report ? euro(report.summary.avgTicket) : '—' },
+        { label: 'Tarjeta', value: extras ? euro(extras.card) : '—', payment: 'card', tone: 'text-sky-300' },
+        { label: 'Efectivo', value: extras ? euro(extras.cash) : '—', payment: 'cash', tone: 'text-emerald-300' },
+        { label: 'Pendiente', value: extras ? euro(extras.pending) : '—', payment: 'pending', tone: 'text-amber-300' },
+        { label: 'Cobros', value: extras ? euro(extras.recovered) : '—', payment: 'collections', tone: 'text-violet-300' }
     ];
     return (
         <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-4 pt-2 text-white">
@@ -425,26 +483,10 @@ function SummaryCard({ title, dateText, report, extras, breakdownReport, scope, 
                 <span className="min-w-0 truncate text-[9px] text-white/55">{dateText}</span>
                 {report && <span className="shrink-0 text-[9px] text-white/80">{euro(report.summary.avgTicket)} medio</span>}
             </div>
-            <div className="grid shrink-0 grid-cols-4 gap-x-1 gap-y-3">
-                {values.map(([label, value]) => {
-                    const payment = ({ Tarjeta:'card', Efectivo:'cash', Pendiente:'pending', Cobros:'collections' } as const)[label as 'Tarjeta' | 'Efectivo' | 'Pendiente' | 'Cobros'];
-                    return payment ? (
-                        <button key={label} type="button" data-crossfilter-trigger
-                            onClick={() => onSelect({kind:'payment',payment,scope})}
-                            aria-pressed={selection?.scope === scope && selection?.kind === 'payment' && selection.payment === payment}
-                            className={cn('min-w-0 text-center transition-colors hover:bg-white/10',
-                                selection?.scope === scope && selection?.kind === 'payment' && selection.payment === payment && 'rounded bg-sky-200/15')}>
-                            <strong className="block truncate text-[12px] font-bold tabular-nums">{value}</strong>
-                            <span className="block truncate text-[8px] uppercase text-white/65">{label}</span>
-                        </button>
-                    ) : (
-                        <div key={label} className="min-w-0 text-center">
-                            <strong className="block truncate text-[12px] font-bold tabular-nums">{value}</strong>
-                            <span className="block truncate text-[8px] uppercase text-white/65">{label}</span>
-                        </div>
-                    );
-                })}
-            </div>
+            <FinancialKpiHeader
+                sales={sales !== null ? euro(sales) : '—'}
+                net={extras ? euro(extras.net) : '—'}
+                items={remaining} scope={scope} selection={selection} onSelect={onSelect}/>
             <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope} selection={selection} onSelect={onSelect}/>
         </div>
     );
@@ -944,37 +986,31 @@ export default function VentasDesktopWorkspace() {
                                 <span className="tabular-nums"><strong className="font-semibold text-white">{dailyReport?.summary.avgTicket != null ? euro(dailyReport.summary.avgTicket) : '—'}</strong> medio</span>
                             </div>
                         </header>
-                        <div className="grid shrink-0 grid-cols-3 gap-x-2 gap-y-2 border-b border-white/10 px-3 py-3 sm:grid-cols-4">
-                            {([
-                                ['Ventas', dailyReport ? euro(dailyReport.summary.totalSales) : '—'],
-                                ['Venta neta', hasClosingData ? euro(periodTotals.net) : '—'],
-                                ['Rendimiento', periodPerformance !== null ? `${Math.abs(periodPerformance).toFixed(1)}%` : '—'],
-                                ['Tarjeta', hasClosingData ? euro(periodTotals.card) : '—'],
-                                ['Efectivo', hasClosingData ? euro(periodTotals.cash) : '—'],
-                                ['Pendiente', hasClosingData ? euro(periodTotals.pending) : '—'],
-                                ['Cobros', hasClosingData ? euro(periodTotals.recovered) : '—'],
-                                ['Diferencia', hasClosingData ? euro(periodTotals.difference) : '—']
-                            ] as [string, string][]).map(([label, value]) => (
-                                <div key={label} data-crossfilter-trigger={['Tarjeta', 'Efectivo', 'Pendiente', 'Cobros'].includes(label) ? true : undefined}
-                                    role={['Tarjeta', 'Efectivo', 'Pendiente', 'Cobros'].includes(label) ? 'button' : undefined}
-                                    tabIndex={['Tarjeta', 'Efectivo', 'Pendiente', 'Cobros'].includes(label) ? 0 : undefined}
-                                    onClick={() => {
-                                        const payment = ({ Tarjeta:'card', Efectivo:'cash', Pendiente:'pending', Cobros:'collections' } as Record<string,'card'|'cash'|'pending'|'collections'>)[label];
-                                        if (payment) onChooseCross({ kind:'payment', payment, scope:'period' });
-                                    }}
-                                    onKeyDown={event => {
-                                        if (event.key !== 'Enter' && event.key !== ' ') return;
-                                        const payment = ({ Tarjeta:'card', Efectivo:'cash', Pendiente:'pending', Cobros:'collections' } as Record<string,'card'|'cash'|'pending'|'collections'>)[label];
-                                        if (payment) { event.preventDefault(); onChooseCross({ kind:'payment', payment, scope:'period' }); }
-                                    }}
-                                    className={cn('min-w-0 text-center',
-                                        ['Tarjeta','Efectivo','Pendiente','Cobros'].includes(label) && 'cursor-pointer rounded hover:bg-white/10',
-                                        crossSelection?.scope === 'period' && crossSelection.kind === 'payment' &&
-                                        ({Tarjeta:'card',Efectivo:'cash',Pendiente:'pending',Cobros:'collections'} as Record<string,string>)[label] === crossSelection.payment && 'bg-sky-200/15')}>
-                                    <strong className={cn("block truncate text-[12px] font-bold tabular-nums", label === 'Diferencia' && periodTotals.difference > 0 && 'text-emerald-400', label === 'Rendimiento' && periodPerformance !== null && (periodPerformance >= 0 ? 'text-emerald-400' : 'text-rose-400'))}>{label === 'Rendimiento' && periodPerformance !== null ? (periodPerformance >= 0 ? '▲ ' : '▼ ') : ''}{value}</strong>
-                                    <span className="block truncate text-[8px] uppercase text-white/60">{label}</span>
-                                </div>
-                            ))}
+                        <div className="shrink-0 border-b border-white/10 px-3 py-3">
+                            <FinancialKpiHeader
+                                sales={dailyReport ? euro(dailyReport.summary.totalSales) : '—'}
+                                net={hasClosingData ? euro(periodTotals.net) : '—'}
+                                items={[
+                                    {
+                                        label: 'Rendimiento',
+                                        value: periodPerformance !== null
+                                            ? (periodPerformance >= 0 ? '▲ ' : '▼ ') + Math.abs(periodPerformance).toFixed(1) + '%'
+                                            : '—',
+                                        tone: periodPerformance !== null
+                                            ? (periodPerformance >= 0 ? 'text-emerald-400' : 'text-rose-400')
+                                            : undefined
+                                    },
+                                    { label: 'Tarjeta', value: hasClosingData ? euro(periodTotals.card) : '—', payment: 'card', tone: 'text-sky-300' },
+                                    { label: 'Efectivo', value: hasClosingData ? euro(periodTotals.cash) : '—', payment: 'cash', tone: 'text-emerald-300' },
+                                    { label: 'Pendiente', value: hasClosingData ? euro(periodTotals.pending) : '—', payment: 'pending', tone: 'text-amber-300' },
+                                    { label: 'Cobros', value: hasClosingData ? euro(periodTotals.recovered) : '—', payment: 'collections', tone: 'text-violet-300' },
+                                    {
+                                        label: 'Diferencia',
+                                        value: hasClosingData ? euro(periodTotals.difference) : '—',
+                                        tone: hasClosingData && periodTotals.difference > 0 ? 'text-emerald-400' : undefined
+                                    }
+                                ]}
+                                scope="period" selection={crossSelection} onSelect={onChooseCross}/>
                         </div>
                         {isSingleDay && selectedClosing && (
                             <div className="flex shrink-0 items-center justify-center gap-2 border-b border-white/10 px-3 py-2">
