@@ -124,29 +124,17 @@ export async function proposeMistralExtraction(params: {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }
-        // Names already received may have OCR drift: they are never touched.
-        // Demand unique source evidence only for the rows we will replace.
-        if (legacyMatches.some((match) => !stockLineIds.has(match.legacyLineId)
-            && match.reason !== 'matched')) {
+        // Reconcile each stock-free row independently. An OCR error elsewhere
+        // must not prevent a uniquely matched purchase from being reviewed.
+        // Rows with stock, ambiguous matches and extra OCR rows stay untouched.
+        const safeMatches = legacyMatches.filter((match) => match.reason === 'matched'
+          && !stockLineIds.has(match.legacyLineId))
+        if (safeMatches.length === 0) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }
-        const matchedRows = new Set(legacyMatches.filter((match) => match.reason === 'matched')
-          .map((match) => match.mistralRowIndex!))
-        const unmatchedEconomicRows = params.canonical.lines.filter((row, index) =>
-          !matchedRows.has(index)
-          && (row.quantity_raw != null || row.unit_price_raw != null || row.line_total_raw != null))
-        const unmatchedStockLines = [...stockLineIds].filter((id) =>
-          !legacyMatches.some((match) => match.legacyLineId === id && match.reason === 'matched'))
-        // A non-purchase heading may add an OCR row. Every other economic row
-        // must still be accounted for by an untouched stock line.
-        if (unmatchedEconomicRows.length !== unmatchedStockLines.length) {
-          return { created: 0, materialized: 0, ready: 0, exceptions: 0,
-            skipped: 'manual_lines_require_review' }
-        }
-        oldLineIds = oldLineIds.filter((id) => !stockLineIds.has(id))
-        eligibleRowIndices = new Set(legacyMatches.filter((match) => !stockLineIds.has(match.legacyLineId))
-          .map((match) => match.mistralRowIndex!))
+        oldLineIds = safeMatches.map((match) => match.legacyLineId)
+        eligibleRowIndices = new Set(safeMatches.map((match) => match.mistralRowIndex!))
       }
     }
   }
