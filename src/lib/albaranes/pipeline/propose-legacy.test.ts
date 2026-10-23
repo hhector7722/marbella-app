@@ -80,14 +80,23 @@ describe('historical Mistral materialization guard', () => {
     })
   }
 
-  it('does not even query effects when a legacy name is ambiguous', async () => {
+  it('checks economic effects despite a legacy OCR mismatch', async () => {
     const changed = legacyLines.map((line) => ({ ...line }))
     changed[1]!.original_name = 'OTRO PRODUCTO'
-    const { db, reads, writes } = blockedDatabase('none', changed)
+    const { db, reads, writes } = blockedDatabase('legacy_stock', changed)
     const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
       sourceHash: 'hash', canonical, correlationId: null })
     assert.equal(result.skipped, 'manual_lines_require_review')
     assert.deepEqual(writes, [])
-    assert.equal(reads.some((read) => read.startsWith('stock_movements:')), false)
+    assert.equal(reads.some((read) => read.startsWith('stock_movements:')), true)
+  })
+
+  it('checks effects even when the old and canonical line counts differ', async () => {
+    const { db, reads, writes } = blockedDatabase('price_history', legacyLines.slice(0, 2))
+    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+      sourceHash: 'hash', canonical, correlationId: null })
+    assert.equal(result.skipped, 'manual_lines_require_review')
+    assert.deepEqual(writes, [])
+    assert.equal(reads.includes('ingredient_price_history:'), true)
   })
 })

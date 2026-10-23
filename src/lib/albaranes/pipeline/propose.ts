@@ -49,6 +49,7 @@ export async function proposeMistralExtraction(params: {
   if (invoiceLinesError) throw new Error('mistral_existing_lines_unavailable')
   let oldLineIds: string[] = []
   let legacyMatchByRow = new Map<number, LegacyMatchResult>()
+  let hadManualLegacyLines = false
   let hasLegacyReconciliationHistory = false
   if (invoiceLines?.length) {
     const { data: ownProposals, error: ownError } = await db.from('purchase_interpretation_proposals')
@@ -63,14 +64,15 @@ export async function proposeMistralExtraction(params: {
     const active = invoiceLines.filter((line) => !line.superseded_by_extraction_id)
     const manual = active.filter((line) => !line.interpretation_proposal_id)
     if (manual.length) {
-      // A historical line may be retired only when every line maps to one
-      // observed row and no line has caused any economic effect. This step
-      // creates proposals only; K4 remains the sole receipt writer.
+      // Replace old OCR rows with the canonical extraction only when no
+      // economic effect exists. A difference in OCR rows must remain editable
+      // by a person instead of permanently blocking the document.
       if (invoice.status !== 'pending_mapping' || manual.length !== active.length
-          || manual.length !== params.canonical.lines.length) {
+          || params.canonical.lines.length === 0) {
         return { created: 0, materialized: 0, ready: 0, exceptions: 0,
           skipped: 'manual_lines_require_review' }
       }
+      hadManualLegacyLines = true
       const matches = matchLegacyLinesToMistral({
         legacyLines: manual.map((line) => ({ id: line.id,
           originalName: line.original_name ?? '', quantity: line.quantity == null ? null : Number(line.quantity) })),
@@ -78,11 +80,8 @@ export async function proposeMistralExtraction(params: {
           descriptionRaw: row.description_raw, quantityRaw: row.quantity_raw,
           supplierProductCodeRaw: row.supplier_product_code_raw })),
       })
-      if (matches.some((match) => match.reason !== 'matched')) {
-        return { created: 0, materialized: 0, ready: 0, exceptions: 0,
-          skipped: 'manual_lines_require_review' }
-      }
-      legacyMatchByRow = new Map(matches.map((match) => [match.mistralRowIndex!, match]))
+      legacyMatchByRow = new Map(matches.filter((match) => match.reason === 'matched')
+        .map((match) => [match.mistralRowIndex!, match]))
     }
     // Las líneas antiguas siguen siendo evidencia histórica. Se retiran de la
     // vista operativa solo después de materializar todas las líneas Mistral.
@@ -317,5 +316,5 @@ export async function proposeMistralExtraction(params: {
   }
   return { created, materialized, ready: assessment.readyCount,
     exceptions: assessment.lines.length - assessment.readyCount,
-    requiresHumanReview: legacyMatchByRow.size > 0 || hasLegacyReconciliationHistory }
+    requiresHumanReview: hadManualLegacyLines || hasLegacyReconciliationHistory }
 }
