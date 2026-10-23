@@ -41,6 +41,14 @@ describe('historical line reconciliation', () => {
     'ambiguous_mistral_rows')
   })
 
+  it('reconciles the Panabad 11/07 trailing OCR artifact only for a unique row', () => {
+    const legacyLines = [{ id: 'bombon', originalName: 'CROISSANT BOMBON FERMENTADO - 40 u31', quantity: 1 }]
+    const rows = [{ rowIndex: 0, descriptionRaw: 'CROISSANT BOMBON FERMENTADO - 40 u', quantityRaw: '1,000', supplierProductCodeRaw: null }]
+    assert.equal(matchLegacyLinesToMistral({ legacyLines, mistralRows: rows })[0]!.reason, 'matched')
+    assert.equal(matchLegacyLinesToMistral({ legacyLines, mistralRows: [...rows,
+      { ...rows[0]!, rowIndex: 1 }] })[0]!.reason, 'ambiguous_mistral_rows')
+  })
+
   it('blocks duplicate rows and duplicate legacy lines instead of assigning one row twice', () => {
     const duplicateRow = matchLegacyLinesToMistral({
       legacyLines: [panabadLegacy[0]!],
