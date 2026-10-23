@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   isMisreadNetAmount,
+  isVerifiedTaxRateMisreadAsDiscount,
   reconcileFixedDiscountedUnitPrice,
   reconcileFreeFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
@@ -27,6 +28,17 @@ test('reconcilia cantidad, precio y descuento porcentual de Panabad', () => {
     discount_raw: '38,00', discount_header_raw: '% Dto.', line_total_raw: '209,93' }))
   assert.deepEqual(check.reasons, [])
   assert.equal(check.discountPercent, 38)
+})
+
+test('Ametller: IVA copiado en DTO y total copiado en neto no inventan descuento', () => {
+  const evidence = row({ quantity_raw: '4,000', unit_price_raw: '2,190',
+    line_total_raw: '8,76', discount_raw: '10,00 %', discount_header_raw: 'Dto.',
+    tax_rate_raw: '10,00 %', net_unit_price_raw: '8,76' })
+  assert.equal(isVerifiedTaxRateMisreadAsDiscount(evidence), true)
+  assert.deepEqual(validateObservedLine(evidence).reasons, [])
+  assert.equal(validateObservedLine(evidence).discountPercent, null)
+  assert.equal(isVerifiedTaxRateMisreadAsDiscount({ ...evidence, line_total_raw: '7,88' }), false)
+  assert.equal(isVerifiedTaxRateMisreadAsDiscount({ ...evidence, tax_rate_raw: '4,00 %' }), false)
 })
 
 test('el precio efectivo se calcula del importe, sin alterar el impreso', () => {

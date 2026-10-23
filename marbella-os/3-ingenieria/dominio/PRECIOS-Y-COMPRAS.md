@@ -138,6 +138,13 @@ el importe. La evidencia OCR permanece intacta en la propuesta anterior. Un
 descuento o un descuadre real conserva su bloqueo y K4 vuelve a validar la
 línea antes de cualquier recepción.
 
+Si OCR copia la tasa de IVA en la columna «Dto.» y copia el importe de la
+línea como supuesto precio neto, se descartan ambas lecturas únicamente cuando
+la tasa coincide exactamente con el IVA de esa fila, el supuesto neto coincide
+con el importe y cantidad × precio bruto reproduce ese importe a céntimos.
+La observación original sigue guardada y cualquier discrepancia conserva el
+bloqueo de K4.
+
 En Panabad, «Preu» es el precio por caja antes del descuento, «%» es el
 descuento y «Import» es el importe neto de toda la línea. La revisión humana
 muestra las tres cifras y permite corregir una lectura errónea. El listado

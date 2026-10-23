@@ -9,6 +9,7 @@ import {
   isMisreadNetAmount,
   isVerifiedIbeeCharge,
   isVerifiedTaxInclusiveUnitPrice,
+  isVerifiedTaxRateMisreadAsDiscount,
   reconcileFixedDiscountedUnitPrice,
   reconcileFreeFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
@@ -277,6 +278,13 @@ async function supersedeK5ProposalWithMapping(params: {
     : []
   const sourceLine = canonicalLineSchema.safeParse(current.observed)
   const sourceCheck = sourceLine.success ? validateObservedLine(sourceLine.data) : null
+  const verifiedTaxRateMisreadAsDiscount = Boolean(
+    sourceLine.success && isVerifiedTaxRateMisreadAsDiscount(sourceLine.data)
+    && sourceCheck?.priceBasis === 'billing_quantity'
+    && sameExactDecimal(sourceCheck.quantity, lineQuantity)
+    && sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
+    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+  )
   if (reviewedManualDiscount) {
     if (!sourceLine.success) throw new Error('Falta evidencia original para el descuento manual.')
     const source = sourceLine.data
@@ -479,6 +487,7 @@ async function supersedeK5ProposalWithMapping(params: {
     verifiedMisreadNetAmount,
     verifiedIbeeCharge,
     verifiedTaxInclusiveUnitPrice,
+    verifiedTaxRateMisreadAsDiscount,
   })
   const reviewReasons: string[] = [...new Set(snapshot
     ? semanticReasons
