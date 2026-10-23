@@ -478,7 +478,7 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
                     { label: 'Venta neta', value: net, tone: 'border-emerald-400/30 bg-emerald-500/10' }
                 ] as const).map(item => (
                     <div key={item.label}
-                        className={cn('flex min-h-[57px] w-fit max-w-full flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
+                        className={cn('flex min-h-[57px] w-fit max-w-full flex-1 flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
                         <span className="text-[11px] font-medium leading-tight text-white/80">{item.label}</span>
                         <strong className="block max-w-full whitespace-nowrap text-[clamp(16px,1.75vw,25px)] font-bold leading-tight tabular-nums text-white">
                             {item.value}
