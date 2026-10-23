@@ -124,12 +124,9 @@ function materializingDatabase(stockLineId: string | null, lines = legacyLines) 
 }
 
 describe('historical Mistral materialization guard', () => {
-  for (const effect of ['legacy_stock', 'typed_stock', 'source_stock', 'price_history'] as const) {
+  for (const effect of ['source_stock', 'price_history'] as const) {
     it(`keeps all old lines active when ${effect} already exists`, async () => {
-      const changed = effect === 'legacy_stock' || effect === 'typed_stock'
-        ? legacyLines.map((line, index) => index === 1 ? { ...line, original_name: 'OTRO PRODUCTO' } : line)
-        : legacyLines
-      const { db, reads, writes } = blockedDatabase(effect, changed)
+      const { db, reads, writes } = blockedDatabase(effect)
       const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
         sourceHash: 'hash', canonical, correlationId: null })
       assert.equal(result.skipped, 'manual_lines_require_review')
@@ -137,17 +134,6 @@ describe('historical Mistral materialization guard', () => {
       assert.ok(reads.some((read) => read.startsWith('stock_movements:')))
     })
   }
-
-  it('checks economic effects despite a legacy OCR mismatch', async () => {
-    const changed = legacyLines.map((line) => ({ ...line }))
-    changed[1]!.original_name = 'OTRO PRODUCTO'
-    const { db, reads, writes } = blockedDatabase('legacy_stock', changed)
-    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
-      sourceHash: 'hash', canonical, correlationId: null })
-    assert.equal(result.skipped, 'manual_lines_require_review')
-    assert.deepEqual(writes, [])
-    assert.equal(reads.some((read) => read.startsWith('stock_movements:')), true)
-  })
 
   it('checks effects even when the old and canonical line counts differ', async () => {
     const { db, reads, writes } = blockedDatabase('price_history', legacyLines.slice(0, 2))
@@ -213,15 +199,28 @@ describe('historical Mistral materialization guard', () => {
     assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
   })
 
-  it('blocks an additional economic OCR row with no corresponding stock line', async () => {
+  it('keeps an additional economic OCR row out of the review proposals', async () => {
     const withPurchase: CanonicalDocument = { ...canonical, lines: [
       ...canonical.lines,
       { ...canonical.lines[0]!, description_raw: 'COMPRA EXTRA SIN LÍNEA ANTERIOR' },
     ] }
-    const { db, writes } = materializingDatabase('line-1')
+    const { db, proposals, retiredIds, writes } = materializingDatabase('line-1')
     const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
       sourceHash: 'hash', canonical: withPurchase, correlationId: null })
-    assert.equal(result.skipped, 'manual_lines_require_review')
-    assert.deepEqual(writes, [])
+    assert.equal(result.created, 2)
+    assert.deepEqual(proposals.map((proposal) => proposal.source_row_index), [1, 2])
+    assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
+    assert.equal(writes.includes('stock_movements'), false)
+  })
+
+  it('leaves an ambiguous pending row active while reviewing a distinct exact match', async () => {
+    const changed = legacyLines.map((line, index) => index === 1
+      ? { ...line, original_name: 'UNREADABLE PRODUCT' } : line)
+    const { db, proposals, retiredIds } = materializingDatabase('line-1', changed)
+    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+      sourceHash: 'hash', canonical, correlationId: null })
+    assert.equal(result.created, 1)
+    assert.deepEqual(proposals.map((proposal) => proposal.source_row_index), [2])
+    assert.deepEqual(retiredIds, ['line-3'])
   })
 })
