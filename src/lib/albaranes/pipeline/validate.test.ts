@@ -84,6 +84,17 @@ test('deduce el descuento porcentual de Panabad cuando falta su cabecera', () =>
   assert.equal(check.discountPercent, 38)
 })
 
+test('Nestlé: DTO sin símbolo se reconoce como porcentaje por el importe impreso', () => {
+  const source = row({ quantity_raw: '1,00', unit_price_raw: '51,600',
+    discount_raw: '15,00', discount_header_raw: 'Dto', line_total_raw: '43,86' })
+  const check = validateObservedLine(source)
+  assert.deepEqual(check.reasons, [])
+  assert.equal(check.discountPercent, 15)
+  assert.equal(check.priceBasis, 'billing_quantity')
+  assert.equal(reconcilePercentageDiscountedUnitPrice(source), '43.86')
+  assert.equal(reconcileFixedDiscountedUnitPrice(source), null)
+})
+
 test('reconcilia el descuento en euros de SHERS con su precio neto impreso', () => {
   const check = validateObservedLine(row({ quantity_raw: '1', unit_price_raw: '8,58',
     discount_raw: '3,38', discount_header_raw: 'DTO.', net_unit_price_raw: '5,20',

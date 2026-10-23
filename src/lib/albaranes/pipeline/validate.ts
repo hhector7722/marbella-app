@@ -382,7 +382,8 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
     if (declaresPercent && discount <= 100) discountPercent = discount
     // Algunos proveedores no preservan la cabecera "% DTO" en la lectura.
     // Solo aceptamos el porcentaje si la ecuación impresa lo demuestra.
-    else if (!header.trim() && percentMatchesAmount) discountPercent = discount
+    else if ((!header.trim() || declaresDiscount)
+      && !fixedDiscountMatchesNetPrice && percentMatchesAmount) discountPercent = discount
     // Un DTO en euros solo es verificable cuando el documento también declara
     // el precio neto unitario y ambas igualdades coinciden.
     else if (fixedDiscountMatchesNetPrice) fixedDiscountPerUnit = discount
