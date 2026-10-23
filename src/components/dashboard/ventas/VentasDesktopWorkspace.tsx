@@ -308,7 +308,7 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
                 className={cn("ventas-ticket-strip flex h-[28px] w-full min-w-0 items-center gap-1.5 overflow-hidden bg-[rgb(255_255_255/0.97)] pl-[18px] pr-[18px] text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
                 <strong className="w-[32px] shrink-0 text-[10px] font-semibold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
                 <span className="w-[68px] shrink-0 border-l border-[#182d5f]/20 pl-1.5 text-right text-[8px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
-                {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="shrink-0 rounded bg-[#e1eaff] px-1.5 py-0.5 text-[9px] font-semibold tabular-nums">{ticket.mesa}</span>}
+                {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="inline-flex h-[18px] w-[34px] shrink-0 items-center justify-center rounded bg-[#e1eaff] text-center text-[9px] font-semibold tabular-nums">{ticket.mesa}</span>}
                 <TicketProductPreview items={items} onOverflowChange={setHasHiddenProducts}/>
                 {canExpand && (expanded
                     ? <ChevronUp size={13} className="shrink-0 text-[#8992a8]" aria-label="Ocultar productos" />
