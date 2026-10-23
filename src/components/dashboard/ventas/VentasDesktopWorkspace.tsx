@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, Pencil, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
@@ -434,13 +435,13 @@ function financialSummaryItems(extras?: FinancialExtras, performance: number | n
         {
             label: 'Rendimiento',
             value: performance === null ? '' : (performance >= 0 ? '▲ ' : '▼ ') + Math.abs(performance).toFixed(1) + '%',
-            tone: performance === null ? undefined : (performance >= 0 ? 'text-emerald-400' : 'text-rose-400')
+            tone: performance === null ? 'border-white/15 bg-white/[0.035]' : (performance >= 0 ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-rose-400/55 bg-rose-500/15')
         },
-        { label: 'Tarjeta', value: extras ? euro(extras.card) : '', payment: 'card', tone: 'text-sky-300' },
-        { label: 'Efectivo', value: extras ? euro(extras.cash) : '', payment: 'cash', tone: 'text-emerald-300' },
-        { label: 'Pendiente', value: extras ? euro(extras.pending) : '', payment: 'pending', tone: 'text-amber-300' },
-        { label: 'Cobros', value: extras ? euro(extras.recovered) : '', payment: 'collections', tone: 'text-violet-300' },
-        { label: 'Diferencia', value: extras ? euro(extras.difference) : '', tone: extras && extras.difference > 0 ? 'text-emerald-400' : undefined }
+        { label: 'Tarjeta', value: extras ? euro(extras.card) : '', payment: 'card', tone: 'border-sky-400/50 bg-sky-500/10' },
+        { label: 'Efectivo', value: extras ? euro(extras.cash) : '', payment: 'cash', tone: 'border-emerald-400/50 bg-emerald-500/10' },
+        { label: 'Pendiente', value: extras ? euro(extras.pending) : '', payment: 'pending', tone: 'border-amber-400/55 bg-amber-500/10' },
+        { label: 'Cobros', value: extras ? euro(extras.recovered) : '', payment: 'collections', tone: 'border-violet-400/55 bg-violet-500/10' },
+        { label: 'Diferencia', value: extras ? euro(extras.difference) : '', tone: 'border-teal-400/50 bg-teal-500/10' }
     ];
 }
 
@@ -485,13 +486,14 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
                     const content = (
                         <>
                             <span className="min-w-0 truncate text-[clamp(11px,0.9vw,12px)] font-medium text-white/75">{item.label}</span>
-                            <strong className={cn('shrink-0 whitespace-nowrap text-right text-[clamp(12px,1vw,14px)] font-semibold tabular-nums text-white', item.tone)}>{item.value}</strong>
+                            <strong className="shrink-0 whitespace-nowrap text-right text-[clamp(12px,1vw,14px)] font-semibold tabular-nums text-white">{item.value}</strong>
                         </>
                     );
                     const rowClass = cn(
-                        'flex min-h-[35px] w-full min-w-0 items-center justify-between gap-1.5 border-b border-white/10 px-1 text-left',
-                        item.payment && 'cursor-pointer transition-colors hover:bg-white/10',
-                        selected && 'rounded-sm bg-sky-200/15'
+                        'flex min-h-[35px] w-full min-w-0 items-center justify-between gap-1.5 rounded-md border px-2 text-left',
+                        item.tone ?? 'border-white/15 bg-white/[0.035]',
+                        item.payment && 'cursor-pointer transition-colors hover:brightness-125',
+                        selected && 'ring-1 ring-inset ring-white/75'
                     );
                     return item.payment ? (
                         <button key={item.label} type="button" data-crossfilter-trigger
@@ -535,6 +537,18 @@ function SummaryCard({ title, dateText, report, extras, breakdownReport, scope, 
 
 export default function VentasDesktopWorkspace() {
     const supabase = useMemo(() => createClient(), []);
+    const router = useRouter();
+    const [canEditClosings, setCanEditClosings] = useState(false);
+    useEffect(() => {
+        let alive = true;
+        void (async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+            if (alive) setCanEditClosings(data?.role === 'manager');
+        })();
+        return () => { alive = false; };
+    }, [supabase]);
     const [month, setMonth] = useState(() => startOfMonth(new Date()));
     const [period, setPeriod] = useState<Period>(todayPeriod);
     const [initializing, setInitializing] = useState(true);
@@ -1010,7 +1024,18 @@ export default function VentasDesktopWorkspace() {
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
                         <header className="flex min-h-[36px] shrink-0 items-center justify-between gap-2 border-b border-white/15 px-3">
-                            <strong className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase">{periodTitle}</strong>
+                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                <strong className="min-w-0 truncate text-[11px] font-bold uppercase" title={periodTitle}>{periodTitle}</strong>
+                                {isSingleDay && selectedClosing && canEditClosings && (
+                                    <button type="button"
+                                        aria-label={`Editar cierre del ${periodTitle}`}
+                                        title="Editar cierre"
+                                        onClick={() => router.push(`/dashboard/history?closingId=${encodeURIComponent(selectedClosing.id)}&edit=1`)}
+                                        className="inline-flex h-6 w-5 shrink-0 items-center justify-center border-0 bg-transparent p-0 font-normal text-white/65 shadow-none hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70">
+                                        <Pencil size={14} strokeWidth={1.6} aria-hidden="true"/>
+                                    </button>
+                                )}
+                            </div>
                             {returnPeriod && (
                                 <button type="button" onClick={restorePeriod} className="inline-flex max-w-[25%] shrink-0 items-center gap-1 truncate rounded border border-sky-400/35 px-2 py-1 text-[10px] text-sky-200 hover:bg-white/10" title={'Volver a ' + periodLabel(returnPeriod)}>
                                     <ArrowLeft size={13} className="shrink-0"/>
