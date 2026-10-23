@@ -307,7 +307,7 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
             <button type="button" aria-expanded={canExpand && expanded} disabled={!canExpand} onClick={canExpand ? onToggle : undefined}
                 className={cn("ventas-ticket-strip flex h-[28px] w-full min-w-0 items-center gap-1.5 overflow-hidden bg-[rgb(255_255_255/0.97)] pl-[18px] pr-[18px] text-left text-[#1a2854] transition-colors", canExpand ? "cursor-pointer hover:bg-white" : "cursor-default")}>
                 <strong className="w-[32px] shrink-0 text-[10px] font-semibold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
-                <span className="shrink-0 border-l border-[#182d5f]/20 pl-1.5 text-[8px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
+                <span className="w-[68px] shrink-0 border-l border-[#182d5f]/20 pl-1.5 text-right text-[8px] font-medium tabular-nums text-[#1a2854]/55">{compactDoc(ticket.numero_documento)}</span>
                 {ticket.mesa != null && Number(ticket.mesa) > 0 && <span className="shrink-0 rounded bg-[#e1eaff] px-1.5 py-0.5 text-[9px] font-semibold tabular-nums">{ticket.mesa}</span>}
                 <TicketProductPreview items={items} onOverflowChange={setHasHiddenProducts}/>
                 {canExpand && (expanded
@@ -430,8 +430,8 @@ type FinancialExtras = { cash: number; card: number; pending: number; recovered:
 
 // Keep monthly and selected-period labels, tones and cross-filter actions identical.
 // A missing financial figure is intentionally empty (not a dash).
-function financialSummaryItems(extras?: FinancialExtras, performance: number | null = null): SummaryKpiItem[] {
-    return [
+function financialSummaryItems(extras?: FinancialExtras, performance: number | null = null, abbreviated = false): SummaryKpiItem[] {
+    const items: SummaryKpiItem[] = [
         {
             label: 'Rendimiento',
             value: performance === null ? '' : (performance >= 0 ? '▲ ' : '▼ ') + Math.abs(performance).toFixed(1) + '%',
@@ -443,6 +443,12 @@ function financialSummaryItems(extras?: FinancialExtras, performance: number | n
         { label: 'Cobros', value: extras ? euro(extras.recovered) : '', payment: 'collections', tone: 'border-violet-400/55 bg-violet-500/10' },
         { label: 'Diferencia', value: extras ? euro(extras.difference) : '', tone: 'border-teal-400/50 bg-teal-500/10' }
     ];
+    if (!abbreviated) return items;
+    const labels: Record<string, string> = {
+        Rendimiento: 'Rend', Tarjeta: 'Tar', Efectivo: 'Efec',
+        Pendiente: 'Pend', Cobros: 'Cobr', Diferencia: 'Dif'
+    };
+    return items.map(item => ({ ...item, label: labels[item.label] ?? item.label }));
 }
 
 function TicketHeaderStats({ report }: { report: TicketReport | null }) {
@@ -529,7 +535,7 @@ function SummaryCard({ title, dateText, report, extras, breakdownReport, scope, 
             <FinancialKpiHeader
                 sales={sales !== null ? euro(sales) : ''}
                 net={extras ? euro(extras.net) : ''}
-                items={financialSummaryItems(extras)} scope={scope} selection={selection} onSelect={onSelect}/>
+                items={financialSummaryItems(extras, null, true)} scope={scope} selection={selection} onSelect={onSelect}/>
             <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope} selection={selection} onSelect={onSelect}/>
         </div>
     );
