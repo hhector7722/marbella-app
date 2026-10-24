@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import Image from 'next/image';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, Pencil, X } from 'lucide-react';
@@ -212,11 +213,6 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                     <path d={area} fill="currentColor" fillOpacity=".12"/>
                     <path d={path} fill="none" stroke="currentColor" strokeWidth="2"
                         strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>
-                    {activeIndex !== null && (
-                        <path d={`M ${points[activeIndex].x} 8 V ${baseline}`}
-                            stroke="currentColor" strokeWidth="1" strokeDasharray="5 5"
-                            strokeOpacity=".75" vectorEffect="non-scaling-stroke"/>
-                    )}
                 </svg>
                 {activeIndex !== null && (
                     <span aria-hidden="true"
@@ -263,10 +259,10 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                     aria-label={activeIndex === null ? 'Tres tramos horarios con mayor facturación' : 'Tramo señalado, anterior y siguiente'}>
                     <caption className="sr-only">Hora, ventas, número de tickets y ticket medio</caption>
                     <colgroup>
-                        <col className="w-[18%]"/>
-                        <col className="w-[32%]"/>
-                        <col className="w-[23%]"/>
+                        <col className="w-[30%]"/>
                         <col className="w-[27%]"/>
+                        <col className="w-[19%]"/>
+                        <col className="w-[24%]"/>
                     </colgroup>
                     <tbody>
                         {displayHours.map((slot, position) => {
@@ -279,9 +275,9 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                                         isHighlighted && 'bg-sky-300/15 text-sky-100',
                                         activeIndex !== null && !isHighlighted && 'text-white/75'
                                     )}
-                                    title={`${slot.hour}:00–${slot.hour + 1}:00`}>
-                                    <th scope="row" className="whitespace-nowrap pr-1 text-left font-semibold">
-                                        {slot.hour}–{slot.hour + 1} h
+                                    title={`${slot.hour}:00 - ${slot.hour + 1}:00`}>
+                                    <th scope="row" className="whitespace-nowrap pr-1 text-left text-[clamp(11px,0.8vw,14px)] font-semibold">
+                                        {slot.hour}:00 - {slot.hour + 1}:00
                                     </th>
                                     <td className="whitespace-nowrap pr-1 text-right font-semibold text-teal-200">
                                         {euro(slot.sales)}
@@ -410,9 +406,24 @@ function RankingViewport({ children }: { children: ReactNode }) {
 }
 
 // Shared product ranking and chronological hourly chart for monthly/period cards.
-function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
+function ProductRankingThumbnail({ src }: { src?: string }) {
+    const [failed, setFailed] = useState(false);
+    return (
+        <span aria-hidden="true"
+            className="flex h-[18px] w-[18px] shrink-0 items-center justify-center overflow-hidden rounded-[4px]">
+            {src && !failed ? (
+                <Image src={src} alt="" width={18} height={18} sizes="18px"
+                    loading="lazy" onError={() => setFailed(true)}
+                    className="block h-[18px] w-[18px] shrink-0 object-cover"/>
+            ) : null}
+        </span>
+    );
+}
+
+function SalesBreakdown({ report, baseReport, scope, selection, onSelect, productThumbnails }: {
     report: TicketReport | null; baseReport: TicketReport | null; scope: CrossScope;
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
+    productThumbnails: Record<number, string>;
 }) {
     // Clicking a product filters the *other* sections but must never reorder,
     // hide, or resize the product ranking the user selected from.
@@ -451,7 +462,12 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
                                     product.articulo_id != null && 'cursor-pointer hover:bg-white/10',
                                     selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id && 'bg-sky-200/15')}
                                 title={product.nombre_articulo + ' · ' + euro(sales) + ' · ' + label}>
-                                <span className="min-w-0 truncate text-white/85">{index + 1}. {product.nombre_articulo}</span>
+                                <span className="flex min-w-0 items-center gap-1 text-white/85">
+                                    <span className="shrink-0 tabular-nums">{index + 1}.</span>
+                                    <ProductRankingThumbnail key={productThumbnails[product.articulo_id ?? -1] ?? product.articulo_id ?? index}
+                                        src={product.articulo_id != null ? productThumbnails[product.articulo_id] : undefined}/>
+                                    <span className="min-w-0 truncate">{product.nombre_articulo}</span>
+                                </span>
                                 <span className="shrink-0 tabular-nums text-white/60">{Number(product.cantidad_total).toLocaleString('es-ES')} u</span>
                                 <div role="img" aria-label={label} className="h-[10px] min-w-0 overflow-hidden rounded-sm bg-white/10">
                                     <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: barWidth(sales, maxProductSales) }}/>
@@ -567,12 +583,13 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
     );
 }
 
-function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPercents, onNavigateMonth, breakdownReport, scope, selection, onSelect }: {
+function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPercents, onNavigateMonth, breakdownReport, scope, selection, onSelect, productThumbnails }: {
     title: string; dateText: string; report: TicketReport | null;
     extras?: FinancialExtras; dailyAverage: number | null; ticketPercents: { cash: number | null; card: number | null };
     onNavigateMonth: (delta: number) => void;
     breakdownReport: TicketReport | null; scope: CrossScope;
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
+    productThumbnails: Record<number, string>;
 }) {
     const sales = report ? Number(report.summary.totalSales) : null;
     const monthlyItems = financialSummaryItems(extras, null, ticketPercents).map(item => item.label === 'Rendimiento'
@@ -603,7 +620,7 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
                 items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect}/>
             <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope}
                 selection={selection?.kind === 'payment' && (selection.payment === 'cash' || selection.payment === 'card') ? null : selection}
-                onSelect={onSelect}/>
+                onSelect={onSelect} productThumbnails={productThumbnails}/>
         </div>
     );
 }
@@ -623,6 +640,8 @@ export default function VentasDesktopWorkspace() {
         return () => { alive = false; };
     }, [supabase]);
     const [month, setMonth] = useState(() => startOfMonth(new Date()));
+    const [summaryMonth, setSummaryMonth] = useState(() => startOfMonth(new Date()));
+    const [productThumbnails, setProductThumbnails] = useState<Record<number, string>>({});
     const [period, setPeriod] = useState<Period>(todayPeriod);
     const [initializing, setInitializing] = useState(true);
     const [returnPeriod, setReturnPeriod] = useState<Period | null>(null);
@@ -658,10 +677,11 @@ export default function VentasDesktopWorkspace() {
     const [crossError, setCrossError] = useState(false);
     const periodKey = period.start + ':' + period.end;
     const periodTitle = periodLabel(period);
-    // Resumen y calendario navegan por el mismo mes sin alterar el detalle del día.
-    const monthStart = format(startOfMonth(month), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(month), 'yyyy-MM-dd');
-    const monthLabel = format(month, 'MMMM yyyy', { locale: es });
+    // El resumen mensual y el calendario tienen navegación independiente.
+    const monthStart = format(startOfMonth(summaryMonth), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(summaryMonth), 'yyyy-MM-dd');
+    const monthLabel = format(summaryMonth, 'MMMM yyyy', { locale: es });
+    const calendarMonthLabel = format(month, 'MMMM yyyy', { locale: es });
     const isSingleDay = period.start === period.end;
     const visibleTickets = crossSelection ? (crossResult?.tickets ?? []) : tickets;
     const paymentOnly = crossSelection?.kind === 'payment' &&
@@ -778,6 +798,7 @@ export default function VentasDesktopWorkspace() {
         }
     };
     const navigateMonth = (delta: number) => setMonth(current => delta < 0 ? subMonths(current, 1) : addMonths(current, 1));
+    const navigateSummaryMonth = (delta: number) => setSummaryMonth(current => delta < 0 ? subMonths(current, 1) : addMonths(current, 1));
     const applyFilter = (value: TimeFilterValue) => {
         const bounds = timeFilterBounds(value);
         if (!bounds) return;
@@ -830,6 +851,23 @@ export default function VentasDesktopWorkspace() {
         void load();
         return () => { active = false; };
     }, [supabase, monthStart, monthEnd]);
+
+    // Una única consulta para las fotos de catálogo, reutilizada en los dos rankings.
+    useEffect(() => {
+        let active = true;
+        void supabase.from('v_digital_menu_items').select('articulo_id,photo_url').limit(1000)
+            .then(({ data, error }) => {
+                if (!active || error) return;
+                const next: Record<number, string> = {};
+                for (const item of data ?? []) {
+                    const id = Number(item.articulo_id);
+                    const url = typeof item.photo_url === 'string' ? item.photo_url.trim() : '';
+                    if (Number.isInteger(id) && url.startsWith('https://')) next[id] = url;
+                }
+                setProductThumbnails(next);
+            });
+        return () => { active = false; };
+    }, [supabase]);
 
     // Solo contadores: la API devuelve count exacto, sin descargar cada ticket.
     useEffect(() => {
@@ -1170,8 +1208,9 @@ export default function VentasDesktopWorkspace() {
                         breakdownReport={monthBreakdown}
                         extras={monthClosings.length ? monthTotals : undefined}
                         dailyAverage={monthDailyAverage} ticketPercents={monthTicketPercentages}
-                        onNavigateMonth={navigateMonth}
-                        scope="month" selection={crossSelection} onSelect={onChooseCross}/>
+                        onNavigateMonth={navigateSummaryMonth}
+                        scope="month" selection={crossSelection} onSelect={onChooseCross}
+                        productThumbnails={productThumbnails}/>
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
@@ -1224,14 +1263,15 @@ export default function VentasDesktopWorkspace() {
                         )}
                         <div data-element="day-breakdown" className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
                             <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
-                                selection={paymentOnly ? null : crossSelection} onSelect={onChooseCross}/>
+                                selection={paymentOnly ? null : crossSelection} onSelect={onChooseCross}
+                                productThumbnails={productThumbnails}/>
                         </div>
                     </section>
                 </div>
                 <div data-element="calendar-column" className="flex min-h-0 min-w-0 flex-col">
                     <nav data-element="calendar-navigation" className="relative flex shrink-0 items-center justify-center gap-2 text-white" aria-label="Cambiar mes de ventas">
                         <button type="button" onClick={() => navigateMonth(-1)} aria-label="Mes anterior" className="rounded p-1.5 hover:bg-white/10"><ChevronLeft size={19}/></button>
-                        <strong className="min-w-[128px] text-center text-sm font-semibold capitalize">{monthLabel}</strong>
+                        <strong className="min-w-[128px] text-center text-sm font-semibold capitalize">{calendarMonthLabel}</strong>
                         <button type="button" onClick={() => navigateMonth(1)} aria-label="Mes siguiente" className="rounded p-1.5 hover:bg-white/10"><ChevronRight size={19}/></button>
                         <div className="absolute right-0 top-0 inline-flex pr-2 pt-1">
                             <button type="button" onClick={() => setFilterOpen(true)}
