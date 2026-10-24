@@ -813,7 +813,11 @@ export default function VentasDesktopWorkspace() {
         setCrossPage(0);
         setPeriod(next);
         if (!keepReturn) setReturnPeriod(null);
-        setMonth(startOfMonth(parseISO(next.start)));
+        // Una fecha seleccionada o filtrada sincroniza ambos paneles.
+        // Las flechas del calendario solo modifican 'month', nunca 'summaryMonth'.
+        const nextMonth = startOfMonth(parseISO(next.start));
+        setMonth(nextMonth);
+        setSummaryMonth(nextMonth);
         setTickets([]);
         setPeriodClosings([]);
         setHistoricalNetByDate(new Map());
