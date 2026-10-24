@@ -16,9 +16,15 @@ import { cn } from '@/lib/utils';
 import { DENOMINATIONS } from '@/lib/constants';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
+import { getProductMarginRanking } from '@/app/dashboard/insights/actions';
 
 type Ticket = { numero_documento: string; fecha: string; hora_cierre: string; total_documento: number; mesa: number | null };
 type Item = { name: string; qty: number; price: number; total: number };
+type RankingMetric = 'importe' | 'cantidad' | 'rentabilidad';
+const RANKING_LABEL: Record<RankingMetric, string> = {
+    importe: 'importe', cantidad: 'cantidad', rentabilidad: 'rentabilidad'
+};
+type ProductCost = { recipeCost: number | null; name: string; recipeId: string | null };
 type TicketReport = {
     summary: { totalSales: number; count: number; avgTicket: number };
     products: { articulo_id?: number; nombre_articulo: string; cantidad_total: number; total_ingresos: number }[];
@@ -409,46 +415,140 @@ function ProductRankingThumbnail({ src }: { src?: string }) {
     const [failed, setFailed] = useState(false);
     return (
         <span aria-hidden="true"
-            className="flex h-[18px] w-[18px] shrink-0 items-center justify-center overflow-hidden rounded-[4px]">
+            className="flex h-[18px] w-[18px] shrink-0 items-center justify-center overflow-hidden rounded-[5px]">
             {src && !failed ? (
-                <Image src={src} alt="" width={18} height={18} sizes="18px"
+                <Image src={src} alt="" width={15} height={15} sizes="15px"
                     loading="lazy" onError={() => setFailed(true)}
-                    className="block h-[18px] w-[18px] shrink-0 object-contain"/>
+                    className="block h-[15px] w-[15px] shrink-0 rounded-[4px] object-contain"/>
             ) : null}
         </span>
     );
 }
 
-function SalesBreakdown({ report, baseReport, scope, selection, onSelect, productThumbnails }: {
+function SalesBreakdown({ report, baseReport, scope, selection, onSelect, productThumbnails, rangeStart, rangeEnd }: {
     report: TicketReport | null; baseReport: TicketReport | null; scope: CrossScope;
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
     productThumbnails: Record<number, string>;
+    rangeStart: string; rangeEnd: string;
 }) {
+    const [metric, setMetric] = useState<RankingMetric>('importe');
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const [costData, setCostData] = useState<{ key: string; costs: Record<number, ProductCost>; failed?: boolean } | null>(null);
+    const costKey = rangeStart + ':' + rangeEnd;
+    const selectedCosts = costData?.key === costKey ? costData.costs : null;
+    useEffect(() => {
+        if (!menuOpen) return;
+        const dismiss = (event: PointerEvent) => {
+            if (event.target instanceof Node && !menuRef.current?.contains(event.target)) setMenuOpen(false);
+        };
+        const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setMenuOpen(false); };
+        document.addEventListener('pointerdown', dismiss);
+        document.addEventListener('keydown', onKey);
+        return () => { document.removeEventListener('pointerdown', dismiss); document.removeEventListener('keydown', onKey); };
+    }, [menuOpen]);
+    useEffect(() => {
+        if (metric !== 'rentabilidad' || selectedCosts) return;
+        let active = true;
+        const supabase = createClient();
+        void Promise.all([
+            getProductMarginRanking(500, rangeStart, rangeEnd),
+            supabase.from('map_tpv_receta').select('articulo_id,recipe_id').limit(500),
+            supabase.from('bdp_articulos').select('id,nombre').limit(1000)
+        ]).then(([result, mapping, articleData]) => {
+            if (!active) return;
+            const costs: Record<number, ProductCost> = {};
+            if (result.success && !mapping.error && !articleData.error) {
+                const articleNames = new Map((articleData.data ?? []).map(row => [Number(row.id), String(row.nombre ?? '')]));
+                const byRecipe = new Map<string, number[]>();
+                for (const row of mapping.data ?? []) {
+                    if (!row.recipe_id) continue;
+                    const ids = byRecipe.get(row.recipe_id) ?? [];
+                    ids.push(Number(row.articulo_id));
+                    byRecipe.set(row.recipe_id, ids);
+                }
+                const normalize = (value: string) => value.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toUpperCase();
+                for (const row of result.data) {
+                    if (!row.recipe_id) continue;
+                    const candidates = byRecipe.get(row.recipe_id) ?? [];
+                    const matching = candidates.filter(id => normalize(articleNames.get(id) ?? '') === normalize(row.product_name));
+                    const id = matching.length === 1 ? matching[0] : candidates.length === 1 ? candidates[0] : null;
+                    if (id !== null) costs[id] = {
+                        recipeCost: row.recipe_cost === null ? null : Number(row.recipe_cost),
+                        name: row.product_name, recipeId: row.recipe_id
+                    };
+                }
+            }
+            setCostData({ key: costKey, costs, failed: !result.success || Boolean(mapping.error || articleData.error) });
+        }).catch(() => {
+            if (active) setCostData({ key: costKey, costs: {}, failed: true });
+        });
+        return () => { active = false; };
+    }, [metric, selectedCosts, costKey, rangeStart, rangeEnd]);
     // Clicking a product filters the *other* sections but must never reorder,
     // hide, or resize the product ranking the user selected from.
     const productRankingReport = selection?.scope === scope && selection.kind === 'product'
         ? baseReport : report;
     const products = productRankingReport?.products ?? [];
-    const maxProductSales = Math.max(1, ...products.map(p => Number(p.total_ingresos ?? 0)));
+    const scoredProducts = products.map((product) => {
+        const sales = Number(product.total_ingresos ?? 0);
+        const units = Number(product.cantidad_total ?? 0);
+        const cost = product.articulo_id == null ? undefined : selectedCosts?.[product.articulo_id]?.recipeCost;
+        const margin = cost != null && Number.isFinite(cost) ? sales - cost * units : null;
+        return { product, sales, units, margin };
+    });
+    const ranking = [...scoredProducts].sort((a, b) => {
+        const av = metric === 'importe' ? a.sales : metric === 'cantidad' ? a.units : a.margin;
+        const bv = metric === 'importe' ? b.sales : metric === 'cantidad' ? b.units : b.margin;
+        if (av === null && bv !== null) return 1;
+        if (bv === null && av !== null) return -1;
+        return (Number(bv ?? 0) - Number(av ?? 0)) || b.sales - a.sales;
+    });
+    const maxValue = Math.max(1, ...ranking.map(row => Math.max(0,
+        metric === 'importe' ? row.sales : metric === 'cantidad' ? row.units : row.margin ?? 0)));
     const totalSales = Number(productRankingReport?.summary?.totalSales ?? 0);
-    const shareLabel = (sales: number) => totalSales > 0
-        ? (sales / totalSales * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + '% del total'
-        : 'Sin total de ventas disponible';
-    const barWidth = (sales: number, maximum: number) => Math.max(0, Math.min(100, sales / maximum * 100)) + '%';
+    const totalUnits = scoredProducts.reduce((sum, row) => sum + row.units, 0);
+    const shareLabel = (value: number, total: number) => total > 0
+        ? (value / total * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + '% del total'
+        : 'Sin total disponible';
+    const barWidth = (value: number) => Math.max(0, Math.min(100, value / maxValue * 100)) + '%';
 
     return (
         <div data-element="sales-breakdown" className="flex h-full min-h-0 flex-1 flex-col gap-1 pt-2">
             <section data-element="products-section" className="flex min-h-0 flex-1 flex-col border-b border-white/15 pb-1">
-                <div className="mb-2 flex h-4 shrink-0 items-center justify-between gap-2">
-                    <h3 className="text-xs font-bold uppercase">Productos</h3>
-                    <span className="max-w-[68%] truncate text-right text-[9px] text-sky-200/85" title={selection?.scope === scope ? crossLabel(selection) : undefined}>
-                        {selection?.scope === scope ? crossLabel(selection) : 'Ventas por producto'}
+                <div className="relative z-[5] mb-2 flex h-4 shrink-0 items-center justify-between gap-2">
+                    <div ref={menuRef} className="relative flex min-w-0 items-center">
+                        <button type="button" aria-haspopup="menu" aria-expanded={menuOpen}
+                            aria-label={'Ventas por ' + RANKING_LABEL[metric] + '. Cambiar criterio'}
+                            onClick={() => setMenuOpen(open => !open)}
+                            className="inline-flex min-w-0 items-center gap-1 text-left text-xs font-bold uppercase tracking-[0.005em] text-white hover:text-sky-100 focus-visible:outline focus-visible:outline-1 focus-visible:outline-sky-300">
+                            <span className="truncate">Ventas por {RANKING_LABEL[metric]}</span>
+                            <ChevronDown size={12} strokeWidth={1.5} className={cn('shrink-0 text-white/45 transition-transform', menuOpen && 'rotate-180')} aria-hidden="true"/>
+                        </button>
+                        {menuOpen && (
+                            <div role="menu" aria-label="Ordenar ventas por" className="absolute left-0 top-full z-[30] mt-1 min-w-[164px] overflow-hidden rounded-lg border border-white/20 bg-[#182a50] p-1 shadow-[0_12px_26px_rgba(4,13,29,0.45)]">
+                                {(['importe', 'cantidad', 'rentabilidad'] as const).map(option => (
+                                    <button key={option} type="button" role="menuitemradio" aria-checked={metric === option}
+                                        className={cn('block w-full rounded-md px-2.5 py-1.5 text-left text-[11px] capitalize transition-colors hover:bg-white/10', metric === option ? 'bg-sky-300/15 font-semibold text-sky-100' : 'text-white/75')}
+                                        onClick={() => { setMetric(option); setMenuOpen(false); }}>
+                                        {RANKING_LABEL[option]}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <span className="max-w-[48%] truncate text-right text-[9px] text-sky-200/75" title={selection?.scope === scope ? crossLabel(selection) : undefined}>
+                        {selection?.scope === scope ? crossLabel(selection) : metric === 'rentabilidad' ? 'Margen estimado' : ''}
                     </span>
                 </div>
                 <RankingViewport>
-                    {products.map((product, index) => {
-                        const sales = Number(product.total_ingresos ?? 0);
-                        const label = shareLabel(sales);
+                    {ranking.map(({ product, sales, units, margin }, index) => {
+                        const value = metric === 'importe' ? sales : metric === 'cantidad' ? units : margin;
+                        const label = metric === 'importe' ? shareLabel(sales, totalSales)
+                            : metric === 'cantidad' ? shareLabel(units, totalUnits)
+                            : margin === null ? 'Coste de receta no disponible' : 'Margen bruto estimado; excluye gastos de personal y otros costes';
+                        const display = metric === 'cantidad' ? units.toLocaleString('es-ES', { maximumFractionDigits: 3 }) + ' u'
+                            : value === null ? (!selectedCosts ? 'Cargando…' : costData?.failed ? 'No disponible' : 'Sin coste') : euro(value);
                         return (
                             <button key={product.articulo_id ?? index} type="button" data-crossfilter-trigger
                                 disabled={product.articulo_id == null}
@@ -460,18 +560,22 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                                 className={cn('grid h-7 w-full min-w-0 snap-start snap-always grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto] items-center gap-x-2 border-b border-white/5 text-left text-[11px]',
                                     product.articulo_id != null && 'cursor-pointer hover:bg-white/10',
                                     selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id && 'bg-sky-200/15')}
-                                title={product.nombre_articulo + ' · ' + euro(sales) + ' · ' + label}>
+                                title={product.nombre_articulo + ' · ' + display + ' · ' + label}>
                                 <span className="flex min-w-0 items-center gap-1 text-white/85">
                                     <span className="shrink-0 tabular-nums">{index + 1}.</span>
                                     <ProductRankingThumbnail key={productThumbnails[product.articulo_id ?? -1] ?? product.articulo_id ?? index}
                                         src={product.articulo_id != null ? productThumbnails[product.articulo_id] : undefined}/>
                                     <span className="min-w-0 truncate">{product.nombre_articulo}</span>
                                 </span>
-                                <span className="shrink-0 tabular-nums text-white/60">{Number(product.cantidad_total).toLocaleString('es-ES')} u</span>
+                                <span className="shrink-0 whitespace-nowrap text-[10px] tabular-nums text-white/60">
+                                    {metric === 'cantidad' ? euro(sales) : units.toLocaleString('es-ES', { maximumFractionDigits: 3 }) + ' u'}
+                                </span>
                                 <div role="img" aria-label={label} className="h-[10px] min-w-0 overflow-hidden rounded-sm bg-white/10">
-                                    <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: barWidth(sales, maxProductSales) }}/>
+                                    <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: value === null ? '0%' : barWidth(Math.max(0, value)) }}/>
                                 </div>
-                                <strong className="min-w-[66px] shrink-0 text-right text-[12px] font-semibold tabular-nums">{euro(sales)}</strong>
+                                <strong className={cn('min-w-[66px] shrink-0 whitespace-nowrap text-right text-[clamp(10px,0.78vw,12px)] font-semibold tabular-nums',
+                                    metric === 'rentabilidad' && margin === null && 'text-white/50',
+                                    metric === 'rentabilidad' && margin !== null && margin < 0 && 'text-rose-200')}>{display}</strong>
                             </button>
                         );
                     })}
@@ -498,7 +602,7 @@ function financialSummaryItems(extras?: FinancialExtras, performance: number | n
     const items: SummaryKpiItem[] = [
         {
             label: 'Rendimiento',
-            tooltip: 'Ventas netas frente a la media de hasta 8 días anteriores del mismo día de la semana. Positivo: por encima de la media; negativo: por debajo.',
+            tooltip: 'Ventas netas comparadas con la media de hasta 8 cierres anteriores del mismo día de la semana.',
             value: performance === null ? '' : (performance >= 0 ? '▲ ' : '▼ ') + Math.abs(performance).toFixed(1) + '%',
             tone: performance === null ? 'border-white/15 bg-white/[0.035]' : (performance >= 0 ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-rose-400/55 bg-rose-500/15')
         },
@@ -639,7 +743,7 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
     );
 }
 
-function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPercents, onNavigateMonth, breakdownReport, scope, selection, onSelect, productThumbnails, cashBreakdown }: {
+function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPercents, onNavigateMonth, breakdownReport, scope, selection, onSelect, productThumbnails, cashBreakdown, rangeStart, rangeEnd }: {
     title: string; dateText: string; report: TicketReport | null;
     extras?: FinancialExtras; dailyAverage: number | null; ticketPercents: { cash: number | null; card: number | null };
     onNavigateMonth: (delta: number) => void;
@@ -647,6 +751,7 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
     productThumbnails: Record<number, string>;
     cashBreakdown?: Record<string, number> | null;
+    rangeStart: string; rangeEnd: string;
 }) {
     const sales = report ? Number(report.summary.totalSales) : null;
     const monthlyItems = financialSummaryItems(extras, null, ticketPercents).map(item => item.label === 'Rendimiento'
@@ -677,7 +782,7 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
                 items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect} cashBreakdown={cashBreakdown}/>
             <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope}
                 selection={selection?.kind === 'payment' && (selection.payment === 'cash' || selection.payment === 'card') ? null : selection}
-                onSelect={onSelect} productThumbnails={productThumbnails}/>
+                onSelect={onSelect} productThumbnails={productThumbnails} rangeStart={rangeStart} rangeEnd={rangeEnd}/>
         </div>
     );
 }
@@ -909,20 +1014,33 @@ export default function VentasDesktopWorkspace() {
         return () => { active = false; };
     }, [supabase, monthStart, monthEnd]);
 
-    // Una única consulta para las fotos de catálogo, reutilizada en los dos rankings.
+    // Usar exactamente la foto de la ficha de Recetas, asociada por map_tpv_receta.
+    // Si no tiene foto, utilizar la de la carta digital; geometría de fila siempre fija.
     useEffect(() => {
         let active = true;
-        void supabase.from('v_digital_menu_items').select('articulo_id,photo_url').limit(1000)
-            .then(({ data, error }) => {
-                if (!active || error) return;
-                const next: Record<number, string> = {};
-                for (const item of data ?? []) {
-                    const id = Number(item.articulo_id);
-                    const url = typeof item.photo_url === 'string' ? item.photo_url.trim() : '';
-                    if (Number.isInteger(id) && url.startsWith('https://')) next[id] = url;
+        void (async () => {
+            const [mapping, menu] = await Promise.all([
+                supabase.from('map_tpv_receta').select('articulo_id,recipe_id').limit(500),
+                supabase.from('v_digital_menu_items').select('articulo_id,photo_url').limit(1000)
+            ]);
+            const next: Record<number, string> = {};
+            for (const item of menu.data ?? []) {
+                const id = Number(item.articulo_id);
+                const url = typeof item.photo_url === 'string' ? item.photo_url.trim() : '';
+                if (Number.isInteger(id) && url.startsWith('https://')) next[id] = url;
+            }
+            const recipeIds = [...new Set((mapping.data ?? []).map(row => row.recipe_id).filter((id): id is string => typeof id === 'string'))];
+            if (recipeIds.length) {
+                const { data: recipes } = await supabase.from('recipes').select('id,photo_url').in('id', recipeIds);
+                const photos = new Map((recipes ?? []).map(recipe => [recipe.id, recipe.photo_url]));
+                for (const row of mapping.data ?? []) {
+                    const photo = photos.get(row.recipe_id);
+                    const id = Number(row.articulo_id);
+                    if (Number.isInteger(id) && typeof photo === 'string' && photo.startsWith('https://')) next[id] = photo;
                 }
-                setProductThumbnails(next);
-            });
+            }
+            if (active) setProductThumbnails(next);
+        })();
         return () => { active = false; };
     }, [supabase]);
 
@@ -1270,7 +1388,7 @@ export default function VentasDesktopWorkspace() {
                         dailyAverage={monthDailyAverage} ticketPercents={monthTicketPercentages}
                         onNavigateMonth={navigateSummaryMonth}
                         scope="month" selection={crossSelection} onSelect={onChooseCross}
-                        productThumbnails={productThumbnails} cashBreakdown={monthCashBreakdown}/>
+                        productThumbnails={productThumbnails} cashBreakdown={monthCashBreakdown} rangeStart={monthStart} rangeEnd={monthEnd}/>
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
@@ -1324,7 +1442,7 @@ export default function VentasDesktopWorkspace() {
                         <div data-element="day-breakdown" className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
                             <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
                                 selection={paymentOnly ? null : crossSelection} onSelect={onChooseCross}
-                                productThumbnails={productThumbnails}/>
+                                productThumbnails={productThumbnails} rangeStart={period.start} rangeEnd={period.end}/>
                         </div>
                     </section>
                 </div>
