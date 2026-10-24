@@ -196,12 +196,14 @@ Una identidad encontrada solo por parecido de nombre sigue pidiendo elección
 humana; la similitud por sí sola no crea un alias confirmable.
 
 Al reprocesar un albarán histórico con líneas manuales anteriores a Mistral,
-solo se sustituyen en la vista operativa si **todas** se corresponden de forma
+solo se sustituyen en la vista operativa si se corresponden de forma
 inequívoca, una a una, con filas del original por nombre y cantidad, y ninguna
-tiene movimiento de stock ni histórico de precio asociado. Se conservan las
-líneas antiguas y el vínculo de conciliación como evidencia. Una diferencia,
-un duplicado o cualquier efecto económico previo mantiene el bloqueo para
-revisión. Esta conciliación crea propuestas, nunca recepciones automáticas:
+tiene movimiento de stock, recepción confirmada ni histórico de precio asociado.
+Cuando existen efectos atribuibles a otras líneas, estas se conservan intactas
+y solo se preparan propuestas para las líneas pendientes conciliadas de forma
+inequívoca. Se conservan las líneas antiguas y el vínculo de conciliación como
+evidencia. Una diferencia o un efecto económico sin atribución segura mantiene
+la línea afectada para revisión. Esta conciliación crea propuestas, nunca recepciones automáticas:
 un gerente o administrador debe revisarlas antes de K4.
 Una captura identificada como copia del mismo albarán conserva su evidencia y
 se muestra como «Duplicado» en el histórico, sin presentarse como recepción
