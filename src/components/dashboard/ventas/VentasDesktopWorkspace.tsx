@@ -830,6 +830,7 @@ export default function VentasDesktopWorkspace() {
     const [loadedMonthKey, setLoadedMonthKey] = useState<string | null>(null);
     const [monthClosings, setMonthClosings] = useState<CloseRow[]>([]);
     const [calendarClosings, setCalendarClosings] = useState<CloseRow[]>([]);
+    const [calendarHistory, setCalendarHistory] = useState<{ key: string; netByDate: Map<string, number> } | null>(null);
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [linesByTicket, setLinesByTicket] = useState<Record<string, Item[]>>({});
     const [linesLoading, setLinesLoading] = useState(false);
@@ -895,6 +896,9 @@ export default function VentasDesktopWorkspace() {
         for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
         return weeks;
     }, [month]);
+    const calendarHistoryKey = format(calendarWeeks[0][0], 'yyyy-MM-dd') + ':' +
+        format(calendarWeeks[calendarWeeks.length - 1][6], 'yyyy-MM-dd');
+    const calendarHistoricalNet = calendarHistory?.key === calendarHistoryKey ? calendarHistory.netByDate : null;
     const byDate = useMemo(() => new Map(calendarClosings.map(c => [c.closing_date, c])), [calendarClosings]);
     const calendarWeekSeries = useMemo(() => calendarWeeks.map(week => week.map(day => {
         const closing = byDate.get(format(day, 'yyyy-MM-dd'));
@@ -914,12 +918,15 @@ export default function VentasDesktopWorkspace() {
     }));
     const monthNetMin = monthNetValues.length ? Math.min(...monthNetValues) : 0;
     const monthNetMax = monthNetValues.length ? Math.max(...monthNetValues) : 0;
+    // Escala cromática contenida del mes: verde, lima, amarillo, ámbar y naranja.
     const calendarSalesTone = (value: number) => {
         if (monthNetMax <= monthNetMin) return 'border-emerald-400 bg-emerald-100/95';
         const position = (value - monthNetMin) / (monthNetMax - monthNetMin);
-        if (position < 1 / 3) return 'border-emerald-300 bg-emerald-50/95';
-        if (position < 2 / 3) return 'border-emerald-400 bg-emerald-100/95';
-        return 'border-emerald-500 bg-emerald-200/95';
+        if (position < 0.2) return 'border-emerald-300 bg-emerald-50/95';
+        if (position < 0.4) return 'border-lime-300 bg-lime-100/95';
+        if (position < 0.6) return 'border-yellow-300 bg-yellow-100/95';
+        if (position < 0.8) return 'border-amber-300 bg-amber-100/95';
+        return 'border-orange-300 bg-orange-100/95';
     };
 
     const changePeriod = (next: Period, keepReturn = false) => {
@@ -1090,17 +1097,25 @@ export default function VentasDesktopWorkspace() {
 
     useEffect(() => {
         let active = true;
-        // Incluir las fechas colindantes visibles para no cortar la curva semanal.
-        const start = format(calendarWeeks[0][0], 'yyyy-MM-dd');
+        // La curva se limita al calendario visible; las referencias para los
+        // triángulos incluyen los cierres de las 16 semanas anteriores.
+        const firstVisible = format(calendarWeeks[0][0], 'yyyy-MM-dd');
+        const historyStart = format(subWeeks(calendarWeeks[0][0], 16), 'yyyy-MM-dd');
         const end = format(calendarWeeks[calendarWeeks.length - 1][6], 'yyyy-MM-dd');
         void supabase.from('cash_closings')
             .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,breakdown')
-            .gte('closing_date', start).lte('closing_date', end)
+            .gte('closing_date', historyStart).lte('closing_date', end).limit(4000)
             .then(({ data, error }) => {
-                if (active) setCalendarClosings(distinctCashClosings(error ? [] : (data ?? []) as CloseRow[]));
+                if (!active) return;
+                const rows = distinctCashClosings(error ? [] : (data ?? []) as CloseRow[]);
+                setCalendarClosings(rows.filter(row => row.closing_date >= firstVisible));
+                setCalendarHistory({
+                    key: calendarHistoryKey,
+                    netByDate: new Map(rows.map(row => [row.closing_date, Number(row.net_sales ?? 0)]))
+                });
             });
         return () => { active = false; };
-    }, [supabase, calendarWeeks]);
+    }, [supabase, calendarWeeks, calendarHistoryKey]);
 
     useEffect(() => {
         if (initializing) return;
@@ -1504,11 +1519,18 @@ export default function VentasDesktopWorkspace() {
                                                 const iso = format(day, 'yyyy-MM-dd');
                                                 const closing = byDate.get(iso);
                                                 const net = closing?.net_sales == null ? null : Number(closing.net_sales);
+                                                const expectedNet = calendarHistoricalNet && net !== null && Number.isFinite(net)
+                                                    ? historicalExpectedNet(iso, calendarHistoricalNet) : null;
+                                                const calendarImproved = expectedNet !== null && net !== null && net > expectedNet + 0.005;
+                                                const calendarDeclined = expectedNet !== null && net !== null && net < expectedNet - 0.005;
+                                                const performanceDescription = calendarImproved
+                                                    ? ', por encima de la media de días equivalentes'
+                                                    : calendarDeclined ? ', por debajo de la media de días equivalentes' : '';
                                                 const selected = isSingleDay && iso === period.start;
                                                 return (
                                                     <button key={iso} type="button" onClick={() => selectDate(iso)}
                                                         aria-pressed={selected}
-                                                        aria-label={`Seleccionar ${iso}${net !== null && Number.isFinite(net) ? ', venta neta ' + euro(net) : ''}`}
+                                                        aria-label={'Seleccionar ' + iso + (net !== null && Number.isFinite(net) ? ', venta neta ' + euro(net) : '') + performanceDescription}
                                                         className={cn(
                                                             'month-cal-cell relative z-[1] flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-transparent p-0.5 last:border-r-0 transition-colors hover:bg-zinc-50/40',
                                                             !isSameMonth(day, month) && 'opacity-35',
@@ -1519,8 +1541,16 @@ export default function VentasDesktopWorkspace() {
                                                             selected ? 'text-zinc-700' : 'text-slate-400')}>{format(day, 'd')}</span>
                                                         {net !== null && Number.isFinite(net) && (
                                                             <div className="flex min-h-0 w-full flex-1 items-center justify-center px-0.5 pt-2 text-center">
-                                                                <span title={euro(net)} className={cn('inline-flex max-w-full items-center justify-center truncate rounded-md border px-1.5 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums', calendarSalesTone(net))}>
-                                                                    {Math.round(net).toLocaleString('es-ES')}€
+                                                                <span title={euro(net) + performanceDescription} className={cn('inline-flex max-w-full items-center justify-center gap-0.5 rounded-md border px-1 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums', calendarSalesTone(net))}>
+                                                                    {(calendarImproved || calendarDeclined) && (
+                                                                        <span aria-hidden="true" className={cn(
+                                                                            'inline-block h-0 w-0 shrink-0 border-x-[3px] border-x-transparent',
+                                                                            calendarImproved
+                                                                                ? 'border-b-[5px] border-b-emerald-600'
+                                                                                : 'border-t-[5px] border-t-rose-600'
+                                                                        )}/>
+                                                                    )}
+                                                                    <span className="min-w-0 truncate">{Math.round(net).toLocaleString('es-ES')}€</span>
                                                                 </span>
                                                             </div>
                                                         )}

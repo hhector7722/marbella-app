@@ -7577,3 +7577,23 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     color-mix(in srgb, var(--color-positivo) 82%, var(--color-texto-fuerte))
   );
 }
+
+/* Ventas móvil: anclar acceso al extremo derecho. Situado tras los estilos
+   globales del enlace primary para que no se restablezca position:relative. */
+@media (max-width: 1023px) {
+  [data-instance='dashboard-ventas'] [data-element='header'] > a[data-style='calculator-primary'] {
+    position: absolute;
+    inset-inline-end: 0;
+    inset-inline-start: auto;
+    top: 0;
+    margin-inline: 0;
+    flex: none;
+  }
+}
+/* En los móviles estrechos, evitar que «Ventas» toque las flechas centradas. */
+@media (max-width: 600px) {
+  [data-instance='dashboard-ventas'] [data-element='header'] > a[data-style='calculator-primary'] {
+    padding-inline: 2px;
+    font-size: 10px;
+  }
+}
