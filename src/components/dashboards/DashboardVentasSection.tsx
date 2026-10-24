@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { ArrowUpRight, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { addDays, format, isToday, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
@@ -382,11 +382,10 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         </div>
                     </div>
                     <Link href="/dashboard/ventas"
+                        data-style="calculator-primary"
                         aria-label="Abrir análisis completo de ventas"
-                        style={{ color: '#fff', backgroundColor: '#234f82' }}
-                        className="group inline-flex h-7 min-w-0 shrink-0 items-center justify-center justify-self-end gap-1 rounded-lg border border-[#1b406c] px-2.5 text-[11px] font-semibold tracking-[0.01em] text-white shadow-[0_2px_5px_rgba(20,57,105,0.20)] transition-all hover:brightness-110 hover:shadow-[0_4px_12px_rgba(20,57,105,0.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 active:scale-[0.98]">
-                        <span className="whitespace-nowrap text-white">Ventas</span>
-                        <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden="true" className="shrink-0 text-white/90 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/>
+                        className="relative isolate inline-flex h-8 min-w-0 shrink-0 items-center justify-center justify-self-end rounded-lg px-2 text-[12px] font-extrabold leading-none text-white transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:scale-95">
+                        Ventas
                     </Link>
                 </div>
 

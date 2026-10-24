@@ -7530,3 +7530,47 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     gap: 1px;
   }
 }
+
+/* Versión global del acceso Ventas: tanto escritorio como smartphone.
+   Replica el botón primary de Calculadora sin cambiar la altura del widget. */
+/* Acceso Ventas: el mismo acabado que Button primary (Calculadora),
+   con una zona visual compacta para no desplazar fecha y hora. */
+[data-instance='dashboard-ventas'] [data-element='header'] a[data-style='calculator-primary'] {
+  position: relative;
+  isolation: isolate;
+  color: var(--color-texto-invertido);
+  font-size: 12px;
+  text-decoration: none;
+  background: transparent;
+}
+[data-instance='dashboard-ventas'] [data-element='header'] a[data-style='calculator-primary']::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset-inline: 0;
+  top: 50%;
+  height: calc(12px + var(--espacio-1) * 2);
+  transform: translateY(-50%);
+  border: 1px solid transparent;
+  border-radius: var(--espacio-2);
+  background-color: var(--color-positivo);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-positivo) 88%, white),
+    var(--color-positivo)
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    0 0 0 1px rgba(24, 24, 27, 0.35),
+    0 1px 2px rgb(0 0 0 / 0.35);
+  transition: filter 75ms ease, background-color 150ms ease, background-image 150ms ease;
+}
+[data-instance='dashboard-ventas'] [data-element='header'] a[data-style='calculator-primary']:hover::before {
+  background-color: color-mix(in srgb, var(--color-positivo) 82%, var(--color-texto-fuerte));
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-positivo) 70%, white),
+    color-mix(in srgb, var(--color-positivo) 82%, var(--color-texto-fuerte))
+  );
+}
