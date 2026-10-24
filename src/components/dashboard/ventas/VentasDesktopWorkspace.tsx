@@ -103,14 +103,35 @@ function historicalExpectedNet(dateYmd: string, netByDate: Map<string, number>):
     return seen > 0 ? total / seen : null;
 }
 
-/** Escala cromática orientativa: el porcentaje no cambia de fórmula. */
-function performanceColors(percentage: number | null): string | null {
-    if (percentage === null) return null;
-    if (percentage >= 15) return 'text-teal-700';
-    if (percentage > 0) return 'text-sky-700';
-    if (percentage >= -5) return 'text-amber-700';
-    if (percentage >= -15) return 'text-orange-700';
-    return 'text-rose-700';
+/** Curvas por semana; los días sin cierre dejan huecos y no se interpretan como cero ventas. */
+function calendarWeekChart(values: (number | null)[], peak: number) {
+    const baseline = 94;
+    const runs: { x: number; y: number }[][] = [];
+    let run: { x: number; y: number }[] = [];
+    values.forEach((value, index) => {
+        if (value === null) {
+            if (run.length) runs.push(run);
+            run = [];
+            return;
+        }
+        run.push({ x: (index + 0.5) * 100, y: baseline - Math.min(1, Math.max(0, value) / peak) * 54 });
+    });
+    if (run.length) runs.push(run);
+    return runs.map(points => {
+        let line = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 1; i < points.length; i++) {
+            const previous = points[i - 1];
+            const current = points[i];
+            const mid = (previous.x + current.x) / 2;
+            line += ` C ${mid} ${previous.y}, ${mid} ${current.y}, ${current.x} ${current.y}`;
+        }
+        const last = points[points.length - 1];
+        return {
+            line: points.length > 1 ? line : null,
+            area: points.length > 1 ? `${line} L ${last.x} ${baseline} L ${points[0].x} ${baseline} Z` : null,
+            dot: points.length === 1 ? points[0] : null
+        };
+    });
 }
 
 // One continuous 7–23 h axis: each slot lives BETWEEN consecutive hour ticks.
@@ -565,7 +586,6 @@ export default function VentasDesktopWorkspace() {
     const [returnFilter, setReturnFilter] = useState<TimeFilterValue | null>(null);
     const [periodClosings, setPeriodClosings] = useState<CloseRow[]>([]);
     const [historicalNetByDate, setHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
-    const [calendarHistoricalNetByDate, setCalendarHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
     const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
     const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
@@ -638,16 +658,13 @@ export default function VentasDesktopWorkspace() {
         return weeks;
     }, [month]);
     const byDate = useMemo(() => new Map(calendarClosings.map(c => [c.closing_date, c])), [calendarClosings]);
-    const calendarPerformanceByDate = useMemo(() => {
-        const result = new Map<string, number>();
-        for (const closing of calendarClosings) {
-            const expected = historicalExpectedNet(closing.closing_date, calendarHistoricalNetByDate);
-            if (expected !== null && expected > 0 && closing.net_sales != null) {
-                result.set(closing.closing_date, (Number(closing.net_sales) - expected) / expected * 100);
-            }
-        }
-        return result;
-    }, [calendarClosings, calendarHistoricalNetByDate]);
+    const calendarWeekSeries = useMemo(() => calendarWeeks.map(week => week.map(day => {
+        const closing = byDate.get(format(day, 'yyyy-MM-dd'));
+        const value = closing?.net_sales == null ? null : Number(closing.net_sales);
+        return value !== null && Number.isFinite(value) ? value : null;
+    })), [calendarWeeks, byDate]);
+    // Todas las semanas comparten una única escala en el mes visible.
+    const calendarMaxNet = Math.max(1, ...calendarWeekSeries.flat().filter((value): value is number => value !== null));
 
     const changePeriod = (next: Period, keepReturn = false) => {
         setCrossSelection(null);
@@ -738,27 +755,17 @@ export default function VentasDesktopWorkspace() {
 
     useEffect(() => {
         let active = true;
-        // Navegación independiente del filtro. Cargar cierres del mes y sus
-        // comparables de los mismos días de semana, sin consultas por celda.
-        const start = format(startOfMonth(month), 'yyyy-MM-dd');
-        const end = format(endOfMonth(month), 'yyyy-MM-dd');
-        const firstComparable = format(subWeeks(startOfMonth(month), 16), 'yyyy-MM-dd');
-        void Promise.all([
-            supabase.from('cash_closings')
-                .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference')
-                .gte('closing_date', start).lte('closing_date', end),
-            supabase.from('cash_closings')
-                .select('closing_date,net_sales')
-                .gte('closing_date', firstComparable).lte('closing_date', end).limit(1500),
-        ]).then(([closings, history]) => {
-            if (!active) return;
-            setCalendarClosings(distinctCashClosings(closings.error ? [] : (closings.data ?? []) as CloseRow[]));
-            setCalendarHistoricalNetByDate(new Map<string, number>(
-                (history.error ? [] : history.data ?? []).map(c => [c.closing_date, Number(c.net_sales ?? 0)] as [string, number])
-            ));
-        });
+        // Incluir las fechas colindantes visibles para no cortar la curva semanal.
+        const start = format(calendarWeeks[0][0], 'yyyy-MM-dd');
+        const end = format(calendarWeeks[calendarWeeks.length - 1][6], 'yyyy-MM-dd');
+        void supabase.from('cash_closings')
+            .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference')
+            .gte('closing_date', start).lte('closing_date', end)
+            .then(({ data, error }) => {
+                if (active) setCalendarClosings(distinctCashClosings(error ? [] : (data ?? []) as CloseRow[]));
+            });
         return () => { active = false; };
-    }, [supabase, month]);
+    }, [supabase, calendarWeeks]);
 
     useEffect(() => {
         if (initializing) return;
@@ -1106,46 +1113,53 @@ export default function VentasDesktopWorkspace() {
                     <section data-element="calendar" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radio-control)] border border-zinc-200 bg-white text-zinc-900">
                         <MonthCalendarFrame flush className="history-desktop-month-cal-chrome">
                             <div className="month-cal-weeks history-desktop-cal-weeks" style={{ gridTemplateRows: 'repeat(' + calendarWeeks.length + ',minmax(0,1fr))' }}>
-                                {calendarWeeks.map((week, index) => (
-                                    <div key={index} className="month-cal-week grid min-h-0 grid-cols-7 border-b border-gray-100 last:border-0">
-                                        {week.map(day => {
-                                            const iso = format(day, 'yyyy-MM-dd');
-                                            const closing = byDate.get(iso);
-                                            const net = closing?.net_sales == null ? null : Number(closing.net_sales);
-                                            const dayPerformance = calendarPerformanceByDate.get(iso) ?? null;
-                                            const tone = performanceColors(dayPerformance);
-                                            const selected = isSingleDay && iso === period.start;
-                                            return (
-                                                <button key={iso} type="button" onClick={() => selectDate(iso)}
-                                                    aria-pressed={selected}
-                                                    aria-label={`Seleccionar ${iso}${net !== null ? ', venta neta ' + euro(net) : ''}${dayPerformance !== null ? ', rendimiento ' + dayPerformance.toFixed(1) + '%' : ''}`}
-                                                    className={cn(
-                                                        'month-cal-cell relative flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-white p-0.5 last:border-r-0 transition-colors hover:bg-zinc-50',
-                                                        !isSameMonth(day, month) && 'opacity-35',
-                                                        !selected && iso >= period.start && iso <= period.end && 'ring-1 ring-inset ring-zinc-300',
-                                                        selected && 'z-[1] ring-2 ring-inset ring-zinc-900'
-                                                    )}>
-                                                    <span className={cn("absolute right-1 top-0.5 text-[9px] font-medium tabular-nums", selected ? "text-zinc-700" : "text-slate-400")}>{format(day, 'd')}</span>
-                                                    {net !== null && Number.isFinite(net) ? (
-                                                        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-px pt-2 text-center">
-                                                            <span title={euro(net)} className="max-w-full truncate text-[clamp(9px,0.85vw,13px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums">
-                                                                {Math.round(net).toLocaleString('es-ES')}€
-                                                            </span>
-                                                            <span className="text-[7px] font-medium leading-none tracking-[0.06em] text-slate-500">V NETA</span>
-                                                            {dayPerformance !== null && tone ? (
-                                                                <span className={cn("mt-1.5 inline-flex max-w-full items-center justify-center gap-0.5 px-1 py-px text-[clamp(8px,0.7vw,10px)] font-medium leading-none tabular-nums", tone)}
-                                                                    title="Rendimiento respecto a cierres anteriores del mismo día de la semana">
-                                                                    <span aria-hidden="true">{dayPerformance >= 0 ? '▲' : '▼'}</span>
-                                                                    {Math.abs(dayPerformance).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                                {calendarWeeks.map((week, index) => {
+                                    const chart = calendarWeekChart(calendarWeekSeries[index], calendarMaxNet);
+                                    return (
+                                        <div key={index} className="month-cal-week relative grid min-h-0 grid-cols-7 overflow-hidden border-b border-gray-100 last:border-0">
+                                            {chart.length > 0 && (
+                                                <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full"
+                                                    viewBox="0 0 700 100" preserveAspectRatio="none">
+                                                    {chart.map((segment, chartIndex) => (
+                                                        <g key={chartIndex}>
+                                                            {segment.area && <path d={segment.area} fill="#60a5fa" fillOpacity="0.13"/>}
+                                                            {segment.line && <path d={segment.line} fill="none" stroke="#60a5fa" strokeWidth="2"
+                                                                strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke"/>}
+                                                            {segment.dot && <circle cx={segment.dot.x} cy={segment.dot.y} r="2.5" fill="#60a5fa"/>}
+                                                        </g>
+                                                    ))}
+                                                </svg>
+                                            )}
+                                            {week.map(day => {
+                                                const iso = format(day, 'yyyy-MM-dd');
+                                                const closing = byDate.get(iso);
+                                                const net = closing?.net_sales == null ? null : Number(closing.net_sales);
+                                                const selected = isSingleDay && iso === period.start;
+                                                return (
+                                                    <button key={iso} type="button" onClick={() => selectDate(iso)}
+                                                        aria-pressed={selected}
+                                                        aria-label={`Seleccionar ${iso}${net !== null && Number.isFinite(net) ? ', venta neta ' + euro(net) : ''}`}
+                                                        className={cn(
+                                                            'month-cal-cell relative z-[1] flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-transparent p-0.5 last:border-r-0 transition-colors hover:bg-zinc-50/40',
+                                                            !isSameMonth(day, month) && 'opacity-35',
+                                                            !selected && iso >= period.start && iso <= period.end && 'ring-1 ring-inset ring-zinc-300',
+                                                            selected && 'ring-2 ring-inset ring-zinc-900'
+                                                        )}>
+                                                        <span className={cn('absolute right-1 top-0.5 text-[9px] font-medium tabular-nums',
+                                                            selected ? 'text-zinc-700' : 'text-slate-400')}>{format(day, 'd')}</span>
+                                                        {net !== null && Number.isFinite(net) && (
+                                                            <div className="flex min-h-0 w-full flex-1 items-center justify-center px-0.5 pt-2 text-center">
+                                                                <span title={euro(net)} className="inline-flex max-w-full items-center justify-center truncate rounded-md border border-emerald-500 bg-emerald-100/95 px-1.5 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums">
+                                                                    {Math.round(net).toLocaleString('es-ES')}€
                                                                 </span>
-                                                            ) : null}
-                                                        </div>
-                                                    ) : null}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </MonthCalendarFrame>
                     </section>
