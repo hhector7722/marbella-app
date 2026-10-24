@@ -675,6 +675,21 @@ export async function saveReceiptMappingProposalAction(params: {
 
   const k5ProposalId = text(line.interpretation_proposal_id)
   if (!k5ProposalId || line.superseded_by_extraction_id) {
+    if (!k5ProposalId && !line.superseded_by_extraction_id) {
+      const [legacyStock, typedStock] = await Promise.all([
+        gate.supabase.from('stock_movements').select('id')
+          .eq('reference_doc', `ALB-LINE-${lineId}`).eq('movement_type', 'PURCHASE').limit(1),
+        gate.supabase.from('stock_movements').select('id')
+          .eq('reference_type', 'purchase_invoice_line').eq('reference_id', lineId)
+          .eq('movement_type', 'PURCHASE').limit(1),
+      ])
+      if (legacyStock.error || typedStock.error) {
+        return { success: false, message: 'No se pudo comprobar si esta línea ya tiene stock. Recarga el albarán.' }
+      }
+      if (legacyStock.data?.length || typedStock.data?.length) {
+        return { success: false, message: 'Esta línea histórica ya tiene stock registrado. No vuelvas a confirmarla ni a reprocesarla; revisa solo las líneas pendientes.' }
+      }
+    }
     return { success: false, message: 'Reprocesa el original con Mistral antes de revisar esta línea histórica.' }
   }
   const { data: sourceProposal, error: sourceProposalError } = await gate.supabase
