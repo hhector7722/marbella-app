@@ -690,7 +690,7 @@ export async function saveReceiptMappingProposalAction(params: {
         return { success: false, message: 'Esta línea histórica ya tiene stock registrado. No vuelvas a confirmarla ni a reprocesarla; revisa solo las líneas pendientes.' }
       }
     }
-    return { success: false, message: 'Reprocesa el original con Mistral antes de revisar esta línea histórica.' }
+    return { success: false, message: 'Esta línea histórica aún no está vinculada de forma segura a una lectura Mistral. Si ya reprocesaste el original, la lectura no ha podido conciliar esta línea; revisa el albarán original antes de confirmarla.' }
   }
   const { data: sourceProposal, error: sourceProposalError } = await gate.supabase
     .from('purchase_interpretation_proposals')

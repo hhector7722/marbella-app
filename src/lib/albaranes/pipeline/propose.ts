@@ -62,8 +62,8 @@ export async function proposeMistralExtraction(params: {
       const provenance = row.provenance as Record<string, unknown> | null
       return provenance?.legacy_line_match != null
     })
-    const ownIds = new Set((ownProposals ?? []).map((row) => row.id))
     const active = invoiceLines.filter((line) => !line.superseded_by_extraction_id)
+    const activeIds = new Set(active.map((line) => line.id))
     const manual = active.filter((line) => !line.interpretation_proposal_id)
     if (confirmedLineIds.size && !manual.length) {
       return { created: 0, materialized: 0, ready: 0, exceptions: 0, skipped: 'already_received' }
@@ -72,7 +72,7 @@ export async function proposeMistralExtraction(params: {
       // Replace old OCR rows with the canonical extraction only when no
       // economic effect exists. A difference in OCR rows must remain editable
       // by a person instead of permanently blocking the document.
-      if (invoice.status !== 'pending_mapping' || manual.length !== active.length
+      if (!['pending_mapping', 'mapped'].includes(invoice.status)
           || params.canonical.lines.length === 0) {
         return { created: 0, materialized: 0, ready: 0, exceptions: 0,
           skipped: 'manual_lines_require_review' }
@@ -91,7 +91,7 @@ export async function proposeMistralExtraction(params: {
     // Las líneas antiguas siguen siendo evidencia histórica. Se retiran de la
     // vista operativa solo después de materializar todas las líneas Mistral.
     oldLineIds = invoiceLines.filter((line) => !line.superseded_by_extraction_id
-      && !ownIds.has(line.interpretation_proposal_id)).map((line) => line.id)
+      && !line.interpretation_proposal_id).map((line) => line.id)
     if (oldLineIds.length) {
       const { data: sourceExtractions, error: sourceError } = await db.from('document_extractions')
         .select('id').eq('invoice_id', params.invoiceId)
@@ -121,21 +121,21 @@ export async function proposeMistralExtraction(params: {
         ...confirmedLineIds,
       ])
       const unattributed = (extractionStock.data ?? []).some((row) =>
-        !oldLineIds.includes(String(row.reference_id ?? ''))
-        && !oldLineIds.includes(String(row.reference_doc ?? '').replace(/^ALB-LINE-/, '')))
+        !activeIds.has(String(row.reference_id ?? ''))
+        && !activeIds.has(String(row.reference_doc ?? '').replace(/^ALB-LINE-/, '')))
         || (priceHistory.data ?? []).some((row) => !row.purchase_invoice_line_id)
       if (unattributed) {
         return { created: 0, materialized: 0, ready: 0, exceptions: 0,
           skipped: 'manual_lines_require_review' }
       }
-      if (effectLineIds.size) {
+      if (effectLineIds.size || manual.length !== active.length) {
         // Where older rows already moved stock, leave them active. Only a
         // uniquely reconciled, stock-free row may become a new review proposal.
         if (!hadManualLegacyLines) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }
-        if ([...effectLineIds].some((id) => !oldLineIds.includes(id))) {
+        if ([...effectLineIds].some((id) => !activeIds.has(id))) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }
