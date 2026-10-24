@@ -130,10 +130,8 @@ function calendarWeekChart(values: (number | null)[], floor: number, ceil: numbe
         const endX = last.x + 50;
         let line = `M ${startX} ${first.y} L ${first.x} ${first.y}`;
         for (let i = 1; i < points.length; i++) {
-            const previous = points[i - 1];
             const current = points[i];
-            const mid = (previous.x + current.x) / 2;
-            line += ` C ${mid} ${previous.y}, ${mid} ${current.y}, ${current.x} ${current.y}`;
+            line += ` L ${current.x} ${current.y}`;
         }
         line += ` L ${endX} ${last.y}`;
         return {
@@ -179,9 +177,8 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
     ).join(' ');
     const area = `${path} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`;
     const bestHours = slots.filter(slot => slot.tickets > 0).sort((a, b) => b.sales - a.sales || a.hour - b.hour).slice(0, 3);
-    // Keep the same three-column layout on hover. The hovered interval is
-    // always centered between its immediate chronological neighbours.
-    // Missing neighbours at 7 h and 22 h leave a genuinely empty column.
+    // Tres filas constantes: máximos por defecto; al señalar, anterior / hora / siguiente.
+    // La primera y la última hora no inventan vecinos.
     const displayHours: (HourSlot | null)[] = activeIndex === null
         ? [bestHours[0] ?? null, bestHours[1] ?? null, bestHours[2] ?? null]
         : [
@@ -213,7 +210,20 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                     <path d={area} fill="currentColor" fillOpacity=".12"/>
                     <path d={path} fill="none" stroke="currentColor" strokeWidth="2"
                         strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>
+                    {activeIndex !== null && (
+                        <path d={`M ${points[activeIndex].x} 8 V ${baseline}`}
+                            stroke="currentColor" strokeWidth="1" strokeDasharray="5 5"
+                            strokeOpacity=".75" vectorEffect="non-scaling-stroke"/>
+                    )}
                 </svg>
+                {activeIndex !== null && (
+                    <span aria-hidden="true"
+                        className="pointer-events-none absolute z-[2] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-[#70b5ff]"
+                        style={{
+                            left: `${(activeIndex + 0.5) / SALES_HOUR_COUNT * 100}%`,
+                            top: `${points[activeIndex].y / 90 * 100}%`
+                        }}/>
+                )}
                 {/* The interaction layer ends at the chart baseline: axis labels never change color. */}
                 {slots.map((slot, index) => (
                     <button key={slot.hour} type="button" data-crossfilter-trigger
@@ -242,42 +252,55 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                 </div>
 
             </div>
-            {/* Fixed detail strip below the axis. Hover preserves exactly
-                three columns: previous, selected, next. No placeholders. */}
-            <div data-element="hours-details" className="mt-2 h-[78px] w-full shrink-0 rounded-md border border-white/15 bg-white/[0.04] px-2.5 py-1.5">
-                <div className="grid h-full grid-cols-3" aria-live="polite"
-                    aria-label={activeIndex === null ? 'Tres tramos horarios con mayor facturación' : 'Tramo señalado y tramos anterior y posterior'}>
-                    {displayHours.map((slot, position) => {
-                        if (!slot) return <div key={`empty-${position}`} aria-hidden="true" />;
-                        const isHighlighted = activeIndex !== null && position === 1;
-                        return (
-                            <div key={slot.hour}
-                                className={cn(
-                                    'flex min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 text-center',
-                                    position !== 2 && displayHours[position + 1] && 'border-r border-white/10',
-                                    isHighlighted && 'rounded-md bg-sky-300/15 ring-1 ring-inset ring-sky-300/35',
-                                    activeIndex !== null && !isHighlighted && 'opacity-75'
-                                )}
-                                title={`${slot.hour}:00–${slot.hour + 1}:00`}>
-                                <span className={cn(
-                                    'w-full text-left text-[12px] font-semibold leading-tight tabular-nums',
-                                    isHighlighted ? 'text-sky-100' : 'text-white/85'
-                                )}>
-                                    {slot.hour}–{slot.hour + 1} h
-                                </span>
-                                <strong className={cn(
-                                    'max-w-full truncate text-[clamp(11px,1vw,15px)] font-semibold leading-tight tabular-nums',
-                                    isHighlighted ? 'text-teal-100' : 'text-teal-200'
-                                )}>
-                                    {euro(slot.sales)}
-                                </strong>
-                                <span className="mt-1.5 max-w-full truncate text-[11px] leading-tight tabular-nums text-white/80">
-                                    {slot.tickets.toLocaleString('es-ES')} tick · {euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)} med
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
+            {/* La tabla conserva siempre los mismos cuatro datos y tres tramos.
+                Al señalar uno: anterior, seleccionado y siguiente. */}
+            <div data-element="hours-details" className="mt-2 h-[78px] w-full shrink-0 overflow-hidden rounded-md border border-white/15 bg-white/[0.04] px-2 py-1.5">
+                <table className="h-full w-full table-fixed border-collapse text-[10px] leading-tight tabular-nums"
+                    aria-live="polite"
+                    aria-label={activeIndex === null ? 'Tres tramos horarios con mayor facturación' : 'Tramo señalado, anterior y siguiente'}>
+                    <colgroup>
+                        <col className="w-[25%]"/>
+                        <col className="w-[30%]"/>
+                        <col className="w-[16%]"/>
+                        <col className="w-[29%]"/>
+                    </colgroup>
+                    <thead>
+                        <tr className="h-[15px] text-[9px] font-medium text-white/55">
+                            <th scope="col" className="text-left font-medium">Hora</th>
+                            <th scope="col" className="text-right font-medium">Ventas</th>
+                            <th scope="col" className="text-right font-medium">Tickets</th>
+                            <th scope="col" className="text-right font-medium">Medio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {displayHours.map((slot, position) => {
+                            if (!slot) return <tr key={`empty-${position}`} className="h-[17px]" aria-hidden="true"><td colSpan={4}/></tr>;
+                            const isHighlighted = activeIndex !== null && position === 1;
+                            return (
+                                <tr key={slot.hour}
+                                    className={cn(
+                                        'h-[17px] border-t border-white/10',
+                                        isHighlighted && 'bg-sky-300/15 text-sky-100',
+                                        activeIndex !== null && !isHighlighted && 'text-white/75'
+                                    )}
+                                    title={`${slot.hour}:00–${slot.hour + 1}:00`}>
+                                    <th scope="row" className="whitespace-nowrap pr-1 text-left font-semibold">
+                                        {slot.hour}–{slot.hour + 1} h
+                                    </th>
+                                    <td className="whitespace-nowrap text-right font-semibold text-teal-200">
+                                        {euro(slot.sales)}
+                                    </td>
+                                    <td className="whitespace-nowrap text-right">
+                                        {slot.tickets.toLocaleString('es-ES')}
+                                    </td>
+                                    <td className="whitespace-nowrap text-right">
+                                        {euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
