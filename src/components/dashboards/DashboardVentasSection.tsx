@@ -335,8 +335,9 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     return (
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
-                <div data-element="header" data-tone="plain" className="flex items-center justify-between gap-2 shrink-0">
-                    <div className="flex-1 flex items-center justify-center min-w-0">
+                <div data-element="header" data-tone="plain" className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1">
+                    <span aria-hidden="true" />
+                    <div className="flex min-w-0 items-center justify-center">
                         <div className="inline-flex items-center gap-1 md:gap-1.5 rounded-lg">
                             <button
                                 type="button"
@@ -382,8 +383,10 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </div>
                     <Link href="/dashboard/ventas"
                         aria-label="Abrir análisis completo de ventas"
-                        className="group inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-sky-200/70 bg-gradient-to-b from-white to-sky-50 px-2.5 text-[10px] font-semibold tracking-[0.01em] text-[#254e88] shadow-[0_1px_3px_rgba(15,43,91,0.08)] transition-all hover:border-sky-300 hover:bg-sky-100 hover:shadow-[0_3px_10px_rgba(15,43,91,0.13)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 active:scale-[0.98]">
-                        Ventas <ArrowUpRight size={13} strokeWidth={1.7} aria-hidden="true" className="opacity-70 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/>
+                        style={{ color: '#fff', backgroundColor: '#234f82' }}
+                        className="group inline-flex h-7 min-w-0 shrink-0 items-center justify-center justify-self-end gap-1 rounded-lg border border-[#1b406c] px-2.5 text-[11px] font-semibold tracking-[0.01em] text-white shadow-[0_2px_5px_rgba(20,57,105,0.20)] transition-all hover:brightness-110 hover:shadow-[0_4px_12px_rgba(20,57,105,0.25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 active:scale-[0.98]">
+                        <span className="whitespace-nowrap text-white">Ventas</span>
+                        <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden="true" className="shrink-0 text-white/90 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/>
                     </Link>
                 </div>
 

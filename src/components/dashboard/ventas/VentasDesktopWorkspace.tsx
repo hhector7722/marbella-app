@@ -415,11 +415,11 @@ function ProductRankingThumbnail({ src }: { src?: string }) {
     const [failed, setFailed] = useState(false);
     return (
         <span aria-hidden="true"
-            className="flex h-[18px] w-[18px] shrink-0 items-center justify-center overflow-hidden rounded-[5px]">
+            className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden rounded-[6px]">
             {src && !failed ? (
-                <Image src={src} alt="" width={15} height={15} sizes="15px"
+                <Image src={src} alt="" width={20} height={20} sizes="20px"
                     loading="lazy" onError={() => setFailed(true)}
-                    className="block h-[15px] w-[15px] shrink-0 rounded-[4px] object-contain"/>
+                    className="block h-[20px] w-[20px] shrink-0 rounded-[5px] object-contain"/>
             ) : null}
         </span>
     );
