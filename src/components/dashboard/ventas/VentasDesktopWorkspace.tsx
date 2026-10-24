@@ -104,8 +104,11 @@ function historicalExpectedNet(dateYmd: string, netByDate: Map<string, number>):
 }
 
 /** Curvas por semana; los días sin cierre dejan huecos y no se interpretan como cero ventas. */
-function calendarWeekChart(values: (number | null)[], peak: number) {
+function calendarWeekChart(values: (number | null)[], floor: number, ceil: number) {
+    const topY = 14;
     const baseline = 94;
+    const drawableHeight = baseline - topY;
+    const denominator = Math.max(1, ceil - floor);
     const runs: { x: number; y: number }[][] = [];
     let run: { x: number; y: number }[] = [];
     values.forEach((value, index) => {
@@ -114,22 +117,28 @@ function calendarWeekChart(values: (number | null)[], peak: number) {
             run = [];
             return;
         }
-        run.push({ x: (index + 0.5) * 100, y: baseline - Math.min(1, Math.max(0, value) / peak) * 54 });
+        const ratio = Math.min(1, Math.max(0, (value - floor) / denominator));
+        run.push({ x: (index + 0.5) * 100, y: baseline - ratio * drawableHeight });
     });
     if (run.length) runs.push(run);
     return runs.map(points => {
-        let line = `M ${points[0].x} ${points[0].y}`;
+        // El tramo comienza y termina en los BORDES de las casillas con datos.
+        // Se mantienen sus puntos en el centro para que cada importe represente su día.
+        const first = points[0];
+        const last = points[points.length - 1];
+        const startX = first.x - 50;
+        const endX = last.x + 50;
+        let line = `M ${startX} ${first.y} L ${first.x} ${first.y}`;
         for (let i = 1; i < points.length; i++) {
             const previous = points[i - 1];
             const current = points[i];
             const mid = (previous.x + current.x) / 2;
             line += ` C ${mid} ${previous.y}, ${mid} ${current.y}, ${current.x} ${current.y}`;
         }
-        const last = points[points.length - 1];
+        line += ` L ${endX} ${last.y}`;
         return {
-            line: points.length > 1 ? line : null,
-            area: points.length > 1 ? `${line} L ${last.x} ${baseline} L ${points[0].x} ${baseline} Z` : null,
-            dot: points.length === 1 ? points[0] : null
+            line,
+            area: `${line} L ${endX} ${baseline} L ${startX} ${baseline} Z`
         };
     });
 }
@@ -663,8 +672,13 @@ export default function VentasDesktopWorkspace() {
         const value = closing?.net_sales == null ? null : Number(closing.net_sales);
         return value !== null && Number.isFinite(value) ? value : null;
     })), [calendarWeeks, byDate]);
-    // Todas las semanas comparten una única escala en el mes visible.
-    const calendarMaxNet = Math.max(1, ...calendarWeekSeries.flat().filter((value): value is number => value !== null));
+    // Escala común mensual basada en mínimo y máximo reales, con margen visual.
+    const calendarNetValues = calendarWeekSeries.flat().filter((value): value is number => value !== null);
+    const calendarMinNet = calendarNetValues.length ? Math.min(...calendarNetValues) : 0;
+    const calendarMaxNet = calendarNetValues.length ? Math.max(...calendarNetValues) : 1;
+    const calendarRangePadding = Math.max((calendarMaxNet - calendarMinNet) * 0.12, 40);
+    const calendarChartFloor = Math.max(0, calendarMinNet - calendarRangePadding);
+    const calendarChartCeil = calendarMaxNet + calendarRangePadding;
 
     const changePeriod = (next: Period, keepReturn = false) => {
         setCrossSelection(null);
@@ -1114,7 +1128,7 @@ export default function VentasDesktopWorkspace() {
                         <MonthCalendarFrame flush className="history-desktop-month-cal-chrome">
                             <div className="month-cal-weeks history-desktop-cal-weeks" style={{ gridTemplateRows: 'repeat(' + calendarWeeks.length + ',minmax(0,1fr))' }}>
                                 {calendarWeeks.map((week, index) => {
-                                    const chart = calendarWeekChart(calendarWeekSeries[index], calendarMaxNet);
+                                    const chart = calendarWeekChart(calendarWeekSeries[index], calendarChartFloor, calendarChartCeil);
                                     return (
                                         <div key={index} className="month-cal-week relative grid min-h-0 grid-cols-7 overflow-hidden border-b border-gray-100 last:border-0">
                                             {chart.length > 0 && (
@@ -1125,7 +1139,6 @@ export default function VentasDesktopWorkspace() {
                                                             {segment.area && <path d={segment.area} fill="#60a5fa" fillOpacity="0.13"/>}
                                                             {segment.line && <path d={segment.line} fill="none" stroke="#60a5fa" strokeWidth="2"
                                                                 strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke"/>}
-                                                            {segment.dot && <circle cx={segment.dot.x} cy={segment.dot.y} r="2.5" fill="#60a5fa"/>}
                                                         </g>
                                                     ))}
                                                 </svg>
