@@ -189,7 +189,7 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
 
     return (
         <div className="flex h-full min-h-0 min-w-0 flex-col">
-            <div data-element="hours-header" className="mb-2 flex h-5 shrink-0 items-center justify-between gap-2">
+            <div data-element="hours-header" className="mb-1 flex h-5 shrink-0 items-center justify-between gap-2">
                 <h3 className="shrink-0 text-xs font-bold uppercase">Horas</h3>
                 <span className="min-w-0 max-w-[75%] truncate text-right text-[9px] text-white/50" title={contextLabel ?? undefined}>
                     {contextLabel ?? 'Facturación · 7–23 h'}
@@ -239,7 +239,7 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                     />
                 ))}
                 </div>
-                <div data-element="hours-axis" className="relative h-[20px] w-full border-t border-white/10">
+                <div data-element="hours-axis" className="relative h-[18px] w-full border-t border-white/10">
                     {Array.from({ length: SALES_HOUR_COUNT + 1 }, (_, index) => (
                         <span key={index} style={{ left: `${index / SALES_HOUR_COUNT * 100}%` }}
                             className={cn(
@@ -252,34 +252,28 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                 </div>
 
             </div>
-            {/* La tabla conserva siempre los mismos cuatro datos y tres tramos.
-                Al señalar uno: anterior, seleccionado y siguiente. */}
-            <div data-element="hours-details" className="mt-2 h-[78px] w-full shrink-0 overflow-hidden rounded-md border border-white/15 bg-white/[0.04] px-2 py-1.5">
-                <table className="h-full w-full table-fixed border-collapse text-[10px] leading-tight tabular-nums"
+            {/* Las tres filas ocupan todo el ancho. Sin cabecera: los cuatro datos
+                se identifican por valor y sufijo, sin añadir métricas. */}
+            <div data-element="hours-details"
+                className="mt-1 h-[100px] w-full shrink-0 overflow-hidden rounded-md border border-white/15 bg-white/[0.04] px-2 py-1">
+                <table className="h-full w-full table-fixed border-collapse text-[clamp(12px,0.9vw,15px)] leading-tight tabular-nums"
                     aria-live="polite"
                     aria-label={activeIndex === null ? 'Tres tramos horarios con mayor facturación' : 'Tramo señalado, anterior y siguiente'}>
+                    <caption className="sr-only">Hora, ventas, número de tickets y ticket medio</caption>
                     <colgroup>
-                        <col className="w-[25%]"/>
-                        <col className="w-[30%]"/>
-                        <col className="w-[16%]"/>
-                        <col className="w-[29%]"/>
+                        <col className="w-[18%]"/>
+                        <col className="w-[32%]"/>
+                        <col className="w-[23%]"/>
+                        <col className="w-[27%]"/>
                     </colgroup>
-                    <thead>
-                        <tr className="h-[15px] text-[9px] font-medium text-white/55">
-                            <th scope="col" className="text-left font-medium">Hora</th>
-                            <th scope="col" className="text-right font-medium">Ventas</th>
-                            <th scope="col" className="text-right font-medium">Tickets</th>
-                            <th scope="col" className="text-right font-medium">Medio</th>
-                        </tr>
-                    </thead>
                     <tbody>
                         {displayHours.map((slot, position) => {
-                            if (!slot) return <tr key={`empty-${position}`} className="h-[17px]" aria-hidden="true"><td colSpan={4}/></tr>;
+                            if (!slot) return <tr key={`empty-${position}`} aria-hidden="true"><td colSpan={4}/></tr>;
                             const isHighlighted = activeIndex !== null && position === 1;
                             return (
                                 <tr key={slot.hour}
                                     className={cn(
-                                        'h-[17px] border-t border-white/10',
+                                        'border-b border-white/10 last:border-b-0',
                                         isHighlighted && 'bg-sky-300/15 text-sky-100',
                                         activeIndex !== null && !isHighlighted && 'text-white/75'
                                     )}
@@ -287,14 +281,14 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                                     <th scope="row" className="whitespace-nowrap pr-1 text-left font-semibold">
                                         {slot.hour}–{slot.hour + 1} h
                                     </th>
-                                    <td className="whitespace-nowrap text-right font-semibold text-teal-200">
+                                    <td className="whitespace-nowrap pr-1 text-right font-semibold text-teal-200">
                                         {euro(slot.sales)}
                                     </td>
-                                    <td className="whitespace-nowrap text-right">
-                                        {slot.tickets.toLocaleString('es-ES')}
+                                    <td className="whitespace-nowrap text-right text-[clamp(11px,0.82vw,14px)] text-white/85">
+                                        {slot.tickets.toLocaleString('es-ES')} tick
                                     </td>
-                                    <td className="whitespace-nowrap text-right">
-                                        {euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)}
+                                    <td className="whitespace-nowrap text-right text-[clamp(11px,0.82vw,14px)] text-white/75">
+                                        {euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)} med
                                     </td>
                                 </tr>
                             );
@@ -431,8 +425,8 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
     const barWidth = (sales: number, maximum: number) => Math.max(0, Math.min(100, sales / maximum * 100)) + '%';
 
     return (
-        <div data-element="sales-breakdown" className="flex h-full min-h-0 flex-1 flex-col gap-3 pt-3">
-            <section data-element="products-section" className="flex min-h-0 flex-1 flex-col border-b border-white/15 pb-3">
+        <div data-element="sales-breakdown" className="flex h-full min-h-0 flex-1 flex-col gap-1 pt-2">
+            <section data-element="products-section" className="flex min-h-0 flex-1 flex-col border-b border-white/15 pb-1">
                 <div className="mb-2 flex h-4 shrink-0 items-center justify-between gap-2">
                     <h3 className="text-xs font-bold uppercase">Productos</h3>
                     <span className="max-w-[68%] truncate text-right text-[9px] text-sky-200/85" title={selection?.scope === scope ? crossLabel(selection) : undefined}>
@@ -466,7 +460,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect }: {
                     })}
                 </RankingViewport>
             </section>
-            <section data-element="hours-section" className="h-[214px] min-h-0 shrink-0">
+            <section data-element="hours-section" className="h-[230px] min-h-0 shrink-0">
                 <HourlySalesTimeline hours={report?.hours}
                     contextLabel={selection?.scope === scope ? crossLabel(selection) : null}
                     selectedHour={selection?.scope === scope && selection.kind === 'hour' ? selection.hour : null}
