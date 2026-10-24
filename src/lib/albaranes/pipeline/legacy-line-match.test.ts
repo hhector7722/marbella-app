@@ -81,6 +81,24 @@ describe('historical line reconciliation', () => {
     assert.equal(ambiguous[0]!.mistralRowIndex, null)
   })
 
+  it('replaces a zero-quantity OCR row only when its full product name is unique', () => {
+    const rows = [
+      { rowIndex: 0, descriptionRaw: 'BACON FOOD SERVICE GALNO', quantityRaw: '3', supplierProductCodeRaw: null },
+      { rowIndex: 1, descriptionRaw: 'BACON FOOD SERVICE PREMIUM', quantityRaw: '2', supplierProductCodeRaw: null },
+    ]
+    const exact = matchLegacyLinesToMistral({
+      legacyLines: [{ id: 'old', originalName: 'BACON FOOD SERVICE GALNO', quantity: 0 }],
+      mistralRows: rows,
+    })
+    assert.equal(exact[0]!.reason, 'matched')
+    assert.equal(exact[0]!.evidence.mistralQuantity, 3)
+    const uncertain = matchLegacyLinesToMistral({
+      legacyLines: [{ id: 'old', originalName: 'BACON FOOD SERVICE', quantity: 0 }],
+      mistralRows: rows,
+    })
+    assert.equal(uncertain[0]!.mistralRowIndex, null)
+  })
+
   it('does not match by position, price or quantity alone', () => {
     const result = matchLegacyLinesToMistral({
       legacyLines: [{ id: 'wrong', originalName: 'CROISSANT DE QUESO - 40 Uds.', quantity: 1 }],

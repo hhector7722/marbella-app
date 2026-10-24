@@ -64,7 +64,7 @@ function oneOcrCharacterApart(left: string, right: string): boolean {
 function uniqueTruncatedNamePrefix(legacy: string, canonical: string): boolean {
   // Older OCR sometimes stopped at the end of a product-name field. Require
   // a substantial complete-token prefix; quantity and unique-row checks still apply.
-  return legacy.length >= 20 && canonical.startsWith(`${legacy} `)
+  return legacy.length >= 18 && canonical.startsWith(`${legacy} `)
 }
 
 export function parseQuantity(raw: string | null): number | null {
@@ -89,10 +89,14 @@ export function matchLegacyLinesToMistral(params: {
   }))
   const candidates = legacy.map((line) => {
     const comparable = rows.filter((row) =>
-      line.name.length > 0 && line.quantity != null && Number.isFinite(line.quantity) && line.quantity > 0
-      && row.quantity === line.quantity && (!line.code || !row.code || line.code === row.code))
+      line.name.length > 0 && line.quantity != null && Number.isFinite(line.quantity) && line.quantity >= 0
+      && (line.quantity === 0 ? row.quantity != null : row.quantity === line.quantity)
+      && (!line.code || !row.code || line.code === row.code))
     const exact = comparable.filter((row) => line.name === row.name)
     if (exact.length) return exact
+    // A zero in old OCR is not a verified quantity. Only an identical, unique
+    // product name can replace that row with a proposal for human review.
+    if (line.quantity === 0) return []
     const ocr = comparable.filter((row) => oneOcrCharacterApart(line.name, row.name))
     return ocr.length ? ocr : comparable.filter((row) => uniqueTruncatedNamePrefix(line.name, row.name))
   })
@@ -107,7 +111,7 @@ export function matchLegacyLinesToMistral(params: {
   return legacy.map((line, index) => {
     const matches = candidates[index]!
     const row = matches.length === 1 ? matches[0]! : null
-    const invalid = !line.name || line.quantity == null || !Number.isFinite(line.quantity) || line.quantity <= 0
+    const invalid = !line.name || line.quantity == null || !Number.isFinite(line.quantity) || line.quantity < 0
     const reason: LegacyMatchResult['reason'] = invalid ? 'invalid_evidence'
       : matches.length === 0 ? 'no_exact_match'
         : matches.length > 1 ? 'ambiguous_mistral_rows'
