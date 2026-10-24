@@ -7492,7 +7492,7 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='summary-stack'] [data-element='hours-plot'] {
-    height: 50px;
+    height: 38px;
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='summary-stack'] [data-element='hours-axis'] {
@@ -7501,26 +7501,23 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='summary-stack'] [data-element='hours-details'] {
     margin-top: 4px;
-    height: 62px;
+    height: 74px;
     padding-block: 3px;
   }
 
   /* Detalle diario: altura menor sin eliminar cifras ni eventos del gráfico. */
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='selected-day'] [data-element='hours-section'] {
-    height: 128px;
+    height: 146px;
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='selected-day'] [data-element='hours-plot'] {
-    height: 30px;
+    height: 24px;
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='selected-day'] [data-element='hours-details'] {
-    height: 52px;
-  }
-  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
-    [data-element='selected-day'] [data-element='hours-details'] span:last-child {
-    margin-top: 2px;
+    height: 74px;
+    padding-block: 2px;
   }
 
   /* Tickets: conservar una línea completa, importe y muescas laterales. */
