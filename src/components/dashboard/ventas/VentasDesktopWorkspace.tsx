@@ -598,11 +598,11 @@ type FinancialExtras = { cash: number; card: number; pending: number; recovered:
 
 // Keep monthly and selected-period labels, tones and cross-filter actions identical.
 // A missing financial figure is intentionally empty (not a dash).
-function financialSummaryItems(extras?: FinancialExtras, performance: number | null = null, ticketPercents?: { cash: number | null; card: number | null }): SummaryKpiItem[] {
+function financialSummaryItems(extras?: FinancialExtras, performance: number | null = null, ticketPercents?: { cash: number | null; card: number | null }, performanceTooltip?: string): SummaryKpiItem[] {
     const items: SummaryKpiItem[] = [
         {
             label: 'Rendimiento',
-            tooltip: 'Ventas netas comparadas con la media de hasta 8 cierres anteriores del mismo día de la semana.',
+            tooltip: performanceTooltip ?? 'Comparación con la venta media de las últimas semanas.',
             value: performance === null ? '' : (performance >= 0 ? '▲ ' : '▼ ') + Math.abs(performance).toFixed(1) + '%',
             tone: performance === null ? 'border-white/15 bg-white/[0.035]' : (performance >= 0 ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-rose-400/55 bg-rose-500/15')
         },
@@ -1381,6 +1381,10 @@ export default function VentasDesktopWorkspace() {
         }
         return expectedSum > 0 ? (netSum - expectedSum) / expectedSum * 100 : null;
     }, [periodClosings, historicalNetByDate]);
+    const weekdayNamesPlural = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
+    const performanceTooltip = isSingleDay
+        ? 'Comparación con la venta media de los últimos 8 ' + weekdayNamesPlural[parseISO(period.start).getDay()] + '.'
+        : 'Comparación con las ventas medias de días equivalentes de las últimas 8 semanas.';
     if (initializing) return <div className="mx-auto hidden w-full items-center justify-center py-16 text-sm text-white/60 lg:flex">Cargando último cierre…</div>;
     return (
         <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
@@ -1434,7 +1438,7 @@ export default function VentasDesktopWorkspace() {
                             <FinancialKpiHeader
                                 sales={dailyReport ? euro(dailyReport.summary.totalSales) : ''}
                                 net={hasClosingData ? euro(periodTotals.net) : ''}
-                                items={financialSummaryItems(hasClosingData ? periodTotals : undefined, periodPerformance, periodTicketPercentages)}
+                                items={financialSummaryItems(hasClosingData ? periodTotals : undefined, periodPerformance, periodTicketPercentages, performanceTooltip)}
                                 scope="period" selection={crossSelection} onSelect={onChooseCross} cashBreakdown={periodCashBreakdown}/>
                         </div>
                         {isSingleDay && selectedClosing && (
