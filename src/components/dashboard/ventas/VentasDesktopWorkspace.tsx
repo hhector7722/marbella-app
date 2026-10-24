@@ -601,7 +601,9 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
                 sales={sales !== null ? euro(sales) : ''}
                 net={extras ? euro(extras.net) : ''}
                 items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect}/>
-            <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope} selection={selection} onSelect={onSelect}/>
+            <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope}
+                selection={selection?.kind === 'payment' && (selection.payment === 'cash' || selection.payment === 'card') ? null : selection}
+                onSelect={onSelect}/>
         </div>
     );
 }
@@ -1222,7 +1224,7 @@ export default function VentasDesktopWorkspace() {
                         )}
                         <div data-element="day-breakdown" className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
                             <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
-                                selection={crossSelection} onSelect={onChooseCross}/>
+                                selection={paymentOnly ? null : crossSelection} onSelect={onChooseCross}/>
                         </div>
                     </section>
                 </div>
