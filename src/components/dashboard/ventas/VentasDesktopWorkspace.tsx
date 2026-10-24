@@ -13,7 +13,7 @@ import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { timeFilterBounds, type TimeFilterValue } from '@/components/time/time-filter-types';
 import { cn } from '@/lib/utils';
-import { DENOMINATIONS } from '@/lib/constants';
+import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { getProductMarginRanking } from '@/app/dashboard/insights/actions';
@@ -415,11 +415,11 @@ function ProductRankingThumbnail({ src }: { src?: string }) {
     const [failed, setFailed] = useState(false);
     return (
         <span aria-hidden="true"
-            className="flex h-[24px] w-[24px] shrink-0 items-center justify-center overflow-hidden rounded-[6px] border border-white/90 bg-white p-[2px] shadow-[0_1px_2px_rgba(0,0,0,0.12)]">
+            className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden rounded-[5px] border border-white/90 bg-white p-[2px] shadow-[0_1px_2px_rgba(0,0,0,0.12)]">
             {src && !failed ? (
-                <Image src={src} alt="" width={18} height={18} sizes="18px"
+                <Image src={src} alt="" width={16} height={16} sizes="16px"
                     loading="lazy" onError={() => setFailed(true)}
-                    className="block h-[18px] w-[18px] max-h-full max-w-full shrink-0 rounded-[3px] object-contain"/>
+                    className="block h-[16px] w-[16px] max-h-full max-w-full shrink-0 rounded-[3px] object-contain"/>
             ) : null}
         </span>
     );
@@ -648,9 +648,10 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
     const cashTotal = denominations.reduce((sum, entry) => sum + entry.total, 0);
     const showHelp = hovered && (hovered.tooltip || (hovered.payment === 'cash' && cashBreakdown));
     const tooltipX = hover && typeof window !== 'undefined'
-        ? Math.max(8, Math.min(hover.x, window.innerWidth - 272)) : 8;
+        ? Math.max(8, Math.min(hover.x, window.innerWidth - (hover.label === 'Efectivo' ? 328 : 272))) : 8;
     const tooltipY = hover && typeof window !== 'undefined'
-        ? (window.innerHeight - hover.bottom >= 240 ? hover.bottom + 7 : Math.max(8, hover.top - 300)) : 8;
+        ? (window.innerHeight - hover.bottom >= (hover.label === 'Efectivo' ? 310 : 180)
+            ? hover.bottom + 7 : Math.max(8, hover.top - (hover.label === 'Efectivo' ? 318 : 170))) : 8;
     return (
         <div className="flex w-full min-w-0 shrink-0 items-stretch gap-3">
             <div className="flex max-w-[52%] shrink-0 flex-col items-start gap-1.5">
@@ -714,17 +715,26 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
             </div>
             {hover && showHelp && typeof document !== 'undefined' && createPortal(
                 <div role="tooltip" aria-label={`Información de ${hover.label}`}
-                    className="pointer-events-none fixed z-[9999] w-[260px] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl border border-sky-200/25 bg-[#142447] p-3 text-white shadow-[0_14px_40px_rgba(8,18,39,0.36)]"
+                    className={cn('pointer-events-none fixed z-[9999] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl border border-sky-200/25 bg-[#142447] p-3 text-white shadow-[0_14px_40px_rgba(8,18,39,0.36)]',
+                        hovered.payment === 'cash' ? 'w-[320px]' : 'w-[260px]')}
                     style={{ left: tooltipX, top: tooltipY, maxHeight: 'min(65vh, 360px)' }}>
                     <div className="mb-1.5 text-[11px] font-bold text-white">{hover.label === 'Rendimiento' ? 'Cómo se calcula' : hover.label === 'Efectivo' ? 'Billetes y monedas' : hover.label}</div>
                     {hovered.payment === 'cash' ? (
                         denominations.length ? (
                             <>
-                                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-white/15 pt-2">
+                                <div className="grid grid-cols-2 gap-1.5 border-t border-white/15 pt-2">
                                     {denominations.map(({ denom, qty, total }) => (
-                                        <div key={denom} className="flex min-w-0 items-baseline justify-between gap-1.5 text-[10px]">
-                                            <span className="shrink-0 text-white/65">{denom < 1 ? `${Math.round(denom * 100)} c` : `${denom} €`} × {qty}</span>
-                                            <span className="truncate text-right font-semibold tabular-nums">{euro(total)}</span>
+                                        <div key={denom} className="flex min-w-0 items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.045] px-1 py-0.5">
+                                            <span className="flex h-[27px] w-[35px] shrink-0 items-center justify-center">
+                                                <Image src={CURRENCY_IMAGES[denom]} alt="" width={35} height={27}
+                                                    sizes="35px" className="pointer-events-none block max-h-full max-w-full object-contain drop-shadow-sm"/>
+                                            </span>
+                                            <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+                                                <span className="truncate text-[9px] leading-none text-white/70 tabular-nums">
+                                                    {(denom < 1 ? String(Math.round(denom * 100)) + ' c' : String(denom) + ' €') + ' × ' + qty}
+                                                </span>
+                                                <strong className="truncate text-[10px] leading-none font-semibold tabular-nums text-white">{euro(total)}</strong>
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
