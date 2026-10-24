@@ -7444,12 +7444,12 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='selected-day'] [data-element='sales-breakdown'] {
-    gap: 8px;
-    padding-top: 8px;
+    gap: 4px;
+    padding-top: 4px;
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='selected-day'] [data-element='products-section'] {
-    padding-bottom: 8px;
+    padding-bottom: 0;
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='selected-day'] [data-element='hours-section'] {
@@ -7484,7 +7484,7 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   /* La ficha mensual conserva los tres intervalos destacados bajo la gráfica. */
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='summary-stack'] [data-element='hours-section'] {
-    height: 162px;
+    height: 178px;
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='summary-stack'] [data-element='hours-header'] {
@@ -7501,14 +7501,14 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='summary-stack'] [data-element='hours-details'] {
     margin-top: 4px;
-    height: 74px;
+    height: 90px;
     padding-block: 3px;
   }
 
   /* Detalle diario: altura menor sin eliminar cifras ni eventos del gráfico. */
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='selected-day'] [data-element='hours-section'] {
-    height: 146px;
+    height: 162px;
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='selected-day'] [data-element='hours-plot'] {
@@ -7516,8 +7516,8 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   }
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
     [data-element='selected-day'] [data-element='hours-details'] {
-    height: 74px;
-    padding-block: 2px;
+    height: 90px;
+    padding-block: 3px;
   }
 
   /* Tickets: conservar una línea completa, importe y muescas laterales. */
