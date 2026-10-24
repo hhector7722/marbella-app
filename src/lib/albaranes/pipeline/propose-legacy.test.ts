@@ -69,8 +69,11 @@ function blockedDatabase(effect: 'legacy_stock' | 'typed_stock' | 'source_stock'
   return { db: { from } as unknown as Parameters<typeof proposeMistralExtraction>[0]['db'], reads, writes }
 }
 
-function materializingDatabase(stockLineId: string | null, lines = legacyLines,
-  effect: 'receipt' | 'source_stock' | 'price_history' | null = null) {
+function materializingDatabase(stockLineId: string | null,
+  lines: Array<Omit<(typeof legacyLines)[number], 'interpretation_proposal_id'> & {
+    interpretation_proposal_id: string | null }> = legacyLines,
+  effect: 'receipt' | 'source_stock' | 'price_history' | null = null,
+  invoiceStatus: 'pending_mapping' | 'mapped' = 'pending_mapping') {
   const proposals: Array<Record<string, unknown>> = []
   const insertedLines: Array<Record<string, unknown>> = []
   const retiredIds: string[] = []
@@ -109,7 +112,7 @@ function materializingDatabase(stockLineId: string | null, lines = legacyLines,
           && inColumn === 'id' && payload.superseded_by_extraction_id) retiredIds.push(...inValues)
       if (mutation) return { data: single ? null : [], error: null }
       if (table === 'purchase_invoices') return { data: { id: invoiceId, supplier_id: 2,
-        created_by: 'manager', status: 'pending_mapping', duplicate_of_invoice_id: null }, error: null }
+        created_by: 'manager', status: invoiceStatus, duplicate_of_invoice_id: null }, error: null }
       if (table === 'purchase_invoice_lines' && columns.includes('original_name')) {
         return { data: lines, error: null }
       }
@@ -196,6 +199,26 @@ describe('historical Mistral materialization guard', () => {
     assert.equal(insertedLines.length, 2)
     assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
     assert.equal(writes.includes('stock_movements'), false)
+  })
+
+  it('reconciles pending historical rows in a mapped invoice without touching received stock', async () => {
+    const { db, proposals, retiredIds } = materializingDatabase('line-1', legacyLines, null, 'mapped')
+    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+      sourceHash: 'hash', canonical, correlationId: null })
+    assert.equal(result.created, 2)
+    assert.deepEqual(proposals.map((proposal) => proposal.source_row_index), [1, 2])
+    assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
+  })
+
+  it('reconciles a pending historical row alongside an existing Mistral row', async () => {
+    const mixedLines = [legacyLines[0]!, { ...legacyLines[1],
+      interpretation_proposal_id: 'existing-mistral-proposal' }]
+    const { db, proposals, retiredIds } = materializingDatabase(null, mixedLines)
+    const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+      sourceHash: 'hash', canonical, correlationId: null })
+    assert.equal(result.created, 1)
+    assert.deepEqual(proposals.map((proposal) => proposal.source_row_index), [0])
+    assert.deepEqual(retiredIds, ['line-1'])
   })
 
   it('does not let OCR drift in an already received row block a distinct pending row', async () => {
