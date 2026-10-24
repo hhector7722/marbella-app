@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type MouseEvent, type FocusEvent } from 'react';
 import Image from 'next/image';
+import { createPortal } from 'react-dom';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, Pencil, X } from 'lucide-react';
@@ -12,9 +13,8 @@ import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { timeFilterBounds, type TimeFilterValue } from '@/components/time/time-filter-types';
 import { cn } from '@/lib/utils';
+import { DENOMINATIONS } from '@/lib/constants';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
-import { CashBreakdownModal } from '@/components/cash/CashBreakdownModal';
-import { Modal } from '@/components/ui/modal';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 
 type Ticket = { numero_documento: string; fecha: string; hora_cierre: string; total_documento: number; mesa: number | null };
@@ -152,10 +152,9 @@ const LAST_SALES_HOUR = 22;
 const SALES_HOUR_COUNT = LAST_SALES_HOUR - FIRST_SALES_HOUR + 1;
 type HourSlot = { hour: number; sales: number; tickets: number };
 
-function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }: {
+function HourlySalesTimeline({ hours, onChooseHour, contextLabel }: {
     hours?: TicketReport['hours'];
     onChooseHour?: (hour: number) => void;
-    selectedHour?: number | null;
     contextLabel?: string | null;
 }) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -227,8 +226,8 @@ function HourlySalesTimeline({ hours, onChooseHour, selectedHour, contextLabel }
                     <button key={slot.hour} type="button" data-crossfilter-trigger
                         style={{ left: `${index / SALES_HOUR_COUNT * 100}%`, width: `${100 / SALES_HOUR_COUNT}%` }}
                         className={cn('absolute inset-y-0 z-[1] cursor-pointer border-x border-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-sky-300',
-                            (activeIndex === index || selectedHour === slot.hour) && 'bg-sky-200/10')}
-                        aria-pressed={selectedHour === slot.hour}
+                            activeIndex === index && 'bg-sky-200/10')}
+                        aria-labelledby={undefined}
                         aria-label={`${slot.hour} a ${slot.hour + 1} horas: ${slot.tickets} tickets, ticket medio ${euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)}, facturación ${euro(slot.sales)}`}
                         onMouseEnter={() => setActiveIndex(index)}
                         onFocus={() => setActiveIndex(index)}
@@ -414,7 +413,7 @@ function ProductRankingThumbnail({ src }: { src?: string }) {
             {src && !failed ? (
                 <Image src={src} alt="" width={18} height={18} sizes="18px"
                     loading="lazy" onError={() => setFailed(true)}
-                    className="block h-[18px] w-[18px] shrink-0 object-cover"/>
+                    className="block h-[18px] w-[18px] shrink-0 object-contain"/>
             ) : null}
         </span>
     );
@@ -479,9 +478,9 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                 </RankingViewport>
             </section>
             <section data-element="hours-section" className="h-[230px] min-h-0 shrink-0">
-                <HourlySalesTimeline hours={report?.hours}
-                    contextLabel={selection?.scope === scope ? crossLabel(selection) : null}
-                    selectedHour={selection?.scope === scope && selection.kind === 'hour' ? selection.hour : null}
+                <HourlySalesTimeline
+                    hours={selection?.scope === scope && selection.kind === 'hour' ? baseReport?.hours : report?.hours}
+                    contextLabel={selection?.scope === scope && selection.kind !== 'hour' ? crossLabel(selection) : null}
                     onChooseHour={hour => onSelect({ kind: 'hour', hour, scope })}/>
             </section>
         </div>
@@ -499,7 +498,7 @@ function financialSummaryItems(extras?: FinancialExtras, performance: number | n
     const items: SummaryKpiItem[] = [
         {
             label: 'Rendimiento',
-            tooltip: 'Comparación de venta neta con hasta 8 cierres anteriores del mismo día de la semana (máximo 16 semanas hacia atrás, sin agosto). Rendimiento = (venta neta real − venta neta esperada) / venta neta esperada × 100. Para periodos de varios días se suman las ventas y referencias comparables antes de calcular.',
+            tooltip: 'Ventas netas frente a la media de hasta 8 días anteriores del mismo día de la semana. Positivo: por encima de la media; negativo: por debajo.',
             value: performance === null ? '' : (performance >= 0 ? '▲ ' : '▼ ') + Math.abs(performance).toFixed(1) + '%',
             tone: performance === null ? 'border-white/15 bg-white/[0.035]' : (performance >= 0 ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-rose-400/55 bg-rose-500/15')
         },
@@ -525,12 +524,29 @@ function TicketHeaderStats({ report }: { report: TicketReport | null }) {
     );
 }
 
-// Two compact columns of three finance metrics each, alongside the revenue tiles.
-function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
+// Paneles flotantes con el mismo lenguaje visual que las cards, fuera de sus zonas recortadas.
+function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cashBreakdown }: {
     sales: string; net: string; items: SummaryKpiItem[];
     scope: CrossScope; selection: CrossSelection | null;
     onSelect: (value: CrossSelection) => void;
+    cashBreakdown?: Record<string, number> | null;
 }) {
+    const [hover, setHover] = useState<{ label: string; x: number; top: number; bottom: number } | null>(null);
+    const reveal = (label: string, element: HTMLElement) => {
+        const rect = element.getBoundingClientRect();
+        setHover({ label, x: rect.left, top: rect.top, bottom: rect.bottom });
+    };
+    const hovered = items.find(item => item.label === hover?.label);
+    const denominations = DENOMINATIONS.flatMap(denom => {
+        const qty = Number(cashBreakdown?.[String(denom)] ?? 0);
+        return qty > 0 ? [{ denom, qty, total: denom * qty }] : [];
+    });
+    const cashTotal = denominations.reduce((sum, entry) => sum + entry.total, 0);
+    const showHelp = hovered && (hovered.tooltip || (hovered.payment === 'cash' && cashBreakdown));
+    const tooltipX = hover && typeof window !== 'undefined'
+        ? Math.max(8, Math.min(hover.x, window.innerWidth - 272)) : 8;
+    const tooltipY = hover && typeof window !== 'undefined'
+        ? (window.innerHeight - hover.bottom >= 240 ? hover.bottom + 7 : Math.max(8, hover.top - 300)) : 8;
     return (
         <div className="flex w-full min-w-0 shrink-0 items-stretch gap-3">
             <div className="flex max-w-[52%] shrink-0 flex-col items-start gap-1.5">
@@ -549,47 +565,88 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect }: {
             </div>
             <div className="grid min-w-0 flex-1 grid-flow-col grid-cols-2 grid-rows-3 gap-x-3 gap-y-1">
                 {items.map(item => {
-                    const selected = selection?.scope === scope && selection.kind === 'payment' && selection.payment === item.payment;
+                    const actionable = Boolean(item.payment && item.payment !== 'collections');
+                    const selected = actionable && selection?.scope === scope && selection.kind === 'payment' && selection.payment === item.payment;
+                    const hasHover = Boolean(item.tooltip || (item.payment === 'cash' && cashBreakdown));
+                    const hoverEvents = hasHover ? {
+                        onMouseEnter: (event: MouseEvent<HTMLElement>) => reveal(item.label, event.currentTarget),
+                        onMouseLeave: () => setHover(null),
+                        onFocus: (event: FocusEvent<HTMLElement>) => reveal(item.label, event.currentTarget),
+                        onBlur: () => setHover(null)
+                    } : {};
                     const content = (
                         <>
-                            <span className="w-full min-w-0 truncate pr-8 text-[11px] font-medium leading-tight text-white/80" title={item.tooltip ?? item.label}>{item.label}</span>
-                            {(item.payment === 'cash' || item.payment === 'card') && item.ticketPercent != null && (
-                                <span className="absolute right-1 top-1 text-[9px] font-semibold leading-none tabular-nums text-white/70"
-                                    title={`${item.ticketPercent.toFixed(1)}% de los tickets cobrados con ${item.label.toLowerCase()}`}>
-                                    {item.ticketPercent.toLocaleString('es-ES', { maximumFractionDigits: 1 })}%
-                                </span>
-                            )}
-                            <strong className="block w-full min-w-0 truncate whitespace-nowrap text-left text-[clamp(13px,1vw,16px)] font-bold leading-tight tabular-nums text-white" title={item.value}>{item.value}</strong>
+                            <span className="flex w-full min-w-0 items-center justify-between gap-1">
+                                <span className="min-w-0 truncate text-[11px] font-medium leading-tight text-white/80">{item.label}</span>
+                                {(item.payment === 'cash' || item.payment === 'card') && item.ticketPercent != null && (
+                                    <span className="shrink-0 text-[9px] font-semibold leading-none tabular-nums text-white/70"
+                                        aria-label={`${item.ticketPercent.toFixed(1)}% de los tickets cobrados con ${item.label.toLowerCase()}`}>
+                                        {item.ticketPercent.toLocaleString('es-ES', { maximumFractionDigits: 1 })}%
+                                    </span>
+                                )}
+                            </span>
+                            <strong className="block w-full min-w-0 truncate whitespace-nowrap text-left text-[clamp(13px,1vw,16px)] font-bold leading-tight tabular-nums text-white">
+                                {item.value}
+                            </strong>
                         </>
                     );
                     const rowClass = cn(
                         'relative flex min-h-[42px] w-full min-w-0 flex-col items-start justify-center gap-0.5 rounded-md border px-2 py-1 text-left',
                         item.tone ?? 'border-white/15 bg-white/[0.035]',
-                        item.payment && 'cursor-pointer transition-colors hover:brightness-125',
+                        actionable && 'cursor-pointer transition-colors hover:brightness-125',
                         selected && 'ring-1 ring-inset ring-white/75'
                     );
-                    return item.payment ? (
+                    return actionable ? (
                         <button key={item.label} type="button" data-crossfilter-trigger
-                            className={rowClass} aria-pressed={selected} title={item.tooltip}
+                            className={rowClass} aria-pressed={selected} {...hoverEvents}
                             onClick={() => onSelect({ kind: 'payment', payment: item.payment!, scope })}>
                             {content}
                         </button>
                     ) : (
-                        <div key={item.label} className={rowClass} title={item.tooltip}>{content}</div>
+                        <div key={item.label} className={rowClass}
+                            tabIndex={hasHover ? 0 : undefined} {...hoverEvents}>{content}</div>
                     );
                 })}
             </div>
+            {hover && showHelp && typeof document !== 'undefined' && createPortal(
+                <div role="tooltip" aria-label={`Información de ${hover.label}`}
+                    className="pointer-events-none fixed z-[9999] w-[260px] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl border border-sky-200/25 bg-[#142447] p-3 text-white shadow-[0_14px_40px_rgba(8,18,39,0.36)]"
+                    style={{ left: tooltipX, top: tooltipY, maxHeight: 'min(65vh, 360px)' }}>
+                    <div className="mb-1.5 text-[11px] font-bold text-white">{hover.label === 'Rendimiento' ? 'Cómo se calcula' : hover.label === 'Efectivo' ? 'Billetes y monedas' : hover.label}</div>
+                    {hovered.payment === 'cash' ? (
+                        denominations.length ? (
+                            <>
+                                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-white/15 pt-2">
+                                    {denominations.map(({ denom, qty, total }) => (
+                                        <div key={denom} className="flex min-w-0 items-baseline justify-between gap-1.5 text-[10px]">
+                                            <span className="shrink-0 text-white/65">{denom < 1 ? `${Math.round(denom * 100)} c` : `${denom} €`} × {qty}</span>
+                                            <span className="truncate text-right font-semibold tabular-nums">{euro(total)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-2 flex items-baseline justify-between gap-2 border-t border-white/20 pt-2 text-[11px]">
+                                    <span className="text-white/70">Total desglosado</span>
+                                    <strong className="tabular-nums text-teal-200">{euro(cashTotal)}</strong>
+                                </div>
+                            </>
+                        ) : <p className="text-[11px] leading-relaxed text-white/75">Este periodo no tiene un desglose de denominaciones registrado.</p>
+                    ) : (
+                        <p className="text-[11px] leading-relaxed text-white/80">{hovered.tooltip}</p>
+                    )}
+                </div>, document.body
+            )}
         </div>
     );
 }
 
-function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPercents, onNavigateMonth, breakdownReport, scope, selection, onSelect, productThumbnails }: {
+function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPercents, onNavigateMonth, breakdownReport, scope, selection, onSelect, productThumbnails, cashBreakdown }: {
     title: string; dateText: string; report: TicketReport | null;
     extras?: FinancialExtras; dailyAverage: number | null; ticketPercents: { cash: number | null; card: number | null };
     onNavigateMonth: (delta: number) => void;
     breakdownReport: TicketReport | null; scope: CrossScope;
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
     productThumbnails: Record<number, string>;
+    cashBreakdown?: Record<string, number> | null;
 }) {
     const sales = report ? Number(report.summary.totalSales) : null;
     const monthlyItems = financialSummaryItems(extras, null, ticketPercents).map(item => item.label === 'Rendimiento'
@@ -617,7 +674,7 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
             <FinancialKpiHeader
                 sales={sales !== null ? euro(sales) : ''}
                 net={extras ? euro(extras.net) : ''}
-                items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect}/>
+                items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect} cashBreakdown={cashBreakdown}/>
             <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope}
                 selection={selection?.kind === 'payment' && (selection.payment === 'cash' || selection.payment === 'card') ? null : selection}
                 onSelect={onSelect} productThumbnails={productThumbnails}/>
@@ -655,6 +712,7 @@ export default function VentasDesktopWorkspace() {
     const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
     const [monthReport, setMonthReport] = useState<TicketReport | null>(null);
+    const [loadedMonthKey, setLoadedMonthKey] = useState<string | null>(null);
     const [monthClosings, setMonthClosings] = useState<CloseRow[]>([]);
     const [calendarClosings, setCalendarClosings] = useState<CloseRow[]>([]);
     const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -667,8 +725,6 @@ export default function VentasDesktopWorkspace() {
     const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
     const [dayError, setDayError] = useState(false);
     const [crossSelection, setCrossSelection] = useState<CrossSelection | null>(null);
-    const [isCashBreakdownOpen, setIsCashBreakdownOpen] = useState(false);
-    const [collectionsScope, setCollectionsScope] = useState<CrossScope | null>(null);
     const [monthPaymentCounts, setMonthPaymentCounts] = useState<{ key: string; cash: number; card: number } | null>(null);
     const [periodPaymentCounts, setPeriodPaymentCounts] = useState<{ key: string; cash: number; card: number } | null>(null);
     const [crossResult, setCrossResult] = useState<CrossResponse | null>(null);
@@ -687,26 +743,15 @@ export default function VentasDesktopWorkspace() {
     const paymentOnly = crossSelection?.kind === 'payment' &&
         (crossSelection.payment === 'cash' || crossSelection.payment === 'card');
     // Tarjeta y Efectivo solo filtran facturas, nunca los productos ni las horas.
-    const monthBreakdown = crossSelection?.scope === 'month' && !paymentOnly ? crossResult : monthReport;
+    const currentMonthLoaded = loadedMonthKey === monthStart + ':' + monthEnd;
+    const visibleMonthReport = currentMonthLoaded ? monthReport : null;
+    const visibleMonthClosings = currentMonthLoaded ? monthClosings : [];
+    const monthBreakdown = crossSelection?.scope === 'month' && !paymentOnly ? crossResult : visibleMonthReport;
     const periodBreakdown = crossSelection?.scope === 'period' && !paymentOnly ? crossResult : dailyReport;
     const crossScopeStart = crossSelection?.scope === 'month' ? monthStart : period.start;
     const crossScopeEnd = crossSelection?.scope === 'month' ? monthEnd : period.end;
     const onChooseCross = (value: CrossSelection) => {
-        if (value.kind === 'payment' && value.payment === 'collections') {
-            setCrossSelection(null);
-            setCrossResult(null);
-            setCrossPage(0);
-            setCollectionsScope(value.scope);
-            return;
-        }
-        if (value.kind === 'payment' && value.payment === 'cash' &&
-            value.scope === 'period' && period.start === period.end && periodClosings.length > 0) {
-            setCrossSelection(null);
-            setCrossResult(null);
-            setCrossPage(0);
-            setIsCashBreakdownOpen(true);
-            return;
-        }
+        if (value.kind === 'payment' && value.payment === 'collections') return;
         setCrossSelection(current => sameCross(current, value) ? null : value);
         setCrossResult(null);
         setCrossPage(0);
@@ -766,8 +811,6 @@ export default function VentasDesktopWorkspace() {
         setCrossSelection(null);
         setCrossResult(null);
         setCrossPage(0);
-        setIsCashBreakdownOpen(false);
-        setCollectionsScope(null);
         setPeriod(next);
         if (!keepReturn) setReturnPeriod(null);
         setMonth(startOfMonth(parseISO(next.start)));
@@ -798,7 +841,16 @@ export default function VentasDesktopWorkspace() {
         }
     };
     const navigateMonth = (delta: number) => setMonth(current => delta < 0 ? subMonths(current, 1) : addMonths(current, 1));
-    const navigateSummaryMonth = (delta: number) => setSummaryMonth(current => delta < 0 ? subMonths(current, 1) : addMonths(current, 1));
+    const navigateSummaryMonth = (delta: number) => {
+        setCrossSelection(current => current?.scope === 'month' ? null : current);
+        setCrossResult(null);
+        setCrossPage(0);
+        setMonthReport(null);
+        setMonthClosings([]);
+        setMonthPaymentCounts(null);
+        setLoadedMonthKey(null);
+        setSummaryMonth(current => delta < 0 ? subMonths(current, 1) : addMonths(current, 1));
+    };
     const applyFilter = (value: TimeFilterValue) => {
         const bounds = timeFilterBounds(value);
         if (!bounds) return;
@@ -841,10 +893,11 @@ export default function VentasDesktopWorkspace() {
         const load = async () => {
             const [monthly, closes] = await Promise.all([
                 supabase.rpc('get_ventas_crossfilter', { p_start_date: monthStart, p_end_date: monthEnd, p_limit: 1 }),
-                supabase.from('cash_closings').select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference').gte('closing_date', monthStart).lte('closing_date', monthEnd)
+                supabase.from('cash_closings').select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,breakdown').gte('closing_date', monthStart).lte('closing_date', monthEnd)
             ]);
             if (!active) return;
             setMonthReport(monthly.error ? null : monthly.data as unknown as TicketReport);
+            setLoadedMonthKey(monthStart + ':' + monthEnd);
             setMonthClosings(distinctCashClosings((closes.data ?? []) as CloseRow[]));
 
         };
@@ -909,7 +962,7 @@ export default function VentasDesktopWorkspace() {
         const start = format(calendarWeeks[0][0], 'yyyy-MM-dd');
         const end = format(calendarWeeks[calendarWeeks.length - 1][6], 'yyyy-MM-dd');
         void supabase.from('cash_closings')
-            .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference')
+            .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,breakdown')
             .gte('closing_date', start).lte('closing_date', end)
             .then(({ data, error }) => {
                 if (active) setCalendarClosings(distinctCashClosings(error ? [] : (data ?? []) as CloseRow[]));
@@ -1113,7 +1166,7 @@ export default function VentasDesktopWorkspace() {
         // preceding 16 same-weekday comparisons used by /dashboard/history.
         const comparisonStart = format(subWeeks(parseISO(period.start), 16), 'yyyy-MM-dd');
         void supabase.from('cash_closings')
-            .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,weather,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
+            .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,breakdown,weather,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
             .gte('closing_date', comparisonStart).lte('closing_date', period.end).limit(4000)
             .then(({ data, error }) => {
                 if (!active) return;
@@ -1143,31 +1196,34 @@ export default function VentasDesktopWorkspace() {
             : { cash: counts.cash / total * 100, card: counts.card / total * 100 };
     const monthTicketPercentages = asPercentages(
         monthPaymentCounts?.key === `${monthStart}:${monthEnd}` ? monthPaymentCounts : null,
-        monthReport?.summary.count
+        visibleMonthReport?.summary.count
     );
     const periodTicketPercentages = asPercentages(
         periodPaymentCounts?.key === `${period.start}:${period.end}` ? periodPaymentCounts : null,
         dailyReport?.summary.count
     );
-    const collectionRows = (collectionsScope === 'month' ? monthClosings : periodClosings)
-        .filter(row => collectionsScope === 'month' || (row.closing_date >= period.start && row.closing_date <= period.end));
-    const collectionsByDate = Array.from(collectionRows.reduce((map, row) => {
-        const amount = Number(row.debt_recovered ?? 0);
-        if (amount !== 0) map.set(row.closing_date, (map.get(row.closing_date) ?? 0) + amount);
-        return map;
-    }, new Map<string, number>()), ([date, amount]) => ({ date, amount }))
-        .sort((a, b) => b.date.localeCompare(a.date));
-    const collectionsTotal = collectionsByDate.reduce((sum, row) => sum + row.amount, 0);
+    const aggregateBreakdown = (closings: CloseRow[]): Record<string, number> => {
+        const entries: Record<string, number> = {};
+        for (const closing of closings) {
+            for (const [key, raw] of Object.entries(closing.breakdown ?? {})) {
+                const n = Number(raw);
+                if (n > 0 && Number.isFinite(n)) entries[key] = (entries[key] ?? 0) + n;
+            }
+        }
+        return entries;
+    };
+    const monthCashBreakdown = aggregateBreakdown(visibleMonthClosings);
+    const periodCashBreakdown = aggregateBreakdown(periodClosings);
     const monthActiveDays = new Set(
-        monthClosings.filter(c => Number(c.tpv_sales ?? 0) > 0).map(c => c.closing_date)
+        visibleMonthClosings.filter(c => Number(c.tpv_sales ?? 0) > 0).map(c => c.closing_date)
     ).size;
-    const monthDailyAverage = monthActiveDays > 0 && monthReport
-        ? Number(monthReport.summary.totalSales) / monthActiveDays : null;
-    const monthTotals = useMemo(() => monthClosings.reduce((a, c) => ({
+    const monthDailyAverage = monthActiveDays > 0 && visibleMonthReport
+        ? Number(visibleMonthReport.summary.totalSales) / monthActiveDays : null;
+    const monthTotals = useMemo(() => visibleMonthClosings.reduce((a, c) => ({
         cash: a.cash + Number(c.cash_counted ?? 0), card: a.card + Number(c.sales_card ?? 0),
         pending: a.pending + Number(c.sales_pending ?? 0), recovered: a.recovered + Number(c.debt_recovered ?? 0),
         net: a.net + Number(c.net_sales ?? 0), difference: a.difference + Number(c.difference ?? 0)
-    }), { cash: 0, card: 0, pending: 0, recovered: 0, net: 0, difference: 0 }), [monthClosings]);
+    }), { cash: 0, card: 0, pending: 0, recovered: 0, net: 0, difference: 0 }), [visibleMonthClosings]);
     const hasClosingData = periodClosings.length > 0;
     const periodTotals = useMemo(() => ({
         sales: closingSum(periodClosings, 'tpv_sales'),
@@ -1204,13 +1260,13 @@ export default function VentasDesktopWorkspace() {
             </div>
             <div className="history-desktop-board grid min-h-0 flex-1 items-start gap-4">
                 <div data-element="summary-stack" className="min-h-0 min-w-0">
-                    <SummaryCard title="Mensual" dateText={monthLabel} report={monthReport}
+                    <SummaryCard title="Mensual" dateText={monthLabel} report={visibleMonthReport}
                         breakdownReport={monthBreakdown}
-                        extras={monthClosings.length ? monthTotals : undefined}
+                        extras={visibleMonthClosings.length ? monthTotals : undefined}
                         dailyAverage={monthDailyAverage} ticketPercents={monthTicketPercentages}
                         onNavigateMonth={navigateSummaryMonth}
                         scope="month" selection={crossSelection} onSelect={onChooseCross}
-                        productThumbnails={productThumbnails}/>
+                        productThumbnails={productThumbnails} cashBreakdown={monthCashBreakdown}/>
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
@@ -1247,7 +1303,7 @@ export default function VentasDesktopWorkspace() {
                                 sales={dailyReport ? euro(dailyReport.summary.totalSales) : ''}
                                 net={hasClosingData ? euro(periodTotals.net) : ''}
                                 items={financialSummaryItems(hasClosingData ? periodTotals : undefined, periodPerformance, periodTicketPercentages)}
-                                scope="period" selection={crossSelection} onSelect={onChooseCross}/>
+                                scope="period" selection={crossSelection} onSelect={onChooseCross} cashBreakdown={periodCashBreakdown}/>
                         </div>
                         {isSingleDay && selectedClosing && (
                             <div className="flex shrink-0 items-center justify-center gap-2 border-b border-white/10 px-3 py-2">
@@ -1392,49 +1448,6 @@ export default function VentasDesktopWorkspace() {
                     </section>
                 </div>
             </div>
-            <CashBreakdownModal
-                isOpen={isCashBreakdownOpen && isSingleDay && Boolean(selectedClosing)}
-                onClose={() => setIsCashBreakdownOpen(false)}
-                breakdown={selectedClosing?.breakdown ?? {}}
-                date={selectedClosing?.closing_date}
-                total={Number(selectedClosing?.cash_counted ?? 0)}
-                layer="base"
-                instance="ventas-dia-cash-breakdown"
-            />
-            <Modal
-                open={collectionsScope !== null}
-                onClose={() => setCollectionsScope(null)}
-                variant="compact"
-                layer="base"
-                instance="ventas-cobros-detalle"
-                title="Cobros de deudas"
-                subtitle={collectionsScope === 'month' ? monthLabel : periodTitle}
-            >
-                <div className="flex min-w-0 flex-col gap-3 px-3 pb-4 pt-1">
-                    <div className="flex items-baseline justify-between gap-3 border-b border-zinc-200 pb-3">
-                        <span className="text-sm text-zinc-600">Total recuperado</span>
-                        <strong className="text-xl font-bold tabular-nums text-zinc-900">{euro(collectionsTotal)}</strong>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-zinc-600">
-                        <span>Fecha del cierre</span>
-                        <span>Importe cobrado</span>
-                    </div>
-                    {collectionsByDate.length ? (
-                        <div className="custom-scrollbar max-h-[45vh] overflow-y-auto">
-                            {collectionsByDate.map(row => (
-                                <div key={row.date} className="flex items-center justify-between gap-3 border-b border-zinc-200 py-2 text-sm">
-                                    <span>{format(parseISO(row.date), 'd MMM yyyy', { locale: es })}</span>
-                                    <strong className="tabular-nums">{euro(row.amount)}</strong>
-                                </div>
-                            ))}
-                        </div>
-                    ) : <p className="py-2 text-sm text-zinc-500">No se registraron cobros de deudas en este periodo.</p>}
-                    <p className="text-xs leading-relaxed text-zinc-500">
-                        Los cierres registran el importe total recuperado por fecha.
-                        No consta a qué cliente, ticket, producto u hora corresponde cada cobro.
-                    </p>
-                </div>
-            </Modal>
             <TimeFilterModal
                 isOpen={filterOpen}
                 onClose={() => setFilterOpen(false)}
