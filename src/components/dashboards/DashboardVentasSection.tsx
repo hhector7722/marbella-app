@@ -335,10 +335,9 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     return (
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
-                <div data-element="header" data-tone="plain" className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1">
-                    <span aria-hidden="true" />
-                    <div className="flex min-w-0 items-center justify-center">
-                        <div className="inline-flex items-center gap-1 md:gap-1.5 rounded-lg">
+                <div data-element="header" data-tone="plain" className="relative flex h-8 w-full shrink-0 items-center justify-end">
+                    <div data-element="centered-date-controls" className="absolute left-1/2 top-1/2 z-10 flex max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center">
+                        <div className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg md:gap-1.5">
                             <button
                                 type="button"
                                 onClick={() => setSalesViewDate(format(subDays(parseSalesViewDate(), 1), 'yyyy-MM-dd'))}
@@ -384,8 +383,9 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     <Link href="/dashboard/ventas"
                         data-style="calculator-primary"
                         aria-label="Abrir análisis completo de ventas"
-                        className="relative isolate inline-flex h-8 min-w-0 shrink-0 items-center justify-center justify-self-end rounded-lg px-2 text-[12px] font-extrabold leading-none text-white transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:scale-95">
-                        Ventas
+                        style={{ color: '#ffffff' }}
+                        className="relative isolate z-0 inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-2 text-[12px] font-extrabold leading-none text-white transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:scale-95">
+                        <span style={{ color: '#ffffff' }}>Ventas</span>
                     </Link>
                 </div>
 

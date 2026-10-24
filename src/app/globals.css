@@ -7535,10 +7535,13 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
    Replica el botón primary de Calculadora sin cambiar la altura del widget. */
 /* Acceso Ventas: el mismo acabado que Button primary (Calculadora),
    con una zona visual compacta para no desplazar fecha y hora. */
+[data-instance='dashboard-ventas'] [data-element='header'] a[data-style='calculator-primary'],
+[data-instance='dashboard-ventas'] [data-element='header'] a[data-style='calculator-primary'] > span {
+  color: #ffffff !important;
+}
 [data-instance='dashboard-ventas'] [data-element='header'] a[data-style='calculator-primary'] {
   position: relative;
   isolation: isolate;
-  color: var(--color-texto-invertido);
   font-size: 12px;
   text-decoration: none;
   background: transparent;
