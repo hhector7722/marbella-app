@@ -64,6 +64,23 @@ describe('historical line reconciliation', () => {
     assert.deepEqual(duplicateLegacy.map((item) => item.mistralRowIndex), [null, null])
   })
 
+  it('reconciles a uniquely truncated historical name without confusing product variants', () => {
+    const rows = [
+      { rowIndex: 0, descriptionRaw: 'VASO CARTON Kraft 4oz (Pak 50 Uds)(Cj.20 Paks)', quantityRaw: '7', supplierProductCodeRaw: null },
+      { rowIndex: 1, descriptionRaw: 'VASO CARTON Kraft 8oz (Pak 50 Uds)(Cj.20 Paks)', quantityRaw: '7', supplierProductCodeRaw: null },
+    ]
+    const match = matchLegacyLinesToMistral({
+      legacyLines: [{ id: 'cup', originalName: 'VASO CARTON Kraft 4oz (Pak 50 Uds) (Cj.20', quantity: 7 }],
+      mistralRows: rows,
+    })
+    assert.equal(match[0]!.mistralRowIndex, 0)
+    const ambiguous = matchLegacyLinesToMistral({
+      legacyLines: [{ id: 'cup', originalName: 'VASO CARTON Kraft', quantity: 7 }],
+      mistralRows: rows,
+    })
+    assert.equal(ambiguous[0]!.mistralRowIndex, null)
+  })
+
   it('does not match by position, price or quantity alone', () => {
     const result = matchLegacyLinesToMistral({
       legacyLines: [{ id: 'wrong', originalName: 'CROISSANT DE QUESO - 40 Uds.', quantity: 1 }],

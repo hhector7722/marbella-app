@@ -205,6 +205,9 @@ inequívoca. Se conservan las líneas antiguas y el vínculo de conciliación co
 evidencia. Una diferencia o un efecto económico sin atribución segura mantiene
 la línea afectada para revisión. Esta conciliación crea propuestas, nunca recepciones automáticas:
 un gerente o administrador debe revisarlas antes de K4.
+Un nombre antiguo cortado al final del campo puede conciliarse cuando conserva
+un prefijo largo de palabras completas, la cantidad coincide y solo existe
+una fila compatible en el original; una variante ambigua sigue bloqueada.
 La conciliación se aplica también a albaranes que figuran como `mapped` y a
 los que ya tienen otras líneas con propuesta Mistral. El estado del albarán o
 la existencia de esas otras propuestas no debe impedir la revisión segura de

@@ -61,6 +61,12 @@ function oneOcrCharacterApart(left: string, right: string): boolean {
   return edits + Number(i < left.length || j < right.length) === 1
 }
 
+function uniqueTruncatedNamePrefix(legacy: string, canonical: string): boolean {
+  // Older OCR sometimes stopped at the end of a product-name field. Require
+  // a substantial complete-token prefix; quantity and unique-row checks still apply.
+  return legacy.length >= 20 && canonical.startsWith(`${legacy} `)
+}
+
 export function parseQuantity(raw: string | null): number | null {
   const match = raw?.trim().match(/^(\d+(?:[,.]\d+)?)(?:\s*(?:U|UD|UDS|CAJA|CAJAS)\.?)?$/i)
   if (!match) return null
@@ -86,7 +92,9 @@ export function matchLegacyLinesToMistral(params: {
       line.name.length > 0 && line.quantity != null && Number.isFinite(line.quantity) && line.quantity > 0
       && row.quantity === line.quantity && (!line.code || !row.code || line.code === row.code))
     const exact = comparable.filter((row) => line.name === row.name)
-    return exact.length ? exact : comparable.filter((row) => oneOcrCharacterApart(line.name, row.name))
+    if (exact.length) return exact
+    const ocr = comparable.filter((row) => oneOcrCharacterApart(line.name, row.name))
+    return ocr.length ? ocr : comparable.filter((row) => uniqueTruncatedNamePrefix(line.name, row.name))
   })
   const demand = new Map<number, number>()
   for (const matches of candidates) {
