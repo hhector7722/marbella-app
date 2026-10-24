@@ -813,6 +813,8 @@ export default function AlbaranesHistoricoClient({
           map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
         }
         setStockStatusByLineId(map)
+      } else {
+        setDetailError(`No se pudo comprobar el stock de este albarán: ${st.message}`)
       }
     } finally {
       if (detailReqRef.current !== reqId) return

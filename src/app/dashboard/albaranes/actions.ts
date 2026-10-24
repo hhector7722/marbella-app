@@ -785,18 +785,20 @@ export async function getInvoiceStockStatusesAction(params: {
   const lineIds = Array.from(new Set((params?.lineIds ?? []).map((x) => String(x ?? '').trim()).filter(Boolean)))
   if (lineIds.length === 0) return { success: true, statuses: [] }
 
-  const ensure = await ensureStockMovementsReferenceDocColumn(gate.supabase)
-  if (!ensure.ok) return { success: false, message: ensure.message }
-
   // 1) Movimientos aplicados: K4 usa una referencia tipada; el histórico
   // conserva `ALB-LINE-*` para que la lectura siga siendo compatible.
   const appliedRefs = lineIds.map((id) => `ALB-LINE-${id}`)
-  const { data: appliedRows, error: appliedErr } = await gate.supabase
-    .from('stock_movements')
-    .select('reference_doc, reference_id, quantity')
-    .eq('movement_type', 'PURCHASE')
-    .or(`reference_doc.in.(${appliedRefs.map((ref) => `\"${ref}\"`).join(',')}),and(reference_type.eq.purchase_invoice_line,reference_id.in.(${lineIds.map((id) => `\"${id}\"`).join(',')}))`)
-  if (appliedErr) return { success: false, message: appliedErr.message }
+  const [legacyApplied, typedApplied] = await Promise.all([
+    gate.supabase.from('stock_movements').select('reference_doc,reference_id,quantity')
+      .eq('movement_type', 'PURCHASE').in('reference_doc', appliedRefs),
+    gate.supabase.from('stock_movements').select('reference_doc,reference_id,quantity')
+      .eq('movement_type', 'PURCHASE').eq('reference_type', 'purchase_invoice_line')
+      .in('reference_id', lineIds),
+  ])
+  if (legacyApplied.error || typedApplied.error) {
+    return { success: false, message: legacyApplied.error?.message ?? typedApplied.error?.message ?? 'No se pudo consultar el stock.' }
+  }
+  const appliedRows = [...(legacyApplied.data ?? []), ...(typedApplied.data ?? [])]
 
   const appliedMap = new Map<string, number>()
   for (const r of appliedRows ?? []) {
