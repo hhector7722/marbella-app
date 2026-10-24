@@ -814,7 +814,7 @@ export async function getInvoiceStockStatusesAction(params: {
   }
 
   // 2) Rectificaciones (ALB-LINE-<id>-REVn-...)
-  const or = lineIds.map((id) => `reference_doc.ilike.ALB-LINE-${id}-REV%`).join(',')
+  const or = lineIds.map((id) => `reference_doc.like.ALB-LINE-${id}-REV%`).join(',')
   let rectRows: any[] = []
   if (or) {
     const { data, error } = await gate.supabase.from('stock_movements').select('reference_doc').or(or).limit(5000)
