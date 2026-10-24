@@ -151,8 +151,27 @@ export async function executeCopilotTool(params: {
       actionName,
       rpc: def.rpc,
       params: rpcPayload,
-      status: 200,
+      status: 502,
       error: `Error en base de datos: ${rpcErr.message}`,
+    };
+  }
+
+  // Algunas RPC heredadas devuelven un JSON de error sin generar un error SQL.
+  // No se puede comunicar al usuario que una operación se ha completado.
+  if (
+    rpcResult &&
+    typeof rpcResult === "object" &&
+    !Array.isArray(rpcResult) &&
+    "error" in rpcResult &&
+    (rpcResult as { error: unknown }).error === "no_implementada"
+  ) {
+    return {
+      ok: false,
+      actionName,
+      rpc: def.rpc,
+      params: rpcPayload,
+      status: 501,
+      error: "La operación todavía no está implementada en la aplicación.",
     };
   }
 

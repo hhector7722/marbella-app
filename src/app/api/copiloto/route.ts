@@ -4,7 +4,6 @@ import {
   convertToModelMessages,
   type UIMessage,
 } from "ai";
-import { zodToJsonSchema } from "zod-to-json-schema";
 import { after } from "next/server";
 import ollama, { type Tool } from "ollama";
 import type { CopilotAction } from "@/lib/copilot/actions";
@@ -690,12 +689,31 @@ export async function POST(req: Request) {
 
   const todayIso = new Date().toISOString().split("T")[0];
 
+  // El contexto procede del navegador: informa sobre la pantalla, pero jamás
+  // autoriza operaciones ni sustituye a las verificaciones del servidor/RLS.
+  const rawPageContext = bodyJson.pageContext;
+  const supplierContext =
+    rawPageContext &&
+    typeof rawPageContext === "object" &&
+    "kind" in rawPageContext &&
+    rawPageContext.kind === "supplier_draft" &&
+    "supplier" in rawPageContext &&
+    typeof rawPageContext.supplier === "string"
+      ? rawPageContext.supplier.trim().replace(/[^\p{L}\p{N} .()\-]/gu, "").slice(0, 120)
+      : "";
+
+  const screenContext = supplierContext
+    ? `La pantalla declara que está abierto un borrador de compra del proveedor ${JSON.stringify(supplierContext)}. Esta información no es un permiso. No afirmes haber modificado ese borrador: aún no existe una herramienta de edición de borradores por chat.`
+    : "No se ha comunicado ningún pedido de proveedor abierto.";
+
   const system = `Eres Crack, el asistente operativo de Bar La Marbella. Hoy es ${todayLabel}.
 REGLA ABSOLUTA DE FORMATO: NUNCA uses simbolos Markdown. CERO asteriscos (*), CERO almohadillas (#), CERO guiones bajos (_). Texto plano siempre.
 Para secciones usa MAYUSCULAS seguidas de dos puntos. Para listas usa numeracion simple.
 REGLA FECHAS: La fecha actual es ${todayIso}. Usa esta fecha para calcular rangos. La semana actual va de lunes a domingo del calendario real. NUNCA uses fechas de 2023.
 REGLA EMPLEADOS: NUNCA pidas un ID de usuario. Cuando el usuario mencione un nombre de empleado, usa consultar_usuarios con el nombre para obtener el UUID, luego usa ese UUID en consultas de horas/asistencia.
 REGLA RECETAS: Confirma el nombre de la receta encontrada, presenta ingredientes en formato "Cantidad Unidad - Ingrediente" y nunca inventes ingredientes.
+REGLA ACCIONES: No afirmes haber añadido, guardado, enviado ni modificado nada sin un resultado confirmado de una herramienta operativa. La herramienta crear_pedido no edita un pedido de TPV ni un borrador: actualmente devuelve no_implementada.
+CONTEXTO DE PANTALLA: ${screenContext}
 Rol: ${role}.`;
 
   const modelMessages = await convertToModelMessages(messages);
@@ -811,7 +829,7 @@ Rol: ${role}.`;
         }
       }
 
-      let ollamaMessages: Array<Record<string, unknown>> = [
+      const ollamaMessages: Array<Record<string, unknown>> = [
         {
           role: "system",
           content: system,

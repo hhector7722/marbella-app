@@ -727,7 +727,9 @@ describe('Dashboard Admin y Master escritorio: cuadrículas de ocho columnas y a
         assert.match(master, /setDesktopOtherShortlist\(window\.matchMedia\('\(min-width: 1024px\)'\)\.matches\)/);
         assert.match(adminModal, /export const ADMIN_MORE_FUNCTIONS_ITEMS/);
         assert.match(masterModal, /export const MASTER_MORE_FUNCTIONS_ITEMS/);
-        assert.match(masterModal, /export const MASTER_DESKTOP_OTHER_INSTANCES = \['web', 'vitrina', 'consumo', 'altas'\]/);
+        assert.match(masterModal, /export const MASTER_DESKTOP_OTHER_INSTANCES = \['agente-ia', 'web', 'vitrina', 'consumo', 'altas'\]/);
+        assert.match(masterModal, /label: 'Agente IA'[^\n]*action: 'chat'/);
+        assert.match(masterModal, /chat: openChat/);
         assert.match(masterModal, /export const MASTER_DESKTOP_DIRECT_ITEMS/);
         assert.match(masterModal, /const availableItems = desktopShortlist \? MASTER_DESKTOP_OTHER_ITEMS : MASTER_MORE_FUNCTIONS_ITEMS;/);
         assert.match(shortcuts, /className="home-desktop-extra"/);
