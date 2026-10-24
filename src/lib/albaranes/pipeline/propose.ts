@@ -38,11 +38,11 @@ export async function proposeMistralExtraction(params: {
       || invoice.supplier_id == null || !invoice.created_by) {
     return { created: 0, materialized: 0, ready: 0, exceptions: 0, skipped: 'invoice_not_eligible' }
   }
-  // No transformar documentos que ya tienen recepciones; el backfill es solo lectura.
+  // Una recepción previa protege su línea, no las demás líneas del documento.
   const { data: confirmed, error: confirmedError } = await db.from('purchase_receipt_confirmations')
-    .select('id').eq('purchase_invoice_id', params.invoiceId).limit(1)
+    .select('purchase_invoice_line_id').eq('purchase_invoice_id', params.invoiceId)
   if (confirmedError) throw new Error('mistral_confirmations_unavailable')
-  if (confirmed?.length) return { created: 0, materialized: 0, ready: 0, exceptions: 0, skipped: 'already_received' }
+  const confirmedLineIds = new Set((confirmed ?? []).map((row) => String(row.purchase_invoice_line_id)))
 
   const { data: invoiceLines, error: invoiceLinesError } = await db.from('purchase_invoice_lines')
     .select('id,original_name,quantity,interpretation_proposal_id,superseded_by_extraction_id').eq('invoice_id', params.invoiceId)
@@ -65,6 +65,9 @@ export async function proposeMistralExtraction(params: {
     const ownIds = new Set((ownProposals ?? []).map((row) => row.id))
     const active = invoiceLines.filter((line) => !line.superseded_by_extraction_id)
     const manual = active.filter((line) => !line.interpretation_proposal_id)
+    if (confirmedLineIds.size && !manual.length) {
+      return { created: 0, materialized: 0, ready: 0, exceptions: 0, skipped: 'already_received' }
+    }
     if (manual.length) {
       // Replace old OCR rows with the canonical extraction only when no
       // economic effect exists. A difference in OCR rows must remain editable
@@ -98,29 +101,41 @@ export async function proposeMistralExtraction(params: {
         db.from('stock_movements').select('id,reference_doc').in('reference_doc', oldLineIds.map((id) => `ALB-LINE-${id}`)),
         db.from('stock_movements').select('id,reference_id').in('reference_id', oldLineIds),
         extractionIds.length
-          ? db.from('stock_movements').select('id').in('source_document_extraction_id', extractionIds).limit(1)
+          ? db.from('stock_movements').select('id,reference_id,reference_doc')
+            .in('source_document_extraction_id', extractionIds)
           : Promise.resolve({ data: [], error: null }),
-        db.from('ingredient_price_history').select('id').eq('purchase_invoice_id', params.invoiceId).limit(1),
+        db.from('ingredient_price_history').select('id,purchase_invoice_line_id')
+          .eq('purchase_invoice_id', params.invoiceId),
       ])
       if (legacyStock.error || typedStock.error || extractionStock.error || priceHistory.error) {
         throw new Error('mistral_legacy_effects_unavailable')
       }
-      if (extractionStock.data?.length || priceHistory.data?.length) {
+      const effectLineIds = new Set<string>([
+        ...(legacyStock.data ?? []).map((row) => String(row.reference_doc).replace(/^ALB-LINE-/, '')),
+        ...(typedStock.data ?? []).map((row) => String(row.reference_id)),
+        ...(extractionStock.data ?? []).map((row) => String(row.reference_id ?? ''))
+          .filter((id) => oldLineIds.includes(id)),
+        ...(extractionStock.data ?? []).map((row) => String(row.reference_doc ?? '')
+          .replace(/^ALB-LINE-/, '')).filter((id) => oldLineIds.includes(id)),
+        ...(priceHistory.data ?? []).map((row) => String(row.purchase_invoice_line_id ?? '')).filter(Boolean),
+        ...confirmedLineIds,
+      ])
+      const unattributed = (extractionStock.data ?? []).some((row) =>
+        !oldLineIds.includes(String(row.reference_id ?? ''))
+        && !oldLineIds.includes(String(row.reference_doc ?? '').replace(/^ALB-LINE-/, '')))
+        || (priceHistory.data ?? []).some((row) => !row.purchase_invoice_line_id)
+      if (unattributed) {
         return { created: 0, materialized: 0, ready: 0, exceptions: 0,
           skipped: 'manual_lines_require_review' }
       }
-      if (legacyStock.data?.length || typedStock.data?.length) {
+      if (effectLineIds.size) {
         // Where older rows already moved stock, leave them active. Only a
         // uniquely reconciled, stock-free row may become a new review proposal.
         if (!hadManualLegacyLines) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }
-        const stockLineIds = new Set<string>([
-          ...(legacyStock.data ?? []).map((row) => String(row.reference_doc).replace(/^ALB-LINE-/, '')),
-          ...(typedStock.data ?? []).map((row) => String(row.reference_id)),
-        ])
-        if ([...stockLineIds].some((id) => !oldLineIds.includes(id))) {
+        if ([...effectLineIds].some((id) => !oldLineIds.includes(id))) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }
         }
@@ -128,7 +143,7 @@ export async function proposeMistralExtraction(params: {
         // must not prevent a uniquely matched purchase from being reviewed.
         // Rows with stock, ambiguous matches and extra OCR rows stay untouched.
         const safeMatches = legacyMatches.filter((match) => match.reason === 'matched'
-          && !stockLineIds.has(match.legacyLineId))
+          && !effectLineIds.has(match.legacyLineId))
         if (safeMatches.length === 0) {
           return { created: 0, materialized: 0, ready: 0, exceptions: 0,
             skipped: 'manual_lines_require_review' }

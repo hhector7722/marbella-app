@@ -69,7 +69,8 @@ function blockedDatabase(effect: 'legacy_stock' | 'typed_stock' | 'source_stock'
   return { db: { from } as unknown as Parameters<typeof proposeMistralExtraction>[0]['db'], reads, writes }
 }
 
-function materializingDatabase(stockLineId: string | null, lines = legacyLines) {
+function materializingDatabase(stockLineId: string | null, lines = legacyLines,
+  effect: 'receipt' | 'source_stock' | 'price_history' | null = null) {
   const proposals: Array<Record<string, unknown>> = []
   const insertedLines: Array<Record<string, unknown>> = []
   const retiredIds: string[] = []
@@ -115,6 +116,19 @@ function materializingDatabase(stockLineId: string | null, lines = legacyLines) 
       if (table === 'stock_movements' && stockLineId && inColumn === 'reference_doc') {
         return { data: [{ id: 'old-stock', reference_doc: `ALB-LINE-${stockLineId}` }], error: null }
       }
+      if (table === 'purchase_receipt_confirmations' && effect === 'receipt') {
+        return { data: [{ purchase_invoice_line_id: 'line-1' }], error: null }
+      }
+      if (table === 'stock_movements' && effect === 'source_stock'
+          && inColumn === 'source_document_extraction_id') {
+        return { data: [{ id: 'old-stock', reference_id: 'line-1', reference_doc: null }], error: null }
+      }
+      if (table === 'ingredient_price_history' && effect === 'price_history') {
+        return { data: [{ id: 'old-price', purchase_invoice_line_id: 'line-1' }], error: null }
+      }
+      if (table === 'document_extractions' && effect === 'source_stock') {
+        return { data: [{ id: 'old-extraction' }], error: null }
+      }
       return { data: single ? null : [], error: null }
     }
     return query
@@ -124,7 +138,7 @@ function materializingDatabase(stockLineId: string | null, lines = legacyLines) 
 }
 
 describe('historical Mistral materialization guard', () => {
-  for (const effect of ['source_stock', 'price_history'] as const) {
+  for (const effect of ['price_history'] as const) {
     it(`keeps all old lines active when ${effect} already exists`, async () => {
       const { db, reads, writes } = blockedDatabase(effect)
       const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
@@ -132,6 +146,18 @@ describe('historical Mistral materialization guard', () => {
       assert.equal(result.skipped, 'manual_lines_require_review')
       assert.deepEqual(writes, [])
       assert.ok(reads.some((read) => read.startsWith('stock_movements:')))
+    })
+  }
+
+  for (const effect of ['receipt', 'source_stock', 'price_history'] as const) {
+    it(`reviews pending lines while preserving a line with ${effect}`, async () => {
+      const { db, proposals, retiredIds, writes } = materializingDatabase(null, legacyLines, effect)
+      const result = await proposeMistralExtraction({ db, invoiceId, extractionId: 'extraction',
+        sourceHash: 'hash', canonical, correlationId: null })
+      assert.equal(result.created, 2)
+      assert.deepEqual(proposals.map((proposal) => proposal.source_row_index), [1, 2])
+      assert.deepEqual(retiredIds.sort(), ['line-2', 'line-3'])
+      assert.equal(writes.includes('stock_movements'), false)
     })
   }
 
