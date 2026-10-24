@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { addDays, format, isToday, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
@@ -336,15 +336,6 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
                 <div data-element="header" data-tone="plain" className="flex items-center justify-between gap-2 shrink-0">
-                    <Link
-                        href="/dashboard/ventas"
-                        className={cn(
-                            'py-0.5 px-2 flex items-center justify-center rounded-md text-[8px] font-medium uppercase tracking-wider',
-                            'bg-zinc-100 text-zinc-700 hover:bg-zinc-200/80 active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
-                        )}
-                    >
-                        Ventas
-                    </Link>
                     <div className="flex-1 flex items-center justify-center min-w-0">
                         <div className="inline-flex items-center gap-1 md:gap-1.5 rounded-lg">
                             <button
@@ -389,14 +380,10 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                             </button>
                         </div>
                     </div>
-                    <Link
-                        href="/dashboard/history"
-                        className={cn(
-                            'py-0.5 px-2 flex items-center justify-center rounded-md text-[8px] font-medium uppercase tracking-wider',
-                            'bg-zinc-100 text-zinc-700 hover:bg-zinc-200/80 active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
-                        )}
-                    >
-                        Cierres
+                    <Link href="/dashboard/ventas"
+                        aria-label="Abrir análisis completo de ventas"
+                        className="group inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-sky-200/70 bg-gradient-to-b from-white to-sky-50 px-2.5 text-[10px] font-semibold tracking-[0.01em] text-[#254e88] shadow-[0_1px_3px_rgba(15,43,91,0.08)] transition-all hover:border-sky-300 hover:bg-sky-100 hover:shadow-[0_3px_10px_rgba(15,43,91,0.13)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 active:scale-[0.98]">
+                        Ventas <ArrowUpRight size={13} strokeWidth={1.7} aria-hidden="true" className="opacity-70 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/>
                     </Link>
                 </div>
 
