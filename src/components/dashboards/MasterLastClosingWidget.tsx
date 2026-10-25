@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/modal';
 import { CashBreakdownModal } from '@/components/cash/CashBreakdownModal';
+import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { getBusinessHourFromTicket, cn } from '@/lib/utils';
 import {
@@ -79,6 +80,7 @@ export function MasterLastClosingWidget() {
     const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>([]);
     const [topHours, setTopHours] = useState<any[]>([]);
     const [salesSummary, setSalesSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
+    const [mobileClosingSnapshot, setMobileClosingSnapshot] = useState<{ date: string; hours: { hora: number; total: number }[]; products: HomeWidgetTopProduct[] } | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -132,6 +134,39 @@ export function MasterLastClosingWidget() {
         const d = parseLocalSafe(closing.closing_date as string);
         return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMM', { locale: es });
     }, [closing]);
+
+    // El resumen compacto se carga con el último cierre; el modal completo sigue siendo bajo demanda.
+    useEffect(() => {
+        const date = closing?.closing_date ? String(closing.closing_date).split('T')[0] : null;
+        if (!date) {
+            setMobileClosingSnapshot(null);
+            return;
+        }
+        let active = true;
+        setMobileClosingSnapshot(null);
+        void Promise.all([
+            supabase.rpc('get_hourly_sales', { p_start_date: date, p_end_date: date }),
+            supabase.rpc('get_product_sales_ranking', {
+                p_start_date: date, p_end_date: date, p_start_time: null, p_end_time: null,
+            }),
+        ]).then(([hourly, ranking]) => {
+            if (!active) return;
+            if (hourly.error) console.warn('Gráfica de último cierre:', hourly.error);
+            if (ranking.error) console.warn('Productos de último cierre:', ranking.error);
+            setMobileClosingSnapshot({
+                date,
+                hours: ((hourly.data ?? []) as { hora: number; total: number }[]).map(item => ({
+                    hora: Number(item.hora),
+                    total: Number(item.total ?? 0),
+                })),
+                products: ((ranking.data ?? []) as { nombre_articulo: string; cantidad_total: number }[]).slice(0, 2).map(item => ({
+                    name: String(item.nombre_articulo ?? 'Producto'),
+                    quantity: Number(item.cantidad_total ?? 0),
+                })),
+            });
+        });
+        return () => { active = false; };
+    }, [supabase, closing?.closing_date]);
 
     const fetchSalesData = async (rawClosingDate: string) => {
         const closingDate = rawClosingDate.split('T')[0];
@@ -244,7 +279,18 @@ export function MasterLastClosingWidget() {
                     </span>
                 </div>
             </div>
-            <div data-element="metrics" className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3 lg:px-3 lg:pb-3 lg:pt-0">
+            {closing && (
+                <HomeSalesMobileSummary
+                    sales={formatClosingValue(metrics.tpvSales, 'tpv_sales')}
+                    net={formatClosingValue(metrics.netSales, 'net_sales')}
+                    hours={mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]
+                        ? mobileClosingSnapshot.hours : []}
+                    products={mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]
+                        ? mobileClosingSnapshot.products : []}
+                    loading={loading || mobileClosingSnapshot?.date !== String(closing.closing_date).split('T')[0]}
+                />
+            )}
+            <div data-element="metrics" className="hidden min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3 lg:flex lg:px-3 lg:pb-3 lg:pt-0">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"
