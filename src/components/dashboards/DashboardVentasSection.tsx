@@ -69,7 +69,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const [isSalesSummaryModalOpen, setIsSalesSummaryModalOpen] = useState(false);
     const [salesSummaryLoading, setSalesSummaryLoading] = useState(false);
     const [salesProducts, setSalesProducts] = useState<any[]>([]);
-    const [homeProducts, setHomeProducts] = useState<HomeRankingProduct[]>([]);
+    const [homeProductsState, setHomeProductsState] = useState<{ date: string; products: HomeRankingProduct[] } | null>(null);
     const [topHours, setTopHours] = useState<any[]>([]);
 
     const titleDate = useMemo(() => {
@@ -81,7 +81,6 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     // El ranking compacto se carga para el día visible sin abrir el modal de análisis.
     useEffect(() => {
         let active = true;
-        setHomeProducts([]);
         void supabase.rpc('get_product_sales_ranking', {
             p_start_date: salesViewDate,
             p_end_date: salesViewDate,
@@ -89,7 +88,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
             p_end_time: null,
         }).then(({ data, error }) => {
             if (!active) return;
-            setHomeProducts(error ? [] : ((data ?? []) as HomeRankingProduct[]).slice(0, 4));
+            setHomeProductsState({ date: salesViewDate, products: error ? [] : ((data ?? []) as HomeRankingProduct[]).slice(0, 4) });
         });
         return () => { active = false; };
     }, [salesViewDate, supabase]);
@@ -347,6 +346,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         return new Date(y, (m || 1) - 1, d || 1);
     };
 
+    const homeProducts = homeProductsState?.date === salesViewDate ? homeProductsState.products : [];
     const chartRangeData = salesChartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
     const chartHasData = Math.max(...chartRangeData.map((d) => d.total), 0) > 0;
 

@@ -77,8 +77,11 @@ export function MasterLastClosingWidget() {
     const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
     const [salesModalLoading, setSalesModalLoading] = useState(false);
     const [salesProducts, setSalesProducts] = useState<any[]>([]);
-    const [homeClosingProducts, setHomeClosingProducts] = useState<HomeRankingProduct[]>([]);
-    const [homeClosingHours, setHomeClosingHours] = useState<{ hora: number; total: number }[]>([]);
+    const [homeClosingState, setHomeClosingState] = useState<{
+        date: string;
+        products: HomeRankingProduct[];
+        hours: { hora: number; total: number }[];
+    } | null>(null);
     const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>([]);
     const [topHours, setTopHours] = useState<any[]>([]);
     const [salesSummary, setSalesSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
@@ -219,8 +222,6 @@ export function MasterLastClosingWidget() {
         const closingDate = typeof closing?.closing_date === 'string'
             ? closing.closing_date.split('T')[0] : null;
         let active = true;
-        setHomeClosingProducts([]);
-        setHomeClosingHours([]);
         if (!closingDate) return () => { active = false; };
         void Promise.all([
             supabase.rpc('get_product_sales_ranking', {
@@ -235,12 +236,18 @@ export function MasterLastClosingWidget() {
             }),
         ]).then(([products, hours]) => {
             if (!active) return;
-            setHomeClosingProducts(products.error ? [] : ((products.data ?? []) as HomeRankingProduct[]).slice(0, 4));
-            setHomeClosingHours(hours.error ? [] : ((hours.data ?? []) as { hora: number; total: number }[]));
+            setHomeClosingState({
+                date: closingDate,
+                products: products.error ? [] : ((products.data ?? []) as HomeRankingProduct[]).slice(0, 4),
+                hours: hours.error ? [] : ((hours.data ?? []) as { hora: number; total: number }[]),
+            });
         });
         return () => { active = false; };
     }, [supabase, closing?.closing_date]);
 
+    const visibleCloseDate = typeof closing?.closing_date === 'string' ? closing.closing_date.split('T')[0] : null;
+    const homeClosingProducts = homeClosingState?.date === visibleCloseDate ? homeClosingState.products : [];
+    const homeClosingHours = homeClosingState?.date === visibleCloseDate ? homeClosingState.hours : [];
     const cashTotal = Number(closing?.cash_counted ?? 0);
     const displayBreakdown = (closing?.breakdown ?? {}) as Record<string, any>;
 
