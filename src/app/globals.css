@@ -7597,3 +7597,64 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     font-size: 10px;
   }
 }
+
+/* Widgets de inicio: solo Ventas y Último cierre, sin cambiar tamaño de celdas
+   ni la apariencia o geometría de Horarios, asistencia y accesos. */
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='header'] > a[data-style='calculator-primary'] {
+    inset-inline-end: 12px;
+    padding-inline: 5px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='metrics'] {
+    gap: 0;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='kpis'] {
+    padding-block: 0;
+  }
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+    [data-element='metrics'] {
+    padding-top: 0;
+    padding-bottom: 3px;
+  }
+}
+@media (min-width: 1024px) {
+  /* Exactamente la misma alineación del botón de Ventas en ambos dashboards. */
+  [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-element='header'],
+  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-element='header'] {
+    margin-inline: 0;
+    width: 100%;
+    padding-inline: 12px;
+  }
+  /* Sustituir el centrado vertical heredado por una composición ordenada. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] > [data-element='body'] > [data-component='Surface'] {
+    justify-content: space-between;
+    gap: 0;
+    padding-block: 3px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='metrics'] {
+    flex: 1 1 auto;
+    justify-content: space-between;
+    gap: 1px;
+    margin: 0;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='kpis'] {
+    margin-top: 0;
+    padding-block: 2px;
+  }
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre'] [data-element='metrics'] {
+    justify-content: space-between;
+    padding-block: 3px;
+  }
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre'] [data-element='kpi-stack'] {
+    flex: 0 0 auto;
+    height: auto;
+    gap: 3px;
+  }
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre'] [data-element='primary-kpis'],
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre'] [data-element='secondary-kpis'] {
+    flex: 0 0 auto;
+  }
+}

@@ -22,6 +22,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
 import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
+import { HomeTopProducts } from './HomeSalesWidgetDetails';
 
 function hourToSlotLabel(h: number): string | null {
     if (h >= 7 && h <= 22) {
@@ -266,7 +267,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 console.warn('No se pudo cargar el ranking móvil de ventas:', error);
                 return;
             }
-            setMobileTopProducts(((data ?? []) as { nombre_articulo: string; cantidad_total: number }[]).slice(0, 2).map(item => ({
+            setMobileTopProducts(((data ?? []) as { nombre_articulo: string; cantidad_total: number }[]).slice(0, 3).map(item => ({
                 name: String(item.nombre_articulo ?? 'Producto'),
                 quantity: Number(item.cantidad_total ?? 0),
             })));
@@ -553,6 +554,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </>
                     )}
                 </div>
+                <HomeTopProducts products={mobileTopProducts}/>
                 </div>
             </Surface>
 

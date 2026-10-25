@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/modal';
 import { CashBreakdownModal } from '@/components/cash/CashBreakdownModal';
 import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
+import { HomeHourlySalesChart, HomeTopProducts } from './HomeSalesWidgetDetails';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { getBusinessHourFromTicket, cn } from '@/lib/utils';
 import {
@@ -159,7 +160,7 @@ export function MasterLastClosingWidget() {
                     hora: Number(item.hora),
                     total: Number(item.total ?? 0),
                 })),
-                products: ((ranking.data ?? []) as { nombre_articulo: string; cantidad_total: number }[]).slice(0, 2).map(item => ({
+                products: ((ranking.data ?? []) as { nombre_articulo: string; cantidad_total: number }[]).slice(0, 3).map(item => ({
                     name: String(item.nombre_articulo ?? 'Producto'),
                     quantity: Number(item.cantidad_total ?? 0),
                 })),
@@ -290,7 +291,11 @@ export function MasterLastClosingWidget() {
                     loading={loading || mobileClosingSnapshot?.date !== String(closing.closing_date).split('T')[0]}
                 />
             )}
-            <div data-element="metrics" className="hidden min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3 lg:flex lg:px-3 lg:pb-3 lg:pt-0">
+            <div data-element="metrics" className="hidden min-h-0 flex-1 flex-col justify-between px-2 pb-1 pt-0 lg:flex lg:px-3 lg:pb-2 lg:pt-1">
+                {closing && <HomeHourlySalesChart hours={
+                    mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]
+                        ? mobileClosingSnapshot.hours : []
+                }/>}
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"
@@ -394,6 +399,10 @@ export function MasterLastClosingWidget() {
                         </div>
                     </div>
                 )}
+                {closing && <HomeTopProducts products={
+                    mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]
+                        ? mobileClosingSnapshot.products : []
+                }/>}
             </div>
 
             {/* Modal de Desglose Monetario de Efectivo */}
