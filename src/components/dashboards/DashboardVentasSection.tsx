@@ -21,6 +21,7 @@ import { KpiStat } from '@/components/ui/KpiStat';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
+import { HomeTopProducts, type HomeRankingProduct } from '@/components/dashboards/HomeSalesWidgetDetails';
 
 function hourToSlotLabel(h: number): string | null {
     if (h >= 7 && h <= 22) {
@@ -68,6 +69,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const [isSalesSummaryModalOpen, setIsSalesSummaryModalOpen] = useState(false);
     const [salesSummaryLoading, setSalesSummaryLoading] = useState(false);
     const [salesProducts, setSalesProducts] = useState<any[]>([]);
+    const [homeProducts, setHomeProducts] = useState<HomeRankingProduct[]>([]);
     const [topHours, setTopHours] = useState<any[]>([]);
 
     const titleDate = useMemo(() => {
@@ -75,6 +77,22 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         const dateObj = new Date(y, (m || 1) - 1, d || 1);
         return isNaN(dateObj.getTime()) ? "Fecha Inválida" : format(dateObj, 'eeee d MMM', { locale: es });
     }, [salesViewDate]);
+
+    // El ranking compacto se carga para el día visible sin abrir el modal de análisis.
+    useEffect(() => {
+        let active = true;
+        setHomeProducts([]);
+        void supabase.rpc('get_product_sales_ranking', {
+            p_start_date: salesViewDate,
+            p_end_date: salesViewDate,
+            p_start_time: null,
+            p_end_time: null,
+        }).then(({ data, error }) => {
+            if (!active) return;
+            setHomeProducts(error ? [] : ((data ?? []) as HomeRankingProduct[]).slice(0, 4));
+        });
+        return () => { active = false; };
+    }, [salesViewDate, supabase]);
 
     const fetchSalesSummaryData = async () => {
         setSalesSummaryLoading(true);
@@ -335,7 +353,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     return (
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
-                <div data-element="header" data-tone="plain" className="relative flex h-8 w-full shrink-0 items-center justify-end">
+                <div data-element="header" data-tone="plain" className="relative flex h-7 w-full shrink-0 items-center justify-end pl-2 pr-3 lg:h-8 lg:px-3">
                     <div data-element="centered-date-controls" className="absolute left-1/2 top-1/2 z-10 flex max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center">
                         <div className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg md:gap-1.5">
                             <button
@@ -392,8 +410,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 <div
                     data-element="metrics"
                     className={cn(
-                        'flex min-h-0 flex-1 flex-col overflow-hidden',
-                        chartHasData ? 'justify-end' : 'justify-center'
+                        'flex min-h-0 flex-1 flex-col justify-between overflow-hidden'
                     )}
                 >
                 {chartHasData && (() => {
@@ -521,6 +538,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </>
                     )}
                 </div>
+                <HomeTopProducts products={homeProducts}/>
                 </div>
             </Surface>
 
