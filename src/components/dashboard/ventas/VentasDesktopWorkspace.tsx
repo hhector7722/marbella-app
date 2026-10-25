@@ -967,17 +967,22 @@ export default function VentasDesktopWorkspace() {
         const value = calendarWeekSeries[wi][di];
         return isSameMonth(day, month) && value !== null && value > 0 ? [value] : [];
     }));
-    const monthNetMin = monthNetValues.length ? Math.min(...monthNetValues) : 0;
-    const monthNetMax = monthNetValues.length ? Math.max(...monthNetValues) : 0;
-    // Menor facturación en naranja; mayor facturación en verde.
-    // El triángulo de rendimiento histórico sigue calculándose por separado.
+    // Clasificar por posición entre los días con ventas del mes (no por rango
+    // mínimo/máximo): un día extraordinario no vuelve naranja a todo el calendario.
+    // Predominan los verdes; amarillo y naranja quedan para los días más flojos.
+    // Los triángulos de rendimiento histórico se calculan por separado.
+    const monthNetSorted = [...monthNetValues].sort((a, b) => a - b);
     const calendarSalesTone = (value: number) => {
-        if (monthNetMax <= monthNetMin) return 'border-yellow-300 bg-yellow-100/95';
-        const position = (value - monthNetMin) / (monthNetMax - monthNetMin);
-        if (position < 0.2) return 'border-orange-300 bg-orange-100/95';
-        if (position < 0.4) return 'border-amber-300 bg-amber-100/95';
-        if (position < 0.6) return 'border-yellow-300 bg-yellow-100/95';
-        if (position < 0.8) return 'border-lime-300 bg-lime-100/95';
+        if (monthNetSorted.length < 2 || monthNetSorted[0] === monthNetSorted[monthNetSorted.length - 1]) {
+            return 'border-emerald-300 bg-emerald-100/95';
+        }
+        const firstGreaterOrEqual = monthNetSorted.findIndex(net => net >= value);
+        const position = (firstGreaterOrEqual < 0 ? monthNetSorted.length - 1 : firstGreaterOrEqual) /
+            (monthNetSorted.length - 1);
+        if (position < 0.05) return 'border-orange-300 bg-orange-100/95';
+        if (position < 0.12) return 'border-yellow-300 bg-yellow-100/95';
+        if (position < 0.25) return 'border-lime-300 bg-lime-100/95';
+        if (position < 0.65) return 'border-emerald-200 bg-emerald-50/95';
         return 'border-emerald-400 bg-emerald-100/95';
     };
 
