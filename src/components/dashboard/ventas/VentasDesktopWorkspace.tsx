@@ -969,15 +969,16 @@ export default function VentasDesktopWorkspace() {
     }));
     const monthNetMin = monthNetValues.length ? Math.min(...monthNetValues) : 0;
     const monthNetMax = monthNetValues.length ? Math.max(...monthNetValues) : 0;
-    // Escala cromática contenida del mes: verde, lima, amarillo, ámbar y naranja.
+    // Menor facturación en naranja; mayor facturación en verde.
+    // El triángulo de rendimiento histórico sigue calculándose por separado.
     const calendarSalesTone = (value: number) => {
-        if (monthNetMax <= monthNetMin) return 'border-emerald-400 bg-emerald-100/95';
+        if (monthNetMax <= monthNetMin) return 'border-yellow-300 bg-yellow-100/95';
         const position = (value - monthNetMin) / (monthNetMax - monthNetMin);
-        if (position < 0.2) return 'border-emerald-300 bg-emerald-50/95';
-        if (position < 0.4) return 'border-lime-300 bg-lime-100/95';
+        if (position < 0.2) return 'border-orange-300 bg-orange-100/95';
+        if (position < 0.4) return 'border-amber-300 bg-amber-100/95';
         if (position < 0.6) return 'border-yellow-300 bg-yellow-100/95';
-        if (position < 0.8) return 'border-amber-300 bg-amber-100/95';
-        return 'border-orange-300 bg-orange-100/95';
+        if (position < 0.8) return 'border-lime-300 bg-lime-100/95';
+        return 'border-emerald-400 bg-emerald-100/95';
     };
 
     const changePeriod = (next: Period, keepReturn = false) => {
