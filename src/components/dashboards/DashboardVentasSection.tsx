@@ -21,6 +21,7 @@ import { KpiStat } from '@/components/ui/KpiStat';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
+import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
 
 function hourToSlotLabel(h: number): string | null {
     if (h >= 7 && h <= 22) {
@@ -69,6 +70,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const [salesSummaryLoading, setSalesSummaryLoading] = useState(false);
     const [salesProducts, setSalesProducts] = useState<any[]>([]);
     const [topHours, setTopHours] = useState<any[]>([]);
+    const [mobileTopProducts, setMobileTopProducts] = useState<HomeWidgetTopProduct[]>([]);
 
     const titleDate = useMemo(() => {
         const [y, m, d] = salesViewDate.split('-').map(Number);
@@ -249,6 +251,29 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
     salesViewDateRef.current = salesViewDate;
 
+    // El ranking visible usa exactamente la misma fecha que las ventas y la gráfica.
+    useEffect(() => {
+        let active = true;
+        setMobileTopProducts([]);
+        void supabase.rpc('get_product_sales_ranking', {
+            p_start_date: salesViewDate,
+            p_end_date: salesViewDate,
+            p_start_time: null,
+            p_end_time: null,
+        }).then(({ data, error }) => {
+            if (!active) return;
+            if (error) {
+                console.warn('No se pudo cargar el ranking móvil de ventas:', error);
+                return;
+            }
+            setMobileTopProducts((data ?? []).slice(0, 2).map(item => ({
+                name: String(item.nombre_articulo ?? 'Producto'),
+                quantity: Number(item.cantidad_total ?? 0),
+            })));
+        });
+        return () => { active = false; };
+    }, [salesViewDate, supabase]);
+
     useEffect(() => {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
         const hasInitialTodayData =
@@ -384,15 +409,22 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         data-style="calculator-primary"
                         aria-label="Abrir análisis completo de ventas"
                         style={{ color: '#ffffff' }}
-                        className="relative isolate z-0 inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-2 text-[12px] font-extrabold leading-none text-white transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:scale-95">
+                        className="relative isolate z-0 mr-2 inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-2 text-[12px] lg:mr-0 font-extrabold leading-none text-white transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:scale-95">
                         <span style={{ color: '#ffffff' }}>Ventas</span>
                     </Link>
                 </div>
 
+                <HomeSalesMobileSummary
+                    sales={formatCurrencySpanish(displaySummary.total)}
+                    net={formatCurrencySpanish(displaySummary.total / 1.1)}
+                    hours={salesChartData}
+                    products={mobileTopProducts}
+                    loading={salesLoading}
+                />
                 <div
                     data-element="metrics"
                     className={cn(
-                        'flex min-h-0 flex-1 flex-col overflow-hidden',
+                        'hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex',
                         chartHasData ? 'justify-end' : 'justify-center'
                     )}
                 >
