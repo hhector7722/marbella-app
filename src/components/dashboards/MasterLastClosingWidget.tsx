@@ -155,11 +155,11 @@ export function MasterLastClosingWidget() {
             if (ranking.error) console.warn('Productos de último cierre:', ranking.error);
             setMobileClosingSnapshot({
                 date,
-                hours: (hourly.data ?? []).map(item => ({
+                hours: ((hourly.data ?? []) as { hora: number; total: number }[]).map(item => ({
                     hora: Number(item.hora),
                     total: Number(item.total ?? 0),
                 })),
-                products: (ranking.data ?? []).slice(0, 2).map(item => ({
+                products: ((ranking.data ?? []) as { nombre_articulo: string; cantidad_total: number }[]).slice(0, 2).map(item => ({
                     name: String(item.nombre_articulo ?? 'Producto'),
                     quantity: Number(item.cantidad_total ?? 0),
                 })),
