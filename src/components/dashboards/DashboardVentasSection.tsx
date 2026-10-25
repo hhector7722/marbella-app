@@ -21,7 +21,8 @@ import { KpiStat } from '@/components/ui/KpiStat';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
-import { HomeTopProducts, type HomeRankingProduct } from '@/components/dashboards/HomeSalesWidgetDetails';
+import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
+import { HomeTopProducts } from './HomeSalesWidgetDetails';
 
 function hourToSlotLabel(h: number): string | null {
     if (h >= 7 && h <= 22) {
@@ -69,29 +70,14 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const [isSalesSummaryModalOpen, setIsSalesSummaryModalOpen] = useState(false);
     const [salesSummaryLoading, setSalesSummaryLoading] = useState(false);
     const [salesProducts, setSalesProducts] = useState<any[]>([]);
-    const [homeProductsState, setHomeProductsState] = useState<{ date: string; products: HomeRankingProduct[] } | null>(null);
     const [topHours, setTopHours] = useState<any[]>([]);
+    const [mobileTopProducts, setMobileTopProducts] = useState<HomeWidgetTopProduct[]>([]);
 
     const titleDate = useMemo(() => {
         const [y, m, d] = salesViewDate.split('-').map(Number);
         const dateObj = new Date(y, (m || 1) - 1, d || 1);
         return isNaN(dateObj.getTime()) ? "Fecha Inválida" : format(dateObj, 'eeee d MMM', { locale: es });
     }, [salesViewDate]);
-
-    // El ranking compacto se carga para el día visible sin abrir el modal de análisis.
-    useEffect(() => {
-        let active = true;
-        void supabase.rpc('get_product_sales_ranking', {
-            p_start_date: salesViewDate,
-            p_end_date: salesViewDate,
-            p_start_time: null,
-            p_end_time: null,
-        }).then(({ data, error }) => {
-            if (!active) return;
-            setHomeProductsState({ date: salesViewDate, products: error ? [] : ((data ?? []) as HomeRankingProduct[]).slice(0, 4) });
-        });
-        return () => { active = false; };
-    }, [salesViewDate, supabase]);
 
     const fetchSalesSummaryData = async () => {
         setSalesSummaryLoading(true);
@@ -266,6 +252,29 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
     salesViewDateRef.current = salesViewDate;
 
+    // El ranking visible usa exactamente la misma fecha que las ventas y la gráfica.
+    useEffect(() => {
+        let active = true;
+        setMobileTopProducts([]);
+        void supabase.rpc('get_product_sales_ranking', {
+            p_start_date: salesViewDate,
+            p_end_date: salesViewDate,
+            p_start_time: null,
+            p_end_time: null,
+        }).then(({ data, error }) => {
+            if (!active) return;
+            if (error) {
+                console.warn('No se pudo cargar el ranking móvil de ventas:', error);
+                return;
+            }
+            setMobileTopProducts(((data ?? []) as { nombre_articulo: string; cantidad_total: number }[]).slice(0, 3).map(item => ({
+                name: String(item.nombre_articulo ?? 'Producto'),
+                quantity: Number(item.cantidad_total ?? 0),
+            })));
+        });
+        return () => { active = false; };
+    }, [salesViewDate, supabase]);
+
     useEffect(() => {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
         const hasInitialTodayData =
@@ -346,14 +355,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         return new Date(y, (m || 1) - 1, d || 1);
     };
 
-    const homeProducts = homeProductsState?.date === salesViewDate ? homeProductsState.products : [];
     const chartRangeData = salesChartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
     const chartHasData = Math.max(...chartRangeData.map((d) => d.total), 0) > 0;
 
     return (
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
-                <div data-element="header" data-tone="plain" className="relative flex h-7 w-full shrink-0 items-center justify-end pl-2 pr-3 lg:h-8 lg:px-3">
+                <div data-element="header" data-tone="plain" className="relative flex h-8 w-full shrink-0 items-center justify-end">
                     <div data-element="centered-date-controls" className="absolute left-1/2 top-1/2 z-10 flex max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center">
                         <div className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg md:gap-1.5">
                             <button
@@ -402,15 +410,23 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         data-style="calculator-primary"
                         aria-label="Abrir análisis completo de ventas"
                         style={{ color: '#ffffff' }}
-                        className="relative isolate z-0 inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-2 text-[12px] font-extrabold leading-none text-white transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:scale-95">
+                        className="relative isolate z-0 mr-2 inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-2 text-[12px] lg:mr-0 font-extrabold leading-none text-white transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:scale-95">
                         <span style={{ color: '#ffffff' }}>Ventas</span>
                     </Link>
                 </div>
 
+                <HomeSalesMobileSummary
+                    sales={formatCurrencySpanish(displaySummary.total)}
+                    net={formatCurrencySpanish(displaySummary.total / 1.1)}
+                    hours={salesChartData}
+                    products={mobileTopProducts}
+                    loading={salesLoading}
+                />
                 <div
                     data-element="metrics"
                     className={cn(
-                        'flex min-h-0 flex-1 flex-col justify-between overflow-hidden'
+                        'hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex',
+                        chartHasData ? 'justify-end' : 'justify-center'
                     )}
                 >
                 {chartHasData && (() => {
@@ -538,7 +554,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </>
                     )}
                 </div>
-                <HomeTopProducts products={homeProducts}/>
+                <HomeTopProducts products={mobileTopProducts}/>
                 </div>
             </Surface>
 
