@@ -87,7 +87,7 @@ export function HomeSalesMobileSummary({
 
     return (
         <div data-element="mobile-sales-snapshot"
-            className="flex min-h-0 w-full flex-1 flex-col gap-1.5 overflow-hidden px-2 pb-1 pt-2 lg:hidden">
+            className="flex min-h-0 w-full flex-1 flex-col gap-1.5 overflow-hidden px-2 pb-1 pt-3 lg:hidden">
             {hasSales && (
                 <>
                     <div className="grid w-full shrink-0 grid-cols-2 gap-2 tabular-nums">
@@ -117,19 +117,20 @@ export function HomeSalesMobileSummary({
                             </span>
                         )}
                     </div>
-                    <div className="grid w-full min-w-0 grid-cols-2 gap-2 tabular-nums">
+                    <div data-element="mobile-sales-rankings" className="grid w-full min-w-0 grid-cols-2 gap-x-5 tabular-nums">
                         <div className="flex min-w-0 flex-col justify-start gap-1 text-left">
                             {rankedHours.map(hour => (
                                 <div key={hour.hora}
-                                    className="flex min-w-0 items-center justify-between gap-1 text-[9px] leading-[1.15]"
+                                    className="flex min-w-0 items-center justify-start gap-1.5 leading-[1.15]"
                                     title={`${hour.hora}h - ${hour.hora + 1}h: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
-                                    <span className="shrink-0 text-[var(--home-widget-ink)]">
+                                    <span className="shrink-0 text-[9px] text-[var(--home-widget-ink)]">
                                         {hour.hora}h - {hour.hora + 1}h
                                     </span>
-                                    <span className="min-w-0 truncate text-right text-[var(--home-widget-ink-secondary)]">
-                                        {hourUnits[hour.hora] !== undefined
-                                            ? `${hourUnits[hour.hora].toLocaleString('es-ES')} u · `
-                                            : ''}{Math.round(hour.total).toLocaleString('es-ES')}€
+                                    <span className="flex min-w-0 items-baseline gap-0.5 whitespace-nowrap text-[var(--home-widget-ink-secondary)]">
+                                        {hourUnits[hour.hora] !== undefined && (
+                                            <span className="text-[7px]">{hourUnits[hour.hora].toLocaleString('es-ES')} u</span>
+                                        )}
+                                        <span className="text-[9px]">{Math.round(hour.total).toLocaleString('es-ES')}€</span>
                                     </span>
                                 </div>
                             ))}
@@ -142,8 +143,9 @@ export function HomeSalesMobileSummary({
                                     <span className="min-w-0 flex-1 truncate text-left text-[var(--home-widget-ink)]">
                                         {index + 1}. {product.name}
                                     </span>
-                                    <span className="shrink-0 text-right text-[var(--home-widget-ink-secondary)]">
-                                        {product.quantity.toLocaleString('es-ES')} u · {product.revenue.toLocaleString('es-ES', { maximumFractionDigits: 2 })}€
+                                    <span className="flex shrink-0 items-baseline gap-0.5 whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">
+                                        <span className="text-[7px]">{product.quantity.toLocaleString('es-ES')} u</span>
+                                        <span className="text-[9px]">{product.revenue.toLocaleString('es-ES', { maximumFractionDigits: 2 })}€</span>
                                     </span>
                                 </div>
                             ))}

@@ -363,7 +363,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
                 <div data-element="header" data-tone="plain" className="relative flex h-8 w-full shrink-0 items-center justify-end">
-                    <div className="absolute left-2 top-1.5 text-[var(--home-widget-ink-secondary)] lg:hidden" aria-label="Hora actual">
+                    <div data-element="mobile-sales-clock" className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--home-widget-ink-secondary)] lg:hidden" aria-label="Hora actual">
                         <LiveClock display="time" />
                     </div>
                     <div data-element="centered-date-controls" className="absolute left-1/2 top-1/2 z-10 flex max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center">
@@ -393,7 +393,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                         <span className="text-[9px] md:text-[10px] font-medium uppercase tracking-widest text-zinc-700 whitespace-nowrap">
                                             {format(parseSalesViewDate(), 'eee d MMM', { locale: es }).replace('.', '')}
                                         </span>
-                                        <span className="text-[8px] font-medium text-zinc-400">histórico</span>
+                                        <span className="hidden text-[8px] font-medium text-zinc-400 lg:block">histórico</span>
                                     </>
                                 )}
                             </button>
