@@ -1348,10 +1348,17 @@ export default function VentasDesktopWorkspace() {
         if (!crossSelection) return;
         const onPointer = (event: PointerEvent) => {
             if (!(event.target instanceof Element)) return;
-            if (event.target.closest('[data-crossfilter-trigger]')) return;
-            // En smartphone se mantiene el filtro al abrir Productos, Tickets o Live.
-            // Para retirarlo se pulsa otra vez el tramo o el control «Quitar filtro».
-            if (event.target.closest('[data-component="HistoryMobileWorkspace"]')) return;
+            // En smartphone, pulsar fuera del punto/tramo seleccionado
+            // cancela el filtro, incluso dentro de Productos, Tickets o Live.
+            const mobileHourSelected = crossSelection.kind === 'hour' &&
+                crossSelection.scope === 'period' &&
+                window.matchMedia('(max-width: 1023px)').matches;
+            if (mobileHourSelected) {
+                if (event.target.closest('[data-mobile-hour-select]')) return;
+            } else {
+                if (event.target.closest('[data-crossfilter-trigger]')) return;
+                if (event.target.closest('[data-component="HistoryMobileWorkspace"]')) return;
+            }
             setCrossSelection(null);
             setCrossResult(null);
             setCrossPage(0);
@@ -1678,7 +1685,7 @@ export default function VentasDesktopWorkspace() {
                     <div className="mb-0.5 flex shrink-0 items-center justify-between">
                         <h2 className="text-[11px] font-bold uppercase">Horas</h2>
                         {mobileActiveSelection?.kind === 'hour' && (
-                            <button type="button" data-crossfilter-trigger
+                            <button type="button" data-crossfilter-trigger data-mobile-hour-select
                                 onClick={() => onChooseCross(mobileActiveSelection)}
                                 className="text-[9px] font-semibold text-sky-200 hover:text-white">
                                 Quitar filtro <X size={10} className="inline-block"/>
@@ -1693,28 +1700,22 @@ export default function VentasDesktopWorkspace() {
                             <path d={mobileHourlyArea} fill="currentColor" fillOpacity=".13"/>
                             <path d={mobileHourlyPath} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
                         </svg>
-                        {mobileHours.map((hour, index) => {
-                            const active = currentHour === hour.hour;
-                            return (
-                                <span key={hour.hour} aria-hidden="true"
-                                    className={cn('pointer-events-none absolute z-[1] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70 bg-[#70b5ff] transition-all',
-                                        active ? 'h-[9px] w-[9px] border-2 border-white shadow-[0_0_0_2px_rgba(112,181,255,0.3)]' : 'h-[5px] w-[5px]',
-                                        currentHour !== null && !active && 'opacity-30')}
-                                    style={{
-                                        left: `${(index + 0.5) / mobileHours.length * 100}%`,
-                                        top: `${hourPoints[index].y / 70 * 25}px`,
-                                    }}/>
-                            );
-                        })}
+                        {currentHour !== null && currentHour >= 7 && currentHour <= 22 && (
+                            <span aria-hidden="true"
+                                className="pointer-events-none absolute z-[1] h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#70b5ff] shadow-sm"
+                                style={{
+                                    left: `${(currentHour - 7 + 0.5) / mobileHours.length * 100}%`,
+                                    top: `${hourPoints[currentHour - 7].y / 70 * 25}px`,
+                                }}/>
+                        )}
                         {mobileHours.map((hour, index) => (
-                            <button key={hour.hour} type="button" data-crossfilter-trigger
+                            <button key={hour.hour} type="button" data-crossfilter-trigger data-mobile-hour-select
                                 onClick={() => onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' })}
                                 aria-pressed={currentHour === hour.hour}
                                 aria-label={`${hour.hour}:00 a ${hour.hour + 1}:00, ${hour.count} tickets, ${euro(hour.total)}. Pulsar para ${currentHour === hour.hour ? 'quitar el filtro' : 'filtrar ventas, productos y tickets'}`}
                                 title={`${hour.hour}:00 - ${hour.hour + 1}:00 · ${euro(hour.total)}`}
                                 style={{ left: `${index / mobileHours.length * 100}%`, width: `${100 / mobileHours.length}%` }}
-                                className={cn('absolute top-0 z-[2] h-[25px] cursor-pointer touch-manipulation focus-visible:rounded-sm focus-visible:outline focus-visible:outline-1 focus-visible:outline-sky-200',
-                                    currentHour === hour.hour && 'bg-sky-300/10')}/>
+                                className="absolute top-0 z-[2] h-[25px] cursor-pointer touch-manipulation focus-visible:rounded-sm focus-visible:outline focus-visible:outline-1 focus-visible:outline-sky-200"/>
                         ))}
                         <div className="flex justify-between text-[8px] text-white/55"><span>7h</span><span>23h</span></div>
                     </div>
@@ -1726,7 +1727,7 @@ export default function VentasDesktopWorkspace() {
                             <span className="text-right">Importe</span>
                         </div>
                         {mobileVisibleHours.map((hour, index) => hour ? (
-                            <button key={hour.hour} type="button" data-crossfilter-trigger
+                            <button key={hour.hour} type="button" data-crossfilter-trigger data-mobile-hour-select
                                 onClick={() => onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' })}
                                 aria-pressed={mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === hour.hour}
                                 className={cn('grid h-[18px] w-full grid-cols-[minmax(0,1.15fr)_minmax(0,0.65fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-1 rounded px-1 text-left text-[9px] leading-none tabular-nums transition-opacity',
