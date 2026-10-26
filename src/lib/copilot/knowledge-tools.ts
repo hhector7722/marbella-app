@@ -118,7 +118,10 @@ export function summarizeProductSales(data: unknown, product?: string): Record<s
   const selection = all.filter((p): p is Record<string, unknown> => Boolean(p && typeof p === "object" && !Array.isArray(p))).filter(p => {
     const name = normalize(String(p.nombre_articulo ?? ""));
     if (!filter) return true;
-    return filter === "cafe" || filter === "cafes" ? coffeePattern.test(name) : name.includes(filter);
+    const singular = filter.length > 5 && filter.endsWith("s") ? filter.slice(0, -1) : filter;
+    return filter === "cafe" || filter === "cafes"
+      ? coffeePattern.test(name)
+      : name.includes(filter) || name.includes(singular);
   });
   const ranked = selection.sort((a,b)=>Number(b.cantidad_total||0)-Number(a.cantidad_total||0));
   const total = ranked.reduce((acc,p)=>acc+Number(p.cantidad_total||0),0);
