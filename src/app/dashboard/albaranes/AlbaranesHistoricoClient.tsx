@@ -1165,21 +1165,6 @@ export default function AlbaranesHistoricoClient({
     setIngredientCreateOpen(true)
   }
 
-  async function returnToMappingAfterCreate(lineId: string | null) {
-    setIngredientCreateOpen(false)
-    setIngredientCreateInitialName(null)
-    setIngredientCreateTargetLineId(null)
-    setIngredientCreateContext(null)
-    if (!lineId || !detail) return
-    await refreshDetailAndStock()
-    const dRes = await getPurchaseInvoiceDetailAction(detail.id)
-    if (!dRes.success) return
-    setDetail(dRes.detail)
-    const line = dRes.detail.lines.find((l) => l.id === lineId)
-    if (line) openLineMappingModal(line)
-  }
-
-
   // Refresca detalle + estado de stock de un albarán. Sincroniza la línea del modal si está abierta.
   async function refreshDetailAndStock() {
     if (!detail) return
@@ -2271,10 +2256,7 @@ export default function AlbaranesHistoricoClient({
 
                 <Modal
                   open={ingredientCreateOpen}
-                  onClose={() => {
-                    const lineId = ingredientCreateTargetLineId
-                    void returnToMappingAfterCreate(lineId)
-                  }}
+                  onClose={() => void returnToInvoiceAfterSave()}
                   variant="compact"
                   layer="derived"
                   instance="albaran-ingredient-create"
@@ -2290,14 +2272,8 @@ export default function AlbaranesHistoricoClient({
                   <IngredientCreateForm
                     initialName={ingredientCreateInitialName ?? undefined}
                     context={ingredientCreateContext ?? undefined}
-                    onCreated={async () => {
-                      const lineId = ingredientCreateTargetLineId
-                      await returnToMappingAfterCreate(lineId)
-                    }}
-                    onClose={() => {
-                      const lineId = ingredientCreateTargetLineId
-                      void returnToMappingAfterCreate(lineId)
-                    }}
+                    onCreated={returnToInvoiceAfterSave}
+                    onClose={() => void returnToInvoiceAfterSave()}
                   />
                 </Modal>
         </>
