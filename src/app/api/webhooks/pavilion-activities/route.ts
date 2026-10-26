@@ -51,16 +51,16 @@ export async function POST(request: Request) {
       source: 'email',
     });
 
-    // Si este mismo PDF ya está pendiente, procesándose o procesado, no lanzamos
-    // un segundo OCR. Esto evita duplicados por reenvíos del mismo correo/archivo.
+    // Si la fecha está registrada, hay ocupaciones PDF o pertenece al histórico,
+    // no lanzamos OCR ni reemplazamos registros por reenvíos del correo.
     if (result.skipped) {
       return NextResponse.json(
         {
           success: true,
           accepted: true,
-          processing: 'deduplicated',
+          processing: result.skipReason ?? 'deduplicated',
           activityDate: result.activityDate,
-          filePath: result.filePath,
+          filePath: result.filePath || null,
         },
         { status: 200 },
       );
