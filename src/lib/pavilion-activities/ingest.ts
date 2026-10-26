@@ -22,7 +22,7 @@ export type IngestPavilionActivityResult = {
   filePath: string;
   contentHash: string;
   skipped?: boolean;
-  skipReason?: 'ignored_historical' | 'deduplicated' | 'existing_occupations';
+  skipReason?: 'ignored_historical' | 'deduplicated' | 'existing_occupations' | 'different_version';
 };
 
 function buildStoragePath(activityDate: string): string {
@@ -122,7 +122,7 @@ export async function ingestPavilionActivityPdf(
     // sea cual sea su hash o estado (pending, processing, processed, error).
     const { data: existing, error: existingError } = await supabase
       .from('pavilion_activity_sheets')
-      .select('id, file_path')
+      .select('id, file_path, content_hash')
       .eq('activity_date', activityDate)
       .maybeSingle();
 
@@ -137,7 +137,7 @@ export async function ingestPavilionActivityPdf(
         filePath: existing.file_path as string,
         contentHash,
         skipped: true,
-        skipReason: 'deduplicated',
+        skipReason: existing.content_hash === contentHash ? 'deduplicated' : 'different_version',
       };
     }
 
@@ -189,7 +189,7 @@ export async function ingestPavilionActivityPdf(
     if (insertError?.code === '23505') {
       const { data: concurrent, error: concurrentError } = await supabase
         .from('pavilion_activity_sheets')
-        .select('id, file_path')
+        .select('id, file_path, content_hash')
         .eq('activity_date', activityDate)
         .maybeSingle();
 
@@ -205,7 +205,7 @@ export async function ingestPavilionActivityPdf(
         filePath: concurrent.file_path as string,
         contentHash,
         skipped: true,
-        skipReason: 'deduplicated',
+        skipReason: concurrent.content_hash === contentHash ? 'deduplicated' : 'different_version',
       };
     }
 
