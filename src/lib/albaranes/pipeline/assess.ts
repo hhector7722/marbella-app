@@ -2,6 +2,7 @@ import type { CanonicalDocument } from '../extractors/canonical.ts'
 import { buildExactMappedSnapshot, type ExactMappingInput } from '../k5/mapped-snapshot.ts'
 import { matchSupplierProduct, type SupplierProductMemory } from './matcher.ts'
 import {
+  isMisreadDiscountAmount,
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
   reconcileRoundedDisplayedUnitPrice,
@@ -93,7 +94,7 @@ export function assessDocument(params: {
       ? reconcileFixedDiscountedUnitPrice(line)
         ?? (check.discountPercent != null ? reconcilePercentageDiscountedUnitPrice(line) : null)
         ?? reconcileUnadjustedNetUnitPrice(line)
-        ?? (!line.discount_raw && !line.net_unit_price_raw
+        ?? ((!line.discount_raw || isMisreadDiscountAmount(line)) && !line.net_unit_price_raw
           ? reconcileRoundedDisplayedUnitPrice(line.quantity_raw, line.unit_price_raw, line.line_total_raw)
           : null)
       : null

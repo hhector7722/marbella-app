@@ -12,6 +12,14 @@ test('solo la coincidencia verificada IVA/DTO libera el bloqueo de precio neto',
   assert.deepEqual(resolveMappingReviewReasons({ ...input, verifiedTaxRateMisreadAsDiscount: true }), [])
 })
 
+test('un importe copiado en DTO retira solo el falso aviso de descuento', () => {
+  const input = { previousReasons: ['descuento_sin_porcentaje_verificado', 'lineas_subtotal_no_reconcilian'],
+    hasResolvedName: true, hasMappedSnapshot: false, humanLineOverride: false,
+    quantity: 10, unitPrice: 0.57, lineTotal: 5.70 }
+  assert.deepEqual(resolveMappingReviewReasons({ ...input, verifiedMisreadDiscountAmount: true }),
+    ['lineas_subtotal_no_reconcilian'])
+})
+
 test('un mapeo humano válido resuelve las dudas de identidad y presentación Mistral', () => {
   const reasons = resolveMappingReviewReasons({
     previousReasons: [

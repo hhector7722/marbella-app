@@ -126,6 +126,12 @@ precio neto unitario explícito que coincida tanto con precio − descuento como
 con el importe. Fuera de esas dos demostraciones, el descuento sigue en
 revisión.
 
+Si OCR copia el importe completo de la línea en «Dto.» y el original no
+contiene precio neto ni cargos, esa copia solo se descarta cuando el supuesto
+descuento coincide exactamente con el importe y cantidad × precio reproduce
+ese mismo importe. La observación original permanece en la propuesta anterior;
+no se crea un descuento ni se confirma stock por esta inferencia.
+
 Si la columna observada lleva la cabecera exacta «Ibee», se trata como cargo
 de envases y no como descuento únicamente cuando cantidad × precio concilia
 con el importe bruto de la línea, no queda otro cargo sin interpretar y la

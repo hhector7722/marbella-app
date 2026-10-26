@@ -4,6 +4,7 @@ import {
   isMisreadNetAmount,
   isVerifiedTaxRateMisreadAsDiscount,
   isVerifiedZeroPricedLine,
+  isMisreadDiscountAmount,
   reviewTaxMisreadAsFixedDiscount,
   reconcileFixedDiscountedUnitPrice,
   reconcileFreeFixedDiscountedUnitPrice,
@@ -52,6 +53,17 @@ test('Sant Aniol: una entrega gratuita explícita conserva su cantidad y coste c
   assert.equal(isVerifiedZeroPricedLine({ ...gift, line_total_raw: '1,00' }), false)
   assert.equal(isVerifiedZeroPricedLine({ ...gift, other_charge_raw: '1' }), false)
   assert.equal(isVerifiedZeroPricedLine({ ...gift, unit_price_raw: null }), false)
+})
+
+test('Ametller: importe copiado en DTO no se aplica como descuento', () => {
+  const evidence = row({ quantity_raw: '10', unit_price_raw: '0,57',
+    discount_raw: '5,70', discount_header_raw: 'Dto', line_total_raw: '5,70' })
+  assert.equal(isMisreadDiscountAmount(evidence), true)
+  assert.deepEqual(validateObservedLine(evidence).reasons, [])
+  assert.equal(validateObservedLine(evidence).priceBasis, 'billing_quantity')
+  assert.equal(isMisreadDiscountAmount({ ...evidence, line_total_raw: '5,60' }), false)
+  assert.equal(isMisreadDiscountAmount({ ...evidence, other_charge_raw: '0,10' }), false)
+  assert.equal(isMisreadDiscountAmount({ ...evidence, net_unit_price_raw: '0,42' }), false)
 })
 
 test('SERHS: corrige DTO de 3,38 leído como IVA 21 sin aceptar cifras arbitrarias', () => {

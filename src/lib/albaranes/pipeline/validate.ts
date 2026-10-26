@@ -406,9 +406,26 @@ export function isVerifiedZeroPricedLine(line: CanonicalDocument['lines'][number
     && (!line.other_charge_raw?.trim() || charge === 0)
 }
 
+/** OCR copió el importe en DTO: sin cargo ni neto, el bruto ya reproduce el importe. */
+export function isMisreadDiscountAmount(line: CanonicalDocument['lines'][number]): boolean {
+  if (!/dto|discount|descuento/i.test(line.discount_header_raw ?? '')
+    || line.net_unit_price_raw?.trim() || line.other_charge_raw?.trim()) return false
+  const quantity = parseExactDecimal(line.quantity_raw)
+  const price = parseExactDecimal(line.unit_price_raw)
+  const discount = parseExactDecimal(line.discount_raw)
+  const total = parseExactDecimal(line.line_total_raw)
+  return isPositiveExact(quantity) && isPositiveExact(price)
+    && isPositiveExact(discount) && isPositiveExact(total)
+    && compareExact(discount, total) === 0
+    && withinExactTolerance(multiplyExact(quantity, price), total, parseExactDecimal('0.03')!)
+}
+
 export function validateObservedLine(line: CanonicalDocument['lines'][number]): LineCheck {
   if (isVerifiedTaxRateMisreadAsDiscount(line)) {
     line = { ...line, discount_raw: null, discount_header_raw: null, net_unit_price_raw: null }
+  }
+  if (isMisreadDiscountAmount(line)) {
+    line = { ...line, discount_raw: null, discount_header_raw: null }
   }
   const quantity = parseObservedDecimal(line.quantity_raw)
   const unitPrice = parseObservedDecimal(line.unit_price_raw)
