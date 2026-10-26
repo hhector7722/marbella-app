@@ -106,6 +106,8 @@ export type LineMappingModalProps = {
   onBackgroundStateChange?: (lineId: string, phase: 'review' | 'confirm' | null) => void
   onClose: () => void
   onSuccess: () => void | Promise<void>
+  /** Guardado final: vuelve al albarán principal sin cerrar su contexto. */
+  onCompleted?: () => void | Promise<void>
   onCreateIngredient?: () => void
 }
 
@@ -121,6 +123,7 @@ export function LineMappingModal({
   onBackgroundStateChange,
   onClose,
   onSuccess,
+  onCompleted,
   onCreateIngredient,
 }: LineMappingModalProps) {
   useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Revisar línea de albarán' })
@@ -914,8 +917,11 @@ export function LineMappingModal({
         return
       }
       toast.success('Mapeo guardado y recepción aplicada.')
-      handleClose()
-      await onSuccess()
+      if (onCompleted) await onCompleted()
+      else {
+        handleClose()
+        await onSuccess()
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo aplicar la recepción.'
       setApplyError(message)
@@ -940,8 +946,11 @@ export function LineMappingModal({
       }
       if (result.warning) toast.warning(result.warning)
       else toast.success('Otros: gasto registrado sin modificar el stock.')
-      handleClose()
-      await onSuccess()
+      if (onCompleted) await onCompleted()
+      else {
+        handleClose()
+        await onSuccess()
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo registrar el gasto.'
       setApplyError(message)
