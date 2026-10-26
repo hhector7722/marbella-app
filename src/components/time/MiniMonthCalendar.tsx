@@ -26,6 +26,7 @@ export function MiniMonthCalendar({
     isInRange,
     isDisabled,
     monthInHeader = false,
+    dayAmounts,
 }: {
     month: Date;
     onMonthChange: (next: Date) => void;
@@ -35,6 +36,8 @@ export function MiniMonthCalendar({
     isDisabled?: (day: Date) => boolean;
     /** Si la cabecera del mes ya está en el Modal, solo se pinta la rejilla. */
     monthInHeader?: boolean;
+    /** Importes diarios del cierre: activa el calendario de ventas en el filtro. */
+    dayAmounts?: Record<string, number>;
 }) {
     const startVisible = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
     const endVisible = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
@@ -77,6 +80,7 @@ export function MiniMonthCalendar({
                     const selected = Boolean(isSelected?.(day));
                     const inRange = Boolean(isInRange?.(day));
                     const disabled = Boolean(isDisabled?.(day));
+                    const amount = dayAmounts?.[format(day, 'yyyy-MM-dd')];
                     return (
                         <button
                             key={day.toISOString()}
@@ -85,21 +89,25 @@ export function MiniMonthCalendar({
                                 if (!disabled) onSelectDay(day);
                             }}
                             disabled={disabled}
-                            aria-label={format(day, 'yyyy-MM-dd')}
+                            aria-label={format(day, 'yyyy-MM-dd') + (amount == null ? '' : ', venta neta ' + amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }))}
                             className={cn(
-                                'flex aspect-square items-center justify-center rounded-lg text-[11px] font-black transition-all',
+                                'flex items-center justify-center rounded-lg text-[11px] font-black transition-all',
+                                dayAmounts ? 'aspect-auto min-h-[47px] flex-col gap-1 px-0.5 py-1' : 'aspect-square',
                                 muted ? 'opacity-20' : 'opacity-100',
                                 disabled && 'cursor-not-allowed text-zinc-300',
                                 selected
                                     ? PERIOD_PICKER_ACCENT_BG
                                     : inRange
                                       ? 'bg-zinc-100 text-[var(--color-envolvente)]'
-                                      : disabled
-                                        ? 'text-zinc-300'
-                                        : 'text-zinc-600',
+                                      : amount != null && !disabled
+                                        ? 'border border-emerald-200 bg-emerald-50 text-zinc-700'
+                                        : disabled
+                                          ? 'text-zinc-300'
+                                          : 'text-zinc-600',
                             )}
                         >
-                            {format(day, 'd')}
+                            <span>{format(day, 'd')}</span>
+                            {dayAmounts && amount != null && <span className={cn('max-w-full whitespace-nowrap text-[8px] font-semibold tracking-tight', selected ? '' : 'text-emerald-700')}>{Math.round(amount).toLocaleString('es-ES')}€</span>}
                         </button>
                     );
                 })}

@@ -8154,3 +8154,17 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     line-height: 1.15;
   }
 }
+
+/* Tickets móviles: el mismo diseño de filas que escritorio, con menos márgenes. */
+@media (max-width: 1023px) {
+  [data-component='HistoryMobileWorkspace'] .ventas-ticket-strip {
+    min-height: 36px;
+    height: 36px;
+    padding-inline: 6px;
+    gap: 4px;
+  }
+  [data-component='HistoryMobileWorkspace'] .ventas-ticket-strip > span:nth-child(2) {
+    width: 55px;
+    padding-left: 3px;
+  }
+}

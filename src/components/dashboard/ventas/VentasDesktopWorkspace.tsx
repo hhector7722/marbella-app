@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, Pencil, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, Pencil, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
@@ -387,55 +387,6 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
 
 // Round the scroll viewport down to full 24px rows: no partially visible
 // product/hour lines when the browser or dashboard is resized.
-
-function MobileSalesTicket({ ticket, cachedItems }: { ticket: Ticket; cachedItems?: Item[] }) {
-    const supabase = useMemo(() => createClient(), []);
-    const [expanded, setExpanded] = useState(false);
-    const [snapshot, setSnapshot] = useState<{ id: string; items: Item[] } | null>(null);
-    const [loading, setLoading] = useState(false);
-    const items = cachedItems ?? (snapshot?.id === ticket.numero_documento ? snapshot.items : []);
-    useEffect(() => {
-        if (!expanded || cachedItems || snapshot?.id === ticket.numero_documento) return;
-        let active = true;
-        void supabase.rpc('get_ticket_lines', { p_numero_documento: ticket.numero_documento })
-            .then(({ data, error }) => {
-                if (!active) return;
-                if (!error) setSnapshot({
-                    id: ticket.numero_documento,
-                    items: ((data ?? []) as { articulo_nombre: string | null; cantidad: number | null; precio_unidad: number | null; importe_total: number | null }[]).map(line => ({
-                        name: String(line.articulo_nombre ?? 'Producto'),
-                        qty: Number(line.cantidad ?? 1),
-                        price: Number(line.precio_unidad ?? 0),
-                        total: Number(line.importe_total ?? 0),
-                    })),
-                });
-                setLoading(false);
-            });
-        return () => { active = false; };
-    }, [expanded, cachedItems, snapshot?.id, supabase, ticket.numero_documento]);
-    return (
-        <div className="overflow-hidden rounded-lg border border-white/15 bg-white/[0.06]">
-            <button type="button" onClick={() => { if (!expanded && !cachedItems && snapshot?.id !== ticket.numero_documento) setLoading(true); setExpanded(v => !v); }}
-                aria-expanded={expanded} className="flex w-full min-w-0 items-center justify-between gap-2 px-3 py-3 text-left">
-                <span className="shrink-0 text-xs font-semibold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</span>
-                <span className="min-w-0 flex-1 truncate text-[11px] text-white/70" title={ticket.numero_documento}>{compactDoc(ticket.numero_documento)}</span>
-                {ticket.mesa != null && ticket.mesa > 0 ? <span className="shrink-0 rounded bg-sky-400/15 px-1.5 py-0.5 text-[10px]">M {ticket.mesa}</span> : null}
-                <strong className="shrink-0 text-xs tabular-nums">{euro(ticket.total_documento)}</strong>
-                {expanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-            </button>
-            {expanded && (
-                <div className="space-y-1.5 border-t border-white/10 bg-white/[0.035] px-3 py-3 text-xs text-white/85">
-                    {loading ? 'Cargando productos…' : items.length ? items.map((item, i) => (
-                        <div key={i} className="flex justify-between gap-3">
-                            <span className="min-w-0 break-words">{item.qty.toLocaleString('es-ES')} × {item.name}</span>
-                            <span className="shrink-0 tabular-nums">{euro(item.total)}</span>
-                        </div>
-                    )) : <span className="text-white/55">Sin líneas de detalle disponibles</span>}
-                </div>
-            )}
-        </div>
-    );
-}
 
 function RankingViewport({ children, mobile = false }: { children: ReactNode; mobile?: boolean }) {
     const viewportRef = useRef<HTMLDivElement>(null);
@@ -860,7 +811,7 @@ export default function VentasDesktopWorkspace() {
     }, [supabase]);
     const [mobileScope, setMobileScope] = useState<CrossScope>('period');
     const [mobileView, setMobileView] = useState<'products' | 'hours' | 'tickets' | 'live'>('products');
-    const [mobileCalendarOpen, setMobileCalendarOpen] = useState(false);
+    const [reportMenuOpen, setReportMenuOpen] = useState(false);
     // Conservar enlaces existentes: /dashboard/ventas?tab=PRODUCTOS|HORAS|VENTAS|LIVE.
     useEffect(() => {
         const tab = new URLSearchParams(window.location.search).get('tab')?.toUpperCase();
@@ -1501,6 +1452,22 @@ export default function VentasDesktopWorkspace() {
             ? { ...item, label: 'Media', value: monthDailyAverage === null ? '' : euro(monthDailyAverage),
                 tooltip: 'Media de ventas por día con cierre y ventas positivas.' } : item);
     const mobileActiveSelection = crossSelection?.scope === mobileScope ? crossSelection : null;
+    const mobileHours = Array.from({ length: 16 }, (_, i) => {
+        const hour = i + 7;
+        const record = (periodBreakdown?.hours ?? dailyReport?.hours ?? []).find(row => Number(row.hour) === hour);
+        return { hour, count: Number(record?.count ?? 0), total: Number(record?.total ?? 0) };
+    });
+    const peakMobile = Math.max(1, ...mobileHours.map(item => item.total));
+    const hourPoints = mobileHours.map((item, i) => ({ x: (i + 0.5) * 10, y: 64 - item.total / peakMobile * 55 }));
+    const mobileHourlyPath = hourPoints.map((item, i) => `${i === 0 ? 'M' : 'L'}${item.x} ${item.y}`).join(' ');
+    const mobileHourlyArea = `${mobileHourlyPath} L${hourPoints[hourPoints.length - 1].x} 64 L${hourPoints[0].x} 64 Z`;
+    const currentHour = mobileActiveSelection?.kind === 'hour' ? mobileActiveSelection.hour : null;
+    const topMobileHours = mobileHours.filter(item => item.count > 0)
+        .sort((a, b) => b.total - a.total || a.hour - b.hour).slice(0, 3);
+    const mobileVisibleHours = currentHour !== null
+        ? [mobileHours[currentHour - 8] ?? null, mobileHours[currentHour - 7] ?? null, mobileHours[currentHour - 6] ?? null]
+        : [topMobileHours[0] ?? null, topMobileHours[1] ?? null, topMobileHours[2] ?? null];
+
     const mobileTicketRows = mobileActiveSelection ? (crossResult?.tickets ?? []) :
         mobileMonth ? (mobileMonthTickets.key === monthTicketKey ? mobileMonthTickets.values : []) : tickets;
     const mobileMoreTickets = mobileActiveSelection ? canLoadMore :
@@ -1521,80 +1488,60 @@ export default function VentasDesktopWorkspace() {
             className="mx-auto flex w-full max-w-[640px] min-w-0 flex-col gap-3 px-2 pb-8 pt-2 text-white lg:hidden">
             <header className="flex min-w-0 items-center justify-between gap-2 px-1">
                 <h1 className="text-lg font-extrabold">Ventas y cierres</h1>
-                <div className="flex shrink-0 items-center gap-1">
-                    <button type="button" aria-label="Calendario de ventas" onClick={() => setMobileCalendarOpen(v => !v)}
-                        aria-expanded={mobileCalendarOpen} className="rounded-md border border-white/20 p-2"><CalendarDays size={17}/></button>
-                    <button type="button" aria-label="Filtrar por fecha o periodo" onClick={() => setFilterOpen(true)}
+                <div className="flex shrink-0 items-center gap-1.5">
+                    <div className="relative">
+                        <button type="button" aria-label="Informes TPV" aria-expanded={reportMenuOpen}
+                            onClick={() => setReportMenuOpen(value => !value)}
+                            className="inline-flex items-center gap-1 rounded-md border border-white/20 px-2 py-2 text-[10px] font-semibold">
+                            <FileText size={15}/> Informes TPV <ChevronDown size={12}/>
+                        </button>
+                        {reportMenuOpen && (
+                            <div className="absolute right-0 top-full z-[40] mt-1 min-w-[175px] space-y-1 rounded-lg border border-white/25 bg-[#192b52] p-1 shadow-xl">
+                                {([
+                                    { name: 'Informe TPV', src: photos.bdpUrl, icon: FileText },
+                                    { name: 'Datáfonos', src: photos.dataphoneUrl, icon: CreditCard }
+                                ] as const).map(item => (
+                                    <button key={item.name} type="button" disabled={!item.src}
+                                        onClick={() => { if (item.src) setOpenPhoto({ src: item.src, alt: item.name }); setReportMenuOpen(false); }}
+                                        className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-white/10 disabled:opacity-40">
+                                        <item.icon size={15}/> {item.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <button type="button" aria-label="Filtrar fecha o periodo" onClick={() => setFilterOpen(true)}
                         className="rounded-md border border-white/20 p-2"><Filter size={17}/></button>
-                    {activeFilter && <button type="button" aria-label="Quitar filtros" onClick={clearAllFilters}
+                    {activeFilter && <button type="button" aria-label="Quitar filtro" onClick={clearAllFilters}
                         className="rounded-md border border-white/20 p-2"><X size={17}/></button>}
                 </div>
             </header>
-            <nav className="grid grid-cols-2 gap-1 rounded-lg border border-white/15 bg-white/[0.07] p-1" aria-label="Resumen de ventas">
-                {([{ id: 'period', label: 'Día / periodo' }, { id: 'month', label: 'Mes' }] as const).map(item => (
-                    <button key={item.id} type="button" aria-pressed={mobileScope === item.id}
-                        onClick={() => { setMobileScope(item.id); setCrossSelection(null); setCrossResult(null); setCrossPage(0); setMonthTicketPage(0); }}
-                        className={cn('rounded-md px-2 py-2 text-xs font-semibold', mobileScope === item.id ? 'bg-sky-400/20 text-white' : 'text-white/60')}>
-                        {item.label}
-                    </button>
-                ))}
-            </nav>
-            {mobileCalendarOpen && (
-                <section className="fixed inset-0 z-[120] overflow-y-auto bg-[#142344] px-4 pb-8 pt-6">
-                    <div className="mx-auto w-full max-w-[640px]">
-                    <header className="mb-5 flex items-center justify-between gap-3">
-                        <h2 className="text-base font-bold">Calendario de ventas</h2>
-                        <button type="button" onClick={() => setMobileCalendarOpen(false)}
-                            aria-label="Cerrar calendario" className="rounded-md border border-white/20 p-2"><X size={18}/></button>
-                    </header>
-                    <div className="mb-2 flex items-center justify-between">
-                        <button type="button" onClick={() => navigateMonth(-1)} aria-label="Mes anterior" className="rounded p-2"><ChevronLeft size={18}/></button>
-                        <strong className="text-sm capitalize">{calendarMonthLabel}</strong>
-                        <button type="button" onClick={() => navigateMonth(1)} aria-label="Mes siguiente" className="rounded p-2"><ChevronRight size={18}/></button>
-                    </div>
-                    <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-white/65">
-                        {['L','M','X','J','V','S','D'].map((day,i) => <span key={i}>{day}</span>)}
-                    </div>
-                    <div className="mt-2 grid grid-cols-7 gap-1">
-                        {calendarWeeks.flat().map(day => {
-                            const iso = format(day, 'yyyy-MM-dd');
-                            const closing = byDate.get(iso);
-                            const net = closing?.net_sales == null ? null : Number(closing.net_sales);
-                            return (
-                                <button key={iso} type="button"
-                                    onClick={() => { selectDate(iso); setMobileScope('period'); setMobileCalendarOpen(false); }}
-                                    aria-label={`Seleccionar ${iso}${net === null ? '' : ', venta neta ' + euro(net)}`}
-                                    aria-pressed={period.start === iso && period.end === iso}
-                                    className={cn('flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-md border border-white/10 py-1 text-[11px] tabular-nums',
-                                        !isSameMonth(day, month) && 'opacity-40',
-                                        period.start === iso && period.end === iso && 'border-sky-300 bg-sky-300/15')}>
-                                    <span>{format(day, 'd')}</span>
-                                    {net != null && <span className="text-[8px] text-emerald-200">{Math.round(net)}€</span>}
-                                </button>
-                            );
-                        })}
-                    </div>
-                    </div>
-                </section>
-            )}
             <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-3 pt-2">
-                <div className="flex min-w-0 items-start justify-between gap-2 border-b border-white/15 pb-2">
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1 text-[11px] text-white/70">
-                            <strong>{mobileMonth ? 'Mensual' : 'Periodo'}</strong>
-                            {!mobileMonth && returnPeriod && (
-                                <button type="button" onClick={restorePeriod} className="ml-1 text-sky-200">Volver al periodo</button>
-                            )}
-                        </div>
-                        <div className="mt-1 flex min-w-0 items-center gap-1">
-                            <button type="button" onClick={() => navigateMobilePeriod(-1)} aria-label="Periodo anterior" className="shrink-0 rounded p-1"><ChevronLeft size={16}/></button>
-                            <strong className="min-w-0 flex-1 text-center text-[11px] capitalize" title={mobileMonth ? monthLabel : periodTitle}>
-                                {mobileMonth ? monthLabel : periodTitle}
-                            </strong>
-                            <button type="button" onClick={() => navigateMobilePeriod(1)} aria-label="Periodo siguiente" className="shrink-0 rounded p-1"><ChevronRight size={16}/></button>
-                        </div>
+                <div className="flex min-w-0 items-center justify-between gap-2 border-b border-white/15 pb-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                        <strong className="shrink-0 whitespace-nowrap text-[11px] font-semibold capitalize tabular-nums">
+                            {isSingleDay
+                                ? format(parseISO(period.start), 'EEE d MMM yy', { locale: es }).replace('.', '')
+                                : periodTitle}
+                        </strong>
+                        {isSingleDay && selectedClosing?.weather && (
+                            <span className="inline-flex min-w-0 items-center gap-1 text-[10px] text-white/65"
+                                title={selectedClosing.weather}>
+                                <CloudSun size={13} className="shrink-0"/>
+                                <span className="max-w-[65px] truncate">{selectedClosing.weather}</span>
+                            </span>
+                        )}
                     </div>
-                    <div className="shrink-0 text-right"><TicketHeaderStats report={mobileReport}/></div>
+                    <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+                        <TicketHeaderStats report={dailyReport}/>
+                        {isSingleDay && selectedClosing && canEditClosings && (
+                            <button type="button" aria-label="Editar cierre" title="Editar cierre"
+                                onClick={() => router.push(`/dashboard/history?closingId=${encodeURIComponent(selectedClosing.id)}&edit=1`)}
+                                className="ml-0.5 shrink-0 rounded p-1 text-white/75">
+                                <Pencil size={15}/>
+                            </button>
+                        )}
+                    </div>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                     {[
@@ -1626,88 +1573,82 @@ export default function VentasDesktopWorkspace() {
                         );
                     })}
                 </div>
-                {!mobileMonth && isSingleDay && selectedClosing && (
-                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
-                        <button type="button" disabled={!photos.bdpUrl} onClick={() => photos.bdpUrl && setOpenPhoto({ src: photos.bdpUrl, alt: 'Informe TPV' })}
-                            className="rounded-md border border-white/25 px-2 py-1.5 text-[10px] disabled:opacity-40">Informe TPV</button>
-                        <button type="button" disabled={!photos.dataphoneUrl} onClick={() => photos.dataphoneUrl && setOpenPhoto({ src: photos.dataphoneUrl, alt: 'Totales datáfonos' })}
-                            className="rounded-md border border-white/25 px-2 py-1.5 text-[10px] disabled:opacity-40">Datáfonos</button>
-                        {canEditClosings && <button type="button"
-                            onClick={() => router.push(`/dashboard/history?closingId=${encodeURIComponent(selectedClosing.id)}&edit=1`)}
-                            className="rounded-md border border-white/25 px-2 py-1.5 text-[10px]">Editar cierre</button>}
+            </section>
+            <div className="grid min-w-0 grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-2">
+                <section className="flex h-[290px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] p-2">
+                    <h2 className="mb-2 text-xs font-bold uppercase">Horas</h2>
+                    <div className="relative h-[65px] shrink-0" aria-label="Facturación por hora">
+                        <svg viewBox="0 0 160 70" className="h-full w-full text-[#70b5ff]" preserveAspectRatio="none"
+                            role="img" aria-label="Evolución de ventas de 7 a 23 horas">
+                            <path d="M0 64 H160" stroke="currentColor" strokeOpacity=".23" strokeWidth="1"/>
+                            <path d={mobileHourlyArea} fill="currentColor" fillOpacity=".13"/>
+                            <path d={mobileHourlyPath} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
+                        </svg>
+                        <div className="flex justify-between text-[8px] text-white/55"><span>7h</span><span>23h</span></div>
+                    </div>
+                    <div className="custom-scrollbar mt-5 min-h-0 flex-1 space-y-1 overflow-y-auto">
+                        {mobileVisibleHours.map((hour, index) => hour ? (
+                            <button key={hour.hour} type="button" data-crossfilter-trigger
+                                onClick={() => onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' })}
+                                aria-pressed={mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === hour.hour}
+                                className={cn('grid w-full grid-cols-[1fr_auto] items-center gap-x-1 rounded p-1 text-left text-[9px] tabular-nums',
+                                    mobileActiveSelection?.kind === 'hour' && hour.hour !== mobileActiveSelection.hour && 'opacity-40')}>
+                                <span className="whitespace-nowrap font-medium">{hour.hour}:00 - {hour.hour + 1}:00</span>
+                                <span className="whitespace-nowrap text-right font-semibold text-teal-200">{Math.round(hour.total).toLocaleString('es-ES')}€</span>
+                                <span className="col-span-2 text-right text-[9px] text-white/60">{hour.count} tickets</span>
+                            </button>
+                        ) : <div key={index} className="h-[32px]"/>)}
+                    </div>
+                </section>
+                <section className="h-[290px] min-w-0 overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-2 pt-1">
+                    <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
+                        selection={paymentOnly ? null : mobileActiveSelection}
+                        onSelect={onChooseCross} productThumbnails={productThumbnails}
+                        rangeStart={period.start} rangeEnd={period.end} mobileView="products"/>
+                </section>
+            </div>
+            <section className="min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
+                <div className="mb-2 flex items-center justify-between gap-2 px-1">
+                    <h2 className="text-xs font-bold">Facturas simplificadas</h2>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] tabular-nums text-white/60">
+                            {visibleTickets.length.toLocaleString('es-ES')} de {(crossSelection ? crossResult?.summary.count : dailyReport?.summary.count ?? tickets.length)?.toLocaleString('es-ES') ?? 0}
+                        </span>
+                        <button type="button" aria-pressed={mobileView === 'live'}
+                            onClick={() => setMobileView(current => current === 'live' ? 'tickets' : 'live')}
+                            className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', mobileView === 'live'
+                                ? 'border-sky-300 bg-sky-400/20 text-sky-100' : 'border-white/25 text-white/80')}>
+                            <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"/>Live
+                        </button>
+                    </div>
+                </div>
+                {mobileView === 'live' ? <div data-element="mobile-ventas-live"><RadarSala/></div> : (
+                    <div className="space-y-1">
+                        <div className="custom-scrollbar max-h-[390px] space-y-1 overflow-y-auto">
+                            {visibleTickets.map((ticket, index) => (
+                                <SalesTicket key={ticket.numero_documento || index} ticket={ticket}
+                                    items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
+                                    expanded={expandedTicket === ticket.numero_documento}
+                                    onToggle={() => setExpandedTicket(current => current === ticket.numero_documento ? null : ticket.numero_documento)}
+                                    loadingItems={linesLoading && !Object.prototype.hasOwnProperty.call(linesByTicket, ticket.numero_documento)}/>
+                            ))}
+                            {!visibleTickets.length && !dayLoading && !crossLoading &&
+                                <p className="py-6 text-center text-xs text-white/55">No hay facturas para este periodo.</p>}
+                        </div>
+                        {(crossSelection ? crossError : dayError) && (
+                            <p className="text-center text-xs text-rose-200">No se pudieron cargar los tickets.</p>
+                        )}
+                        {(crossSelection ? crossLoading : dayLoading) && (
+                            <p className="text-center text-xs text-white/60">Cargando tickets…</p>
+                        )}
+                        {canLoadMore && (
+                            <button type="button" onClick={() => crossSelection
+                                ? setCrossPage(current => current + PAGE_SIZE)
+                                : setPage(current => current + PAGE_SIZE)}
+                                className="w-full rounded-md border border-white/25 py-2 text-xs">Ver más</button>
+                        )}
                     </div>
                 )}
-            </section>
-            <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] p-3">
-                <HourlySalesTimeline hours={mobileBreakdown?.hours ?? mobileReport?.hours}
-                    contextLabel={mobileActiveSelection ? crossLabel(mobileActiveSelection) : undefined}
-                    onChooseHour={hour => onChooseCross({ kind: 'hour', hour, scope: mobileScope })}/>
-            </section>
-            <nav className="grid grid-cols-4 gap-1 rounded-lg border border-white/15 bg-white/[0.07] p-1" aria-label="Secciones de ventas">
-                {([{ id: 'products', label: 'Productos' }, { id: 'hours', label: 'Horas' },
-                    { id: 'tickets', label: 'Tickets' }, { id: 'live', label: 'Live' }] as const).map(item => (
-                    <button key={item.id} type="button" aria-pressed={mobileView === item.id}
-                        onClick={() => setMobileView(item.id)}
-                        className={cn('rounded-md px-1 py-2 text-[11px] font-semibold',
-                            mobileView === item.id ? 'bg-sky-400/20 text-white' : 'text-white/60')}>
-                        {item.label}
-                    </button>
-                ))}
-            </nav>
-            <section className="min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-4 pt-2">
-                {mobileView === 'products' ? (
-                    <div className="h-[370px] min-h-0">
-                        <SalesBreakdown report={mobileBreakdown} baseReport={mobileReport} scope={mobileScope}
-                            selection={mobileActiveSelection?.kind === 'payment' && ['cash', 'card'].includes(mobileActiveSelection.payment) ? null : mobileActiveSelection}
-                            onSelect={onChooseCross} productThumbnails={productThumbnails}
-                            rangeStart={mobileMonth ? monthStart : period.start} rangeEnd={mobileMonth ? monthEnd : period.end}
-                            mobileView="products"/>
-                    </div>
-                ) : mobileView === 'hours' ? (
-                    <div className="space-y-1">
-                        <h2 className="mb-2 text-xs font-bold uppercase">Facturación por hora</h2>
-                        {(mobileBreakdown?.hours ?? mobileReport?.hours ?? [])
-                            .filter(item => Number(item.hour) >= 7 && Number(item.hour) <= 22).map(item => (
-                            <button key={item.hour} type="button" data-crossfilter-trigger
-                                onClick={() => onChooseCross({ kind: 'hour', hour: item.hour, scope: mobileScope })}
-                                aria-pressed={mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === item.hour}
-                                className={cn('flex w-full items-center justify-between gap-2 rounded-md border border-white/10 px-2 py-2 text-left text-[11px] tabular-nums',
-                                    mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === item.hour && 'border-sky-300 bg-sky-300/15')}>
-                                <span>{item.hour}:00 - {item.hour + 1}:00</span>
-                                <span className="text-white/60">{item.count} tickets</span>
-                                <strong>{euro(item.total)}</strong>
-                            </button>
-                        ))}
-                        {!(mobileBreakdown?.hours ?? mobileReport?.hours)?.length &&
-                            <p className="py-8 text-center text-xs text-white/60">Sin desglose horario disponible</p>}
-                    </div>
-                ) : mobileView === 'tickets' ? (
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                            <h2 className="text-xs font-bold uppercase">Facturas simplificadas</h2>
-                            <span className="text-[10px] text-white/60 tabular-nums">{mobileTicketRows.length.toLocaleString('es-ES')} tickets</span>
-                        </div>
-                        {mobileTicketRows.map((ticket, i) => (
-                            <MobileSalesTicket key={ticket.numero_documento || i} ticket={ticket}
-                                cachedItems={!mobileMonth || mobileActiveSelection ? linesByTicket[ticket.numero_documento] : undefined}/>
-                        ))}
-                        {mobileTicketRows.length === 0 && (
-                            <p className="py-8 text-center text-xs text-white/60">
-                                {mobileMonth && mobileMonthTickets.key !== monthTicketKey ? 'Cargando tickets…' : 'Sin tickets en este periodo.'}
-                            </p>
-                        )}
-                        {(mobileActiveSelection ? crossError : mobileMonth ? mobileMonthTickets.error : dayError) &&
-                            <p className="text-xs text-rose-200">Error al cargar tickets.</p>}
-                        {(mobileActiveSelection ? crossLoading : mobileMonth ? mobileMonthTickets.loading : dayLoading) &&
-                            <p className="text-xs text-white/60">Cargando tickets…</p>}
-                        {mobileMoreTickets && (
-                            <button type="button" onClick={() => mobileActiveSelection
-                                ? setCrossPage(n => n + PAGE_SIZE)
-                                : mobileMonth ? setMonthTicketPage(n => n + 1) : setPage(n => n + PAGE_SIZE)}
-                                className="w-full rounded-md border border-white/25 py-2 text-xs">Ver más tickets</button>
-                        )}
-                    </div>
-                ) : <div data-element="mobile-ventas-live"><RadarSala/></div>}
             </section>
         </div>
 
@@ -1932,6 +1873,10 @@ export default function VentasDesktopWorkspace() {
                 initialValue={initialTimeFilter}
                 defaultKind={activeFilter?.kind ?? 'date'}
                 quickRangePreset={lastThreeMonthsPreset}
+                calendarDayAmounts={Object.fromEntries(calendarClosings
+                    .filter(row => row.net_sales != null)
+                    .map(row => [row.closing_date, Number(row.net_sales)]) )}
+                onCalendarMonthChange={setMonth}
                 onApply={applyFilter}
             />
             <ImageLightbox

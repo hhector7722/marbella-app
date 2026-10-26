@@ -44,6 +44,8 @@ export function TimeFilterModal({
   initialValue,
   defaultKind,
   quickRangePreset,
+  calendarDayAmounts,
+  onCalendarMonthChange,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -53,6 +55,8 @@ export function TimeFilterModal({
   defaultKind?: TimeFilterKind;
   /** Acceso opcional a un periodo habitual; conserva el mismo modal visual P7. */
   quickRangePreset?: { label: string; value: Extract<TimeFilterValue, { kind: "range" }> };
+  calendarDayAmounts?: Record<string, number>;
+  onCalendarMonthChange?: (next: Date) => void;
 }) {
   const pathname = usePathname();
   const initialKind = useMemo<TimeFilterKind>(() => {
@@ -277,7 +281,8 @@ export function TimeFilterModal({
             <div className="space-y-3">
               <MiniMonthCalendar
                 month={calendarBaseDate}
-                onMonthChange={setCalendarBaseDate}
+                onMonthChange={next => { setCalendarBaseDate(next); onCalendarMonthChange?.(next); }}
+                dayAmounts={calendarDayAmounts}
                 onSelectDay={selectCalendarDay}
                 isSelected={calendarSelected}
                 isInRange={calendarInRange}

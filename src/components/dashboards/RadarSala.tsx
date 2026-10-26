@@ -1,16 +1,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { Euro } from 'lucide-react';
 import { parseRadiografiaTimestamp, parseDBDate, formatLocalTime } from '@/utils/date-utils';
 import { cn } from '@/lib/utils';
 import { Surface } from '@/components/ui/Surface';
 import { EmptyState } from '@/components/ui/EmptyState';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 function isEmptyish(v: unknown): boolean {
   if (v == null) return true;
@@ -259,42 +254,45 @@ function RadarSalaActive() {
     };
 
     let active = true;
-    const fetchInicial = async () => {
-      const { data, error } = await supabase.from('estado_sala')
-        .select('radiografia_completa,ultima_actualizacion').eq('id', 1).maybeSingle();
-      if (!active) return;
-      if (error || !data) {
-        setSyncError(true);
-        return;
-      }
-      setMesas(processData(Array.isArray(data.radiografia_completa) ? data.radiografia_completa : []));
-      setUltimaAct(data.ultima_actualizacion ? parseDBDate(data.ultima_actualizacion) : null);
-      setSyncError(false);
-      setNow(Date.now());
-    };
-    void fetchInicial();
-
-    // Realtime puede dejar de entregar cambios tras suspender la app o cambiar de red.
-    // Refrescar cada 15 s garantiza recuperación y presencia/ausencia real de mesas.
-    const interval = window.setInterval(() => { void fetchInicial(); }, 15_000);
-    const clock = window.setInterval(() => setNow(Date.now()), 30_000);
-    const canal = supabase.channel('radar-sala')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'estado_sala' }, (payload) => {
+    let inflight = false;
+    const fetchEstado = async () => {
+      if (inflight || !active) return;
+      inflight = true;
+      try {
+        const response = await fetch('/api/dashboard/sala/live', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data: { mesas?: unknown; actualizacion?: string | null } = await response.json();
         if (!active) return;
-        if (payload.eventType === 'DELETE') { void fetchInicial(); return; }
-        const row = payload.new as Record<string, unknown>;
-        setMesas(processData(Array.isArray(row.radiografia_completa) ? row.radiografia_completa : []));
-        setUltimaAct(row.ultima_actualizacion ? parseDBDate(String(row.ultima_actualizacion)) : null);
+        setMesas(processData(Array.isArray(data.mesas) ? data.mesas : []));
+        setUltimaAct(data.actualizacion ? parseDBDate(data.actualizacion) : null);
         setSyncError(false);
         setNow(Date.now());
-      })
-      .subscribe(status => { if (status === 'SUBSCRIBED') void fetchInicial(); });
-
+      } catch (error) {
+        if (active) {
+          console.warn('[RadarSala] Error de sincronización', error);
+          setSyncError(true);
+        }
+      } finally {
+        inflight = false;
+      }
+    };
+    void fetchEstado();
+    // Consulta autenticada: RLS no expone estado_sala desde el navegador.
+    // El polling permite recuperar la conexión tras pasar la app a segundo plano.
+    const interval = window.setInterval(() => { void fetchEstado(); }, 12_000);
+    const clock = window.setInterval(() => setNow(Date.now()), 30_000);
+    const onFocus = () => { void fetchEstado(); };
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('online', onFocus);
     return () => {
       active = false;
       window.clearInterval(interval);
       window.clearInterval(clock);
-      void supabase.removeChannel(canal);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('online', onFocus);
     };
   }, []);
 
@@ -311,7 +309,7 @@ function RadarSalaActive() {
     return { color: 'bg-[#407080]', texto: 'text-white', min: minutos, hora: horaFormatted };
   };
 
-  const datosDesactualizados = ultimaAct !== null && now - ultimaAct.getTime() > 120_000;
+  const datosDesactualizados = ultimaAct !== null && now - ultimaAct.getTime() > 300_000;
   const mesasOrdenadas = [...mesas].sort((a, b) => {
     const timeA = mesaAperturaToDate(resolveMesaAperturaRaw(a))?.getTime() ?? 0;
     const timeB = mesaAperturaToDate(resolveMesaAperturaRaw(b))?.getTime() ?? 0;
