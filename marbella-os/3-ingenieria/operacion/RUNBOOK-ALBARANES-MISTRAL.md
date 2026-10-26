@@ -115,3 +115,6 @@ propuestas está lista para recepción. Antes de mapear o recibir ese albarán,
 reconciliar las hojas originales y seleccionar una sola copia de cada par.
 No borrar la evidencia repetida ni asumir que hashes de archivo distintos
 significan entregas distintas.
+# Descuento confundido con IVA en una línea
+
+Si la lectura asigna el valor de `% IVA` al descuento, compara las columnas del original. En la revisión de compra, corrige el valor en «Descuento leído» y selecciona si es un importe fijo o un porcentaje. El precio bruto, el descuento corregido y el importe de la línea deben conciliar antes de guardar. La evidencia original se conserva. En una tabla SERHS con `DTO.`, `P.UN` y `% IVA`, `DTO.` es el descuento y `P.UN` el precio neto.

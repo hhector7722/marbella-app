@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   isMisreadNetAmount,
   isVerifiedTaxRateMisreadAsDiscount,
+  reviewTaxMisreadAsFixedDiscount,
   reconcileFixedDiscountedUnitPrice,
   reconcileFreeFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
@@ -39,6 +40,20 @@ test('Ametller: IVA copiado en DTO y total copiado en neto no inventan descuento
   assert.equal(validateObservedLine(evidence).discountPercent, null)
   assert.equal(isVerifiedTaxRateMisreadAsDiscount({ ...evidence, line_total_raw: '7,88' }), false)
   assert.equal(isVerifiedTaxRateMisreadAsDiscount({ ...evidence, tax_rate_raw: '4,00 %' }), false)
+})
+
+test('SERHS: corrige DTO de 3,38 leído como IVA 21 sin aceptar cifras arbitrarias', () => {
+  const evidence = row({ unit_price_raw: '8,58', discount_raw: '21,00',
+    discount_header_raw: 'DTO.', tax_rate_raw: '21,00', net_unit_price_raw: '3,38' })
+  const corrected = reviewTaxMisreadAsFixedDiscount(evidence,
+    { quantity: 1, discount: 3.38, lineTotal: 5.20 })
+  assert.equal(corrected?.discount_raw, '3.38')
+  assert.equal(corrected?.net_unit_price_raw, '5.2')
+  assert.equal(reconcileFixedDiscountedUnitPrice(corrected!), '5.2')
+  assert.equal(reviewTaxMisreadAsFixedDiscount(evidence,
+    { quantity: 1, discount: 3.39, lineTotal: 5.20 }), null)
+  assert.equal(reviewTaxMisreadAsFixedDiscount({ ...evidence, tax_rate_raw: '10' },
+    { quantity: 1, discount: 3.38, lineTotal: 5.20 }), null)
 })
 
 test('el precio efectivo se calcula del importe, sin alterar el impreso', () => {

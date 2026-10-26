@@ -10,6 +10,7 @@ import {
   isVerifiedIbeeCharge,
   isVerifiedTaxInclusiveUnitPrice,
   isVerifiedTaxRateMisreadAsDiscount,
+  reviewTaxMisreadAsFixedDiscount,
   reconcileFixedDiscountedUnitPrice,
   reconcileFreeFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
@@ -35,6 +36,7 @@ type PricingReview = {
   discountPercent: number
   lineTotal: number
 }
+type DiscountCorrectionReview = { kind: 'fixed'; discount: number }
 
 export type ReceiptAllocationInput = {
   purchase_order_item_id: string
@@ -171,6 +173,7 @@ async function supersedeK5ProposalWithMapping(params: {
   variableWeightKg?: number | null
   variablePieceCount?: number | null
   pricingReview?: PricingReview | null
+  discountCorrectionReview?: DiscountCorrectionReview | null
   manualDiscountReview?: ManualDiscountReview | null
   verifiedOcrAmount?: boolean
 }): Promise<K5MappingRevision | null> {
@@ -278,6 +281,17 @@ async function supersedeK5ProposalWithMapping(params: {
     : []
   const sourceLine = canonicalLineSchema.safeParse(current.observed)
   const sourceCheck = sourceLine.success ? validateObservedLine(sourceLine.data) : null
+  const correctedSource = sourceLine.success && params.discountCorrectionReview
+    ? reviewTaxMisreadAsFixedDiscount(sourceLine.data, {
+        quantity: quantityNumber ?? NaN,
+        discount: params.discountCorrectionReview.discount,
+        lineTotal: lineTotalNumber ?? NaN,
+      }) : null
+  if (params.discountCorrectionReview && (!correctedSource
+    || !sameExactDecimal(reconcileFixedDiscountedUnitPrice(correctedSource), observedUnitPrice))) {
+    throw new Error('El descuento corregido no concilia con el DTO, el IVA, el precio y el importe del original.')
+  }
+  const correctedCheck = correctedSource ? validateObservedLine(correctedSource) : null
   const verifiedTaxRateMisreadAsDiscount = Boolean(
     sourceLine.success && isVerifiedTaxRateMisreadAsDiscount(sourceLine.data)
     && sourceCheck?.priceBasis === 'billing_quantity'
@@ -290,7 +304,7 @@ async function supersedeK5ProposalWithMapping(params: {
     const source = sourceLine.data
     const possibleBasePrices = [
       reviewedPricing?.effectiveUnitPrice,
-      reconcileFixedDiscountedUnitPrice(source),
+      reconcileFixedDiscountedUnitPrice(correctedSource ?? source),
       reconcileFreeFixedDiscountedUnitPrice(source),
       reconcilePercentageDiscountedUnitPrice(source),
       reconcileUnadjustedNetUnitPrice(source),
@@ -388,11 +402,11 @@ async function supersedeK5ProposalWithMapping(params: {
   // mera corrección manual: bruto, DTO, neto y total vienen del original.
   const verifiedFixedDiscount = Boolean(
     sourceLine.success
-    && sourceCheck?.priceBasis === 'billing_quantity'
-    && sameExactDecimal(sourceCheck.quantity, lineQuantity)
-    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+    && (correctedCheck ?? sourceCheck)?.priceBasis === 'billing_quantity'
+    && sameExactDecimal((correctedCheck ?? sourceCheck)?.quantity, lineQuantity)
+    && sameExactDecimal((correctedCheck ?? sourceCheck)?.lineTotal, lineTotal)
     && sameExactDecimal(
-      reconcileFixedDiscountedUnitPrice(sourceLine.data),
+      reconcileFixedDiscountedUnitPrice(correctedSource ?? sourceLine.data),
       observedUnitPrice
     )
   )
@@ -528,6 +542,7 @@ async function supersedeK5ProposalWithMapping(params: {
       : reviewedPricing,
     reviewed_weight_quantity: verifiedCorrectedWeightMath,
     reviewed_ocr_amount: verifiedOcrAmount,
+    discount_correction_review: correctedSource ? params.discountCorrectionReview : null,
   })
 
   const { data: existing, error: existingError } = await params.supabase
@@ -569,7 +584,7 @@ async function supersedeK5ProposalWithMapping(params: {
       mapping_version_id: params.mappingVersionId,
       ingredient_id: params.ingredientId,
       status,
-      observed: current.observed ?? {},
+      observed: correctedSource ?? current.observed ?? {},
       interpreted: current.interpreted ?? {},
       normalized,
       pricing: {
@@ -606,6 +621,12 @@ async function supersedeK5ProposalWithMapping(params: {
         ...(verifiedCorrectedWeightMath ? { reviewed_weight_quantity: true } : {}),
         ...(reviewedPricing ? { manual_percentage_review: true } : {}),
         ...(reviewedManualDiscount ? { manual_discount_review: true } : {}),
+        ...(correctedSource ? { corrected_discount: {
+          original_observed: current.observed,
+          corrected_discount: params.discountCorrectionReview?.discount,
+          reviewer_id: params.userId,
+          reviewed_at: new Date().toISOString(),
+        } } : {}),
         ...(params.variableWeightKg != null
           ? {
               variable_weight_kg: params.variableWeightKg,
@@ -634,6 +655,7 @@ export async function saveReceiptMappingProposalAction(params: {
   lineContentQty: number
   lineContentUnit: string
   pricingReview?: PricingReview | null
+  discountCorrectionReview?: DiscountCorrectionReview | null
   manualDiscountReview?: ManualDiscountReview | null
   verifiedOcrAmount?: boolean
 }): Promise<
@@ -656,6 +678,7 @@ export async function saveReceiptMappingProposalAction(params: {
   const lineContentQty = decimal(params?.lineContentQty)
   const lineContentUnit = text(params?.lineContentUnit)
   const pricingReview = params?.pricingReview ?? null
+  const discountCorrectionReview = params?.discountCorrectionReview ?? null
   const manualDiscountReview = params?.manualDiscountReview ?? null
   if (!invoiceId || !lineId || !ingredientId || conversionFactor == null || conversionFactor <= 0) {
     return { success: false, message: 'Faltan el ingrediente o el factor de conversión válido.' }
@@ -891,6 +914,7 @@ export async function saveReceiptMappingProposalAction(params: {
       lineContentQty: effectiveLineContentQty,
       lineContentUnit: effectiveLineContentUnit,
       pricingReview,
+      discountCorrectionReview,
       manualDiscountReview,
       verifiedOcrAmount: params.verifiedOcrAmount,
       variableWeightKg,
