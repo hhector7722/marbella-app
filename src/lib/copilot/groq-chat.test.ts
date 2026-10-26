@@ -33,7 +33,7 @@ test("una comparación de proveedores no se interpreta como mero listado", () =>
 test("la consulta de horas incluye resolución de usuarios antes de los registros", () => {
   const names = selectGroqTools("¿Cuántas horas extras hizo Fernando?", catalog)
     .map((x) => x.function.name);
-  assert.ok(names.includes("consultar_usuarios"));
+  assert.ok(names.includes("consultar_registros_asistencia"));
   assert.ok(names.includes("consultar_registros_horas_extras"));
 });
 
