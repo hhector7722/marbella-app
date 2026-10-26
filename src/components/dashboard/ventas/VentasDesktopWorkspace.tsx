@@ -1349,6 +1349,9 @@ export default function VentasDesktopWorkspace() {
         const onPointer = (event: PointerEvent) => {
             if (!(event.target instanceof Element)) return;
             if (event.target.closest('[data-crossfilter-trigger]')) return;
+            // En smartphone se mantiene el filtro al abrir Productos, Tickets o Live.
+            // Para retirarlo se pulsa otra vez el tramo o el control «Quitar filtro».
+            if (event.target.closest('[data-component="HistoryMobileWorkspace"]')) return;
             setCrossSelection(null);
             setCrossResult(null);
             setCrossPage(0);
@@ -1530,9 +1533,14 @@ export default function VentasDesktopWorkspace() {
             ? { ...item, label: 'Media', value: monthDailyAverage === null ? '' : euro(monthDailyAverage),
                 tooltip: 'Media de ventas por día con cierre y ventas positivas.' } : item);
     const mobileActiveSelection = crossSelection?.scope === mobileScope ? crossSelection : null;
+    // Si se filtra una hora, conservar los datos originales de las horas vecinas
+    // para que sigan visibles y atenuadas, como en los widgets del inicio.
+    const mobileHoursSource = mobileActiveSelection?.kind === 'hour'
+        ? dailyReport?.hours
+        : periodBreakdown?.hours ?? dailyReport?.hours;
     const mobileHours = Array.from({ length: 16 }, (_, i) => {
         const hour = i + 7;
-        const record = (periodBreakdown?.hours ?? dailyReport?.hours ?? []).find(row => Number(row.hour) === hour);
+        const record = mobileHoursSource?.find(row => Number(row.hour) === hour);
         return { hour, count: Number(record?.count ?? 0), total: Number(record?.total ?? 0) };
     });
     const peakMobile = Math.max(1, ...mobileHours.map(item => item.total));
@@ -1666,10 +1674,19 @@ export default function VentasDesktopWorkspace() {
                 </div>
             </section>
             <div className="min-w-0">
-                <section className="flex h-[158px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 py-1.5">
-                    <h2 className="mb-0.5 text-[11px] font-bold uppercase">Horas</h2>
-                    <div className="relative h-[42px] shrink-0" aria-label="Facturación por hora">
-                        <svg viewBox="0 0 160 70" className="h-[31px] w-full text-[#70b5ff]" preserveAspectRatio="none"
+                <section className="flex h-[143px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 py-1.5">
+                    <div className="mb-0.5 flex shrink-0 items-center justify-between">
+                        <h2 className="text-[11px] font-bold uppercase">Horas</h2>
+                        {mobileActiveSelection?.kind === 'hour' && (
+                            <button type="button" data-crossfilter-trigger
+                                onClick={() => onChooseCross(mobileActiveSelection)}
+                                className="text-[9px] font-semibold text-sky-200 hover:text-white">
+                                Quitar filtro <X size={10} className="inline-block"/>
+                            </button>
+                        )}
+                    </div>
+                    <div className="relative h-[35px] shrink-0" aria-label="Facturación por hora">
+                        <svg viewBox="0 0 160 70" className="h-[25px] w-full text-[#70b5ff]" preserveAspectRatio="none"
                             role="img" aria-label="Evolución de ventas de 7 a 23 horas">
                             <path d="M0 64 H160" stroke="currentColor" strokeOpacity=".23" strokeWidth="1"/>
                             <path d={mobileHourlyArea} fill="currentColor" fillOpacity=".13"/>
@@ -1677,18 +1694,29 @@ export default function VentasDesktopWorkspace() {
                         </svg>
                         <div className="flex justify-between text-[8px] text-white/55"><span>7h</span><span>23h</span></div>
                     </div>
-                    <div className="custom-scrollbar mt-1.5 min-h-0 flex-1 space-y-0.5 overflow-y-auto">
+                    <div className="custom-scrollbar mt-1 min-h-0 flex-1 overflow-y-auto">
+                        <div className="grid h-[13px] grid-cols-[minmax(0,1.15fr)_minmax(0,0.65fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-1 px-1 text-[8px] leading-none text-white/45">
+                            <span>Tramo</span>
+                            <span className="text-center">Tickets</span>
+                            <span className="text-right">Medio</span>
+                            <span className="text-right">Importe</span>
+                        </div>
                         {mobileVisibleHours.map((hour, index) => hour ? (
                             <button key={hour.hour} type="button" data-crossfilter-trigger
                                 onClick={() => onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' })}
                                 aria-pressed={mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === hour.hour}
-                                className={cn('grid h-[23px] w-full grid-cols-[minmax(0,1fr)_max-content_max-content] items-center gap-x-2 rounded px-1 text-left text-[9px] tabular-nums',
-                                    mobileActiveSelection?.kind === 'hour' && hour.hour !== mobileActiveSelection.hour && 'opacity-40')}>
+                                className={cn('grid h-[18px] w-full grid-cols-[minmax(0,1.15fr)_minmax(0,0.65fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-1 rounded px-1 text-left text-[9px] leading-none tabular-nums transition-opacity',
+                                    mobileActiveSelection?.kind === 'hour' && hour.hour !== mobileActiveSelection.hour && 'opacity-35',
+                                    mobileActiveSelection?.kind === 'hour' && hour.hour === mobileActiveSelection.hour && 'font-bold text-white')}
+                                title={`${hour.hour}:00 - ${hour.hour + 1}:00 · ${hour.count} tickets · media ${hour.count ? euro(hour.total / hour.count) : '—'} · ${euro(hour.total)}`}>
                                 <span className="min-w-0 whitespace-nowrap font-medium">{hour.hour}:00 - {hour.hour + 1}:00</span>
-                                <span className="whitespace-nowrap text-right text-[9px] text-white/60">{hour.count} tickets</span>
-                                <span className="whitespace-nowrap text-right font-semibold text-teal-200">{Math.round(hour.total).toLocaleString('es-ES')}€</span>
+                                <span className="min-w-0 whitespace-nowrap text-center text-white/70">{hour.count}</span>
+                                <span className="min-w-0 whitespace-nowrap text-right text-white/70">
+                                    {hour.count ? euro(hour.total / hour.count) : '—'}
+                                </span>
+                                <span className="min-w-0 whitespace-nowrap text-right font-semibold text-teal-200">{Math.round(hour.total).toLocaleString('es-ES')} €</span>
                             </button>
-                        ) : <div key={index} className="h-[23px]"/>)}
+                        ) : <div key={index} className="h-[18px]"/>)}
                     </div>
                 </section>
             </div>
