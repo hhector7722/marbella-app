@@ -526,6 +526,36 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
         }
     });
 
+    it('Albaranes: cerrar un modal auxiliar conserva el detalle del mismo documento', () => {
+        const components = [
+            ['src/components/albaranes/LineEditModal.tsx', 'albaran-line-edit'],
+            ['src/components/albaranes/LineMappingModal.tsx', 'albaran-line-mapping'],
+            ['src/components/albaranes/DocumentEvidenceModal.tsx', 'albaran-document-evidence'],
+        ] as const;
+        for (const [file, instance] of components) {
+            const source = readFileSync(join(process.cwd(), file), 'utf8');
+            assert.ok(
+                source.includes('instance="' + instance + '"')
+                    && source.includes('parentInstance="albaran-detail"')
+                    && source.includes('dismissScope="self"'),
+                file + ' debe cerrar solo su superficie derivada'
+            );
+            const events: string[] = [];
+            resetModalHistoryForTests();
+            registerNav({ surfaceId: 'invoice-detail', instance: 'albaran-detail', events });
+            registerNav({
+                surfaceId: instance,
+                instance,
+                parentInstance: 'albaran-detail',
+                layer: 'derived',
+                events,
+            });
+            requestModalClose(instance);
+            assert.deepEqual(events, ['dismiss:' + instance]);
+            assert.deepEqual(getModalHistorySnapshot().map(entry => entry.surfaceId), ['invoice-detail']);
+        }
+    });
+
     it('6. Escape hijo = cerrar toda la cadena', () => {
         const events: string[] = [];
         registerNav({ surfaceId: 'a', instance: 'a', events });
