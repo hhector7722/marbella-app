@@ -164,7 +164,11 @@ export async function getActivitiesByDateAction(params: {
       const end = row.end_time;
       const key = `${actName}|${start}|${end}`;
 
-      const venues = ((row.occurrence_venues as any) ?? []).map((ov: any) => ov.venues.code);
+      // Mostrar y editar únicamente ocupaciones de P1, P2, P3 o P4.
+      const venues = ((row.occurrence_venues as any) ?? [])
+        .map((ov: any) => ov.venues.code as string)
+        .filter((code: string) => ['P1', 'P2', 'P3', 'P4'].includes(code));
+      if (venues.length === 0) continue;
       const groups = ((row.occurrence_groups as any) ?? []).map((g: any) => ({
         category_id: g.category_id,
         name: g.participant_categories?.name ?? g.category_id,
@@ -220,11 +224,13 @@ export async function saveActivitiesAction(
       return { success: false, error: 'No hay datos para guardar. Agrega al menos una actividad.' };
     }
 
-    // 1. Delete all occurrences for this date
+    // 1. Sustituir únicamente ocupaciones procedentes de PDF.
+    // No borrar los registros independientes de /reporte.
     const { error: deleteError } = await supabase
       .from('activity_occurrences')
       .delete()
-      .eq('activity_date', params.date);
+      .eq('activity_date', params.date)
+      .eq('source_type', 'pdf');
 
     if (deleteError) throw deleteError;
 
