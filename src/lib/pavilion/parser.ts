@@ -23,11 +23,13 @@ export interface Occupation {
 export interface ParsePdfResult {
   occupations: Occupation[];
   date: string;
+  warnings: string[];
 }
 
 interface MistralOccupationsResult {
   date: string;
   occupations: Array<Omit<Occupation, 'date'>>;
+  warnings: string[];
 }
 
 interface MistralChatResponse {
@@ -112,10 +114,14 @@ function parseAndValidateResult(raw: string): MistralOccupationsResult {
   }
 
   const deduped = new Map<string, Omit<Occupation, 'date'>>();
+  const warnings: string[] = [];
 
   candidate.occupations.forEach((item, index) => {
-    if (!item || typeof item !== 'object') {
-      throw new Error(`Ocupación inválida en posición ${index}.`);
+    // Mistral puede incluir una celda gris o vacía como fila.
+    // Nunca dejamos que una de estas filas anule todas las ocupaciones válidas.
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      warnings.push(`Fila ${index + 1}: objeto inválido; requiere revisión.`);
+      return;
     }
 
     const row = item as {
@@ -132,7 +138,8 @@ function parseAndValidateResult(raw: string): MistralOccupationsResult {
       !Array.isArray(row.venues) ||
       !row.venues.every((venue) => typeof venue === 'string')
     ) {
-      throw new Error(`Ocupación incompleta o inválida en posición ${index}.`);
+      warnings.push(`Fila ${index + 1}: campos incompletos; requiere revisión.`);
+      return;
     }
 
     const activity = cleanActivityName(row.activity);
@@ -143,15 +150,16 @@ function parseAndValidateResult(raw: string): MistralOccupationsResult {
     )].sort();
 
     if (!activity) {
-      throw new Error(`Actividad vacía en posición ${index}.`);
+      warnings.push(`Fila ${index + 1}: nombre vacío; requiere revisión.`);
+      return;
     }
-    if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
-      throw new Error(
-        `Horario inválido en posición ${index}: ${startTime}-${endTime}.`,
-      );
+    if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime) || startTime >= endTime) {
+      warnings.push(`Fila ${index + 1}: horario inválido; requiere revisión.`);
+      return;
     }
     if (venues.length === 0) {
-      throw new Error(`Ocupación sin espacio en posición ${index}.`);
+      warnings.push(`Fila ${index + 1}: sin espacio; requiere revisión.`);
+      return;
     }
 
     const key = [
@@ -172,11 +180,13 @@ function parseAndValidateResult(raw: string): MistralOccupationsResult {
   return {
     date: typeof candidate.date === 'string' ? candidate.date.trim() : '',
     occupations: [...deduped.values()],
+    warnings,
   };
 }
 
 async function callMistralDocumentQna(
   pdfBase64: string,
+  secondPass = false,
 ): Promise<MistralOccupationsResult> {
   const apiKey = getMistralKey();
 
@@ -220,7 +230,13 @@ REGLES CRÍTIQUES:
 4. start_time i end_time han de reflectir els límits visuals del bloc.
 5. Si un bloc acaba a 23:59, usa "23:59".
 6. Si no pots determinar alguna ocupació amb prou certesa, omet-la abans d'inventar-la.
-7. No afegeixis explicacions, markdown ni camps extra.`;
+7. No afegeixis explicacions, markdown ni camps extra.
+8. No retornis mai una fila amb activity buit, sense horari o sense espai.
+9. Si de debò no hi ha ocupacions reals, retorna occupations: [] sense inventar res.`;
+
+  const secondPassInstructions = secondPass
+    ? '\\n\\nSEGONA LECTURA VISUAL: La primera lectura no ha trobat cap ocupació vàlida. Revisa amb especial atenció TOTES les columnes, els blocs verticals de color i les franges horàries. Si hi ha text llegible dins un bloc ocupat, extreu-lo. No inventis dades. Si la graella és buida, retorna occupations: [].'
+    : '';
 
   const res = await fetch(MISTRAL_CHAT_URL, {
     method: 'POST',
@@ -234,7 +250,7 @@ REGLES CRÍTIQUES:
         {
           role: 'user',
           content: [
-            { type: 'text', text: prompt },
+            { type: 'text', text: prompt + secondPassInstructions },
             {
               type: 'document_url',
               document_url: `data:application/pdf;base64,${pdfBase64}`,
@@ -276,7 +292,17 @@ export async function parsePdf(
   pdfBase64: string,
   filename?: string,
 ): Promise<ParsePdfResult> {
-  const result = await callMistralDocumentQna(pdfBase64);
+  let result = await callMistralDocumentQna(pdfBase64);
+
+  // Segunda lectura visual solo si el primer resultado quedó completamente
+  // vacío. Nunca aceptamos cero ocupaciones como una importación correcta.
+  if (result.occupations.length === 0) {
+    const second = await callMistralDocumentQna(pdfBase64, true);
+    result = {
+      ...second,
+      warnings: [...result.warnings, ...second.warnings],
+    };
+  }
 
   // La fecha del nombre del archivo es la fuente autoritativa cuando existe.
   const filenameDate = extractDateFromFilename(filename);
@@ -294,5 +320,6 @@ export async function parsePdf(
   return {
     occupations,
     date: resolvedDate,
+    warnings: result.warnings,
   };
 }
