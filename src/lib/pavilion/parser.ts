@@ -153,7 +153,7 @@ function parseAndValidateResult(raw: string): MistralOccupationsResult {
       warnings.push(`Fila ${index + 1}: nombre vacío; requiere revisión.`);
       return;
     }
-    if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime) || startTime >= endTime) {
+    if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime) ) {
       warnings.push(`Fila ${index + 1}: horario inválido; requiere revisión.`);
       return;
     }
@@ -235,7 +235,7 @@ REGLES CRÍTIQUES:
 9. Si de debò no hi ha ocupacions reals, retorna occupations: [] sense inventar res.`;
 
   const secondPassInstructions = secondPass
-    ? '\\n\\nSEGONA LECTURA VISUAL: La primera lectura no ha trobat cap ocupació vàlida. Revisa amb especial atenció TOTES les columnes, els blocs verticals de color i les franges horàries. Si hi ha text llegible dins un bloc ocupat, extreu-lo. No inventis dades. Si la graella és buida, retorna occupations: [].'
+    ? '\n\nSEGONA LECTURA VISUAL: La primera lectura no ha trobat cap ocupació vàlida. Revisa amb especial atenció TOTES les columnes, els blocs verticals de color i les franges horàries. Si hi ha text llegible dins un bloc ocupat, extreu-lo. No inventis dades. Si la graella és buida, retorna occupations: [].'
     : '';
 
   const res = await fetch(MISTRAL_CHAT_URL, {
