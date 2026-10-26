@@ -19,6 +19,8 @@ import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos
 import { getProductMarginRanking } from '@/app/dashboard/insights/actions';
 import { ProductRankingThumbnail } from './ProductRankingThumbnail';
 import RadarSala from '@/components/dashboards/RadarSala';
+import VentasClosingEditor from './VentasClosingEditor';
+import { Modal } from '@/components/ui/modal';
 
 type Ticket = { numero_documento: string; fecha: string; hora_cierre: string; total_documento: number; mesa: number | null };
 type Item = { name: string; qty: number; price: number; total: number };
@@ -385,6 +387,58 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
     );
 }
 
+// El listado anterior de smartphone: filas oscuras, detalle legible y despliegue propio.
+function MobileSalesTicket({ ticket, cachedItems }: { ticket: Ticket; cachedItems?: Item[] }) {
+    const supabase = useMemo(() => createClient(), []);
+    const [expanded, setExpanded] = useState(false);
+    const [loaded, setLoaded] = useState<{ key: string; values: Item[] } | null>(null);
+    const [loading, setLoading] = useState(false);
+    const items = cachedItems ?? (loaded?.key === ticket.numero_documento ? loaded.values : []);
+    useEffect(() => {
+        if (!expanded || cachedItems || loaded?.key === ticket.numero_documento) return;
+        let active = true;
+        void supabase.rpc('get_ticket_lines', { p_numero_documento: ticket.numero_documento })
+            .then(({ data, error }) => {
+                if (!active) return;
+                if (!error) setLoaded({ key: ticket.numero_documento, values: ((data ?? []) as {
+                    articulo_nombre: string | null; cantidad: number | null;
+                    precio_unidad: number | null; importe_total: number | null;
+                }[]).map(item => ({
+                    name: String(item.articulo_nombre ?? 'Producto'), qty: Number(item.cantidad ?? 1),
+                    price: Number(item.precio_unidad ?? 0), total: Number(item.importe_total ?? 0)
+                })) });
+                setLoading(false);
+            });
+        return () => { active = false; };
+    }, [expanded, cachedItems, loaded?.key, ticket.numero_documento, supabase]);
+    return (
+        <div className="overflow-hidden rounded-lg border border-white/15 bg-white/[0.06]">
+            <button type="button" aria-expanded={expanded}
+                onClick={() => {
+                    if (!expanded && !cachedItems && loaded?.key !== ticket.numero_documento) setLoading(true);
+                    setExpanded(v => !v);
+                }}
+                className="flex w-full min-w-0 items-center gap-2 px-3 py-3 text-left text-white">
+                <strong className="shrink-0 text-xs tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
+                <span className="min-w-0 flex-1 truncate text-[11px] tabular-nums text-white/65">{compactDoc(ticket.numero_documento)}</span>
+                {ticket.mesa != null && ticket.mesa > 0 && <span className="shrink-0 rounded bg-sky-400/15 px-1.5 py-0.5 text-[10px]">M{ticket.mesa}</span>}
+                <strong className="shrink-0 whitespace-nowrap text-xs tabular-nums">{euro(ticket.total_documento)}</strong>
+                {expanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+            </button>
+            {expanded && (
+                <div className="space-y-1.5 border-t border-white/10 bg-white/[0.035] px-3 py-3 text-xs text-white/85">
+                    {loading ? 'Cargando productos…' : items.length ? items.map((item, i) => (
+                        <div key={i} className="flex justify-between gap-3">
+                            <span className="min-w-0 break-words">{item.qty.toLocaleString('es-ES')} × {item.name}</span>
+                            <span className="shrink-0 tabular-nums">{euro(item.total)}</span>
+                        </div>
+                    )) : <span className="text-white/55">Sin líneas disponibles</span>}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // Round the scroll viewport down to full 24px rows: no partially visible
 // product/hour lines when the browser or dashboard is resized.
 
@@ -550,17 +604,17 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                                 aria-pressed={selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id}
                                 className={cn('grid w-full min-w-0 snap-start snap-always items-center gap-x-2 border-b border-white/5 text-left text-[11px]',
                                     mobileView === 'products'
-                                        ? 'min-h-[58px] grid-cols-[max-content_minmax(0,1fr)_max-content] gap-y-1 px-1 py-1.5'
+                                        ? 'h-9 grid-cols-[minmax(0,1fr)_max-content_26px_max-content] gap-x-1 px-1 py-1'
                                         : 'h-7 grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto]',
                                     product.articulo_id != null && 'cursor-pointer hover:bg-white/10',
                                     selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id && 'bg-sky-200/15')}
                                 aria-label={product.nombre_articulo + ' · ' + display + ' · ' + label}>
-                                <span className={cn('flex min-w-0 items-center gap-1 text-white/85', mobileView === 'products' && 'col-span-3')}>
+                                <span className={cn('flex min-w-0 items-center gap-1 text-white/85', mobileView === 'products' && 'min-w-0 overflow-hidden')}>
                                     <span className="shrink-0 tabular-nums">{index + 1}.</span>
                                     <ProductRankingThumbnail key={productThumbnails[product.articulo_id ?? -1] ?? product.articulo_id ?? index}
                                         src={product.articulo_id != null ? productThumbnails[product.articulo_id] : undefined}
                                         name={product.nombre_articulo}/>
-                                    <span className={cn('min-w-0', mobileView === 'products' ? 'whitespace-normal break-words leading-tight' : 'truncate')}>{product.nombre_articulo}</span>
+                                    <span className={cn('min-w-0', mobileView === 'products' ? 'truncate whitespace-nowrap' : 'truncate')}>{product.nombre_articulo}</span>
                                 </span>
                                 <span className="shrink-0 whitespace-nowrap text-[10px] tabular-nums text-white/60">
                                     {metric === 'cantidad' ? euro(sales) : units.toLocaleString('es-ES', { maximumFractionDigits: 3 }) + ' u'}
@@ -812,6 +866,9 @@ export default function VentasDesktopWorkspace() {
     const [mobileScope, setMobileScope] = useState<CrossScope>('period');
     const [mobileView, setMobileView] = useState<'products' | 'hours' | 'tickets' | 'live'>('products');
     const [reportMenuOpen, setReportMenuOpen] = useState(false);
+    const [mobileInfo, setMobileInfo] = useState<'cash' | 'performance' | null>(null);
+    const [editingClosingId, setEditingClosingId] = useState<string | null>(null);
+    const [closingRefresh, setClosingRefresh] = useState(0);
     // Conservar enlaces existentes: /dashboard/ventas?tab=PRODUCTOS|HORAS|VENTAS|LIVE.
     useEffect(() => {
         const tab = new URLSearchParams(window.location.search).get('tab')?.toUpperCase();
@@ -1070,7 +1127,7 @@ export default function VentasDesktopWorkspace() {
         };
         void load();
         return () => { active = false; };
-    }, [supabase, monthStart, monthEnd]);
+    }, [supabase, monthStart, monthEnd, closingRefresh]);
 
     // Usar exactamente la foto de la ficha de Recetas, asociada por map_tpv_receta.
     // Si no tiene foto, utilizar la de la carta digital; geometría de fila siempre fija.
@@ -1156,7 +1213,7 @@ export default function VentasDesktopWorkspace() {
                 });
             });
         return () => { active = false; };
-    }, [supabase, calendarWeeks, calendarHistoryKey]);
+    }, [supabase, calendarWeeks, calendarHistoryKey, closingRefresh]);
 
     useEffect(() => {
         if (initializing) return;
@@ -1363,7 +1420,7 @@ export default function VentasDesktopWorkspace() {
                 setPeriodClosings(rows.filter(row => row.closing_date >= period.start));
             });
         return () => { active = false; };
-    }, [supabase, period.start, period.end, initializing]);
+    }, [supabase, period.start, period.end, initializing, closingRefresh]);
 
     const selectedClosing = isSingleDay ? periodClosings.find(c => c.closing_date === period.start) : undefined;
     useEffect(() => {
@@ -1518,12 +1575,16 @@ export default function VentasDesktopWorkspace() {
             </header>
             <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-3 pt-2">
                 <div className="flex min-w-0 items-center justify-between gap-2 border-b border-white/15 pb-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                        <strong className="shrink-0 whitespace-nowrap text-[11px] font-semibold capitalize tabular-nums">
+                    <div className="flex min-w-0 items-center gap-0.5">
+                        <button type="button" onClick={() => navigateMobilePeriod(-1)}
+                            aria-label="Fecha anterior" className="shrink-0 rounded p-1 text-white/75"><ChevronLeft size={16}/></button>
+                        <strong className="min-w-0 whitespace-nowrap text-[11px] font-semibold capitalize tabular-nums">
                             {isSingleDay
                                 ? format(parseISO(period.start), 'EEE d MMM yy', { locale: es }).replace('.', '')
                                 : periodTitle}
                         </strong>
+                        <button type="button" onClick={() => navigateMobilePeriod(1)}
+                            aria-label="Fecha siguiente" className="shrink-0 rounded p-1 text-white/75"><ChevronRight size={16}/></button>
                         {isSingleDay && selectedClosing?.weather && (
                             <span className="inline-flex min-w-0 items-center gap-1 text-[10px] text-white/65"
                                 title={selectedClosing.weather}>
@@ -1536,7 +1597,7 @@ export default function VentasDesktopWorkspace() {
                         <TicketHeaderStats report={dailyReport}/>
                         {isSingleDay && selectedClosing && canEditClosings && (
                             <button type="button" aria-label="Editar cierre" title="Editar cierre"
-                                onClick={() => router.push(`/dashboard/history?closingId=${encodeURIComponent(selectedClosing.id)}&edit=1`)}
+                                onClick={() => setEditingClosingId(selectedClosing.id)}
                                 className="ml-0.5 shrink-0 rounded p-1 text-white/75">
                                 <Pencil size={15}/>
                             </button>
@@ -1556,26 +1617,35 @@ export default function VentasDesktopWorkspace() {
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                     {mobileFinancialItems.map(item => {
-                        const actionable = item.payment === 'cash' || item.payment === 'card' || item.payment === 'pending';
+                        const actionable = item.payment === 'card' || item.payment === 'pending';
+                        const detail = item.label === 'Rendimiento' ? 'performance' : item.label === 'Efectivo' ? 'cash' : null;
                         const selected = mobileActiveSelection?.kind === 'payment' && mobileActiveSelection.payment === item.payment;
-                        return (
-                            <button key={item.label} type="button" data-crossfilter-trigger={actionable ? true : undefined}
-                                disabled={!actionable} onClick={() => actionable && item.payment && onChooseCross({ kind: 'payment', payment: item.payment, scope: mobileScope })}
-                                aria-pressed={actionable ? selected : undefined} title={item.tooltip}
-                                className={cn('min-w-0 rounded-md border px-2 py-2 text-left', item.tone ?? 'border-white/15 bg-white/[0.04]',
-                                    selected && 'ring-1 ring-sky-300')}>
-                                <span className="block truncate text-[10px] text-white/70">{item.label}</span>
-                                <strong className="mt-1 block break-words text-[12px] font-semibold tabular-nums">{item.value || ' '}</strong>
+                        const tone = cn('min-w-0 rounded-md border px-2 py-2 text-left',
+                            item.tone ?? 'border-white/15 bg-white/[0.04]',
+                            selected && 'ring-1 ring-sky-300');
+                        const body = <>
+                            <span className="flex min-w-0 items-center justify-between gap-0.5">
+                                <span className="min-w-0 truncate text-[10px] text-white/70">{item.label}</span>
                                 {(item.payment === 'cash' || item.payment === 'card') && item.ticketPercent != null && (
-                                    <span className="block text-[9px] text-white/45">{Math.round(item.ticketPercent)}% tickets</span>
+                                    <span className="shrink-0 text-right text-[9px] tabular-nums text-white/70">
+                                        {item.ticketPercent.toLocaleString('es-ES', { maximumFractionDigits: 1 })}%
+                                    </span>
                                 )}
-                            </button>
-                        );
+                            </span>
+                            <strong className="mt-1 block break-words text-[12px] font-semibold tabular-nums">{item.value || ' '}</strong>
+                        </>;
+                        return actionable || detail ? (
+                            <button key={item.label} type="button" data-crossfilter-trigger={actionable}
+                                onClick={() => detail ? setMobileInfo(detail) :
+                                    item.payment && onChooseCross({ kind: 'payment', payment: item.payment, scope: 'period' })}
+                                aria-pressed={actionable ? selected : undefined}
+                                className={tone}>{body}</button>
+                        ) : <div key={item.label} className={tone}>{body}</div>;
                     })}
                 </div>
             </section>
-            <div className="grid min-w-0 grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-2">
-                <section className="flex h-[290px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] p-2">
+            <div className="min-w-0">
+                <section className="flex h-[245px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] p-2">
                     <h2 className="mb-2 text-xs font-bold uppercase">Horas</h2>
                     <div className="relative h-[65px] shrink-0" aria-label="Facturación por hora">
                         <svg viewBox="0 0 160 70" className="h-full w-full text-[#70b5ff]" preserveAspectRatio="none"
@@ -1600,37 +1670,32 @@ export default function VentasDesktopWorkspace() {
                         ) : <div key={index} className="h-[32px]"/>)}
                     </div>
                 </section>
-                <section className="h-[290px] min-w-0 overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-2 pt-1">
-                    <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
-                        selection={paymentOnly ? null : mobileActiveSelection}
-                        onSelect={onChooseCross} productThumbnails={productThumbnails}
-                        rangeStart={period.start} rangeEnd={period.end} mobileView="products"/>
-                </section>
             </div>
             <section className="min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
-                <div className="mb-2 flex items-center justify-between gap-2 px-1">
-                    <h2 className="text-xs font-bold">Facturas simplificadas</h2>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] tabular-nums text-white/60">
-                            {visibleTickets.length.toLocaleString('es-ES')} de {(crossSelection ? crossResult?.summary.count : dailyReport?.summary.count ?? tickets.length)?.toLocaleString('es-ES') ?? 0}
-                        </span>
-                        <button type="button" aria-pressed={mobileView === 'live'}
-                            onClick={() => setMobileView(current => current === 'live' ? 'tickets' : 'live')}
-                            className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', mobileView === 'live'
-                                ? 'border-sky-300 bg-sky-400/20 text-sky-100' : 'border-white/25 text-white/80')}>
-                            <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"/>Live
+                <nav className="mb-2 grid grid-cols-3 gap-1 border-b border-white/15 pb-2" aria-label="Detalle de ventas">
+                    {([{ id: 'products', label: 'Productos' }, { id: 'tickets', label: 'Tickets' }, { id: 'live', label: 'Live' }] as const).map(item => (
+                        <button key={item.id} type="button" aria-pressed={mobileView === item.id}
+                            onClick={() => setMobileView(item.id)}
+                            className={cn('rounded-md px-1 py-2 text-[11px] font-semibold',
+                                mobileView === item.id ? 'bg-sky-400/20 text-white' : 'text-white/65')}>
+                            {item.id === 'live' && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"/>}{item.label}
                         </button>
+                    ))}
+                </nav>
+                {mobileView === 'live' ? <div data-element="mobile-ventas-live"><RadarSala variant="ventas"/></div>
+                  : mobileView === 'products' ? (
+                    <div className="h-[350px] min-w-0">
+                        <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
+                            selection={paymentOnly ? null : mobileActiveSelection}
+                            onSelect={onChooseCross} productThumbnails={productThumbnails}
+                            rangeStart={period.start} rangeEnd={period.end} mobileView="products"/>
                     </div>
-                </div>
-                {mobileView === 'live' ? <div data-element="mobile-ventas-live"><RadarSala/></div> : (
+                  ) : (
                     <div className="space-y-1">
                         <div className="custom-scrollbar max-h-[390px] space-y-1 overflow-y-auto">
                             {visibleTickets.map((ticket, index) => (
-                                <SalesTicket key={ticket.numero_documento || index} ticket={ticket}
-                                    items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
-                                    expanded={expandedTicket === ticket.numero_documento}
-                                    onToggle={() => setExpandedTicket(current => current === ticket.numero_documento ? null : ticket.numero_documento)}
-                                    loadingItems={linesLoading && !Object.prototype.hasOwnProperty.call(linesByTicket, ticket.numero_documento)}/>
+                                <MobileSalesTicket key={ticket.numero_documento || index} ticket={ticket}
+                                    cachedItems={linesByTicket[ticket.numero_documento]}/>
                             ))}
                             {!visibleTickets.length && !dayLoading && !crossLoading &&
                                 <p className="py-6 text-center text-xs text-white/55">No hay facturas para este periodo.</p>}
@@ -1866,6 +1931,37 @@ export default function VentasDesktopWorkspace() {
                 </div>
             </div>
         </div>
+        <Modal open={mobileInfo !== null} onClose={() => setMobileInfo(null)}
+            scheme="dark" variant="compact" title={mobileInfo === 'cash' ? 'Billetes y monedas' : 'Cómo se calcula'}
+            instance="ventas-mobile-kpi-details">
+            <div className="px-3 py-4 text-white">
+                {mobileInfo === 'performance' ? (
+                    <p className="text-sm leading-relaxed text-white/85">{performanceTooltip}</p>
+                ) : mobileInfo === 'cash' ? (
+                    <>
+                        <div className="grid grid-cols-2 gap-2">
+                            {DENOMINATIONS.flatMap(denom => {
+                                const qty = Number(periodCashBreakdown[String(denom)] ?? 0);
+                                if (qty <= 0) return [];
+                                return [<div key={denom} className="flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] p-1.5">
+                                    <Image src={CURRENCY_IMAGES[denom]} alt="" width={35} height={27} className="max-h-7 w-[35px] object-contain"/>
+                                    <div className="min-w-0">
+                                        <span className="block text-[10px] text-white/70">{denom < 1 ? Math.round(denom * 100) + ' c' : denom + ' €'} × {qty}</span>
+                                        <strong className="block whitespace-nowrap text-xs">{euro(qty * denom)}</strong>
+                                    </div>
+                                </div>];
+                            })}
+                        </div>
+                        <div className="mt-3 flex justify-between border-t border-white/15 pt-3 text-xs">
+                            <span>Total desglosado</span>
+                            <strong className="text-teal-200">{euro(DENOMINATIONS.reduce((sum, den) => sum + den * Number(periodCashBreakdown[String(den)] ?? 0), 0))}</strong>
+                        </div>
+                    </>
+                ) : null}
+            </div>
+        </Modal>
+        <VentasClosingEditor closingId={editingClosingId} onClose={() => setEditingClosingId(null)}
+            onSaved={() => setClosingRefresh(value => value + 1)}/>
         <TimeFilterModal
                 isOpen={filterOpen}
                 onClose={() => setFilterOpen(false)}

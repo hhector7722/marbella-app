@@ -162,11 +162,11 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
   );
 }
 
-export default function RadarSala() {
-  return <RadarSalaActive />;
+export default function RadarSala({ variant = 'default' }: { variant?: 'default' | 'ventas' }) {
+  return <RadarSalaActive variant={variant}/>;
 }
 
-function RadarSalaActive() {
+function RadarSalaActive({ variant }: { variant: 'default' | 'ventas' }) {
   const [mesas, setMesas] = useState<any[]>([]);
   const [ultimaAct, setUltimaAct] = useState<Date | null>(null);
   const [syncError, setSyncError] = useState(false);
@@ -315,6 +315,72 @@ function RadarSalaActive() {
     const timeB = mesaAperturaToDate(resolveMesaAperturaRaw(b))?.getTime() ?? 0;
     return timeA - timeB;
   });
+
+  if (variant === 'ventas') {
+    return (
+      <div className="space-y-3 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <strong className="text-xs font-semibold">Mesas abiertas</strong>
+          <span className="text-[10px] tabular-nums text-white/65">
+            {mesas.length} en curso {ultimaAct ? '· ' + formatLocalTime(ultimaAct) : ''}
+          </span>
+        </div>
+        {(syncError || datosDesactualizados) && (
+          <p role="status" className="rounded-md border border-amber-400/30 bg-amber-400/10 p-2 text-[11px] text-amber-100">
+            {syncError ? 'No se ha podido actualizar el estado de sala' : 'Esperando datos recientes del TPV'}
+          </p>
+        )}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {mesasOrdenadas.map(m => {
+            const apertura = mesaAperturaToDate(resolveMesaAperturaRaw(m));
+            const status = calcularEstado(apertura);
+            const products = Array.isArray(m.productos)
+              ? m.productos.filter((p: Record<string, unknown>) => Number(p.unidades) > 0) : [];
+            const total = products.reduce((sum: number, p: Record<string, unknown>) =>
+              sum + Number(p.unidades) * Number(p.precio ?? 0), 0);
+            const age = status.min > 45 ? 'bg-rose-400' : status.min > 30 ? 'bg-amber-300' : 'bg-emerald-300';
+            return (
+              <article key={String(m.id_ticket ?? m.numero_documento ?? m.mesa)}
+                className="min-w-0 overflow-hidden rounded-lg border border-white/20 bg-white/[0.055]">
+                <div className="flex min-w-0 items-center gap-2 border-b border-white/10 px-3 py-2">
+                  <span className={'h-2 w-2 shrink-0 rounded-full ' + age} aria-hidden="true"/>
+                  <strong className="shrink-0 text-xs">Mesa {String(m.mesa ?? '—')}</strong>
+                  <span className="min-w-0 flex-1 truncate text-[10px] text-white/65">
+                    {String(m.nombre_cliente ?? '')}
+                  </span>
+                  <span className="shrink-0 text-[10px] tabular-nums text-white/60">{status.hora}</span>
+                  <strong className="shrink-0 whitespace-nowrap text-xs tabular-nums">
+                    {total.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                  </strong>
+                </div>
+                <ul className="space-y-1 px-3 py-2 text-[11px]">
+                  {products.map((p: Record<string, unknown>, idx: number) => (
+                    <li key={idx} className="flex items-start justify-between gap-3">
+                      <span className="min-w-0 break-words text-white/80">
+                        <span className="mr-1 font-bold tabular-nums">{String(p.unidades ?? 1)}×</span>
+                        {String(p.nombre ?? '')}
+                      </span>
+                      {Number(p.precio) > 0 && (
+                        <span className="shrink-0 tabular-nums text-white/65">
+                          {(Number(p.precio) * Number(p.unidades)).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                  {!products.length && <li className="text-white/50">Sin productos pendientes</li>}
+                </ul>
+              </article>
+            );
+          })}
+        </div>
+        {!mesas.length && !syncError && (
+          <p className="rounded-lg border border-white/10 py-6 text-center text-xs text-white/65">
+            No hay mesas abiertas en este momento.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Surface variant="block" instance="sala-mesas" className="overflow-hidden">
