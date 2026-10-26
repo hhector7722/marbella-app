@@ -288,7 +288,7 @@ export function MasterLastClosingWidget() {
                         ? mobileClosingSnapshot.hours : []}
                     products={mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]
                         ? mobileClosingSnapshot.products : []}
-                    loading={loading || mobileClosingSnapshot?.date !== String(closing.closing_date).split('T')[0]}
+                    hasSales={metrics.tpvSales > 0}
                 />
             )}
             <div data-element="metrics" className="hidden min-h-0 flex-1 flex-col justify-between px-2 pb-1 pt-0 lg:flex lg:px-3 lg:pb-2 lg:pt-1">

@@ -420,7 +420,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     net={formatCurrencySpanish(displaySummary.total / 1.1)}
                     hours={salesChartData}
                     products={mobileTopProducts}
-                    loading={salesLoading}
+                    hasSales={displaySummary.total > 0}
                 />
                 <div
                     data-element="metrics"

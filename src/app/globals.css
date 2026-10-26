@@ -7603,8 +7603,21 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 @media (max-width: 1023px) {
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='header'] > a[data-style='calculator-primary'] {
-    inset-inline-end: 12px;
-    padding-inline: 5px;
+    inset-inline-end: 18px;
+    top: 5px;
+    width: max-content;
+    height: auto;
+    min-height: 0;
+    padding: 4px 7px;
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='header'] > a[data-style='calculator-primary']::before {
+    inset: 0;
+    height: auto;
+    transform: none;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='metrics'] {
