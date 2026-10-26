@@ -2,11 +2,12 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { BotMessageSquare, Loader2, type LucideIcon } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { AccessShortcutGrid } from '@/components/dashboards/AccessShortcutGrid';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { useAIStore } from '@/store/aiStore';
 
 /** 4 columnas × 3 filas: lo que cabe en el modal sin scroll. */
 const PAGE_SIZE = 12;
@@ -28,13 +29,15 @@ interface MasterMoreFunctionsModalProps {
 type MoreFunctionsItem = {
     label: string;
     instance: string;
-    img: string;
+    img?: string;
+    icon?: LucideIcon;
 } & (
     | { href: string }
-    | { action: 'cierre' | 'web' | 'stock' | 'compra' | 'info' }
+    | { action: 'cierre' | 'web' | 'stock' | 'compra' | 'info' | 'asistente' }
 );
 
 export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
+    { label: 'Asistente IA', instance: 'asistente', action: 'asistente', icon: BotMessageSquare },
     { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/suplier.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
@@ -51,7 +54,7 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
 ];
 
 /** Accesos exclusivos del modal Otros en /master/dashboard escritorio. */
-export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas'] as const;
+export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas', 'asistente'] as const;
 
 const desktopOtherIds = new Set<string>(MASTER_DESKTOP_OTHER_INSTANCES);
 export const MASTER_DESKTOP_OTHER_ITEMS = MASTER_MORE_FUNCTIONS_ITEMS.filter(
@@ -71,6 +74,7 @@ export function MasterMoreFunctionsModal({
     desktopShortlist = false,
 }: MasterMoreFunctionsModalProps) {
     const router = useRouter();
+    const openChat = useAIStore((state) => state.openChat);
     const [isNavigating, setIsNavigating] = useState(false);
     const [page, setPage] = useState(0);
     const trackOtros = useTrackModalApply('master-otros', 'Otros (master)');
@@ -101,12 +105,13 @@ export function MasterMoreFunctionsModal({
         setTimeout(action, 150);
     };
 
-    const actionHandlers: Record<'cierre' | 'web' | 'stock' | 'compra' | 'info', () => void> = {
+    const actionHandlers: Record<'cierre' | 'web' | 'stock' | 'compra' | 'info' | 'asistente', () => void> = {
         cierre: onOpenCierre,
         web: () => window.open(WEB_URL, '_blank', 'noopener,noreferrer'),
         stock: onOpenStock,
         compra: onOpenCompra,
         info: onOpenInfo,
+        asistente: openChat,
     };
 
     return (
@@ -170,6 +175,7 @@ export function MasterMoreFunctionsModal({
                                                     instance={item.instance}
                                                     label={item.label}
                                                     img={item.img}
+                                                    icon={item.icon}
                                                     onClick={() => {
                                                         trackOtros(item.label);
                                                         setIsNavigating(true);
@@ -185,6 +191,7 @@ export function MasterMoreFunctionsModal({
                                                 instance={item.instance}
                                                 label={item.label}
                                                 img={item.img}
+                                                icon={item.icon}
                                                 onClick={() => runAction(item.label, actionHandlers[item.action])}
                                             />
                                         );
