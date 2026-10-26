@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { resolveActivityDate, madridIsoDateFromEpochMs } from '@/lib/pavilion-activities/date-parse';
+import { resolveActivityDate, parseActivityDateFromText, madridIsoDateFromEpochMs } from '@/lib/pavilion-activities/date-parse';
 
 export const PAVILION_ACTIVITIES_BUCKET = 'pavilion_activities';
 export const PAVILION_ACTIVITY_MAX_BYTES = 10 * 1024 * 1024;
@@ -22,6 +22,7 @@ export type IngestPavilionActivityResult = {
   filePath: string;
   contentHash: string;
   skipped?: boolean;
+  skipReason?: 'ignored_historical' | 'deduplicated' | 'existing_occupations';
 };
 
 function buildStoragePath(activityDate: string): string {
@@ -86,15 +87,160 @@ export async function ingestPavilionActivityPdf(
 
   const normalizedFilename = params.filename?.trim() || 'actividades.pdf';
   const contentHash = hashPdf(params.pdfBuffer);
-  const activityDate = resolvePavilionActivityDate({
-    filename: normalizedFilename,
-    subject: params.subject,
-    emailDate: params.emailDate,
-    activityDate: params.activityDate,
-  });
+  // Para los correos, la fecha del nombre del PDF es obligatoria y autoritativa.
+  // Evita atribuir archivos mal nombrados a la fecha de recepción.
+  const activityDate =
+    params.source === 'email'
+      ? parseActivityDateFromText(normalizedFilename)
+      : resolvePavilionActivityDate({
+          filename: normalizedFilename,
+          subject: params.subject,
+          emailDate: params.emailDate,
+          activityDate: params.activityDate,
+        });
 
   if (!activityDate) {
-    throw new Error('No se pudo inferir la fecha del PDF (asunto, nombre o fecha de email).');
+    throw new Error('No se pudo inferir una fecha válida del PDF.');
+  }
+
+  if (params.source === 'email') {
+    const storagePath = buildStoragePath(activityDate);
+
+    // La recuperación del histórico es una operación manual separada.
+    if (activityDate < '2026-10-26') {
+      return {
+        sheetId: '',
+        activityDate,
+        filePath: '',
+        contentHash,
+        skipped: true,
+        skipReason: 'ignored_historical',
+      };
+    }
+
+    // No reemplazar nunca, desde el correo, una hoja existente,
+    // sea cual sea su hash o estado (pending, processing, processed, error).
+    const { data: existing, error: existingError } = await supabase
+      .from('pavilion_activity_sheets')
+      .select('id, file_path')
+      .eq('activity_date', activityDate)
+      .maybeSingle();
+
+    if (existingError) {
+      throw new Error(`Fallo comprobando fecha existente: ${existingError.message}`);
+    }
+
+    if (existing) {
+      return {
+        sheetId: existing.id as string,
+        activityDate,
+        filePath: existing.file_path as string,
+        contentHash,
+        skipped: true,
+        skipReason: 'deduplicated',
+      };
+    }
+
+    // Protegemos también días que tienen ocupaciones PDF importadas
+    // pero carecen de la fila original de pavilion_activity_sheets.
+    const { data: existingOccupation, error: occupationError } = await supabase
+      .from('activity_occurrences')
+      .select('id')
+      .eq('activity_date', activityDate)
+      .eq('source_type', 'pdf')
+      .limit(1)
+      .maybeSingle();
+
+    if (occupationError) {
+      throw new Error(`Fallo comprobando ocupaciones existentes: ${occupationError.message}`);
+    }
+
+    if (existingOccupation) {
+      return {
+        sheetId: '',
+        activityDate,
+        filePath: '',
+        contentHash,
+        skipped: true,
+        skipReason: 'existing_occupations',
+      };
+    }
+
+    // INSERT (nunca UPSERT): el UNIQUE(activity_date) de Postgres
+    // es la última protección frente a dos correos simultáneos.
+    const { data: inserted, error: insertError } = await supabase
+      .from('pavilion_activity_sheets')
+      .insert({
+        activity_date: activityDate,
+        file_path: storagePath,
+        source: 'email',
+        gmail_message_id: params.gmailMessageId ?? null,
+        original_filename: normalizedFilename,
+        uploaded_by: null,
+        content_hash: contentHash,
+        processing_status: 'pending',
+        processing_error: null,
+        processed_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    if (insertError?.code === '23505') {
+      const { data: concurrent, error: concurrentError } = await supabase
+        .from('pavilion_activity_sheets')
+        .select('id, file_path')
+        .eq('activity_date', activityDate)
+        .maybeSingle();
+
+      if (concurrentError || !concurrent) {
+        throw new Error(
+          `Conflicto de fecha sin registro recuperable: ${concurrentError?.message ?? activityDate}`,
+        );
+      }
+
+      return {
+        sheetId: concurrent.id as string,
+        activityDate,
+        filePath: concurrent.file_path as string,
+        contentHash,
+        skipped: true,
+        skipReason: 'deduplicated',
+      };
+    }
+
+    if (insertError || !inserted) {
+      throw new Error(`Fallo creando PDF: ${insertError?.message ?? 'sin fila devuelta'}`);
+    }
+
+    // Nunca sobrescribir blobs existentes por la vía automática.
+    const { error: uploadError } = await supabase.storage
+      .from(PAVILION_ACTIVITIES_BUCKET)
+      .upload(storagePath, params.pdfBuffer, {
+        contentType: 'application/pdf',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      // El PDF no está disponible: retirar solo la fila recién creada
+      // para permitir un nuevo intento sin tocar contenido histórico.
+      const { error: cleanupError } = await supabase
+        .from('pavilion_activity_sheets')
+        .delete()
+        .eq('id', inserted.id)
+        .eq('content_hash', contentHash);
+      throw new Error(
+        `Fallo Storage: ${uploadError.message}` +
+          (cleanupError ? `; limpieza fallida: ${cleanupError.message}` : ''),
+      );
+    }
+
+    return {
+      sheetId: inserted.id as string,
+      activityDate,
+      filePath: storagePath,
+      contentHash,
+    };
   }
 
   // Deduplicación por contenido, no solo por Gmail message id. Los reenvíos del
