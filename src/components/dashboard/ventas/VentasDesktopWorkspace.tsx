@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, Pencil, X } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, Pencil, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
@@ -18,6 +18,7 @@ import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { getProductMarginRanking } from '@/app/dashboard/insights/actions';
 import { ProductRankingThumbnail } from './ProductRankingThumbnail';
+import RadarSala from '@/components/dashboards/RadarSala';
 
 type Ticket = { numero_documento: string; fecha: string; hora_cierre: string; total_documento: number; mesa: number | null };
 type Item = { name: string; qty: number; price: number; total: number };
@@ -386,12 +387,62 @@ function SalesTicket({ ticket, items, expanded, onToggle, loadingItems }: {
 
 // Round the scroll viewport down to full 24px rows: no partially visible
 // product/hour lines when the browser or dashboard is resized.
-function RankingViewport({ children }: { children: ReactNode }) {
+
+function MobileSalesTicket({ ticket, cachedItems }: { ticket: Ticket; cachedItems?: Item[] }) {
+    const supabase = useMemo(() => createClient(), []);
+    const [expanded, setExpanded] = useState(false);
+    const [snapshot, setSnapshot] = useState<{ id: string; items: Item[] } | null>(null);
+    const [loading, setLoading] = useState(false);
+    const items = cachedItems ?? (snapshot?.id === ticket.numero_documento ? snapshot.items : []);
+    useEffect(() => {
+        if (!expanded || cachedItems || snapshot?.id === ticket.numero_documento) return;
+        let active = true;
+        void supabase.rpc('get_ticket_lines', { p_numero_documento: ticket.numero_documento })
+            .then(({ data, error }) => {
+                if (!active) return;
+                if (!error) setSnapshot({
+                    id: ticket.numero_documento,
+                    items: ((data ?? []) as { articulo_nombre: string | null; cantidad: number | null; precio_unidad: number | null; importe_total: number | null }[]).map(line => ({
+                        name: String(line.articulo_nombre ?? 'Producto'),
+                        qty: Number(line.cantidad ?? 1),
+                        price: Number(line.precio_unidad ?? 0),
+                        total: Number(line.importe_total ?? 0),
+                    })),
+                });
+                setLoading(false);
+            });
+        return () => { active = false; };
+    }, [expanded, cachedItems, snapshot?.id, supabase, ticket.numero_documento]);
+    return (
+        <div className="overflow-hidden rounded-lg border border-white/15 bg-white/[0.06]">
+            <button type="button" onClick={() => { if (!expanded && !cachedItems && snapshot?.id !== ticket.numero_documento) setLoading(true); setExpanded(v => !v); }}
+                aria-expanded={expanded} className="flex w-full min-w-0 items-center justify-between gap-2 px-3 py-3 text-left">
+                <span className="shrink-0 text-xs font-semibold tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</span>
+                <span className="min-w-0 flex-1 truncate text-[11px] text-white/70" title={ticket.numero_documento}>{compactDoc(ticket.numero_documento)}</span>
+                {ticket.mesa != null && ticket.mesa > 0 ? <span className="shrink-0 rounded bg-sky-400/15 px-1.5 py-0.5 text-[10px]">M {ticket.mesa}</span> : null}
+                <strong className="shrink-0 text-xs tabular-nums">{euro(ticket.total_documento)}</strong>
+                {expanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+            </button>
+            {expanded && (
+                <div className="space-y-1.5 border-t border-white/10 bg-white/[0.035] px-3 py-3 text-xs text-white/85">
+                    {loading ? 'Cargando productos…' : items.length ? items.map((item, i) => (
+                        <div key={i} className="flex justify-between gap-3">
+                            <span className="min-w-0 break-words">{item.qty.toLocaleString('es-ES')} × {item.name}</span>
+                            <span className="shrink-0 tabular-nums">{euro(item.total)}</span>
+                        </div>
+                    )) : <span className="text-white/55">Sin líneas de detalle disponibles</span>}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function RankingViewport({ children, mobile = false }: { children: ReactNode; mobile?: boolean }) {
     const viewportRef = useRef<HTMLDivElement>(null);
     const [fittedHeight, setFittedHeight] = useState<number | null>(null);
     useEffect(() => {
         const holder = viewportRef.current;
-        if (!holder) return;
+        if (!holder || mobile) return;
         const measure = () => {
             const next = Math.max(0, Math.floor(holder.clientHeight / 28) * 28);
             setFittedHeight(old => old === next ? old : next);
@@ -400,11 +451,11 @@ function RankingViewport({ children }: { children: ReactNode }) {
         const observer = new ResizeObserver(measure);
         observer.observe(holder);
         return () => observer.disconnect();
-    }, []);
+    }, [mobile]);
     return (
         <div ref={viewportRef} className="min-h-0 flex-1 overflow-hidden">
             <div className="custom-scrollbar min-w-0 snap-y snap-mandatory overflow-y-auto overscroll-contain"
-                style={{ height: fittedHeight === null ? '100%' : fittedHeight }}>
+                style={{ height: mobile || fittedHeight === null ? '100%' : fittedHeight }}>
                 {children}
             </div>
         </div>
@@ -413,11 +464,11 @@ function RankingViewport({ children }: { children: ReactNode }) {
 
 // Shared product ranking and chronological hourly chart for monthly/period cards.
 
-function SalesBreakdown({ report, baseReport, scope, selection, onSelect, productThumbnails, rangeStart, rangeEnd }: {
+function SalesBreakdown({ report, baseReport, scope, selection, onSelect, productThumbnails, rangeStart, rangeEnd, mobileView }: {
     report: TicketReport | null; baseReport: TicketReport | null; scope: CrossScope;
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
     productThumbnails: Record<number, string>;
-    rangeStart: string; rangeEnd: string;
+    rangeStart: string; rangeEnd: string; mobileView?: 'products' | 'hours';
 }) {
     const [metric, setMetric] = useState<RankingMetric>('importe');
     const [menuOpen, setMenuOpen] = useState(false);
@@ -503,6 +554,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
 
     return (
         <div data-element="sales-breakdown" className="flex h-full min-h-0 flex-1 flex-col gap-1 pt-2">
+            {mobileView !== 'hours' && (
             <section data-element="products-section" className="flex min-h-0 flex-1 flex-col border-b border-white/15 pb-1">
                 <div className="relative z-[5] mb-2 flex h-4 shrink-0 items-center justify-between gap-2">
                     <div ref={menuRef} className="relative flex min-w-0 items-center">
@@ -529,7 +581,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                         {selection?.scope === scope ? crossLabel(selection) : metric === 'rentabilidad' ? 'Margen estimado' : ''}
                     </span>
                 </div>
-                <RankingViewport>
+                <RankingViewport mobile={Boolean(mobileView)}>
                     {ranking.map(({ product, sales, units, margin }, index) => {
                         const value = metric === 'importe' ? sales : metric === 'cantidad' ? units : margin;
                         const label = metric === 'importe' ? shareLabel(sales, totalSales)
@@ -545,16 +597,19 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                                     productName: product.nombre_articulo, scope
                                 })}
                                 aria-pressed={selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id}
-                                className={cn('grid h-7 w-full min-w-0 snap-start snap-always grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto] items-center gap-x-2 border-b border-white/5 text-left text-[11px]',
+                                className={cn('grid w-full min-w-0 snap-start snap-always items-center gap-x-2 border-b border-white/5 text-left text-[11px]',
+                                    mobileView === 'products'
+                                        ? 'min-h-[58px] grid-cols-[max-content_minmax(0,1fr)_max-content] gap-y-1 px-1 py-1.5'
+                                        : 'h-7 grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto]',
                                     product.articulo_id != null && 'cursor-pointer hover:bg-white/10',
                                     selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id && 'bg-sky-200/15')}
                                 aria-label={product.nombre_articulo + ' · ' + display + ' · ' + label}>
-                                <span className="flex min-w-0 items-center gap-1 text-white/85">
+                                <span className={cn('flex min-w-0 items-center gap-1 text-white/85', mobileView === 'products' && 'col-span-3')}>
                                     <span className="shrink-0 tabular-nums">{index + 1}.</span>
                                     <ProductRankingThumbnail key={productThumbnails[product.articulo_id ?? -1] ?? product.articulo_id ?? index}
                                         src={product.articulo_id != null ? productThumbnails[product.articulo_id] : undefined}
                                         name={product.nombre_articulo}/>
-                                    <span className="min-w-0 truncate">{product.nombre_articulo}</span>
+                                    <span className={cn('min-w-0', mobileView === 'products' ? 'whitespace-normal break-words leading-tight' : 'truncate')}>{product.nombre_articulo}</span>
                                 </span>
                                 <span className="shrink-0 whitespace-nowrap text-[10px] tabular-nums text-white/60">
                                     {metric === 'cantidad' ? euro(sales) : units.toLocaleString('es-ES', { maximumFractionDigits: 3 }) + ' u'}
@@ -570,12 +625,15 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                     })}
                 </RankingViewport>
             </section>
-            <section data-element="hours-section" className="h-[230px] min-h-0 shrink-0">
+            )}
+            {mobileView !== 'products' && (
+            <section data-element="hours-section" className={cn('min-h-0 shrink-0', mobileView === 'hours' ? 'h-[238px]' : 'h-[230px]')}>
                 <HourlySalesTimeline
                     hours={selection?.scope === scope && selection.kind === 'hour' ? baseReport?.hours : report?.hours}
                     contextLabel={selection?.scope === scope && selection.kind !== 'hour' ? crossLabel(selection) : null}
                     onChooseHour={hour => onSelect({ kind: 'hour', hour, scope })}/>
             </section>
+            )}
         </div>
     );
 }
@@ -800,6 +858,22 @@ export default function VentasDesktopWorkspace() {
         })();
         return () => { alive = false; };
     }, [supabase]);
+    const [mobileScope, setMobileScope] = useState<CrossScope>('period');
+    const [mobileView, setMobileView] = useState<'products' | 'hours' | 'tickets' | 'live'>('products');
+    const [mobileCalendarOpen, setMobileCalendarOpen] = useState(false);
+    // Conservar enlaces existentes: /dashboard/ventas?tab=PRODUCTOS|HORAS|VENTAS|LIVE.
+    useEffect(() => {
+        const tab = new URLSearchParams(window.location.search).get('tab')?.toUpperCase();
+        const section = tab === 'PRODUCTOS' ? 'products' : tab === 'HORAS' ? 'hours'
+            : tab === 'VENTAS' ? 'tickets' : tab === 'LIVE' ? 'live' : null;
+        if (!section) return;
+        const frame = window.requestAnimationFrame(() => setMobileView(section));
+        return () => window.cancelAnimationFrame(frame);
+    }, []);
+    const [monthTicketPage, setMonthTicketPage] = useState(0);
+    const [mobileMonthTickets, setMobileMonthTickets] = useState<{ key: string; values: Ticket[]; hasMore: boolean; loading: boolean; error: boolean }>({
+        key: '', values: [], hasMore: false, loading: false, error: false,
+    });
     const [month, setMonth] = useState(() => startOfMonth(new Date()));
     const [summaryMonth, setSummaryMonth] = useState(() => startOfMonth(new Date()));
     const [productThumbnails, setProductThumbnails] = useState<Record<number, string>>({});
@@ -843,6 +917,26 @@ export default function VentasDesktopWorkspace() {
     const monthEnd = format(endOfMonth(summaryMonth), 'yyyy-MM-dd');
     const monthLabel = format(summaryMonth, 'MMMM yyyy', { locale: es });
     const calendarMonthLabel = format(month, 'MMMM yyyy', { locale: es });
+    const monthTicketKey = monthStart + ':' + monthEnd;
+    useEffect(() => {
+        if (initializing || mobileScope !== 'month' || mobileView !== 'tickets' || crossSelection?.scope === 'month') return;
+        let alive = true;
+        // Mes y periodo se obtienen desde el mismo RPC paginado que el panel escritorio.
+        void supabase.rpc('get_tickets_marbella_page', {
+            p_start_date: monthStart, p_end_date: monthEnd,
+            p_limit: 20, p_offset: monthTicketPage * 20, p_start_time: null, p_end_time: null,
+        }).then(({ data, error }) => {
+            if (!alive) return;
+            const values = (data ?? []) as Ticket[];
+            setMobileMonthTickets(previous => ({
+                key: monthTicketKey, values: monthTicketPage > 0 && previous.key === monthTicketKey
+                    ? [...previous.values, ...values] : values,
+                hasMore: values.length === 20, loading: false, error: Boolean(error),
+            }));
+        });
+        return () => { alive = false; };
+    }, [supabase, monthStart, monthEnd, monthTicketKey, monthTicketPage, mobileScope, mobileView, crossSelection?.scope, initializing]);
+
     const isSingleDay = period.start === period.end;
     const visibleTickets = crossSelection ? (crossResult?.tickets ?? []) : tickets;
     const paymentOnly = crossSelection?.kind === 'payment' &&
@@ -981,6 +1075,7 @@ export default function VentasDesktopWorkspace() {
             start: bounds.startDate, end: bounds.endDate,
             kind: value.kind === 'month' ? 'month' : value.kind === 'week' ? 'week' : bounds.startDate === bounds.endDate ? 'day' : 'range',
         });
+        setMobileScope('period');
         setFilterOpen(false);
     };
     const clearAllFilters = () => {
@@ -1395,8 +1490,228 @@ export default function VentasDesktopWorkspace() {
     const performanceTooltip = isSingleDay
         ? 'Comparación con la venta media de los últimos 8 ' + weekdayNamesPlural[parseISO(period.start).getDay()] + '.'
         : 'Comparación con las ventas medias de días equivalentes de las últimas 8 semanas.';
-    if (initializing) return <div className="mx-auto hidden w-full items-center justify-center py-16 text-sm text-white/60 lg:flex">Cargando último cierre…</div>;
+    const mobileMonth = mobileScope === 'month';
+    const mobileReport = mobileMonth ? visibleMonthReport : dailyReport;
+    const mobileBreakdown = mobileMonth ? monthBreakdown : periodBreakdown;
+    const mobileExtras = mobileMonth ? (visibleMonthClosings.length ? monthTotals : null) : (hasClosingData ? periodTotals : null);
+    const mobileFinancialItems = financialSummaryItems(mobileExtras ?? undefined,
+        mobileMonth ? null : periodPerformance,
+        mobileMonth ? monthTicketPercentages : periodTicketPercentages, performanceTooltip)
+        .map(item => mobileMonth && item.label === 'Rendimiento'
+            ? { ...item, label: 'Media', value: monthDailyAverage === null ? '' : euro(monthDailyAverage),
+                tooltip: 'Media de ventas por día con cierre y ventas positivas.' } : item);
+    const mobileActiveSelection = crossSelection?.scope === mobileScope ? crossSelection : null;
+    const mobileTicketRows = mobileActiveSelection ? (crossResult?.tickets ?? []) :
+        mobileMonth ? (mobileMonthTickets.key === monthTicketKey ? mobileMonthTickets.values : []) : tickets;
+    const mobileMoreTickets = mobileActiveSelection ? canLoadMore :
+        mobileMonth ? (mobileMonthTickets.key === monthTicketKey && mobileMonthTickets.hasMore) : canLoadMore;
+    const navigateMobilePeriod = (delta: number) => {
+        if (mobileMonth) {
+            setMonthTicketPage(0);
+            navigateSummaryMonth(delta);
+        } else {
+            const start = parseISO(delta < 0 ? period.start : period.end);
+            selectDate(format(new Date(start.getFullYear(), start.getMonth(), start.getDate() + delta), 'yyyy-MM-dd'));
+        }
+    };
+    if (initializing) return <div className="w-full py-12 text-center text-sm text-white/65">Cargando ventas y cierres…</div>;
     return (
+        <>
+        <div data-component="HistoryMobileWorkspace" data-page="ventas-consolidated"
+            className="mx-auto flex w-full max-w-[640px] min-w-0 flex-col gap-3 px-2 pb-8 pt-2 text-white lg:hidden">
+            <header className="flex min-w-0 items-center justify-between gap-2 px-1">
+                <h1 className="text-lg font-extrabold">Ventas y cierres</h1>
+                <div className="flex shrink-0 items-center gap-1">
+                    <button type="button" aria-label="Calendario de ventas" onClick={() => setMobileCalendarOpen(v => !v)}
+                        aria-expanded={mobileCalendarOpen} className="rounded-md border border-white/20 p-2"><CalendarDays size={17}/></button>
+                    <button type="button" aria-label="Filtrar por fecha o periodo" onClick={() => setFilterOpen(true)}
+                        className="rounded-md border border-white/20 p-2"><Filter size={17}/></button>
+                    {activeFilter && <button type="button" aria-label="Quitar filtros" onClick={clearAllFilters}
+                        className="rounded-md border border-white/20 p-2"><X size={17}/></button>}
+                </div>
+            </header>
+            <nav className="grid grid-cols-2 gap-1 rounded-lg border border-white/15 bg-white/[0.07] p-1" aria-label="Resumen de ventas">
+                {([{ id: 'period', label: 'Día / periodo' }, { id: 'month', label: 'Mes' }] as const).map(item => (
+                    <button key={item.id} type="button" aria-pressed={mobileScope === item.id}
+                        onClick={() => { setMobileScope(item.id); setCrossSelection(null); setCrossResult(null); setCrossPage(0); setMonthTicketPage(0); }}
+                        className={cn('rounded-md px-2 py-2 text-xs font-semibold', mobileScope === item.id ? 'bg-sky-400/20 text-white' : 'text-white/60')}>
+                        {item.label}
+                    </button>
+                ))}
+            </nav>
+            {mobileCalendarOpen && (
+                <section className="fixed inset-0 z-[120] overflow-y-auto bg-[#142344] px-4 pb-8 pt-6">
+                    <div className="mx-auto w-full max-w-[640px]">
+                    <header className="mb-5 flex items-center justify-between gap-3">
+                        <h2 className="text-base font-bold">Calendario de ventas</h2>
+                        <button type="button" onClick={() => setMobileCalendarOpen(false)}
+                            aria-label="Cerrar calendario" className="rounded-md border border-white/20 p-2"><X size={18}/></button>
+                    </header>
+                    <div className="mb-2 flex items-center justify-between">
+                        <button type="button" onClick={() => navigateMonth(-1)} aria-label="Mes anterior" className="rounded p-2"><ChevronLeft size={18}/></button>
+                        <strong className="text-sm capitalize">{calendarMonthLabel}</strong>
+                        <button type="button" onClick={() => navigateMonth(1)} aria-label="Mes siguiente" className="rounded p-2"><ChevronRight size={18}/></button>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-white/65">
+                        {['L','M','X','J','V','S','D'].map((day,i) => <span key={i}>{day}</span>)}
+                    </div>
+                    <div className="mt-2 grid grid-cols-7 gap-1">
+                        {calendarWeeks.flat().map(day => {
+                            const iso = format(day, 'yyyy-MM-dd');
+                            const closing = byDate.get(iso);
+                            const net = closing?.net_sales == null ? null : Number(closing.net_sales);
+                            return (
+                                <button key={iso} type="button"
+                                    onClick={() => { selectDate(iso); setMobileScope('period'); setMobileCalendarOpen(false); }}
+                                    aria-label={`Seleccionar ${iso}${net === null ? '' : ', venta neta ' + euro(net)}`}
+                                    aria-pressed={period.start === iso && period.end === iso}
+                                    className={cn('flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-md border border-white/10 py-1 text-[11px] tabular-nums',
+                                        !isSameMonth(day, month) && 'opacity-40',
+                                        period.start === iso && period.end === iso && 'border-sky-300 bg-sky-300/15')}>
+                                    <span>{format(day, 'd')}</span>
+                                    {net != null && <span className="text-[8px] text-emerald-200">{Math.round(net)}€</span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    </div>
+                </section>
+            )}
+            <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-3 pt-2">
+                <div className="flex min-w-0 items-start justify-between gap-2 border-b border-white/15 pb-2">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1 text-[11px] text-white/70">
+                            <strong>{mobileMonth ? 'Mensual' : 'Periodo'}</strong>
+                            {!mobileMonth && returnPeriod && (
+                                <button type="button" onClick={restorePeriod} className="ml-1 text-sky-200">Volver al periodo</button>
+                            )}
+                        </div>
+                        <div className="mt-1 flex min-w-0 items-center gap-1">
+                            <button type="button" onClick={() => navigateMobilePeriod(-1)} aria-label="Periodo anterior" className="shrink-0 rounded p-1"><ChevronLeft size={16}/></button>
+                            <strong className="min-w-0 flex-1 text-center text-[11px] capitalize" title={mobileMonth ? monthLabel : periodTitle}>
+                                {mobileMonth ? monthLabel : periodTitle}
+                            </strong>
+                            <button type="button" onClick={() => navigateMobilePeriod(1)} aria-label="Periodo siguiente" className="shrink-0 rounded p-1"><ChevronRight size={16}/></button>
+                        </div>
+                    </div>
+                    <div className="shrink-0 text-right"><TicketHeaderStats report={mobileReport}/></div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                    {[
+                        { label: 'Ventas', value: mobileReport ? euro(mobileReport.summary.totalSales) : '', tone: 'border-sky-400/35 bg-sky-500/10' },
+                        { label: 'Venta neta', value: mobileExtras ? euro(mobileExtras.net) : '', tone: 'border-emerald-400/30 bg-emerald-500/10' },
+                    ].map(item => (
+                        <div key={item.label} className={cn('min-w-0 rounded-lg border px-3 py-2', item.tone)}>
+                            <span className="block text-[11px] font-medium text-white/75">{item.label}</span>
+                            <strong className="mt-1 block break-words text-[clamp(13px,4vw,20px)] font-bold tabular-nums">{item.value || ' '}</strong>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                    {mobileFinancialItems.map(item => {
+                        const actionable = item.payment === 'cash' || item.payment === 'card' || item.payment === 'pending';
+                        const selected = mobileActiveSelection?.kind === 'payment' && mobileActiveSelection.payment === item.payment;
+                        return (
+                            <button key={item.label} type="button" data-crossfilter-trigger={actionable ? true : undefined}
+                                disabled={!actionable} onClick={() => actionable && item.payment && onChooseCross({ kind: 'payment', payment: item.payment, scope: mobileScope })}
+                                aria-pressed={actionable ? selected : undefined} title={item.tooltip}
+                                className={cn('min-w-0 rounded-md border px-2 py-2 text-left', item.tone ?? 'border-white/15 bg-white/[0.04]',
+                                    selected && 'ring-1 ring-sky-300')}>
+                                <span className="block truncate text-[10px] text-white/70">{item.label}</span>
+                                <strong className="mt-1 block break-words text-[12px] font-semibold tabular-nums">{item.value || ' '}</strong>
+                                {(item.payment === 'cash' || item.payment === 'card') && item.ticketPercent != null && (
+                                    <span className="block text-[9px] text-white/45">{Math.round(item.ticketPercent)}% tickets</span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+                {!mobileMonth && isSingleDay && selectedClosing && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+                        <button type="button" disabled={!photos.bdpUrl} onClick={() => photos.bdpUrl && setOpenPhoto({ src: photos.bdpUrl, alt: 'Informe TPV' })}
+                            className="rounded-md border border-white/25 px-2 py-1.5 text-[10px] disabled:opacity-40">Informe TPV</button>
+                        <button type="button" disabled={!photos.dataphoneUrl} onClick={() => photos.dataphoneUrl && setOpenPhoto({ src: photos.dataphoneUrl, alt: 'Totales datáfonos' })}
+                            className="rounded-md border border-white/25 px-2 py-1.5 text-[10px] disabled:opacity-40">Datáfonos</button>
+                        {canEditClosings && <button type="button"
+                            onClick={() => router.push(`/dashboard/history?closingId=${encodeURIComponent(selectedClosing.id)}&edit=1`)}
+                            className="rounded-md border border-white/25 px-2 py-1.5 text-[10px]">Editar cierre</button>}
+                    </div>
+                )}
+            </section>
+            <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] p-3">
+                <HourlySalesTimeline hours={mobileBreakdown?.hours ?? mobileReport?.hours}
+                    contextLabel={mobileActiveSelection ? crossLabel(mobileActiveSelection) : undefined}
+                    onChooseHour={hour => onChooseCross({ kind: 'hour', hour, scope: mobileScope })}/>
+            </section>
+            <nav className="grid grid-cols-4 gap-1 rounded-lg border border-white/15 bg-white/[0.07] p-1" aria-label="Secciones de ventas">
+                {([{ id: 'products', label: 'Productos' }, { id: 'hours', label: 'Horas' },
+                    { id: 'tickets', label: 'Tickets' }, { id: 'live', label: 'Live' }] as const).map(item => (
+                    <button key={item.id} type="button" aria-pressed={mobileView === item.id}
+                        onClick={() => setMobileView(item.id)}
+                        className={cn('rounded-md px-1 py-2 text-[11px] font-semibold',
+                            mobileView === item.id ? 'bg-sky-400/20 text-white' : 'text-white/60')}>
+                        {item.label}
+                    </button>
+                ))}
+            </nav>
+            <section className="min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-4 pt-2">
+                {mobileView === 'products' ? (
+                    <div className="h-[370px] min-h-0">
+                        <SalesBreakdown report={mobileBreakdown} baseReport={mobileReport} scope={mobileScope}
+                            selection={mobileActiveSelection?.kind === 'payment' && ['cash', 'card'].includes(mobileActiveSelection.payment) ? null : mobileActiveSelection}
+                            onSelect={onChooseCross} productThumbnails={productThumbnails}
+                            rangeStart={mobileMonth ? monthStart : period.start} rangeEnd={mobileMonth ? monthEnd : period.end}
+                            mobileView="products"/>
+                    </div>
+                ) : mobileView === 'hours' ? (
+                    <div className="space-y-1">
+                        <h2 className="mb-2 text-xs font-bold uppercase">Facturación por hora</h2>
+                        {(mobileBreakdown?.hours ?? mobileReport?.hours ?? [])
+                            .filter(item => Number(item.hour) >= 7 && Number(item.hour) <= 22).map(item => (
+                            <button key={item.hour} type="button" data-crossfilter-trigger
+                                onClick={() => onChooseCross({ kind: 'hour', hour: item.hour, scope: mobileScope })}
+                                aria-pressed={mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === item.hour}
+                                className={cn('flex w-full items-center justify-between gap-2 rounded-md border border-white/10 px-2 py-2 text-left text-[11px] tabular-nums',
+                                    mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === item.hour && 'border-sky-300 bg-sky-300/15')}>
+                                <span>{item.hour}:00 - {item.hour + 1}:00</span>
+                                <span className="text-white/60">{item.count} tickets</span>
+                                <strong>{euro(item.total)}</strong>
+                            </button>
+                        ))}
+                        {!(mobileBreakdown?.hours ?? mobileReport?.hours)?.length &&
+                            <p className="py-8 text-center text-xs text-white/60">Sin desglose horario disponible</p>}
+                    </div>
+                ) : mobileView === 'tickets' ? (
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                            <h2 className="text-xs font-bold uppercase">Facturas simplificadas</h2>
+                            <span className="text-[10px] text-white/60 tabular-nums">{mobileTicketRows.length.toLocaleString('es-ES')} tickets</span>
+                        </div>
+                        {mobileTicketRows.map((ticket, i) => (
+                            <MobileSalesTicket key={ticket.numero_documento || i} ticket={ticket}
+                                cachedItems={!mobileMonth || mobileActiveSelection ? linesByTicket[ticket.numero_documento] : undefined}/>
+                        ))}
+                        {mobileTicketRows.length === 0 && (
+                            <p className="py-8 text-center text-xs text-white/60">
+                                {mobileMonth && mobileMonthTickets.key !== monthTicketKey ? 'Cargando tickets…' : 'Sin tickets en este periodo.'}
+                            </p>
+                        )}
+                        {(mobileActiveSelection ? crossError : mobileMonth ? mobileMonthTickets.error : dayError) &&
+                            <p className="text-xs text-rose-200">Error al cargar tickets.</p>}
+                        {(mobileActiveSelection ? crossLoading : mobileMonth ? mobileMonthTickets.loading : dayLoading) &&
+                            <p className="text-xs text-white/60">Cargando tickets…</p>}
+                        {mobileMoreTickets && (
+                            <button type="button" onClick={() => mobileActiveSelection
+                                ? setCrossPage(n => n + PAGE_SIZE)
+                                : mobileMonth ? setMonthTicketPage(n => n + 1) : setPage(n => n + PAGE_SIZE)}
+                                className="w-full rounded-md border border-white/25 py-2 text-xs">Ver más tickets</button>
+                        )}
+                    </div>
+                ) : <div data-element="mobile-ventas-live"><RadarSala/></div>}
+            </section>
+        </div>
+
+
         <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
             <div className="mb-3 flex shrink-0 items-baseline justify-between gap-4 text-white">
                 <div className="flex min-w-0 items-baseline gap-4">
@@ -1609,7 +1924,8 @@ export default function VentasDesktopWorkspace() {
                     </section>
                 </div>
             </div>
-            <TimeFilterModal
+        </div>
+        <TimeFilterModal
                 isOpen={filterOpen}
                 onClose={() => setFilterOpen(false)}
                 allowedKinds={['date', 'range', 'week', 'month', 'year']}
@@ -1630,6 +1946,6 @@ export default function VentasDesktopWorkspace() {
                 imageOnly
                 instance="ventas-consolidated-photo-preview"
             />
-        </div>
+        </>
     );
 }

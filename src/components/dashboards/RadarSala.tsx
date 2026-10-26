@@ -7,7 +7,6 @@ import { parseRadiografiaTimestamp, parseDBDate, formatLocalTime } from '@/utils
 import { cn } from '@/lib/utils';
 import { Surface } from '@/components/ui/Surface';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { useSalaWeekdayMadrid } from '@/hooks/useSalaWeekdayMadrid';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -169,25 +168,14 @@ function TarjetaMesa({ m, estado }: { m: any, estado: any }) {
 }
 
 export default function RadarSala() {
-  const enabled = useSalaWeekdayMadrid();
-  if (!enabled) {
-    return (
-      <Surface variant="block" instance="sala-mesas" className="overflow-hidden">
-        <div data-element="header">
-          <h2 data-element="title">Mesas abiertas</h2>
-        </div>
-        <p className="px-4 py-6 text-sm text-zinc-500">
-          Estado de sala inactivo sábados y domingos. Se reactiva el lunes.
-        </p>
-      </Surface>
-    );
-  }
   return <RadarSalaActive />;
 }
 
 function RadarSalaActive() {
   const [mesas, setMesas] = useState<any[]>([]);
   const [ultimaAct, setUltimaAct] = useState<Date | null>(null);
+  const [syncError, setSyncError] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   /** Evita parpadeo: el TPV a veces manda el ticket ganador sin nombre en un ciclo; conservamos el último por id_ticket. */
   const lastNombreByTicketRef = useRef<Record<string, string>>({});
 
@@ -270,23 +258,44 @@ function RadarSalaActive() {
       return finalMesas;
     };
 
+    let active = true;
     const fetchInicial = async () => {
-      const { data, error } = await supabase.from('estado_sala').select('*').eq('id', 1).single();
-      if (!error && data) {
-        setMesas(processData(data.radiografia_completa));
-        setUltimaAct(data.ultima_actualizacion ? parseDBDate(data.ultima_actualizacion) : new Date());
+      const { data, error } = await supabase.from('estado_sala')
+        .select('radiografia_completa,ultima_actualizacion').eq('id', 1).maybeSingle();
+      if (!active) return;
+      if (error || !data) {
+        setSyncError(true);
+        return;
       }
+      setMesas(processData(Array.isArray(data.radiografia_completa) ? data.radiografia_completa : []));
+      setUltimaAct(data.ultima_actualizacion ? parseDBDate(data.ultima_actualizacion) : null);
+      setSyncError(false);
+      setNow(Date.now());
     };
-    fetchInicial();
+    void fetchInicial();
 
+    // Realtime puede dejar de entregar cambios tras suspender la app o cambiar de red.
+    // Refrescar cada 15 s garantiza recuperación y presencia/ausencia real de mesas.
+    const interval = window.setInterval(() => { void fetchInicial(); }, 15_000);
+    const clock = window.setInterval(() => setNow(Date.now()), 30_000);
     const canal = supabase.channel('radar-sala')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'estado_sala' }, (payload) => {
-        setMesas(processData(payload.new.radiografia_completa));
-        setUltimaAct(payload.new.ultima_actualizacion ? parseDBDate(payload.new.ultima_actualizacion) : new Date());
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'estado_sala' }, (payload) => {
+        if (!active) return;
+        if (payload.eventType === 'DELETE') { void fetchInicial(); return; }
+        const row = payload.new as Record<string, unknown>;
+        setMesas(processData(Array.isArray(row.radiografia_completa) ? row.radiografia_completa : []));
+        setUltimaAct(row.ultima_actualizacion ? parseDBDate(String(row.ultima_actualizacion)) : null);
+        setSyncError(false);
+        setNow(Date.now());
       })
-      .subscribe();
+      .subscribe(status => { if (status === 'SUBSCRIBED') void fetchInicial(); });
 
-    return () => { supabase.removeChannel(canal); };
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.clearInterval(clock);
+      void supabase.removeChannel(canal);
+    };
   }, []);
 
   const calcularEstado = (apertura: Date | null) => {
@@ -294,7 +303,7 @@ function RadarSalaActive() {
       return { color: 'bg-[#407080]', texto: 'text-white', min: 0, hora: '--:--' };
     }
 
-    const minutos = Math.floor((Date.now() - apertura.getTime()) / 60000);
+    const minutos = Math.floor((now - apertura.getTime()) / 60000);
     const horaFormatted = formatLocalTime(apertura);
 
     if (minutos > 45) return { color: 'bg-[#D64D5D]', texto: 'text-white', min: minutos, hora: horaFormatted };
@@ -302,6 +311,7 @@ function RadarSalaActive() {
     return { color: 'bg-[#407080]', texto: 'text-white', min: minutos, hora: horaFormatted };
   };
 
+  const datosDesactualizados = ultimaAct !== null && now - ultimaAct.getTime() > 120_000;
   const mesasOrdenadas = [...mesas].sort((a, b) => {
     const timeA = mesaAperturaToDate(resolveMesaAperturaRaw(a))?.getTime() ?? 0;
     const timeB = mesaAperturaToDate(resolveMesaAperturaRaw(b))?.getTime() ?? 0;
@@ -312,12 +322,15 @@ function RadarSalaActive() {
     <Surface variant="block" instance="sala-mesas" className="overflow-hidden">
       <div data-element="header" className="flex flex-wrap items-center gap-2 shrink-0">
         <h2 data-element="title">Mesas Abiertas</h2>
-        {mesas.length > 0 ? (
-          <span className="text-[11px] tabular-nums opacity-60">
-            {mesas.length} mesas activas
-            {ultimaAct ? ` • ${formatLocalTime(ultimaAct)}` : ''}
+        <span className="text-[11px] tabular-nums opacity-70">
+          {mesas.length} mesas activas
+          {ultimaAct ? ` · Última señal ${formatLocalTime(ultimaAct)}` : ' · Sin señal reciente'}
+        </span>
+        {(syncError || datosDesactualizados) && (
+          <span role="status" className="text-[11px] font-medium text-amber-500">
+            {syncError ? 'Sin conexión al estado de sala' : 'Datos sin actualizar'}
           </span>
-        ) : null}
+        )}
       </div>
 
       <div className="p-3 md:p-6 lg:p-8 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 xl:gap-10">
