@@ -160,9 +160,10 @@ export function MasterLastClosingWidget() {
                     hora: Number(item.hora),
                     total: Number(item.total ?? 0),
                 })),
-                products: ((ranking.data ?? []) as { nombre_articulo: string; cantidad_total: number }[]).slice(0, 3).map(item => ({
+                products: ((ranking.data ?? []) as { nombre_articulo: string; cantidad_total: number; total_ingresos: number }[]).slice(0, 3).map(item => ({
                     name: String(item.nombre_articulo ?? 'Producto'),
                     quantity: Number(item.cantidad_total ?? 0),
+                    revenue: Number(item.total_ingresos ?? 0),
                 })),
             });
         });
@@ -284,6 +285,7 @@ export function MasterLastClosingWidget() {
                 <HomeSalesMobileSummary
                     sales={formatClosingValue(metrics.tpvSales, 'tpv_sales')}
                     net={formatClosingValue(metrics.netSales, 'net_sales')}
+                    date={String(closing.closing_date).split('T')[0]}
                     hours={mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]
                         ? mobileClosingSnapshot.hours : []}
                     products={mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]

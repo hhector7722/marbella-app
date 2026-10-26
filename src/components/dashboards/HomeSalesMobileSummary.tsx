@@ -1,20 +1,24 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BUSINESS_HOURS } from '@/lib/constants';
+import { createClient } from '@/utils/supabase/client';
 
 type HourlySale = { hora: number; total: number };
-export type HomeWidgetTopProduct = { name: string; quantity: number };
+export type HomeWidgetTopProduct = { name: string; quantity: number; revenue: number };
 
 export function HomeSalesMobileSummary({
-    sales, net, hours, products, hasSales,
+    sales, net, date, hours, products, hasSales,
 }: {
     sales: string;
     net: string;
+    date: string;
     hours: HourlySale[];
     products: HomeWidgetTopProduct[];
     hasSales: boolean;
 }) {
+    const supabase = useMemo(() => createClient(), []);
+
     const rankedHours = useMemo(() =>
         hours
             .filter(item =>
@@ -25,6 +29,43 @@ export function HomeSalesMobileSummary({
             .sort((a, b) => Number(b.total) - Number(a.total))
             .slice(0, 3),
     [hours]);
+
+    // Reutilizar el crossfilter: suma las unidades de todas las líneas de ticket
+    // por tramo horario, no el número de tickets.
+    const hoursSignature = rankedHours.map(item => `${item.hora}:${item.total}`).join('|');
+    const snapshotKey = `${date}/${hoursSignature}`;
+    const [unitSnapshot, setUnitSnapshot] = useState<{ key: string; values: Record<number, number> }>({
+        key: '', values: {},
+    });
+
+    useEffect(() => {
+        if (!hasSales || !date || rankedHours.length === 0) return;
+        let active = true;
+        void Promise.all(rankedHours.map(async ({ hora }) => {
+            const { data, error } = await supabase.rpc('get_ventas_crossfilter', {
+                p_start_date: date, p_end_date: date, p_hour: hora, p_offset: 0, p_limit: 1,
+            });
+            if (error) {
+                console.warn('Unidades por franja horaria:', error);
+                return null;
+            }
+            const result = data as { products?: { cantidad_total?: number | null }[] } | null;
+            const units = (result?.products ?? []).reduce(
+                (sum, item) => sum + Number(item.cantidad_total ?? 0), 0,
+            );
+            return { hora, units };
+        })).then(results => {
+            if (!active) return;
+            const values: Record<number, number> = {};
+            for (const item of results) {
+                if (item) values[item.hora] = item.units;
+            }
+            setUnitSnapshot({ key: snapshotKey, values });
+        });
+        return () => { active = false; };
+    }, [date, hasSales, hoursSignature, rankedHours, snapshotKey, supabase]);
+
+    const hourUnits = unitSnapshot.key === snapshotKey ? unitSnapshot.values : {};
 
     const chart = useMemo(() => {
         const values = Array.from(
@@ -46,56 +87,68 @@ export function HomeSalesMobileSummary({
 
     return (
         <div data-element="mobile-sales-snapshot"
-            className="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-2 pb-1 pt-0 lg:hidden">
+            className="flex min-h-0 w-full flex-1 flex-col gap-1.5 overflow-hidden px-2 pb-1 pt-2 lg:hidden">
             {hasSales && (
                 <>
-                    <div className="grid w-full shrink-0 grid-cols-3 items-center gap-x-2 tabular-nums">
-                        <div className="flex min-w-0 flex-col justify-center gap-1 text-left">
-                            <div className="flex min-w-0 flex-col rounded-md border border-sky-400/35 bg-sky-500/10 px-1.5 py-1">
-                                <span className="block truncate text-[8px] font-medium leading-tight text-[var(--home-widget-ink-secondary)]">Ventas</span>
-                                <strong className="block truncate text-[clamp(10px,2.8vw,13px)] font-bold leading-tight text-[var(--home-widget-ink)]"
-                                    title={sales}>{sales}</strong>
-                            </div>
-                            <div className="flex min-w-0 flex-col rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1.5 py-1">
-                                <span className="block truncate text-[8px] font-medium leading-tight text-[var(--home-widget-ink-secondary)]">Venta neta</span>
-                                <strong className="block truncate text-[clamp(10px,2.8vw,13px)] font-bold leading-tight text-[var(--home-widget-ink)]"
-                                    title={net}>{net}</strong>
-                            </div>
+                    <div className="grid w-full shrink-0 grid-cols-2 gap-2 tabular-nums">
+                        <div className="flex min-w-0 items-center justify-between gap-1 rounded-md border border-sky-400/35 bg-sky-500/10 px-1.5 py-0.5">
+                            <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]">Ventas</span>
+                            <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
+                                title={sales}>{sales}</strong>
                         </div>
-                        <div className="flex min-w-0 flex-col items-start justify-center gap-1 text-left">
-                            {rankedHours.map((hour) => {
-                                const range = `${String(hour.hora).padStart(2, '0')}:00 - ${String(hour.hora + 1).padStart(2, '0')}:00`;
-                                return (
-                                    <div key={hour.hora} className="flex w-full min-w-0 flex-col items-start">
-                                        <span className="w-full truncate text-[8px] font-medium leading-tight text-[var(--home-widget-ink)]"
-                                            title={range}>{range}</span>
-                                        <span className="w-full truncate text-[8px] leading-tight text-[var(--home-widget-ink-secondary)]"
-                                            title={hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}>
-                                            {Math.round(hour.total).toLocaleString('es-ES')}€
-                                        </span>
-                                    </div>
-                                );
-                            })}
+                        <div className="flex min-w-0 items-center justify-between gap-1 rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1.5 py-0.5">
+                            <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]">Venta neta</span>
+                            <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
+                                title={net}>{net}</strong>
                         </div>
-                        <div className="flex min-w-0 flex-col items-start justify-center gap-1 text-left">
+                    </div>
+                    <div data-element="mobile-sales-hour-chart" className="flex h-[18px] w-full shrink-0 items-end">
+                        {chart ? (
+                            <svg viewBox="0 0 160 22" preserveAspectRatio="none"
+                                className="block h-[17px] w-full shrink-0" role="img"
+                                aria-label="Gráfica de facturación por hora, de 7 a 23 h">
+                                <path d={chart} fill="none" stroke="#4A9BDD" strokeWidth="1.6"
+                                    strokeLinecap="round" strokeLinejoin="round"
+                                    vectorEffect="non-scaling-stroke" />
+                            </svg>
+                        ) : (
+                            <span className="w-full text-center text-[8px] text-[var(--home-widget-ink-secondary)]">
+                                Sin desglose horario disponible
+                            </span>
+                        )}
+                    </div>
+                    <div className="grid w-full min-w-0 grid-cols-2 gap-2 tabular-nums">
+                        <div className="flex min-w-0 flex-col justify-start gap-1 text-left">
+                            {rankedHours.map(hour => (
+                                <div key={hour.hora}
+                                    className="flex min-w-0 items-center justify-between gap-1 text-[9px] leading-[1.15]"
+                                    title={`${hour.hora}h - ${hour.hora + 1}h: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
+                                    <span className="shrink-0 text-[var(--home-widget-ink)]">
+                                        {hour.hora}h - {hour.hora + 1}h
+                                    </span>
+                                    <span className="min-w-0 truncate text-right text-[var(--home-widget-ink-secondary)]">
+                                        {hourUnits[hour.hora] !== undefined
+                                            ? `${hourUnits[hour.hora].toLocaleString('es-ES')} u · `
+                                            : ''}{Math.round(hour.total).toLocaleString('es-ES')}€
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex min-w-0 flex-col justify-start gap-1 text-left">
                             {products.slice(0, 3).map((product, index) => (
-                                <span key={`${product.name}-${index}`}
-                                    className="block w-full truncate text-left text-[8px] leading-tight text-[var(--home-widget-ink)]"
-                                    title={`${index + 1}. ${product.name} · ${product.quantity} unidades`}>
-                                    {index + 1}. {product.name}
-                                </span>
+                                <div key={`${product.name}-${index}`}
+                                    className="flex min-w-0 items-center justify-between gap-1 text-[9px] leading-[1.15]"
+                                    title={`${product.name}: ${product.quantity} unidades · ${product.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
+                                    <span className="min-w-0 flex-1 truncate text-left text-[var(--home-widget-ink)]">
+                                        {index + 1}. {product.name}
+                                    </span>
+                                    <span className="shrink-0 text-right text-[var(--home-widget-ink-secondary)]">
+                                        {product.quantity.toLocaleString('es-ES')} u · {product.revenue.toLocaleString('es-ES', { maximumFractionDigits: 2 })}€
+                                    </span>
+                                </div>
                             ))}
                         </div>
                     </div>
-                    {chart && (
-                        <svg viewBox="0 0 160 22" preserveAspectRatio="none"
-                            className="mt-auto block h-[13px] w-full shrink-0" role="img"
-                            aria-label="Gráfica de facturación por hora, de 7 a 23 h">
-                            <path d={chart} fill="none" stroke="#8CC5FF" strokeWidth="1.6"
-                                strokeLinecap="round" strokeLinejoin="round"
-                                vectorEffect="non-scaling-stroke" />
-                        </svg>
-                    )}
                 </>
             )}
         </div>

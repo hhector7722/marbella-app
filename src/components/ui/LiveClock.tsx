@@ -10,7 +10,7 @@ import { es } from 'date-fns/locale';
  * Ticks every second but keeps state local.
  * Parent never re-renders from clock updates.
  */
-const LiveClock = memo(function LiveClock() {
+const LiveClock = memo(function LiveClock({ display = 'both' }: { display?: 'both' | 'date' | 'time' }) {
     const [now, setNow] = useState<Date | null>(null);
 
     useEffect(() => {
@@ -24,15 +24,19 @@ const LiveClock = memo(function LiveClock() {
 
     return (
         <div className="flex flex-col items-center leading-tight">
-            <span className="text-[9px] md:text-[10px] font-medium uppercase tracking-widest text-current opacity-90">
-                {format(now, "eee d MMM", { locale: es }).replace('.', '')}
-            </span>
-            <span
-                className="text-[10px] md:text-xs font-medium tracking-[0.1em] text-current opacity-70"
-                style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-                {format(now, "HH:mm:ss")}
-            </span>
+            {display !== 'time' && (
+                <span className="text-[9px] md:text-[10px] font-medium uppercase tracking-widest text-current opacity-90">
+                    {format(now, "eee d MMM", { locale: es }).replace('.', '')}
+                </span>
+            )}
+            {display !== 'date' && (
+                <span
+                    className="text-[10px] md:text-xs font-medium tracking-[0.1em] text-current opacity-70"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                    {format(now, "HH:mm:ss")}
+                </span>
+            )}
         </div>
     );
 });
