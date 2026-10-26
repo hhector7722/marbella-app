@@ -49,38 +49,38 @@ export function HomeSalesMobileSummary({
             className="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-2 pb-1 pt-0 lg:hidden">
             {hasSales && (
                 <>
-                    <div className="grid min-h-0 w-full flex-1 grid-cols-3 items-center gap-x-1.5 tabular-nums">
-                        <div className="flex min-w-0 flex-col items-center justify-center gap-1 text-center">
-                            <div className="min-w-0 w-full">
-                                <strong className="block truncate text-[clamp(10px,2.8vw,13px)] font-bold leading-none text-[var(--home-widget-ink)]"
+                    <div className="grid w-full shrink-0 grid-cols-3 items-center gap-x-2 tabular-nums">
+                        <div className="flex min-w-0 flex-col justify-center gap-1 text-left">
+                            <div className="flex min-w-0 flex-col rounded-md border border-sky-400/35 bg-sky-500/10 px-1.5 py-1">
+                                <span className="block truncate text-[8px] font-medium leading-tight text-[var(--home-widget-ink-secondary)]">Ventas</span>
+                                <strong className="block truncate text-[clamp(10px,2.8vw,13px)] font-bold leading-tight text-[var(--home-widget-ink)]"
                                     title={sales}>{sales}</strong>
-                                <span className="block text-[7px] leading-[1.15] text-[var(--home-widget-ink-secondary)]">Ventas</span>
                             </div>
-                            <div className="min-w-0 w-full">
-                                <strong className="block truncate text-[clamp(10px,2.8vw,13px)] font-bold leading-none text-[var(--home-widget-ink)]"
+                            <div className="flex min-w-0 flex-col rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1.5 py-1">
+                                <span className="block truncate text-[8px] font-medium leading-tight text-[var(--home-widget-ink-secondary)]">Venta neta</span>
+                                <strong className="block truncate text-[clamp(10px,2.8vw,13px)] font-bold leading-tight text-[var(--home-widget-ink)]"
                                     title={net}>{net}</strong>
-                                <span className="block text-[7px] leading-[1.15] text-[var(--home-widget-ink-secondary)]">Venta neta</span>
                             </div>
                         </div>
-                        <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 text-center">
-                            <span className="w-full truncate text-[8px] font-semibold leading-none text-[var(--home-widget-ink-secondary)]">
-                                Horas punta
-                            </span>
-                            {rankedHours.map((hour) => (
-                                <span key={hour.hora}
-                                    className="w-full truncate text-[8px] leading-[1.15] text-[var(--home-widget-ink)]"
-                                    title={`${hour.hora}:00 · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
-                                    {hour.hora}h · {Math.round(hour.total).toLocaleString('es-ES')}€
-                                </span>
-                            ))}
+                        <div className="flex min-w-0 flex-col items-start justify-center gap-1 text-left">
+                            {rankedHours.map((hour) => {
+                                const range = `${String(hour.hora).padStart(2, '0')}:00 - ${String(hour.hora + 1).padStart(2, '0')}:00`;
+                                return (
+                                    <div key={hour.hora} className="flex w-full min-w-0 flex-col items-start">
+                                        <span className="w-full truncate text-[8px] font-medium leading-tight text-[var(--home-widget-ink)]"
+                                            title={range}>{range}</span>
+                                        <span className="w-full truncate text-[8px] leading-tight text-[var(--home-widget-ink-secondary)]"
+                                            title={hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}>
+                                            {Math.round(hour.total).toLocaleString('es-ES')}€
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
-                        <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 text-center">
-                            <span className="w-full truncate text-[8px] font-semibold leading-none text-[var(--home-widget-ink-secondary)]">
-                                Productos top
-                            </span>
+                        <div className="flex min-w-0 flex-col items-start justify-center gap-1 text-left">
                             {products.slice(0, 3).map((product, index) => (
                                 <span key={`${product.name}-${index}`}
-                                    className="w-full truncate text-[8px] leading-[1.15] text-[var(--home-widget-ink)]"
+                                    className="block w-full truncate text-left text-[8px] leading-tight text-[var(--home-widget-ink)]"
                                     title={`${index + 1}. ${product.name} · ${product.quantity} unidades`}>
                                     {index + 1}. {product.name}
                                 </span>
