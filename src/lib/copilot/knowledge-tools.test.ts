@@ -36,6 +36,20 @@ test("ventas: distingue 61 tickets de unidades de café y cortados", () => {
   assert.equal(result.importe_eur,26);
 });
 
+test("ventas: croissants incluye producto simple y de chocolate incluso si el usuario escribe plural", () => {
+  const source = {
+    summary: {count: 61},
+    products: [
+      {nombre_articulo:"Croissant",cantidad_total:5,total_ingresos:7.5},
+      {nombre_articulo:"Croissant XOCO",cantidad_total:5,total_ingresos:9},
+      {nombre_articulo:"Café con leche",cantidad_total:12,total_ingresos:20},
+    ],
+  };
+  assert.equal(summarizeProductSales(source,"croissants").unidades,10);
+  assert.equal(summarizeProductSales(source,"croissant").unidades,10);
+  assert.equal(summarizeProductSales(source,"croissants").articulos_encontrados,2);
+});
+
 test("horas: suma intervalos cerrados y señala fichajes pendientes", () => {
   const hours=calculateWorkedHours([
     {clock_in:"2026-10-19T08:00:00Z",clock_out:"2026-10-19T16:00:00Z",total_hours:7.5},
