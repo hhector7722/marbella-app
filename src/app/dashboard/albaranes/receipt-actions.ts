@@ -12,6 +12,7 @@ import {
   isVerifiedTaxRateMisreadAsDiscount,
   isVerifiedZeroPricedLine,
   isMisreadDiscountAmount,
+  reconcileMisreadDiscountUnitPrice,
   reviewTaxMisreadAsFixedDiscount,
   reconcileFixedDiscountedUnitPrice,
   reconcileFreeFixedDiscountedUnitPrice,
@@ -306,7 +307,8 @@ async function supersedeK5ProposalWithMapping(params: {
     && sourceCheck?.priceBasis === 'billing_quantity'
     && sameExactDecimal(sourceCheck.quantity, lineQuantity)
     && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
-    && sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
+    && (sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
+      || sameExactDecimal(reconcileMisreadDiscountUnitPrice(sourceLine.data), observedUnitPrice))
   )
   if (reviewedManualDiscount) {
     if (!sourceLine.success) throw new Error('Falta evidencia original para el descuento manual.')
