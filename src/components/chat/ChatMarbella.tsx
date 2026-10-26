@@ -9,6 +9,7 @@ import { DefaultChatTransport } from 'ai';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { useChatVisualViewport } from '@/hooks/useChatVisualViewport';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 // Helper para extraer texto del Vercel AI SDK
@@ -65,6 +66,7 @@ export default function ChatMarbella() {
   const isOpen = useAIStore((s) => s.isOpen);
   const closeChat = useAIStore((s) => s.closeChat);
   const [showVoiceCall, setShowVoiceCall] = useState(false);
+  useChatVisualViewport(isOpen);
 
   return (
     <Modal
