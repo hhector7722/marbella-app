@@ -7716,3 +7716,116 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     flex: 0 0 auto;
   }
 }
+
+/* Escritorio: reutilizar las mismas cuatro filas que en smartphone.
+   No cambia los tamaños de los slots de HomeScreen ni el diseño móvil. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
+    > [data-element='body'] > [data-component='Surface'][data-instance='dashboard-ventas'] {
+    justify-content: flex-start;
+    gap: 0;
+    padding: 0;
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-element='header'],
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] [data-element='header'] {
+    display: flex;
+    box-sizing: border-box;
+    height: 32px;
+    min-height: 32px;
+    flex: 0 0 32px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    margin: 0;
+    width: 100%;
+    padding: 0 8px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='mobile-sales-clock'] {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    padding: 0;
+    margin: 0;
+    transform: translateY(-50%);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='mobile-sales-clock'] span {
+    font-size: 9px;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='centered-date-controls'] {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max-content;
+    max-width: 58%;
+    transform: translate(-50%, -50%);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='mobile-sales-date'] span,
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='mobile-sales-history-date'] {
+    font-size: 9px;
+    letter-spacing: 0.02em;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='header'] a[data-style='calculator-primary'] {
+    height: auto;
+    min-height: 0;
+    flex: none;
+    margin: 0;
+    padding: 4px 7px;
+    font-size: 10px;
+    line-height: 1;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='header'] a[data-style='calculator-primary']::before {
+    inset: 0;
+    height: auto;
+    transform: none;
+  }
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+    [data-element='header'] > div {
+    grid-row: auto;
+    width: auto;
+    min-width: 0;
+    justify-content: flex-end;
+    padding: 0;
+    line-height: 1.1;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='metrics'],
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+    [data-has-closing='true'] > [data-element='metrics'] {
+    display: none !important;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] {
+    display: grid;
+    grid-template-rows: 22px 20px minmax(0, 1fr);
+    row-gap: 6px;
+    min-height: 0;
+    padding: 5px 8px 7px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-hour-chart'] {
+    height: 20px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-hour-chart'] svg {
+    height: 19px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 8px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-units'] {
+    color: color-mix(in srgb, var(--home-widget-ink) 48%, transparent);
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div {
+    gap: 4px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:first-child > div {
+    gap: 6px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:first-child > div > span:last-child {
+    gap: 5px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:last-child > div > span:last-child {
+    gap: 5px;
+  }
+}

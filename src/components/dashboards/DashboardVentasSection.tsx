@@ -363,7 +363,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
                 <div data-element="header" data-tone="plain" className="relative flex h-8 w-full shrink-0 items-center justify-end">
-                    <div data-element="mobile-sales-clock" className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--home-widget-ink-secondary)] lg:hidden" aria-label="Hora actual">
+                    <div data-element="mobile-sales-clock" className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--home-widget-ink-secondary)]" aria-label="Hora actual">
                         <LiveClock display="time" />
                     </div>
                     <div data-element="centered-date-controls" className="absolute left-1/2 top-1/2 z-10 flex max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center">
@@ -385,15 +385,14 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                             >
                                 {isToday(parseSalesViewDate()) ? (
                                     <>
-                                        <span data-element="mobile-sales-date" className="lg:hidden"><LiveClock display="date" /></span>
-                                        <span className="hidden lg:block"><LiveClock /></span>
+                                        <span data-element="mobile-sales-date"><LiveClock display="date" /></span>
                                     </>
                                 ) : (
                                     <>
                                         <span data-element="mobile-sales-history-date" className="text-[9px] md:text-[10px] font-medium uppercase tracking-widest text-zinc-700 whitespace-nowrap">
                                             {format(parseSalesViewDate(), 'eee d MMM', { locale: es }).replace('.', '')}
                                         </span>
-                                        <span className="hidden text-[8px] font-medium text-zinc-400 lg:block">histórico</span>
+                                        <span className="hidden text-[8px] font-medium text-zinc-400">histórico</span>
                                     </>
                                 )}
                             </button>
@@ -433,7 +432,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 <div
                     data-element="metrics"
                     className={cn(
-                        'hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex',
+                        'hidden min-h-0 flex-1 flex-col overflow-hidden',
                         chartHasData ? 'justify-end' : 'justify-center'
                     )}
                 >

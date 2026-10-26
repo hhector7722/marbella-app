@@ -252,7 +252,7 @@ export function MasterLastClosingWidget() {
     const displayBreakdown = (closing?.breakdown ?? {}) as Record<string, any>;
 
     return (
-        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <div data-has-closing={closing ? "true" : "false"} className="flex h-full min-h-0 flex-col overflow-hidden">
             <div data-element="header" className="flex h-8 min-h-8 shrink-0 items-center justify-between gap-2 px-2 py-0 lg:h-auto lg:min-h-0 lg:px-3 lg:pt-2">
                 <Link href="/dashboard/history" className={pillClassName}>
                     Último cierre

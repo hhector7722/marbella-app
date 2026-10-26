@@ -87,7 +87,7 @@ export function HomeSalesMobileSummary({
 
     return (
         <div data-element="mobile-sales-snapshot"
-            className="grid min-h-0 w-full flex-1 grid-rows-[16px_16px_minmax(0,1fr)] gap-y-0.5 overflow-hidden px-2 pb-1 pt-0.5 lg:hidden">
+            className="grid min-h-0 w-full flex-1 grid-rows-[16px_16px_minmax(0,1fr)] gap-y-0.5 overflow-hidden px-2 pb-1 pt-0.5 lg:grid">
             {hasSales && (
                 <>
                     <div className="grid w-full shrink-0 grid-cols-2 gap-2 tabular-nums">
