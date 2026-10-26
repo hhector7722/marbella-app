@@ -48,6 +48,7 @@ export function LineEditModal({
       layer="derived"
       instance="albaran-line-edit"
       parentInstance="albaran-detail"
+      dismissScope="self"
       usageId="albaran-line-edit"
       usageLabel="Corregir lectura del albarán"
       headerTitleAlign="left"
