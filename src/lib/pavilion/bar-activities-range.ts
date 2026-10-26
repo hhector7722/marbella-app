@@ -54,7 +54,6 @@ export function groupOccurrencesToByDate(
     if (!byDate[d]) {
       byDate[d] = { date: d, totalCount: 0, barActivities: [] };
     }
-    byDate[d].totalCount++;
     const venues =
       (
         row.occurrence_venues as
@@ -63,10 +62,11 @@ export function groupOccurrencesToByDate(
           | undefined
       )?.map((ov) => ov.venues) ?? [];
 
-    const barVenues = venues.filter((v) => v.affects_bar);
-    const hasFormTimes = row.form_start_time !== null;
-    const fromReportForm = row.preferred_start_time === 'form' && venues.length === 0;
-    if (barVenues.length > 0 || hasFormTimes || fromReportForm) {
+    // La actividad del bar solo existe si ocupa una de las pistas
+    // P1, P2, P3 o P4. Informes sin pista asignada no se cuentan.
+    const barVenues = venues.filter((v) => ['P1', 'P2', 'P3', 'P4'].includes(v.code));
+    if (barVenues.length > 0) {
+      byDate[d].totalCount++;
       const prefStart = row.preferred_start_time as string;
       const prefEnd = row.preferred_end_time as string;
       const formStart = row.form_start_time as string | null;
