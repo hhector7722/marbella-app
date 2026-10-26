@@ -7937,4 +7937,19 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     text-align: right;
     justify-self: end;
   }
+  /* En Horas, las unidades se sitúan entre el tramo y el importe. */
+  [data-component='HomeScreen'] [data-element='mobile-sales-hours'] [data-element='mobile-sales-units'] {
+    text-align: center;
+    justify-self: center;
+  }
+  /* Reducir solo el nombre de producto en escritorio; unidades e importes conservan tamaño. */
+  [data-component='HomeScreen'] [data-element='mobile-sales-products'] > div > span:first-child {
+    font-size: clamp(8px, 0.62vw, 10px);
+  }
+}
+
+/* La selección se identifica sin fondo: las horas vecinas permanecen legibles,
+   pero discretas, tanto en smartphone como en escritorio. */
+[data-component='HomeScreen'] [data-element='mobile-sales-hours'] [data-muted-hour='true'] {
+  opacity: 0.55;
 }

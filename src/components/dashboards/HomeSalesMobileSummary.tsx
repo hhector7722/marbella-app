@@ -215,15 +215,15 @@ export function HomeSalesMobileSummary({
                         )}
                     </div>
                     <div data-element="mobile-sales-rankings" className="grid w-full min-w-0 grid-cols-2 gap-x-5 tabular-nums">
-                        <div data-element="mobile-sales-hours" className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] content-start gap-x-1.5 gap-y-0.5 pr-1.5 text-left">
+                        <div data-element="mobile-sales-hours" className="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)_max-content] content-start gap-x-1 gap-y-0.5 pr-1.5 text-left">
                             {displayHours.map((hour, index) => hour ? (
-                                <div key={hour.hora} data-selected-hour={selectedHour === hour.hora ? 'true' : undefined}
-                                    className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline rounded-sm text-[8px] leading-[1.15] data-[selected-hour=true]:bg-sky-500/15"
+                                <div key={hour.hora} data-muted-hour={selectedHour !== null && selectedHour !== hour.hora ? 'true' : undefined}
+                                    className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
                                     title={`${hour.hora}h - ${hour.hora + 1}h: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]">
                                         {hour.hora}h - {hour.hora + 1}h
                                     </span>
-                                    <span data-element="mobile-sales-units" className="justify-self-end whitespace-nowrap text-right text-[7px]">
+                                    <span data-element="mobile-sales-units" className="justify-self-center whitespace-nowrap text-center text-[7px]">
                                         {hourUnits[hour.hora] !== undefined ? `${hourUnits[hour.hora].toLocaleString('es-ES')} u` : ''}
                                     </span>
                                     <span data-element="mobile-sales-amount" className="justify-self-end whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">{Math.round(hour.total).toLocaleString('es-ES')}€</span>
