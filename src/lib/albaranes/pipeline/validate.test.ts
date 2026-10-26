@@ -359,6 +359,26 @@ test('Videla: varios bultos con peso total impreso solo se aceptan si el importe
   assert.equal(verifiedTotalWeightColumn({ ...evidence, discount_raw: '1' }), null)
 })
 
+test('Santa Teresa: Aperol 1 L distingue importe neto de Pre+Iva leído como total', () => {
+  const aperol = row({
+    quantity_raw: '1', unit_price_raw: '10.00',
+    net_unit_price_raw: '10.00', line_total_raw: '12.10',
+    discount_raw: '0.00', discount_header_raw: 'Ibee',
+    tax_rate_raw: '10.0', // OCR heredó el IVA de otra base del albarán
+  })
+  const checked = validateObservedLine(aperol)
+  assert.deepEqual(checked.reasons, [])
+  assert.equal(checked.lineTotal, 10)
+  assert.equal(checked.priceBasis, 'billing_quantity')
+  // Nunca resolver discrepancias sin una igualdad estricta.
+  assert.ok(validateObservedLine({ ...aperol, line_total_raw: '12.17' }).reasons
+    .includes('cantidad_precio_importe_no_reconcilian'))
+  assert.ok(validateObservedLine({ ...aperol, net_unit_price_raw: '9.00' }).reasons
+    .includes('precio_neto_contradictorio'))
+  assert.ok(validateObservedLine({ ...aperol, discount_raw: '1.00' }).reasons
+    .includes('cantidad_precio_importe_no_reconcilian'))
+})
+
 test('Santa Teresa: Importe es el total y Pre+Iva el precio de una unidad', () => {
   const check = validateObservedLine(row({ quantity_raw: '600', unit_price_raw: '0.54',
     tax_rate_raw: '21.0', line_total_raw: '0.65', other_charge_raw: '324.00',
