@@ -350,6 +350,42 @@ export function isVerifiedTaxInclusiveUnitPrice(line: CanonicalDocument['lines']
     compareExact(parseExactDecimal(roundExactToScale(multiplyExact(unitPrice, parseExactDecimal(rate)!), 2))!, priceWithTax) === 0)
 }
 
+/**
+ * Santa Teresa muestra también un precio unitario "Pre+Iva". En algunas
+ * extracciones Mistral lo traslada a line_total_raw y conserva el importe neto
+ * real en net_unit_price_raw. Solo lo reconocemos para UNA unidad, con DTO/Ibee
+ * cero, sin otros cargos y cuando el precio bruto impreso coincide al céntimo
+ * con el precio neto más una tasa legal (4, 10 o 21 %).
+ *
+ * El tipo OCR tax_rate_raw puede pertenecer a otra base de la factura mixta;
+ * nunca reescribimos ese dato ni damos por conciliado el total del documento.
+ */
+export function verifiedTaxInclusiveDisplayAmount(
+  line: CanonicalDocument['lines'][number]
+): number | null {
+  if ((line.discount_header_raw ?? '').trim().toLocaleLowerCase('es') !== 'ibee'
+    || line.other_charge_raw?.trim()) return null
+  const quantity = parseExactDecimal(line.quantity_raw)
+  const unitPrice = parseExactDecimal(line.unit_price_raw)
+  const net = parseExactDecimal(line.net_unit_price_raw)
+  const printedWithTax = parseExactDecimal(line.line_total_raw)
+  const discount = parseExactDecimal(line.discount_raw)
+  if (!quantity || compareExact(quantity, ratio(BigInt(1))) !== 0
+    || !isPositiveExact(unitPrice) || !isPositiveExact(net)
+    || !isPositiveExact(printedWithTax)
+    || compareExact(unitPrice, net) !== 0
+    || (discount && compareExact(discount, ratio(BigInt(0))) !== 0)) return null
+
+  const verified = ['1.04', '1.10', '1.21'].some((rate) =>
+    compareExact(
+      parseExactDecimal(roundExactToScale(multiplyExact(unitPrice, parseExactDecimal(rate)!), 2))!,
+      printedWithTax
+    ) === 0
+  )
+  if (!verified) return null
+  return parseObservedDecimal(line.unit_price_raw)
+}
+
 /** An OCR tax percentage can be copied into the discount column and the
  * line amount into the net-unit-price column. Ignore those two readings only
  * when the printed gross arithmetic independently matches the line amount. */
@@ -442,7 +478,9 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
   const quantity = parseObservedDecimal(line.quantity_raw)
   const unitPrice = parseObservedDecimal(line.unit_price_raw)
   const verifiedAmount = verifiedAmountColumn(line, quantity, unitPrice)
-  const lineTotal = verifiedAmount ?? parseObservedDecimal(line.line_total_raw)
+  const lineTotal = verifiedAmount
+    ?? verifiedTaxInclusiveDisplayAmount(line)
+    ?? parseObservedDecimal(line.line_total_raw)
   const netUnitPrice = parseObservedDecimal(line.net_unit_price_raw)
   const discount = parseObservedDecimal(line.discount_raw)
   const packageContent = parseObservedDecimal(line.content_per_unit_raw)
