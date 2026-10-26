@@ -44,6 +44,7 @@ const MISTRAL_MODEL = 'mistral-medium-3-5';
 const MISTRAL_CHAT_URL = 'https://api.mistral.ai/v1/chat/completions';
 const MAX_REASONABLE_OCCUPATIONS = 120;
 const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+const RELEVANT_PAVILION_VENUES = new Set(['P1', 'P2', 'P3', 'P4']);
 
 function getMistralKey(): string {
   const key = process.env.MISTRAL_API_KEY;
@@ -145,9 +146,18 @@ function parseAndValidateResult(raw: string): MistralOccupationsResult {
     const activity = cleanActivityName(row.activity);
     const startTime = row.start_time.trim();
     const endTime = row.end_time.trim();
+    // Solo nos interesan las pistas polideportivas: nunca importar PEIX,
+    // TATAMI, ATL, GESPA u otras columnas de la hoja.
     const venues = [...new Set(
-      row.venues.map((venue) => venue.trim().toUpperCase()).filter(Boolean),
+      row.venues
+        .map((venue) => venue.trim().toUpperCase())
+        .filter((venue) => RELEVANT_PAVILION_VENUES.has(venue)),
     )].sort();
+
+    if (venues.length === 0) {
+      // Registro situado fuera de P1-P4; no es un error de extracción.
+      return;
+    }
 
     if (!activity) {
       warnings.push(`Fila ${index + 1}: nombre vacío; requiere revisión.`);
@@ -195,15 +205,17 @@ async function callMistralDocumentQna(
 IMPORTANT: la graella principal és una IMATGE dins del PDF. No et limitis al text OCR del títol: has d'interpretar visualment tota la graella.
 
 ESTRUCTURA:
-- Cada COLUMNA és un espai/recurs. El nom de l'espai és la capçalera superior de la columna (P1, P2, P3, P4, PEX, TATAMI, ANTIC MODUL, NOU MODUL, TERR, GESPA, GESPA P, FORM-ATLE, ATL, ATL P, ANNEX, FOTO, OBS, OBS2, o la capçalera que aparegui realment).
+- NOMÉS s'han d'extreure ocupacions de les QUATRE columnes amb capçalera P1, P2, P3 i P4. Ignora totalment les altres columnes encara que continguin blocs amb activitats. No extreguis PEIX, TATAMI, ATL, GESPA, ANNEX ni cap altre espai.
+- Cada COLUMNA P1, P2, P3, P4 és una pista diferent. Segueix els límits visuals verticals de cadascuna sense traslladar les activitats d'una columna a les altres.
+- Revisa P1, P2, P3 i P4 per separat, de dalt a baix, i no barregis textos de blocs adjacents.
 - Cada FILA representa una franja horària, normalment en intervals de 30 minuts.
 - Els blocs de color amb text són ocupacions. Les cel·les grises o buides NO són activitats.
 - Un bloc vertical que cobreix diverses franges representa UNA sola ocupació desde la seva hora inicial fins a la seva hora final.
 - No generis una ocupació por cada cel·la de 30 minuts.
 - Si exactament la mateixa activitat ocupa diversos espais simultàniament amb la mateixa hora inicial i final, retorna UNA sola ocupació amb tots aquests espais en venues.
-- venues ha de contenir EXCLUSIVAMENT noms de capçaleres de columna que existeixin al document; mai noms d'activitats.
+- venues ha de contenir EXCLUSIVAMENT P1, P2, P3 o P4, quan la pista correspongui realment al bloc visual; mai noms d'activitats.
 
-EXTREU totes les ocupacions reals que apareixen a la graella, ni més ni menys.
+EXTREU totes les ocupacions reals de P1, P2, P3 i P4, ni més ni menys. La resta de la graella és irrellevant.
 
 NETEJA DEL NOM:
 - Elimina només el codi numèric inicial entre parèntesis o delante del nombre.
@@ -231,7 +243,7 @@ REGLES CRÍTIQUES:
 5. Si un bloc acaba a 23:59, usa "23:59".
 6. Si no pots determinar alguna ocupació amb prou certesa, omet-la abans d'inventar-la.
 7. No afegeixis explicacions, markdown ni camps extra.
-8. No retornis mai una fila amb activity buit, sense horari o sense espai.
+8. No retornis mai una fila amb activity buit, sense horari o sense espai. No incloguis espais diferents de P1, P2, P3 i P4.
 9. Si de debò no hi ha ocupacions reals, retorna occupations: [] sense inventar res.`;
 
   const secondPassInstructions = secondPass
