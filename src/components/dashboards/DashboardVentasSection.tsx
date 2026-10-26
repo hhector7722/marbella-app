@@ -385,12 +385,12 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                             >
                                 {isToday(parseSalesViewDate()) ? (
                                     <>
-                                        <span className="lg:hidden"><LiveClock display="date" /></span>
+                                        <span data-element="mobile-sales-date" className="lg:hidden"><LiveClock display="date" /></span>
                                         <span className="hidden lg:block"><LiveClock /></span>
                                     </>
                                 ) : (
                                     <>
-                                        <span className="text-[9px] md:text-[10px] font-medium uppercase tracking-widest text-zinc-700 whitespace-nowrap">
+                                        <span data-element="mobile-sales-history-date" className="text-[9px] md:text-[10px] font-medium uppercase tracking-widest text-zinc-700 whitespace-nowrap">
                                             {format(parseSalesViewDate(), 'eee d MMM', { locale: es }).replace('.', '')}
                                         </span>
                                         <span className="hidden text-[8px] font-medium text-zinc-400 lg:block">histórico</span>

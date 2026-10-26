@@ -7642,9 +7642,18 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     line-height: 1;
     letter-spacing: 0.02em;
   }
-  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
-    [data-element='mobile-sales-rankings'] {
-    margin-top: 4px;
+  /* Mismas alturas y posiciones en Ventas y Último cierre:
+     cabecera de 32px + retícula interior compartida para tarjetas,
+     gráfica horaria y rankings. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-date'] span,
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-history-date'] {
+    font-size: 7.5px;
+    letter-spacing: 0.04em;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-units'] {
+    color: color-mix(in srgb, var(--home-widget-ink) 48%, transparent);
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='metrics'] {
