@@ -7581,12 +7581,12 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-component='HomeScreen'][data-layout='ops-admin'],
   [data-component='HomeScreen'][data-layout='master'] {
     grid-template-rows:
-      repeat(2, calc(var(--home-row-track) + 26px))
+      repeat(2, calc(var(--home-row-track) + 12px))
       repeat(4, var(--home-row-track));
   }
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-rows:
-      repeat(2, calc(var(--home-row-track) + 26px))
+      repeat(2, calc(var(--home-row-track) + 12px))
       repeat(5, var(--home-row-track));
   }
 }
@@ -7601,6 +7601,19 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     [data-instance='dashboard-ventas'],
     [data-instance='master-ultimo-cierre']
   ) > [data-element='body'] {
+    padding-bottom: 0;
+  }
+  /* Reducir el espacio entre el borde superior y la primera fila en ambas
+     tarjetas por igual; así también vuelve a verse la última fila de accesos. */
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='dashboard-ventas'],
+    [data-instance='master-ultimo-cierre']
+  ) [data-element='header'] {
+    height: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    flex: 0 0 28px;
+    padding-top: 0;
     padding-bottom: 0;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
@@ -7881,9 +7894,14 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-component='HomeScreen'] [data-element='mobile-sales-hour-chart'] svg path {
     stroke-width: 2;
   }
+  /* Separar visualmente los importes de los tramos de la columna de productos
+     sin pegarlos a las horas. Móvil usa la misma reserva desde el componente. */
   [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: 8px;
+    column-gap: clamp(10px, 1vw, 18px);
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
+    padding-right: clamp(4px, 0.55vw, 10px);
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-units'] {
     color: color-mix(in srgb, var(--home-widget-ink) 48%, transparent);
