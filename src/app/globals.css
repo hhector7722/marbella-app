@@ -7953,3 +7953,35 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 [data-component='HomeScreen'] [data-element='mobile-sales-hours'] [data-muted-hour='true'] {
   opacity: 0.55;
 }
+
+/* Dos secciones inequívocas, sin raya divisoria: el importe horario termina
+   al menos a 24px del primer producto en móvil (20px + reserva interna).
+   La barra proporcional ocupa una sola columna, sin añadir altura. */
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    column-gap: 20px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
+    padding-right: 4px;
+  }
+}
+@media (max-width: 359px) {
+  /* En pantallas realmente estrechas, priorizar las cifras completas. */
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
+    grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+    column-gap: 14px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
+    padding-right: 3px;
+  }
+}
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 28px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
+    padding-right: 4px;
+  }
+}

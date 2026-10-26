@@ -95,6 +95,7 @@ export function HomeSalesMobileSummary({
         ? products.slice(0, 3)
         : filteredSnapshot?.key === filterKey ? filteredSnapshot.products : [];
     const isFiltering = selectedHour !== null && filteredSnapshot?.key !== filterKey && filterError?.key !== filterKey;
+    const topProductRevenue = Math.max(0, ...displayProducts.map(product => Number(product.revenue) || 0));
 
     // Reutilizar el crossfilter: unidades de todas las líneas de ticket
     // por cada hora visible, no solo los tickets.
@@ -230,20 +231,26 @@ export function HomeSalesMobileSummary({
                                 </div>
                             ) : <div key={`empty-hour-${index}`} className="col-span-3" aria-hidden="true" />)}
                         </div>
-                        <div data-element="mobile-sales-products" className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] content-start gap-x-1.5 gap-y-0.5 text-left">
+                        <div data-element="mobile-sales-products" className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(22px,0.35fr)_max-content_max-content] content-start gap-x-1 gap-y-0.5 text-left">
                             {displayProducts.map((product, index) => (
                                 <div key={`${product.name}-${index}`}
-                                    className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
+                                    className="col-span-4 grid min-w-0 grid-cols-subgrid items-center text-[8px] leading-[1.15]"
                                     title={`${product.name}: ${product.quantity} unidades · ${product.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]">
                                         {index + 1}. {product.name}
+                                    </span>
+                                    <span data-element="mobile-sales-product-bar" role="img"
+                                        aria-label={`${Math.round(topProductRevenue > 0 ? Math.max(0, product.revenue) / topProductRevenue * 100 : 0)}% de la facturación del producto más vendido`}
+                                        className="block h-[3px] min-w-0 self-center overflow-hidden rounded-full bg-sky-400/15">
+                                        <span className="block h-full rounded-full bg-[#4A9BDD]"
+                                            style={{ width: `${topProductRevenue > 0 ? Math.min(100, Math.max(0, Number(product.revenue) / topProductRevenue * 100)) : 0}%` }} />
                                     </span>
                                     <span data-element="mobile-sales-units" className="justify-self-end whitespace-nowrap text-right text-[7px]">{product.quantity.toLocaleString('es-ES')} u</span>
                                     <span data-element="mobile-sales-amount" className="justify-self-end whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">{product.revenue.toLocaleString('es-ES', { maximumFractionDigits: 2 })}€</span>
                                 </div>
                             ))}
                             {selectedHour !== null && displayProducts.length === 0 && (
-                                <span className="col-span-3 truncate text-[8px] text-[var(--home-widget-ink-secondary)]" role="status">
+                                <span className="col-span-4 truncate text-[8px] text-[var(--home-widget-ink-secondary)]" role="status">
                                     {isFiltering ? 'Filtrando productos…' : filterError?.key === filterKey
                                         ? 'No se pudieron cargar' : 'Sin productos en este tramo'}
                                 </span>
