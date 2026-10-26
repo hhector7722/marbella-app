@@ -972,6 +972,7 @@ export function LineMappingModal({
       layer="derived"
       instance="albaran-line-mapping"
       parentInstance="albaran-detail"
+      dismissScope="self"
       usageId="albaran-line-mapping"
       usageLabel="Revisar línea de albarán"
       headerTitleAlign="left"
