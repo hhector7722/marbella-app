@@ -5,11 +5,12 @@ import { laborRatioBand } from './labor-cost-ratio-presentation.ts';
 test('clasifica los costes diarios sobre ventas con límites inclusivos', () => {
     assert.equal(laborRatioBand(0), 'good');
     assert.equal(laborRatioBand(25), 'good');
-    assert.equal(laborRatioBand(25.01), 'attention');
-    assert.equal(laborRatioBand(35), 'attention');
-    assert.equal(laborRatioBand(35.01), 'high');
-    assert.equal(laborRatioBand(50), 'high');
-    assert.equal(laborRatioBand(50.01), 'critical');
+    assert.equal(laborRatioBand(55), 'good');
+    assert.equal(laborRatioBand(55.01), 'attention');
+    assert.equal(laborRatioBand(70), 'attention');
+    assert.equal(laborRatioBand(70.01), 'high');
+    assert.equal(laborRatioBand(90), 'high');
+    assert.equal(laborRatioBand(90.01), 'critical');
     assert.equal(laborRatioBand(150), 'critical');
 });
 

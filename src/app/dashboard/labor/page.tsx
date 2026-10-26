@@ -100,12 +100,20 @@ function formatLaborPercent(n: number): string {
     return new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(n) + '%';
 }
 
+/** El calendario tiene 7 columnas: sin separador entre cantidad y símbolo. */
+function formatCalendarLaborEuro(n: number): string {
+    return new Intl.NumberFormat('es-ES', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(n) + '€';
+}
+
 const ratioStyles: Record<LaborRatioBand, { chip: string; bar: string; text: string }> = {
-    good: { chip: 'border-emerald-200 bg-emerald-50 text-emerald-700', bar: 'bg-emerald-400', text: 'text-emerald-300' },
-    attention: { chip: 'border-amber-200 bg-amber-50 text-amber-700', bar: 'bg-amber-400', text: 'text-amber-300' },
-    high: { chip: 'border-orange-200 bg-orange-50 text-orange-700', bar: 'bg-orange-400', text: 'text-orange-300' },
-    critical: { chip: 'border-rose-200 bg-rose-50 text-rose-700', bar: 'bg-rose-400', text: 'text-rose-300' },
-    unavailable: { chip: 'border-zinc-200 bg-zinc-100 text-zinc-500', bar: 'bg-zinc-400', text: 'text-white/60' },
+    good: { chip: 'border-emerald-200/80 bg-emerald-50/75 text-emerald-700', bar: 'bg-emerald-400', text: 'text-emerald-300' },
+    attention: { chip: 'border-amber-200/80 bg-amber-50/75 text-amber-700', bar: 'bg-amber-400', text: 'text-amber-300' },
+    high: { chip: 'border-orange-200/80 bg-orange-50/75 text-orange-700', bar: 'bg-orange-400', text: 'text-orange-300' },
+    critical: { chip: 'border-rose-200/80 bg-rose-50/75 text-rose-700', bar: 'bg-rose-400', text: 'text-rose-300' },
+    unavailable: { chip: 'border-zinc-200/80 bg-zinc-50 text-zinc-500', bar: 'bg-zinc-400', text: 'text-white/60' },
 };
 
 function dayInPeriod(isoDay: string, periodStart: string, periodEnd: string): boolean {
@@ -139,12 +147,15 @@ function formatWorkerPctLine(pct: number | null): string {
     return `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1, minimumFractionDigits: 0 }).format(pct)}%`;
 }
 
-/** Color del indicador: verde ≤25%, amarillo 26–35%, naranja 36–50%, rojo >50% */
+/** Los mismos rangos en el anillo y el calendario; no cambian el cálculo. */
 function laborPctIndicatorClass(pct: number): string {
-    if (pct > 50) return 'text-red-500 stroke-red-500';
-    if (pct > 35) return 'text-orange-500 stroke-orange-500';
-    if (pct > 25) return 'text-amber-400 stroke-amber-400';
-    return 'text-emerald-600 stroke-emerald-600';
+    switch (laborRatioBand(pct)) {
+        case 'good': return 'text-emerald-600 stroke-emerald-600';
+        case 'attention': return 'text-amber-600 stroke-amber-600';
+        case 'high': return 'text-orange-600 stroke-orange-600';
+        case 'critical': return 'text-rose-600 stroke-rose-600';
+        default: return 'text-zinc-400 stroke-zinc-400';
+    }
 }
 
 function LaborPctRing({
@@ -620,8 +631,8 @@ export default function LaborHistoryPage() {
                         <div aria-label="Leyenda de coste laboral sobre ventas" className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 px-1 py-1 text-[9px] text-zinc-500 sm:text-[10px]">
                             <span className="font-medium text-zinc-600">Coste / ventas:</span>
                             {([
-                                ['good', '≤25%'], ['attention', '25–35%'],
-                                ['high', '35–50%'], ['critical', '>50%'],
+                                ['good', '≤55%'], ['attention', '55–70%'],
+                                ['high', '70–90%'], ['critical', '>90%'],
                             ] as const).map(([band, label]) => (
                                 <span key={band} className="inline-flex items-center gap-1">
                                     <span aria-hidden="true" className={cn('h-2 w-2 rounded-full', ratioStyles[band].bar)} />
@@ -676,6 +687,12 @@ export default function LaborHistoryPage() {
                                                 type="button"
                                                 onClick={() => clickable && openDayDetail(day)}
                                                 disabled={!clickable}
+                                                aria-label={showData
+                                                    ? format(day, 'd MMMM yyyy', { locale: es }) + ', ' +
+                                                        (dayOrdinaryUnknown ? 'nómina pendiente' :
+                                                            ratio === null ? 'porcentaje no disponible' : 'coste sobre ventas ' + formatLaborPercent(ratio)) +
+                                                        ', coste ' + (dayOrdinaryUnknown ? 'pendiente' : formatLaborEuro(cell?.total ?? 0))
+                                                    : format(day, 'd MMMM yyyy', { locale: es })}
                                                 className={cn(
                                                     'group relative flex flex-col text-left transition-colors p-0.5 sm:p-1 month-cal-cell',
                                                     'border-r border-gray-100 last:border-r-0 bg-white',
@@ -702,29 +719,26 @@ export default function LaborHistoryPage() {
                                                 >
                                                     {format(day, 'd')}
                                                 </span>
-                                                <div className="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 pt-3 text-center">
-                                                    {showData && (dayOrdinaryUnknown ? (
-                                                        <span className="max-w-full truncate rounded-md border border-zinc-200 bg-zinc-100 px-1 py-1 text-[9px] font-medium text-zinc-500">
-                                                            Pendiente
-                                                        </span>
-                                                    ) : (
-                                                        <>
-                                                            <span
-                                                                className={cn('inline-flex max-w-full items-center justify-center rounded-md border px-1 py-1 text-[9px] font-bold leading-none tabular-nums min-[370px]:text-[10px] sm:text-[12px]', ratioTone.chip)}
-                                                                title={ratio === null ? 'Sin venta neta registrada para calcular el porcentaje' : 'Coste laboral / ventas netas: ' + formatLaborPercent(ratio)}
-                                                            >
-                                                                {ratio === null ? 'Sin ventas' : formatLaborPercent(ratio)}
-                                                            </span>
-                                                            <span className="max-w-full truncate text-[9px] font-semibold leading-none text-zinc-700 tabular-nums sm:text-[11px]">
-                                                                {formatLaborEuro(cell?.total ?? 0)}
-                                                            </span>
-                                                            {(cell?.overtime ?? 0) > 0 && (
-                                                                <span className="max-w-full truncate text-[8px] leading-none text-amber-600 sm:text-[9px]">
-                                                                    Extra {formatLaborEuro(cell!.overtime)}
-                                                                </span>
+                                                <div className="flex w-full min-w-0 flex-1 items-center justify-center px-0.5 pt-3">
+                                                    {showData && (
+                                                        <div
+                                                            className={cn(
+                                                                'flex w-full min-w-0 max-w-full flex-col items-center justify-center gap-0.5 rounded-md border px-0.5 py-1 text-center tabular-nums',
+                                                                ratioTone.chip,
                                                             )}
-                                                        </>
-                                                    ))}
+                                                            title={dayOrdinaryUnknown
+                                                                ? 'Nómina pendiente'
+                                                                : (ratio === null ? 'Sin venta neta positiva' : 'Coste / ventas: ' + formatLaborPercent(ratio)) +
+                                                                    ' · Coste diario: ' + formatLaborEuro(cell?.total ?? 0)}
+                                                        >
+                                                            <span className="block w-full truncate text-[9px] font-semibold leading-none sm:text-[10px]">
+                                                                {dayOrdinaryUnknown || ratio === null ? '—' : formatLaborPercent(ratio)}
+                                                            </span>
+                                                            <span className="block w-full whitespace-nowrap text-[8px] font-bold leading-tight tracking-tight min-[375px]:text-[9px] sm:text-[11px]">
+                                                                {dayOrdinaryUnknown ? '—' : formatCalendarLaborEuro(cell?.total ?? 0)}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </button>
                                         );
@@ -773,9 +787,9 @@ export default function LaborHistoryPage() {
                                         <span className="text-[10px] font-semibold uppercase tracking-[0.09em] text-white/65">Coste laboral / ventas netas</span>
                                         <span className={cn('inline-flex shrink-0 rounded-md border px-2 py-1 text-[10px] font-semibold', tone.chip)}>
                                             {pending ? 'Nómina pendiente' : ratio === null ? 'Sin ventas' :
-                                                laborRatioBand(ratio) === 'good' ? '≤25%' :
-                                                laborRatioBand(ratio) === 'attention' ? '25–35%' :
-                                                laborRatioBand(ratio) === 'high' ? '35–50%' : '>50%'}
+                                                laborRatioBand(ratio) === 'good' ? '≤55%' :
+                                                laborRatioBand(ratio) === 'attention' ? '55–70%' :
+                                                laborRatioBand(ratio) === 'high' ? '70–90%' : '>90%'}
                                         </span>
                                     </div>
                                     <strong className={cn('mt-2 block text-[32px] font-bold leading-none tracking-tight tabular-nums sm:text-[38px]', tone.text)}>
