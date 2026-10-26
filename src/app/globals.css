@@ -8341,3 +8341,42 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-element='header'] > a:hover {
   background: rgb(255 255 255 / 0.14);
 }
+
+/* Último cierre y Mensual: dos tarjetas simétricas en un único slot 4×1.
+   La retícula original de Dashboard/Master no aumenta de altura. */
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre']::before {
+  background: transparent;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] > [data-element='body'] {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 0;
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair'] {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair'] > :is(
+  [data-element='closing-half'], [data-element='monthly-container']
+) {
+  height: 100%;
+  min-height: 0;
+  border: 1px solid rgb(255 255 255 / 0.23);
+  border-radius: var(--home-widget-radius);
+  background: linear-gradient(155deg,
+    color-mix(in srgb, var(--color-envolvente-bajo) 84%, var(--color-envolvente)) 0%,
+    var(--color-envolvente-bajo) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10), 0 5px 16px rgb(0 0 0 / 0.16);
+  overflow: hidden;
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair'] :is(
+  [data-element='closing-compact'], [data-element='monthly-half']
+) {
+  height: 100%;
+  min-height: 0;
+}

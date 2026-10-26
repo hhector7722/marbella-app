@@ -28,7 +28,7 @@ import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { OpsHomeScreen } from '@/components/dashboards/OpsHomeScreen';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
-import { MasterLastClosingWidget } from '@/components/dashboards/MasterLastClosingWidget';
+import { HomeClosingMonthlyPair } from '@/components/dashboards/HomeClosingMonthlyPair';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
 import { CajaInicialControl, MasterCajasCambioControl } from '@/components/dashboards/MasterShortcutGrid';
 import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
@@ -564,7 +564,7 @@ const AdminDashboardView = ({
     );
 
     const ultimoCierreSection = (
-        <MasterLastClosingWidget />
+        <HomeClosingMonthlyPair />
     );
 
     const horarioSection = (

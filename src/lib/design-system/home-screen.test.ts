@@ -476,7 +476,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(master, /layout="master"/);
         assert.match(master, /size="wide" instance="dashboard-ventas"/);
         assert.match(master, /size="wide" instance="master-ultimo-cierre"/);
-        assert.match(master, /<MasterLastClosingWidget/);
+        assert.match(master, /<HomeClosingMonthlyPair/);
         assert.match(master, /size=\{attendanceExpanded \? 'tall' : 'tile'\}[\s\S]*?instance="master-asistencia"/);
         assert.match(master, /label=\{attendanceExpanded \? undefined : 'Asistencia'\}/);
         assert.match(master, /<MasterTodayAttendanceWidget/);

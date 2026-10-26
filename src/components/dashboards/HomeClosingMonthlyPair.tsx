@@ -1,0 +1,166 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { addMonths, endOfMonth, format, isAfter, startOfMonth, subMonths } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
+import { MasterLastClosingWidget } from './MasterLastClosingWidget';
+
+type MonthlySnapshot = {
+    key: string;
+    sales: number;
+    net: number | null;
+    tickets: number;
+    average: number;
+    daily: number | null;
+    closingDays: number;
+};
+
+function MonthlyMetric({ label, value, tone, title }: {
+    label: string;
+    value: string;
+    tone?: 'sales' | 'net';
+    title?: string;
+}) {
+    return (
+        <div data-metric={tone} title={title}
+            className={'min-w-0 rounded-md px-1 py-1 ' + (
+                tone === 'sales' ? 'border border-sky-400/25 bg-sky-500/10'
+                    : tone === 'net' ? 'border border-emerald-400/25 bg-emerald-500/10'
+                        : '')}>
+            <span className="block truncate text-[8px] leading-tight text-white/65">{label}</span>
+            <strong className={'block truncate leading-tight text-white ' +
+                (tone ? 'text-[clamp(10px,2.7vw,17px)] font-bold' : 'text-[10px] font-semibold')}
+                title={value}>{value}</strong>
+        </div>
+    );
+}
+
+function HomeMonthlySalesWidget() {
+    const supabase = useMemo(() => createClient(), []);
+    const [month, setMonth] = useState(() => startOfMonth(new Date()));
+    const [snapshot, setSnapshot] = useState<MonthlySnapshot | null>(null);
+    const [errorKey, setErrorKey] = useState<string | null>(null);
+    const monthStart = format(startOfMonth(month), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(month), 'yyyy-MM-dd');
+    const key = monthStart + ':' + monthEnd;
+    const isCurrentMonth = format(month, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
+    const visible = snapshot?.key === key ? snapshot : null;
+    const failed = errorKey === key;
+
+    const refresh = useCallback(async (signal?: AbortSignal) => {
+        // Reutilizar las mismas fuentes que el resumen mensual de /dashboard/ventas.
+        // La RPC contiene todas las facturas del periodo, independientemente del cierre.
+        const [ticketsResult, closingsResult] = await Promise.all([
+            supabase.rpc('get_ventas_crossfilter', {
+                p_start_date: monthStart, p_end_date: monthEnd, p_limit: 1,
+            }),
+            supabase.from('cash_closings')
+                .select('closing_date,closed_at,tpv_sales,net_sales')
+                .gte('closing_date', monthStart).lte('closing_date', monthEnd)
+                .order('closed_at', { ascending: true }),
+        ]);
+        if (signal?.aborted) return;
+        if (ticketsResult.error) {
+            console.warn('No se pudieron cargar las ventas mensuales', ticketsResult.error);
+            setErrorKey(key);
+            return;
+        }
+        const summary = (ticketsResult.data as { summary?: { totalSales?: number; count?: number } } | null)?.summary;
+        if (!summary) {
+            setErrorKey(key);
+            return;
+        }
+        const sales = Number(summary.totalSales ?? 0);
+        const tickets = Number(summary.count ?? 0);
+        // Un cierre por día; nunca duplicar cierres si un día se reabre.
+        const unique = new Map<string, { tpv_sales: number; net_sales: number }>();
+        for (const c of closingsResult.data ?? []) {
+            unique.set(String(c.closing_date), {
+                tpv_sales: Number(c.tpv_sales ?? 0),
+                net_sales: Number(c.net_sales ?? 0),
+            });
+        }
+        const positiveDays = [...unique.values()].filter(item => item.tpv_sales > 0);
+        const closingDays = positiveDays.length;
+        const closedSales = positiveDays.reduce((sum, item) => sum + item.tpv_sales, 0);
+        setSnapshot({
+            key, sales, net: closingsResult.error ? null :
+                [...unique.values()].reduce((sum, item) => sum + item.net_sales, 0),
+            tickets, average: tickets > 0 ? sales / tickets : 0,
+            daily: closingDays ? closedSales / closingDays : null,
+            closingDays,
+        });
+        setErrorKey(null);
+    }, [supabase, monthStart, monthEnd, key]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        // Evitar un setState síncrono dentro de useEffect y cancelar consultas obsoletas.
+        const initial = window.setTimeout(() => { void refresh(controller.signal); }, 0);
+        // El mes abierto se actualiza automáticamente; meses históricos son estáticos.
+        if (!isCurrentMonth) return () => { controller.abort(); window.clearTimeout(initial); };
+        const interval = window.setInterval(() => { void refresh(controller.signal); }, 90_000);
+        return () => { controller.abort(); window.clearTimeout(initial); window.clearInterval(interval); };
+    }, [refresh, isCurrentMonth]);
+
+    return (
+        <section data-element="monthly-half"
+            className="flex h-full min-h-0 min-w-0 flex-col justify-between gap-1 px-2 py-1.5 text-white tabular-nums"
+            aria-label="Resumen mensual de ventas">
+            <div className="flex min-h-[19px] min-w-0 items-center justify-between gap-1">
+                <h2 className="shrink-0 text-[10px] font-bold text-white">Mensual</h2>
+                <div className="flex min-w-0 items-center justify-end gap-0.5">
+                    <button type="button" aria-label="Mes anterior" title="Mes anterior"
+                        onClick={() => setMonth(value => subMonths(value, 1))}
+                        className="shrink-0 rounded p-0.5 text-white/75 hover:bg-white/10"><ChevronLeft size={14}/></button>
+                    <span className="min-w-0 whitespace-nowrap text-[9px] capitalize text-white/80">
+                        {format(month, 'MMM yy', { locale: es }).replace('.', '')}
+                    </span>
+                    <button type="button" aria-label="Mes siguiente" title="Mes siguiente"
+                        disabled={isCurrentMonth || isAfter(addMonths(month, 1), startOfMonth(new Date()))}
+                        onClick={() => setMonth(value => addMonths(value, 1))}
+                        className="shrink-0 rounded p-0.5 text-white/75 hover:bg-white/10 disabled:opacity-25"><ChevronRight size={14}/></button>
+                </div>
+            </div>
+            {!visible && !failed ? (
+                <p role="status" className="flex flex-1 items-center justify-center text-[10px] text-white/65">Cargando mes…</p>
+            ) : !visible && failed ? (
+                <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1">
+                    <span className="text-[10px] text-amber-200">Error al cargar el mes</span>
+                    <button type="button" onClick={() => void refresh()} className="text-[10px] underline">Reintentar</button>
+                </div>
+            ) : visible ? (
+                <>
+                    <div className="grid min-h-0 grid-cols-2 gap-1">
+                        <MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/>
+                        <MonthlyMetric label="V neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
+                            tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
+                    </div>
+                    <div className="grid min-w-0 grid-cols-3 gap-x-1 text-center">
+                        <MonthlyMetric label="Tickets" value={visible.tickets.toLocaleString('es-ES')}/>
+                        <MonthlyMetric label="T. medio" value={visible.tickets ? formatCurrencySpanish(visible.average) : '—'}/>
+                        <MonthlyMetric label="Media/día" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
+                            title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
+                    </div>
+                </>
+            ) : null}
+        </section>
+    );
+}
+
+/** Un solo hueco de HomeScreen, dividido en dos tarjetas iguales: no desplaza horarios ni accesos. */
+export function HomeClosingMonthlyPair() {
+    return (
+        <div data-element="home-closing-monthly-pair" className="grid h-full min-h-0 w-full grid-cols-2 gap-2">
+            <section data-element="closing-half" className="min-h-0 min-w-0 overflow-hidden">
+                <MasterLastClosingWidget compact/>
+            </section>
+            <div data-element="monthly-container" className="min-h-0 min-w-0 overflow-hidden">
+                <HomeMonthlySalesWidget/>
+            </div>
+        </div>
+    );
+}
