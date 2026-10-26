@@ -28,7 +28,6 @@ import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
-import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import { chunkCalendarWeeks } from '@/lib/month-calendar-weeks';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import {
@@ -42,8 +41,9 @@ import {
 } from '@/app/actions/labor-cost-ssot';
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import { payrollAbsenceNotice } from '@/lib/payroll/payroll-month-status';
+import { laborRatioBand, type LaborRatioBand } from '@/lib/labor-cost-ratio-presentation';
 
-type DayCell = { total: number; fixed: number; overtime: number };
+type DayCell = { total: number; fixed: number; overtime: number; laborPctOfSales: number | null };
 
 type MonthSummaryPayload = {
     year: number;
@@ -91,6 +91,22 @@ function formatEuroRead(n: number): string {
         maximumFractionDigits: n < 100 ? 2 : 0,
     }).format(n);
 }
+
+function formatLaborEuro(n: number): string {
+    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(n);
+}
+
+function formatLaborPercent(n: number): string {
+    return new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(n) + '%';
+}
+
+const ratioStyles: Record<LaborRatioBand, { chip: string; bar: string; text: string }> = {
+    good: { chip: 'border-emerald-200 bg-emerald-50 text-emerald-700', bar: 'bg-emerald-400', text: 'text-emerald-300' },
+    attention: { chip: 'border-amber-200 bg-amber-50 text-amber-700', bar: 'bg-amber-400', text: 'text-amber-300' },
+    high: { chip: 'border-orange-200 bg-orange-50 text-orange-700', bar: 'bg-orange-400', text: 'text-orange-300' },
+    critical: { chip: 'border-rose-200 bg-rose-50 text-rose-700', bar: 'bg-rose-400', text: 'text-rose-300' },
+    unavailable: { chip: 'border-zinc-200 bg-zinc-100 text-zinc-500', bar: 'bg-zinc-400', text: 'text-white/60' },
+};
 
 function dayInPeriod(isoDay: string, periodStart: string, periodEnd: string): boolean {
     const d = isoDay.split('T')[0];
@@ -292,6 +308,7 @@ export default function LaborHistoryPage() {
         totalOvertime: number;
         totalCost: number;
         dayNetSales: number;
+        laborPctOfSales: number | null;
         payrollPending: boolean;
         workers: WorkerRow[];
     } | null>(null);
@@ -370,6 +387,7 @@ export default function LaborHistoryPage() {
                     total: Number(cell.total) || 0,
                     fixed: Number(cell.fixed) || 0,
                     overtime: Number(cell.overtime) || 0,
+                    laborPctOfSales: cell.laborPctOfSales == null ? null : Number(cell.laborPctOfSales),
                 };
             }
 
@@ -409,7 +427,8 @@ export default function LaborHistoryPage() {
     }, [supabase, periodStart, periodEnd, workerFilterId]);
 
     useEffect(() => {
-        fetchPeriodSummary();
+        const timer = window.setTimeout(() => { void fetchPeriodSummary(); }, 0);
+        return () => window.clearTimeout(timer);
     }, [fetchPeriodSummary]);
 
     const handlePrevMonth = () => {
@@ -442,8 +461,6 @@ export default function LaborHistoryPage() {
 
     const handleApplyTimeFilter = (val: TimeFilterValue) => {
         setAppliedFilter(val);
-        const curYear = new Date().getFullYear();
-
         if (val.kind === 'month') {
             const dt = new Date(val.year, val.month - 1, 1);
             setViewMonth(dt);
@@ -468,12 +485,10 @@ export default function LaborHistoryPage() {
         }
     };
 
-    const [includeAllContracted, setIncludeAllContracted] = useState(false);
-
     const openDayDetail = useCallback(
         async (day: Date, optionsOverride?: { includeAll?: boolean }) => {
             const key = format(day, 'yyyy-MM-dd');
-            const showAll = optionsOverride?.includeAll ?? includeAllContracted;
+            const showAll = optionsOverride?.includeAll ?? false;
             trackUsageModalApply(
                 'labor-day-detail',
                 'Detalle día laboral',
@@ -510,6 +525,7 @@ export default function LaborHistoryPage() {
                     totalOvertime: labor.totalOvertime,
                     totalCost: labor.totalCost,
                     dayNetSales: labor.netSales,
+                    laborPctOfSales: labor.laborPctOfSales,
                     payrollPending: labor.isPayrollPending,
                     workers,
                 });
@@ -521,7 +537,7 @@ export default function LaborHistoryPage() {
                 setDetailLoading(false);
             }
         },
-        [workerFilterId, pathname, includeAllContracted],
+        [workerFilterId, pathname],
     );
 
     const closeDetail = useCallback(() => {
@@ -601,6 +617,19 @@ export default function LaborHistoryPage() {
                             </div>
                         </div>
 
+                        <div aria-label="Leyenda de coste laboral sobre ventas" className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 px-1 py-1 text-[9px] text-zinc-500 sm:text-[10px]">
+                            <span className="font-medium text-zinc-600">Coste / ventas:</span>
+                            {([
+                                ['good', '≤25%'], ['attention', '25–35%'],
+                                ['high', '35–50%'], ['critical', '>50%'],
+                            ] as const).map(([band, label]) => (
+                                <span key={band} className="inline-flex items-center gap-1">
+                                    <span aria-hidden="true" className={cn('h-2 w-2 rounded-full', ratioStyles[band].bar)} />
+                                    {label}
+                                </span>
+                            ))}
+                        </div>
+
                         {payrollNotice ? (
                             <Notice
                                 instance="labor-payroll-absence"
@@ -637,6 +666,9 @@ export default function LaborHistoryPage() {
                                             isViewMonthDay && inPeriod && !isFutureDay;
                                         const clickable = showData;
                                         const todayCell = isToday(day);
+                                        const ratio = showData && !dayOrdinaryUnknown
+                                            ? cell?.laborPctOfSales ?? null : null;
+                                        const ratioTone = ratioStyles[laborRatioBand(ratio)];
 
                                         return (
                                             <button
@@ -670,18 +702,28 @@ export default function LaborHistoryPage() {
                                                 >
                                                     {format(day, 'd')}
                                                 </span>
-                                                <div className="flex w-full min-w-0 flex-1 flex-col justify-center gap-0.5 px-1 pt-4 text-[8px] font-normal leading-tight tabular-nums min-[370px]:px-1.5 min-[370px]:text-[9px] sm:px-2 sm:text-[10px]">
-                                                    {([
-                                                        { label: 'Fijo', value: dayOrdinaryUnknown ? '—' : formatEuroRead(cell?.fixed ?? 0).trim() || '0 €', color: 'text-zinc-700' },
-                                                        { label: 'Extra', value: formatEuroRead(cell?.overtime ?? 0).trim() || '0 €', color: 'text-amber-600' },
-                                                        { label: 'Total', value: dayOrdinaryUnknown ? '—' : formatEuroRead(cell?.total ?? 0).trim() || '0 €', color: 'text-zinc-900' },
-                                                    ] as const).map(({ label, value, color }) => (
-                                                        <div key={label} className="flex min-w-0 w-full flex-row items-center justify-between gap-1">
-                                                            <span className="font-normal text-zinc-500">{showData ? label : ''}</span>
-                                                            <span className={cn('max-w-full whitespace-nowrap font-normal tracking-tighter', color)}>
-                                                                {showData ? value : ''}
+                                                <div className="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 pt-3 text-center">
+                                                    {showData && (dayOrdinaryUnknown ? (
+                                                        <span className="max-w-full truncate rounded-md border border-zinc-200 bg-zinc-100 px-1 py-1 text-[9px] font-medium text-zinc-500">
+                                                            Pendiente
+                                                        </span>
+                                                    ) : (
+                                                        <>
+                                                            <span
+                                                                className={cn('inline-flex max-w-full items-center justify-center rounded-md border px-1 py-1 text-[9px] font-bold leading-none tabular-nums min-[370px]:text-[10px] sm:text-[12px]', ratioTone.chip)}
+                                                                title={ratio === null ? 'Sin venta neta registrada para calcular el porcentaje' : 'Coste laboral / ventas netas: ' + formatLaborPercent(ratio)}
+                                                            >
+                                                                {ratio === null ? 'Sin ventas' : formatLaborPercent(ratio)}
                                                             </span>
-                                                        </div>
+                                                            <span className="max-w-full truncate text-[9px] font-semibold leading-none text-zinc-700 tabular-nums sm:text-[11px]">
+                                                                {formatLaborEuro(cell?.total ?? 0)}
+                                                            </span>
+                                                            {(cell?.overtime ?? 0) > 0 && (
+                                                                <span className="max-w-full truncate text-[8px] leading-none text-amber-600 sm:text-[9px]">
+                                                                    Extra {formatLaborEuro(cell!.overtime)}
+                                                                </span>
+                                                            )}
+                                                        </>
                                                     ))}
                                                 </div>
                                             </button>
@@ -699,91 +741,128 @@ export default function LaborHistoryPage() {
                 open={detailOpen}
                 onClose={closeDetail}
                 variant="standard"
+                scheme="dark"
                 layer="base"
                 instance="labor-cost-day-detail"
                 usageId="labor-cost-day-detail"
                 usageLabel="Detalle día laboral"
                 title={selectedDayStr ? format(parseLocalSafe(selectedDayStr), 'EEEE · d MMMM yyyy', { locale: es }) : 'Coste laboral'}
             >
-                <div>
+                <div className="min-w-0 px-3 py-4 text-white sm:px-5 sm:py-5">
                     {detailLoading ? (
-                        <div className="flex justify-center py-20">
-                            <LoadingSpinner size="lg" className="text-zinc-900" />
+                        <div className="flex justify-center py-14">
+                            <LoadingSpinner size="lg" className="text-white" />
                         </div>
-                    ) : dayDetail ? (
-                        <div className="flex flex-col">
-                            {dayPayrollNotice ? (
-                                <div className="mb-3">
-                                    <Notice
-                                        instance="labor-day-payroll-absence"
-                                        variant={dayPayrollNotice.variant}
-                                        title={dayPayrollNotice.title}
-                                    >
+                    ) : dayDetail ? (() => {
+                        const pending = dayDetail.payrollPending;
+                        const ratio = pending || dayDetail.dayNetSales <= 0 ? null : dayDetail.laborPctOfSales;
+                        const tone = ratioStyles[laborRatioBand(ratio)];
+                        const shownWorkers = dayDetail.workers
+                            .filter(w => showNoActivity || w.hasActivity || w.total !== 0 || w.fixed !== 0 || w.overtime !== 0)
+                            .sort((a, b) => b.total - a.total || Number(b.hasActivity) - Number(a.hasActivity));
+                        return (
+                            <div className="flex min-w-0 flex-col gap-3">
+                                {dayPayrollNotice && (
+                                    <Notice instance="labor-day-payroll-absence" variant={dayPayrollNotice.variant} title={dayPayrollNotice.title}>
                                         {dayPayrollNotice.body}
                                     </Notice>
+                                )}
+
+                                <section aria-label="Porcentaje de coste sobre ventas" className="rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3.5">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-[10px] font-semibold uppercase tracking-[0.09em] text-white/65">Coste laboral / ventas netas</span>
+                                        <span className={cn('inline-flex shrink-0 rounded-md border px-2 py-1 text-[10px] font-semibold', tone.chip)}>
+                                            {pending ? 'Nómina pendiente' : ratio === null ? 'Sin ventas' :
+                                                laborRatioBand(ratio) === 'good' ? '≤25%' :
+                                                laborRatioBand(ratio) === 'attention' ? '25–35%' :
+                                                laborRatioBand(ratio) === 'high' ? '35–50%' : '>50%'}
+                                        </span>
+                                    </div>
+                                    <strong className={cn('mt-2 block text-[32px] font-bold leading-none tracking-tight tabular-nums sm:text-[38px]', tone.text)}>
+                                        {ratio === null ? '—' : formatLaborPercent(ratio)}
+                                    </strong>
+                                    <p className="mt-2 text-[11px] leading-relaxed text-white/60">
+                                        {pending ? 'No hay todavía un coste fijo oficial para calcular la proporción.' :
+                                            ratio === null ? 'No hay venta neta positiva con la que comparar este día.' :
+                                            'Parte de las ventas netas destinada al coste de personal de este día.'}
+                                    </p>
+                                    <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden="true">
+                                        {ratio !== null && (
+                                            <div className={cn('h-full rounded-full transition-[width]', tone.bar)}
+                                                style={{ width: Math.min(100, Math.max(0, ratio)) + '%' }} />
+                                        )}
+                                    </div>
+                                </section>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    {([
+                                        { label: 'Coste total', value: pending ? '—' : formatLaborEuro(dayDetail.totalCost), emphasized: true },
+                                        { label: 'Venta neta', value: formatLaborEuro(dayDetail.dayNetSales), emphasized: false },
+                                        { label: 'Coste fijo', value: pending ? '—' : formatLaborEuro(dayDetail.totalFixed), emphasized: false },
+                                        { label: 'Horas extra', value: formatLaborEuro(dayDetail.totalOvertime), emphasized: false },
+                                    ] as const).map(metric => (
+                                        <div key={metric.label} className="min-w-0 rounded-lg border border-white/10 bg-white/[0.045] p-3">
+                                            <span className="block text-[10px] font-medium text-white/60">{metric.label}</span>
+                                            <strong className={cn('mt-1 block truncate text-[17px] font-semibold tabular-nums sm:text-[20px]',
+                                                metric.emphasized ? 'text-white' : 'text-white/90')}>
+                                                {metric.value}
+                                            </strong>
+                                        </div>
+                                    ))}
                                 </div>
-                            ) : null}
-                            <WorkerListSummary
-                                metrics={[
-                                    { label: 'Fijo', value: dayDetail.payrollPending ? ' ' : formatEuroRead(dayDetail.totalFixed) },
-                                    { label: 'Extras', value: formatEuroRead(dayDetail.totalOvertime) },
-                                    { label: 'Ventas', value: formatEuroRead(dayDetail.dayNetSales) },
-                                ]}
-                                total={dayDetail.payrollPending ? ' ' : formatEuroRead(dayDetail.totalCost)}
-                            />
 
-                            <div className="mb-1 flex justify-end">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowNoActivity(!showNoActivity)}
-                                    className="py-1 text-[12px] font-medium text-zinc-400"
-                                >
-                                    {showNoActivity ? 'Ocultar inactivos' : 'Mostrar todos'}
-                                </button>
+                                <section className="min-w-0">
+                                    <div className="mb-2 flex items-center justify-between gap-2">
+                                        <h3 className="text-xs font-semibold text-white">Coste por trabajador</h3>
+                                        <button type="button" onClick={() => setShowNoActivity(v => !v)}
+                                            className="rounded-md px-1.5 py-1 text-[11px] font-medium text-sky-200 hover:bg-white/10">
+                                            {showNoActivity ? 'Ocultar inactivos' : 'Mostrar todos'}
+                                        </button>
+                                    </div>
+                                    <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.035]">
+                                        {shownWorkers.length ? shownWorkers.map(w => {
+                                            const workerRatio = pending || dayDetail.dayNetSales <= 0 ? null : w.laborPctOfSales;
+                                            const workerBand = laborRatioBand(workerRatio);
+                                            const name = firstNameOnly(w.name);
+                                            return (
+                                                <div key={w.id} className={cn('flex min-w-0 items-center gap-2.5 border-b border-white/10 px-3 py-2.5 last:border-b-0', !w.hasActivity && w.total === 0 && 'opacity-50')}>
+                                                    <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white/85">
+                                                        {name.charAt(0)}
+                                                    </span>
+                                                    <div className="min-w-0 flex-1">
+                                                        <span className="block truncate text-[12px] font-semibold text-white">{name}</span>
+                                                        <span className="block truncate text-[10px] text-white/55">
+                                                            {pending ? (w.overtime > 0 ? 'Extras ' + formatLaborEuro(w.overtime) : 'Coste fijo pendiente') :
+                                                                'Fijo ' + formatLaborEuro(w.fixed) + (w.overtime > 0 ? ' · Extras ' + formatLaborEuro(w.overtime) : '')}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                                                        <strong className="text-[12px] font-semibold tabular-nums text-white">
+                                                            {formatLaborEuro(pending ? w.overtime : w.total)}
+                                                        </strong>
+                                                        <span className={cn('text-[10px] font-semibold tabular-nums', ratioStyles[workerBand].text)}>
+                                                            {workerRatio === null ? '—' : formatWorkerPctLine(workerRatio)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }) : (
+                                            <p className="px-3 py-5 text-center text-[12px] text-white/55">No hay trabajadores con costes registrados este día.</p>
+                                        )}
+                                    </div>
+                                </section>
+
+                                {!pending && (
+                                    <p className="text-center text-[10px] leading-relaxed text-white/50">
+                                        El coste fijo se distribuye entre los días naturales del mes según la nómina oficial.
+                                        Los colores representan el porcentaje de coste sobre ventas netas.
+                                    </p>
+                                )}
                             </div>
-
-                            <div>
-                                {dayDetail.workers
-                                    .filter((w) => showNoActivity || w.hasActivity)
-                                    .sort((a, b) => Number(b.hasActivity) - Number(a.hasActivity) || b.total - a.total)
-                                    .map((w) => (
-                                    <WorkerPersonRow
-                                        key={w.id}
-                                        name={firstNameOnly(w.name)}
-                                        muted={!w.hasActivity}
-                                        subtitle={
-                                            dayDetail.payrollPending ? (
-                                                w.overtime > 0 ? (
-                                                    <span>Extras {formatEuroRead(w.overtime)}</span>
-                                                ) : undefined
-                                            ) : (
-                                                <>
-                                                    <span>Fijo {formatEuroRead(w.fixed)}</span>
-                                                    {w.overtime > 0 ? (
-                                                        <>
-                                                            <span className="text-zinc-300">·</span>
-                                                            <span>Extras {formatEuroRead(w.overtime)}</span>
-                                                        </>
-                                                    ) : null}
-                                                </>
-                                            )
-                                        }
-                                        value={
-                                            dayDetail.payrollPending
-                                                ? formatEuroRead(w.overtime)
-                                                : formatEuroRead(w.total)
-                                        }
-                                    />
-                                ))}
-                            </div>
-
-                            {dayDetail.payrollPending ? null : (
-                            <p className="mt-6 text-center text-[11px] leading-relaxed text-zinc-400">
-                                El coste fijo corresponde al prorrateo diario del coste laboral mensual.
-                            </p>
-                            )}
-                        </div>
-                    ) : null}
+                        );
+                    })() : (
+                        <p className="py-8 text-center text-sm text-white/65">No se pudo mostrar el detalle del día.</p>
+                    )}
                 </div>
             </Modal>
 
