@@ -556,6 +556,33 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
         }
     });
 
+    it('Albaranes: guardar en hijo restaura documento sin cerrar su modal base', () => {
+        const historico = readFileSync(join(process.cwd(), 'src/app/dashboard/albaranes/AlbaranesHistoricoClient.tsx'), 'utf8');
+        const mapping = readFileSync(join(process.cwd(), 'src/components/albaranes/LineMappingModal.tsx'), 'utf8');
+        const evidence = readFileSync(join(process.cwd(), 'src/components/albaranes/DocumentEvidenceModal.tsx'), 'utf8');
+
+        assert.match(historico, /async function returnToInvoiceAfterSave\(\)[\s\S]*?setLineForEditModal\(null\)[\s\S]*?setLineForMappingModal\(null\)[\s\S]*?setLineForEvidenceModal\(null\)[\s\S]*?await refreshDetailAndStock\(\)/);
+        assert.match(historico, /if \(ok\) await returnToInvoiceAfterSave\(\)/);
+        assert.match(historico, /onCompleted=\{returnToInvoiceAfterSave\}/);
+        assert.match(historico, /onSaved=\{returnToInvoiceAfterSave\}/);
+        assert.match(historico, /onCreated=\{returnToInvoiceAfterSave\}/);
+        assert.match(historico, /onClose=\{dismissInvoiceOrChild\}/);
+        assert.match(mapping, /toast\.success\('Mapeo guardado y recepción aplicada\.'\)[\s\S]*?if \(onCompleted\) await onCompleted\(\)/);
+        assert.match(mapping, /toast\.success\('Otros: gasto registrado sin modificar el stock\.'\)[\s\S]*?if \(onCompleted\) await onCompleted\(\)/);
+        assert.match(evidence, /if \(onSaved\) await onSaved\(\)/);
+        assert.doesNotMatch(evidence, /window\.addEventListener\('keydown'/);
+
+        for (const child of ['albaran-line-edit', 'albaran-line-mapping', 'albaran-document-evidence']) {
+            resetModalHistoryForTests();
+            const events: string[] = [];
+            registerNav({ surfaceId: 'invoice-detail', instance: 'albaran-detail', events });
+            registerNav({ surfaceId: child, instance: child, parentInstance: 'albaran-detail', layer: 'derived', events });
+            requestModalClose(child);
+            assert.deepEqual(getModalHistorySnapshot().map(e => e.surfaceId), ['invoice-detail']);
+            assert.deepEqual(events, ['dismiss:' + child]);
+        }
+    });
+
     it('6. Escape hijo = cerrar toda la cadena', () => {
         const events: string[] = [];
         registerNav({ surfaceId: 'a', instance: 'a', events });
