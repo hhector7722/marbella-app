@@ -1,60 +1,38 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { GetMonthlyLaborCostSummaryUseCase } from './get-monthly-labor-cost-summary.ts';
+import { laborSupabaseFixture, payrollFixture } from '../read-models/labor-cost-test-fixture.ts';
 
-describe('FASE 10: GetMonthlyLaborCostSummaryUseCase', () => {
-  it('proyecta el resumen mensual con byDate y totales V2', async () => {
-    const mockSupabase: any = {
-      from: (table: string) => {
-        const chain: any = {
-          select: () => chain,
-          eq: () => chain,
-          in: () => chain,
-          gte: () => chain,
-          lte: () => chain,
-          or: () => Promise.resolve({ data: [{ id: 'term_1' }], error: null }),
-          maybeSingle: () => Promise.resolve({ data: { total_net_amount: 1200 } }),
-          order: () => Promise.resolve({ data: [], error: null }),
-          then: (resolve: any) => resolve({ data: [], error: null }),
-        };
-
-        if (table === 'daily_sales') {
-          return {
-            select: () => ({
-              gte: () => ({
-                lte: () => Promise.resolve({ data: [{ date: '2026-07-15', total_net_amount: 1200 }], error: null }),
-              }),
-              eq: () => ({ maybeSingle: () => Promise.resolve({ data: { total_net_amount: 1200 } }) }),
-            }),
-          };
-        }
-        if (table === 'profiles') {
-          return {
-            select: () => Promise.resolve({
-              data: [{ id: 'usr_test', first_name: 'Test', last_name: 'Worker', visible_in_plantilla: true }],
-            }),
-          };
-        }
-        if (table === 'employee_payroll_facts') {
-          const factsChain: any = {
-            select: () => factsChain,
-            eq: () => factsChain,
-            then: (resolve: any) => resolve({
-              data: [{ id: 'fact_1', user_id: 'usr_test', period_ym: '2026-07', total_company_cost: 3100, status: 'active' }],
-              error: null,
-            }),
-          };
-          return factsChain;
-        }
-        return chain;
-      },
-    };
-
-    const useCase = new GetMonthlyLaborCostSummaryUseCase(mockSupabase);
+describe('Coste laboral mensual — SSOT gestoría', () => {
+  it('concilia el calendario al céntimo sin fichajes y con trabajadores ocultos', async () => {
+    const useCase = new GetMonthlyLaborCostSummaryUseCase(laborSupabaseFixture(payrollFixture));
     const dto = await useCase.execute({ startDate: '2026-07-01', endDate: '2026-07-31' });
+    assert.equal(dto.totalFixed, 4100);
+    assert.equal(dto.totalCost, 4100);
+    assert.equal(Object.keys(dto.byDate).length, 31);
+    assert.equal(Number(Object.values(dto.byDate).reduce((s, c) => s + c.fixed, 0).toFixed(2)), 4100);
+    assert.equal(dto.byDate['2026-07-15']?.laborPctOfSales !== null, true);
+    assert.equal(dto.missingPayrollMonths.length, 0);
+  });
 
-    assert.equal(dto.startDate, '2026-07-01');
-    assert.ok(dto.byDate);
-    assert.equal(typeof dto.totalCost, 'number');
+  it('el filtro por trabajador y el intervalo parcial prorratean correctamente', async () => {
+    const useCase = new GetMonthlyLaborCostSummaryUseCase(laborSupabaseFixture(payrollFixture));
+    const individual = await useCase.execute({
+      startDate: '2026-07-01', endDate: '2026-07-31', userId: 'usr_active',
+    });
+    assert.equal(individual.totalFixed, 3100);
+
+    const partial = await useCase.execute({ startDate: '2026-07-01', endDate: '2026-07-15' });
+    assert.equal(Object.keys(partial.byDate).length, 15);
+    assert.equal(partial.totalFixed, 1983.75);
+    assert.ok(partial.totalFixed < 4100);
+  });
+
+  it('no inventa costes fijos en meses sin resumen oficial', async () => {
+    const seed = { ...payrollFixture, payroll_monthly_totals: [] };
+    const useCase = new GetMonthlyLaborCostSummaryUseCase(laborSupabaseFixture(seed));
+    const dto = await useCase.execute({ startDate: '2026-07-01', endDate: '2026-07-31' });
+    assert.equal(dto.totalFixed, 0);
+    assert.deepEqual(dto.missingPayrollMonths, ['2026-07']);
   });
 });

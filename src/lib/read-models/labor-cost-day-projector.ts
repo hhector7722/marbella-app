@@ -1,20 +1,10 @@
 /**
- * LaborCostDayReadModelProjector (FASE 4).
+ * Detalle diario del coste laboral.
  *
- * Consume exclusivamente:
- * - PayrollAllocationService (Payroll Domain)
- * - ContractTermsService (Contracts SSOT)
- * - weekly_snapshot_days.overtime_cost (proyección persistida)
- * - Ventas (daily_sales / ticket_sales)
- *
- * REGLAS INVIOLABLES:
- * 1. NUNCA incluye la fila sintética "Nómina empresa". Desaparece al 100%.
- * 2. Toggle OFF: Filtra únicamente trabajadores con actividad real (fichajes > 0 u extras > 0). Resumen = suma exclusiva de los visibles.
- * 3. Toggle ON: Muestra trabajadores con contrato activo UNION trabajadores con actividad real.
- * 4. Eventuales: Sin contrato ni nómina -> Fijo = 0, Extras = proyección, Total = Extras.
- * 5. Sin Payroll: isPayrollPending = true, pctStatus = 'incomplete_payroll_pending'. NUNCA estima datos.
+ * Fijo: prorrateo contable por días naturales del coste realmente importado
+ * de la gestoría, no sólo de trabajadores que hayan fichado ese día.
+ * Extras: proyección semanal persistida, sin estimar importes pendientes.
  */
-
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PayrollAllocationService } from '../payroll/payroll-allocation-service.ts';
 import type { ContractTermsService } from '../payroll/contract-terms-service.ts';
@@ -23,10 +13,8 @@ import { Money, Percentage } from '../payroll/value-objects.ts';
 import type { LaborCostDayDTO, WorkerLaborCostDTO } from './labor-cost-dtos.ts';
 import { loadOvertimeCostByDay } from './overtime-cost-from-projection.ts';
 import { formatYmdInMadrid, madridRangeUtcIso } from '../madrid-date-bounds.ts';
-import {
-  filterVisiblePlantillaEmployees,
-  PLANTILLA_EMPLOYEE_SELECT,
-} from '../staff/plantilla-employees.ts';
+import { filterVisiblePlantillaEmployees, PLANTILLA_EMPLOYEE_SELECT } from '../staff/plantilla-employees.ts';
+import { allocatePayrollToNaturalDays } from '../hours-engine/payroll-ordinary-daily.ts';
 import { resolveLaborWorkerDay } from './labor-worker-day.ts';
 
 const LABOR_PROFILE_SELECT = `${PLANTILLA_EMPLOYEE_SELECT}, staffing_mode` as const;
@@ -39,177 +27,149 @@ export class LaborCostDayReadModelProjector {
     private readonly payrollRepo: PayrollFactRepository,
   ) {}
 
-  /**
-   * Proyecta el detalle diario del coste laboral para una fecha.
-   */
   async projectDayDetail(
     dateYmd: string,
-    options?: {
-      includeAllContracted?: boolean; // false = Toggle OFF, true = Toggle ON
-      userId?: string | null;
-    },
+    options?: { includeAllContracted?: boolean; userId?: string | null },
   ): Promise<LaborCostDayDTO> {
-    const day = dateYmd.split('T')[0]!;
-    const periodYm = day.substring(0, 7);
-    const includeAll = options?.includeAllContracted ?? false; // Default Toggle OFF
+    const day = dateYmd.slice(0, 10);
+    const periodYm = day.slice(0, 7);
+    const includeAll = options?.includeAllContracted ?? false;
+    const workerFilter = options?.userId ?? null;
 
-    // 1. Obtener hechos de nómina para verificar si el mes tiene nómina cargada.
-    //    También se reutilizan estos mismos hechos para calcular el coste mensual por trabajador,
-    //    evitando volver a consultar employee_payroll_facts dentro del bucle.
-    const activeFacts = await this.payrollRepo.getActiveFactsForPeriod(periodYm);
-    const isPayrollPending = activeFacts.length === 0;
-    const payrollFactsByUser = new Map<string, typeof activeFacts>();
+    const [activeFacts, summaryResult, salesResult, profilesResult] = await Promise.all([
+      this.payrollRepo.getActiveFactsForPeriod(periodYm),
+      this.supabase.from('payroll_monthly_totals')
+        .select('period_start, period_end, total_company_cost')
+        .eq('period_ym', periodYm).maybeSingle(),
+      this.supabase.from('cash_closings')
+        .select('net_sales').eq('closing_date', day),
+      this.supabase.from('profiles').select(LABOR_PROFILE_SELECT),
+    ]);
+    if (summaryResult.error) throw new Error(`payroll_monthly_totals: ${summaryResult.error.message}`);
+    if (salesResult.error) throw new Error(`cash_closings: ${salesResult.error.message}`);
+    if (profilesResult.error) throw new Error(`profiles: ${profilesResult.error.message}`);
+
+    const summaryRow = summaryResult.data;
+    const isPayrollPending = !summaryRow || summaryRow.total_company_cost == null;
+    const periodStart = String(summaryRow?.period_start ?? `${periodYm}-01`).slice(0, 10);
+    const periodEnd = String(summaryRow?.period_end ?? day).slice(0, 10);
+    const netSalesMoney = Money.from((salesResult.data ?? [])
+      .reduce((sum, row) => sum + Number(row.net_sales ?? 0), 0));
+
+    // Conservar en el detalle a antiguos empleados con nómina aunque
+    // ya no figuren como visibles en el selector de plantilla.
+    const visible = filterVisiblePlantillaEmployees(profilesResult.data ?? []);
+    const paidIds = new Set(activeFacts.map((fact) => fact.user_id));
+    const profiles = [
+      ...visible,
+      ...(profilesResult.data ?? []).filter((p) =>
+        paidIds.has(p.id) && !visible.some((v) => v.id === p.id)),
+    ].filter((p) => !workerFilter || p.id === workerFilter);
+
+    const monthlyCostByUser = new Map<string, number>();
     for (const fact of activeFacts) {
-      const facts = payrollFactsByUser.get(fact.user_id) ?? [];
-      facts.push(fact);
-      payrollFactsByUser.set(fact.user_id, facts);
+      monthlyCostByUser.set(fact.user_id,
+        (monthlyCostByUser.get(fact.user_id) ?? 0) + Number(fact.total_company_cost));
+    }
+    const fixedByUser = new Map<string, Money>();
+    if (!isPayrollPending) {
+      for (const [userId, cost] of monthlyCostByUser) {
+        fixedByUser.set(userId, Money.from(
+          allocatePayrollToNaturalDays(cost, periodStart, periodEnd)[day] ?? 0,
+        ));
+      }
+    }
+    // Compensar sólo céntimos de redondeo entre reparto total y reparto
+    // individual; diferencias reales deben permanecer visibles en conciliación.
+    const officialDayFixed = isPayrollPending ? Money.zero() :
+      Money.from(allocatePayrollToNaturalDays(
+        Number(summaryRow!.total_company_cost), periodStart, periodEnd,
+      )[day] ?? 0);
+    if (!workerFilter && fixedByUser.size > 0) {
+      const allocated = [...fixedByUser.values()]
+        .reduce((sum, cost) => sum.add(cost), Money.zero());
+      const remainder = officialDayFixed.subtract(allocated);
+      if (Math.abs(remainder.amount) <= 0.05 && !remainder.isZero()) {
+        const firstPaid = fixedByUser.keys().next().value as string;
+        fixedByUser.set(firstPaid, fixedByUser.get(firstPaid)!.add(remainder));
+      }
     }
 
-    // 2. Obtener Ventas Netas del día
-    let netSalesMoney = Money.zero();
-    const { data: salesData } = await this.supabase
-      .from('daily_sales')
-      .select('total_net_amount')
-      .eq('date', day)
-      .maybeSingle();
-
-    if (salesData && salesData.total_net_amount) {
-      netSalesMoney = Money.from(Number(salesData.total_net_amount));
-    }
-
-    // 3. Obtener Plantilla de Trabajadores
-    let profilesQuery = this.supabase
-      .from('profiles')
-      .select(LABOR_PROFILE_SELECT);
-
-    if (options?.userId) {
-      profilesQuery = profilesQuery.eq('id', options.userId);
-    }
-
-    const { data: profileRows } = await profilesQuery;
-    const profiles = filterVisiblePlantillaEmployees(profileRows ?? []);
-    const profileIds = profiles.map((profile) => profile.id);
-
-    // 4. Contratos del mes en una sola carga. Extra diario: proyección persistida.
-    let contractStore;
-
-    try {
-      contractStore = await this.contractTermsService.loadTermsForMonth(profileIds, periodYm);
-    } catch {
-      contractStore = null;
-    }
-
+    const profileIds = profiles.map((p) => p.id);
     const overtimeByUser = await loadOvertimeCostByDay(this.supabase, profileIds, day, day);
     const clockInUsers = new Set<string>();
     if (profileIds.length > 0) {
       const { startIso, endIso } = madridRangeUtcIso(day, day);
-      const { data: logRows, error: logsErr } = await this.supabase
-        .from('time_logs')
-        .select('user_id, clock_in')
+      const { data: logs, error: logsError } = await this.supabase
+        .from('time_logs').select('user_id, clock_in')
         .in('user_id', profileIds)
-        .gte('clock_in', startIso)
-        .lte('clock_in', endIso);
-      if (logsErr) {
-        throw new Error(`time_logs: ${logsErr.message}`);
-      }
-      for (const row of logRows ?? []) {
-        if (formatYmdInMadrid(row.clock_in) === day) {
-          clockInUsers.add(String(row.user_id));
+        .gte('clock_in', startIso).lte('clock_in', endIso);
+      if (logsError) throw new Error(`time_logs: ${logsError.message}`);
+      for (const log of logs ?? []) {
+        if (formatYmdInMadrid(log.clock_in) === day) {
+          clockInUsers.add(String(log.user_id));
         }
       }
     }
 
-    const workerDTOs: WorkerLaborCostDTO[] = [];
-    let summaryFixed = Money.zero();
-    let summaryOvertime = Money.zero();
-
+    const contractStore = profileIds.length > 0
+      ? await this.contractTermsService.loadTermsForMonth(profileIds, periodYm)
+      : null;
+    const workers: WorkerLaborCostDTO[] = [];
+    let totalOvertime = Money.zero();
     for (const profile of profiles) {
-      const name = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || '—';
-
+      const fixed = fixedByUser.get(profile.id) ?? Money.zero();
+      const overtime = Money.from(overtimeByUser.get(profile.id)?.get(day)?.overtimeCost ?? 0);
+      const hasActivity = clockInUsers.has(profile.id) || !overtime.isZero();
       const hasActiveContract = contractStore
-        ? contractStore.isContractActiveOn(profile.id, day)
-        : await this.contractTermsService.isContractActiveOn(profile.id, day);
-
-      const overtimeMoney = Money.from(
-        overtimeByUser.get(profile.id)?.get(day)?.overtimeCost ?? 0,
-      );
-      const hasClockIns = clockInUsers.has(profile.id);
-
-      const hasActivity = hasClockIns || !overtimeMoney.isZero();
-
-      // C. Fijo Diario (Payroll facts ya cargados para todo el periodo).
-      let fixedMoney = Money.zero();
-      const userFacts = payrollFactsByUser.get(profile.id) ?? [];
-      if (!isPayrollPending && userFacts.length > 0) {
-        const monthlyCompanyCost = userFacts.reduce(
-          (sum, fact) => sum + Number(fact.total_company_cost),
-          0,
-        );
-        const activeContractDays = contractStore
-          ? contractStore.getActiveContractDays(profile.id, periodYm)
-          : await this.contractTermsService.getActiveContractDays(profile.id, periodYm);
-
-        if (hasActiveContract && activeContractDays > 0 && monthlyCompanyCost !== 0) {
-          fixedMoney = Money.from(monthlyCompanyCost).divide(activeContractDays);
-        }
-      }
-
-      const isEventual = !hasActiveContract && isPayrollPending;
-      if (isEventual) {
-        fixedMoney = Money.zero();
-      }
-
+        ? contractStore.isContractActiveOn(profile.id, day) : false;
       const decision = resolveLaborWorkerDay({
         staffingMode: profile.staffing_mode,
         hasActivity,
         hasActiveContract,
         includeAllContracted: includeAll,
-        fixed: fixedMoney.amount,
-        overtime: overtimeMoney.amount,
+        fixed: fixed.amount,
+        overtime: overtime.amount,
       });
-
-      if (decision.include) {
-        const shownFixed = Money.from(decision.fixed);
-        const shownOvertime = Money.from(decision.overtime);
-        const totalMoney = shownFixed.add(shownOvertime);
-        const workerPct = Percentage.fromValues(totalMoney, netSalesMoney);
-        workerDTOs.push({
-          id: profile.id,
-          name,
-          fixed: shownFixed.amount,
-          overtime: shownOvertime.amount,
-          total: totalMoney.amount,
-          laborPctOfSales: netSalesMoney.isZero() ? null : workerPct.value,
-          hasActivity,
-          hasActiveContract,
-          isEventual,
-        });
-
-        summaryFixed = summaryFixed.add(shownFixed);
-        summaryOvertime = summaryOvertime.add(shownOvertime);
-      }
+      // Al mostrar todos, incluir también pagos a antiguos empleados, incluso
+      // si su contrato ya no está activo hoy. No inventar una fila sintética.
+      const include = decision.include || (includeAll && !fixed.isZero());
+      if (!include) continue;
+      const shownFixed = includeAll ? fixed : Money.from(decision.fixed);
+      const shownOvertime = Money.from(decision.overtime);
+      const total = shownFixed.add(shownOvertime);
+      workers.push({
+        id: profile.id,
+        name: `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || '—',
+        fixed: shownFixed.amount,
+        overtime: shownOvertime.amount,
+        total: total.amount,
+        laborPctOfSales: netSalesMoney.isZero()
+          ? null : Percentage.fromValues(total, netSalesMoney).value,
+        hasActivity,
+        hasActiveContract,
+        isEventual: !hasActiveContract && isPayrollPending,
+      });
+      totalOvertime = totalOvertime.add(shownOvertime);
     }
 
-    const summaryTotalCost = summaryFixed.add(summaryOvertime);
-    const summaryPct = Percentage.fromValues(summaryTotalCost, netSalesMoney);
-
-    let pctStatus: 'complete' | 'incomplete_payroll_pending' | 'no_sales' = 'complete';
-    if (netSalesMoney.isZero()) {
-      pctStatus = 'no_sales';
-    } else if (isPayrollPending) {
-      pctStatus = 'incomplete_payroll_pending';
-    }
+    const totalFixed = workerFilter
+      ? fixedByUser.get(workerFilter) ?? Money.zero() : officialDayFixed;
+    const totalCost = totalFixed.add(totalOvertime);
+    const pctStatus = netSalesMoney.isZero() ? 'no_sales'
+      : isPayrollPending ? 'incomplete_payroll_pending' : 'complete';
 
     return {
       dateYmd: day,
       netSales: netSalesMoney.amount,
-      totalFixed: summaryFixed.amount,
-      totalOvertime: summaryOvertime.amount,
-      totalCost: summaryTotalCost.amount,
-      laborPctOfSales: netSalesMoney.isZero() ? null : summaryPct.value,
+      totalFixed: totalFixed.amount,
+      totalOvertime: totalOvertime.amount,
+      totalCost: totalCost.amount,
+      laborPctOfSales: netSalesMoney.isZero()
+        ? null : Percentage.fromValues(totalCost, netSalesMoney).value,
       isPayrollPending,
       pctStatus,
-      workers: workerDTOs,
+      workers,
       reconciliation: null,
     };
   }

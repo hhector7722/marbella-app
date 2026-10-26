@@ -1,12 +1,10 @@
 /**
- * GetMonthlyLaborCostSummaryUseCase (FASE 10 - Cutover Final).
+ * Resumen de coste laboral para mes o rango.
  *
- * Caso de uso de aplicación Clean Architecture / CQRS para la proyección de periodo / resumen mensual de coste laboral V2:
- * - Sustituye definitivamente a `buildLaborCostPeriodFromSsot`.
- * - Consume el Read Model V2 (`LaborCostMonthReadModelProjector` y `LaborCostDayReadModelProjector`).
- * - Retorna los totales consolidados (`totalFixed`, `totalOvertime`, `totalCost`), `byDate`, estados de nómina y conciliación informativa.
+ * Cada mes usa exactamente la misma proyección oficial; las selecciones
+ * parciales suman únicamente sus días, evitando volver a calcular costes
+ * por fichajes y evitando N consultas por cada día del rango.
  */
-
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { LaborCostDayReadModelProjector } from '../read-models/labor-cost-day-projector.ts';
 import { LaborCostMonthReadModelProjector } from '../read-models/labor-cost-month-projector.ts';
@@ -40,45 +38,47 @@ export interface MonthlyLaborCostSummaryDTO {
 }
 
 export class GetMonthlyLaborCostSummaryUseCase {
-  private readonly dayProjector: LaborCostDayReadModelProjector;
   private readonly monthProjector: LaborCostMonthReadModelProjector;
 
-  constructor(private readonly supabase: SupabaseClient) {
+  constructor(supabase: SupabaseClient) {
     const payrollRepo = new PayrollFactRepository(supabase);
     const contractTermsService = new ContractTermsService(supabase);
     const allocationService = new PayrollAllocationService(payrollRepo, contractTermsService);
-    this.dayProjector = new LaborCostDayReadModelProjector(
-      supabase,
-      allocationService,
-      contractTermsService,
-      payrollRepo,
+    const dayProjector = new LaborCostDayReadModelProjector(
+      supabase, allocationService, contractTermsService, payrollRepo,
     );
     this.monthProjector = new LaborCostMonthReadModelProjector(
-      supabase,
-      this.dayProjector,
-      payrollRepo,
-      contractTermsService,
+      supabase, dayProjector, payrollRepo, contractTermsService,
     );
   }
 
-  /**
-   * Ejecuta la proyección del periodo para el resumen de coste laboral V2.
-   */
   async execute(input: {
     startDate: string;
     endDate: string;
     userId?: string | null;
   }): Promise<MonthlyLaborCostSummaryDTO> {
-    const startMonth = input.startDate.slice(0, 7);
-    const endMonth = input.endDate.slice(0, 7);
+    const startDate = input.startDate.slice(0, 10);
+    const endDate = input.endDate.slice(0, 10);
+    if (endDate < startDate) throw new Error('Rango de coste laboral inválido');
 
-    // Si es un único mes estándar YYYY-MM
-    if (startMonth === endMonth) {
-      const monthDto = await this.monthProjector.projectMonthSummary(startMonth);
-      const byDateFormatted: MonthlyLaborCostSummaryDTO['byDate'] = {};
+    const byDate: MonthlyLaborCostSummaryDTO['byDate'] = {};
+    const missingMonths = new Set<string>();
+    let totalFixed = Money.zero();
+    let totalOvertime = Money.zero();
+    let reconciliation: PayrollReconciliationSummaryDTO | null = null;
 
-      for (const [dateKey, cell] of Object.entries(monthDto.byDate)) {
-        byDateFormatted[dateKey] = {
+    let [year, month] = startDate.slice(0, 7).split('-').map(Number) as [number, number];
+    const lastMonth = endDate.slice(0, 7);
+
+    while (`${year}-${String(month).padStart(2, '0')}` <= lastMonth) {
+      const ym = `${year}-${String(month).padStart(2, '0')}`;
+      const monthDto = await this.monthProjector.projectMonthSummary(ym, {
+        userId: input.userId ?? null,
+      });
+      if (!reconciliation) reconciliation = monthDto.reconciliation;
+      for (const [date, cell] of Object.entries(monthDto.byDate)) {
+        if (date < startDate || date > endDate) continue;
+        byDate[date] = {
           totalCost: cell.totalCost,
           totalFixed: cell.totalFixed,
           totalOvertime: cell.totalOvertime,
@@ -87,92 +87,24 @@ export class GetMonthlyLaborCostSummaryUseCase {
           overtime: cell.totalOvertime,
           laborPctOfSales: cell.laborPctOfSales,
         };
+        totalFixed = totalFixed.add(Money.from(cell.totalFixed));
+        totalOvertime = totalOvertime.add(Money.from(cell.totalOvertime));
       }
-
-      return {
-        startDate: input.startDate,
-        endDate: input.endDate,
-        byDate: byDateFormatted,
-        totalFixed: monthDto.totalFixed,
-        totalOvertime: monthDto.totalOvertime,
-        totalCost: monthDto.totalCost,
-        isPayrollPending: monthDto.isPayrollPending,
-        missingPayrollMonths: monthDto.missingPayrollMonths,
-        reconciliation: monthDto.reconciliation,
-      };
+      for (const missing of monthDto.missingPayrollMonths) missingMonths.add(missing);
+      if (++month === 13) { year++; month = 1; }
     }
 
-    // Para rangos multi-mes
-    let current = new Date(input.startDate + 'T00:00:00Z');
-    const end = new Date(input.endDate + 'T00:00:00Z');
-    const byDate: MonthlyLaborCostSummaryDTO['byDate'] = {};
-    let totalFixedMoney = Money.zero();
-    let totalOvertimeMoney = Money.zero();
-    const missingMonths = new Set<string>();
-
-    while (current <= end) {
-      const dayYmd = current.toISOString().split('T')[0]!;
-      const dayDto = await this.dayProjector.projectDayDetail(dayYmd, { userId: input.userId });
-
-      byDate[dayYmd] = {
-        totalCost: dayDto.totalCost,
-        totalFixed: dayDto.totalFixed,
-        totalOvertime: dayDto.totalOvertime,
-        total: dayDto.totalCost,
-        fixed: dayDto.totalFixed,
-        overtime: dayDto.totalOvertime,
-        laborPctOfSales: dayDto.laborPctOfSales,
-      };
-
-      totalFixedMoney = totalFixedMoney.add(Money.from(dayDto.totalFixed));
-      totalOvertimeMoney = totalOvertimeMoney.add(Money.from(dayDto.totalOvertime));
-
-      if (dayDto.isPayrollPending) {
-        missingMonths.add(dayYmd.slice(0, 7));
-      }
-      current.setUTCDate(current.getUTCDate() + 1);
-    }
-
-    const totalCostMoney = totalFixedMoney.add(totalOvertimeMoney);
-
-    // Conciliación del mes inicial en rangos multi-mes
-    const startMonthDto = await this.monthProjector.projectMonthSummary(startMonth);
-
-    // KPI "Fijo" del encabezado en rangos multi-mes = suma de payroll_monthly_totals de cada mes
-    // Para mantener consistencia con el path de mes único.
-    const uniqueMonths = [...new Set(
-      Object.keys(byDate).map((d) => d.slice(0, 7))
-    )];
-    const { data: monthlyTotalsRows } = await this.supabase
-      .from('payroll_monthly_totals')
-      .select('period_ym, total_company_cost')
-      .in('period_ym', uniqueMonths);
-
-    let officialFixed = 0;
-    let allMonthsHaveOfficial = true;
-    for (const ym of uniqueMonths) {
-      const row = monthlyTotalsRows?.find((r) => r.period_ym === ym);
-      if (row?.total_company_cost != null) {
-        officialFixed += Number(row.total_company_cost);
-      } else {
-        allMonthsHaveOfficial = false;
-      }
-    }
-
-    const headerFixed = allMonthsHaveOfficial ? officialFixed : totalFixedMoney.amount;
-    const headerOvertime = totalOvertimeMoney.amount;
-    const headerCost = Money.from(headerFixed).add(Money.from(headerOvertime)).amount;
-
+    if (!reconciliation) throw new Error('No se pudo calcular la conciliación de nóminas');
     return {
-      startDate: input.startDate,
-      endDate: input.endDate,
+      startDate,
+      endDate,
       byDate,
-      totalFixed: headerFixed,
-      totalOvertime: headerOvertime,
-      totalCost: headerCost,
+      totalFixed: totalFixed.amount,
+      totalOvertime: totalOvertime.amount,
+      totalCost: totalFixed.add(totalOvertime).amount,
       isPayrollPending: missingMonths.size > 0,
       missingPayrollMonths: Array.from(missingMonths),
-      reconciliation: startMonthDto.reconciliation,
+      reconciliation,
     };
   }
 }

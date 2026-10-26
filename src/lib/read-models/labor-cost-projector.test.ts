@@ -1,177 +1,39 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Dobles de Supabase usados exclusivamente en pruebas */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { LaborCostDayReadModelProjector } from './labor-cost-day-projector.ts';
-import { Money } from '../payroll/value-objects.ts';
+import { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
+import { ContractTermsService } from '../payroll/contract-terms-service.ts';
+import { laborSupabaseFixture, payrollFixture } from './labor-cost-test-fixture.ts';
 
-describe('FASE 4: Read Models & Projectors (Coste Laboral V2 SSOT)', () => {
-  it('elimina completamente la fila sintética Nómina empresa y atribuye el coste a trabajadores reales', async () => {
-    const mockSupabase: any = {
-      from: (table: string) => {
-        if (table === 'daily_sales') {
-          return {
-            select: () => ({
-              eq: () => ({
-                maybeSingle: () => Promise.resolve({ data: { total_net_amount: 1000 } }),
-              }),
-            }),
-          };
-        }
-        if (table === 'profiles') {
-          return {
-            select: () => Promise.resolve({
-              data: [
-                { id: 'usr_alba', first_name: 'Alba', last_name: 'Martín', visible_in_plantilla: true },
-              ],
-            }),
-          };
-        }
-        return {
-          select: () => ({
-            eq: () => ({
-              gte: () => ({ lte: () => Promise.resolve({ data: [], error: null }) }),
-            }),
-          }),
-        };
-      },
-    };
+function projector(seed = payrollFixture as Record<string, Array<Record<string, any>>>) {
+  const supabase = laborSupabaseFixture(seed);
+  return new LaborCostDayReadModelProjector(
+    supabase, {} as any, new ContractTermsService(supabase),
+    new PayrollFactRepository(supabase),
+  );
+}
 
-    const mockAllocationService: any = {
-      getDailyPayrollCost: () => Promise.resolve({
-        userId: 'usr_alba',
-        dailyFixedCost: Money.from(100),
-      }),
-    };
-
-    const mockContractService: any = {
-      isContractActiveOn: () => Promise.resolve(true),
-    };
-
-    const mockPayrollRepo: any = {
-      getActiveFactsForPeriod: () => Promise.resolve([{ id: 'f1', user_id: 'usr_alba' }]),
-    };
-
-    const projector = new LaborCostDayReadModelProjector(
-      mockSupabase,
-      mockAllocationService,
-      mockContractService,
-      mockPayrollRepo,
-    );
-
-    // Toggle ON para incluir trabajadores con contrato activo
-    const dto = await projector.projectDayDetail('2026-07-15', { includeAllContracted: true });
-
-    assert.equal(dto.workers.length, 1);
-    assert.equal(dto.workers[0]?.name, 'Alba Martín');
-    assert.equal(dto.workers[0]?.fixed, 100);
-    assert.equal(dto.totalFixed, 100);
-
-    // Verificación Inviolable: Ningún trabajador se llama "Nómina empresa"
-    const hasSyntheticRow = dto.workers.some((w) => w.name.includes('Nómina empresa'));
-    assert.equal(hasSyntheticRow, false);
+describe('Coste laboral diario desde nómina oficial', () => {
+  it('mantiene la nómina de antiguos empleados incluso sin fichajes', async () => {
+    const dto = await projector().projectDayDetail('2026-07-15', { includeAllContracted: true });
+    assert.equal(dto.netSales, 1500);
+    assert.equal(dto.isPayrollPending, false);
+    assert.ok(dto.totalFixed > 132 && dto.totalFixed < 133);
+    assert.equal(dto.workers.length, 2);
+    assert.ok(dto.workers.every((worker) => worker.name !== 'Nómina empresa'));
+    assert.equal(Number(dto.workers.reduce((s, row) => s + row.fixed, 0).toFixed(2)), dto.totalFixed);
   });
 
-  it('Toggle OFF: incluye únicamente trabajadores con actividad real (fichajes > 0 u extras > 0)', async () => {
-    const mockSupabase: any = {
-      from: (table: string) => {
-        if (table === 'daily_sales') {
-          return {
-            select: () => ({
-              eq: () => ({ maybeSingle: () => Promise.resolve({ data: { total_net_amount: 1500 } }) }),
-            }),
-          };
-        }
-        if (table === 'profiles') {
-          return {
-            select: () => Promise.resolve({
-              data: [
-                { id: 'usr_active', first_name: 'Trabajador', last_name: 'Activo', visible_in_plantilla: true },
-                { id: 'usr_inactive', first_name: 'Trabajador', last_name: 'Inactivo', visible_in_plantilla: true },
-              ],
-            }),
-          };
-        }
-        return {
-          select: () => ({
-            eq: () => ({
-              gte: () => ({ lte: () => Promise.resolve({ data: [], error: null }) }),
-            }),
-          }),
-        };
-      },
-    };
-
-    const mockAllocationService: any = {
-      getDailyPayrollCost: (uId: string) => Promise.resolve({
-        userId: uId,
-        dailyFixedCost: Money.from(100),
-      }),
-    };
-
-    const mockContractService: any = {
-      isContractActiveOn: () => Promise.resolve(true), // Ambos tienen contrato
-    };
-
-    const mockPayrollRepo: any = {
-      getActiveFactsForPeriod: () => Promise.resolve([{ id: 'f1', user_id: 'usr_active' }]),
-    };
-
-    const projector = new LaborCostDayReadModelProjector(
-      mockSupabase,
-      mockAllocationService,
-      mockContractService,
-      mockPayrollRepo,
-    );
-
-    // Toggle OFF (includeAllContracted = false)
-    const dtoToggleOff = await projector.projectDayDetail('2026-07-15', { includeAllContracted: false });
-
-    // Sin fichajes ni extras simulados, 0 trabajadores en Toggle OFF
-    assert.equal(dtoToggleOff.workers.length, 0);
-
-    // Toggle ON (includeAllContracted = true)
-    const dtoToggleOn = await projector.projectDayDetail('2026-07-15', { includeAllContracted: true });
-    assert.equal(dtoToggleOn.workers.length, 2);
+  it('el interruptor OFF sólo oculta las filas inactivas, nunca el coste total de empresa', async () => {
+    const dto = await projector().projectDayDetail('2026-07-15', { includeAllContracted: false });
+    assert.equal(dto.workers.length, 0);
+    assert.ok(dto.totalFixed > 0);
   });
 
-  it('marca isPayrollPending = true y pctStatus = incomplete_payroll_pending cuando un mes no tiene nómina', async () => {
-    const mockSupabase: any = {
-      from: (table: string) => {
-        if (table === 'daily_sales') {
-          return {
-            select: () => ({
-              eq: () => ({ maybeSingle: () => Promise.resolve({ data: { total_net_amount: 2000 } }) }),
-            }),
-          };
-        }
-        if (table === 'profiles') {
-          return { select: () => Promise.resolve({ data: [] }) };
-        }
-        return {};
-      },
-    };
-
-    const mockAllocationService: any = {
-      getDailyPayrollCost: () => Promise.resolve({ dailyFixedCost: Money.zero() }),
-    };
-
-    const mockContractService: any = {
-      isContractActiveOn: () => Promise.resolve(false),
-    };
-
-    // Sin hechos contables activos en el mes
-    const mockPayrollRepo: any = {
-      getActiveFactsForPeriod: () => Promise.resolve([]),
-    };
-
-    const projector = new LaborCostDayReadModelProjector(
-      mockSupabase,
-      mockAllocationService,
-      mockContractService,
-      mockPayrollRepo,
-    );
-
-    const dto = await projector.projectDayDetail('2026-07-15');
-
+  it('señala nómina pendiente cuando falta el resumen oficial', async () => {
+    const seed = { ...payrollFixture, payroll_monthly_totals: [], employee_payroll_facts: [] };
+    const dto = await projector(seed).projectDayDetail('2026-07-15');
     assert.equal(dto.isPayrollPending, true);
     assert.equal(dto.pctStatus, 'incomplete_payroll_pending');
     assert.equal(dto.totalFixed, 0);

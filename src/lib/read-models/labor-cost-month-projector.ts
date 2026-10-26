@@ -1,23 +1,20 @@
 /**
- * LaborCostMonthReadModelProjector (FASE 10 - Corrección Batch Loading Definitiva).
+ * Calendario de coste laboral: fuente de verdad = resumen oficial de gestoría.
  *
- * Proyector encargado de construir el resumen mensual para el calendario del Dashboard.
- * Cumple estrictamente la regla de 1 ÚNICA consulta SQL a `hours_contract_terms` por mes.
- * Incorpora conciliación contable puramente informativa (computePeriodReconciliation).
+ * El coste de nómina se prorratea por días naturales del periodo del PDF.
+ * No depende de fichajes ni de la visibilidad actual de los empleados:
+ * los trabajadores dados de baja también forman parte del coste real.
+ * Las extras siguen leyendo la proyección persistida por trabajador.
  */
-
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ContractTermsService, type ContractTermsStore } from '../payroll/contract-terms-service.ts';
+import { ContractTermsService } from '../payroll/contract-terms-service.ts';
 import type { LaborCostDayReadModelProjector } from './labor-cost-day-projector.ts';
 import type { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
 import type { LaborCostMonthSummaryDTO } from './labor-cost-dtos.ts';
 import { Money, Percentage } from '../payroll/value-objects.ts';
 import { loadOvertimeCostByDay } from './overtime-cost-from-projection.ts';
-import { formatYmdInMadrid, madridRangeUtcIso } from '../madrid-date-bounds.ts';
 import { filterVisiblePlantillaEmployees, PLANTILLA_EMPLOYEE_SELECT } from '../staff/plantilla-employees.ts';
-import { resolveLaborWorkerDay } from './labor-worker-day.ts';
-
-const LABOR_PROFILE_SELECT = `${PLANTILLA_EMPLOYEE_SELECT}, staffing_mode` as const;
+import { allocatePayrollToNaturalDays } from '../hours-engine/payroll-ordinary-daily.ts';
 import { computePeriodReconciliation } from '../payroll/payroll-reconciliation-service.ts';
 
 export class LaborCostMonthReadModelProjector {
@@ -28,184 +25,101 @@ export class LaborCostMonthReadModelProjector {
     private readonly contractTermsService?: ContractTermsService,
   ) {}
 
-  /**
-   * Proyecta el calendario mensual: contratos, proyección diaria persistida y nómina.
-   */
   async projectMonthSummary(
     periodYm: string,
-    options?: { includeAllContracted?: boolean },
+    options?: { includeAllContracted?: boolean; userId?: string | null },
   ): Promise<LaborCostMonthSummaryDTO> {
     const monthDays = ContractTermsService.listMonthDays(periodYm);
     const startDate = monthDays[0]!;
     const endDate = monthDays[monthDays.length - 1]!;
-    const includeAll = options?.includeAllContracted ?? false;
+    const workerFilter = options?.userId ?? null;
 
-    // 1. Nóminas activas del mes.
     const activeFacts = await this.payrollRepo.getActiveFactsForPeriod(periodYm);
+    const { data: summaryRow, error: summaryError } = await this.supabase
+      .from('payroll_monthly_totals')
+      .select('period_ym, period_start, period_end, total_company_cost')
+      .eq('period_ym', periodYm)
+      .maybeSingle();
+    if (summaryError) throw new Error(`payroll_monthly_totals: ${summaryError.message}`);
 
-    // Resumen oficial gestoría para conciliación informativa.
-    let summaryCost: number | null = null;
-    try {
-      const { data: summaryRow } = await this.supabase
-        .from('payroll_monthly_totals')
-        .select('total_company_cost')
-        .eq('period_ym', periodYm)
-        .maybeSingle();
-      if (summaryRow?.total_company_cost != null) summaryCost = Number(summaryRow.total_company_cost);
-    } catch {
-      summaryCost = null;
+    const officialCost = summaryRow?.total_company_cost == null
+      ? null : Number(summaryRow.total_company_cost);
+    const isPayrollPending = officialCost === null;
+    const reconciliation = computePeriodReconciliation({ summaryCost: officialCost, activeFacts });
+
+    // Sin filtro: TOTAL oficial de empresa, incluidos empleados no visibles en plantilla.
+    // Con filtro: sólo hechos contables activos del trabajador elegido.
+    const fixedPeriodCost = isPayrollPending ? 0 : workerFilter
+      ? activeFacts.filter((fact) => fact.user_id === workerFilter)
+          .reduce((sum, fact) => sum + Number(fact.total_company_cost), 0)
+      : officialCost;
+
+    const fixedByDate = !isPayrollPending && summaryRow
+      ? allocatePayrollToNaturalDays(
+          fixedPeriodCost,
+          String(summaryRow.period_start).slice(0, 10),
+          String(summaryRow.period_end).slice(0, 10),
+        )
+      : {};
+
+    // cash_closings es la misma fuente neta usada por get_cash_closings_summary
+    // en la cabecera del dashboard. La tabla "daily_sales" no existe.
+    const { data: salesRows, error: salesError } = await this.supabase
+      .from('cash_closings')
+      .select('closing_date, net_sales')
+      .gte('closing_date', startDate)
+      .lte('closing_date', endDate);
+    if (salesError) throw new Error(`cash_closings: ${salesError.message}`);
+
+    const salesByDate = new Map<string, number>();
+    for (const row of salesRows ?? []) {
+      const day = String(row.closing_date);
+      salesByDate.set(day, (salesByDate.get(day) ?? 0) + Number(row.net_sales ?? 0));
     }
 
-    const reconciliation = computePeriodReconciliation({ summaryCost, activeFacts });
-    const isPayrollPending = summaryCost === null;
-
-    const companyCostByWorker: Record<string, number> = {};
-    for (const fact of activeFacts) {
-      companyCostByWorker[fact.user_id] = (companyCostByWorker[fact.user_id] ?? 0) + fact.total_company_cost;
-    }
-
-    // 2. Ventas diarias netas.
-    const { data: salesRows } = await this.supabase
-      .from('daily_sales')
-      .select('date, total_net_amount')
-      .gte('date', startDate)
-      .lte('date', endDate);
-
-    const salesByDate: Record<string, Money> = {};
-    for (const s of salesRows ?? []) {
-      if (s.date && s.total_net_amount) salesByDate[s.date] = Money.from(Number(s.total_net_amount));
-    }
-
-    // 3. Plantilla.
-    const { data: profileRows } = await this.supabase
+    const { data: profileRows, error: profileError } = await this.supabase
       .from('profiles')
-      .select(LABOR_PROFILE_SELECT);
-    const profiles = filterVisiblePlantillaEmployees(profileRows ?? []);
-    const workerIds = profiles.map((p) => p.id);
+      .select(PLANTILLA_EMPLOYEE_SELECT);
+    if (profileError) throw new Error(`profiles: ${profileError.message}`);
+    const workerIds = filterVisiblePlantillaEmployees(profileRows ?? [])
+      .map((p) => p.id)
+      .filter((id) => !workerFilter || id === workerFilter);
+    const overtimeByUser = await loadOvertimeCostByDay(
+      this.supabase, workerIds, startDate, endDate,
+    );
 
-    // 4. Tramos contractuales en una sola consulta por mes.
-    let contractStore: ContractTermsStore | null = null;
-    if (this.contractTermsService) {
-      contractStore = await this.contractTermsService.loadTermsForMonth(workerIds, periodYm);
-    }
-
-    // 5. Extra diario persistido + fichajes del mes (sin Hours Engine).
-    const overtimeByUser = await loadOvertimeCostByDay(this.supabase, workerIds, startDate, endDate);
-    const clockInDaysByUser = new Map<string, Set<string>>();
-    if (workerIds.length > 0) {
-      const { startIso, endIso } = madridRangeUtcIso(startDate, endDate);
-      const { data: logRows, error: logsErr } = await this.supabase
-        .from('time_logs')
-        .select('user_id, clock_in')
-        .in('user_id', workerIds)
-        .gte('clock_in', startIso)
-        .lte('clock_in', endIso);
-      if (logsErr) {
-        throw new Error(`time_logs: ${logsErr.message}`);
-      }
-      for (const row of logRows ?? []) {
-        const userId = String(row.user_id);
-        const day = formatYmdInMadrid(row.clock_in);
-        if (day < startDate || day > endDate) continue;
-        let days = clockInDaysByUser.get(userId);
-        if (!days) {
-          days = new Set();
-          clockInDaysByUser.set(userId, days);
-        }
-        days.add(day);
-      }
-    }
-
-    // 6. Coste fijo diario por trabajador, completamente en memoria.
-    const dailyFixedByWorker: Record<string, Money> = {};
-    if (!isPayrollPending && contractStore) {
-      for (const p of profiles) {
-        const cost = companyCostByWorker[p.id] ?? 0;
-        if (cost > 0) {
-          const activeDays = contractStore.getActiveContractDays(p.id, periodYm);
-          if (activeDays > 0) dailyFixedByWorker[p.id] = Money.from(cost).divide(activeDays);
-        }
-      }
-    }
-
-    const workerDailyCosts: Record<string, Record<string, { fixed: Money; overtime: Money; hasActivity: boolean; hasActiveContract: boolean; include: boolean }>> = {};
-
-    for (const profile of profiles) {
-      workerDailyCosts[profile.id] = {};
-      const clockInDays = clockInDaysByUser.get(profile.id) ?? new Set<string>();
-      const overtimeDays = overtimeByUser.get(profile.id);
-
-      for (const dayYmd of monthDays) {
-        const hasActiveContract = contractStore
-          ? contractStore.isContractActiveOn(profile.id, dayYmd)
-          : false;
-        const overtimeMoney = Money.from(overtimeDays?.get(dayYmd)?.overtimeCost ?? 0);
-        const hasClockIns = clockInDays.has(dayYmd);
-        const hasActivity = hasClockIns || !overtimeMoney.isZero();
-        let fixedMoney = dailyFixedByWorker[profile.id] ?? Money.zero();
-        if (!hasActiveContract && isPayrollPending) fixedMoney = Money.zero();
-        const decision = resolveLaborWorkerDay({
-          staffingMode: profile.staffing_mode,
-          hasActivity,
-          hasActiveContract,
-          includeAllContracted: includeAll,
-          fixed: fixedMoney.amount,
-          overtime: overtimeMoney.amount,
-        });
-        workerDailyCosts[profile.id]![dayYmd] = {
-          fixed: Money.from(decision.fixed),
-          overtime: Money.from(decision.overtime),
-          hasActivity,
-          hasActiveContract,
-          include: decision.include,
-        };
-      }
-    }
-
-    // 8. Construir DTO final en memoria.
     const byDate: LaborCostMonthSummaryDTO['byDate'] = {};
-    let totalFixedMoney = Money.zero();
-    let totalOvertimeMoney = Money.zero();
+    let totalFixed = Money.zero();
+    let totalOvertime = Money.zero();
 
-    for (const dayYmd of monthDays) {
-      const netSalesMoney = salesByDate[dayYmd] ?? Money.zero();
-      let dayFixed = Money.zero();
-      let dayOvertime = Money.zero();
-      for (const profile of profiles) {
-        const workerData = workerDailyCosts[profile.id]?.[dayYmd];
-        if (!workerData) continue;
-        const shouldInclude = workerData.include;
-        if (shouldInclude) {
-          dayFixed = dayFixed.add(workerData.fixed);
-          dayOvertime = dayOvertime.add(workerData.overtime);
-        }
+    for (const day of monthDays) {
+      const fixed = Money.from(fixedByDate[day] ?? 0);
+      let overtime = Money.zero();
+      for (const userDays of overtimeByUser.values()) {
+        overtime = overtime.add(Money.from(userDays.get(day)?.overtimeCost ?? 0));
       }
-      const dayTotal = dayFixed.add(dayOvertime);
-      const dayPct = Percentage.fromValues(dayTotal, netSalesMoney);
-      byDate[dayYmd] = {
+      const dayTotal = fixed.add(overtime);
+      const netSales = Money.from(salesByDate.get(day) ?? 0);
+      byDate[day] = {
         totalCost: dayTotal.amount,
-        totalFixed: dayFixed.amount,
-        totalOvertime: dayOvertime.amount,
+        totalFixed: fixed.amount,
+        totalOvertime: overtime.amount,
         total: dayTotal.amount,
-        fixed: dayFixed.amount,
-        overtime: dayOvertime.amount,
-        laborPctOfSales: netSalesMoney.isZero() ? null : dayPct.value,
+        fixed: fixed.amount,
+        overtime: overtime.amount,
+        laborPctOfSales: netSales.isZero()
+          ? null : Percentage.fromValues(dayTotal, netSales).value,
       };
-      totalFixedMoney = totalFixedMoney.add(dayFixed);
-      totalOvertimeMoney = totalOvertimeMoney.add(dayOvertime);
+      totalFixed = totalFixed.add(fixed);
+      totalOvertime = totalOvertime.add(overtime);
     }
-
-    const totalCostMoney = totalFixedMoney.add(totalOvertimeMoney);
-    const headerFixed = summaryCost !== null ? summaryCost : totalFixedMoney.amount;
-    const headerOvertime = totalOvertimeMoney.amount;
-    const headerCost = Money.from(headerFixed).add(Money.from(headerOvertime)).amount;
 
     return {
       periodYm,
       byDate,
-      totalFixed: headerFixed,
-      totalOvertime: headerOvertime,
-      totalCost: headerCost,
+      totalFixed: totalFixed.amount,
+      totalOvertime: totalOvertime.amount,
+      totalCost: totalFixed.add(totalOvertime).amount,
       isPayrollPending,
       missingPayrollMonths: isPayrollPending ? [periodYm] : [],
       reconciliation,
