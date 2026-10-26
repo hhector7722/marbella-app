@@ -14,6 +14,7 @@ import { canonicalDocumentSchema } from '@/lib/albaranes/extractors/canonical'
 import {
   isMisreadDiscountAmount,
   parseObservedDecimal,
+  verifiedTaxInclusiveDisplayAmount,
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
 } from '@/lib/albaranes/pipeline/validate'
@@ -520,8 +521,18 @@ export async function getPurchaseInvoiceDetailAction(
         ? proposal.observed.discount_raw : null
       const discountIsCopiedAmount = isMisreadDiscountAmount(proposal?.observed ?? {})
       if (discountIsCopiedAmount) line.printed_discount_raw = null
-      line.proposal_review_reasons = Array.isArray(proposal?.review_reasons)
+      const storedReasons: string[] = Array.isArray(proposal?.review_reasons)
         ? proposal.review_reasons.map(String) : []
+      const verifiedTaxInclusive = verifiedTaxInclusiveDisplayAmount(proposal?.observed ?? {})
+      const amountMatchesEvidence = verifiedTaxInclusive != null
+        && line.quantity != null && Math.abs(line.quantity - 1) < 1e-9
+        && line.unit_price != null && Math.abs(line.unit_price - verifiedTaxInclusive) < 0.005
+        && line.total_price != null && Math.abs(line.total_price - verifiedTaxInclusive) < 0.005
+      // Las propuestas K5 son inmutables. El detalle revalida el falso aviso
+      // de "Pre+Iva" sin alterar el OCR; K4 volverá a verificar antes de stock.
+      line.proposal_review_reasons = amountMatchesEvidence
+        ? storedReasons.filter((reason) => reason !== 'cantidad_precio_importe_no_reconcilian')
+        : storedReasons
       const printedNet = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
       line.printed_net_unit_price = printedNet != null && printedNet >= 0 ? printedNet : null
       line.printed_has_adjustments = Boolean(
