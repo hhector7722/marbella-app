@@ -26,6 +26,16 @@ test('identidad probable, mapping confirmado y cuentas coherentes producen propu
   assert.equal(result.lines[0]?.normalized?.purchaseQuantity, '24')
 })
 
+test('una línea gratuita con presentación confirmada mantiene coste cero y cantidad física', () => {
+  const source = document({ unit_price_raw: '0,00', line_total_raw: '0,00', discount_raw: '0' })
+  source.subtotal_raw = '0,00'
+  const result = assessDocument({ document: source, supplierId: 7,
+    memory: [presentation], presentations: [presentation] })
+  assert.equal(result.lines[0]?.status, 'ready_for_review')
+  assert.equal(result.lines[0]?.normalized?.purchaseQuantity, '24')
+  assert.equal(result.lines[0]?.normalized?.normalizedUnitPrice, '0')
+})
+
 test('un aviso de totales del documento no bloquea una línea correcta', () => {
   const source = document({})
   source.subtotal_raw = '10,00'

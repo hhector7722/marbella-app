@@ -97,7 +97,8 @@ export function assessDocument(params: {
           ? reconcileRoundedDisplayedUnitPrice(line.quantity_raw, line.unit_price_raw, line.line_total_raw)
           : null)
       : null
-    if (presentation && check.quantity && check.unitPrice && check.lineTotal != null && check.priceBasis) {
+    if (presentation && check.quantity != null && check.quantity > 0
+      && check.unitPrice != null && check.lineTotal != null && check.priceBasis) {
       let numericEconomicQuantity = check.quantity
       if (check.priceBasis === 'package_content') {
         const packageContent = check.packageContent

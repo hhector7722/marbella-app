@@ -10,6 +10,7 @@ import {
   isVerifiedIbeeCharge,
   isVerifiedTaxInclusiveUnitPrice,
   isVerifiedTaxRateMisreadAsDiscount,
+  isVerifiedZeroPricedLine,
   reviewTaxMisreadAsFixedDiscount,
   reconcileFixedDiscountedUnitPrice,
   reconcileFreeFixedDiscountedUnitPrice,
@@ -419,6 +420,12 @@ async function supersedeK5ProposalWithMapping(params: {
     && sameExactDecimal(sourceCheck?.quantity, lineQuantity)
     && reconcileFreeFixedDiscountedUnitPrice(sourceLine.data) === '0'
   )
+  const verifiedZeroPriced = Boolean(
+    sourceLine.success && isVerifiedZeroPricedLine(sourceLine.data)
+    && sameExactDecimal(sourceCheck?.quantity, lineQuantity)
+    && sameExactDecimal(observedUnitPrice, 0)
+    && sameExactDecimal(lineTotal, 0)
+  )
   // Recalcular también bloqueos heredados de porcentajes redondeados,
   // pero exclusivamente a partir de la evidencia original verificable.
   const verifiedPercentDiscount = Boolean(
@@ -492,7 +499,7 @@ async function supersedeK5ProposalWithMapping(params: {
       || verifiedCorrectedWeightMath
       || verifiedAmountColumnMath
       || verifiedUnadjustedNet || verifiedPercentDiscount,
-    verifiedZeroCost: verifiedFreeFixedDiscount
+    verifiedZeroCost: verifiedFreeFixedDiscount || verifiedZeroPriced
       || (reviewedPricing?.discountPercent === 100 && reviewedPricing.lineTotal === 0)
       || (reviewedManualDiscount?.finalUnitPrice === 0),
     verifiedFixedDiscountMath: verifiedFixedDiscount,
@@ -742,13 +749,15 @@ export async function saveReceiptMappingProposalAction(params: {
     const fixedGift = source.success
       && reconcileFreeFixedDiscountedUnitPrice(source.data) === '0'
       && sameExactDecimal(source.data.quantity_raw, line.quantity)
+    const zeroPricedGift = source.success && isVerifiedZeroPricedLine(source.data)
+      && sameExactDecimal(source.data.quantity_raw, line.quantity)
     const reviewedGift = pricingReview?.discountPercent === 100
       && reviewDiscountedLine({ quantity: decimal(line.quantity), ...pricingReview })?.effectiveUnitPrice === 0
     const explicitManualGift = manualDiscountReview != null
       && calculateManualDiscount({ quantity: decimal(line.quantity),
         baseUnitPrice: manualDiscountReview.baseUnitPrice,
         discountPerUnit: manualDiscountReview.discountPerUnit })?.finalUnitPrice === 0
-    if (decimal(line.total_price) !== 0 || (!fixedGift && !reviewedGift && !explicitManualGift)) {
+    if (decimal(line.total_price) !== 0 || (!fixedGift && !zeroPricedGift && !reviewedGift && !explicitManualGift)) {
       return { success: false, message: 'El coste cero exige un descuento total verificable y un importe de línea de 0 €.' }
     }
   }

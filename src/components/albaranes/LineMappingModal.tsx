@@ -442,8 +442,11 @@ export function LineMappingModal({
     const raw = observedUnitPriceDraft.trim().replace(',', '.')
     if (!raw) return null
     const value = Number(raw)
-    return Number.isFinite(value) && value > 0 ? value : null
-  }, [observedUnitPriceDraft])
+    return Number.isFinite(value) && (value > 0 || (value === 0
+      && line?.quantity != null && line?.total_price === 0
+      && line?.printed_unit_price_raw != null
+      && parseObservedDecimal(line.printed_unit_price_raw) === 0)) ? value : null
+  }, [observedUnitPriceDraft, line?.quantity, line?.total_price, line?.printed_unit_price_raw])
   const isPanabad = supplierId === 2
   const sourceDiscount = line?.printed_discount_raw == null
     ? null : Number(line.printed_discount_raw.replace(',', '.'))

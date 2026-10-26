@@ -108,6 +108,12 @@ cantidad × precio y el precio con IVA calculado. La evidencia OCR se conserva
 literal y cualquier descuento o total documental aún contradictorio sigue en
 revisión. Una corrección de lectura no confirma K4 ni mueve stock.
 
+Una entrega gratuita con cantidad positiva admite precio unitario e importe
+de línea cero solo si ambos ceros figuran explícitamente en el original y
+descuento, neto y cargos no contienen importes distintos de cero. La identidad
+y la presentación siguen requiriendo revisión humana, y solo K4 registra la
+recepción y el stock tras esa confirmación.
+
 En facturas con varias bases de IVA, la tasa copiada por OCR puede pertenecer
 a otra línea. Se admite el «Importe» bruto solo cuando cantidad × precio lo
 reproduce y el precio unitario con IVA coincide con una de las tasas 4 %, 10 %
