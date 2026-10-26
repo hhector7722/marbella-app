@@ -7581,12 +7581,12 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-component='HomeScreen'][data-layout='ops-admin'],
   [data-component='HomeScreen'][data-layout='master'] {
     grid-template-rows:
-      repeat(2, calc(var(--home-row-track) + 12px))
+      repeat(2, calc(var(--home-row-track) + 8px))
       repeat(4, var(--home-row-track));
   }
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-rows:
-      repeat(2, calc(var(--home-row-track) + 12px))
+      repeat(2, calc(var(--home-row-track) + 8px))
       repeat(5, var(--home-row-track));
   }
 }
@@ -7956,10 +7956,10 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   }
 }
 
-/* La selección se identifica sin fondo: las horas vecinas permanecen legibles,
-   pero discretas, tanto en smartphone como en escritorio. */
+/* Al seleccionar un tramo, sus vecinos siguen legibles pero pierden
+   protagonismo. El seleccionado no cambia de fondo ni se atenúa. */
 [data-component='HomeScreen'] [data-element='mobile-sales-hours'] [data-muted-hour='true'] {
-  opacity: 0.55;
+  opacity: 0.40;
 }
 
 /* Dos columnas independientes: a la izquierda cifras compactas + productos,
@@ -8010,7 +8010,7 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     grid-template-rows: 16px minmax(0, 1fr);
     column-gap: 22px;
-    row-gap: 6px;
+    row-gap: 9px;
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] {
     display: grid;
@@ -8079,7 +8079,7 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
       'financial hours'
       'products products';
     grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    grid-template-rows: minmax(0, 0.8fr) minmax(0, 1.08fr) minmax(0, 1.15fr);
+    grid-template-rows: minmax(0, 0.72fr) minmax(0, 0.9fr) minmax(0, 1.45fr);
     column-gap: clamp(10px, 1vw, 22px);
     row-gap: clamp(4px, 0.65vh, 9px);
     padding: 5px 8px 7px;
@@ -8104,16 +8104,48 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     min-height: 0;
     align-items: center;
     justify-content: space-between;
-    gap: clamp(5px, 0.7vw, 12px);
-    padding: 4px clamp(7px, 0.7vw, 13px);
+    flex-wrap: wrap;
+    align-content: center;
+    gap: clamp(3px, 0.4vw, 7px);
+    padding: 4px clamp(5px, 0.55vw, 10px);
+    overflow: visible;
+    white-space: normal;
+  }
+  /* En escritorio mostrar SIEMPRE el importe íntegro, incluso con cifras grandes. */
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > span {
+    flex: 0 1 auto;
+    font-size: clamp(9px, 0.69vw, 11px);
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > strong {
+    flex: 0 0 auto;
+    min-width: max-content;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+    font-size: clamp(9px, 0.77vw, 12px);
+    letter-spacing: -0.015em;
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
     padding-right: 0;
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-products'] {
     width: 100%;
-    grid-template-columns: minmax(0, 30%) minmax(24px, 1fr) max-content max-content;
-    column-gap: clamp(5px, 0.6vw, 11px);
+    grid-template-columns: minmax(0, 1fr) clamp(24px, 3vw, 44px) max-content max-content;
+    column-gap: clamp(5px, 0.55vw, 9px);
     align-content: space-evenly;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-product-label'] {
+    min-width: 0;
+    align-items: center;
+    white-space: normal;
+    overflow: visible;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-product-label'] > span:last-child {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.15;
   }
 }

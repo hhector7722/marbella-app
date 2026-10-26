@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { createClient } from '@/utils/supabase/client';
+import { ProductRankingThumbnail } from '@/components/dashboard/ventas/ProductRankingThumbnail';
 
 type HourlySale = { hora: number; total: number };
 export type HomeWidgetTopProduct = { name: string; quantity: number; revenue: number };
@@ -96,6 +97,69 @@ export function HomeSalesMobileSummary({
         : filteredSnapshot?.key === filterKey ? filteredSnapshot.products : [];
     const isFiltering = selectedHour !== null && filteredSnapshot?.key !== filterKey && filterError?.key !== filterKey;
     const topProductRevenue = Math.max(0, ...displayProducts.map(product => Number(product.revenue) || 0));
+
+    // La ficha de Ventas usa imagen de Recetas (preferente) o Carta digital.
+    // Consultar solo los tres artículos visibles y solo cuando se ve en escritorio.
+    const [desktopImagesEnabled, setDesktopImagesEnabled] = useState(false);
+    useEffect(() => {
+        const media = window.matchMedia('(min-width: 1024px)');
+        const update = () => setDesktopImagesEnabled(media.matches);
+        update();
+        media.addEventListener('change', update);
+        return () => media.removeEventListener('change', update);
+    }, []);
+    const visibleNamesKey = displayProducts.map(product => product.name.trim()).join('\u001f');
+    const [photoSnapshot, setPhotoSnapshot] = useState<{ key: string; urls: Record<string, string> }>({
+        key: '', urls: {},
+    });
+    useEffect(() => {
+        if (!desktopImagesEnabled || !visibleNamesKey) return;
+        let active = true;
+        void (async () => {
+            const names = visibleNamesKey.split('\u001f').filter(Boolean);
+            const articles = await supabase.from('bdp_articulos')
+                .select('id,nombre').in('nombre', names).limit(60);
+            if (articles.error) throw articles.error;
+            const catalog = articles.data ?? [];
+            const ids = [...new Set(catalog.map(article => Number(article.id)).filter(Number.isInteger))];
+            if (!ids.length) {
+                if (active) setPhotoSnapshot({ key: visibleNamesKey, urls: {} });
+                return;
+            }
+            const [mapping, menu] = await Promise.all([
+                supabase.from('map_tpv_receta').select('articulo_id,recipe_id').in('articulo_id', ids),
+                supabase.from('v_digital_menu_items').select('articulo_id,photo_url').in('articulo_id', ids),
+            ]);
+            const byArticle: Record<number, string> = {};
+            for (const item of menu.data ?? []) {
+                const url = typeof item.photo_url === 'string' ? item.photo_url.trim() : '';
+                if (url.startsWith('https://')) byArticle[Number(item.articulo_id)] = url;
+            }
+            const recipeIds = [...new Set((mapping.data ?? [])
+                .map(row => row.recipe_id).filter((id): id is string => typeof id === 'string'))];
+            if (recipeIds.length) {
+                const recipes = await supabase.from('recipes').select('id,photo_url').in('id', recipeIds);
+                const recipePhotos = new Map((recipes.data ?? []).map(recipe => [recipe.id, recipe.photo_url]));
+                for (const row of mapping.data ?? []) {
+                    const photo = recipePhotos.get(row.recipe_id);
+                    if (typeof photo === 'string' && photo.startsWith('https://')) {
+                        byArticle[Number(row.articulo_id)] = photo;
+                    }
+                }
+            }
+            const urls: Record<string, string> = {};
+            for (const article of catalog) {
+                const url = byArticle[Number(article.id)];
+                if (url && !urls[article.nombre.trim()]) urls[article.nombre.trim()] = url;
+            }
+            if (active) setPhotoSnapshot({ key: visibleNamesKey, urls });
+        })().catch(error => {
+            console.warn('Miniaturas de productos en el widget:', error);
+            if (active) setPhotoSnapshot({ key: visibleNamesKey, urls: {} });
+        });
+        return () => { active = false; };
+    }, [desktopImagesEnabled, visibleNamesKey, supabase]);
+    const productThumbnails = photoSnapshot.key === visibleNamesKey ? photoSnapshot.urls : {};
 
     // Reutilizar el crossfilter: unidades de todas las líneas de ticket
     // por cada hora visible, no solo los tickets.
@@ -222,7 +286,8 @@ export function HomeSalesMobileSummary({
                                     className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
                                     title={`${hour.hora}h - ${hour.hora + 1}h: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]">
-                                        {hour.hora}h - {hour.hora + 1}h
+                                        <span className="lg:hidden">{hour.hora}h - {hour.hora + 1}h</span>
+                                        <span className="hidden lg:inline">{hour.hora}:00 - {hour.hora + 1}:00</span>
                                     </span>
                                     <span data-element="mobile-sales-units" className="justify-self-center whitespace-nowrap text-center text-[7px]">
                                         {hourUnits[hour.hora] !== undefined ? `${hourUnits[hour.hora].toLocaleString('es-ES')} u` : ''}
@@ -236,8 +301,13 @@ export function HomeSalesMobileSummary({
                                 <div key={`${product.name}-${index}`}
                                     className="col-span-4 grid min-w-0 grid-cols-subgrid items-center text-[8px] leading-[1.15]"
                                     title={`${product.name}: ${product.quantity} unidades · ${product.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
-                                    <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]">
-                                        {index + 1}. {product.name}
+                                    <span data-element="mobile-sales-product-label" className="flex min-w-0 items-center gap-1 text-left text-[var(--home-widget-ink)]">
+                                        <span className="shrink-0">{index + 1}.</span>
+                                        <span className="hidden shrink-0 lg:inline-flex">
+                                            <ProductRankingThumbnail key={productThumbnails[product.name] ?? product.name}
+                                                src={productThumbnails[product.name]} name={product.name} />
+                                        </span>
+                                        <span className="min-w-0 truncate lg:overflow-visible lg:whitespace-normal lg:break-words">{product.name}</span>
                                     </span>
                                     <span data-element="mobile-sales-product-bar" role="img"
                                         aria-label={`${Math.round(topProductRevenue > 0 ? Math.max(0, product.revenue) / topProductRevenue * 100 : 0)}% de la facturación del producto más vendido`}
