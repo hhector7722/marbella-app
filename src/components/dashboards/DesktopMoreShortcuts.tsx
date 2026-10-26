@@ -1,13 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import type { LucideIcon } from 'lucide-react';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 
 export type DesktopMoreShortcutItem = {
     label: string;
     instance: string;
-    img: string;
+    img?: string;
+    icon?: LucideIcon;
 } & ({ href: string } | { action: string });
 
 /**
@@ -38,6 +40,7 @@ export function DesktopMoreShortcuts({
                         instance={`${namespace}-desktop-${item.instance}`}
                         label={item.label}
                         img={item.img}
+                        icon={item.icon}
                         onClick={() => {
                             if ('href' in item) router.push(item.href);
                             else onAction(item.action);
