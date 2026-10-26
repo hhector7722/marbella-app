@@ -77,6 +77,7 @@ export async function extractWithMistral(params: {
         'Usa null para valores no visibles o dudosos. No inventes fechas, densidades, descuentos ni tamaños de envase.',
         'Distingue precio bruto, precio neto, descuento y otros cargos usando la cabecera visible de cada columna.',
         'discount_raw solo corresponde a una columna de descuento; copia su cabecera en discount_header_raw. Ibee, impuesto de envases, canon y portes son otros cargos, nunca descuentos.',
+        'No copies el importe total de la fila en discount_raw: si cantidad por precio ya da ese importe y no se ve una cifra propia bajo DTO, usa null para discount_raw.',
         'En tablas con columnas DTO., P.UN y % IVA, DTO. es el descuento monetario, P.UN es el precio neto y % IVA es el tipo impositivo. Nunca copies % IVA a discount_raw ni DTO. a net_unit_price_raw.',
         'net_unit_price_raw solo corresponde a una columna explícita de precio unitario neto, nunca a un porcentaje de descuento ni al importe total.',
         'Si se factura una caja o bulto pero el precio es por kg o unidad, separa cantidad de cajas, contenido y unidad física cuando sean visibles.',

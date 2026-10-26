@@ -12,6 +12,7 @@ import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoic
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
 import { canonicalDocumentSchema } from '@/lib/albaranes/extractors/canonical'
 import {
+  isMisreadDiscountAmount,
   parseObservedDecimal,
   reconcileFixedDiscountedUnitPrice,
   reconcilePercentageDiscountedUnitPrice,
@@ -517,12 +518,14 @@ export async function getPurchaseInvoiceDetailAction(
         ? proposal.observed.line_total_raw : null
       line.printed_discount_raw = typeof proposal?.observed?.discount_raw === 'string'
         ? proposal.observed.discount_raw : null
+      const discountIsCopiedAmount = isMisreadDiscountAmount(proposal?.observed ?? {})
+      if (discountIsCopiedAmount) line.printed_discount_raw = null
       line.proposal_review_reasons = Array.isArray(proposal?.review_reasons)
         ? proposal.review_reasons.map(String) : []
       const printedNet = parseObservedDecimal(proposal?.observed?.net_unit_price_raw ?? null)
       line.printed_net_unit_price = printedNet != null && printedNet >= 0 ? printedNet : null
       line.printed_has_adjustments = Boolean(
-        String(proposal?.observed?.discount_raw ?? '').trim()
+        (!discountIsCopiedAmount && String(proposal?.observed?.discount_raw ?? '').trim())
         || String(proposal?.observed?.other_charge_raw ?? '').trim()
       )
       if (Number((data as any).supplier_id) !== 2

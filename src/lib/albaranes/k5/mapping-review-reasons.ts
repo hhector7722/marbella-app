@@ -22,6 +22,7 @@ type MappingReviewInput = {
   verifiedIbeeCharge?: boolean
   verifiedTaxInclusiveUnitPrice?: boolean
   verifiedTaxRateMisreadAsDiscount?: boolean
+  verifiedMisreadDiscountAmount?: boolean
 }
 
 /** Resolve only facts explicitly supplied by the reviewer; keep economic and
@@ -79,6 +80,11 @@ export function resolveMappingReviewReasons(input: MappingReviewInput): string[]
       'precio_neto_contradictorio',
       'descuento_sin_porcentaje_verificado',
       'cantidad_precio_importe_no_reconcilian',
+    ].includes(reason)) return false
+    if (input.verifiedMisreadDiscountAmount && [
+      'descuento_sin_porcentaje_verificado',
+      'discount_not_interpretable',
+      'discount_requires_review',
     ].includes(reason)) return false
     if (input.verifiedReviewedPricing && [
       'descuento_sin_porcentaje_verificado',
