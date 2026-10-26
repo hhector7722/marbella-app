@@ -392,6 +392,20 @@ export function reviewTaxMisreadAsFixedDiscount(
   return reconcileFixedDiscountedUnitPrice(corrected) == null ? null : corrected
 }
 
+/** Una línea gratuita debe mostrar explícitamente precio e importe cero. */
+export function isVerifiedZeroPricedLine(line: CanonicalDocument['lines'][number]): boolean {
+  const quantity = parseObservedDecimal(line.quantity_raw)
+  const unitPrice = parseObservedDecimal(line.unit_price_raw)
+  const total = parseObservedDecimal(line.line_total_raw)
+  const discount = parseObservedDecimal(line.discount_raw)
+  const net = parseObservedDecimal(line.net_unit_price_raw)
+  const charge = parseObservedDecimal(line.other_charge_raw)
+  return quantity != null && quantity > 0 && unitPrice === 0 && total === 0
+    && (!line.discount_raw?.trim() || discount === 0)
+    && (!line.net_unit_price_raw?.trim() || net === 0)
+    && (!line.other_charge_raw?.trim() || charge === 0)
+}
+
 export function validateObservedLine(line: CanonicalDocument['lines'][number]): LineCheck {
   if (isVerifiedTaxRateMisreadAsDiscount(line)) {
     line = { ...line, discount_raw: null, discount_header_raw: null, net_unit_price_raw: null }
@@ -408,7 +422,7 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
   const reasons: string[] = []
 
   if (quantity == null || quantity <= 0) reasons.push('cantidad_ausente_o_invalida')
-  if (unitPrice == null || unitPrice <= 0) reasons.push('precio_ausente_o_invalido')
+  if (unitPrice == null || (unitPrice <= 0 && !isVerifiedZeroPricedLine(line))) reasons.push('precio_ausente_o_invalido')
   if (lineTotal == null || lineTotal < 0) reasons.push('importe_ausente_o_invalido')
 
   let discountPercent: number | null = null
@@ -436,6 +450,7 @@ export function validateObservedLine(line: CanonicalDocument['lines'][number]): 
   }
 
   let priceBasis: LineCheck['priceBasis'] = null
+  if (isVerifiedZeroPricedLine(line)) priceBasis = 'billing_quantity'
   if (quantity != null && quantity > 0 && unitPrice != null && unitPrice > 0 && lineTotal != null) {
     const multiplier = discountPercent == null ? 1 : 1 - discountPercent / 100
     const effectiveUnitPrice = fixedDiscountPerUnit == null
