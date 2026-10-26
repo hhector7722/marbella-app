@@ -5,6 +5,7 @@ import {
   isVerifiedTaxRateMisreadAsDiscount,
   isVerifiedZeroPricedLine,
   isMisreadDiscountAmount,
+  reconcileMisreadDiscountUnitPrice,
   reviewTaxMisreadAsFixedDiscount,
   reconcileFixedDiscountedUnitPrice,
   reconcileFreeFixedDiscountedUnitPrice,
@@ -64,6 +65,10 @@ test('Ametller: importe copiado en DTO no se aplica como descuento', () => {
   assert.equal(isMisreadDiscountAmount({ ...evidence, line_total_raw: '5,60' }), false)
   assert.equal(isMisreadDiscountAmount({ ...evidence, other_charge_raw: '0,10' }), false)
   assert.equal(isMisreadDiscountAmount({ ...evidence, net_unit_price_raw: '0,42' }), false)
+  const rounded = row({ quantity_raw: '9,100', unit_price_raw: '4,650',
+    discount_raw: '42,32', discount_header_raw: 'Dto', line_total_raw: '42,32' })
+  assert.equal(reconcileMisreadDiscountUnitPrice(rounded), '4.6505')
+  assert.equal(reconcileMisreadDiscountUnitPrice({ ...rounded, line_total_raw: '42,00' }), null)
 })
 
 test('SERHS: corrige DTO de 3,38 leído como IVA 21 sin aceptar cifras arbitrarias', () => {

@@ -420,6 +420,18 @@ export function isMisreadDiscountAmount(line: CanonicalDocument['lines'][number]
     && withinExactTolerance(multiplyExact(quantity, price), total, parseExactDecimal('0.03')!)
 }
 
+/** Precio a cuatro decimales respaldado por el importe cuando DTO repite ese importe. */
+export function reconcileMisreadDiscountUnitPrice(line: CanonicalDocument['lines'][number]): string | null {
+  if (!isMisreadDiscountAmount(line)) return null
+  const quantity = parseExactDecimal(line.quantity_raw)!
+  const total = parseExactDecimal(line.line_total_raw)!
+  const effective = divideExact(total, quantity)
+  if (!isPositiveExact(effective)) return null
+  const rounded = roundExactToScale(effective, 4)
+  return withinExactTolerance(multiplyExact(quantity, parseExactDecimal(rounded)!), total,
+    parseExactDecimal('0.03')!) ? rounded : null
+}
+
 export function validateObservedLine(line: CanonicalDocument['lines'][number]): LineCheck {
   if (isVerifiedTaxRateMisreadAsDiscount(line)) {
     line = { ...line, discount_raw: null, discount_header_raw: null, net_unit_price_raw: null }
