@@ -25,6 +25,26 @@ export interface ImportResult {
   occurrenceVenuesInserted: number;
 }
 
+/**
+ * Regla permanente para la actividad relevante al Bar La Marbella:
+ * de los PDF de ocupación, solo P1, P2, P3 y P4.
+ *
+ * Si una actividad comparte pista con otro recurso, se conservan únicamente
+ * las pistas P1-P4. No se alteran los PDF originales.
+ */
+const PAVILION_BAR_VENUES = new Set(['P1', 'P2', 'P3', 'P4']);
+
+export function filterPavilionBarOccupations(occupations: readonly Occupation[]): Occupation[] {
+  return occupations
+    .map((occ) => ({
+      ...occ,
+      venues: [...new Set(
+        (occ.venues ?? []).map((venue) => venue.trim().toUpperCase()),
+      )].filter((venue) => PAVILION_BAR_VENUES.has(venue)),
+    }))
+    .filter((occ) => occ.venues.length > 0);
+}
+
 // ---------------------------------------------------------------------------
 // Helpers de normalización
 // ---------------------------------------------------------------------------
@@ -138,17 +158,20 @@ export async function importOccupations(
   occupations: Occupation[],
   sourcePdfId?: string,
 ): Promise<ImportResult> {
-  if (occupations.length === 0) {
+  const relevantOccupations = filterPavilionBarOccupations(occupations);
+  const date = occupations[0]?.date ?? '';
+
+  // Nunca eliminar registros existentes si el OCR no identificó ninguna
+  // actividad en P1-P4 (la ausencia podría deberse a un error visual).
+  if (relevantOccupations.length === 0) {
     return {
-      date: '',
+      date,
       activitiesCreated: 0,
       venuesCreated: 0,
       occurrencesInserted: 0,
       occurrenceVenuesInserted: 0,
     };
   }
-
-  const date = occupations[0]!.date;
 
   // --------------------------------------------------
   // 1. Idempotencia: eliminar ocurrencies anteriors
@@ -203,7 +226,7 @@ export async function importOccupations(
 
   const resolved: ResolvedOccupation[] = [];
 
-  for (const occ of occupations) {
+  for (const occ of relevantOccupations) {
     // Activity
     const { id: activityId, wasCreated: actCreated } = await resolveActivity(
       supabase,
