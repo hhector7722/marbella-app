@@ -114,7 +114,7 @@ export async function POST(request: Request) {
         const { parsePdf } = await import('@/lib/pavilion/parser');
         const { importOccupations } = await import('@/lib/pavilion/importer');
 
-        const { occupations } = await parsePdf(fileBase64, filename);
+        const { occupations, warnings } = await parsePdf(fileBase64, filename);
 
         // Un PDF de planificación aceptado con cero actividades es sospechoso.
         // Nunca borramos datos válidos por una extracción vacía.
@@ -159,7 +159,11 @@ export async function POST(request: Request) {
           .from('pavilion_activity_sheets')
           .update({
             processing_status: 'processed',
-            processing_error: null,
+            // No ocultar filas descartadas: la extracción queda importada
+            // pero el operador puede localizarla para revisión.
+            processing_error: warnings.length
+              ? `REVISAR extracción parcial: ${warnings.join(' | ').slice(0, 3500)}`
+              : null,
             processed_at: new Date().toISOString(),
           })
           .eq('id', result.sheetId)
