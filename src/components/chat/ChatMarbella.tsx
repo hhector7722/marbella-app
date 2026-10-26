@@ -74,16 +74,12 @@ export default function ChatMarbella() {
     <Modal
       open={isOpen}
       onClose={closeChat}
-      title={
-        <>
-          <Image src="/icons/logo-white.png" alt="Bar La Marbella" width={28} height={28} className="object-contain" priority />
-          <span className="ml-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/85">Asistente</span>
-        </>
-      }
+      title={<Image src="/icons/logo-white.png" alt="Bar La Marbella" width={28} height={28} className="object-contain" priority />}
       variant="standard"
       layer="base"
       scheme="dark"
       instance="chat-marbella"
+      hideHeaderDivider
       scrollContent={false}
     >
       <div className="relative flex h-full min-h-0 flex-1 flex-col">
@@ -248,13 +244,12 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   };
 
   return (
-    <div data-element="chat-view" className="flex h-full min-h-0 flex-1 flex-col bg-[var(--color-envolvente-bajo)] text-white">
+    <div data-element="chat-view" className="flex h-full w-full min-h-0 min-w-0 flex-1 flex-col bg-[var(--color-envolvente-bajo)] text-white">
       {/* Messages */}
       <div ref={scrollRef} data-element="chat-messages" className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4">
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-            <span className="text-sm font-semibold tracking-wide text-white/90">¿Qué necesitas?</span>
-            <span className="max-w-56 text-xs leading-relaxed text-sky-100/55">Consulta la información de La Marbella.</span>
+            <span className="text-sm font-semibold tracking-wide text-white/90">¿Qué necesitas crack?</span>
           </div>
         )}
 
@@ -293,7 +288,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       </div>
 
       {/* Input bar — no top border */}
-      <div data-element="chat-composer" className="shrink-0 border-t border-white/15 bg-[#142447] px-2 pb-3 pt-2">
+      <div data-element="chat-composer" className="box-border w-full min-w-0 shrink-0 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
         <div className="flex min-w-0 items-end gap-1.5">
           {/* + button */}
           <div className="relative shrink-0">
@@ -345,9 +340,9 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
                 handleSend();
               }
             }}
-            placeholder="Escribe tu mensaje..."
+            placeholder="Escribe tu mensaje"
             rows={1}
-            className="min-h-[42px] max-h-28 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border border-white/20 bg-[#192b52] px-3 py-[9px] text-base leading-6 text-white outline-none placeholder:text-slate-400 focus:border-sky-300/65 focus:ring-2 focus:ring-sky-300/20"
+            className="min-h-[42px] max-h-28 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border border-white/20 bg-[#192b52] px-2.5 py-[9px] text-base leading-6 text-white outline-none placeholder:text-[11px] placeholder:tracking-tight placeholder:text-slate-400 focus:border-sky-300/65 focus:ring-2 focus:ring-sky-300/20"
             disabled={busy}
           />
 
@@ -529,7 +524,7 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full w-full flex-1 flex-col bg-[var(--color-envolvente-bajo)] text-white">
       {/* Voice header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-white/15 bg-[#142447] px-4 py-3 text-white">
+      <div className="flex shrink-0 items-center justify-between bg-[var(--color-envolvente-bajo)] px-4 py-3 text-white">
         <span className="text-sm font-semibold">Llamada de voz</span>
         <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors">
           <X size={16} strokeWidth={2.5} />
