@@ -957,6 +957,41 @@ export default function AlbaranesHistoricoClient({
     setLineForEvidenceModal(lineId)
   }
 
+  /**
+   * Guardar desde una superficie auxiliar vuelve al documento abierto, nunca
+   * a la lista y, a diferencia de "Volver", no reabre Auditoría de evidencia.
+   */
+  async function returnToInvoiceAfterSave() {
+    if (!selectedId || !detail || detail.id !== selectedId) return
+    setLineForEditModal(null)
+    setLineForMappingModal(null)
+    setLineForEvidenceModal(null)
+    evidenceContextLineIdRef.current = null
+    setSupplierPickerOpen(false)
+    setInvoiceImageViewerOpen(false)
+    setIngredientCreateOpen(false)
+    setIngredientCreateInitialName(null)
+    setIngredientCreateTargetLineId(null)
+    setIngredientCreateContext(null)
+    await refreshDetailAndStock()
+  }
+
+  /** Protege la ficha ante clicks del backdrop padre mientras hay una hija. */
+  function dismissInvoiceOrChild() {
+    if (lineForEditModal || lineForMappingModal || lineForEvidenceModal
+      || supplierPickerOpen || ingredientCreateOpen || invoiceImageViewerOpen) {
+      setLineForEditModal(null)
+      setLineForMappingModal(null)
+      setLineForEvidenceModal(null)
+      setSupplierPickerOpen(false)
+      setIngredientCreateOpen(false)
+      setInvoiceImageViewerOpen(false)
+      evidenceContextLineIdRef.current = null
+      return
+    }
+    closeModal()
+  }
+
   async function saveLine(lineId: string): Promise<boolean> {
     if (!detail) return false
     setSaveError(null)
@@ -1547,7 +1582,7 @@ export default function AlbaranesHistoricoClient({
 
       <Modal
         open={Boolean(selectedId)}
-        onClose={closeModal}
+        onClose={dismissInvoiceOrChild}
         variant="work"
         layer="base"
         instance="albaran-detail"
@@ -2079,7 +2114,7 @@ export default function AlbaranesHistoricoClient({
                   onSaveLine={async () => {
                     if (!lineForEditModal) return
                     const ok = await saveLine(lineForEditModal.id)
-                    if (ok) reopenEvidenceFromContext()
+                    if (ok) await returnToInvoiceAfterSave()
                   }}
                 />
 
@@ -2102,6 +2137,7 @@ export default function AlbaranesHistoricoClient({
                     reopenEvidenceFromContext()
                   }}
                   onSuccess={() => refreshDetailAndStock()}
+                  onCompleted={returnToInvoiceAfterSave}
                   onCreateIngredient={() => {
                     if (!lineForMappingModal) return
                     openCreateIngredientForLine(lineForMappingModal, lineForMappingModal.original_name || '')
@@ -2119,6 +2155,7 @@ export default function AlbaranesHistoricoClient({
                     evidenceContextLineIdRef.current = null
                     setLineForEvidenceModal(null)
                   }}
+                  onSaved={returnToInvoiceAfterSave}
                   onOpenProduct={() => {
                     const l = detail?.lines.find((line) => line.id === lineForEvidenceModal)
                     if (!l) return
@@ -2161,6 +2198,7 @@ export default function AlbaranesHistoricoClient({
                   layer="derived"
                   instance="albaranes-supplier-picker"
                   parentInstance="albaran-detail"
+                  dismissScope="self"
                   usageId="albaranes-supplier-picker"
                   usageLabel="Proveedor albarán"
                   headerTitleAlign="left"
@@ -2241,6 +2279,7 @@ export default function AlbaranesHistoricoClient({
                   layer="derived"
                   instance="albaran-ingredient-create"
                   parentInstance="albaran-detail"
+                  dismissScope="self"
                   usageId="albaran-ingredient-create"
                   usageLabel="Crear ingrediente"
                   title="Nuevo ingrediente"
@@ -2271,6 +2310,7 @@ export default function AlbaranesHistoricoClient({
         layer="derived"
         instance="albaran-invoice-image"
         parentInstance="albaran-detail"
+        dismissScope="self"
         usageId="albaran-invoice-image"
         usageLabel="Visor de hojas del albarán"
         title={invoiceImageSheetOptions[invoiceCarouselIndex]?.label ?? 'Hoja'}
