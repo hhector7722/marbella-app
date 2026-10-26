@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { X, Mic, Phone, Plus, Send, FileText, Image as ImageIcon } from 'lucide-react';
+import { Mic, Phone, Plus, Send, FileText, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useAIStore } from '@/store/aiStore';
 import { useChat } from '@ai-sdk/react';
@@ -11,7 +11,7 @@ import { Modal } from '@/components/ui/modal';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useChatVisualViewport } from '@/hooks/useChatVisualViewport';
 import { useFreezeChatBackground } from '@/hooks/useFreezeChatBackground';
-import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import VoiceConversation from '@/components/chat/VoiceConversation';
 
 // Helper para extraer texto del Vercel AI SDK
 function messageCombinedText(parts: unknown): string {
@@ -87,7 +87,7 @@ export default function ChatMarbella() {
 
         {showVoiceCall && (
           <div className="absolute inset-0 z-20 flex flex-col animate-in fade-in duration-200">
-            <VoiceCallView onClose={() => setShowVoiceCall(false)} />
+            <VoiceConversation onClose={() => setShowVoiceCall(false)} />
           </div>
         )}
       </div>
@@ -100,6 +100,9 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
 
   const [input, setInput] = useState('');
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileContextRef = useRef('');
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [pressingMic, setPressingMic] = useState(false);
   const micHeldRef = useRef(false);
@@ -177,8 +180,15 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       const res = await fetch('/api/copiloto/transcribe', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok || !data.text) throw new Error(data.error || 'No se pudo transcribir el audio');
-      setInput((prev) => (prev ? prev + ' ' + data.text : data.text));
-      toast.success('Dictado añadido al mensaje', { id: toastId });
+      if (!input.trim() && !selectedFile && status === 'ready') {
+        void sendMessage({text:data.text.trim()}, {
+          body:{sessionId:getActiveSessionId(),attachmentContext:fileContextRef.current},
+        });
+        toast.success('Audio transcrito y enviado', { id: toastId });
+      } else {
+        setInput((prev) => (prev ? prev + ' ' + data.text : data.text));
+        toast.success('Audio añadido a tu mensaje', { id: toastId });
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error('Error: ' + msg, { id: toastId });
@@ -227,20 +237,53 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     if (micReadyRef.current) void stopMicAndTranscribe();
   };
 
-  const busy = status !== 'ready' && status !== 'error';
-  const handleSend = useCallback(() => {
-    const val = input.trim();
-    if (!val || busy) return;
-    sendMessage({ text: val }, { body: { sessionId: getActiveSessionId() } });
+  const busy = (status !== 'ready' && status !== 'error') || uploadingFile;
+  const handleSend = async () => {
+    const value = input.trim();
+    if ((!value && !selectedFile) || busy) return;
+    let context = fileContextRef.current;
+    let fileLabel = '';
+    if (selectedFile) {
+      setUploadingFile(true);
+      const toastId = toast.loading(`Analizando ${selectedFile.name}…`);
+      try {
+        const fd = new FormData();
+        fd.append('file', selectedFile);
+        const response = await fetch('/api/copiloto/attachments', {
+          method:'POST',body:fd,credentials:'same-origin',
+        });
+        const data = await response.json() as {error?:string;name?:string;kind?:string;content?:string;pages?:number;truncated?:boolean};
+        if(!response.ok || !data.content)throw new Error(data.error||'No se pudo adjuntar el archivo.');
+        context = `Archivo temporal adjunto: ${data.name} (${data.kind}${data.pages?`, ${data.pages} páginas`:''}).\n${data.content}`;
+        fileContextRef.current=context;
+        fileLabel=`📎 ${data.name}${data.truncated?' (texto abreviado)':''}`;
+        setSelectedFile(null);
+        toast.success('Archivo analizado y añadido a la consulta.',{id:toastId});
+      } catch (cause) {
+        toast.error(cause instanceof Error?cause.message:'Error al adjuntar el archivo.',{id:toastId});
+        return;
+      } finally {
+        setUploadingFile(false);
+      }
+    }
+    const visibleText=[value || (selectedFile?'Analiza el archivo adjunto.':''),fileLabel].filter(Boolean).join('\n');
+    if(!visibleText)return;
+    void sendMessage({text:visibleText}, {body:{sessionId:getActiveSessionId(),attachmentContext:context}});
     setInput('');
-  }, [input, busy, sendMessage]);
+  };
 
-  const handleFileAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    toast.info(`Adjunto "${file.name}" recibido (próximamente compatible)`);
-    e.target.value = '';
+  const handleFileAttach = (event:React.ChangeEvent<HTMLInputElement>)=>{
+    const file=event.target.files?.[0];
+    event.target.value='';
     setShowAttachMenu(false);
+    if(!file)return;
+    if(!(/\.pdf$/i.test(file.name)||file.type.startsWith('image/'))){
+      toast.error('Selecciona una imagen o PDF válido.');return;
+    }
+    if(file.size>(/\.pdf$/i.test(file.name)?20:10)*1024*1024){
+      toast.error('Archivo demasiado grande (PDF 20 MB, imagen 10 MB).');return;
+    }
+    setSelectedFile(file);
   };
 
   return (
@@ -289,6 +332,12 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
 
       {/* Input bar — no top border */}
       <div data-element="chat-composer" className="box-border w-full min-w-0 shrink-0 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
+        {selectedFile && (
+          <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2 rounded-xl bg-[#192b52] px-3 py-2 text-xs text-sky-100">
+            <span className="min-w-0 truncate">📎 {selectedFile.name}</span>
+            <button type="button" aria-label="Quitar adjunto" className="shrink-0 text-white/70" onClick={()=>setSelectedFile(null)}>✕</button>
+          </div>
+        )}
         <div className="flex min-w-0 items-end gap-1.5">
           {/* + button */}
           <div className="relative shrink-0">
@@ -337,7 +386,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                void handleSend();
               }
             }}
             placeholder="Escribe tu mensaje"
@@ -349,11 +398,11 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           {/* Enviar con botón o Intro, sin ocultar parte del editor. */}
           <button
             type="button"
-            onClick={handleSend}
-            disabled={busy || !input.trim()}
+            onClick={()=>void handleSend()}
+            disabled={busy || (!input.trim() && !selectedFile)}
             className="flex h-10 w-8 shrink-0 items-center justify-center rounded-xl text-sky-300 transition-colors hover:bg-white/10 disabled:text-white/25"
             aria-label="Enviar mensaje"
-            title="Enviar mensaje"
+            title={uploadingFile?'Analizando archivo…':'Enviar mensaje o adjunto'}
           >
             <Send size={18} />
           </button>
@@ -392,189 +441,6 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       </div>
 
 
-    </div>
-  );
-}
-
-type TranscriptEvent = { role: 'user' | 'assistant'; text: string };
-
-function VoiceCallView({ onClose }: { onClose: () => void }) {
-  const trackVoiceCallStart = useTrackModalApply('chat-voice-call', 'Llamada voz chat');
-  const [isActive, setIsActive] = useState(false);
-  const [transcripts, setTranscripts] = useState<TranscriptEvent[]>([]);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const dcRef = useRef<RTCDataChannel | null>(null);
-  const sessionIdRef = useRef<string | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [transcripts]);
-
-  useEffect(() => {
-    return () => stopCall();
-  }, []);
-
-  async function startCall() {
-    trackVoiceCallStart('Iniciar llamada');
-    setIsActive(true);
-    setTranscripts([]);
-    try {
-      const tokenReq = await fetch('/api/copiloto/voice/token');
-      if (!tokenReq.ok) {
-        let msg = 'No se pudo obtener autorización.';
-        try { const j = await tokenReq.json(); if (typeof j?.error === 'string') msg = j.error; } catch {}
-        throw new Error(msg);
-      }
-
-      const { client_secret: clientSecret, session_id: sessionId } = await tokenReq.json();
-      sessionIdRef.current = typeof sessionId === 'string' ? sessionId : null;
-      const pc = new RTCPeerConnection();
-      pcRef.current = pc;
-
-      const audioEl = document.createElement('audio');
-      audioEl.autoplay = true;
-      audioElRef.current = audioEl;
-      pc.ontrack = (evt) => { audioEl.srcObject = evt.streams[0]; };
-
-      const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
-      localStreamRef.current = ms;
-      ms.getTracks().forEach((track) => pc.addTrack(track, ms));
-
-      const dc = pc.createDataChannel('oai-events');
-      dcRef.current = dc;
-
-      dc.addEventListener('message', async (e) => {
-        try {
-          const event = JSON.parse(e.data as string);
-          if (event.type === 'response.audio_transcript.done') {
-            const tx = typeof event.transcript === 'string' ? event.transcript.trim() : '';
-            if (tx) setTranscripts((prev) => [...prev, { role: 'assistant', text: tx }]);
-          }
-          if (event.type === 'conversation.item.input_audio_transcription.completed') {
-            const tx = typeof event.transcript === 'string' ? event.transcript.trim() : '';
-            if (tx) setTranscripts((prev) => [...prev, { role: 'user', text: tx }]);
-          }
-          if (event.type === 'response.function_call_arguments.done') {
-            try {
-              const { call_id, name, arguments: argsString } = event;
-              const args = JSON.parse(argsString);
-              const res = await fetch('/api/copiloto/tools', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ toolName: name, args, sessionId: sessionIdRef.current, idempotencyKey: call_id }),
-              });
-              let data: unknown;
-              try {
-                data = await res.json();
-              } catch {
-                data = { error: res.statusText || 'Respuesta de herramienta invalida' };
-              }
-              const output = res.ok ? data : { error: 'tool_execution_failed', status: res.status, detail: data };
-              dcRef.current?.send(JSON.stringify({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id, output: JSON.stringify(output) } }));
-              dcRef.current?.send(JSON.stringify({ type: 'response.create' }));
-            } catch (err) {
-              console.error('Error tool voz', err);
-              const callId = typeof event.call_id === 'string' ? event.call_id : '';
-              if (callId) {
-                dcRef.current?.send(JSON.stringify({
-                  type: 'conversation.item.create',
-                  item: {
-                    type: 'function_call_output',
-                    call_id: callId,
-                    output: JSON.stringify({ error: 'tool_execution_failed', detail: err instanceof Error ? err.message : String(err) }),
-                  },
-                }));
-                dcRef.current?.send(JSON.stringify({ type: 'response.create' }));
-              }
-            }
-          }
-        } catch {}
-      });
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      const sdpRes = await fetch('https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17', {
-        method: 'POST', body: offer.sdp,
-        headers: { Authorization: `Bearer ${clientSecret}`, 'Content-Type': 'application/sdp' },
-      });
-      if (!sdpRes.ok) throw new Error('Fallo en la negociación SDP.');
-      const answerSdp = await sdpRes.text();
-      await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      toast.error(`No se pudo iniciar la llamada: ${msg}`);
-      stopCall();
-    }
-  }
-
-  function stopCall() {
-    setIsActive(false);
-    dcRef.current?.close();
-    pcRef.current?.close();
-    localStreamRef.current?.getTracks().forEach((track) => track.stop());
-    if (audioElRef.current) audioElRef.current.srcObject = null;
-    sessionIdRef.current = null;
-    dcRef.current = null; pcRef.current = null; localStreamRef.current = null; audioElRef.current = null;
-  }
-
-  return (
-    <div className="flex h-full w-full flex-1 flex-col bg-[var(--color-envolvente-bajo)] text-white">
-      {/* Voice header */}
-      <div className="flex shrink-0 items-center justify-between bg-[var(--color-envolvente-bajo)] px-4 py-3 text-white">
-        <span className="text-sm font-semibold">Llamada de voz</span>
-        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors">
-          <X size={16} strokeWidth={2.5} />
-        </button>
-      </div>
-
-      {!isActive ? (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <button
-            onClick={startCall}
-            className="flex h-14 items-center gap-3 rounded-xl bg-emerald-500 px-9 text-sm font-bold uppercase tracking-wide text-white shadow-[0_10px_26px_rgba(3,12,30,0.28)] transition-colors hover:bg-emerald-600"
-          >
-            <Phone size={20} fill="currentColor" />
-            Iniciar Llamada
-          </button>
-        </div>
-      ) : (
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div ref={scrollRef} className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
-            {transcripts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full space-y-4">
-                <div className="flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-emerald-400/15">
-                  <Mic size={28} className="text-emerald-300" />
-                </div>
-                <p className="text-sm text-sky-100/65">Escuchando...</p>
-              </div>
-            ) : (
-              transcripts.map((t, i) => (
-                <div key={i} className={t.role === 'user' ? 'text-right' : 'text-left'}>
-                  <span className={cn(
-                    "inline-block max-w-[85%] break-words rounded-xl border px-4 py-2.5 text-sm leading-relaxed",
-                    t.role === 'user' ? "rounded-tr-sm border-sky-300/20 bg-[#315a86] text-white" : "rounded-tl-sm border-white/15 bg-[#192b52] text-slate-100"
-                  )}>
-                    {t.text}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-          <div className="shrink-0 p-4 flex justify-center">
-            <button
-              onClick={stopCall}
-              className="flex h-12 items-center gap-2 rounded-xl border border-rose-400/30 bg-rose-400/10 px-8 text-sm font-semibold text-rose-200 transition-colors hover:bg-rose-400/20"
-            >
-              <Phone size={16} className="rotate-[135deg]" />
-              Finalizar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

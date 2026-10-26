@@ -146,6 +146,7 @@ export function useVoiceRecorder() {
     startRecording,
     stopRecording,
     cancelRecording,
+    getStream: () => streamRef.current,
   };
 }
 
