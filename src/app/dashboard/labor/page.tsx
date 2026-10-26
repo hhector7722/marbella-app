@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { User } from 'lucide-react';
+import { ChevronDown, User } from 'lucide-react';
 import {
     addMonths,
     eachDayOfInterval,
@@ -40,7 +40,7 @@ import {
     getLaborCostPeriodSsot,
 } from '@/app/actions/labor-cost-ssot';
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
-import { payrollAbsenceNotice } from '@/lib/payroll/payroll-month-status';
+import { payrollAbsenceNotice, type PayrollAbsenceNotice } from '@/lib/payroll/payroll-month-status';
 import { laborRatioBand, type LaborRatioBand } from '@/lib/labor-cost-ratio-presentation';
 
 type DayCell = { total: number; fixed: number; overtime: number; laborPctOfSales: number | null };
@@ -80,16 +80,6 @@ function parseLocalSafe(dateStr: string | null): Date {
     if (!dateStr) return new Date();
     const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
     return new Date(y, m - 1, d);
-}
-
-/** Regla Zero-Display: lectura, 0 → espacio */
-function formatEuroRead(n: number): string {
-    if (n === 0 || Object.is(n, -0)) return ' ';
-    return new Intl.NumberFormat('es-ES', {
-        style: 'currency',
-        currency: 'EUR',
-        maximumFractionDigits: n < 100 ? 2 : 0,
-    }).format(n);
 }
 
 function formatLaborEuro(n: number): string {
@@ -137,144 +127,65 @@ function firstNameOnly(full: string | null): string {
     return full.trim().split(/\s+/)[0] ?? '—';
 }
 
-function laborPctTextClass(pct: number | null): string {
-    if (pct === null || Number.isNaN(pct)) return 'text-zinc-400';
-    return laborPctIndicatorClass(pct).split(' ')[0];
-}
 
-function formatWorkerPctLine(pct: number | null): string {
-    if (pct === null || Number.isNaN(pct)) return '—';
-    return `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1, minimumFractionDigits: 0 }).format(pct)}%`;
-}
-
-/** Los mismos rangos en el anillo y el calendario; no cambian el cálculo. */
-function laborPctIndicatorClass(pct: number): string {
-    switch (laborRatioBand(pct)) {
-        case 'good': return 'text-emerald-600 stroke-emerald-600';
-        case 'attention': return 'text-amber-600 stroke-amber-600';
-        case 'high': return 'text-orange-600 stroke-orange-600';
-        case 'critical': return 'text-rose-600 stroke-rose-600';
-        default: return 'text-zinc-400 stroke-zinc-400';
-    }
-}
-
-function LaborPctRing({
-    percent,
-    size = 44,
-    strokeWidth = 5,
-}: {
-    /** 0–100 para el arco; si >100 se muestra anillo lleno (100%) */
-    percent: number;
-    size?: number;
-    strokeWidth?: number;
-}) {
-    const arcPct = Math.max(0, Math.min(100, percent));
-    const r = (size - strokeWidth) / 2;
-    const c = 2 * Math.PI * r;
-    const offset = c * (1 - arcPct / 100);
-    const colorClass = laborPctIndicatorClass(percent);
-
-    return (
-        <svg
-            width={size}
-            height={size}
-            className="shrink-0 -rotate-90"
-            viewBox={`0 0 ${size} ${size}`}
-            aria-hidden
-        >
-            <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={r}
-                fill="none"
-                className="stroke-zinc-200"
-                strokeWidth={strokeWidth}
-            />
-            <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={r}
-                fill="none"
-                className={cn('transition-all duration-500 ease-out', colorClass)}
-                strokeWidth={strokeWidth}
-                strokeDasharray={c}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
-            />
-        </svg>
-    );
-}
-
-function LaborPctRingCentered({
-    percentRaw,
-    size = 36,
-}: {
-    percentRaw: number | null;
-    size?: number;
-}) {
-    const pct = percentRaw === null || Number.isNaN(percentRaw) ? null : Math.round(percentRaw * 10) / 10;
-    const isOverCap = pct !== null && pct > 100;
-    const pctDisplay = isOverCap ? 100 : (pct ?? 0);
-    const textClass = laborPctTextClass(pct);
-
-    return (
-        <div className="relative inline-flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-            <LaborPctRing percent={pctDisplay} size={size} strokeWidth={4} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className={cn('text-[9px] font-black tabular-nums leading-none tracking-tight sm:text-[10px]', textClass)}>
-                    {pct === null ? '—' : `${pct}%`}
-                </span>
-            </div>
-        </div>
-    );
-}
-
-function ReconciliationBadge({
+/**
+ * Aviso de una sola línea sobre las tarjetas de ventas/costes.
+ * El detalle solo se muestra al pulsar; no ocupa altura en el calendario.
+ */
+function CompactLaborNotice({
+    payrollNotice,
     reconciliation,
 }: {
+    payrollNotice: PayrollAbsenceNotice | null;
     reconciliation?: MonthSummaryPayload['reconciliation'];
 }) {
-    if (!reconciliation) return null;
+    let title = '';
+    let explanation = '';
+    let color = 'bg-sky-400';
 
-    const { status, totalSummary, totalPayrolls, difference, importedCount } = reconciliation;
-
-    if (status === 'RECONCILED') {
-        return (
-            <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-emerald-800 text-xs font-semibold">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                <span>🟢 Conciliado</span>
-                <span className="text-emerald-700 font-mono">
-                    ({formatEuroRead(totalPayrolls)} / {formatEuroRead(totalSummary)})
-                </span>
-            </div>
-        );
+    if (payrollNotice) {
+        title = payrollNotice.title;
+        explanation = payrollNotice.body;
+        color = payrollNotice.variant === 'negative' ? 'bg-rose-400' : 'bg-amber-400';
+    } else if (reconciliation) {
+        switch (reconciliation.status) {
+            case 'RECONCILED':
+                title = 'Nóminas conciliadas';
+                explanation = 'Resumen oficial: ' + formatLaborEuro(reconciliation.totalSummary) +
+                    '. Nóminas importadas: ' + formatLaborEuro(reconciliation.totalPayrolls) + '.';
+                color = 'bg-emerald-400';
+                break;
+            case 'PENDING_RECONCILIATION':
+                title = 'Pendiente de conciliación';
+                explanation = String(reconciliation.importedCount) + ' nóminas importadas. Diferencia: ' +
+                    formatLaborEuro(reconciliation.difference) + '.';
+                color = 'bg-amber-400';
+                break;
+            case 'WAITING_PAYROLLS':
+                title = 'Esperando nóminas individuales';
+                explanation = 'Resumen de gestoría recibido (' + formatLaborEuro(reconciliation.totalSummary) +
+                    '). Faltan las nóminas para completar la conciliación.';
+                color = 'bg-sky-400';
+                break;
+            default:
+                break;
+        }
     }
 
-    if (status === 'PENDING_RECONCILIATION') {
-        return (
-            <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-900 text-xs font-semibold">
-                <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse" />
-                <span>🟡 Pendiente de conciliar</span>
-                <span className="text-amber-800 font-mono">
-                    Importadas {importedCount} nóminas | Dif. pendiente: {formatEuroRead(difference)}
-                </span>
-            </div>
-        );
-    }
+    if (!title) return null;
 
-    if (status === 'NO_SUMMARY') return null;
-
-    if (status === 'WAITING_PAYROLLS') {
-        return (
-            <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-sky-50 border border-sky-200/80 rounded-xl text-sky-900 text-xs font-semibold">
-                <span className="inline-block w-2 h-2 rounded-full bg-sky-500 shrink-0" />
-                <span>⚪ Resumen Gestoría ({formatEuroRead(totalSummary)})</span>
-                <span className="text-sky-700 font-normal">| Esperando nóminas individuales</span>
-            </div>
-        );
-    }
-
-    return null;
+    return (
+        <details className="group min-w-0 rounded-md border border-white/15 bg-white/[0.035] text-white">
+            <summary className="flex min-h-[29px] cursor-pointer list-none items-center gap-2 px-2.5 py-1.5 text-left text-[11px] font-semibold [&::-webkit-details-marker]:hidden">
+                <span aria-hidden="true" className={cn('h-1.5 w-1.5 shrink-0 rounded-full', color)} />
+                <span className="min-w-0 flex-1 truncate">{title}</span>
+                <ChevronDown aria-hidden="true" size={13} className="shrink-0 text-white/60 transition-transform group-open:rotate-180" />
+            </summary>
+            <p className="border-t border-white/10 px-3 pb-2.5 pt-2 text-[11px] leading-relaxed text-white/70">
+                {explanation}
+            </p>
+        </details>
+    );
 }
 
 type ProfileOption = {
@@ -422,7 +333,7 @@ export default function LaborHistoryPage() {
             });
             if (salesErr) {
                 console.warn(salesErr);
-                setPeriodNetSales(0);
+                setPeriodNetSales(null);
             } else {
                 const raw = salesData as { totalNet?: number } | null;
                 setPeriodNetSales(Number(raw?.totalNet) || 0);
@@ -594,65 +505,58 @@ export default function LaborHistoryPage() {
                     </div>
                 }
             leadSlot={
-                <>
-                    <div className="grid grid-cols-4 gap-0.5 sm:gap-1 min-w-0">
-                            <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
-                                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
-                                    Coste
-                                </span>
-                                <span className="text-[11px] font-black leading-tight text-rose-500 tabular-nums sm:text-xs md:text-sm">
-                                    {summary && !ordinaryUnknown ? formatEuroRead(summary.totalCost) : ' '}
-                                </span>
-                            </div>
-                            <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
-                                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
-                                    Fijo
-                                </span>
-                                <span className="text-[11px] font-black leading-tight text-zinc-700 tabular-nums sm:text-xs md:text-sm">
-                                    {summary && !ordinaryUnknown ? formatEuroRead(summary.totalFixed) : ' '}
-                                </span>
-                            </div>
-                            <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
-                                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
-                                    Extras
-                                </span>
-                                <span className="text-[11px] font-black leading-tight text-amber-600 tabular-nums sm:text-xs md:text-sm">
-                                    {summary ? formatEuroRead(summary.totalOvertime) : ' '}
-                                </span>
-                            </div>
-                            <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
-                                <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
-                                    M.O./Vtas
-                                </span>
-                                <LaborPctRingCentered percentRaw={laborPctOfPeriod} size={36} />
-                            </div>
-                        </div>
-
-                        <div aria-label="Leyenda de coste laboral sobre ventas" className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 px-1 py-1 text-[9px] text-zinc-500 sm:text-[10px]">
-                            <span className="font-medium text-zinc-600">Coste / ventas:</span>
+                <section aria-label="Resumen de costes laborales y ventas" className="flex min-w-0 flex-col gap-1.5 rounded-xl border border-white/20 bg-[var(--color-envolvente-bajo)] p-2 text-white sm:p-2.5">
+                    <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row">
+                        <div className="grid min-w-0 grid-cols-2 gap-1.5 sm:w-[42%]">
                             {([
-                                ['good', '≤55%'], ['attention', '55–70%'],
-                                ['high', '70–90%'], ['critical', '>90%'],
-                            ] as const).map(([band, label]) => (
-                                <span key={band} className="inline-flex items-center gap-1">
-                                    <span aria-hidden="true" className={cn('h-2 w-2 rounded-full', ratioStyles[band].bar)} />
-                                    {label}
-                                </span>
+                                {
+                                    label: 'Ventas netas',
+                                    value: periodNetSales === null ? '—' : formatLaborEuro(periodNetSales),
+                                    tone: 'border-sky-400/35 bg-sky-500/10',
+                                },
+                                {
+                                    label: 'Coste laboral',
+                                    value: summary && !ordinaryUnknown ? formatLaborEuro(summary.totalCost) : '—',
+                                    tone: 'border-rose-400/35 bg-rose-500/10',
+                                },
+                            ] as const).map(item => (
+                                <div key={item.label} className={cn('flex min-w-0 flex-col justify-center rounded-lg border px-2.5 py-2', item.tone)}>
+                                    <span className="block truncate text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]">{item.label}</span>
+                                    <strong className="mt-0.5 block truncate text-[clamp(13px,2vw,19px)] font-bold leading-tight tabular-nums text-white" title={item.value}>
+                                        {item.value}
+                                    </strong>
+                                </div>
                             ))}
                         </div>
-
-                        {payrollNotice ? (
-                            <Notice
-                                instance="labor-payroll-absence"
-                                variant={payrollNotice.variant}
-                                title={payrollNotice.title}
-                            >
-                                {payrollNotice.body}
-                            </Notice>
-                        ) : (
-                            <ReconciliationBadge reconciliation={summary?.reconciliation} />
-                        )}
-                </>
+                        <div className="grid min-w-0 grid-cols-3 gap-1.5 sm:flex-1">
+                            {([
+                                {
+                                    label: 'Fijo',
+                                    value: summary && !ordinaryUnknown ? formatLaborEuro(summary.totalFixed) : '—',
+                                    tone: 'border-white/15 bg-white/[0.045]',
+                                },
+                                {
+                                    label: 'Extras',
+                                    value: summary ? formatLaborEuro(summary.totalOvertime) : '—',
+                                    tone: 'border-amber-400/30 bg-amber-500/10',
+                                },
+                                {
+                                    label: 'Coste / ventas',
+                                    value: laborPctOfPeriod === null ? '—' : formatLaborPercent(laborPctOfPeriod),
+                                    tone: 'border-violet-400/35 bg-violet-500/10',
+                                },
+                            ] as const).map(item => (
+                                <div key={item.label} className={cn('flex min-w-0 flex-col justify-center rounded-md border px-2 py-2', item.tone)}>
+                                    <span className="block truncate text-[10px] font-medium leading-tight text-white/70">{item.label}</span>
+                                    <strong className="mt-0.5 block truncate text-[clamp(12px,1.45vw,17px)] font-bold leading-tight tabular-nums text-white" title={item.value}>
+                                        {item.value}
+                                    </strong>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <CompactLaborNotice payrollNotice={payrollNotice} reconciliation={summary?.reconciliation} />
+                </section>
             }
         >
                     <div className="flex flex-col month-cal-body min-h-0">
@@ -855,7 +759,7 @@ export default function LaborHistoryPage() {
                                                             {formatLaborEuro(pending ? w.overtime : w.total)}
                                                         </strong>
                                                         <span className={cn('text-[10px] font-semibold tabular-nums', ratioStyles[workerBand].text)}>
-                                                            {workerRatio === null ? '—' : formatWorkerPctLine(workerRatio)}
+                                                            {workerRatio === null ? '—' : formatLaborPercent(workerRatio)}
                                                         </span>
                                                     </div>
                                                 </div>
