@@ -8209,3 +8209,39 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   max-height: 100% !important;
   min-height: 0;
 }
+
+/* Chat Marbella: misma paleta petróleo y paneles que Ventas. Este tema sólo
+   afecta al asistente, sin alterar las superficies de los demás modales. */
+[data-component='Modal'][data-instance='chat-marbella'][data-scheme='dark'] [data-element='container'] {
+  background-color: var(--color-envolvente-bajo);
+  border: 1px solid rgb(255 255 255 / 0.20);
+  color: #f8fafc;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 20px 54px rgb(3 12 30 / 0.42);
+}
+[data-component='Modal'][data-instance='chat-marbella'][data-scheme='dark'] [data-element='header'] {
+  background: linear-gradient(115deg, #142447 0%, #192b52 100%);
+  border-color: rgb(255 255 255 / 0.16);
+  color: #f8fafc;
+}
+[data-component='Modal'][data-instance='chat-marbella'][data-scheme='dark'] [data-element='header'] [data-element='heading'] {
+  color: #f8fafc;
+}
+[data-component='Modal'][data-instance='chat-marbella'][data-scheme='dark'] [data-element='header'] button {
+  color: rgb(255 255 255 / 0.72);
+}
+[data-component='Modal'][data-instance='chat-marbella'][data-scheme='dark'] [data-element='header'] button:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 0.08);
+}
+[data-component='Modal'][data-instance='chat-marbella'][data-scheme='dark'] [data-element='body'] {
+  background: var(--color-envolvente-bajo);
+}
+[data-component='Modal'][data-instance='chat-marbella'] [data-element='chat-messages'] {
+  background:
+    radial-gradient(ellipse 125% 36% at 50% 0%, rgb(42 90 150 / 0.17), transparent 72%),
+    var(--color-envolvente-bajo);
+  scrollbar-color: rgb(137 174 226 / 0.36) transparent;
+}
+[data-component='Modal'][data-instance='chat-marbella'] [data-element='chat-composer'] {
+  box-shadow: 0 -5px 22px rgb(3 12 30 / 0.18);
+}

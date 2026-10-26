@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useChatVisualViewport } from '@/hooks/useChatVisualViewport';
+import { useFreezeChatBackground } from '@/hooks/useFreezeChatBackground';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 // Helper para extraer texto del Vercel AI SDK
@@ -66,6 +67,7 @@ export default function ChatMarbella() {
   const isOpen = useAIStore((s) => s.isOpen);
   const closeChat = useAIStore((s) => s.closeChat);
   const [showVoiceCall, setShowVoiceCall] = useState(false);
+  useFreezeChatBackground(isOpen);
   useChatVisualViewport(isOpen);
 
   return (
@@ -75,11 +77,12 @@ export default function ChatMarbella() {
       title={
         <>
           <Image src="/icons/logo-white.png" alt="Bar La Marbella" width={28} height={28} className="object-contain" priority />
-          <span className="sr-only">Chat Marbella</span>
+          <span className="ml-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/85">Asistente</span>
         </>
       }
       variant="standard"
       layer="base"
+      scheme="dark"
       instance="chat-marbella"
       scrollContent={false}
     >
@@ -245,12 +248,13 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col bg-white">
+    <div data-element="chat-view" className="flex h-full min-h-0 flex-1 flex-col bg-[var(--color-envolvente-bajo)] text-white">
       {/* Messages */}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-3">
+      <div ref={scrollRef} data-element="chat-messages" className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-400 space-y-2">
-            <p className="text-sm">¿Qué necesitas crack?</p>
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+            <span className="text-sm font-semibold tracking-wide text-white/90">¿Qué necesitas?</span>
+            <span className="max-w-56 text-xs leading-relaxed text-sky-100/55">Consulta la información de La Marbella.</span>
           </div>
         )}
 
@@ -258,10 +262,10 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           <div
             key={m.id}
             className={cn(
-              "max-w-[88%] px-4 py-2.5 text-[13px] leading-relaxed rounded-2xl",
+              "max-w-[88%] rounded-xl border px-3.5 py-2.5 text-sm leading-relaxed shadow-[0_6px_18px_rgba(3,12,30,0.16)]",
               m.role === 'user'
-                ? 'ml-auto bg-[#3F5E7A] text-white rounded-tr-sm shadow-sm'
-                : 'mr-auto bg-zinc-100 text-zinc-800 rounded-tl-sm'
+                ? 'ml-auto rounded-tr-sm border-sky-300/20 bg-[#315a86] text-white'
+                : 'mr-auto rounded-tl-sm border-white/15 bg-[#192b52] text-slate-100'
             )}
           >
             <div className="whitespace-pre-wrap break-words">{
@@ -273,7 +277,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
         ))}
 
         {busy && (
-          <div className="mr-auto bg-zinc-100 text-zinc-400 px-4 py-2.5 rounded-2xl rounded-tl-sm text-[13px]">
+          <div className="mr-auto rounded-xl rounded-tl-sm border border-white/15 bg-[#192b52] px-4 py-2.5 text-sm text-sky-200/65">
             <span className="inline-flex gap-1">
               <span className="animate-bounce" style={{ animationDelay: '0ms' }}>·</span>
               <span className="animate-bounce" style={{ animationDelay: '150ms' }}>·</span>
@@ -282,39 +286,39 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           </div>
         )}
         {error && (
-          <div className="mx-auto bg-red-50 text-red-600 px-4 py-2 rounded-2xl text-xs border border-red-100">
+          <div className="mx-auto rounded-xl border border-rose-400/30 bg-rose-950/60 px-4 py-2 text-xs text-rose-200">
             Error de conexión.
           </div>
         )}
       </div>
 
       {/* Input bar — no top border */}
-      <div className="shrink-0 bg-white px-2 pb-3 pt-2">
+      <div data-element="chat-composer" className="shrink-0 border-t border-white/15 bg-[#142447] px-2 pb-3 pt-2">
         <div className="flex min-w-0 items-end gap-1.5">
           {/* + button */}
           <div className="relative shrink-0">
             <button
               type="button"
               onClick={() => setShowAttachMenu((v) => !v)}
-              className="flex h-10 w-7 items-center justify-start rounded-xl text-zinc-500 hover:text-zinc-700 active:scale-95 transition-all"
+              className="flex h-10 w-7 items-center justify-start rounded-xl text-sky-200/80 transition-all hover:text-white active:scale-95"
               title="Adjuntar archivo"
             >
               <Plus size={21} />
             </button>
             {showAttachMenu && (
-              <div className="absolute bottom-14 left-0 bg-white rounded-2xl shadow-xl border border-zinc-100 overflow-hidden z-10 min-w-[160px]">
+              <div className="absolute bottom-14 left-0 z-10 min-w-[160px] overflow-hidden rounded-xl border border-white/20 bg-[#192b52] shadow-[0_14px_40px_rgba(3,12,30,0.55)]">
                 <button
                   onClick={() => { imageInputRef.current?.click(); setShowAttachMenu(false); }}
-                  className="flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 hover:bg-zinc-50 w-full text-left"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-slate-100 hover:bg-white/10"
                 >
-                  <ImageIcon size={16} className="text-[#3F5E7A]" />
+                  <ImageIcon size={16} className="text-sky-300" />
                   Imagen
                 </button>
                 <button
                   onClick={() => { fileInputRef.current?.click(); setShowAttachMenu(false); }}
-                  className="flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 hover:bg-zinc-50 w-full text-left border-t border-zinc-100"
+                  className="flex w-full items-center gap-3 border-t border-white/10 px-4 py-3 text-left text-sm text-slate-100 hover:bg-white/10"
                 >
-                  <FileText size={16} className="text-[#3F5E7A]" />
+                  <FileText size={16} className="text-sky-300" />
                   PDF
                 </button>
               </div>
@@ -343,7 +347,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             }}
             placeholder="Escribe tu mensaje..."
             rows={1}
-            className="min-w-0 flex-1 min-h-[42px] max-h-28 resize-none rounded-2xl border border-zinc-200 px-3 py-[9px] text-base leading-6 outline-none focus:ring-2 focus:ring-[#3F5E7A]/30 bg-white overflow-y-auto"
+            className="min-h-[42px] max-h-28 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border border-white/20 bg-[#192b52] px-3 py-[9px] text-base leading-6 text-white outline-none placeholder:text-slate-400 focus:border-sky-300/65 focus:ring-2 focus:ring-sky-300/20"
             disabled={busy}
           />
 
@@ -352,7 +356,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             type="button"
             onClick={handleSend}
             disabled={busy || !input.trim()}
-            className="flex h-10 w-8 shrink-0 items-center justify-center rounded-xl text-[#3F5E7A] disabled:text-zinc-300"
+            className="flex h-10 w-8 shrink-0 items-center justify-center rounded-xl text-sky-300 transition-colors hover:bg-white/10 disabled:text-white/25"
             aria-label="Enviar mensaje"
             title="Enviar mensaje"
           >
@@ -370,7 +374,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             disabled={isTranscribing}
             className={cn(
               "flex h-10 w-8 shrink-0 touch-none select-none items-center justify-center rounded-xl transition-colors disabled:opacity-40",
-              pressingMic || isRecording ? "bg-red-50 text-red-600" : "text-zinc-500 hover:text-zinc-700"
+              pressingMic || isRecording ? "bg-rose-400/15 text-rose-300" : "text-sky-100/75 hover:bg-white/10 hover:text-white"
             )}
             aria-label="Mantener pulsado para dictar, soltar para transcribir"
             aria-pressed={pressingMic || isRecording}
@@ -523,9 +527,9 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="flex-1 flex flex-col w-full h-full bg-white">
+    <div className="flex h-full w-full flex-1 flex-col bg-[var(--color-envolvente-bajo)] text-white">
       {/* Voice header */}
-      <div className="bg-[#3F5E7A] px-4 py-3 flex items-center justify-between shrink-0 text-white">
+      <div className="flex shrink-0 items-center justify-between border-b border-white/15 bg-[#142447] px-4 py-3 text-white">
         <span className="text-sm font-semibold">Llamada de voz</span>
         <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors">
           <X size={16} strokeWidth={2.5} />
@@ -536,28 +540,28 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
         <div className="flex-1 flex items-center justify-center p-8">
           <button
             onClick={startCall}
-            className="bg-emerald-500 text-white font-bold px-10 h-14 py-3 rounded-2xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 flex items-center gap-3 text-sm uppercase tracking-wide"
+            className="flex h-14 items-center gap-3 rounded-xl bg-emerald-500 px-9 text-sm font-bold uppercase tracking-wide text-white shadow-[0_10px_26px_rgba(3,12,30,0.28)] transition-colors hover:bg-emerald-600"
           >
             <Phone size={20} fill="currentColor" />
             Iniciar Llamada
           </button>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div ref={scrollRef} className="custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
             {transcripts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full space-y-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center animate-pulse">
-                  <Mic size={28} className="text-emerald-600" />
+                <div className="flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-emerald-400/15">
+                  <Mic size={28} className="text-emerald-300" />
                 </div>
-                <p className="text-sm text-zinc-500">Escuchando...</p>
+                <p className="text-sm text-sky-100/65">Escuchando...</p>
               </div>
             ) : (
               transcripts.map((t, i) => (
                 <div key={i} className={t.role === 'user' ? 'text-right' : 'text-left'}>
                   <span className={cn(
-                    "inline-block px-4 py-2.5 rounded-2xl text-[13px] max-w-[85%] break-words leading-relaxed",
-                    t.role === 'user' ? "bg-[#3F5E7A] text-white rounded-tr-sm" : "bg-zinc-100 text-zinc-800 rounded-tl-sm"
+                    "inline-block max-w-[85%] break-words rounded-xl border px-4 py-2.5 text-sm leading-relaxed",
+                    t.role === 'user' ? "rounded-tr-sm border-sky-300/20 bg-[#315a86] text-white" : "rounded-tl-sm border-white/15 bg-[#192b52] text-slate-100"
                   )}>
                     {t.text}
                   </span>
@@ -568,7 +572,7 @@ function VoiceCallView({ onClose }: { onClose: () => void }) {
           <div className="shrink-0 p-4 flex justify-center">
             <button
               onClick={stopCall}
-              className="bg-red-50 text-red-600 border border-red-200 font-semibold px-8 h-12 rounded-2xl hover:bg-red-100 transition-colors flex items-center gap-2 text-sm"
+              className="flex h-12 items-center gap-2 rounded-xl border border-rose-400/30 bg-rose-400/10 px-8 text-sm font-semibold text-rose-200 transition-colors hover:bg-rose-400/20"
             >
               <Phone size={16} className="rotate-[135deg]" />
               Finalizar
