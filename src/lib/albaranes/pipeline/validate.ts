@@ -368,6 +368,30 @@ export function isVerifiedTaxRateMisreadAsDiscount(line: CanonicalDocument['line
     && withinExactTolerance(multiplyExact(quantity, price), total, parseExactDecimal('0.01')!)
 }
 
+/** Revisión humana de un DTO fijo desplazado a P.UN mientras el IVA se leyó como DTO. */
+export function reviewTaxMisreadAsFixedDiscount(
+  line: CanonicalDocument['lines'][number],
+  review: { quantity: number; discount: number; lineTotal: number }
+): CanonicalDocument['lines'][number] | null {
+  const misread = parseObservedDecimal(line.discount_raw)
+  const tax = parseObservedDecimal(line.tax_rate_raw)
+  const printedDto = parseObservedDecimal(line.net_unit_price_raw)
+  if (!/dto|descuento|discount/i.test(line.discount_header_raw ?? '')
+    || misread == null || tax == null || misread !== tax
+    || printedDto == null || printedDto !== review.discount
+    || !Number.isFinite(review.quantity) || review.quantity <= 0
+    || !Number.isFinite(review.lineTotal) || review.lineTotal <= 0
+    || !Number.isFinite(review.discount) || review.discount <= 0) return null
+  const corrected = {
+    ...line,
+    quantity_raw: String(review.quantity),
+    discount_raw: String(review.discount),
+    net_unit_price_raw: String(review.lineTotal / review.quantity),
+    line_total_raw: String(review.lineTotal),
+  }
+  return reconcileFixedDiscountedUnitPrice(corrected) == null ? null : corrected
+}
+
 export function validateObservedLine(line: CanonicalDocument['lines'][number]): LineCheck {
   if (isVerifiedTaxRateMisreadAsDiscount(line)) {
     line = { ...line, discount_raw: null, discount_header_raw: null, net_unit_price_raw: null }

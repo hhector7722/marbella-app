@@ -141,6 +141,7 @@ export function LineMappingModal({
   const [observedUnitPriceDraft, setObservedUnitPriceDraft] = useState('')
   const [discountDraft, setDiscountDraft] = useState('')
   const [discountKindOverride, setDiscountKindOverride] = useState<'percent' | 'fixed' | null>(null)
+  const [discountValueOverride, setDiscountValueOverride] = useState('')
   const [manualDiscountDraft, setManualDiscountDraft] = useState('')
   const [lineTotalDraft, setLineTotalDraft] = useState('')
   const [verifiedOcrAmount, setVerifiedOcrAmount] = useState(false)
@@ -395,6 +396,7 @@ export function LineMappingModal({
       setDiscountDraft(resolveSyncKey.line.printed_discount_percent == null
         ? '' : String(resolveSyncKey.line.printed_discount_percent))
       setDiscountKindOverride(null)
+      setDiscountValueOverride('')
       setLineTotalDraft(resolveSyncKey.line.total_price == null ? '' : String(resolveSyncKey.line.total_price))
     }
   }
@@ -445,8 +447,12 @@ export function LineMappingModal({
   const isPanabad = supplierId === 2
   const sourceDiscount = line?.printed_discount_raw == null
     ? null : Number(line.printed_discount_raw.replace(',', '.'))
+  const correctedDiscount = discountValueOverride.trim() === ''
+    ? sourceDiscount : parseObservedDecimal(discountValueOverride)
   const hasSourceDiscount = sourceDiscount != null && Number.isFinite(sourceDiscount) && sourceDiscount > 0
-  const isShersFixedDiscount = !isPanabad && hasSourceDiscount
+  const validCorrectedDiscount = correctedDiscount != null && Number.isFinite(correctedDiscount)
+    && correctedDiscount > 0
+  const isShersFixedDiscount = !isPanabad && hasSourceDiscount && validCorrectedDiscount
     && (discountKindOverride === 'fixed'
       || (discountKindOverride == null && line?.printed_fixed_discount_eur != null))
   const shersEffectiveUnitPrice = isShersFixedDiscount && grossUnitPrice != null
@@ -454,21 +460,25 @@ export function LineMappingModal({
     ? reconcileFixedDiscountedUnitPrice({
         quantity_raw: String(line.quantity),
         unit_price_raw: String(grossUnitPrice),
-        discount_raw: String(sourceDiscount),
+        discount_raw: String(correctedDiscount),
         discount_header_raw: 'DTO.',
-        net_unit_price_raw: String(line.printed_net_unit_price),
+        net_unit_price_raw: discountValueOverride.trim() && lineTotalDraft && line.quantity
+          ? String(Number(lineTotalDraft.replace(',', '.')) / Number(line.quantity))
+          : String(line.printed_net_unit_price),
         line_total_raw: lineTotalDraft,
       }) ?? reconcileFreeFixedDiscountedUnitPrice({
         quantity_raw: String(line.quantity),
         unit_price_raw: String(grossUnitPrice),
-        discount_raw: String(sourceDiscount),
+        discount_raw: String(correctedDiscount),
         discount_header_raw: 'DTO.',
-        net_unit_price_raw: line.printed_net_unit_price == null
+        net_unit_price_raw: discountValueOverride.trim() && lineTotalDraft && line.quantity
+          ? String(Number(lineTotalDraft.replace(',', '.')) / Number(line.quantity))
+          : line.printed_net_unit_price == null
           ? null : String(line.printed_net_unit_price),
         line_total_raw: lineTotalDraft,
       })
     : null
-  const isOtherPercentDiscount = !isPanabad && !isShersFixedDiscount && hasSourceDiscount
+  const isOtherPercentDiscount = !isPanabad && !isShersFixedDiscount && hasSourceDiscount && validCorrectedDiscount
     && (discountKindOverride === 'percent'
       || (discountKindOverride == null && line?.printed_discount_percent != null))
   const otherPercentEffectiveUnitPrice = isOtherPercentDiscount && grossUnitPrice != null
@@ -476,8 +486,10 @@ export function LineMappingModal({
     ? reconcilePercentageDiscountedUnitPrice({
         quantity_raw: String(line.quantity),
         unit_price_raw: String(grossUnitPrice),
-        discount_raw: String(sourceDiscount),
-        net_unit_price_raw: line.printed_net_unit_price == null
+        discount_raw: String(correctedDiscount),
+        net_unit_price_raw: discountValueOverride.trim() && lineTotalDraft && line.quantity
+          ? String(Number(lineTotalDraft.replace(',', '.')) / Number(line.quantity))
+          : line.printed_net_unit_price == null
           ? null : String(line.printed_net_unit_price),
         line_total_raw: lineTotalDraft,
       })
@@ -803,6 +815,9 @@ export function LineMappingModal({
           discountPercent: reviewedDiscount.discountPercent,
           lineTotal: reviewedDiscount.lineTotal,
         } : null,
+        discountCorrectionReview: isShersFixedDiscount && discountValueOverride.trim()
+          && correctedDiscount != null && correctedDiscount !== sourceDiscount
+          ? { kind: 'fixed', discount: correctedDiscount } : null,
         manualDiscountReview: manualDiscount,
         verifiedOcrAmount,
       })
@@ -1185,20 +1200,29 @@ export function LineMappingModal({
                     </span>
                   </div>
                   {!isPanabad && hasSourceDiscount ? (
-                    <label className="flex flex-wrap items-center gap-2 px-1 text-xs font-semibold text-zinc-700">
-                      Descuento impreso: {sourceDiscount?.toLocaleString('es-ES')}
+                    <div className="flex flex-wrap items-end gap-2 px-1 text-xs font-semibold text-zinc-700">
+                      <label className="flex flex-col gap-1">
+                        Descuento leído (corrige si es el IVA)
+                        <input
+                          aria-label="Corregir descuento leído"
+                          inputMode="decimal"
+                          value={discountValueOverride || String(sourceDiscount ?? '')}
+                          onChange={(event) => setDiscountValueOverride(event.target.value)}
+                          className="min-h-12 w-28 rounded-lg border border-zinc-300 bg-white px-2 text-sm tabular-nums text-zinc-900"
+                        />
+                      </label>
                       <select
                         aria-label="Interpretación del descuento impreso"
                         value={discountKindOverride ?? (line?.printed_fixed_discount_eur != null
                           ? 'fixed' : line?.printed_discount_percent != null ? 'percent' : '')}
                         onChange={(event) => setDiscountKindOverride(event.target.value as 'percent' | 'fixed')}
-                        className="min-h-10 rounded-lg border border-zinc-300 bg-white px-2 text-sm text-zinc-900"
+                        className="min-h-12 rounded-lg border border-zinc-300 bg-white px-2 text-sm text-zinc-900"
                       >
                         <option value="" disabled>Elegir unidad</option>
                         <option value="percent">% porcentaje</option>
                         <option value="fixed">€ por {billingUnitForDisplay}</option>
                       </select>
-                    </label>
+                    </div>
                   ) : null}
                   {isPanabad ? (
                     <>
@@ -1240,7 +1264,7 @@ export function LineMappingModal({
                   ) : isShersFixedDiscount ? (
                     <div className="flex flex-col gap-1 px-1 text-xs text-zinc-700">
                       <p>Descuento fijo: <span className="font-semibold tabular-nums">
-                        {sourceDiscount?.toLocaleString('es-ES', {
+                        {correctedDiscount?.toLocaleString('es-ES', {
                           minimumFractionDigits: 2, maximumFractionDigits: 2,
                         })} € por {billingUnitForDisplay}</span>
                       </p>
@@ -1264,7 +1288,7 @@ export function LineMappingModal({
                   ) : isOtherPercentDiscount ? (
                     <div className="flex flex-col gap-1 px-1 text-xs text-zinc-700">
                       <p>Descuento: <span className="font-semibold">
-                        {sourceDiscount?.toLocaleString('es-ES')} %
+                        {correctedDiscount?.toLocaleString('es-ES')} %
                       </span></p>
                       {otherPercentEffectiveUnitPrice != null ? (
                         <p className="font-semibold text-zinc-900">
