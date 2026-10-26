@@ -77,6 +77,10 @@ conciliación documental previa, como el par de hojas repetidas descrito abajo.
   el mismo `created_by`.
 - Si K4 devuelve `needs_review`, respetar la excepción concreta; la identidad
   técnica no omite los mapeos, las conversiones ni el cálculo económico.
+- Si la vista de un albarán informa de un tiempo agotado al comprobar stock,
+  verificar que está aplicada la migración de lectura indexada de
+  rectificaciones y que `get_purchase_line_rectification_counts(uuid[])`
+  responde para las líneas del documento. Esta lectura no modifica stock.
 - Ante anomalía económica, desactivar `ALBARAN_AUTO_RECEIPT_MISTRAL`, conservar
   evidencia y trabajos, y revisar las confirmaciones y el registro privado de
   auditoría antes de volver a activar.

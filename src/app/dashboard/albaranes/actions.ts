@@ -784,6 +784,7 @@ export async function getInvoiceStockStatusesAction(params: {
   const isManager = gate.role === 'manager' || gate.role === 'admin'
   const lineIds = Array.from(new Set((params?.lineIds ?? []).map((x) => String(x ?? '').trim()).filter(Boolean)))
   if (lineIds.length === 0) return { success: true, statuses: [] }
+  if (lineIds.length > 200) return { success: false, message: 'El albarán supera el límite de 200 líneas.' }
 
   // 1) Movimientos aplicados: K4 usa una referencia tipada; el histórico
   // conserva `ALB-LINE-*` para que la lectura siga siendo compatible.
@@ -813,24 +814,18 @@ export async function getInvoiceStockStatusesAction(params: {
     }
   }
 
-  // 2) Rectificaciones (ALB-LINE-<id>-REVn-...)
-  const or = lineIds.map((id) => `reference_doc.like.ALB-LINE-${id}-REV%`).join(',')
-  let rectRows: any[] = []
-  if (or) {
-    const { data, error } = await gate.supabase.from('stock_movements').select('reference_doc').or(or).limit(5000)
-    if (error) return { success: false, message: error.message }
-    rectRows = (data as any[]) ?? []
-  }
-
+  // 2) Rectificaciones: la RPC busca cada prefijo mediante el índice y respeta RLS.
+  // Evita el OR de LIKE parametrizados que agotaba el tiempo en PostgREST.
+  const { data: rectRows, error: rectError } = await gate.supabase
+    .rpc('get_purchase_line_rectification_counts', { p_line_ids: lineIds })
+  if (rectError) return { success: false, message: rectError.message }
   const rectCountMap = new Map<string, number>()
-  for (const row of rectRows) {
-    const ref = String(row.reference_doc ?? '')
-    const m = ref.match(/^ALB-LINE-([0-9a-fA-F-]{36})-REV(\d+)-/i)
-    if (!m) continue
-    const lid = m[1]!
-    const n = Number(m[2])
-    if (!Number.isFinite(n)) continue
-    rectCountMap.set(lid, Math.max(rectCountMap.get(lid) ?? 0, n))
+  for (const row of rectRows ?? []) {
+    const lineId = String(row.line_id ?? '')
+    const count = Number(row.rectified_count)
+    if (lineIds.includes(lineId) && Number.isSafeInteger(count) && count >= 0) {
+      rectCountMap.set(lineId, count)
+    }
   }
 
   const statuses: StockLineStatus[] = lineIds.map((lineId) => {
