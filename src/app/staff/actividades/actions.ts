@@ -292,16 +292,16 @@ export async function fetchDayDetailAction(params: {
   for (const row of occData ?? []) {
     const act = row.activities as unknown as { name: string; color: string | null; active: boolean | null } | null;
     if (act && act.active === false) continue;
-    totalCount++;
     const venues =
       (row.occurrence_venues as unknown as {
         venues: { code: string; affects_bar: boolean };
       }[])?.map((ov) => ov.venues) ?? [];
 
-    const barVenues = venues.filter((v) => v.affects_bar);
-    const hasFormTimes = (row as any).form_start_time !== null;
-    const fromReportForm = (row as any).preferred_start_time === 'form' && venues.length === 0;
-    if (barVenues.length > 0 || hasFormTimes || fromReportForm) {
+    // Mostrar solo las ocupaciones de P1, P2, P3 y P4,
+    // independientemente de que existan horas de formulario.
+    const barVenues = venues.filter((v) => ['P1', 'P2', 'P3', 'P4'].includes(v.code));
+    if (barVenues.length > 0) {
+      totalCount++;
       const prefStart = (row as any).preferred_start_time as string;
       const prefEnd = (row as any).preferred_end_time as string;
       const formStart = (row as any).form_start_time as string | null;
