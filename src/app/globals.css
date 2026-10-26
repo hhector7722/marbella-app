@@ -7888,7 +7888,9 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-component='HomeScreen'] [data-element='mobile-sales-units'] {
     color: color-mix(in srgb, var(--home-widget-ink) 48%, transparent);
   }
-  /* Las tres líneas de cada ranking se distribuyen desde arriba hasta abajo. */
+  /* Rankings con columnas compartidas por sus tres filas:
+     descripción a la izquierda, unidades e importes alineados a la derecha.
+     Horas y productos utilizan idéntica escala tipográfica. */
   [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
     min-height: 0;
     height: 100%;
@@ -7896,34 +7898,25 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div {
     min-height: 0;
-    justify-content: space-evenly;
-    gap: 2px;
+    align-content: space-evenly;
+    column-gap: clamp(4px, 0.45vw, 9px);
+    row-gap: 2px;
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div > div {
     min-height: 0;
     line-height: 1.2;
   }
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:first-child > div {
-    gap: clamp(4px, 0.5vw, 10px);
-  }
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:first-child > div > span:first-child {
-    font-size: clamp(9px, 0.8vw, 13px);
-  }
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:first-child > div > span:last-child,
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:last-child > div > span:last-child {
-    gap: clamp(4px, 0.45vw, 9px);
-  }
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:first-child > div > span:last-child > span:last-child {
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div > div > span:first-child,
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div > div > [data-element='mobile-sales-amount'] {
     font-size: clamp(9px, 0.75vw, 12px);
   }
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:last-child > div {
-    font-size: clamp(9px, 0.75vw, 12px);
-    gap: 4px;
-  }
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] > div:last-child > div > span:last-child > span:last-child {
-    font-size: clamp(9px, 0.75vw, 12px);
-  }
-  [data-component='HomeScreen'] [data-element='mobile-sales-units'] {
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] [data-element='mobile-sales-units'] {
     font-size: clamp(8px, 0.62vw, 10px);
+    text-align: right;
+    justify-self: end;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] [data-element='mobile-sales-amount'] {
+    text-align: right;
+    justify-self: end;
   }
 }
