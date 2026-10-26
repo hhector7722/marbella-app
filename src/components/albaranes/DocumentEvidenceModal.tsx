@@ -174,6 +174,7 @@ export function DocumentEvidenceModal({
       layer="derived"
       instance="albaran-document-evidence"
       parentInstance="albaran-detail"
+      dismissScope="self"
       usageId="albaran-document-evidence"
       usageLabel="Auditoría de evidencia"
       headerTitleAlign="left"
