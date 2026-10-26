@@ -299,7 +299,6 @@ export default function ActividadesPage() {
               variant="tertiary"
               instance="actividades-recuperar-pdf"
               aria-label="Recuperar los cinco PDF fallidos"
-              title="Reprocesar PDF con error"
               icon={<RefreshCcw size={20} strokeWidth={2.5} />}
               loading={retryingFailedPdf}
               disabled={retryingFailedPdf}
