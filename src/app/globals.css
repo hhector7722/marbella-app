@@ -7617,6 +7617,15 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 /* Widgets de inicio: solo Ventas y Último cierre, sin cambiar tamaño de celdas
    ni la apariencia o geometría de Horarios, asistencia y accesos. */
 @media (max-width: 1023px) {
+  /* Ventas conservaba 4 px de padding-bottom heredado en el body del slot,
+     a diferencia de Último cierre. Eso recortaba la última fila de rankings.
+     Ambas tarjetas deben entregar exactamente la misma altura a su contenido. */
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='dashboard-ventas'],
+    [data-instance='master-ultimo-cierre']
+  ) > [data-element='body'] {
+    padding-bottom: 0;
+  }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='header'] > a[data-style='calculator-primary'] {
     inset-inline-end: 18px;
