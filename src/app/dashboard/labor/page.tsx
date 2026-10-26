@@ -43,7 +43,15 @@ import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import { payrollAbsenceNotice, type PayrollAbsenceNotice } from '@/lib/payroll/payroll-month-status';
 import { laborRatioBand, type LaborRatioBand } from '@/lib/labor-cost-ratio-presentation';
 
-type DayCell = { total: number; fixed: number; overtime: number; laborPctOfSales: number | null };
+type DayCell = {
+    total: number;
+    fixed: number;
+    overtime: number;
+    laborPctOfSales: number | null;
+    operationalIncomplete: boolean;
+    operationalMissingWorkers: number;
+    hasActivity: boolean;
+};
 
 type MonthSummaryPayload = {
     year: number;
@@ -74,6 +82,8 @@ type WorkerRow = {
     hasActivity: boolean;
     hasActiveContract: boolean;
     isEventual: boolean;
+    workedHours: number;
+    costKnown: boolean;
 };
 
 function parseLocalSafe(dateStr: string | null): Date {
@@ -232,6 +242,8 @@ export default function LaborHistoryPage() {
         dayNetSales: number;
         laborPctOfSales: number | null;
         payrollPending: boolean;
+        operationalIncomplete: boolean;
+        operationalMissingWorkers: number;
         workers: WorkerRow[];
     } | null>(null);
 
@@ -310,6 +322,9 @@ export default function LaborHistoryPage() {
                     fixed: Number(cell.fixed) || 0,
                     overtime: Number(cell.overtime) || 0,
                     laborPctOfSales: cell.laborPctOfSales == null ? null : Number(cell.laborPctOfSales),
+                    operationalIncomplete: cell.operationalIncomplete,
+                    operationalMissingWorkers: cell.operationalMissingWorkers,
+                    hasActivity: cell.hasActivity,
                 };
             }
 
@@ -439,6 +454,8 @@ export default function LaborHistoryPage() {
                     hasActivity: w.hasActivity,
                     hasActiveContract: w.hasActiveContract,
                     isEventual: w.isEventual,
+                    workedHours: w.workedHours ?? 0,
+                    costKnown: w.costKnown ?? false,
                 }));
 
                 setDayDetail({
@@ -449,6 +466,8 @@ export default function LaborHistoryPage() {
                     dayNetSales: labor.netSales,
                     laborPctOfSales: labor.laborPctOfSales,
                     payrollPending: labor.isPayrollPending,
+                    operationalIncomplete: labor.operationalIncomplete,
+                    operationalMissingWorkers: labor.operationalMissingWorkers,
                     workers,
                 });
             } catch (e) {
@@ -531,7 +550,7 @@ export default function LaborHistoryPage() {
                         <div className="grid min-w-0 grid-cols-3 gap-1.5 sm:flex-1">
                             {([
                                 {
-                                    label: 'Fijo',
+                                    label: 'Nóminas',
                                     value: summary && !ordinaryUnknown ? formatLaborEuro(summary.totalFixed) : '—',
                                     tone: 'border-white/15 bg-white/[0.045]',
                                 },
@@ -581,7 +600,7 @@ export default function LaborHistoryPage() {
                                             isViewMonthDay && inPeriod && !isFutureDay;
                                         const clickable = showData;
                                         const todayCell = isToday(day);
-                                        const ratio = showData && !dayOrdinaryUnknown
+                                        const ratio = showData && !dayOrdinaryUnknown && !cell?.operationalIncomplete
                                             ? cell?.laborPctOfSales ?? null : null;
                                         const ratioTone = ratioStyles[laborRatioBand(ratio)];
 
@@ -594,8 +613,9 @@ export default function LaborHistoryPage() {
                                                 aria-label={showData
                                                     ? format(day, 'd MMMM yyyy', { locale: es }) + ', ' +
                                                         (dayOrdinaryUnknown ? 'nómina pendiente' :
-                                                            ratio === null ? 'porcentaje no disponible' : 'coste sobre ventas ' + formatLaborPercent(ratio)) +
-                                                        ', coste ' + (dayOrdinaryUnknown ? 'pendiente' : formatLaborEuro(cell?.total ?? 0))
+                                                            cell?.operationalIncomplete ? 'coste operativo incompleto' :
+                                                            ratio === null ? 'porcentaje no disponible' : 'coste operativo sobre ventas ' + formatLaborPercent(ratio)) +
+                                                        ', coste ' + (dayOrdinaryUnknown || cell?.operationalIncomplete ? 'pendiente' : formatLaborEuro(cell?.total ?? 0))
                                                     : format(day, 'd MMMM yyyy', { locale: es })}
                                                 className={cn(
                                                     'group relative flex flex-col text-left transition-colors p-0.5 sm:p-1 month-cal-cell',
@@ -630,16 +650,17 @@ export default function LaborHistoryPage() {
                                                                 'flex w-full min-w-0 max-w-full flex-col items-center justify-center gap-0.5 rounded-md border px-0.5 py-1 text-center tabular-nums',
                                                                 ratioTone.chip,
                                                             )}
-                                                            title={dayOrdinaryUnknown
-                                                                ? 'Nómina pendiente'
-                                                                : (ratio === null ? 'Sin venta neta positiva' : 'Coste / ventas: ' + formatLaborPercent(ratio)) +
-                                                                    ' · Coste diario: ' + formatLaborEuro(cell?.total ?? 0)}
+                                                            title={dayOrdinaryUnknown ? 'Nómina pendiente' :
+                                                                cell?.operationalIncomplete
+                                                                    ? 'Coste operativo incompleto: ' + cell.operationalMissingWorkers + ' trabajador(es) sin tarifa verificable o sin fichajes'
+                                                                    : (ratio === null ? 'Sin venta neta positiva' : 'Coste operativo / ventas: ' + formatLaborPercent(ratio)) +
+                                                                        ' · Coste del personal fichado: ' + formatLaborEuro(cell?.total ?? 0)}
                                                         >
                                                             <span className="block w-full truncate text-[9px] font-semibold leading-none sm:text-[10px]">
                                                                 {dayOrdinaryUnknown || ratio === null ? '—' : formatLaborPercent(ratio)}
                                                             </span>
                                                             <span className="block w-full whitespace-nowrap text-[8px] font-bold leading-tight tracking-tight min-[375px]:text-[9px] sm:text-[11px]">
-                                                                {dayOrdinaryUnknown ? '—' : formatCalendarLaborEuro(cell?.total ?? 0)}
+                                                                {dayOrdinaryUnknown || cell?.operationalIncomplete ? '—' : formatCalendarLaborEuro(cell?.total ?? 0)}
                                                             </span>
                                                         </div>
                                                     )}
@@ -673,7 +694,8 @@ export default function LaborHistoryPage() {
                         </div>
                     ) : dayDetail ? (() => {
                         const pending = dayDetail.payrollPending;
-                        const ratio = pending || dayDetail.dayNetSales <= 0 ? null : dayDetail.laborPctOfSales;
+                        const incomplete = dayDetail.operationalIncomplete;
+                        const ratio = pending || incomplete || dayDetail.dayNetSales <= 0 ? null : dayDetail.laborPctOfSales;
                         const tone = ratioStyles[laborRatioBand(ratio)];
                         const shownWorkers = dayDetail.workers
                             .filter(w => showNoActivity || w.hasActivity || w.total !== 0 || w.fixed !== 0 || w.overtime !== 0)
@@ -685,12 +707,20 @@ export default function LaborHistoryPage() {
                                         {dayPayrollNotice.body}
                                     </Notice>
                                 )}
+                                {!pending && incomplete && (
+                                    <p role="status" className="rounded-lg border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
+                                        Coste operativo incompleto: {dayDetail.operationalMissingWorkers > 0
+                                            ? dayDetail.operationalMissingWorkers + ' trabajador(es) ficharon sin una tarifa empresarial verificable.'
+                                            : 'no hay horas de trabajo válidas registradas para ese día.'}
+                                        {' '}No se muestra un porcentaje que pueda inducir a error.
+                                    </p>
+                                )}
 
                                 <section aria-label="Porcentaje de coste sobre ventas" className="rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3.5">
                                     <div className="flex items-center justify-between gap-3">
                                         <span className="text-[10px] font-semibold uppercase tracking-[0.09em] text-white/65">Coste laboral / ventas netas</span>
                                         <span className={cn('inline-flex shrink-0 rounded-md border px-2 py-1 text-[10px] font-semibold', tone.chip)}>
-                                            {pending ? 'Nómina pendiente' : ratio === null ? 'Sin ventas' :
+                                            {pending ? 'Nómina pendiente' : incomplete ? 'Datos incompletos' : ratio === null ? 'Sin ventas' :
                                                 laborRatioBand(ratio) === 'good' ? '≤55%' :
                                                 laborRatioBand(ratio) === 'attention' ? '55–70%' :
                                                 laborRatioBand(ratio) === 'high' ? '70–90%' : '>90%'}
@@ -700,9 +730,10 @@ export default function LaborHistoryPage() {
                                         {ratio === null ? '—' : formatLaborPercent(ratio)}
                                     </strong>
                                     <p className="mt-2 text-[11px] leading-relaxed text-white/60">
-                                        {pending ? 'No hay todavía un coste fijo oficial para calcular la proporción.' :
+                                        {pending ? 'No se puede calcular el coste horario sin la nómina oficial.' :
+                                            incomplete ? 'Hay fichajes sin coste salarial verificable o faltan fichajes. La nómina mensual sigue íntegra.' :
                                             ratio === null ? 'No hay venta neta positiva con la que comparar este día.' :
-                                            'Parte de las ventas netas destinada al coste de personal de este día.'}
+                                            'Coste de quienes ficharon ese día, valorado según nómina oficial y horas contractuales.'}
                                     </p>
                                     <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden="true">
                                         {ratio !== null && (
@@ -714,10 +745,10 @@ export default function LaborHistoryPage() {
 
                                 <div className="grid grid-cols-2 gap-2">
                                     {([
-                                        { label: 'Coste total', value: pending ? '—' : formatLaborEuro(dayDetail.totalCost), emphasized: true },
+                                        { label: 'Coste operativo', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalCost), emphasized: true },
                                         { label: 'Venta neta', value: formatLaborEuro(dayDetail.dayNetSales), emphasized: false },
-                                        { label: 'Coste fijo', value: pending ? '—' : formatLaborEuro(dayDetail.totalFixed), emphasized: false },
-                                        { label: 'Horas extra', value: formatLaborEuro(dayDetail.totalOvertime), emphasized: false },
+                                        { label: 'Horas ordinarias', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalFixed), emphasized: false },
+                                        { label: 'Horas extra', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalOvertime), emphasized: false },
                                     ] as const).map(metric => (
                                         <div key={metric.label} className="min-w-0 rounded-lg border border-white/10 bg-white/[0.045] p-3">
                                             <span className="block text-[10px] font-medium text-white/60">{metric.label}</span>
@@ -750,13 +781,15 @@ export default function LaborHistoryPage() {
                                                     <div className="min-w-0 flex-1">
                                                         <span className="block truncate text-[12px] font-semibold text-white">{name}</span>
                                                         <span className="block truncate text-[10px] text-white/55">
-                                                            {pending ? (w.overtime > 0 ? 'Extras ' + formatLaborEuro(w.overtime) : 'Coste fijo pendiente') :
-                                                                'Fijo ' + formatLaborEuro(w.fixed) + (w.overtime > 0 ? ' · Extras ' + formatLaborEuro(w.overtime) : '')}
+                                                            {w.hasActivity ? w.workedHours.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + ' h' : 'Sin fichajes'}
+                                                            {w.hasActivity && !w.costKnown ? ' · Sin tarifa' :
+                                                                w.hasActivity ? ' · Ordinario ' + formatLaborEuro(w.fixed) +
+                                                                    (w.overtime > 0 ? ' · Extras ' + formatLaborEuro(w.overtime) : '') : ''}
                                                         </span>
                                                     </div>
                                                     <div className="flex shrink-0 flex-col items-end gap-0.5">
                                                         <strong className="text-[12px] font-semibold tabular-nums text-white">
-                                                            {formatLaborEuro(pending ? w.overtime : w.total)}
+                                                            {w.costKnown ? formatLaborEuro(w.total) : '—'}
                                                         </strong>
                                                         <span className={cn('text-[10px] font-semibold tabular-nums', ratioStyles[workerBand].text)}>
                                                             {workerRatio === null ? '—' : formatLaborPercent(workerRatio)}
@@ -772,8 +805,10 @@ export default function LaborHistoryPage() {
 
                                 {!pending && (
                                     <p className="text-center text-[10px] leading-relaxed text-white/50">
-                                        El coste fijo se distribuye entre los días naturales del mes según la nómina oficial.
-                                        Los colores representan el porcentaje de coste sobre ventas netas.
+                                        El coste operativo usa solo las horas realmente fichadas, con una tarifa
+                                        empresarial estimada de la nómina y la jornada contratada. El resumen mensual
+                                        conserva íntegro el coste oficial, incluidas ausencias y descansos.
+                                        Las extras estimadas no se añaden de nuevo al coste oficial.
                                     </p>
                                 )}
                             </div>

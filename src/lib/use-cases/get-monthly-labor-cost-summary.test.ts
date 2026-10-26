@@ -4,14 +4,17 @@ import { GetMonthlyLaborCostSummaryUseCase } from './get-monthly-labor-cost-summ
 import { laborSupabaseFixture, payrollFixture } from '../read-models/labor-cost-test-fixture.ts';
 
 describe('Coste laboral mensual — SSOT gestoría', () => {
-  it('concilia el calendario al céntimo sin fichajes y con trabajadores ocultos', async () => {
+  it('conserva la nómina mensual oficial y muestra solo horas fichadas en el calendario', async () => {
     const useCase = new GetMonthlyLaborCostSummaryUseCase(laborSupabaseFixture(payrollFixture));
     const dto = await useCase.execute({ startDate: '2026-07-01', endDate: '2026-07-31' });
     assert.equal(dto.totalFixed, 4100);
     assert.equal(dto.totalCost, 4100);
     assert.equal(Object.keys(dto.byDate).length, 31);
-    assert.equal(Number(Object.values(dto.byDate).reduce((s, c) => s + c.fixed, 0).toFixed(2)), 4100);
+    assert.ok(Object.values(dto.byDate).reduce((s, c) => s + c.fixed, 0) < 4100);
     assert.equal(dto.byDate['2026-07-15']?.laborPctOfSales !== null, true);
+    assert.equal(dto.byDate['2026-07-16']?.totalCost, 0);
+    assert.equal(dto.byDate['2026-07-16']?.operationalIncomplete, true);
+    assert.equal(dto.byDate['2026-07-16']?.laborPctOfSales, null);
     assert.equal(dto.missingPayrollMonths.length, 0);
   });
 
@@ -26,6 +29,20 @@ describe('Coste laboral mensual — SSOT gestoría', () => {
     assert.equal(Object.keys(partial.byDate).length, 15);
     assert.equal(partial.totalFixed, 1983.75);
     assert.ok(partial.totalFixed < 4100);
+  });
+
+  it('mantiene la nómina mensual sin duplicar extras de fichajes o de su proyección', async () => {
+    const seed = { ...payrollFixture, weekly_snapshot_days: [
+      { user_id: 'usr_active', week_start: '2026-07-13', day: '2026-07-15',
+        overtime_hours: 2, overtime_cost: 30 },
+    ] };
+    const summary = await new GetMonthlyLaborCostSummaryUseCase(laborSupabaseFixture(seed))
+      .execute({ startDate: '2026-07-01', endDate: '2026-07-31' });
+    assert.equal(summary.totalFixed, 4100);
+    assert.equal(summary.totalOvertime, 30); // informativa, incluida en el control
+    assert.equal(summary.totalCost, 4100); // ninguna segunda suma de 30
+    assert.equal(summary.byDate['2026-07-15']!.total,
+      summary.byDate['2026-07-15']!.fixed + summary.byDate['2026-07-15']!.overtime);
   });
 
   it('no inventa costes fijos en meses sin resumen oficial', async () => {

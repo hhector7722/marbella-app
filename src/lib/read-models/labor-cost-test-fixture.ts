@@ -52,6 +52,11 @@ export const payrollFixture = {
   ],
   weekly_snapshots: [],
   weekly_snapshot_days: [],
-  hours_contract_terms: [],
-  time_logs: [],
+  hours_contract_terms: [
+    { user_id: 'usr_active', effective_from:'2026-01-01', effective_to:null, weekly_hours:40 },
+    { user_id: 'usr_hidden', effective_from:'2026-01-01', effective_to:null, weekly_hours:40 },
+  ],
+  time_logs: [
+    { user_id: 'usr_active', clock_in: '2026-07-15T09:00:00Z', clock_out:'2026-07-15T17:00:00Z', total_hours:8 },
+  ],
 };

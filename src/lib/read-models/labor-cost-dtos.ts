@@ -18,6 +18,8 @@ export type WorkerLaborCostDTO = {
   hasActivity: boolean;
   hasActiveContract: boolean;
   isEventual: boolean;
+  workedHours?: number;
+  costKnown?: boolean;
 };
 
 export type LaborCostDayDTO = {
@@ -28,7 +30,9 @@ export type LaborCostDayDTO = {
   totalCost: number;
   laborPctOfSales: number | null;
   isPayrollPending: boolean;
-  pctStatus: 'complete' | 'incomplete_payroll_pending' | 'no_sales';
+  pctStatus: 'complete' | 'incomplete_payroll_pending' | 'no_sales' | 'incomplete_operational';
+  operationalIncomplete: boolean;
+  operationalMissingWorkers: number;
   workers: WorkerLaborCostDTO[];
   reconciliation: PayrollReconciliationReportDTO | null;
 };
@@ -45,6 +49,11 @@ export type LaborCostMonthSummaryDTO = {
       fixed?: number;
       overtime?: number;
       laborPctOfSales: number | null;
+      accountingFixed?: number;
+      accountingOvertime?: number;
+      operationalIncomplete?: boolean;
+      operationalMissingWorkers?: number;
+      hasActivity?: boolean;
     }
   >;
   totalFixed: number;

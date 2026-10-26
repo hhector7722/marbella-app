@@ -14,21 +14,28 @@ function projector(seed = payrollFixture as Record<string, Array<Record<string, 
   );
 }
 
-describe('Coste laboral diario desde nómina oficial', () => {
-  it('mantiene la nómina de antiguos empleados incluso sin fichajes', async () => {
+describe('Coste laboral operativo diario sobre nómina oficial', () => {
+  it('imputa coste solo al trabajador fichado sin perder el salario del antiguo en el mes', async () => {
     const dto = await projector().projectDayDetail('2026-07-15', { includeAllContracted: true });
     assert.equal(dto.netSales, 1500);
     assert.equal(dto.isPayrollPending, false);
-    assert.ok(dto.totalFixed > 132 && dto.totalFixed < 133);
+    assert.ok(dto.totalFixed > 0);
     assert.equal(dto.workers.length, 2);
     assert.ok(dto.workers.every((worker) => worker.name !== 'Nómina empresa'));
+    assert.ok(dto.workers.find(w => w.id === 'usr_active')!.fixed > 0);
+    assert.equal(dto.workers.find(w => w.id === 'usr_hidden')!.fixed, 0);
     assert.equal(Number(dto.workers.reduce((s, row) => s + row.fixed, 0).toFixed(2)), dto.totalFixed);
   });
 
-  it('el interruptor OFF sólo oculta las filas inactivas, nunca el coste total de empresa', async () => {
+  it('el selector oculta inactivos sin imputar el sueldo de sus días de descanso', async () => {
     const dto = await projector().projectDayDetail('2026-07-15', { includeAllContracted: false });
-    assert.equal(dto.workers.length, 0);
+    assert.equal(dto.workers.length, 1);
     assert.ok(dto.totalFixed > 0);
+    const off = await projector().projectDayDetail('2026-07-16', { includeAllContracted: false });
+    assert.equal(off.workers.length, 0);
+    assert.equal(off.totalCost, 0);
+    assert.equal(off.laborPctOfSales, null);
+    assert.equal(off.operationalIncomplete, true);
   });
 
   it('señala nómina pendiente cuando falta el resumen oficial', async () => {

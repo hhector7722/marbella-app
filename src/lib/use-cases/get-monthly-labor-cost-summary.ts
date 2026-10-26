@@ -27,6 +27,9 @@ export interface MonthlyLaborCostSummaryDTO {
       fixed: number;
       overtime: number;
       laborPctOfSales: number | null;
+      operationalIncomplete: boolean;
+      operationalMissingWorkers: number;
+      hasActivity: boolean;
     }
   >;
   totalFixed: number;
@@ -86,9 +89,12 @@ export class GetMonthlyLaborCostSummaryUseCase {
           fixed: cell.totalFixed,
           overtime: cell.totalOvertime,
           laborPctOfSales: cell.laborPctOfSales,
+          operationalIncomplete: Boolean(cell.operationalIncomplete),
+          operationalMissingWorkers: cell.operationalMissingWorkers ?? 0,
+          hasActivity: Boolean(cell.hasActivity),
         };
-        totalFixed = totalFixed.add(Money.from(cell.totalFixed));
-        totalOvertime = totalOvertime.add(Money.from(cell.totalOvertime));
+        totalFixed = totalFixed.add(Money.from(cell.accountingFixed ?? 0));
+        totalOvertime = totalOvertime.add(Money.from(cell.accountingOvertime ?? 0));
       }
       for (const missing of monthDto.missingPayrollMonths) missingMonths.add(missing);
       if (++month === 13) { year++; month = 1; }
@@ -101,7 +107,8 @@ export class GetMonthlyLaborCostSummaryUseCase {
       byDate,
       totalFixed: totalFixed.amount,
       totalOvertime: totalOvertime.amount,
-      totalCost: totalFixed.add(totalOvertime).amount,
+      // El coste del informe mensual es la nómina oficial, sin sumar otra vez extras.
+      totalCost: missingMonths.size > 0 ? 0 : totalFixed.amount,
       isPayrollPending: missingMonths.size > 0,
       missingPayrollMonths: Array.from(missingMonths),
       reconciliation,

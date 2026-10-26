@@ -24,10 +24,10 @@ async function run() {
   // 2. KPI Extras sin cambios
   console.log(`KPI Extras: ${summary.totalOvertime.toFixed(2)} €`);
 
-  // 3. KPI Coste = Fijo + Extras
-  const expectedCost = summary.totalFixed + summary.totalOvertime;
+  // 3. KPI Coste = nómina oficial. La proyección de extras puede estar incluida.
+  const expectedCost = summary.totalFixed;
   const costeOk = Math.abs(summary.totalCost - expectedCost) < 0.01;
-  console.log(`KPI Coste: ${summary.totalCost.toFixed(2)} € = ${summary.totalFixed.toFixed(2)} + ${summary.totalOvertime.toFixed(2)} → ${costeOk ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(`KPI Coste: ${summary.totalCost.toFixed(2)} € = nómina oficial (extras no duplicadas) → ${costeOk ? '✅ PASS' : '❌ FAIL'}`);
   if (!costeOk) allPassed = false;
 
   // 4. Banner conciliación
