@@ -26,13 +26,13 @@ function MonthlyMetric({ label, value, tone, title }: {
 }) {
     return (
         <div data-metric={tone} title={title}
-            className={'min-w-0 rounded-md px-1 py-1 ' + (
+            className={'min-w-0 rounded-md px-1 py-0.5 ' + (
                 tone === 'sales' ? 'border border-sky-400/25 bg-sky-500/10'
                     : tone === 'net' ? 'border border-emerald-400/25 bg-emerald-500/10'
                         : '')}>
-            <span className="block truncate text-[8px] leading-tight text-white/65">{label}</span>
+            <span className="block truncate text-[7px] leading-none text-white/65">{label}</span>
             <strong className={'block truncate leading-tight text-white ' +
-                (tone ? 'text-[clamp(10px,2.7vw,17px)] font-bold' : 'text-[10px] font-semibold')}
+                (tone ? 'text-[clamp(9px,2.4vw,14px)] font-bold' : 'text-[9px] font-semibold')}
                 title={value}>{value}</strong>
         </div>
     );
@@ -108,22 +108,19 @@ function HomeMonthlySalesWidget() {
 
     return (
         <section data-element="monthly-half"
-            className="flex h-full min-h-0 min-w-0 flex-col justify-between gap-1 px-2 py-1.5 text-white tabular-nums"
+            className="flex h-full min-h-0 min-w-0 flex-col justify-between gap-0.5 px-1.5 py-1 text-white tabular-nums"
             aria-label="Resumen mensual de ventas">
-            <div className="flex min-h-[19px] min-w-0 items-center justify-between gap-1">
-                <h2 className="shrink-0 text-[10px] font-bold text-white">Mensual</h2>
-                <div className="flex min-w-0 items-center justify-end gap-0.5">
-                    <button type="button" aria-label="Mes anterior" title="Mes anterior"
-                        onClick={() => setMonth(value => subMonths(value, 1))}
-                        className="shrink-0 rounded p-0.5 text-white/75 hover:bg-white/10"><ChevronLeft size={14}/></button>
-                    <span className="min-w-0 whitespace-nowrap text-[9px] capitalize text-white/80">
-                        {format(month, 'MMM yy', { locale: es }).replace('.', '')}
-                    </span>
-                    <button type="button" aria-label="Mes siguiente" title="Mes siguiente"
-                        disabled={isCurrentMonth || isAfter(addMonths(month, 1), startOfMonth(new Date()))}
-                        onClick={() => setMonth(value => addMonths(value, 1))}
-                        className="shrink-0 rounded p-0.5 text-white/75 hover:bg-white/10 disabled:opacity-25"><ChevronRight size={14}/></button>
-                </div>
+            <div className="grid h-[15px] shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-0.5">
+                <button type="button" aria-label="Mes anterior" title="Mes anterior"
+                    onClick={() => setMonth(value => subMonths(value, 1))}
+                    className="justify-self-start rounded p-0.5 text-white/75 hover:bg-white/10"><ChevronLeft size={12}/></button>
+                <span className="whitespace-nowrap text-center text-[10px] font-bold capitalize leading-none text-white">
+                    {format(month, 'MMM yy', { locale: es }).replace('.', '')}
+                </span>
+                <button type="button" aria-label="Mes siguiente" title="Mes siguiente"
+                    disabled={isCurrentMonth || isAfter(addMonths(month, 1), startOfMonth(new Date()))}
+                    onClick={() => setMonth(value => addMonths(value, 1))}
+                    className="justify-self-end rounded p-0.5 text-white/75 hover:bg-white/10 disabled:opacity-25"><ChevronRight size={12}/></button>
             </div>
             {!visible && !failed ? (
                 <p role="status" className="flex flex-1 items-center justify-center text-[10px] text-white/65">Cargando mes…</p>
@@ -134,12 +131,12 @@ function HomeMonthlySalesWidget() {
                 </div>
             ) : visible ? (
                 <>
-                    <div className="grid min-h-0 grid-cols-2 gap-1">
+                    <div className="grid min-h-0 grid-cols-2 gap-0.5">
                         <MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/>
                         <MonthlyMetric label="V neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
                             tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
                     </div>
-                    <div className="grid min-w-0 grid-cols-3 gap-x-1 text-center">
+                    <div className="grid min-w-0 grid-cols-3 gap-x-0.5 text-center">
                         <MonthlyMetric label="Tickets" value={visible.tickets.toLocaleString('es-ES')}/>
                         <MonthlyMetric label="T. medio" value={visible.tickets ? formatCurrencySpanish(visible.average) : '—'}/>
                         <MonthlyMetric label="Media/día" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}

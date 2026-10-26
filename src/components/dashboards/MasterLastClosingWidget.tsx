@@ -254,13 +254,13 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
     return (
         <div data-has-closing={closing ? "true" : "false"} className="flex h-full min-h-0 flex-col overflow-hidden">
             {compact ? (
-                <div data-element="closing-compact" className="flex h-full min-h-0 flex-col justify-between gap-1 px-2 py-1.5 tabular-nums">
-                    <div className="flex min-h-[19px] min-w-0 items-center justify-between gap-1.5">
+                <div data-element="closing-compact" className="flex h-full min-h-0 flex-col justify-between gap-0.5 px-1.5 py-1 tabular-nums">
+                    <div className="flex h-[15px] min-w-0 shrink-0 items-center justify-between gap-1">
                         <Link href="/dashboard/history"
-                            className="shrink-0 whitespace-nowrap text-[10px] font-bold text-white hover:text-sky-200">
+                            className="shrink-0 whitespace-nowrap text-[9px] font-bold leading-none text-white hover:text-sky-200">
                             Último cierre
                         </Link>
-                        <span className="inline-flex min-w-0 items-center gap-1 text-right text-[9px] text-white/65">
+                        <span className="inline-flex min-w-0 items-center gap-0.5 text-right text-[8px] text-white/65">
                             {metrics.weatherIcon && <img src={metrics.weatherIcon} alt="" title={metrics.weatherLabel ?? ''} className="h-3 w-3 shrink-0 object-contain"/>}
                             <span className="truncate whitespace-nowrap">{closing ? dateLabel : '—'}</span>
                         </span>
@@ -271,38 +271,38 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                         <div className="flex min-h-0 flex-1 items-center justify-center text-[10px] text-white/65">Sin cierres registrados</div>
                     ) : (
                         <>
-                            <div className="grid min-h-0 grid-cols-2 gap-1">
+                            <div className="grid min-h-0 grid-cols-2 gap-0.5">
                                 <button type="button" onClick={() => {
                                         void fetchSalesData(String(closing.closing_date));
                                         setIsSalesModalOpen(true);
                                     }}
-                                    title="Ver detalles de las ventas del cierre" className="min-w-0 rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-1 text-left">
-                                    <span className="block truncate text-[8px] text-white/70">Ventas</span>
-                                    <strong className="block truncate text-[clamp(10px,2.7vw,17px)] font-bold leading-tight text-white" title={formatCurrencySpanish(metrics.tpvSales)}>
+                                    title="Ver detalles de las ventas del cierre" className="min-w-0 rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
+                                    <span className="block truncate text-[7px] leading-none text-white/70">Ventas</span>
+                                    <strong className="block truncate text-[clamp(9px,2.4vw,14px)] font-bold leading-tight text-white" title={formatCurrencySpanish(metrics.tpvSales)}>
                                         {formatCurrencySpanish(metrics.tpvSales)}
                                     </strong>
                                 </button>
-                                <div className="min-w-0 rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-1">
-                                    <span className="block truncate text-[8px] text-white/70">V neta</span>
-                                    <strong className="block truncate text-[clamp(10px,2.7vw,17px)] font-bold leading-tight text-white" title={formatCurrencySpanish(metrics.netSales)}>
+                                <div className="min-w-0 rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-0.5">
+                                    <span className="block truncate text-[7px] leading-none text-white/70">V neta</span>
+                                    <strong className="block truncate text-[clamp(9px,2.4vw,14px)] font-bold leading-tight text-white" title={formatCurrencySpanish(metrics.netSales)}>
                                         {formatCurrencySpanish(metrics.netSales)}
                                     </strong>
                                 </div>
                             </div>
-                            <div className="grid min-w-0 grid-cols-3 gap-x-1 text-center">
+                            <div className="grid min-w-0 grid-cols-3 gap-x-0.5 text-center">
                                 <button type="button" onClick={() => setIsCashModalOpen(true)}
-                                    className="min-w-0 rounded-md py-0.5 hover:bg-white/10" title="Ver desglose del efectivo">
+                                    className="min-w-0 rounded-md hover:bg-white/10" title="Ver desglose del efectivo">
                                     <span className="block truncate text-[8px] text-white/60">Efectivo</span>
                                     <strong className="block truncate text-[10px] font-semibold text-white">{formatCurrencySpanish(metrics.cashCounted)}</strong>
                                 </button>
-                                <div className="min-w-0 py-0.5" title="Diferencia del arqueo de caja">
+                                <div className="min-w-0" title="Diferencia del arqueo de caja">
                                     <span className="block truncate text-[8px] text-white/60">Diferencia</span>
                                     <strong className={cn('block truncate text-[10px] font-semibold',
                                         Math.abs(metrics.difference) < 0.005 ? 'text-emerald-200' : 'text-amber-200')}>
                                         {formatClosingDifference(metrics.difference)}
                                     </strong>
                                 </div>
-                                <div className="min-w-0 py-0.5">
+                                <div className="min-w-0">
                                     <span className="block truncate text-[8px] text-white/60">Tickets</span>
                                     <strong className="block truncate text-[10px] font-semibold text-white">{metrics.tickets.toLocaleString('es-ES')}</strong>
                                 </div>
