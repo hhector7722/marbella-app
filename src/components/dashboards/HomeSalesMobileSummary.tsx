@@ -246,14 +246,14 @@ export function HomeSalesMobileSummary({
                                 <svg viewBox="0 0 160 22" preserveAspectRatio="none"
                                     className="pointer-events-none block h-[15px] w-full shrink-0" role="img"
                                     aria-label="Gráfica de facturación por hora, de 7 a 23 h">
-                                    <path d={chartData.path} fill="none" stroke="#4A9BDD" strokeWidth="1.6"
+                                    <path d={chartData.path} fill="none" stroke="#70b5ff" strokeWidth="1.6"
                                         strokeLinecap="round" strokeLinejoin="round"
                                         vectorEffect="non-scaling-stroke" />
                                 </svg>
                                 {dotPosition && (
                                     <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[15px] lg:h-full">
                                         <span data-element="selected-hour-dot"
-                                            className="absolute z-[2] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-[#4A9BDD] shadow-sm"
+                                            className="absolute z-[2] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-[#70b5ff] shadow-sm"
                                             style={dotPosition} />
                                     </span>
                                 )}
@@ -312,7 +312,7 @@ export function HomeSalesMobileSummary({
                                     <span data-element="mobile-sales-product-bar" role="img"
                                         aria-label={`${Math.round(topProductRevenue > 0 ? Math.max(0, product.revenue) / topProductRevenue * 100 : 0)}% de la facturación del producto más vendido`}
                                         className="block h-[3px] min-w-0 self-center overflow-hidden rounded-full bg-sky-400/15">
-                                        <span className="block h-full rounded-full bg-[#4A9BDD]"
+                                        <span className="block h-full rounded-full bg-[#70b5ff]"
                                             style={{ width: `${topProductRevenue > 0 ? Math.min(100, Math.max(0, Number(product.revenue) / topProductRevenue * 100)) : 0}%` }} />
                                     </span>
                                     <span data-element="mobile-sales-units" className="justify-self-end whitespace-nowrap text-right text-[7px]">{product.quantity.toLocaleString('es-ES')} u</span>

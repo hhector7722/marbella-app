@@ -8252,3 +8252,92 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   background: var(--color-envolvente-bajo);
   box-shadow: none;
 }
+
+/* Dashboard y Master: widgets de Ventas/Cierre con la misma paleta que
+   /dashboard/ventas, conservando las retículas y alturas ya ajustadas. */
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='dashboard-ventas'],
+  [data-instance='master-ultimo-cierre']
+) {
+  --home-widget-ink: #f8fbff;
+  --home-widget-ink-secondary: rgb(225 236 252 / 0.72);
+  --home-widget-fill-secondary: rgb(255 255 255 / 0.08);
+  --home-widget-separator: rgb(255 255 255 / 0.14);
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='dashboard-ventas'],
+  [data-instance='master-ultimo-cierre']
+) > [data-element='body'] {
+  background: linear-gradient(155deg,
+    color-mix(in srgb, var(--color-envolvente-bajo) 84%, var(--color-envolvente)) 0%,
+    var(--color-envolvente-bajo) 100%);
+  border: 1px solid rgb(255 255 255 / 0.23);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10), 0 5px 16px rgb(0 0 0 / 0.16);
+  color: var(--home-widget-ink);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* La fecha y sus flechas conservan contraste sobre fondo marino. */
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='centered-date-controls'] :is(button, span, svg),
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-clock'],
+[data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+  [data-element='header'] > a {
+  color: var(--home-widget-ink);
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='centered-date-controls'] button:hover {
+  background-color: rgb(255 255 255 / 0.10);
+}
+[data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+  [data-element='header'] > a {
+  font-weight: 700;
+  text-decoration: none;
+}
+/* Celdas y barras del mismo tono que el informe de ventas.
+   Los fondos de ventas (azul) y venta neta (verde) conservan su significado. */
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='dashboard-ventas'],
+  [data-instance='master-ultimo-cierre']
+) [data-element='mobile-sales-kpis'] > div {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='dashboard-ventas'],
+  [data-instance='master-ultimo-cierre']
+) [data-element='mobile-sales-product-bar'] {
+  background-color: rgb(112 181 255 / 0.16);
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='dashboard-ventas'],
+  [data-instance='master-ultimo-cierre']
+) [data-element='mobile-sales-hour-chart'] [data-element='selected-hour-dot'] {
+  border-color: white;
+}
+
+/* Cabeceras enlazables: mismo tratamiento discreto que los controles
+   de Ventas, sin el botón verde heredado de Calculadora. */
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='header'] a[data-style='calculator-primary'],
+[data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+  [data-element='header'] > a {
+  color: #fff;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.075);
+  border-radius: 7px;
+  text-decoration: none;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 700;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='header'] a[data-style='calculator-primary']::before {
+  display: none;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='header'] a[data-style='calculator-primary']:hover,
+[data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+  [data-element='header'] > a:hover {
+  background: rgb(255 255 255 / 0.14);
+}
