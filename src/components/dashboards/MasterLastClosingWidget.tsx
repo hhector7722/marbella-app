@@ -285,6 +285,7 @@ export function MasterLastClosingWidget() {
                 <HomeSalesMobileSummary
                     sales={formatClosingValue(metrics.tpvSales, 'tpv_sales')}
                     net={formatClosingValue(metrics.netSales, 'net_sales')}
+                    date={String(closing.closing_date).split('T')[0]}
                     hours={mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]
                         ? mobileClosingSnapshot.hours : []}
                     products={mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]

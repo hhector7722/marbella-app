@@ -363,25 +363,31 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
                 <div data-element="header" data-tone="plain" className="relative flex h-8 w-full shrink-0 items-center justify-end">
+                    <div className="absolute left-2 top-1.5 text-[var(--home-widget-ink-secondary)] lg:hidden" aria-label="Hora actual">
+                        <LiveClock display="time" />
+                    </div>
                     <div data-element="centered-date-controls" className="absolute left-1/2 top-1/2 z-10 flex max-w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-                        <div className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg md:gap-1.5">
+                        <div className="inline-flex items-stretch gap-0.5 whitespace-nowrap rounded-lg lg:items-center lg:gap-1">
                             <button
                                 type="button"
                                 onClick={() => setSalesViewDate(format(subDays(parseSalesViewDate(), 1), 'yyyy-MM-dd'))}
-                                className="shrink-0 h-full min-h-0 min-w-[36px] flex items-center justify-center rounded-lg hover:bg-zinc-100 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
+                                className="flex w-[17px] shrink-0 items-center justify-center rounded-md hover:bg-zinc-100 active:scale-[0.98] transition-all cursor-pointer touch-manipulation lg:h-full lg:min-w-[36px] lg:w-auto"
                                 aria-label="Día anterior"
                             >
-                                <ChevronLeft className="w-5 h-5 text-zinc-700" />
+                                <ChevronLeft className="h-3 w-3 text-zinc-700 lg:h-5 lg:w-5" />
                             </button>
                             <button
                                 onClick={() => {
                                     setSalesCalendarBaseDate(parseSalesViewDate());
                                     setIsSalesDateModalOpen(true);
                                 }}
-                                className="shrink-0 h-full min-h-0 flex flex-col items-center justify-center py-0 px-2 rounded-lg hover:bg-zinc-100 active:scale-[0.98] transition-all cursor-pointer"
+                                className="flex min-h-[18px] shrink-0 flex-col items-center justify-center rounded-lg px-0.5 py-0 hover:bg-zinc-100 active:scale-[0.98] transition-all cursor-pointer lg:h-full lg:px-2"
                             >
                                 {isToday(parseSalesViewDate()) ? (
-                                    <LiveClock />
+                                    <>
+                                        <span className="lg:hidden"><LiveClock display="date" /></span>
+                                        <span className="hidden lg:block"><LiveClock /></span>
+                                    </>
                                 ) : (
                                     <>
                                         <span className="text-[9px] md:text-[10px] font-medium uppercase tracking-widest text-zinc-700 whitespace-nowrap">
@@ -399,11 +405,11 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                         setSalesViewDate(format(next, 'yyyy-MM-dd'));
                                     }
                                 }}
-                                className="shrink-0 h-full min-h-0 min-w-[36px] flex items-center justify-center rounded-lg hover:bg-zinc-100 active:scale-[0.98] transition-all cursor-pointer touch-manipulation disabled:opacity-50 disabled:pointer-events-none"
+                                className="flex w-[17px] shrink-0 items-center justify-center rounded-md hover:bg-zinc-100 active:scale-[0.98] transition-all cursor-pointer touch-manipulation disabled:opacity-50 disabled:pointer-events-none lg:h-full lg:min-w-[36px] lg:w-auto"
                                 aria-label="Día siguiente"
                                 disabled={format(addDays(parseSalesViewDate(), 1), 'yyyy-MM-dd') > format(new Date(), 'yyyy-MM-dd')}
                             >
-                                <ChevronRight className="w-5 h-5 text-zinc-700" />
+                                <ChevronRight className="h-3 w-3 text-zinc-700 lg:h-5 lg:w-5" />
                             </button>
                         </div>
                     </div>
@@ -419,6 +425,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 <HomeSalesMobileSummary
                     sales={formatCurrencySpanish(displaySummary.total)}
                     net={formatCurrencySpanish(displaySummary.total / 1.1)}
+                    date={salesViewDate}
                     hours={salesChartData}
                     products={mobileTopProducts}
                     hasSales={displaySummary.total > 0}
