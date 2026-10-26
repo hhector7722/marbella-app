@@ -16,6 +16,8 @@ interface DocumentEvidenceModalProps {
   open: boolean
   lineId: string | null
   onClose: () => void
+  /** Al confirmar evidencia, cerrar solo la revisión y conservar el albarán. */
+  onSaved?: () => void | Promise<void>
   /** Nombre del proveedor del albarán abierto (contexto de cabecera). */
   supplierName?: string | null
   /** Nº de albarán / factura del documento abierto (contexto de cabecera). */
@@ -55,6 +57,7 @@ export function DocumentEvidenceModal({
   open,
   lineId,
   onClose,
+  onSaved,
   supplierName = null,
   invoiceNumber = null,
   isManager = false,
@@ -115,15 +118,8 @@ export function DocumentEvidenceModal({
     }
   }, [open, lineId, refreshVersion, localRefresh])
 
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
-
+  // El Modal oficial ya procesa Escape con dismissScope="self".
+  // Un segundo listener podía cerrar también el modal principal.
   const activeProvenance = useMemo(() => {
     if (!data) return null
     return resolveActiveProvenance(data.provenanceChain)
@@ -144,7 +140,8 @@ export function DocumentEvidenceModal({
         setConfirmError(res.message)
         return
       }
-      setLocalRefresh((v) => v + 1)
+      if (onSaved) await onSaved()
+      else setLocalRefresh((v) => v + 1)
     } catch (err) {
       setConfirmError(err instanceof Error ? err.message : 'Error al confirmar evidencia')
     } finally {
