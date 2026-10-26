@@ -8114,7 +8114,7 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   /* En escritorio mostrar SIEMPRE el importe íntegro, incluso con cifras grandes. */
   [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > span {
     flex: 0 1 auto;
-    font-size: clamp(9px, 0.69vw, 11px);
+    font-size: clamp(10px, 0.8vw, 14px);
     white-space: nowrap;
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > strong {
@@ -8123,7 +8123,7 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     overflow: visible;
     text-overflow: clip;
     white-space: nowrap;
-    font-size: clamp(9px, 0.77vw, 12px);
+    font-size: clamp(12px, 1vw, 17px);
     letter-spacing: -0.015em;
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
@@ -8131,9 +8131,14 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-products'] {
     width: 100%;
-    grid-template-columns: minmax(0, 1fr) clamp(24px, 3vw, 44px) max-content max-content;
-    column-gap: clamp(5px, 0.55vw, 9px);
+    /* Barras más largas; los nombres tienen prioridad y envuelven el texto
+       completo en vez de mostrar puntos suspensivos. */
+    grid-template-columns: minmax(0, 1fr) minmax(30px, min(20%, 96px)) max-content max-content;
+    column-gap: clamp(4px, 0.45vw, 7px);
     align-content: space-evenly;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-products'] [data-element='mobile-sales-amount'] {
+    margin-inline-start: clamp(6px, 0.7vw, 12px);
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-product-label'] {
     min-width: 0;

@@ -234,7 +234,7 @@ export function HomeSalesMobileSummary({
                                 title={sales}>{sales}</strong>
                         </div>
                         <div className="inline-flex w-max max-w-full min-w-0 shrink-0 items-center gap-[3px] rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1 py-0.5">
-                            <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]">Venta neta</span>
+                            <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]"><span className="lg:hidden">Venta neta</span><span className="hidden lg:inline">V neta</span></span>
                             <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
                                 title={net}>{net}</strong>
                         </div>
@@ -302,7 +302,7 @@ export function HomeSalesMobileSummary({
                                     className="col-span-4 grid min-w-0 grid-cols-subgrid items-center text-[8px] leading-[1.15]"
                                     title={`${product.name}: ${product.quantity} unidades · ${product.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span data-element="mobile-sales-product-label" className="flex min-w-0 items-center gap-1 text-left text-[var(--home-widget-ink)]">
-                                        <span className="shrink-0">{index + 1}.</span>
+                                        <span className="shrink-0 lg:hidden">{index + 1}.</span>
                                         <span className="hidden shrink-0 lg:inline-flex">
                                             <ProductRankingThumbnail key={productThumbnails[product.name] ?? product.name}
                                                 src={productThumbnails[product.name]} name={product.name} />
