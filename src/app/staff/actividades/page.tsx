@@ -15,7 +15,7 @@ import {
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { Settings } from 'lucide-react';
+import { RefreshCcw, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -124,6 +124,7 @@ export default function ActividadesPage() {
   const [loading, setLoading] = useState(true);
   const [byDate, setByDate] = useState<Record<string, DayCalendarData>>({});
   const [isMaster, setIsMaster] = useState(false);
+  const [retryingFailedPdf, setRetryingFailedPdf] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -217,6 +218,37 @@ export default function ActividadesPage() {
     void loadData();
   }, [loadData]);
 
+  const retryFailedPdf = async () => {
+    if (retryingFailedPdf) return;
+    setRetryingFailedPdf(true);
+    try {
+      const response = await fetch('/api/pavilion/retry-failed', {
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+      const data = await response.json() as {
+        success?: boolean;
+        queued?: number;
+        error?: string;
+      };
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'No se pudo iniciar la recuperación.');
+      }
+      if (!data.queued) {
+        toast.success('No hay PDF fallidos pendientes de recuperación automática.');
+      } else {
+        toast.success(
+          `Reprocesamiento iniciado para ${data.queued} PDF. Se conservarán los días correctos.`,
+          { duration: 6500 },
+        );
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error iniciando OCR.');
+    } finally {
+      setRetryingFailedPdf(false);
+    }
+  };
+
   const openDay = (day: Date) => {
     const key = format(day, 'yyyy-MM-dd');
     setSelectedDayStr(key);
@@ -262,6 +294,18 @@ export default function ActividadesPage() {
       }
       rightSlot={
         <div className="flex items-center justify-end gap-2">
+          {isMaster ? (
+            <Button
+              variant="tertiary"
+              instance="actividades-recuperar-pdf"
+              aria-label="Recuperar los cinco PDF fallidos"
+              title="Reprocesar PDF con error"
+              icon={<RefreshCcw size={20} strokeWidth={2.5} />}
+              loading={retryingFailedPdf}
+              disabled={retryingFailedPdf}
+              onClick={() => void retryFailedPdf()}
+            />
+          ) : null}
           {isMaster ? (
             <Button
               variant="tertiary"
