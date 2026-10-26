@@ -1,4 +1,4 @@
-import { ACTION_SCHEMA, type CopilotAction } from "./actions";
+import { ACTION_SCHEMA, type CopilotAction } from "./actions.ts";
 
 /** Valores válidos según BD (profiles_role_check migraciones). */
 export type RoleName = "staff" | "supervisor" | "manager" | "admin" | "chef";

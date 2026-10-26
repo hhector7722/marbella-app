@@ -216,7 +216,11 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
                 : 'mr-auto bg-zinc-100 text-zinc-800 rounded-tl-sm'
             )}
           >
-            <div className="whitespace-pre-wrap break-words">{messageCombinedText(m.parts)}</div>
+            <div className="whitespace-pre-wrap break-words">{
+              m.role === 'assistant'
+                ? messageCombinedText(m.parts).replace(/\*\*(.*?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1')
+                : messageCombinedText(m.parts)
+            }</div>
           </div>
         ))}
 

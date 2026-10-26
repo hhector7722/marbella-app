@@ -45,8 +45,11 @@ export function selectGroqTools(
   const selected = new Set<string>();
   const include = (...names: string[]) => names.forEach((name) => selected.add(name));
 
-  if (/venta|vend|factura|facturac|ingreso|ticket|caja|recaudac|importe|reporte|informe|resumen|compar/.test(q)) {
-    include("consultar_metricas_basicas", "generar_informe_diario", "generar_informe_semanal");
+  if (/venta|vend|factura|facturac|ingreso|ticket|caja|recaudac|importe|reporte|informe|resumen|compar|producto|articulo|cafe|cafes|cortado|bebida|bocadillo|brava/.test(q)) {
+    include("consultar_ventas_productos", "consultar_metricas_basicas", "generar_informe_diario", "generar_informe_semanal");
+  }
+  if (/efectivo|monedas|cambio de caja|cambio entre cajas|tesoreria|retirada de caja|arqueo/.test(q)) {
+    include("consultar_flujos_caja_efectivo", "consultar_cambios_entre_cajas");
   }
   if (/proveedor|compra|precio|albaran|pedido a|pedir a|costo|coste/.test(q)) {
     include("gestionar_proveedores", "gestionar_ingredientes");
@@ -55,10 +58,10 @@ export function selectGroqTools(
     include("consultar_inventario", "gestionar_ingredientes");
   }
   if (/receta|elaborac|carta|plato|sangria|ingrediente|escandallo/.test(q)) {
-    include("gestionar_recetas", "gestionar_ingredientes");
+    include("consultar_receta_detallada", "gestionar_recetas", "gestionar_ingredientes");
   }
-  if (/emplead|personal|usuario|turno|horario|fichaj|asistencia|horas? extras?|nomina|trabajad/.test(q)) {
-    include("consultar_usuarios", "consultar_registros_asistencia", "consultar_registros_horas_extras");
+  if (/emplead|personal|usuario|turno|horario|fichaj|asistencia|horas?|trabaj|nomina|extra/.test(q)) {
+    include("consultar_horas_trabajadas", "consultar_registros_asistencia", "consultar_registros_horas_extras");
     if (/coste|costo|mano de obra|nomina/.test(q)) include("consultar_costes_mano_obra");
   }
   if (/pedido|comanda|mesa|cocina|sala/.test(q)) include("consultar_pedidos_abiertos");
@@ -68,16 +71,31 @@ export function selectGroqTools(
 
   // En una pregunta imprecisa ofrecemos solo un conjunto muy pequeño.
   if (!selected.size) {
-    include("consultar_metricas_basicas", "consultar_inventario", "gestionar_recetas", "gestionar_proveedores");
+    include("consultar_metricas_basicas", "consultar_inventario", "consultar_receta_detallada", "gestionar_proveedores");
   }
 
-  return tools.filter(({ function: { name } }) => selected.has(name)).slice(0, 7);
+  // Las preguntas de las capturas tienen una fuente inequívoca.
+  // No ofrecer estadísticas de tickets como alternativa a unidades de artículos,
+  // ni una receta resumida que omita sus ingredientes físicos.
+  const exact = (name: string) => tools.filter((t) => t.function.name === name);
+  if (/cafe|cafes|cortado|brava|bocadillo|refresco|sangria/.test(q)
+      && /vend|venta|cuant|unidades|factur/.test(q)) {
+    return exact("consultar_ventas_productos");
+  }
+  if (/(que lleva|ingredientes de|como se prepara|receta de)/.test(q)) {
+    const recipe = exact("consultar_receta_detallada");
+    if (recipe.length) return recipe;
+  }
+  if (/horas?/.test(q) && /trabaj|hizo|ficho|fichado/.test(q) && !/extra/.test(q)) {
+    return exact("consultar_horas_trabajadas");
+  }
+  return tools.filter(({ function: { name } }) => selected.has(name)).slice(0, 9);
 }
 
 export async function completeGroqChat(
   messages: GroqChatMessage[],
   tools: GroqTool[],
-  options: { apiKey: string; fetcher?: typeof fetch; timeoutMs?: number },
+  options: { apiKey: string; fetcher?: typeof fetch; timeoutMs?: number; toolChoice?: "auto" | "required" },
 ): Promise<{ content: string; toolCalls: GroqToolCall[] }> {
   const endpoint = "https://api.groq.com/openai/v1/chat/completions";
   const response = await (options.fetcher ?? fetch)(endpoint, {
@@ -90,7 +108,7 @@ export async function completeGroqChat(
       model: GROQ_MODEL,
       messages,
       tools: tools.length ? tools : undefined,
-      tool_choice: tools.length ? "auto" : undefined,
+      tool_choice: tools.length ? (options.toolChoice ?? "auto") : undefined,
       parallel_tool_calls: false,
       reasoning_effort: "low",
       max_completion_tokens: 1400,

@@ -18,6 +18,14 @@ import {
   type GroqChatMessage,
   type GroqTool,
 } from "@/lib/copilot/groq-chat";
+import {
+  KNOWLEDGE_TOOL_DEFS,
+  KNOWLEDGE_TOOLS,
+  madridDate,
+  runKnowledgeTool,
+  toolEnabled,
+  type KnowledgeToolName,
+} from "@/lib/copilot/knowledge-tools";
 
 export const maxDuration = 60;
 
@@ -25,12 +33,15 @@ export const maxDuration = 60;
 // Futuras acciones necesitarán confirmación explícita en la aplicación.
 const READ_ONLY_TOOLS = new Set<CopilotAction>([
   "consultar_pedidos_abiertos",
+  "consultar_flujos_caja_efectivo",
+  "consultar_cambios_entre_cajas",
   "consultar_inventario",
   "gestionar_recetas",
   "gestionar_ingredientes",
   "gestionar_proveedores",
   "gestionar_consumo_personal",
-  "consultar_registros_asistencia",
+  // Los fichajes contienen campos de localización: enviar solo el resumen mínimo
+  // mediante consultar_horas_trabajadas, nunca la RPC cruda al proveedor.
   "consultar_registros_horas_extras",
   "consultar_costes_mano_obra",
   "consultar_reservas",
@@ -85,7 +96,10 @@ function availableTools(role: RoleName, question: string): GroqTool[] {
         })(),
       },
     }));
-  return selectGroqTools(question, all);
+  const knowledge = (Object.keys(KNOWLEDGE_TOOL_DEFS) as KnowledgeToolName[])
+    .filter((name) => toolEnabled(role, name))
+    .map((name) => KNOWLEDGE_TOOL_DEFS[name]);
+  return selectGroqTools(question, [...knowledge, ...all]);
 }
 
 function safeToolMessage(result: unknown): string {
@@ -157,13 +171,17 @@ export async function POST(req: Request) {
   }
 
   const tools = availableTools(role, userText);
-  const now = new Date();
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  const today = madridDate();
   const system = [
     "Eres Marbella, el asistente operativo del Bar La Marbella en Barcelona.",
     `Hoy es ${today} (zona Europe/Madrid). Rol autorizado: ${role}.`,
-    "Contesta en español claro y breve. No inventes cantidades, ventas, empleados, precios ni ingredientes.",
-    "Ante preguntas de datos de Marbella App, usa primero las herramientas disponibles.",
+    "Contesta en español claro y breve. SOLO TEXTO PLANO sin Markdown ni asteriscos. No inventes cantidades, ventas, empleados, precios ni ingredientes.",
+    "Si te preguntan por datos del negocio, consulta primero la base mediante herramientas antes de responder.",
+    "Para unidades vendidas de productos utiliza consultar_ventas_productos, no el recuento de tickets.",
+    "Para qué lleva una receta utiliza consultar_receta_detallada y sus componentes reales.",
+    "Para horas trabajadas utiliza consultar_horas_trabajadas, con nombre y periodo. No niegues acceso antes de consultar si tu rol lo permite.",
+    "Ante preguntas generales responde normalmente sin inventar datos de Marbella.",
+    "Respeta siempre los permisos de cada usuario.",
     "Si una herramienta no proporciona datos suficientes (p.ej. histórico de precios o albaranes), dilo claramente; no simules que has consultado algo.",
     "Nunca pidas UUID a un usuario. Para consultas de fichajes u horas, usa consultar_usuarios para obtener un UUID válido.",
     "Nunca sugieras que has ejecutado una acción de escritura. Solo tienes herramientas de consulta.",
@@ -176,13 +194,18 @@ export async function POST(req: Request) {
     execute: async ({ writer }) => {
       let answer = "";
       try {
-        for (let step = 0; step < 3; step++) {
-          const completion = await completeGroqChat(history, tools, { apiKey });
+        const dataQuestion = /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|manual|importe|ingreso|coste|precio|informe|report/i.test(userText);
+        const started = Date.now();
+        for (let step = 0; step < 5 && Date.now() - started < 47500; step++) {
+          const completion = await completeGroqChat(history, tools, {
+            apiKey, timeoutMs: 13500,
+            toolChoice: step === 0 && dataQuestion && tools.length > 0 ? "required" : "auto",
+          });
           if (!completion.toolCalls.length) {
             answer = completion.content.trim() || "No he recibido una respuesta válida del modelo.";
             break;
           }
-          if (step === 2) {
+          if (step === 4 || Date.now() - started > 45000) {
             answer = "No he podido completar la consulta con las herramientas disponibles. Prueba una pregunta más concreta.";
             break;
           }
@@ -208,15 +231,19 @@ export async function POST(req: Request) {
               ? { ...(args && typeof args === "object" && !Array.isArray(args) ? args : {}), p_user_id: user.id }
               : args;
             const exposed = tools.some((tool) => tool.function.name === call.function.name);
-            const output = exposed
-              ? await executeCopilotTool({
-                  supabase: supabase as unknown as CopilotSupabaseClient,
-                  role, userId: user.id,
-                  toolName: call.function.name, args: safeArgs,
-                  sessionId,
-                  mode: "chat",
-                })
-              : { ok: false, error: "Herramienta no autorizada." };
+            const output = !exposed
+              ? { ok: false, error: "Herramienta no autorizada." }
+              : KNOWLEDGE_TOOLS.has(call.function.name as KnowledgeToolName)
+                ? await runKnowledgeTool(call.function.name as KnowledgeToolName, safeArgs, {
+                    supabase, role, userId: user.id, today,
+                  })
+                : await executeCopilotTool({
+                    supabase: supabase as unknown as CopilotSupabaseClient,
+                    role, userId: user.id,
+                    toolName: call.function.name, args: safeArgs,
+                    sessionId,
+                    mode: "chat",
+                  });
             writer.write({ type: "tool-output-available", toolCallId: call.id, output });
             history.push({
               role: "tool", tool_call_id: call.id, name: call.function.name, content: safeToolMessage(output),
