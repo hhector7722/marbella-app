@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/modal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { AccessShortcutGrid } from '@/components/dashboards/AccessShortcutGrid';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { useAIStore } from '@/store/aiStore';
 
 /** 4 columnas × 3 filas: lo que cabe en el modal sin scroll. */
 const PAGE_SIZE = 12;
@@ -31,10 +32,11 @@ type MoreFunctionsItem = {
     img: string;
 } & (
     | { href: string }
-    | { action: 'cierre' | 'web' | 'stock' | 'compra' | 'info' }
+    | { action: 'cierre' | 'web' | 'stock' | 'compra' | 'info' | 'chat' }
 );
 
 export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
+    { label: 'Agente IA', instance: 'agente-ia', action: 'chat', img: '/icons/agente-ia.svg' },
     { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/suplier.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
@@ -51,7 +53,7 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
 ];
 
 /** Accesos exclusivos del modal Otros en /master/dashboard escritorio. */
-export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas'] as const;
+export const MASTER_DESKTOP_OTHER_INSTANCES = ['agente-ia', 'web', 'vitrina', 'consumo', 'altas'] as const;
 
 const desktopOtherIds = new Set<string>(MASTER_DESKTOP_OTHER_INSTANCES);
 export const MASTER_DESKTOP_OTHER_ITEMS = MASTER_MORE_FUNCTIONS_ITEMS.filter(
@@ -74,6 +76,7 @@ export function MasterMoreFunctionsModal({
     const [isNavigating, setIsNavigating] = useState(false);
     const [page, setPage] = useState(0);
     const trackOtros = useTrackModalApply('master-otros', 'Otros (master)');
+    const openChat = useAIStore((state) => state.openChat);
     const gesture = useRef<{ x: number; y: number; axis: 'x' | 'y' | null } | null>(null);
     const suppressClick = useRef(false);
 
@@ -101,7 +104,8 @@ export function MasterMoreFunctionsModal({
         setTimeout(action, 150);
     };
 
-    const actionHandlers: Record<'cierre' | 'web' | 'stock' | 'compra' | 'info', () => void> = {
+    const actionHandlers: Record<'cierre' | 'web' | 'stock' | 'compra' | 'info' | 'chat', () => void> = {
+        chat: openChat,
         cierre: onOpenCierre,
         web: () => window.open(WEB_URL, '_blank', 'noopener,noreferrer'),
         stock: onOpenStock,

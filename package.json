@@ -42,6 +42,7 @@
     "hooks:install": "git config core.hooksPath .githooks && chmod +x .githooks/* && echo \"Puerta local activada: .githooks/\""
   },
   "dependencies": {
+    "@ai-sdk/gateway": "3.0.211",
     "@ai-sdk/openai": "^3.0.63",
     "@ai-sdk/react": "^3.0.178",
     "@dnd-kit/core": "^6.3.1",
@@ -50,6 +51,7 @@
     "@livekit/components-react": "^2.9.20",
     "@livekit/components-styles": "^1.2.0",
     "@n8n/chat": "^1.14.0",
+    "@napi-rs/canvas": "^0.1.96",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.99.3",
     "ai": "^6.0.176",
@@ -65,7 +67,6 @@
     "lucide-react": "^0.563.0",
     "next": "^16.2.6",
     "ollama": "^0.6.3",
-    "@napi-rs/canvas": "^0.1.96",
     "papaparse": "^5.5.3",
     "pdf2json": "^4.0.2",
     "pdfjs-dist": "^5.5.207",

@@ -117,9 +117,17 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       if (typeof opts?.body === 'string') {
         try {
           const j = JSON.parse(opts.body) as Record<string, unknown>;
+          const supplierName =
+            window.location.pathname === '/orders/new'
+              ? new URLSearchParams(window.location.search).get('supplier')
+              : null;
           mergedBody = JSON.stringify({
             ...j,
             sessionId: getActiveSessionId(),
+            // Contexto de la pantalla, nunca una credencial de autorización.
+            pageContext: supplierName
+              ? { kind: 'supplier_draft', supplier: supplierName.slice(0, 120) }
+              : null,
           });
         } catch {
           mergedBody = opts.body;
@@ -140,7 +148,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: '/api/copiloto',
+        api: '/api/copiloto/v2',
         fetch: fetchWithSession,
       }),
     [fetchWithSession]
@@ -149,7 +157,11 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const { messages, sendMessage, status, error } = useChat({
     transport,
     onError: (err: Error) => {
-      toast.error(`Error: ${err.message}`);
+      const restricted = /free tier users do not have access|restrictedmodels|créditos actuales|no_providers_available/i.test(err.message);
+      toast.error(restricted
+        ? 'El modelo de IA no está disponible con los créditos actuales de Vercel.'
+        : 'El servicio de IA no ha podido responder. Comprueba la configuración del proveedor.',
+      );
     },
   });
 
@@ -163,14 +175,15 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     const toastId = toast.loading('Transcribiendo...');
     try {
       const formData = new FormData();
-      formData.append('file', audioBlob, 'audio.webm');
+      const extension = audioBlob.type.includes('mp4') ? 'm4a'
+        : audioBlob.type.includes('ogg') ? 'ogg' : 'webm';
+      formData.append('file', audioBlob, `audio.${extension}`);
       const res = await fetch('/api/copiloto/transcribe', { method: 'POST', body: formData });
       const data = await res.json();
-      if (data.text) {
-        setInput((prev) => (prev ? prev + ' ' + data.text : data.text));
-        toast.success('Listo', { id: toastId });
+      if (typeof data.text === 'string' && data.text.trim()) {
+        sendMessage({ text: data.text.trim() }, { body: { sessionId: getActiveSessionId() } });
+        toast.success('Audio enviado', { id: toastId });
         setShowBigMic(false);
-        setTimeout(() => textareaRef.current?.focus(), 100);
       } else {
         throw new Error(data.error || 'Sin texto');
       }
@@ -230,8 +243,10 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           </div>
         )}
         {error && (
-          <div className="mx-auto bg-red-50 text-red-600 px-4 py-2 rounded-2xl text-xs border border-red-100">
-            Error de conexión.
+          <div role="alert" className="mx-auto bg-red-50 text-red-600 px-4 py-2 rounded-2xl text-xs border border-red-100">
+            {/free tier users do not have access|restrictedmodels|créditos actuales|no_providers_available/i.test(error.message)
+              ? 'El modelo no está habilitado para los créditos actuales de Vercel.'
+              : 'No se ha podido obtener respuesta del servicio de IA. No significa que tu Internet haya fallado.'}
           </div>
         )}
       </div>
@@ -305,15 +320,15 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             <Mic size={18} />
           </button>
 
-          {/* Phone button */}
-          <button
+          {/* La llamada en directo está desactivada hasta migrar y verificar Realtime GA. */}
+          {false && <button
             type="button"
             onClick={onCallOpen}
             className="h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all shadow-sm"
             title="Llamada de voz"
           >
             <Phone size={18} className="text-white" />
-          </button>
+          </button>}
         </div>
       </div>
 
