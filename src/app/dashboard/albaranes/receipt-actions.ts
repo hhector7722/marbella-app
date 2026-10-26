@@ -21,6 +21,7 @@ import {
   reconcileVerifiedTotalWeightUnitPrice,
   reconcileUnadjustedNetUnitPrice,
   verifiedAmountColumn,
+  verifiedTaxInclusiveDisplayAmount,
   verifiedTotalWeightColumn,
 } from '@/lib/albaranes/pipeline/validate'
 import { proposalInputFingerprint } from '@/lib/albaranes/k5/proposal-fingerprint'
@@ -362,6 +363,15 @@ async function supersedeK5ProposalWithMapping(params: {
     && sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
     && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
   )
+  // La propuesta histórica puede arrastrar el falso bloqueo OCR de Aperol
+  // (Pre+Iva leído como importe). La evidencia se revalida sin tocar K3/K5.
+  const verifiedTaxInclusiveDisplay = Boolean(
+    sourceLine.success && verifiedTaxInclusiveDisplayAmount(sourceLine.data) != null
+    && sourceCheck?.priceBasis === 'billing_quantity'
+    && sameExactDecimal(sourceCheck.quantity, lineQuantity)
+    && sameExactDecimal(sourceCheck.unitPrice, observedUnitPrice)
+    && sameExactDecimal(sourceCheck.lineTotal, lineTotal)
+  )
   const verifiedEmbeddedKgMath = Boolean(
     sourceLine.success
     && /^\s*(?:BU|BULTOS?|CJ|CAJAS?)\s+\d+(?:[.,]\d+)?\s*(?:KG|KILOS?|QUILOS?)\s*$/i
@@ -505,7 +515,7 @@ async function supersedeK5ProposalWithMapping(params: {
     quantity: quantityNumber,
     unitPrice: unitPriceNumber,
     lineTotal: lineTotalNumber,
-    verifiedObservedMath: verifiedOcrAmount || verifiedEmbeddedKgMath || verifiedTotalWeightMath || verifiedRoundedUnitMath
+    verifiedObservedMath: verifiedOcrAmount || verifiedTaxInclusiveDisplay || verifiedEmbeddedKgMath || verifiedTotalWeightMath || verifiedRoundedUnitMath
       || verifiedCorrectedWeightMath
       || verifiedAmountColumnMath
       || verifiedUnadjustedNet || verifiedPercentDiscount,
