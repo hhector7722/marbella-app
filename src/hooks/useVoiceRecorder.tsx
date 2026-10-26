@@ -35,7 +35,6 @@ export function useVoiceRecorder() {
       mediaRecorderRef.current = null;
       chunksRef.current = [];
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function startRecording() {
@@ -44,15 +43,24 @@ export function useVoiceRecorder() {
 
     if (typeof window === 'undefined') return;
     if (!navigator.mediaDevices || typeof window.MediaRecorder === 'undefined') {
-      setError('Este navegador no soporta grabación de audio (MediaRecorder).');
+      const message = 'Este navegador no soporta grabación de audio (MediaRecorder).';
+      setError(message);
       setStatus('error');
-      return;
+      throw new Error(message);
     }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      // iOS Safari suele admitir MP4/AAC, no WebM. Elegir el contenedor
+      // realmente soportado evita grabaciones silenciosas en iPhone.
+      const supportedMime = [
+        'audio/webm;codecs=opus',
+        'audio/mp4',
+        'audio/webm',
+        'audio/mp4;codecs=mp4a.40.2',
+      ].find((type) => MediaRecorder.isTypeSupported(type));
+      const mr = new MediaRecorder(stream, supportedMime ? { mimeType: supportedMime } : undefined);
       mediaRecorderRef.current = mr;
       chunksRef.current = [];
 
@@ -74,14 +82,15 @@ export function useVoiceRecorder() {
       };
 
       mr.start();
-    } catch (e: any) {
+    } catch (e: unknown) {
       const msg =
-        e?.name === 'NotAllowedError'
+        e instanceof Error && e.name === 'NotAllowedError'
           ? 'Permiso de micrófono denegado.'
-          : e?.message || 'Error solicitando micrófono.';
+          : e instanceof Error ? e.message : 'Error solicitando micrófono.';
       setError(msg);
       setStatus('error');
       stopTracks();
+      throw new Error(msg);
     }
   }
 
@@ -97,7 +106,7 @@ export function useVoiceRecorder() {
         clearTimer();
         setDurationMs(0);
 
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/mp4' });
         chunksRef.current = [];
         mediaRecorderRef.current = null;
         stopTracks();

@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { X, Mic, Phone, Plus, FileText, Image as ImageIcon } from 'lucide-react';
+import { X, Mic, Phone, Plus, Send, FileText, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useAIStore } from '@/store/aiStore';
 import { useChat } from '@ai-sdk/react';
@@ -70,19 +70,18 @@ export default function ChatMarbella() {
     <Modal
       open={isOpen}
       onClose={closeChat}
-      title="Chat Marbella"
+      title={
+        <>
+          <Image src="/icons/logo-white.png" alt="Bar La Marbella" width={28} height={28} className="object-contain" priority />
+          <span className="sr-only">Chat Marbella</span>
+        </>
+      }
       variant="standard"
       layer="base"
       instance="chat-marbella"
-      hideTitle
       scrollContent={false}
-      headerTrailing={
-        <div className="relative w-8 h-8 shrink-0">
-          <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
-        </div>
-      }
     >
-      <div className="relative flex-1 flex flex-col min-h-0">
+      <div className="relative flex h-full min-h-0 flex-1 flex-col">
         <TextChatView onCallOpen={() => setShowVoiceCall(true)} />
 
         {showVoiceCall && (
@@ -100,7 +99,12 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
 
   const [input, setInput] = useState('');
   const [showAttachMenu, setShowAttachMenu] = useState(false);
-  const [showBigMic, setShowBigMic] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [pressingMic, setPressingMic] = useState(false);
+  const micHeldRef = useRef(false);
+  const micStartingRef = useRef(false);
+  const micReadyRef = useRef(false);
+  const micStoppingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -159,25 +163,67 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   }, [messages, status]);
 
   const handleTranscription = async (audioBlob: Blob) => {
-    if (!audioBlob || audioBlob.size < 500) return;
+    if (!audioBlob || audioBlob.size < 500) {
+      toast.info('Mantén pulsado el micrófono un momento para dictar.');
+      return;
+    }
+    setIsTranscribing(true);
     const toastId = toast.loading('Transcribiendo...');
     try {
       const formData = new FormData();
-      formData.append('file', audioBlob, 'audio.webm');
+      const extension = /mp4|m4a|aac/i.test(audioBlob.type) ? 'mp4' : 'webm';
+      formData.append('file', audioBlob, `audio.${extension}`);
       const res = await fetch('/api/copiloto/transcribe', { method: 'POST', body: formData });
       const data = await res.json();
-      if (data.text) {
-        setInput((prev) => (prev ? prev + ' ' + data.text : data.text));
-        toast.success('Listo', { id: toastId });
-        setShowBigMic(false);
-        setTimeout(() => textareaRef.current?.focus(), 100);
-      } else {
-        throw new Error(data.error || 'Sin texto');
-      }
+      if (!res.ok || !data.text) throw new Error(data.error || 'No se pudo transcribir el audio');
+      setInput((prev) => (prev ? prev + ' ' + data.text : data.text));
+      toast.success('Dictado añadido al mensaje', { id: toastId });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error('Error: ' + msg, { id: toastId });
+    } finally {
+      setIsTranscribing(false);
     }
+  };
+
+  // Push-to-talk: mismo micrófono pequeño para iniciar y terminar la captura.
+  // Si la persona suelta durante el diálogo de permiso, paramos tan pronto
+  // como el grabador quede preparado; no dejamos el micrófono abierto.
+  const stopMicAndTranscribe = async () => {
+    if (micStoppingRef.current || !micReadyRef.current) return;
+    micStoppingRef.current = true;
+    micReadyRef.current = false;
+    try {
+      const audioBlob = await stopRecording();
+      if (audioBlob) await handleTranscription(audioBlob);
+    } finally {
+      micStoppingRef.current = false;
+    }
+  };
+
+  const startMicOnHold = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0 || micStartingRef.current || micReadyRef.current || micStoppingRef.current || isTranscribing) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    micHeldRef.current = true;
+    micStartingRef.current = true;
+    setPressingMic(true);
+    void startRecording().then(() => {
+      micReadyRef.current = true;
+      if (!micHeldRef.current) void stopMicAndTranscribe();
+    }).catch((err: unknown) => {
+      toast.error('Error de micrófono: ' + (err instanceof Error ? err.message : String(err)));
+    }).finally(() => {
+      micStartingRef.current = false;
+      if (!micHeldRef.current && micReadyRef.current) void stopMicAndTranscribe();
+    });
+  };
+
+  const releaseMic = () => {
+    if (!micHeldRef.current) return;
+    micHeldRef.current = false;
+    setPressingMic(false);
+    if (micReadyRef.current) void stopMicAndTranscribe();
   };
 
   const busy = status !== 'ready' && status !== 'error';
@@ -197,9 +243,9 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-white">
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-white">
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-3">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-zinc-400 space-y-2">
             <p className="text-sm">¿Qué necesitas crack?</p>
@@ -241,17 +287,17 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       </div>
 
       {/* Input bar — no top border */}
-      <div className="shrink-0 px-3 pb-3 pt-2 bg-white">
-        <div className="flex items-end gap-2">
+      <div className="shrink-0 bg-white px-2 pb-3 pt-2">
+        <div className="flex min-w-0 items-end gap-1.5">
           {/* + button */}
           <div className="relative shrink-0">
             <button
               type="button"
               onClick={() => setShowAttachMenu((v) => !v)}
-              className="h-11 w-11 flex items-center justify-center rounded-2xl text-zinc-400 hover:text-zinc-600 active:scale-95 transition-all"
+              className="flex h-10 w-7 items-center justify-start rounded-xl text-zinc-500 hover:text-zinc-700 active:scale-95 transition-all"
               title="Adjuntar archivo"
             >
-              <Plus size={20} />
+              <Plus size={21} />
             </button>
             {showAttachMenu && (
               <div className="absolute bottom-14 left-0 bg-white rounded-2xl shadow-xl border border-zinc-100 overflow-hidden z-10 min-w-[160px]">
@@ -283,9 +329,9 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
-              // Auto-expand
+              // No dejar que el editor crezca hasta cortar los mensajes.
               e.target.style.height = 'auto';
-              e.target.style.height = `${e.target.scrollHeight}px`;
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 112)}px`;
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -295,122 +341,56 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             }}
             placeholder="Escribe tu mensaje..."
             rows={1}
-            className="flex-1 min-h-[44px] max-h-48 resize-none rounded-2xl border border-zinc-200 px-3 py-[10px] text-[13px] outline-none focus:ring-2 focus:ring-[#3F5E7A]/30 bg-white overflow-hidden"
+            className="min-w-0 flex-1 min-h-[42px] max-h-28 resize-none rounded-2xl border border-zinc-200 px-3 py-[9px] text-base leading-6 outline-none focus:ring-2 focus:ring-[#3F5E7A]/30 bg-white overflow-y-auto"
             disabled={busy}
           />
 
-          {/* Mic button — Opens big mic overlay */}
+          {/* Enviar con botón o Intro, sin ocultar parte del editor. */}
           <button
             type="button"
-            onClick={() => setShowBigMic(true)}
-            className="h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 text-zinc-400 hover:text-zinc-600 active:scale-95 transition-all"
-            title="Grabar mensaje de voz"
+            onClick={handleSend}
+            disabled={busy || !input.trim()}
+            className="flex h-10 w-8 shrink-0 items-center justify-center rounded-xl text-[#3F5E7A] disabled:text-zinc-300"
+            aria-label="Enviar mensaje"
+            title="Enviar mensaje"
+          >
+            <Send size={18} />
+          </button>
+
+          {/* Mantener pulsado para hablar; soltar para transcribir. */}
+          <button
+            type="button"
+            onPointerDown={startMicOnHold}
+            onPointerUp={releaseMic}
+            onPointerCancel={releaseMic}
+            onLostPointerCapture={releaseMic}
+            onContextMenu={(e) => e.preventDefault()}
+            disabled={isTranscribing}
+            className={cn(
+              "flex h-10 w-8 shrink-0 touch-none select-none items-center justify-center rounded-xl transition-colors disabled:opacity-40",
+              pressingMic || isRecording ? "bg-red-50 text-red-600" : "text-zinc-500 hover:text-zinc-700"
+            )}
+            aria-label="Mantener pulsado para dictar, soltar para transcribir"
+            aria-pressed={pressingMic || isRecording}
+            title="Mantén pulsado para hablar"
           >
             <Mic size={18} />
           </button>
 
-          {/* Phone button */}
+          {/* Llamada más discreta en el extremo derecho. */}
           <button
             type="button"
             onClick={onCallOpen}
-            className="h-11 w-11 flex items-center justify-center rounded-2xl shrink-0 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all shadow-sm"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white transition-colors hover:bg-emerald-600"
+            aria-label="Iniciar llamada de voz"
             title="Llamada de voz"
           >
-            <Phone size={18} className="text-white" />
+            <Phone size={16} />
           </button>
         </div>
       </div>
 
-      {/* Big Mic Overlay */}
-      {showBigMic && (
-        <BigMicOverlay 
-          onClose={() => setShowBigMic(false)}
-          onFinish={handleTranscription}
-          isRecording={isRecording}
-          startRecording={startRecording}
-          stopRecording={stopRecording}
-        />
-      )}
-    </div>
-  );
-}
 
-function BigMicOverlay({ 
-  onClose, onFinish, isRecording, startRecording, stopRecording 
-}: { 
-  onClose: () => void, 
-  onFinish: (blob: Blob) => void,
-  isRecording: boolean,
-  startRecording: () => Promise<void>,
-  stopRecording: () => Promise<Blob | null>
-}) {
-  const isRecordingRef = useRef(isRecording);
-
-  useEffect(() => {
-    isRecordingRef.current = isRecording;
-  }, [isRecording]);
-
-  const toggleRecording = async () => {
-    if (isRecordingRef.current) {
-      const blob = await stopRecording();
-      if (blob) onFinish(blob);
-    } else {
-      try {
-        await startRecording();
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        toast.error('Error de microfono: ' + msg);
-      }
-    }
-  };
-
-  return (
-    <div className="absolute inset-0 z-30 bg-white flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-200">
-      <button 
-        onClick={onClose}
-        className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
-      >
-        <X size={20} />
-      </button>
-
-      <div className="flex flex-col items-center gap-8">
-        <div className="text-center space-y-2">
-          <h3 className="text-lg font-semibold text-[#3F5E7A]">Mensaje de voz</h3>
-          <p className="text-sm text-zinc-400">
-            {isRecording ? 'pulsa para detener' : 'pulsa para grabar'}
-          </p>
-        </div>
-
-        <div className="relative flex items-center justify-center w-64 h-64">
-          {/* Animated rings when recording */}
-          {isRecording && (
-            <>
-              <div className="absolute inset-0 bg-red-500/10 rounded-full animate-ping" />
-              <div className="absolute inset-4 bg-red-500/20 rounded-full animate-pulse" />
-            </>
-          )}
-
-          <button
-            onClick={toggleRecording}
-            className={cn(
-              "relative z-10 w-32 h-32 rounded-full flex items-center justify-center transition-all duration-150 select-none shadow-xl",
-              isRecording 
-                ? "bg-red-500 scale-110 text-white shadow-red-200" 
-                : "bg-[#3F5E7A] text-white active:scale-95 shadow-zinc-200"
-            )}
-          >
-            <Mic size={48} strokeWidth={1.5} />
-          </button>
-        </div>
-
-        <div className={cn(
-          "h-6 flex items-center gap-2 transition-opacity",
-          isRecording ? "opacity-100" : "opacity-0"
-        )}>
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-red-500 text-sm font-medium">Grabando...</span>
-        </div>
-      </div>
     </div>
   );
 }
