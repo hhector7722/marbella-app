@@ -267,9 +267,10 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 console.warn('No se pudo cargar el ranking móvil de ventas:', error);
                 return;
             }
-            setMobileTopProducts(((data ?? []) as { nombre_articulo: string; cantidad_total: number }[]).slice(0, 3).map(item => ({
+            setMobileTopProducts(((data ?? []) as { nombre_articulo: string; cantidad_total: number; total_ingresos: number }[]).slice(0, 3).map(item => ({
                 name: String(item.nombre_articulo ?? 'Producto'),
                 quantity: Number(item.cantidad_total ?? 0),
+                revenue: Number(item.total_ingresos ?? 0),
             })));
         });
         return () => { active = false; };

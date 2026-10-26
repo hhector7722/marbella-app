@@ -7598,6 +7598,22 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   }
 }
 
+/* En móvil, Ventas y Último cierre tienen una fila de datos extra.
+   Reservar altura para el gráfico inferior sin recortarlo ni solaparlo. */
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'][data-layout='ops-admin'],
+  [data-component='HomeScreen'][data-layout='master'] {
+    grid-template-rows:
+      repeat(2, calc(var(--home-row-track) + 22px))
+      repeat(4, var(--home-row-track));
+  }
+  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
+    grid-template-rows:
+      repeat(2, calc(var(--home-row-track) + 22px))
+      repeat(5, var(--home-row-track));
+  }
+}
+
 /* Widgets de inicio: solo Ventas y Último cierre, sin cambiar tamaño de celdas
    ni la apariencia o geometría de Horarios, asistencia y accesos. */
 @media (max-width: 1023px) {
