@@ -8182,3 +8182,30 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   padding-top: 0;
   overflow: hidden;
 }
+
+/* Chat Marbella al abrir teclado (Safari/iPhone y Chrome overlays-content).
+ * El área de diálogo sigue el visualViewport, la cabecera mantiene la posición
+ * original y SOLO se reduce la altura disponible para los mensajes. */
+[data-component='Modal'][data-instance='chat-marbella'][data-chat-viewport-pinned='true'] {
+  top: var(--chat-visible-top, 0px) !important;
+  left: var(--chat-visible-left, 0px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: var(--chat-visible-width, 100vw) !important;
+  height: min(var(--chat-visible-height, 100dvh), calc(100dvh - env(keyboard-inset-height, 0px))) !important;
+  overscroll-behavior: contain;
+}
+[data-component='Modal'][data-instance='chat-marbella'][data-chat-viewport-pinned='true'] [data-element='frame'] {
+  justify-content: flex-start !important;
+  padding-top: var(--chat-modal-anchor-top, 0px);
+}
+[data-component='Modal'][data-instance='chat-marbella'][data-chat-viewport-pinned='true'] [data-element='frame'] > [role='dialog'] {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+[data-component='Modal'][data-instance='chat-marbella'][data-chat-viewport-pinned='true'] [data-element='container'] {
+  height: min(var(--chat-modal-expanded-height, 920px), 100%) !important;
+  max-height: 100% !important;
+  min-height: 0;
+}
