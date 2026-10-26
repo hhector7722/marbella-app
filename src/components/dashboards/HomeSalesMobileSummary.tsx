@@ -160,16 +160,16 @@ export function HomeSalesMobileSummary({
 
     return (
         <div data-element="mobile-sales-snapshot"
-            className="grid min-h-0 w-full flex-1 grid-rows-[16px_16px_minmax(0,1fr)] gap-y-px overflow-hidden px-2 pb-0.5 pt-0 lg:grid">
+            className="grid min-h-0 w-full flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] grid-rows-[16px_minmax(0,1fr)] gap-x-5 gap-y-px overflow-hidden px-2 pb-0.5 pt-0 lg:grid">
             {hasSales && (
                 <>
-                    <div className="grid w-full shrink-0 grid-cols-2 gap-2 tabular-nums">
-                        <div className="flex min-w-0 items-center justify-between gap-1 rounded-md border border-sky-400/35 bg-sky-500/10 px-1.5 py-0.5">
+                    <div data-element="mobile-sales-kpis" className="flex min-w-0 flex-nowrap items-center justify-start gap-1 tabular-nums">
+                        <div className="inline-flex w-max max-w-full min-w-0 shrink-0 items-center gap-[3px] rounded-md border border-sky-400/35 bg-sky-500/10 px-1 py-0.5">
                             <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]">Ventas</span>
                             <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
                                 title={sales}>{sales}</strong>
                         </div>
-                        <div className="flex min-w-0 items-center justify-between gap-1 rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1.5 py-0.5">
+                        <div className="inline-flex w-max max-w-full min-w-0 shrink-0 items-center gap-[3px] rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1 py-0.5">
                             <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]">Venta neta</span>
                             <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
                                 title={net}>{net}</strong>
@@ -215,7 +215,7 @@ export function HomeSalesMobileSummary({
                             </span>
                         )}
                     </div>
-                    <div data-element="mobile-sales-rankings" className="grid w-full min-w-0 grid-cols-2 gap-x-5 tabular-nums">
+                    <div data-element="mobile-sales-rankings" className="contents tabular-nums">
                         <div data-element="mobile-sales-hours" className="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)_max-content] content-start gap-x-1 gap-y-0.5 pr-1.5 text-left">
                             {displayHours.map((hour, index) => hour ? (
                                 <div key={hour.hora} data-muted-hour={selectedHour !== null && selectedHour !== hour.hora ? 'true' : undefined}

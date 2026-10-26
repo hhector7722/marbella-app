@@ -7855,30 +7855,38 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     [data-has-closing='true'] > [data-element='metrics'] {
     display: none !important;
   }
-  /* En escritorio, cada fila crece proporcionalmente y ocupa la altura del widget.
-     Sin medidas fijas de 22/20px que dejaban el contenido arriba y diminuto. */
+  /* Composición de dos columnas: indicadores y productos a la izquierda,
+     gráfica y horas a la derecha. Cada lado administra su propio espacio. */
   [data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] {
     display: grid;
-    grid-template-rows: minmax(0, 0.95fr) minmax(0, 1.15fr) minmax(0, 1.6fr);
-    row-gap: clamp(5px, 1vh, 11px);
+    grid-template-areas:
+      'financial chart'
+      'products hours';
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1.7fr);
+    column-gap: 28px;
+    row-gap: clamp(5px, 0.9vh, 10px);
     min-height: 0;
     padding: 5px 8px 9px;
   }
-  [data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] > .grid:first-child {
-    min-height: 0;
-    align-items: center;
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] {
     gap: 8px;
+    align-self: center;
   }
-  [data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] > .grid:first-child > div {
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div {
     box-sizing: border-box;
-    height: clamp(27px, 75%, 56px);
+    width: max-content;
+    max-width: 100%;
+    height: clamp(26px, 75%, 52px);
     min-height: 0;
     padding: 5px 7px;
+    justify-content: flex-start;
+    gap: 5px;
   }
-  [data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] > .grid:first-child > div > span {
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > span {
     font-size: clamp(10px, 0.75vw, 13px);
   }
-  [data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] > .grid:first-child > div > strong {
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > strong {
     font-size: clamp(12px, 1.1vw, 19px);
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-hour-chart'] {
@@ -7954,34 +7962,94 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   opacity: 0.55;
 }
 
-/* Dos secciones inequívocas, sin raya divisoria: el importe horario termina
-   al menos a 24px del primer producto en móvil (20px + reserva interna).
-   La barra proporcional ocupa una sola columna, sin añadir altura. */
+/* Dos columnas independientes: a la izquierda cifras compactas + productos,
+   a la derecha curva interactiva + horas. El wrapper de rankings no genera
+   una caja adicional, para que las cuatro áreas compartan la retícula. */
+[data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] {
+  grid-template-areas:
+    'financial chart'
+    'products hours';
+}
+[data-component='HomeScreen'] [data-element='mobile-sales-kpis'] {
+  grid-area: financial;
+  min-width: 0;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+}
+[data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div {
+  width: max-content;
+  max-width: 100%;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+[data-component='HomeScreen'] [data-element='mobile-sales-hour-chart'] {
+  grid-area: chart;
+  min-width: 0;
+}
+[data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
+  display: contents;
+}
+[data-component='HomeScreen'] [data-element='mobile-sales-products'] {
+  grid-area: products;
+  min-width: 0;
+}
+[data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
+  grid-area: hours;
+  min-width: 0;
+}
+
+/* Móvil: más ancho para los productos y distancia suficiente hasta las horas.
+   Conservamos la altura reducida para que se vea la última fila del mosaico. */
 @media (max-width: 1023px) {
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  [data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-rows: 16px minmax(0, 1fr);
     column-gap: 20px;
+    row-gap: 2px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] {
+    gap: 4px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div {
+    gap: 2px;
+    padding: 2px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > span {
+    font-size: 8px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > strong {
+    font-size: 9px;
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
-    padding-right: 4px;
+    padding-right: 0;
   }
 }
 @media (max-width: 359px) {
-  /* En pantallas realmente estrechas, priorizar las cifras completas. */
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
-    grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
-    column-gap: 14px;
+  [data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    column-gap: 12px;
   }
-  [data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
-    padding-right: 3px;
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] {
+    gap: 2px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div {
+    gap: 2px;
+    padding: 2px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > span {
+    font-size: 7px;
+  }
+  [data-component='HomeScreen'] [data-element='mobile-sales-kpis'] > div > strong {
+    font-size: 8px;
   }
 }
 @media (min-width: 1024px) {
-  [data-component='HomeScreen'] [data-element='mobile-sales-rankings'] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  [data-component='HomeScreen'] [data-element='mobile-sales-snapshot'] {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1.7fr);
     column-gap: 28px;
   }
   [data-component='HomeScreen'] [data-element='mobile-sales-hours'] {
-    padding-right: 4px;
+    padding-right: 0;
   }
 }
