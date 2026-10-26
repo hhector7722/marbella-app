@@ -7604,12 +7604,12 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-component='HomeScreen'][data-layout='ops-admin'],
   [data-component='HomeScreen'][data-layout='master'] {
     grid-template-rows:
-      repeat(2, calc(var(--home-row-track) + 40px))
+      repeat(2, calc(var(--home-row-track) + 26px))
       repeat(4, var(--home-row-track));
   }
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-rows:
-      repeat(2, calc(var(--home-row-track) + 40px))
+      repeat(2, calc(var(--home-row-track) + 26px))
       repeat(5, var(--home-row-track));
   }
 }

@@ -87,7 +87,7 @@ export function HomeSalesMobileSummary({
 
     return (
         <div data-element="mobile-sales-snapshot"
-            className="grid min-h-0 w-full flex-1 grid-rows-[16px_18px_minmax(0,1fr)] gap-y-1 overflow-hidden px-2 pb-1 pt-1 lg:hidden">
+            className="grid min-h-0 w-full flex-1 grid-rows-[16px_16px_minmax(0,1fr)] gap-y-0.5 overflow-hidden px-2 pb-1 pt-0.5 lg:hidden">
             {hasSales && (
                 <>
                     <div className="grid w-full shrink-0 grid-cols-2 gap-2 tabular-nums">
@@ -102,10 +102,10 @@ export function HomeSalesMobileSummary({
                                 title={net}>{net}</strong>
                         </div>
                     </div>
-                    <div data-element="mobile-sales-hour-chart" className="flex h-[18px] w-full shrink-0 items-end">
+                    <div data-element="mobile-sales-hour-chart" className="flex h-[16px] w-full shrink-0 items-end">
                         {chart ? (
                             <svg viewBox="0 0 160 22" preserveAspectRatio="none"
-                                className="block h-[17px] w-full shrink-0" role="img"
+                                className="block h-[15px] w-full shrink-0" role="img"
                                 aria-label="Gráfica de facturación por hora, de 7 a 23 h">
                                 <path d={chart} fill="none" stroke="#4A9BDD" strokeWidth="1.6"
                                     strokeLinecap="round" strokeLinejoin="round"
@@ -118,15 +118,15 @@ export function HomeSalesMobileSummary({
                         )}
                     </div>
                     <div data-element="mobile-sales-rankings" className="grid w-full min-w-0 grid-cols-2 gap-x-5 tabular-nums">
-                        <div className="flex min-w-0 flex-col justify-start gap-1 text-left">
+                        <div className="flex min-w-0 flex-col justify-start gap-0.5 text-left">
                             {rankedHours.map(hour => (
                                 <div key={hour.hora}
-                                    className="flex min-w-0 items-center justify-start gap-3 leading-[1.15]"
+                                    className="flex min-w-0 items-center justify-start gap-3.5 leading-[1.15]"
                                     title={`${hour.hora}h - ${hour.hora + 1}h: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span className="shrink-0 text-[9px] text-[var(--home-widget-ink)]">
                                         {hour.hora}h - {hour.hora + 1}h
                                     </span>
-                                    <span className="flex min-w-0 items-baseline gap-2 whitespace-nowrap text-[var(--home-widget-ink-secondary)]">
+                                    <span className="flex min-w-0 items-baseline gap-2.5 whitespace-nowrap text-[var(--home-widget-ink-secondary)]">
                                         {hourUnits[hour.hora] !== undefined && (
                                             <span data-element="mobile-sales-units" className="text-[7px]">{hourUnits[hour.hora].toLocaleString('es-ES')} u</span>
                                         )}
@@ -135,7 +135,7 @@ export function HomeSalesMobileSummary({
                                 </div>
                             ))}
                         </div>
-                        <div className="flex min-w-0 flex-col justify-start gap-1 text-left">
+                        <div className="flex min-w-0 flex-col justify-start gap-0.5 text-left">
                             {products.slice(0, 3).map((product, index) => (
                                 <div key={`${product.name}-${index}`}
                                     className="flex min-w-0 items-center justify-between gap-1 text-[8px] leading-[1.15]"
@@ -143,7 +143,7 @@ export function HomeSalesMobileSummary({
                                     <span className="min-w-0 flex-1 truncate text-left text-[var(--home-widget-ink)]">
                                         {index + 1}. {product.name}
                                     </span>
-                                    <span className="flex shrink-0 items-baseline gap-0.5 whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">
+                                    <span className="flex shrink-0 items-baseline gap-2 whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">
                                         <span data-element="mobile-sales-units" className="text-[7px]">{product.quantity.toLocaleString('es-ES')} u</span>
                                         <span className="text-[8px]">{product.revenue.toLocaleString('es-ES', { maximumFractionDigits: 2 })}€</span>
                                     </span>
