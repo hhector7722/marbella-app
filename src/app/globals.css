@@ -6781,29 +6781,6 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
     margin-top: clamp(9px, 1.4vh, 15px);
   }
 
-  /* Último cierre: la línea de fecha, tiempo y tickets va debajo del título. */
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-ultimo-cierre']
-  [data-element='header'] {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-content: start;
-    row-gap: 3px;
-  }
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-ultimo-cierre']
-  [data-element='header'] > a {
-    grid-row: 1;
-    justify-self: start;
-  }
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-ultimo-cierre']
-  [data-element='header'] > div {
-    grid-row: 2;
-    justify-content: center;
-    width: 100%;
-    min-width: 0;
-    padding-top: 5px;
-    line-height: 1.15;
-  }
-
   /* El widget Asistencia 1x1 debe medir lo mismo que un squircle. */
   [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] {
     container-type: size;
@@ -7782,14 +7759,83 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     height: auto;
     transform: none;
   }
+  /* Los widgets deben empezar en el mismo píxel también en Master:
+     anular los 2px de padding superior heredados del Surface de Ventas. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas']
+    > [data-element='body'] > [data-component='Surface'][data-instance='dashboard-ventas'],
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-ventas']
+    > [data-element='body'] > [data-component='Surface'][data-instance='dashboard-ventas'] {
+    justify-content: flex-start;
+    gap: 0;
+    padding: 0;
+  }
+  /* Último cierre comparte la misma cabecera de 32px que Ventas.
+     Antes, las reglas antiguas de Master forzaban una segunda fila. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+    [data-element='header'],
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+    [data-element='header'] {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    flex: 0 0 32px;
+    gap: 5px;
+    padding: 0 8px;
+  }
   [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
-    [data-element='header'] > div {
-    grid-row: auto;
-    width: auto;
+    [data-element='header'] > a {
+    flex: 0 0 auto;
     min-width: 0;
+    white-space: nowrap;
+    align-self: center;
+  }
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+    [data-element='closing-header-facts'] {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    align-items: center;
     justify-content: flex-end;
+    min-width: 0;
+    width: auto;
+    overflow: hidden;
+    white-space: nowrap;
+    gap: clamp(2px, 0.3vw, 6px);
     padding: 0;
     line-height: 1.1;
+    font-size: clamp(7px, 0.62vw, 10px);
+  }
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+    [data-element='closing-header-date'],
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+    [data-element='closing-header-tickets'] {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+    [data-element='closing-header-weather'] {
+    flex: 0 1 auto;
+    min-width: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+    [data-element='closing-header-weather'] > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* El ticket medio sigue disponible al pasar sobre el contador de tickets.
+     La etiqueta extra no desplaza fuera de la fila fecha, tiempo y tickets. */
+  [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']
+    [data-element='closing-header-avg-ticket'] {
+    display: none;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='metrics'],
   [data-component='HomeScreen'] [data-instance='master-ultimo-cierre']

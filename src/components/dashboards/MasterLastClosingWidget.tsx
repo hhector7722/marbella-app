@@ -257,10 +257,10 @@ export function MasterLastClosingWidget() {
                 <Link href="/dashboard/history" className={pillClassName}>
                     Último cierre
                 </Link>
-                <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-0.5 text-[7px] md:text-[8px] lg:text-[10px] font-medium tabular-nums text-[var(--home-widget-ink-secondary)]">
-                    {closing ? <span className="shrink-0">{dateLabel}</span> : null}
+                <div data-element="closing-header-facts" className="flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-0.5 text-[7px] md:text-[8px] lg:text-[10px] font-medium tabular-nums text-[var(--home-widget-ink-secondary)]">
+                    {closing ? <span data-element="closing-header-date" className="shrink-0">{dateLabel}</span> : null}
                     {metrics.weatherLabel ? (
-                        <span className="inline-flex shrink-0 items-center gap-1">
+                        <span data-element="closing-header-weather" className="inline-flex shrink-0 items-center gap-1" title={metrics.weatherLabel}>
                             {metrics.weatherIcon ? (
                                 <img src={metrics.weatherIcon} alt="" className="h-2.5 w-2.5 object-contain" />
                             ) : (
@@ -269,12 +269,12 @@ export function MasterLastClosingWidget() {
                             <span>{metrics.weatherLabel}</span>
                         </span>
                     ) : null}
-                    <span className="shrink-0">
+                    <span data-element="closing-header-tickets" className="shrink-0" title={metrics.avgTicket > 0 ? `${formatCurrencySpanish(metrics.avgTicket)} de ticket medio` : undefined}>
                         {metrics.tickets === 0
                             ? ' '
                             : `${metrics.tickets.toLocaleString('es-ES')} tickets`}
                     </span>
-                    <span className="shrink-0">
+                    <span data-element="closing-header-avg-ticket" className="shrink-0">
                         {metrics.avgTicket === 0
                             ? ' '
                             : `${formatCurrencySpanish(metrics.avgTicket)} t medio`}
