@@ -411,19 +411,40 @@ function MobileSalesTicket({ ticket, cachedItems }: { ticket: Ticket; cachedItem
             });
         return () => { active = false; };
     }, [expanded, cachedItems, loaded?.key, ticket.numero_documento, supabase]);
+    const inlineProducts = items.map(item => item.qty !== 1
+        ? item.qty.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + '× ' + item.name
+        : item.name).join(' · ');
     return (
-        <div className="overflow-hidden rounded-lg border border-white/15 bg-white/[0.06]">
+        <div className="min-w-0 overflow-hidden rounded-lg border border-white/15 bg-white/[0.06]">
+            {/* Mismo orden del listado de escritorio: hora | documento | mesa | productos | desplegar | importe. */}
             <button type="button" aria-expanded={expanded}
                 onClick={() => {
                     if (!expanded && !cachedItems && loaded?.key !== ticket.numero_documento) setLoading(true);
-                    setExpanded(v => !v);
+                    setExpanded(value => !value);
                 }}
-                className="flex w-full min-w-0 items-center gap-2 px-3 py-3 text-left text-white">
-                <strong className="shrink-0 text-xs tabular-nums">{formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}</strong>
-                <span className="min-w-0 flex-1 truncate text-[11px] tabular-nums text-white/65">{compactDoc(ticket.numero_documento)}</span>
-                {ticket.mesa != null && ticket.mesa > 0 && <span className="shrink-0 rounded bg-sky-400/15 px-1.5 py-0.5 text-[10px]">M{ticket.mesa}</span>}
-                <strong className="shrink-0 whitespace-nowrap text-xs tabular-nums">{euro(ticket.total_documento)}</strong>
-                {expanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                className="flex h-[36px] w-full min-w-0 items-center gap-[3px] overflow-hidden px-1.5 text-left text-white transition-colors hover:bg-white/[0.075]">
+                <strong className="w-[34px] shrink-0 whitespace-nowrap text-[9px] font-semibold tabular-nums">
+                    {formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}
+                </strong>
+                <span className="w-[54px] shrink-0 truncate border-l border-white/20 pl-1 text-right text-[8px] tabular-nums text-white/60"
+                    title={ticket.numero_documento}>
+                    {compactDoc(ticket.numero_documento)}
+                </span>
+                {ticket.mesa != null && Number(ticket.mesa) > 0 && (
+                    <span className="inline-flex h-[17px] w-[25px] shrink-0 items-center justify-center rounded bg-sky-300/15 text-[9px] font-semibold tabular-nums text-sky-100">
+                        {ticket.mesa}
+                    </span>
+                )}
+                <span className="min-w-0 flex-1 truncate whitespace-nowrap text-[9px] text-white/80"
+                    title={inlineProducts || 'Productos pendientes de cargar'}>
+                    {inlineProducts || (cachedItems ? 'Sin productos' : '…')}
+                </span>
+                {expanded ? <ChevronUp size={12} className="shrink-0 text-white/60"/> :
+                    <ChevronDown size={12} className="shrink-0 text-white/60"/>}
+                <strong className={cn('ml-0.5 shrink-0 whitespace-nowrap text-right text-[10px] font-semibold tabular-nums',
+                    Number(ticket.total_documento) >= 0 ? 'text-teal-200' : 'text-rose-300')}>
+                    {euro(ticket.total_documento)}
+                </strong>
             </button>
             {expanded && (
                 <div className="space-y-1.5 border-t border-white/10 bg-white/[0.035] px-3 py-3 text-xs text-white/85">
@@ -604,7 +625,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                                 aria-pressed={selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id}
                                 className={cn('grid w-full min-w-0 snap-start snap-always items-center gap-x-2 border-b border-white/5 text-left text-[11px]',
                                     mobileView === 'products'
-                                        ? 'h-9 grid-cols-[minmax(0,1fr)_max-content_26px_max-content] gap-x-1 px-1 py-1'
+                                        ? 'h-9 grid-cols-[minmax(0,1fr)_max-content_clamp(48px,18vw,78px)_max-content] gap-x-1 px-1 py-1'
                                         : 'h-7 grid-cols-[minmax(0,1.2fr)_auto_minmax(50px,0.9fr)_auto]',
                                     product.articulo_id != null && 'cursor-pointer hover:bg-white/10',
                                     selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id && 'bg-sky-200/15')}
@@ -1573,7 +1594,7 @@ export default function VentasDesktopWorkspace() {
                         className="rounded-md border border-white/20 p-2"><X size={17}/></button>}
                 </div>
             </header>
-            <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-3 pt-2">
+            <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-2 pt-2">
                 <div className="flex min-w-0 items-center justify-between gap-2 border-b border-white/15 pb-2">
                     <div className="flex min-w-0 items-center gap-0.5">
                         <button type="button" onClick={() => navigateMobilePeriod(-1)}
@@ -1604,23 +1625,23 @@ export default function VentasDesktopWorkspace() {
                         )}
                     </div>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
                     {[
                         { label: 'Ventas', value: mobileReport ? euro(mobileReport.summary.totalSales) : '', tone: 'border-sky-400/35 bg-sky-500/10' },
                         { label: 'Venta neta', value: mobileExtras ? euro(mobileExtras.net) : '', tone: 'border-emerald-400/30 bg-emerald-500/10' },
                     ].map(item => (
-                        <div key={item.label} className={cn('min-w-0 rounded-lg border px-3 py-2', item.tone)}>
+                        <div key={item.label} className={cn('min-w-0 rounded-lg border px-2.5 py-1.5', item.tone)}>
                             <span className="block text-[11px] font-medium text-white/75">{item.label}</span>
-                            <strong className="mt-1 block break-words text-[clamp(13px,4vw,20px)] font-bold tabular-nums">{item.value || ' '}</strong>
+                            <strong className="mt-0.5 block break-words text-[clamp(13px,4vw,20px)] font-bold leading-tight tabular-nums">{item.value || ' '}</strong>
                         </div>
                     ))}
                 </div>
-                <div className="mt-2 grid grid-cols-3 gap-2">
+                <div className="mt-1.5 grid grid-cols-3 gap-1.5">
                     {mobileFinancialItems.map(item => {
                         const actionable = item.payment === 'card' || item.payment === 'pending';
                         const detail = item.label === 'Rendimiento' ? 'performance' : item.label === 'Efectivo' ? 'cash' : null;
                         const selected = mobileActiveSelection?.kind === 'payment' && mobileActiveSelection.payment === item.payment;
-                        const tone = cn('min-w-0 rounded-md border px-2 py-2 text-left',
+                        const tone = cn('min-w-0 rounded-md border px-1.5 py-1 text-left',
                             item.tone ?? 'border-white/15 bg-white/[0.04]',
                             selected && 'ring-1 ring-sky-300');
                         const body = <>
@@ -1632,7 +1653,7 @@ export default function VentasDesktopWorkspace() {
                                     </span>
                                 )}
                             </span>
-                            <strong className="mt-1 block break-words text-[12px] font-semibold tabular-nums">{item.value || ' '}</strong>
+                            <strong className="mt-0.5 block break-words text-[12px] font-semibold leading-tight tabular-nums">{item.value || ' '}</strong>
                         </>;
                         return actionable || detail ? (
                             <button key={item.label} type="button" data-crossfilter-trigger={actionable}
@@ -1645,10 +1666,10 @@ export default function VentasDesktopWorkspace() {
                 </div>
             </section>
             <div className="min-w-0">
-                <section className="flex h-[245px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] p-2">
-                    <h2 className="mb-2 text-xs font-bold uppercase">Horas</h2>
-                    <div className="relative h-[65px] shrink-0" aria-label="Facturación por hora">
-                        <svg viewBox="0 0 160 70" className="h-full w-full text-[#70b5ff]" preserveAspectRatio="none"
+                <section className="flex h-[158px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 py-1.5">
+                    <h2 className="mb-0.5 text-[11px] font-bold uppercase">Horas</h2>
+                    <div className="relative h-[42px] shrink-0" aria-label="Facturación por hora">
+                        <svg viewBox="0 0 160 70" className="h-[31px] w-full text-[#70b5ff]" preserveAspectRatio="none"
                             role="img" aria-label="Evolución de ventas de 7 a 23 horas">
                             <path d="M0 64 H160" stroke="currentColor" strokeOpacity=".23" strokeWidth="1"/>
                             <path d={mobileHourlyArea} fill="currentColor" fillOpacity=".13"/>
@@ -1656,18 +1677,18 @@ export default function VentasDesktopWorkspace() {
                         </svg>
                         <div className="flex justify-between text-[8px] text-white/55"><span>7h</span><span>23h</span></div>
                     </div>
-                    <div className="custom-scrollbar mt-5 min-h-0 flex-1 space-y-1 overflow-y-auto">
+                    <div className="custom-scrollbar mt-1.5 min-h-0 flex-1 space-y-0.5 overflow-y-auto">
                         {mobileVisibleHours.map((hour, index) => hour ? (
                             <button key={hour.hour} type="button" data-crossfilter-trigger
                                 onClick={() => onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' })}
                                 aria-pressed={mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === hour.hour}
-                                className={cn('grid w-full grid-cols-[1fr_auto] items-center gap-x-1 rounded p-1 text-left text-[9px] tabular-nums',
+                                className={cn('grid h-[23px] w-full grid-cols-[minmax(0,1fr)_max-content_max-content] items-center gap-x-2 rounded px-1 text-left text-[9px] tabular-nums',
                                     mobileActiveSelection?.kind === 'hour' && hour.hour !== mobileActiveSelection.hour && 'opacity-40')}>
-                                <span className="whitespace-nowrap font-medium">{hour.hour}:00 - {hour.hour + 1}:00</span>
+                                <span className="min-w-0 whitespace-nowrap font-medium">{hour.hour}:00 - {hour.hour + 1}:00</span>
+                                <span className="whitespace-nowrap text-right text-[9px] text-white/60">{hour.count} tickets</span>
                                 <span className="whitespace-nowrap text-right font-semibold text-teal-200">{Math.round(hour.total).toLocaleString('es-ES')}€</span>
-                                <span className="col-span-2 text-right text-[9px] text-white/60">{hour.count} tickets</span>
                             </button>
-                        ) : <div key={index} className="h-[32px]"/>)}
+                        ) : <div key={index} className="h-[23px]"/>)}
                     </div>
                 </section>
             </div>
