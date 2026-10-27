@@ -58,7 +58,7 @@ La dirección `otificaciones@spairal.com` se ha mantenido exactamente como
 la facilitó el responsable. Confirmar ortografía si dejan de llegar documentos.
 
 **Excepciones sin email:** `/dashboard/albaranes/hielo` (Don Hielo, kg)
-y `/dashboard/albaranes/pons` (Pons, Vermut, litros).
+y `/dashboard/albaranes/vermut` (Vermut (proveedor), Vermut (producto), litros).
 Ambas producen entradas de stock idempotentes con coste pendiente de
 factura/justificante. Los originales recibidos posteriormente pueden
 fotografiarse, pero los documentos de Don Hielo o Pons no pueden generar
