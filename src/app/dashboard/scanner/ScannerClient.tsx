@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { randomId } from '@/lib/random-id'
 import { SupplierSelectionModal } from '@/components/suppliers/SupplierSelectionModal'
+import { Modal } from '@/components/ui/modal'
+import { recordStandardPackageDelivery } from './package-delivery-actions'
 
 type PendingItem = { id: string; dataUri: string; filename: string }
 
@@ -60,6 +62,11 @@ export function ScannerClient({
   const [messageTone, setMessageTone] = useState<'error' | 'success' | 'info'>('info')
   const [showSupplierModal, setShowSupplierModal] = useState(autoStart)
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null)
+  const [quickSupplierId, setQuickSupplierId] = useState<17 | 22 | null>(null)
+  const [quickPackages, setQuickPackages] = useState(1)
+  const [quickRequestId, setQuickRequestId] = useState(() => newPendingId())
+  const [quickError, setQuickError] = useState<string | null>(null)
+
   /** Borrador: fotos validadas listas para guardar en un solo albarán (1ª = cabecera, resto = adjuntos). */
   const [pendingBatch, setPendingBatch] = useState<{ supplierId: number; items: PendingItem[] } | null>(null)
   const [carouselIndex, setCarouselIndex] = useState(0)
@@ -282,7 +289,64 @@ export function ScannerClient({
 
   const handleSelectSupplier = (id: number) => {
     setSelectedSupplierId(id)
+    if (id === 17 || id === 22) {
+      setQuickSupplierId(id)
+      setQuickPackages(1)
+      setQuickRequestId(newPendingId())
+      setQuickError(null)
+      return
+    }
     triggerNativeImagePicker()
+  }
+
+  const closeQuickDelivery = () => {
+    if (isProcessing) return
+    setQuickSupplierId(null)
+    setSelectedSupplierId(null)
+    setQuickError(null)
+  }
+
+  const scanQuickDeliveryDocument = () => {
+    // Alternative path if the person has a real paper receipt.
+    // It follows the existing scanner and never creates a second stock entry.
+    setQuickSupplierId(null)
+    setQuickError(null)
+    triggerNativeImagePicker()
+  }
+
+  const saveQuickDelivery = async () => {
+    const supplierId = quickSupplierId
+    if (!supplierId || !Number.isSafeInteger(quickPackages) || quickPackages<1
+      || quickPackages > (supplierId === 22 ? 50 : 20)) {
+      setQuickError('Introduce una cantidad válida.')
+      return
+    }
+    setIsProcessing(true)
+    setQuickError(null)
+    try {
+      const saved = await recordStandardPackageDelivery({
+        requestId: quickRequestId,
+        supplierId,
+        packages: quickPackages,
+      })
+      if (!saved.success) {
+        setQuickError(saved.message)
+        return
+      }
+      setMessageTone('success')
+      setMessage(saved.duplicate
+        ? 'Esta entrega ya estaba registrada; no se ha duplicado.'
+        : 'Entrega registrada en albaranes e inventario.')
+      setQuickSupplierId(null)
+      setSelectedSupplierId(null)
+      setQuickPackages(1)
+      onInvoiceSaved?.(saved.invoiceId)
+      onSuccess?.()
+    } catch {
+      setQuickError('No se pudo guardar. Vuelve a intentarlo; el sistema evita duplicados.')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const triggerAnotherCapture = () => {
@@ -502,6 +566,64 @@ export function ScannerClient({
           </div>
         ) : null}
       </div>
+
+      <Modal
+        open={quickSupplierId != null}
+        onClose={closeQuickDelivery}
+        title={quickSupplierId === 22 ? 'Don Hielo' : 'Vermut'}
+        subtitle="Entrada rápida de mercancía"
+        variant="standard"
+        layer="base"
+        scheme="dark"
+        instance="scanner-standard-package"
+        usageId="scanner-standard-package"
+        usageLabel="Registrar entrega por envases"
+      >
+        <div className="space-y-4 p-4 sm:p-5">
+          <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+            <p className="text-sm font-semibold">
+              {quickSupplierId === 22 ? 'Sacos de hielo' : 'Garrafas de vermut'}
+            </p>
+            <p className="mt-1 text-xs opacity-75">
+              {quickSupplierId === 22
+                ? 'Cada saco contiene 5 bolsas de 2 kg (10 kg en total).'
+                : 'Cada garrafa contiene 10 litros.'}
+            </p>
+          </div>
+          <label className="block space-y-2 text-sm font-medium" htmlFor="scanner-quick-package-count">
+            <span>Número de {quickSupplierId === 22 ? 'sacos' : 'garrafas'}</span>
+            <input
+              id="scanner-quick-package-count"
+              type="number"
+              min={1}
+              max={quickSupplierId === 22 ? 50 : 20}
+              step={1}
+              inputMode="numeric"
+              value={quickPackages}
+              onChange={(e) => setQuickPackages(Number(e.target.value))}
+              disabled={isProcessing}
+              className="w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-center text-2xl font-bold text-white outline-none focus:border-white/50"
+            />
+          </label>
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+            <p className="text-xs opacity-70">Cantidad que entrará en inventario</p>
+            <p className="mt-1 text-xl font-bold tabular-nums">
+              {Number.isSafeInteger(quickPackages) && quickPackages > 0
+                ? quickPackages * 10 : '—'} {quickSupplierId === 22 ? 'kg' : 'litros'}
+            </p>
+          </div>
+          {quickError ? <p role="alert" className="rounded-lg bg-rose-900/40 px-3 py-2 text-sm text-rose-100">{quickError}</p> : null}
+          <Button type="button" variant="primary" layout="fill"
+            onClick={() => void saveQuickDelivery()} disabled={isProcessing}
+            loading={isProcessing} loadingLabel="Guardando…">
+            Guardar entrega
+          </Button>
+          <Button type="button" variant="tertiary" layout="fill"
+            onClick={scanQuickDeliveryDocument} disabled={isProcessing}>
+            Escanear un albarán o justificante
+          </Button>
+        </div>
+      </Modal>
 
       <SupplierSelectionModal
         isOpen={showSupplierModal}
