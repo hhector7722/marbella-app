@@ -1767,14 +1767,16 @@ export default function AlbaranesHistoricoClient({
                           </Button>
                         ) : (
                           <div className="flex min-h-12 w-full items-center justify-center text-xs font-medium text-zinc-400">
-                            Sin imagen
+                            {detail?.source === 'manual'
+                              ? 'Entrega registrada sin justificante adjunto'
+                              : 'Sin imagen'}
                           </div>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {detail && !isLoadingDetail && isManager ? (
+                  {detail && !isLoadingDetail && isManager && detail.source !== 'manual' ? (
                     <div className="mb-2 flex min-w-0 flex-col items-stretch gap-3 rounded-xl bg-zinc-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
