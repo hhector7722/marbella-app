@@ -51,7 +51,7 @@ export default async function EmailAlbaranesPage({
       <div className="rounded-xl border border-zinc-200 p-4 text-sm text-zinc-600">
         <p className="font-semibold text-zinc-900">{pending.length} adjuntos sin clasificar</p>
         <p>Se conservan los originales sin aumentar el stock. Al asignar el proveedor y tipo se inicia la lectura OCR. Las facturas mensuales nunca generan una segunda recepción de mercancía.</p>
-        <p className="mt-1">Don Hielo: utiliza la recepción manual; compras imprevistas: utiliza la cámara en Albaranes.</p>
+        <p className="mt-1">Don Hielo y Pons: utiliza la recepción manual de un producto; compras imprevistas: utiliza la cámara en Albaranes.</p>
       </div>
       {params.error ? <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{params.error}</p> : null}
       {error ? <p role="alert" className="text-red-700">Error cargando la bandeja: {error.message}</p> : null}
