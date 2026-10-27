@@ -3,7 +3,7 @@
  *
  * Instalar en el Apps Script de marbellaremote@gmail.com, NO en nóminas ni
  * actividades. Propiedades del script: WEBHOOK_SECRET (o ALBARANES_WEBHOOK_SECRET).
- * Activador temporal: procesarAlbaranesEntrantes cada 5 minutos.
+ * Activador temporal: procesarAlbaranesEntrantes cada hora (o cada 5 min).
  *
  * Este script NO clasifica facturas, modifica existencias ni marca mensajes
  * leídos: envía PDF/JPG/PNG a una bandeja de revisión segura en Marbella App.
