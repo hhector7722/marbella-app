@@ -5,7 +5,7 @@ export function SalesPreviewModal({ preview, onClose }: { preview: SalesPreview 
     if (!preview) return null;
     const title = preview.mode === 'month' ? 'Ventas mensuales' : 'Detalle de ventas';
     const url = '/dashboard/ventas?preview=' + preview.mode + '&date=' + encodeURIComponent(preview.date);
-    return <Modal open onClose={onClose} title={title} scheme="dark" variant="large" instance="home-sales-preview" scrollContent={false}>
+    return <Modal open onClose={onClose} title={title} scheme="dark" variant="amplify" instance="home-sales-preview" scrollContent={false}>
         <iframe key={url} title={title} src={url} className="block h-[min(76dvh,760px)] w-full rounded-md border-0 bg-transparent" loading="eager"/>
     </Modal>;
 }
