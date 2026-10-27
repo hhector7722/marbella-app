@@ -613,12 +613,12 @@ export function ScannerClient({
             </p>
           </div>
           {quickError ? <p role="alert" className="rounded-lg bg-rose-900/40 px-3 py-2 text-sm text-rose-100">{quickError}</p> : null}
-          <Button type="button" variant="primary" layout="fill"
+          <Button type="button" variant="primary" layout="fill" instance="scanner-quick-save"
             onClick={() => void saveQuickDelivery()} disabled={isProcessing}
             loading={isProcessing} loadingLabel="Guardando…">
             Guardar entrega
           </Button>
-          <Button type="button" variant="tertiary" layout="fill"
+          <Button type="button" variant="tertiary" layout="fill" instance="scanner-quick-scan"
             onClick={scanQuickDeliveryDocument} disabled={isProcessing}>
             Escanear un albarán o justificante
           </Button>
