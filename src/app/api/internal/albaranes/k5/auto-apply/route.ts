@@ -85,14 +85,23 @@ async function autoApplyDeterministicReceipts(
 ): Promise<Record<string, unknown>> {
   const { data: invoiceData, error: invoiceError } = await supabase
     .from('purchase_invoices')
-    .select('id,supplier_id,status,duplicate_of_invoice_id,expected_pages,content_sha256')
+    .select('id,supplier_id,status,source,document_kind,duplicate_of_invoice_id,expected_pages,content_sha256')
     .eq('id', payload.invoiceId)
     .maybeSingle()
   const invoice = invoiceData as { id?: string; supplier_id?: number | null; status?: string | null;
+    source?: string | null; document_kind?: string | null;
     duplicate_of_invoice_id?: string | null; expected_pages?: number | null;
     content_sha256?: string | null } | null
   if (invoiceError || !invoice || invoice.supplier_id == null) {
     return { ok: true, applied: 0, blocked: [{ proposalId: '', lineId: null, reason: 'invoice_or_supplier_unavailable' }] }
+  }
+  // Gmail intake is transport/evidence, never authorization for physical stock.
+  // Human K4 receipt confirmation is separate from extraction. Monthly totals
+  // additionally have a DB-level receipt/purchase guard.
+  if (text(invoice.source) === 'email') {
+    return { ok: true, applied: 0, eligible: 0, blocked: [],
+      reason: invoice.document_kind === 'monthly_invoice'
+        ? 'monthly_invoice_economic_only' : 'email_requires_physical_receipt_confirmation' }
   }
   if (text(invoice.status) === 'discarded') {
     return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_discarded' }
