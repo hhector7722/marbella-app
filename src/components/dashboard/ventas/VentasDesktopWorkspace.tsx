@@ -1564,7 +1564,7 @@ export default function VentasDesktopWorkspace() {
     const mobileActiveSelection = crossSelection?.scope === mobileScope ? crossSelection : null;
     // Si se filtra una hora, conservar los datos originales de las horas vecinas
     // para que sigan visibles y atenuadas, como en los widgets del inicio.
-    const mobileHoursSource = mobileActiveSelection?.kind === 'hour'
+    const mobileHoursSource = previewMode === 'month' ? monthBreakdown?.hours ?? visibleMonthReport?.hours : mobileActiveSelection?.kind === 'hour'
         ? dailyReport?.hours
         : periodBreakdown?.hours ?? dailyReport?.hours;
     const mobileHours = Array.from({ length: 16 }, (_, i) => {
@@ -1638,8 +1638,8 @@ export default function VentasDesktopWorkspace() {
                         <button type="button" disabled={previewMode === 'day'} onClick={() => navigateMobilePeriod(-1)}
                             aria-label="Fecha anterior" className="shrink-0 rounded p-1 text-white/75"><ChevronLeft size={16}/></button>
                         <strong className="min-w-0 whitespace-nowrap text-[11px] font-semibold capitalize tabular-nums">
-                            {isSingleDay
-                                ? format(parseISO(period.start), 'EEE d MMM yy', { locale: es }).replace('.', '')
+                            {previewMode === 'month' ? monthLabel :
+                                isSingleDay ? format(parseISO(period.start), 'EEE d MMM yy', { locale: es }).replace('.', '')
                                 : periodTitle}
                         </strong>
                         <button type="button" disabled={previewMode === 'day'} onClick={() => navigateMobilePeriod(1)}
@@ -1653,7 +1653,7 @@ export default function VentasDesktopWorkspace() {
                         )}
                     </div>
                     <div className="flex min-w-0 shrink-0 items-center gap-1.5">
-                        <TicketHeaderStats report={dailyReport}/>
+                        <TicketHeaderStats report={previewMode === 'month' ? visibleMonthReport : dailyReport}/>
                         {!previewMode && isSingleDay && selectedClosing && canEditClosings && (
                             <button type="button" aria-label="Editar cierre" title="Editar cierre"
                                 onClick={() => setEditingClosingId(selectedClosing.id)}
@@ -1783,10 +1783,10 @@ export default function VentasDesktopWorkspace() {
                 {mobileView === 'live' ? <div data-element="mobile-ventas-live"><RadarSala variant="ventas"/></div>
                   : mobileView === 'products' ? (
                     <div className="h-[350px] min-w-0">
-                        <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
-                            selection={paymentOnly ? null : mobileActiveSelection}
+                        <SalesBreakdown report={previewMode === 'month' ? monthBreakdown : periodBreakdown} baseReport={previewMode === 'month' ? visibleMonthReport : dailyReport} scope={previewMode === 'month' ? 'month' : 'period'}
+                            selection={previewMode ? null : paymentOnly ? null : mobileActiveSelection}
                             onSelect={previewMode ? () => {} : onChooseCross} productThumbnails={productThumbnails}
-                            rangeStart={period.start} rangeEnd={period.end} mobileView="products"/>
+                            rangeStart={previewMode === 'month' ? monthStart : period.start} rangeEnd={previewMode === 'month' ? monthEnd : period.end} mobileView="products"/>
                     </div>
                   ) : (
                     <div className="space-y-1">
@@ -1816,7 +1816,7 @@ export default function VentasDesktopWorkspace() {
         </div>
 
 
-        <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" className="history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex">
+        <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" className={cn("history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex", previewMode && "!hidden")}>
             <div className="mb-3 flex shrink-0 items-baseline justify-between gap-4 text-white">
                 <div className="flex min-w-0 items-baseline gap-4">
                     <h1 className="text-xl font-black">Ventas y cierres</h1>
