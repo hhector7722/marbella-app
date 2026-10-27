@@ -1118,14 +1118,6 @@ export default function VentasDesktopWorkspace() {
         let active = true;
         void (async () => {
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!active) return;
-                if (user?.email?.trim().toLowerCase() === 'hhector7722@gmail.com') {
-                    const today = format(new Date(), 'yyyy-MM-dd');
-                    setLastClosingDate(today);
-                    changePeriod({ start: today, end: today, kind: 'day' });
-                    return;
-                }
                 const { data } = await supabase.from('cash_closings')
                     .select('closing_date')
                     .order('closing_date', { ascending: false })
