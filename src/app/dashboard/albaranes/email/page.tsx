@@ -24,7 +24,7 @@ export default async function EmailAlbaranesPage({
 
   const [{ data: docs, error }, { data: suppliers }] = await Promise.all([
     supabase.from('purchase_email_documents')
-      .select('id,sender_email,email_subject,email_date,filename,storage_path,suggested_kind,document_kind,status,invoice_id,received_at')
+      .select('id,sender_email,email_subject,email_date,filename,storage_path,suggested_kind,document_kind,supplier_id,status,invoice_id,received_at')
       .order('received_at', { ascending: false }).limit(120),
     supabase.from('suppliers').select('id,name').order('name'),
   ])
@@ -69,13 +69,14 @@ export default async function EmailAlbaranesPage({
                 <p className="text-xs text-zinc-500 break-all">{doc.sender_email} · {doc.email_date ? new Date(doc.email_date).toLocaleDateString('es-ES') : 'Fecha desconocida'}</p>
                 <p className="text-sm text-zinc-600 break-words">{doc.email_subject}</p>
                 <p className="text-xs text-zinc-500 mt-1">Sugerencia: {kindLabel(doc.suggested_kind)}</p>
+                <p className="text-xs text-zinc-500">{doc.supplier_id ? 'Proveedor identificado por correo verificado' : 'Proveedor sin identificar: selecciona manualmente'}</p>
               </div>
               {doc.url ? <a href={doc.url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-sm underline">Ver original</a> : null}
             </div>
             <form action={importPurchaseEmailDocument} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
               <input type="hidden" name="documentId" value={doc.id} />
               <label className="block text-xs font-medium">Proveedor
-                <select name="supplierId" required defaultValue="" className="mt-1 w-full rounded-lg border border-zinc-300 bg-white p-2 text-sm text-zinc-900">
+                <select name="supplierId" required defaultValue={doc.supplier_id ?? ''} className="mt-1 w-full rounded-lg border border-zinc-300 bg-white p-2 text-sm text-zinc-900">
                   <option value="" disabled>Seleccionar proveedor</option>
                   {(suppliers ?? []).map(supplier => (
                     <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
