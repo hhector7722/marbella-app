@@ -273,7 +273,10 @@ async function enrichInvoicesWithProcessingState(
     ])
   )
 
-  return baseItems.map((item) => ({ ...item, is_fully_processed: stateByInvoiceId.get(item.id) === true }))
+  return baseItems.map((item) => ({ ...item,
+    is_fully_processed: item.source === 'manual' && item.status === 'mapped'
+      ? true : stateByInvoiceId.get(item.id) === true,
+  }))
 }
 
 /** Listado inicial del histórico: más recientes primero, sin tope de fechas. */
@@ -435,7 +438,8 @@ export async function getPurchaseInvoiceDetailAction(
 
   let signedUrl: string | null = null
   const filePath = (data as any).file_path as string | null
-  if (filePath) {
+  // Quick physical deliveries are valid albaranes without a scanned file.
+  if (filePath && (data as any).source !== 'manual') {
     const { data: signed, error: signedErr } = await gate.supabase.storage.from('albaranes').createSignedUrl(filePath, 60 * 10)
     if (signedErr) return { success: false, message: `No se pudo firmar el documento: ${signedErr.message}` }
     signedUrl = signed?.signedUrl ?? null
