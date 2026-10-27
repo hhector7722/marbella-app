@@ -447,7 +447,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         data-style="calculator-primary"
                         aria-label="Abrir análisis completo de ventas"
                         style={{ color: '#ffffff' }}
-                        className="relative isolate z-0 mr-2 inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-2 text-[12px] lg:mr-0 font-extrabold leading-none text-white transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:scale-95">
+                        className="relative isolate z-0 mr-2 ml-auto inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-2 text-[12px] lg:ml-auto lg:mr-2 font-extrabold leading-none text-white transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 active:scale-95">
                         <span style={{ color: '#ffffff' }}>Ventas</span>
                     </Link>
                 </div>
