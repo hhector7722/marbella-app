@@ -81,6 +81,8 @@ BEGIN
   UPDATE public.ingredients SET inventory_visible=false, archived_at=now()
     WHERE id=v_rec.duplicate;
   IF v_rec.duplicate='ccb183fa-2507-4543-b0ef-38e5e995fe44'::uuid THEN
+    -- Names are unique globally, including archived records.
+    UPDATE public.ingredients SET name='Orégano (duplicado histórico)' WHERE id=v_rec.duplicate;
     UPDATE public.ingredients SET name='Orégano' WHERE id=v_rec.canonical;
   END IF;
   INSERT INTO public.ingredient_consolidation_aliases(
