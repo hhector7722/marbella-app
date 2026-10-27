@@ -38,3 +38,29 @@ Cuenta de recepción: `marbellaremote@gmail.com`.
 - La recepción de mercancía y la conciliación fiscal son estados diferentes. El pipeline K3 extrae, pero ninguna factura mensual se contabiliza como un segundo suministro; vincular facturas mensuales con entregas sigue necesitando revisión explícita.
 - No se importa automáticamente ningún correo histórico anterior a `FECHA_INICIO`.
 - El webhook requiere tener un secreto configurado; no se ha cambiado ni revelado el secreto de producción.
+
+
+## Remitentes verificados (27 octubre 2026)
+La tabla `purchase_supplier_sender_addresses` vincula **18 direcciones completas a 14 proveedores**:
+Sanilec, Ametller, Shers (2), Fritz Ravich, Carnicas Pijuan,
+Sant Aniol (2), Nestle, Abril, Videla, Vino, Santa Teresa,
+Meritem, Panabad (3), Zander.
+
+La lista completa está versionada en
+`supabase/migrations/20261027094000_purchase_supplier_sender_addresses.sql`
+y en `integrations/apps-script/albaranes.gs`.
+El webhook usa una coincidencia de dirección exacta para sugerir proveedor;
+**no asume que un dominio compartido identifique inequívocamente al proveedor**.
+La clasificación del tipo de documento y la confirmación de entrega
+permanecen separadas. No se realiza OCR/stock automáticamente al recibir email.
+
+La dirección `otificaciones@spairal.com` se ha mantenido exactamente como
+la facilitó el responsable. Confirmar ortografía si dejan de llegar documentos.
+
+**Excepciones sin email:** `/dashboard/albaranes/hielo` (Don Hielo, kg)
+y `/dashboard/albaranes/pons` (Pons, Vermut, litros).
+Ambas producen entradas de stock idempotentes con coste pendiente de
+factura/justificante. Los originales recibidos posteriormente pueden
+fotografiarse, pero los documentos de Don Hielo o Pons no pueden generar
+otra recepción de stock: salvaguarda de base de datos + control K5.
+
