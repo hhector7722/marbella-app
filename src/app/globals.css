@@ -3084,12 +3084,15 @@ button[data-element='catalog-filter'] {
   overflow: hidden;
 }
 [data-component='StaffWeekSchedule'] [data-element='month-weeks'] {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   gap: var(--staff-calendar-gap);
   min-height: 0;
-  overflow: hidden;
 }
 [data-component='StaffWeekSchedule'] [data-element='week-block'] {
   display: flex;
@@ -3100,7 +3103,7 @@ button[data-element='catalog-filter'] {
 [data-component='StaffWeekSchedule'] [data-element='week-block'][data-expanded='true'] {
   /* El hueco de la semana abierta se reparte por la retícula, nunca por el
    * contenido que llegue después desde turno, actividad u horas extra. */
-  flex: 1 1 0;
+  flex: 1 0 auto;
   min-height: calc(var(--staff-week-day-size) + var(--espacio-1) + var(--staff-week-expansion-min));
   gap: 0;
   overflow: hidden;
