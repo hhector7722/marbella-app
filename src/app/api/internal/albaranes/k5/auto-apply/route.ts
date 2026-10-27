@@ -85,11 +85,11 @@ async function autoApplyDeterministicReceipts(
 ): Promise<Record<string, unknown>> {
   const { data: invoiceData, error: invoiceError } = await supabase
     .from('purchase_invoices')
-    .select('id,supplier_id,status,source,document_kind,duplicate_of_invoice_id,expected_pages,content_sha256')
+    .select('id,supplier_id,invoice_number,status,source,document_kind,duplicate_of_invoice_id,expected_pages,content_sha256')
     .eq('id', payload.invoiceId)
     .maybeSingle()
   const invoice = invoiceData as { id?: string; supplier_id?: number | null; status?: string | null;
-    source?: string | null; document_kind?: string | null;
+    source?: string | null; document_kind?: string | null; invoice_number?: string | null;
     duplicate_of_invoice_id?: string | null; expected_pages?: number | null;
     content_sha256?: string | null } | null
   if (invoiceError || !invoice || invoice.supplier_id == null) {
@@ -104,14 +104,63 @@ async function autoApplyDeterministicReceipts(
     .from('suppliers').select('name').eq('id', invoice.supplier_id).maybeSingle()
   if (supplierLookupError) throw new Error('No se pudo validar el proveedor')
   const supplierName = text(supplierRow?.name).toLocaleLowerCase('es')
-  if (supplierName === 'don hielo' || supplierName === 'vermut') {
+  if (supplierName === 'don hielo' || supplierName === 'vermut' || supplierName === 'otros') {
     return { ok: true, applied: 0, eligible: 0, blocked: [],
-      reason: 'manual_supplier_economic_document_only' }
+      reason: supplierName === 'otros'
+        ? 'otros_expense_only_no_stock'
+        : 'manual_supplier_economic_document_only' }
+  }
+  if (invoice.document_kind === 'monthly_invoice' || invoice.document_kind === 'other') {
+    return { ok: true, applied: 0, eligible: 0, blocked: [],
+      reason: 'non_delivery_economic_document_only' }
   }
   if (text(invoice.source) === 'email') {
-    return { ok: true, applied: 0, eligible: 0, blocked: [],
-      reason: invoice.document_kind === 'monthly_invoice'
-        ? 'monthly_invoice_economic_only' : 'email_requires_physical_receipt_confirmation' }
+    // Sender, supplier and document kind must all be explicit before a
+    // message can become a physical receipt. Unknown PDFs remain OCR-only.
+    if (invoice.document_kind !== 'delivery_note') {
+      return { ok: true, applied: 0, eligible: 0, blocked: [],
+        reason: 'email_kind_unverified_no_stock' }
+    }
+    const { data: emailProof, error: emailProofError } = await supabase
+      .from('purchase_email_documents')
+      .select('sender_email,supplier_id,status,content_sha256')
+      .eq('invoice_id', payload.invoiceId).maybeSingle()
+    if (emailProofError || !emailProof || emailProof.status !== 'imported'
+      || text(emailProof.content_sha256) !== text(invoice.content_sha256)
+      || String(emailProof.supplier_id) !== String(invoice.supplier_id)) {
+      return { ok: true, applied: 0, eligible: 0, blocked: [],
+        reason: 'email_source_not_verified' }
+    }
+    const { data: verifiedEmail, error: verifiedError } = await supabase
+      .from('purchase_supplier_sender_addresses')
+      .select('supplier_id,confirmed_by_owner')
+      .eq('sender_email',emailProof.sender_email).maybeSingle()
+    if (verifiedError || !verifiedEmail || verifiedEmail.confirmed_by_owner !== true
+      || String(verifiedEmail.supplier_id) !== String(invoice.supplier_id)) {
+      return { ok: true, applied: 0, eligible: 0, blocked: [],
+        reason: 'email_sender_no_longer_verified' }
+    }
+    // The same paper may previously have been scanned at the bar.
+    // Same hash is handled at intake; supplier + document number blocks
+    // different photographs or PDFs of the same physical delivery.
+    const invoiceNumber = text(invoice.invoice_number)
+    if (!invoiceNumber || invoiceNumber === 'PROCESANDO…'
+      || invoiceNumber === 'DESCONOCIDO') {
+      return { ok: true, applied: 0, eligible: 0, blocked: [],
+        reason: 'email_document_number_missing' }
+    }
+    const { data: otherInvoices, error: duplicatesError } = await supabase
+      .from('purchase_invoices')
+      .select('id')
+      .eq('supplier_id', invoice.supplier_id)
+      .eq('invoice_number',invoiceNumber)
+      .neq('id',payload.invoiceId)
+      .neq('status','discarded')
+      .limit(1)
+    if (duplicatesError || (otherInvoices?.length ?? 0)>0) {
+      return { ok: true, applied: 0, eligible: 0, blocked: [],
+        reason: 'email_same_invoice_number_already_exists' }
+    }
   }
   if (text(invoice.status) === 'discarded') {
     return { ok: true, applied: 0, eligible: 0, blocked: [], reason: 'invoice_discarded' }
