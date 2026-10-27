@@ -484,6 +484,7 @@ export default function AlbaranesHistoricoClient({
   // se quedaba con `is_fully_processed=false` hasta el siguiente refresh global.
   const detailFullyProcessed = useMemo(() => {
     if (!detail) return null
+    if (detail.source === 'manual') return detail.status === 'mapped'
     const lines = detail.lines
     if (lines.length === 0) return null
     const allResolved = lines.every((l) => isInvoiceLineResolved(l))
@@ -1395,6 +1396,7 @@ export default function AlbaranesHistoricoClient({
       toolbarSlot={
       <ScannerClient
         onSuccess={refresh}
+        autoStart={searchParams.get('scan') === '1'}
         compactTrigger
         renderTrigger={(trigger) => (
           <div className="flex w-full shrink-0 items-stretch gap-2" data-element="albaranes-toolbar">
