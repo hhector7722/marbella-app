@@ -110,17 +110,17 @@ function HomeMonthlySalesWidget() {
         <section data-element="monthly-half"
             className="flex h-full min-h-0 min-w-0 flex-col justify-center gap-1 px-1.5 py-1 text-white tabular-nums"
             aria-label="Resumen mensual de ventas">
-            <div className="grid h-[15px] shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-0.5">
+            <div className="flex h-[15px] shrink-0 items-center justify-center gap-0.5">
                 <button type="button" aria-label="Mes anterior" title="Mes anterior"
                     onClick={() => setMonth(value => subMonths(value, 1))}
-                    className="justify-self-start rounded p-0.5 text-white/75 hover:bg-white/10"><ChevronLeft size={12}/></button>
+                    className="shrink-0 rounded p-0.5 text-white/75 hover:bg-white/10"><ChevronLeft size={12}/></button>
                 <span className="whitespace-nowrap text-center text-[10px] font-bold capitalize leading-none text-white">
                     {format(month, 'MMMM yyyy', { locale: es })}
                 </span>
                 <button type="button" aria-label="Mes siguiente" title="Mes siguiente"
                     disabled={isCurrentMonth || isAfter(addMonths(month, 1), startOfMonth(new Date()))}
                     onClick={() => setMonth(value => addMonths(value, 1))}
-                    className="justify-self-end rounded p-0.5 text-white/75 hover:bg-white/10 disabled:opacity-25"><ChevronRight size={12}/></button>
+                    className="shrink-0 rounded p-0.5 text-white/75 hover:bg-white/10 disabled:opacity-25"><ChevronRight size={12}/></button>
             </div>
             {!visible && !failed ? (
                 <p role="status" className="flex flex-1 items-center justify-center text-[10px] text-white/65">Cargando mes…</p>
@@ -131,12 +131,12 @@ function HomeMonthlySalesWidget() {
                 </div>
             ) : visible ? (
                 <>
-                    <div className="flex min-h-0 flex-wrap items-start gap-0.5">
-                        <MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/>
-                        <MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
-                            tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
+                    <div className="grid min-h-0 grid-cols-2 items-start gap-0.5">
+                        <div className="flex min-w-0 justify-center"><MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/></div>
+                        <div className="flex min-w-0 justify-center"><MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
+                            tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/></div>
                     </div>
-                    <div className="flex min-w-0 items-start justify-start gap-x-2 text-left">
+                    <div className="grid min-w-0 grid-cols-3 items-start gap-0.5 text-left">
                         <MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
                             title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
                         <MonthlyMetric label="Tickets" value={visible.tickets.toLocaleString('es-ES')}/>
