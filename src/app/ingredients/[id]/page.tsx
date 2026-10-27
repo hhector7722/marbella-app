@@ -186,6 +186,11 @@ export default function IngredientDetailPage() {
               <IngredientFact label="Unidad de pedido">
                 {valueOrDash(ingredient.order_unit)}
               </IngredientFact>
+              {ingredient.preferred_invoice_unit ? (
+                <IngredientFact label="Unidad de albarán">
+                  {ingredient.preferred_invoice_unit}
+                </IngredientFact>
+              ) : null}
               <IngredientFact label="Categoría">{valueOrDash(ingredient.category)}</IngredientFact>
             </div>
           </IngredientPanel>
