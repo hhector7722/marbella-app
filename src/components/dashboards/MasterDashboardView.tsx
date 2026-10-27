@@ -598,18 +598,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     onOpenAlbaranes={() => setIsAlbaranesModalOpen(true)}
                     pendingReservationsCount={pendingReservationsCount}
                 />
-                <HomeScreenSlot
-                    size="icon"
-                    instance="master-desktop-asistencia"
-                    className="home-desktop-extra"
-                >
-                    <DashboardShortcut
-                        instance="master-attendance-access"
-                        label="Asistencia"
-                        img="/icons/calendar.png"
-                        onClick={() => router.push('/staff/history')}
-                    />
-                </HomeScreenSlot>
                 <DesktopMoreShortcuts
                     namespace="master"
                     items={MASTER_DESKTOP_DIRECT_ITEMS}
