@@ -21,6 +21,7 @@ import {
     formatClosingValue,
     formatClosingDifference,
     formatCurrencySpanish,
+    formatNumberSpanish,
     type LastClosingMetrics,
 } from '@/lib/cash-closing-metrics';
 
@@ -314,8 +315,8 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                             <span className="whitespace-nowrap">{closing ? dateLabel : '—'}</span>
                             {closing && (
                                 <span className="shrink-0 whitespace-nowrap text-white/85"
-                                    title={`${metrics.tickets.toLocaleString('es-ES')} tickets`}>
-                                    {metrics.tickets.toLocaleString('es-ES')} t
+                                    title={`${formatNumberSpanish(metrics.tickets)} tickets`}>
+                                    {formatNumberSpanish(metrics.tickets)} t
                                 </span>
                             )}
                         </span>
@@ -356,7 +357,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                     <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Rendimiento</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white">
                                         {compactPerformance?.date === String(closing.closing_date).split('T')[0] && compactPerformance.percent !== null
-                                            ? `${compactPerformance.percent >= 0 ? '▲' : '▼'} ${Math.abs(compactPerformance.percent).toFixed(1)}%`
+                                            ? `${compactPerformance.percent >= 0 ? '▲' : '▼'} ${Math.absformatNumberSpanish((compactPerformance.percent), 1)}%`
                                             : '—'}
                                     </strong>
                                 </div>
@@ -407,7 +408,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                     <span data-element="closing-header-tickets" className="shrink-0" title={metrics.avgTicket > 0 ? `${formatCurrencySpanish(metrics.avgTicket)} de ticket medio` : undefined}>
                         {metrics.tickets === 0
                             ? ' '
-                            : `${metrics.tickets.toLocaleString('es-ES')} tickets`}
+                            : `${formatNumberSpanish(metrics.tickets)} tickets`}
                     </span>
                     <span data-element="closing-header-avg-ticket" className="shrink-0">
                         {metrics.avgTicket === 0
@@ -579,7 +580,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                             <div className="grid grid-cols-3 mb-3 shrink-0">
                                 <div className="flex flex-col items-center justify-center text-center">
                                     <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
-                                        {salesSummary.totalSales > 0 ? `${salesSummary.totalSales.toFixed(2)}€` : " "}
+                                        {salesSummary.totalSales > 0 ? `${formatNumberSpanish(salesSummary.totalSales, 2)}€` : " "}
                                     </span>
                                     <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ventas Totales</span>
                                 </div>
@@ -593,7 +594,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
 
                                 <div className="flex flex-col items-center justify-center text-center border-l border-white/10 italic">
                                     <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
-                                        {salesSummary.avgTicket > 0 ? `${salesSummary.avgTicket.toFixed(2)}€` : " "}
+                                        {salesSummary.avgTicket > 0 ? `${formatNumberSpanish(salesSummary.avgTicket, 2)}€` : " "}
                                     </span>
                                     <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ticket Medio</span>
                                 </div>
@@ -660,13 +661,13 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                                             {prod.nombre_articulo}
                                                         </td>
                                                         <td className="py-1 text-center text-white/60 tabular-nums">
-                                                            {Number(prod.cantidad_total).toFixed(0)}
+                                                            {NumberformatNumberSpanish((prod.cantidad_total), 0)}
                                                         </td>
                                                         <td className="py-1 text-center text-white/50 tabular-nums">
-                                                            {Number(prod.precio_medio).toFixed(1)}€
+                                                            {NumberformatNumberSpanish((prod.precio_medio), 1)}€
                                                         </td>
                                                         <td className="py-1 text-right font-black tabular-nums text-emerald-400">
-                                                            {Number(prod.total_ingresos).toFixed(1)}€
+                                                            {NumberformatNumberSpanish((prod.total_ingresos), 1)}€
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -698,10 +699,10 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                                             {row.cant}
                                                         </td>
                                                         <td className="py-1 text-center text-white/50 tabular-nums">
-                                                            {row.media.toFixed(1)}€
+                                                            {formatNumberSpanish(row.media, 1)}€
                                                         </td>
                                                         <td className="py-1 text-right font-black tabular-nums text-emerald-400">
-                                                            {row.total.toFixed(1)}€
+                                                            {formatNumberSpanish(row.total, 1)}€
                                                         </td>
                                                     </tr>
                                                 ))}
