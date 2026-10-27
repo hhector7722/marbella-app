@@ -26,13 +26,13 @@ function MonthlyMetric({ label, value, tone, title }: {
 }) {
     return (
         <div data-metric={tone} title={title}
-            className={'flex h-fit w-max max-w-full min-w-0 flex-col items-start justify-center rounded-md text-left ' + (tone ? 'min-h-[35px] px-2 py-1 ' : 'px-1 py-0.5 ') + (
+            className={'flex h-fit w-max max-w-full min-w-0 flex-col items-start justify-center rounded-md text-left ' + (tone ? 'min-h-[35px] min-w-[74px] px-2.5 py-1 ' : 'px-1 py-0.5 ') + (
                 tone === 'sales' ? 'border border-sky-400/25 bg-sky-500/10'
                     : tone === 'net' ? 'border border-emerald-400/25 bg-emerald-500/10'
                         : '')}>
-            <span className={'block whitespace-nowrap leading-tight text-white/65 ' + (tone ? 'text-[9px]' : 'text-[7px]')}>{label}</span>
+            <span className={'block whitespace-nowrap leading-tight text-white/65 ' + 'text-[7px]'}>{label}</span>
             <strong className={'block whitespace-nowrap leading-tight tracking-tight text-white ' +
-                (tone ? 'text-[clamp(11px,2vw,15px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
+                (tone ? 'text-[clamp(8px,1.8vw,13px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
                 title={value}>{value}</strong>
         </div>
     );
@@ -131,16 +131,17 @@ function HomeMonthlySalesWidget() {
                 </div>
             ) : visible ? (
                 <>
-                    <div className="grid min-h-0 grid-cols-2 items-start gap-0.5">
-                        <div className="flex min-w-0 justify-center"><MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/></div>
-                        <div className="flex min-w-0 justify-center"><MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
+                    <div className="flex min-h-0 flex-1 items-center justify-center">
+                        <div className="grid w-max max-w-full grid-cols-6 items-start gap-x-0.5 gap-y-1 text-left">
+                        <div className="col-span-3 flex min-w-0 justify-start"><MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/></div>
+                        <div className="col-span-3 flex min-w-0 justify-start"><MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
                             tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/></div>
                     </div>
                     <div className="grid min-w-0 grid-cols-3 items-start gap-0.5 text-left [&>div]:!items-start [&>div]:!justify-start [&>div]:!text-left">
-                        <MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
-                            title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
-                        <MonthlyMetric label="Tickets" value={formatNumberSpanish(visible.tickets)}/>
-                        <MonthlyMetric label="T. medio" value={visible.tickets ? formatCurrencySpanish(visible.average) : '—'}/>
+                        <div className="col-span-2 min-w-0"><MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
+                            title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/></div>
+                        <div className="col-span-2 min-w-0"><MonthlyMetric label="Tickets" value={formatNumberSpanish(visible.tickets)}/></div>
+                        <div className="col-span-2 min-w-0"><MonthlyMetric label="T. medio" value={visible.tickets ? formatCurrencySpanish(visible.average) : '—'}/></div>
                     </div>
                 </>
             ) : null}
