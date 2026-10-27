@@ -7,7 +7,7 @@ const EmbeddedSales = dynamic(() => import('@/components/dashboard/ventas/Ventas
     ssr: false,
 });
 
-export type SalesPreview = { mode: 'day' | 'month'; date: string };
+export type SalesPreview = { mode: 'current' | 'day' | 'month'; date: string };
 
 export function SalesPreviewModal({ preview, onClose }: { preview: SalesPreview | null; onClose: () => void }) {
     if (!preview) return null;
@@ -16,7 +16,7 @@ export function SalesPreviewModal({ preview, onClose }: { preview: SalesPreview 
         <Modal open onClose={onClose} title={title} scheme="dark" variant="amplify"
             instance="home-sales-preview" scrollContent={true}>
             <div className="max-h-[75dvh] min-h-0 w-full overflow-y-auto overflow-x-hidden">
-                <EmbeddedSales key={preview.mode + preview.date} embeddedMode={preview.mode} embeddedDate={preview.date}/>
+                <EmbeddedSales key={preview.mode + preview.date} embeddedMode={preview.mode === 'current' ? 'day' : preview.mode} embeddedDate={preview.date} embeddedShowLive={preview.mode === 'current'}/>
             </div>
         </Modal>
     );
