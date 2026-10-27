@@ -26,13 +26,13 @@ function MonthlyMetric({ label, value, tone, title }: {
 }) {
     return (
         <div data-metric={tone} title={title}
-            className={'flex h-fit w-max max-w-full min-w-0 flex-col items-start justify-center rounded-md px-1 py-0.5 ' + (
+            className={'flex h-fit w-max max-w-full min-w-0 flex-col items-start justify-center rounded-md text-left ' + (tone ? 'min-h-[35px] px-2 py-1 ' : 'px-1 py-0.5 ') + (
                 tone === 'sales' ? 'border border-sky-400/25 bg-sky-500/10'
                     : tone === 'net' ? 'border border-emerald-400/25 bg-emerald-500/10'
                         : '')}>
-            <span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">{label}</span>
+            <span className={'block whitespace-nowrap leading-tight text-white/65 ' + (tone ? 'text-[9px]' : 'text-[7px]')}>{label}</span>
             <strong className={'block whitespace-nowrap leading-tight tracking-tight text-white ' +
-                (tone ? 'text-[clamp(8px,1.8vw,13px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
+                (tone ? 'text-[clamp(11px,2vw,15px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
                 title={value}>{value}</strong>
         </div>
     );
