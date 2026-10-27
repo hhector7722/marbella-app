@@ -871,6 +871,9 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
 }
 
 export default function VentasDesktopWorkspace() {
+    const preview = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('preview') : null;
+    const previewMode = preview === 'day' || preview === 'month' ? preview : null;
+    const previewDate = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('date') : null;
     const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
     const [canEditClosings, setCanEditClosings] = useState(false);
@@ -1118,6 +1121,17 @@ export default function VentasDesktopWorkspace() {
         let active = true;
         void (async () => {
             try {
+                if (previewMode) {
+                    const day = previewDate && /^\\d{4}-\\d{2}-\\d{2}$/.test(previewDate)
+                        ? previewDate : format(new Date(), 'yyyy-MM-dd');
+                    setLastClosingDate(day);
+                    changePeriod({ start: day, end: day, kind: 'day' });
+                    if (previewMode === 'month') {
+                        setSummaryMonth(startOfMonth(parseISO(day)));
+                        setMobileScope('month');
+                    }
+                    return;
+                }
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!active) return;
                 if (user?.email?.trim().toLowerCase() === 'hhector7722@gmail.com') {
@@ -1574,6 +1588,7 @@ export default function VentasDesktopWorkspace() {
     const mobileMoreTickets = mobileActiveSelection ? canLoadMore :
         mobileMonth ? (mobileMonthTickets.key === monthTicketKey && mobileMonthTickets.hasMore) : canLoadMore;
     const navigateMobilePeriod = (delta: number) => {
+        if (previewMode === 'day') return;
         if (mobileMonth) {
             setMonthTicketPage(0);
             navigateSummaryMonth(delta);
@@ -1586,8 +1601,8 @@ export default function VentasDesktopWorkspace() {
     return (
         <>
         <div data-component="HistoryMobileWorkspace" data-page="ventas-consolidated"
-            className="mx-auto flex w-full max-w-[640px] min-w-0 flex-col gap-3 px-2 pb-8 pt-2 text-white lg:hidden">
-            <header className="flex min-w-0 items-center justify-between gap-2 px-1">
+            className={cn("mx-auto flex w-full max-w-[640px] min-w-0 flex-col gap-3 px-2 pb-8 pt-2 text-white lg:hidden", previewMode && "!flex !max-w-none !px-2 !pb-3")}>
+            {!previewMode && <header className="flex min-w-0 items-center justify-between gap-2 px-1">
                 <h1 className="text-lg font-extrabold">Ventas y cierres</h1>
                 <div className="flex shrink-0 items-center gap-1.5">
                     <div className="relative">
@@ -1616,18 +1631,18 @@ export default function VentasDesktopWorkspace() {
                     {activeFilter && <button type="button" aria-label="Quitar filtro" onClick={clearAllFilters}
                         className="rounded-md border border-white/20 p-2"><X size={17}/></button>}
                 </div>
-            </header>
+            </header>}
             <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-2 pt-2">
                 <div className="flex min-w-0 items-center justify-between gap-2 border-b border-white/15 pb-2">
                     <div className="flex min-w-0 items-center gap-0.5">
-                        <button type="button" onClick={() => navigateMobilePeriod(-1)}
+                        <button type="button" disabled={previewMode === 'day'} onClick={() => navigateMobilePeriod(-1)}
                             aria-label="Fecha anterior" className="shrink-0 rounded p-1 text-white/75"><ChevronLeft size={16}/></button>
                         <strong className="min-w-0 whitespace-nowrap text-[11px] font-semibold capitalize tabular-nums">
                             {isSingleDay
                                 ? format(parseISO(period.start), 'EEE d MMM yy', { locale: es }).replace('.', '')
                                 : periodTitle}
                         </strong>
-                        <button type="button" onClick={() => navigateMobilePeriod(1)}
+                        <button type="button" disabled={previewMode === 'day'} onClick={() => navigateMobilePeriod(1)}
                             aria-label="Fecha siguiente" className="shrink-0 rounded p-1 text-white/75"><ChevronRight size={16}/></button>
                         {isSingleDay && selectedClosing?.weather && (
                             <span className="inline-flex min-w-0 items-center gap-1 text-[10px] text-white/65"
@@ -1639,7 +1654,7 @@ export default function VentasDesktopWorkspace() {
                     </div>
                     <div className="flex min-w-0 shrink-0 items-center gap-1.5">
                         <TicketHeaderStats report={dailyReport}/>
-                        {isSingleDay && selectedClosing && canEditClosings && (
+                        {!previewMode && isSingleDay && selectedClosing && canEditClosings && (
                             <button type="button" aria-label="Editar cierre" title="Editar cierre"
                                 onClick={() => setEditingClosingId(selectedClosing.id)}
                                 className="ml-0.5 shrink-0 rounded p-1 text-white/75">
@@ -1659,7 +1674,7 @@ export default function VentasDesktopWorkspace() {
                         </div>
                     ))}
                 </div>
-                <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+                {!previewMode && <div className="mt-1.5 grid grid-cols-3 gap-1.5">
                     {mobileFinancialItems.map(item => {
                         const actionable = item.payment === 'card' || item.payment === 'pending';
                         const detail = item.label === 'Rendimiento' ? 'performance' : item.label === 'Efectivo' ? 'cash' : null;
@@ -1687,12 +1702,13 @@ export default function VentasDesktopWorkspace() {
                         ) : <div key={item.label} className={tone}>{body}</div>;
                     })}
                 </div>
+                }
             </section>
             <div className="min-w-0">
                 <section className="flex h-[143px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 py-1.5">
                     <div className="mb-0.5 flex shrink-0 items-center justify-between">
                         <h2 className="text-[11px] font-bold uppercase">Horas</h2>
-                        {mobileActiveSelection?.kind === 'hour' && (
+                        {!previewMode && mobileActiveSelection?.kind === 'hour' && (
                             <button type="button" data-crossfilter-trigger data-mobile-hour-select
                                 onClick={() => onChooseCross(mobileActiveSelection)}
                                 className="text-[9px] font-semibold text-sky-200 hover:text-white">
@@ -1718,7 +1734,7 @@ export default function VentasDesktopWorkspace() {
                         )}
                         {mobileHours.map((hour, index) => (
                             <button key={hour.hour} type="button" data-crossfilter-trigger data-mobile-hour-select
-                                onClick={() => onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' })}
+                                onClick={() => { if (!previewMode) onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' }); }}
                                 aria-pressed={currentHour === hour.hour}
                                 aria-label={`${hour.hour}:00 a ${hour.hour + 1}:00, ${hour.count} tickets, ${euro(hour.total)}. Pulsar para ${currentHour === hour.hour ? 'quitar el filtro' : 'filtrar ventas, productos y tickets'}`}
                                 title={`${hour.hour}:00 - ${hour.hour + 1}:00 · ${euro(hour.total)}`}
@@ -1769,7 +1785,7 @@ export default function VentasDesktopWorkspace() {
                     <div className="h-[350px] min-w-0">
                         <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
                             selection={paymentOnly ? null : mobileActiveSelection}
-                            onSelect={onChooseCross} productThumbnails={productThumbnails}
+                            onSelect={previewMode ? () => {} : onChooseCross} productThumbnails={productThumbnails}
                             rangeStart={period.start} rangeEnd={period.end} mobileView="products"/>
                     </div>
                   ) : (
