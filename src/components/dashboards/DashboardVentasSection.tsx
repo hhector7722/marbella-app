@@ -779,13 +779,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                                             {prod.nombre_articulo}
                                                         </td>
                                                         <td className="py-1 text-center text-white/60 tabular-nums">
-                                                            {NumberformatNumberSpanish((prod.cantidad_total), 0)}
+                                                            {formatNumberSpanish(Number(prod.cantidad_total), 0)}
                                                         </td>
                                                         <td className="py-1 text-center text-white/50 tabular-nums">
-                                                            {NumberformatNumberSpanish((prod.precio_medio), 1)}€
+                                                            {formatNumberSpanish(Number(prod.precio_medio), 1)}€
                                                         </td>
                                                         <td className="py-1 text-right font-black tabular-nums text-emerald-400">
-                                                            {NumberformatNumberSpanish((prod.total_ingresos), 1)}€
+                                                            {formatNumberSpanish(Number(prod.total_ingresos), 1)}€
                                                         </td>
                                                     </tr>
                                                 ))}
