@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/modal';
 import { CashBreakdownModal } from '@/components/cash/CashBreakdownModal';
+import { SalesPreviewModal, type SalesPreview } from './SalesPreviewModal';
 import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
 import { HomeHourlySalesChart, HomeTopProducts } from './HomeSalesWidgetDetails';
 import { BUSINESS_HOURS } from '@/lib/constants';
@@ -77,6 +78,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
     // Modals states
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
     const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
+    const [preview, setPreview] = useState<SalesPreview | null>(null);
     const [salesModalLoading, setSalesModalLoading] = useState(false);
     const [salesProducts, setSalesProducts] = useState<any[]>([]);
     const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>([]);
@@ -306,10 +308,10 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
             {compact ? (
                 <div data-element="closing-compact" className="flex h-full min-h-0 flex-col justify-center gap-1 px-1.5 py-1 tabular-nums">
                     <div className="flex h-[15px] min-w-0 shrink-0 items-center justify-between gap-1">
-                        <Link href="/dashboard/history"
+                        <button type="button" onClick={() => { if (closing) setPreview({ mode: 'day', date: String(closing.closing_date).split('T')[0] }); }}
                             className="shrink-0 whitespace-nowrap text-[9px] font-bold leading-none text-white hover:text-sky-200">
                             Último cierre
-                        </Link>
+                        </button>
                         <span className="inline-flex min-w-0 items-center gap-x-1.5 text-right text-[8px] text-white/65">
                             {metrics.weatherIcon && <img src={metrics.weatherIcon} alt="" title={metrics.weatherLabel ?? ''} className="h-3 w-3 shrink-0 object-contain"/>}
                             <span className="whitespace-nowrap">{closing ? dateLabel : '—'}</span>
@@ -329,8 +331,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                         <div className="flex min-h-0 flex-1 items-center justify-center">
                             <div className="grid w-full min-w-0 grid-cols-3 items-stretch gap-x-0.5 gap-y-1">
                                 <button type="button" onClick={() => {
-                                    void fetchSalesData(String(closing.closing_date));
-                                    setIsSalesModalOpen(true);
+                                    setPreview({ mode: 'day', date: String(closing.closing_date).split('T')[0] });
                                 }} title="Ver detalles de las ventas del cierre"
                                     className="flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
                                     <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Ventas</span>
@@ -554,6 +555,8 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                 layer="base"
                 instance="master-last-closing-cash-breakdown"
             />
+
+            <SalesPreviewModal preview={preview} onClose={() => setPreview(null)}/>
 
             {/* Modal Resumen de Ventas */}
             <Modal
