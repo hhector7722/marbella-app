@@ -26,7 +26,7 @@ function MonthlyMetric({ label, value, tone, title }: {
 }) {
     return (
         <div data-metric={tone} title={title}
-            className={'flex h-fit w-max max-w-full min-w-0 flex-col items-start justify-center rounded-md text-left ' + (tone ? 'min-w-[74px] px-2 py-0.5 ' : 'px-1 py-0.5 ') + (
+            className={'flex h-fit w-fit max-w-full min-w-0 flex-col items-start justify-center rounded-md text-left ' + (tone ? 'min-w-[74px] px-2 py-0.5 ' : 'px-1 py-0.5 ') + (
                 tone === 'sales' ? 'border border-sky-400/25 bg-sky-500/10'
                     : tone === 'net' ? 'border border-emerald-400/25 bg-emerald-500/10'
                         : '')}>
@@ -131,22 +131,22 @@ function HomeMonthlySalesWidget() {
                 </div>
             ) : visible ? (
                 <div className="flex min-h-0 flex-1 items-center justify-center">
-                    <div className="grid w-max max-w-full grid-cols-6 items-start gap-x-1 gap-y-1.5 text-left">
-                        <div className="col-span-3 flex min-w-0 justify-start">
+                    <div className="grid w-full min-w-0 grid-cols-6 items-center gap-x-1 gap-y-1.5 text-left">
+                        <div className="col-span-3 flex min-w-0 justify-center">
                             <MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/>
                         </div>
-                        <div className="col-span-3 flex min-w-0 justify-start">
+                        <div className="col-span-3 flex min-w-0 justify-center">
                             <MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
                                 tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
                         </div>
-                        <div className="col-span-2 min-w-0">
+                        <div className="col-span-2 flex min-w-0 justify-center">
                             <MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
                                 title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
                         </div>
-                        <div className="col-span-2 min-w-0">
+                        <div className="col-span-2 flex min-w-0 justify-center">
                             <MonthlyMetric label="Tickets" value={formatNumberSpanish(visible.tickets)}/>
                         </div>
-                        <div className="col-span-2 min-w-0">
+                        <div className="col-span-2 flex min-w-0 justify-center">
                             <MonthlyMetric label="T. medio" value={visible.tickets ? formatCurrencySpanish(visible.average) : '—'}/>
                         </div>
                     </div>
