@@ -13,11 +13,27 @@ var CONFIG_ALBARANES = {
   CUENTA: 'marbellaremote@gmail.com',
   FECHA_INICIO: '2026/10/27',
   URL: 'https://marbella-app.vercel.app/api/webhooks/albaranes',
+  // Remitentes facilitados por el responsable de La Marbella el 27/10/2026.
+  // Se comprueban direcciones completas, no dominios genéricos como gmail.com.
   REMITENTES_ADMITIDOS: [
-    'info@grupsantateresa.com',
+    'pedido@sanilec.es',
+    'contabilidad.horeca@ametllerorigen.cat',
+    'otificaciones@spairal.com',
+    'grupserhs@grupserhs.com',
     'peterdelperal@gmail.com',
+    'carnicaspijuan@gmail.com',
+    'no-reply@santaniol.com',
+    'sroca@santaniol.com',
     'delegacion.barcelona@es.froneri.com',
-    'pedido@sanilec.es'
+    'julian@disabril.com',
+    'facturacion@grupovidela.com',
+    'x.castellet@cellercapcanes.com',
+    'info@grupsantateresa.com',
+    'gjubert@meritem.es',
+    'facturacion@panabad.com',
+    'administracion@panabad.com',
+    'compras@panabad.com',
+    'facturacion@zanderfoods.com'
   ],
   // Los proveedores nuevos también entran cuando el asunto o fichero
   // describe claramente un documento de compra.
