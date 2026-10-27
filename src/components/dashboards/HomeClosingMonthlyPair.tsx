@@ -26,7 +26,7 @@ function MonthlyMetric({ label, value, tone, title }: {
 }) {
     return (
         <div data-metric={tone} title={title}
-            className={'flex h-fit min-w-0 flex-col justify-center rounded-md px-0.5 py-0.5 ' + (
+            className={'flex h-fit w-max max-w-full min-w-0 flex-col items-start justify-center rounded-md px-1 py-0.5 ' + (
                 tone === 'sales' ? 'border border-sky-400/25 bg-sky-500/10'
                     : tone === 'net' ? 'border border-emerald-400/25 bg-emerald-500/10'
                         : '')}>
@@ -131,12 +131,12 @@ function HomeMonthlySalesWidget() {
                 </div>
             ) : visible ? (
                 <>
-                    <div className="grid min-h-0 grid-cols-2 gap-0.5">
+                    <div className="flex min-h-0 flex-wrap items-start gap-0.5">
                         <MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/>
                         <MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
                             tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
                     </div>
-                    <div className="grid min-w-0 grid-cols-3 gap-x-0.5 text-center">
+                    <div className="flex min-w-0 items-start justify-start gap-x-2 text-left">
                         <MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
                             title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
                         <MonthlyMetric label="Tickets" value={visible.tickets.toLocaleString('es-ES')}/>
