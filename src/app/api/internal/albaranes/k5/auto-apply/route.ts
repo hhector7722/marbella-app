@@ -98,6 +98,16 @@ async function autoApplyDeterministicReceipts(
   // Gmail intake is transport/evidence, never authorization for physical stock.
   // Human K4 receipt confirmation is separate from extraction. Monthly totals
   // additionally have a DB-level receipt/purchase guard.
+  // Don Hielo and Pons always record physical goods via the
+  // dedicated one-product form. Invoices are economic evidence only.
+  const { data: supplierRow, error: supplierLookupError } = await supabase
+    .from('suppliers').select('name').eq('id', invoice.supplier_id).maybeSingle()
+  if (supplierLookupError) throw new Error('No se pudo validar el proveedor')
+  const supplierName = text(supplierRow?.name).toLocaleLowerCase('es')
+  if (supplierName === 'don hielo' || supplierName === 'pons') {
+    return { ok: true, applied: 0, eligible: 0, blocked: [],
+      reason: 'manual_supplier_economic_document_only' }
+  }
   if (text(invoice.source) === 'email') {
     return { ok: true, applied: 0, eligible: 0, blocked: [],
       reason: invoice.document_kind === 'monthly_invoice'
