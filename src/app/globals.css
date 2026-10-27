@@ -8406,3 +8406,111 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   max-height: 100%;
   overflow: hidden;
 }
+
+/* Dashboard de escritorio: conserva el diseño móvil de los tres widgets,
+   con una franja completa de ventas y dos tarjetas amplias debajo. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout='ops-admin'] {
+    grid-template-areas:
+      'ventas ventas ventas ventas'
+      'cierre cierre cierre cierre'
+      'cierre cierre cierre cierre'
+      'horarios horarios horarios cinicial'
+      'horarios horarios horarios plant'
+      'mobra stock recetas albaranes'
+      'mas asis cajascambio ingredientes';
+    grid-template-rows: repeat(7, var(--home-row-track));
+  }
+  [data-component='HomeScreen'][data-layout='master'] {
+    grid-template-areas:
+      'ventas ventas ventas ventas'
+      'ultcierre ultcierre ultcierre ultcierre'
+      'ultcierre ultcierre ultcierre ultcierre'
+      'horario horario horario asis'
+      'horario horario horario caja'
+      'reservas ingred recetas albaran'
+      'otros cajascambio plantilla cambio';
+    grid-template-rows: repeat(7, var(--home-row-track));
+  }
+  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
+    grid-template-areas:
+      'ventas ventas ventas ventas'
+      'ultcierre ultcierre ultcierre ultcierre'
+      'ultcierre ultcierre ultcierre ultcierre'
+      'horario horario horario asis'
+      'horario horario horario asis'
+      'reservas ingred recetas albaran'
+      'otros cajascambio plantilla cambio'
+      'caja . . .';
+    grid-template-rows: repeat(8, var(--home-row-track));
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+    > [data-element='body'] > [data-element='home-closing-monthly-pair'] {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    margin: 0;
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair'] {
+    gap: var(--espacio-4);
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) {
+    justify-content: center;
+    gap: clamp(12px, 2vh, 26px);
+    padding: clamp(12px, 1.5vw, 22px);
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) > :first-child {
+    height: auto;
+    min-height: 24px;
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) :is(span, strong) {
+    font-size: clamp(12px, 0.95vw, 17px);
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) strong {
+    font-size: clamp(15px, 1.2vw, 21px);
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) :is(button, [data-metric]) {
+    min-width: 0;
+  }
+  /* Retícula de Ventas idéntica en jerarquía al smartphone: cifras/gráfica
+     arriba y productos/horas debajo, con más superficie disponible. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    grid-template-areas: 'financial chart' 'products hours';
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(28px, auto) minmax(0, 1fr);
+    column-gap: clamp(18px, 2vw, 32px);
+    row-gap: 10px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] {
+    display: flex;
+    flex-direction: row;
+    height: auto;
+    min-height: 28px;
+    align-self: center;
+    gap: 8px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div {
+    box-sizing: border-box;
+    width: auto;
+    max-width: calc(50% - 4px);
+    min-width: 0;
+    height: auto;
+    min-height: 28px;
+    flex: 1 1 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    padding: 5px 8px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hour-chart'] {
+    align-items: end;
+  }
+}
