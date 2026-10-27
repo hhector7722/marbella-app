@@ -46,6 +46,7 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Compra', instance: 'compra', action: 'compra', img: '/icons/shop.png' },
     { label: 'Cierre', instance: 'cierre', action: 'cierre', img: '/icons/lock.png' },
     { label: 'Propinas', instance: 'propinas', href: '/dashboard/propinas', img: '/icons/tip.png' },
+    { label: 'Asistencia', instance: 'asistencia', href: '/staff/history', img: '/icons/calendar.png' },
     { label: 'Uso app', instance: 'uso-app', href: '/dashboard/uso', img: '/icons/uso.png' },
     { label: 'Rentabilidad', instance: 'rentabilidad', href: '/dashboard/insights', img: '/icons/rent.png' },
     { label: 'Info', instance: 'info', action: 'info', img: '/icons/information.png' },
@@ -54,7 +55,7 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
 ];
 
 /** Accesos exclusivos del modal Otros en /master/dashboard escritorio. */
-export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas', 'asistente'] as const;
+export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas', 'asistente', 'asistencia', 'propinas'] as const;
 
 const desktopOtherIds = new Set<string>(MASTER_DESKTOP_OTHER_INSTANCES);
 export const MASTER_DESKTOP_OTHER_ITEMS = MASTER_MORE_FUNCTIONS_ITEMS.filter(
