@@ -8815,3 +8815,11 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   isolation: auto;
   filter: none !important;
 }
+
+/* La franja oscura entre Cierre y Mensual la producen las sombras
+   proyectadas de AMBAS tarjetas: se solapan sobre el hueco transparente.
+   Mantener fondos, borde, radio y relieve interior, sin sombra externa. */
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container']) {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10);
+}
