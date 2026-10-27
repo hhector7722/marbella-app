@@ -870,7 +870,7 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
     );
 }
 
-export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: { embeddedMode?: 'day' | 'month'; embeddedDate?: string } = {}) {
+export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, embeddedShowLive }: { embeddedMode?: 'day' | 'month'; embeddedDate?: string; embeddedShowLive?: boolean } = {}) {
     const preview = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('preview') : null;
     const previewMode = embeddedMode ?? (preview === 'day' || preview === 'month' ? preview : null);
     const previewDate = embeddedDate ?? (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('date') : null);
@@ -1771,7 +1771,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: {
             </div>
             <section className="min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
                 <nav className="mb-2 grid grid-cols-3 gap-1 border-b border-white/15 pb-2" aria-label="Detalle de ventas">
-                    {(previewMode === 'day' || previewMode === 'month' && !isSameMonth(summaryMonth, new Date())
+                    {(previewMode && !embeddedShowLive
                     ? ([{ id: 'products', label: 'Productos' }, { id: 'tickets', label: 'Tickets' }] as const)
                     : ([{ id: 'products', label: 'Productos' }, { id: 'tickets', label: 'Tickets' }, { id: 'live', label: 'Live' }] as const)
                 ).map(item => (
