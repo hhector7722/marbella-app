@@ -8496,7 +8496,8 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
       'horario horario horario horario mmobra mcompra mcierre mpropinas'
       'horario horario horario horario muso mrent minfo otros'
       'ingred cajascambio . . . . . .';
-    grid-template-rows: repeat(6, minmax(0, 1fr));
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    grid-auto-rows: var(--home-row-track);
   }
   [data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre']
     > [data-element='body'] > [data-element='home-closing-monthly-pair'] {
