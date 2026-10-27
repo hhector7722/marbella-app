@@ -29,7 +29,7 @@ BEGIN
  END IF;
 
  IF p_supplier_id=22 THEN
-   SELECT i.id,i.quantity_kg INTO v_invoice,v_existing_packages
+   SELECT i.invoice_id,i.quantity_kg INTO v_invoice,v_existing_packages
    FROM public.manual_ice_receipts i WHERE i.id=p_request_id FOR UPDATE;
    IF FOUND THEN
      IF v_existing_packages<>p_packages*10 THEN
