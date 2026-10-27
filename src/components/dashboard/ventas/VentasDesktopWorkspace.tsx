@@ -870,10 +870,10 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
     );
 }
 
-export default function VentasDesktopWorkspace() {
+export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: { embeddedMode?: 'day' | 'month'; embeddedDate?: string } = {}) {
     const preview = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('preview') : null;
-    const previewMode = preview === 'day' || preview === 'month' ? preview : null;
-    const previewDate = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('date') : null;
+    const previewMode = embeddedMode ?? (preview === 'day' || preview === 'month' ? preview : null);
+    const previewDate = embeddedDate ?? (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('date') : null);
     const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
     const [canEditClosings, setCanEditClosings] = useState(false);
