@@ -472,6 +472,7 @@ export function StaffWeekScheduleWidget({
 }: StaffWeekScheduleWidgetProps) {
     const [monthAnchor, setMonthAnchor] = useState(() => startOfMonth(new Date()));
     const [expandedWeekStart, setExpandedWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+    const monthWeeksRef = useRef<HTMLDivElement>(null);
     const [shifts, setShifts] = useState<ShiftRow[]>([]);
     const [eventsByDate, setEventsByDate] = useState<Record<string, BarActivity[]>>({});
     const [loading, setLoading] = useState(true);
@@ -494,6 +495,21 @@ export function StaffWeekScheduleWidget({
     );
 
     const monthWeeks = useMemo(() => chunkWeeks(monthDays), [monthDays]);
+
+    useEffect(() => {
+        const viewport = monthWeeksRef.current;
+        if (!viewport) return;
+        const selected = Array.from(viewport.children).find((el) =>
+            el.getAttribute('data-expanded') === 'true'
+        ) as HTMLElement | undefined;
+        if (!selected) return;
+        const bottom = selected.offsetTop + selected.offsetHeight;
+        if (bottom > viewport.scrollTop + viewport.clientHeight) {
+            viewport.scrollTop = bottom - viewport.clientHeight;
+        } else if (selected.offsetTop < viewport.scrollTop) {
+            viewport.scrollTop = selected.offsetTop;
+        }
+    }, [expandedWeekStart, monthAnchor]);
 
     const { weeks: overtimeWeekList, loading: overtimeLoading } = useOvertimeWeeks(
         rangeStart,
@@ -676,7 +692,7 @@ export function StaffWeekScheduleWidget({
                     ) : null}
                 </div>
 
-                <div data-element="month-weeks" className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div ref={monthWeeksRef} data-element="month-weeks" className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
                     {monthWeeks.map((weekDays) => {
                         const weekStart = weekDays[0];
                         const weekKey = format(weekStart, 'yyyy-MM-dd');
