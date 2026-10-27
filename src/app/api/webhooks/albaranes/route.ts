@@ -102,6 +102,15 @@ export async function POST(request: Request) {
     documentId: acknowledged.id, invoiceId: acknowledged.invoice_id,
   })
 
+  // Remitentes confirmados por propietario: coincidencia de email completo,
+  // nunca por dominio genérico. No autoriza por sí sola una recepción de stock.
+  const { data: supplierSender, error: supplierError } = await supabase
+    .from('purchase_supplier_sender_addresses')
+    .select('supplier_id')
+    .eq('sender_email', sender)
+    .maybeSingle()
+  if (supplierError) return reply('No se pudo identificar el remitente', 503)
+
   // Content hash protects against reforwarded files even with new Gmail IDs.
   const { data: previous, error: previousError } = await supabase
     .from('purchase_email_documents').select('id,storage_path')
@@ -133,6 +142,7 @@ export async function POST(request: Request) {
     content_sha256: contentHash,
     storage_path: previous?.storage_path ?? path,
     suggested_kind: suggestKind(filename, subject),
+    supplier_id: supplierSender?.supplier_id ?? null,
     duplicate_of: previous?.id ?? null,
     status: duplicate ? 'duplicate' : 'received',
     error_message: existingInvoice ? 'Archivo existente en albaranes; sin segunda importación' : null,
