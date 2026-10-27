@@ -1385,12 +1385,12 @@ export default function AlbaranesHistoricoClient({
         Hielo
       </Link>
       <Link
-        href="/dashboard/albaranes/pons"
-        title="Registrar entrega de vermut de Pons"
-        aria-label="Registrar entrega de Pons"
+        href="/dashboard/albaranes/vermut"
+        title="Registrar entrega de Vermut"
+        aria-label="Registrar entrega de Vermut"
         className="inline-flex h-9 items-center rounded-lg border border-white/20 px-2 text-xs font-semibold"
       >
-        Pons
+        Vermut
       </Link>
       <PeriodFilterButton instance="albaranes-filter-open" onClick={() => void openFilterModal()} />
       <Button
