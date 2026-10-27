@@ -62,7 +62,7 @@ export function ScannerClient({
   const [messageTone, setMessageTone] = useState<'error' | 'success' | 'info'>('info')
   const [showSupplierModal, setShowSupplierModal] = useState(autoStart)
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null)
-  const [quickSupplierId, setQuickSupplierId] = useState<17 | 22 | null>(null)
+  const [quickSupplierId, setQuickSupplierId] = useState<17 | 13 | null>(null)
   const [quickPackages, setQuickPackages] = useState(1)
   const [quickRequestId, setQuickRequestId] = useState(() => newPendingId())
   const [quickError, setQuickError] = useState<string | null>(null)
@@ -289,7 +289,7 @@ export function ScannerClient({
 
   const handleSelectSupplier = (id: number) => {
     setSelectedSupplierId(id)
-    if (id === 17 || id === 22) {
+    if (id === 17 || id === 13) {
       setQuickSupplierId(id)
       setQuickPackages(1)
       setQuickRequestId(newPendingId())
@@ -317,7 +317,7 @@ export function ScannerClient({
   const saveQuickDelivery = async () => {
     const supplierId = quickSupplierId
     if (!supplierId || !Number.isSafeInteger(quickPackages) || quickPackages<1
-      || quickPackages > (supplierId === 22 ? 50 : 20)) {
+      || quickPackages > (supplierId === 13 ? 50 : 20)) {
       setQuickError('Introduce una cantidad válida.')
       return
     }
@@ -570,7 +570,7 @@ export function ScannerClient({
       <Modal
         open={quickSupplierId != null}
         onClose={closeQuickDelivery}
-        title={quickSupplierId === 22 ? 'Don Hielo' : 'Vermut'}
+        title={quickSupplierId === 13 ? 'Hielo Fenix' : 'Vermut'}
         subtitle="Entrada rápida de mercancía"
         variant="standard"
         layer="base"
@@ -582,21 +582,21 @@ export function ScannerClient({
         <div className="space-y-4 p-4 sm:p-5">
           <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
             <p className="text-sm font-semibold">
-              {quickSupplierId === 22 ? 'Sacos de hielo' : 'Garrafas de vermut'}
+              {quickSupplierId === 13 ? 'Sacos de hielo' : 'Garrafas de vermut'}
             </p>
             <p className="mt-1 text-xs opacity-75">
-              {quickSupplierId === 22
+              {quickSupplierId === 13
                 ? 'Cada saco contiene 5 bolsas de 2 kg (10 kg en total).'
                 : 'Cada garrafa contiene 10 litros.'}
             </p>
           </div>
           <label className="block space-y-2 text-sm font-medium" htmlFor="scanner-quick-package-count">
-            <span>Número de {quickSupplierId === 22 ? 'sacos' : 'garrafas'}</span>
+            <span>Número de {quickSupplierId === 13 ? 'sacos' : 'garrafas'}</span>
             <input
               id="scanner-quick-package-count"
               type="number"
               min={1}
-              max={quickSupplierId === 22 ? 50 : 20}
+              max={quickSupplierId === 13 ? 50 : 20}
               step={1}
               inputMode="numeric"
               value={quickPackages}
@@ -609,7 +609,7 @@ export function ScannerClient({
             <p className="text-xs opacity-70">Cantidad que entrará en inventario</p>
             <p className="mt-1 text-xl font-bold tabular-nums">
               {Number.isSafeInteger(quickPackages) && quickPackages > 0
-                ? quickPackages * 10 : '—'} {quickSupplierId === 22 ? 'kg' : 'litros'}
+                ? quickPackages * 10 : '—'} {quickSupplierId === 13 ? 'kg' : 'litros'}
             </p>
           </div>
           {quickError ? <p role="alert" className="rounded-lg bg-rose-900/40 px-3 py-2 text-sm text-rose-100">{quickError}</p> : null}
