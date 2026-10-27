@@ -8459,3 +8459,39 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     justify-content: center;
   }
 }
+
+/* Ventas de escritorio: misma composición de dos filas que smartphone,
+   ampliada al ancho de las cuatro columnas. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    grid-template-areas: 'financial chart' 'products hours';
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: 28px minmax(0, 1fr);
+    column-gap: clamp(16px, 2vw, 32px);
+    row-gap: 6px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    gap: 8px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div {
+    width: auto;
+    max-width: 50%;
+    height: auto;
+    min-height: 24px;
+    flex: 1 1 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hour-chart'] {
+    align-items: end;
+  }
+}
