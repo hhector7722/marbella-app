@@ -309,7 +309,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                             className="shrink-0 whitespace-nowrap text-[9px] font-bold leading-none text-white hover:text-sky-200">
                             Último cierre
                         </Link>
-                        <span className="inline-flex min-w-0 items-center gap-0.5 text-right text-[8px] text-white/65">
+                        <span className="inline-flex min-w-0 items-center gap-x-1.5 text-right text-[8px] text-white/65">
                             {metrics.weatherIcon && <img src={metrics.weatherIcon} alt="" title={metrics.weatherLabel ?? ''} className="h-3 w-3 shrink-0 object-contain"/>}
                             <span className="whitespace-nowrap">{closing ? dateLabel : '—'}</span>
                             {closing && (
@@ -326,21 +326,21 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                         <div className="flex min-h-0 flex-1 items-center justify-center text-[10px] text-white/65">Sin cierres registrados</div>
                     ) : (
                         <>
-                            <div className="grid min-h-0 grid-cols-[max-content_max-content_minmax(max-content,1fr)] gap-0.5">
+                            <div className="grid min-h-0 grid-cols-3 gap-0.5">
                                 <button type="button" onClick={() => {
                                     void fetchSalesData(String(closing.closing_date));
                                     setIsSalesModalOpen(true);
                                 }} title="Ver detalles de las ventas del cierre"
                                     className="flex min-w-0 flex-col justify-center rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
                                     <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Ventas</span>
-                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,12px)] font-bold leading-tight tracking-tight text-white"
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.tpvSales)}>
                                         {formatCurrencySpanish(metrics.tpvSales)}
                                     </strong>
                                 </button>
                                 <div className="flex min-w-0 flex-col justify-center rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-0.5">
                                     <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Venta neta</span>
-                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.45vw,13px)] font-bold leading-tight tracking-tight text-white"
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.netSales)}>
                                         {formatCurrencySpanish(metrics.netSales)}
                                     </strong>
@@ -354,7 +354,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                             : 'border-rose-400/55 bg-rose-500/15'
                                 )} title="Comparación con la venta neta media de hasta 8 cierres previos del mismo día de la semana">
                                     <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Rendimiento</span>
-                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.45vw,13px)] font-bold leading-tight tracking-tight text-white">
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white">
                                         {compactPerformance?.date === String(closing.closing_date).split('T')[0] && compactPerformance.percent !== null
                                             ? `${compactPerformance.percent >= 0 ? '▲' : '▼'} ${Math.abs(compactPerformance.percent).toFixed(1)}%`
                                             : '—'}
