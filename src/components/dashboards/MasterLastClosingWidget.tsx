@@ -327,19 +327,19 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                         <div className="flex min-h-0 flex-1 items-center justify-center text-[10px] text-white/65">Sin cierres registrados</div>
                     ) : (
                         <>
-                            <div className="grid min-h-0 grid-cols-3 gap-0.5">
+                            <div className="grid min-h-0 w-full grid-cols-3 items-stretch gap-0.5">
                                 <button type="button" onClick={() => {
                                     void fetchSalesData(String(closing.closing_date));
                                     setIsSalesModalOpen(true);
                                 }} title="Ver detalles de las ventas del cierre"
-                                    className="flex min-w-0 flex-col justify-center rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
+                                    className="flex h-full w-full min-w-0 flex-col justify-center overflow-hidden rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
                                     <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Ventas</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.tpvSales)}>
                                         {formatCurrencySpanish(metrics.tpvSales)}
                                     </strong>
                                 </button>
-                                <div className="flex min-w-0 flex-col justify-center rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-0.5">
+                                <div className="flex h-full w-full min-w-0 flex-col justify-center overflow-hidden rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-0.5">
                                     <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Venta neta</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.netSales)}>
@@ -347,7 +347,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                     </strong>
                                 </div>
                                 <div className={cn(
-                                    'flex min-w-0 flex-col justify-center rounded-md border px-1 py-0.5',
+                                    'flex h-full w-full min-w-0 flex-col justify-center overflow-hidden rounded-md border px-1 py-0.5',
                                     compactPerformance?.date !== String(closing.closing_date).split('T')[0] || compactPerformance.percent === null
                                         ? 'border-white/15 bg-white/[0.035]'
                                         : compactPerformance.percent >= 0
@@ -357,7 +357,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                     <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Rendimiento</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white">
                                         {compactPerformance?.date === String(closing.closing_date).split('T')[0] && compactPerformance.percent !== null
-                                            ? `${compactPerformance.percent >= 0 ? '▲' : '▼'} ${Math.absformatNumberSpanish((compactPerformance.percent), 1)}%`
+                                            ? `${compactPerformance.percent >= 0 ? '▲' : '▼'} ${formatNumberSpanish(Math.abs(compactPerformance.percent), 1)}%`
                                             : '—'}
                                     </strong>
                                 </div>
