@@ -8753,3 +8753,40 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     white-space: normal;
   }
 }
+
+
+/* El slot del par no es una card: anular por completo su cristal heredado.
+   La regla genérica del body en @supports volvía a poner el fondo aunque
+   el wrapper estuviera declarado transparente. Las dos cards internas no
+   se modifican. */
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre']::before {
+  background: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] > [data-element='body'] {
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] > [data-element='body']::before,
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] > [data-element='body']::after,
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+  > [data-element='body'] > [data-element='home-closing-monthly-pair']::before,
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+  > [data-element='body'] > [data-element='home-closing-monthly-pair']::after {
+  content: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+  > [data-element='body'] > [data-element='home-closing-monthly-pair'] {
+  background: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
