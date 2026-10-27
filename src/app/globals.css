@@ -8406,3 +8406,56 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   max-height: 100%;
   overflow: hidden;
 }
+
+/* Escritorio: Ventas ocupa la primera fila (4 columnas).
+   Último cierre y Mensual comparten la segunda franja (2 columnas cada uno),
+   con dos pistas de altura. Smartphone conserva la retícula original. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout='ops-admin'] {
+    grid-template-areas:
+      'ventas ventas ventas ventas'
+      'cierre cierre cierre cierre'
+      'cierre cierre cierre cierre'
+      'horarios horarios horarios cinicial'
+      'horarios horarios horarios plant'
+      'mobra stock recetas albaranes'
+      'mas asis cajascambio ingredientes';
+    grid-template-rows: repeat(7, var(--home-row-track));
+  }
+  [data-component='HomeScreen'][data-layout='master'] {
+    grid-template-areas:
+      'ventas ventas ventas ventas'
+      'ultcierre ultcierre ultcierre ultcierre'
+      'ultcierre ultcierre ultcierre ultcierre'
+      'horario horario horario asis'
+      'horario horario horario caja'
+      'reservas ingred recetas albaran'
+      'otros cajascambio plantilla cambio';
+    grid-template-rows: repeat(7, var(--home-row-track));
+  }
+  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
+    grid-template-areas:
+      'ventas ventas ventas ventas'
+      'ultcierre ultcierre ultcierre ultcierre'
+      'ultcierre ultcierre ultcierre ultcierre'
+      'horario horario horario asis'
+      'horario horario horario asis'
+      'reservas ingred recetas albaran'
+      'otros cajascambio plantilla cambio'
+      'caja . . .';
+    grid-template-rows: repeat(8, var(--home-row-track));
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+    > [data-element='body'] > [data-element='home-closing-monthly-pair'] {
+    height: 100%;
+    max-height: 100%;
+    margin: 0 auto;
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair'] {
+    align-items: stretch;
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) {
+    justify-content: center;
+  }
+}
