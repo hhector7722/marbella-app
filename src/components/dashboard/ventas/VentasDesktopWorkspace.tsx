@@ -1752,7 +1752,7 @@ export default function VentasDesktopWorkspace() {
                         </div>
                         {mobileVisibleHours.map((hour, index) => hour ? (
                             <button key={hour.hour} type="button" data-crossfilter-trigger data-mobile-hour-select
-                                onClick={() => onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' })}
+                                onClick={() => { if (!previewMode) onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' }); }}
                                 aria-pressed={mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === hour.hour}
                                 className={cn('grid h-[18px] w-full grid-cols-[minmax(0,1.15fr)_minmax(0,0.65fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-1 rounded px-1 text-left text-[9px] leading-none tabular-nums transition-opacity',
                                     mobileActiveSelection?.kind === 'hour' && hour.hour !== mobileActiveSelection.hour && 'opacity-35',
