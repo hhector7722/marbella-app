@@ -1376,6 +1376,14 @@ export default function AlbaranesHistoricoClient({
         <Mail className="h-4 w-4" />
         <span className="hidden sm:inline">Correo</span>
       </Link>
+      <Link
+        href="/dashboard/albaranes/hielo"
+        title="Registrar entrega de hielo"
+        aria-label="Registrar entrega de hielo"
+        className="inline-flex h-9 items-center rounded-lg border border-white/20 px-2 text-xs font-semibold"
+      >
+        Hielo
+      </Link>
       <PeriodFilterButton instance="albaranes-filter-open" onClick={() => void openFilterModal()} />
       <Button
         type="button"
