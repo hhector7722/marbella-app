@@ -8823,3 +8823,74 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   > :is([data-element='closing-half'], [data-element='monthly-container']) {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10);
 }
+
+/* Escritorio compacto de trabajo (portátiles HD): mantener intactos los
+   escritorios anchos >= 1441px y todas las vistas smartphone. Se ajusta
+   exclusivamente la composición interior de las tarjetas. */
+@media (min-width: 1024px) and (max-width: 1440px) {
+  [data-component='HomeScreen'][data-layout='master'] [data-element='closing-compact'],
+  [data-component='HomeScreen'][data-layout='ops-admin'] [data-element='closing-compact'] {
+    padding: 7px 9px;
+    gap: 4px;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] > div:first-child {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: 5px;
+    height: 18px;
+    min-height: 18px;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] > div:first-child > button {
+    flex: 0 0 auto;
+    font-size: 11px;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] > div:first-child > span {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    justify-content: flex-end;
+    gap: 3px;
+    font-size: 9px;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] > div:first-child > span > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3 {
+    min-height: 0;
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    column-gap: 5px;
+    row-gap: 5px;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3 :is(button,div) {
+    min-width: 0;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3 strong {
+    font-size: clamp(10px,0.85vw,12px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 strong {
+    font-size: clamp(10px,0.85vw,12px);
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 7px 10px;
+    padding: 6px 9px 9px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div {
+    padding: 6px 7px;
+    min-width: 0;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] strong {
+    font-size: clamp(13px,1.05vw,16px);
+  }
+}
