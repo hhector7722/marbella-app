@@ -1771,7 +1771,10 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: {
             </div>
             <section className="min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
                 <nav className="mb-2 grid grid-cols-3 gap-1 border-b border-white/15 pb-2" aria-label="Detalle de ventas">
-                    {([{ id: 'products', label: 'Productos' }, { id: 'tickets', label: 'Tickets' }, { id: 'live', label: 'Live' }] as const).map(item => (
+                    {(previewMode === 'day' || previewMode === 'month' && !isSameMonth(summaryMonth, new Date())
+                    ? ([{ id: 'products', label: 'Productos' }, { id: 'tickets', label: 'Tickets' }] as const)
+                    : ([{ id: 'products', label: 'Productos' }, { id: 'tickets', label: 'Tickets' }, { id: 'live', label: 'Live' }] as const)
+                ).map(item => (
                         <button key={item.id} type="button" aria-pressed={mobileView === item.id}
                             onClick={() => setMobileView(item.id)}
                             className={cn('rounded-md px-1 py-2 text-[11px] font-semibold',
