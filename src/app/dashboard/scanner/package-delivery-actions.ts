@@ -24,8 +24,8 @@ export async function recordStandardPackageDelivery(params: {
   const supplierId = Number(params.supplierId)
   const packages = Number(params.packages)
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)
-    || ![17,22].includes(supplierId) || !Number.isSafeInteger(packages)
-    || packages < 1 || (supplierId === 22 && packages > 50)
+    || ![17,13].includes(supplierId) || !Number.isSafeInteger(packages)
+    || packages < 1 || (supplierId === 13 && packages > 50)
     || (supplierId === 17 && packages > 20)) {
     return { success: false, message: 'Introduce un número válido de sacos o garrafas.' }
   }
