@@ -456,7 +456,9 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
                 <div className="min-h-0 flex-1 cursor-pointer lg:cursor-auto" onClick={(event) => {
                     if (window.matchMedia('(min-width: 1024px)').matches) return;
-                    setSalesPreview({ mode: 'day', date: format(new Date(), 'yyyy-MM-dd') });
+                    const target = event.target as HTMLElement;
+                    if (target.closest('[data-element="mobile-sales-hour-chart"], [data-element="mobile-sales-hours"], [data-element="mobile-sales-hour-row"], [data-mobile-hour-select]')) return;
+                    setSalesPreview({ mode: 'current', date: format(new Date(), 'yyyy-MM-dd') });
                 }}>
                 <HomeSalesMobileSummary
                     sales={formatCurrencySpanish(displaySummary.total)}
