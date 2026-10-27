@@ -5,6 +5,7 @@ import { canonicalDocumentSchema, type CanonicalDocument } from '@/lib/albaranes
 import { extractWithMistral, fileSha256, MISTRAL_EXTRACTOR_VERSION,
   MISTRAL_OCR_MODEL } from '@/lib/albaranes/extractors/mistral'
 import { proposeMistralExtraction } from '@/lib/albaranes/pipeline/propose'
+import { documentedInvoiceDate, financialEvidence } from '@/lib/albaranes/email-financial'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -138,10 +139,55 @@ export async function POST(request: Request) {
     if (!extractionId) throw new Error('extraction_missing')
     const proposals = await proposeMistralExtraction({ db, invoiceId: job.invoice_id,
       extractionId, sourceHash: hash, canonical, correlationId: job.correlation_id })
-    const auto = job.replay_mode === 'live'
-      && process.env.ALBARAN_AUTO_RECEIPT_MISTRAL === 'enabled'
+    // Independently read the economic total: receipt-to-stock is NOT expense
+    // accounting, especially for the dedicated supplier "Otros".
+    const { data: invoiceRow, error: invoiceLookupError } = await db
+      .from('purchase_invoices')
+      .select('id,supplier_id,source,document_kind,total_amount,base_amount,invoice_number,status')
+      .eq('id', job.invoice_id).single()
+    if (invoiceLookupError || !invoiceRow) throw new Error('invoice_financial_lookup_failed')
+    const { data: supplierRow, error: supplierLookupError } = await db
+      .from('suppliers').select('name').eq('id', invoiceRow.supplier_id).single()
+    if (supplierLookupError || !supplierRow) throw new Error('supplier_financial_lookup_failed')
+    const supplierName = String(supplierRow.name ?? '').trim().toLowerCase()
+    const isOtherExpense = supplierName === 'otros'
+    const evidence = financialEvidence(canonical)
+    if (job.replay_mode === 'live' && invoiceRow.status !== 'discarded') {
+      const patch: Record<string, unknown> = {}
+      if (evidence && Number(invoiceRow.total_amount ?? 0) <= 0) {
+        patch.total_amount = evidence.total_amount
+        patch.base_amount = evidence.base_amount
+        patch.tax_amount = evidence.tax_amount
+        patch.tax_rate = evidence.tax_rate
+      }
+      const invoiceNumber = (canonical.document_number_raw ?? '').trim()
+      if (invoiceRow.source === 'email' && invoiceNumber.length >= 3
+        && invoiceNumber.length < 96 && !/[<>]/.test(invoiceNumber)
+        && (!invoiceRow.invoice_number || invoiceRow.invoice_number === 'PROCESANDO…')) {
+        patch.invoice_number = invoiceNumber
+      }
+      const documentedDate = documentedInvoiceDate(canonical.document_date_raw)
+      if (documentedDate && invoiceRow.source === 'email') {
+        patch.invoice_date = documentedDate
+      }
+      if (Object.keys(patch).length) {
+        const { error: patchError } = await db.from('purchase_invoices')
+          .update(patch).eq('id',job.invoice_id).neq('status','discarded')
+        if (patchError) throw new Error('financial_evidence_save_failed')
+      }
+    }
+
+    // The configured scanner automatic policy is preserved. A verified email
+    // delivery note is additionally eligible for trusted K5 auto-receipt.
+    // Monthly invoices, unknown documents and "Otros" are always no-stock.
+    const emailDelivery = invoiceRow.source === 'email'
+      && invoiceRow.document_kind === 'delivery_note'
+    const autoAllowed = job.replay_mode === 'live'
+      && !isOtherExpense
+      && (emailDelivery || process.env.ALBARAN_AUTO_RECEIPT_MISTRAL === 'enabled')
       && !proposals.requiresHumanReview
       && (proposals.skipped == null || proposals.skipped === 'already_received')
+    const auto = autoAllowed
       ? await autoApplyFromJob(request, job, leaseToken, extractionId)
       : null
     metrics = { ...metrics, duration_ms: Date.now() - started,
@@ -156,6 +202,15 @@ export async function POST(request: Request) {
       p_metrics: metrics, p_error: null, p_retryable: false,
     })
     if (completeError) throw new Error('job_completion_failed')
+    // A valid Otros ticket is an expense even without mapped ingredients.
+    // Never count an empty/failed extraction as a paid purchase.
+    if (job.replay_mode === 'live' && isOtherExpense && evidence) {
+      const { error: expensesError } = await db.from('purchase_invoices')
+        .update({ status: 'mapped' })
+        .eq('id', job.invoice_id).eq('status','pending_mapping')
+        .gt('total_amount',0)
+      if (expensesError) throw new Error('expense_status_save_failed')
+    }
     return NextResponse.json({ ok: true, processed: true, jobId: job.job_id,
       extractionId, metrics })
   } catch (error) {
