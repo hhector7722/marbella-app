@@ -2,7 +2,7 @@
 -- Asociación por correo COMPLETO, nunca por dominio, porque hay Gmail y no-reply compartidos.
 CREATE TABLE IF NOT EXISTS public.purchase_supplier_sender_addresses (
   sender_email text PRIMARY KEY CHECK (sender_email = lower(btrim(sender_email))
-    AND sender_email ~ '^[^@[:space:]]+@[^@[:space:]]+[.][^@[:space:]]+),
+    AND sender_email ~ '^[^@[:space:]]+@[^@[:space:]]+[.][^@[:space:]]+$')
   supplier_id bigint NOT NULL REFERENCES public.suppliers(id),
   confirmed_by_owner boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now()
