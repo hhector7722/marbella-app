@@ -8894,3 +8894,63 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     font-size: clamp(13px,1.05vw,16px);
   }
 }
+
+/* Escritorio (todos los tamaños): concepto e importe en una sola línea.
+   No afecta smartphone ni geometría exterior de las cards. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(button,div) > div {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: clamp(2px,.28vw,5px);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(button,div) > div > span {
+    flex: 0 0 auto;
+    font-size: clamp(8px,.58vw,10px);
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(button,div) > div > strong {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: clamp(9px,.75vw,13px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    [data-metric] {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: clamp(2px,.3vw,6px);
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    [data-metric] > span {
+    flex: 0 0 auto;
+    font-size: clamp(8px,.58vw,10px);
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    [data-metric] > strong {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: clamp(9px,.75vw,13px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
