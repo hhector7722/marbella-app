@@ -456,8 +456,6 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
                 <div className="min-h-0 flex-1 cursor-pointer lg:cursor-auto" onClick={(event) => {
                     if (window.matchMedia('(min-width: 1024px)').matches) return;
-                    const target = event.target as HTMLElement;
-                    if (target.closest('button, a, input')) return;
                     setSalesPreview({ mode: 'day', date: format(new Date(), 'yyyy-MM-dd') });
                 }}>
                 <HomeSalesMobileSummary
