@@ -8520,3 +8520,44 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     grid-row: 2;
   }
 }
+
+
+/* Las tarjetas del par deben reproducir las DOS capas del calendario:
+   base --color-envolvente-bajo del ::before del slot y cristal de su body.
+   Antes solo tenían el cristal, encima de un slot transparente. */
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container']) {
+  position: relative;
+  isolation: isolate;
+  background: var(--color-envolvente-bajo);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container'])::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--home-widget-fallback);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    > :is([data-element='closing-half'], [data-element='monthly-container']) {
+    background: var(--color-envolvente-bajo);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    > :is([data-element='closing-half'], [data-element='monthly-container'])::before {
+    background: var(--home-widget-fill);
+    -webkit-backdrop-filter: saturate(var(--home-widget-saturate)) blur(var(--home-widget-blur));
+    backdrop-filter: saturate(var(--home-widget-saturate)) blur(var(--home-widget-blur));
+  }
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container']) > * {
+  position: relative;
+  z-index: 1;
+}
