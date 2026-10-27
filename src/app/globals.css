@@ -6549,7 +6549,7 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
       'ventas ventas ultcierre ultcierre asis asisaccess caja ingred'
       'ventas ventas ultcierre ultcierre reservas recetas albaran cajascambio'
       'horario horario horario horario cambio plantilla mstock mcarta'
-      'horario horario horario horario mmobra mcompra mcierre mpropinas'
+      'horario horario horario horario mmobra mcompra mcierre .'
       'horario horario horario horario muso mrent minfo otros';
   }
 
@@ -8490,7 +8490,7 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-component='HomeScreen'][data-layout='master'],
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-areas:
-      'ultcierre ultcierre ventas ventas ventas asis asisaccess caja'
+      'ultcierre ultcierre ventas ventas ventas asis . caja'
       'ultcierre ultcierre ventas ventas ventas reservas recetas albaran'
       'horario horario horario horario cambio plantilla mstock mcarta'
       'horario horario horario horario mmobra mcompra mcierre mpropinas'
