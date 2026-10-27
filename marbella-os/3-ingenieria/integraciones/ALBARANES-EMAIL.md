@@ -64,3 +64,16 @@ factura/justificante. Los originales recibidos posteriormente pueden
 fotografiarse, pero los documentos de Don Hielo o Pons no pueden generar
 otra recepción de stock: salvaguarda de base de datos + control K5.
 
+
+
+## Automatización de producción revisada (27/10/2026, mediodía)
+- Activador GAS `procesarAlbaranesEntrantes`: **cada hora** es suficiente; a cada ejecución transporta hasta 8 adjuntos nuevos. El procesamiento Mistral está programado en Supabase (job `marbella-mistral-process`, cada dos minutos).
+- Los remitentes previamente confirmados se validan por dirección completa; el webhook llama `auto_import_purchase_email_document` y registra de forma idempotente factura + cola Mistral. Ninguna confirmación humana es necesaria para poner en marcha el OCR.
+- Proveedores/desconocidos o suplantaciones quedan para revisión; nunca entran al stock por el mero hecho de enviar correo.
+- Los albaranes identificados inequívocamente como **delivery_note** pueden pasar K5 automático después de OCR si el proveedor, número de documento, no-duplicación contra escáner y todas las equivalencias/costos superan K4/K5. No se rebajan controles de precio, reconciliación ni confianza por venir por Gmail.
+- Facturas mensuales, anexos ambiguos, recibos de Don Hielo y Vermut y **todos los documentos del proveedor Otros** quedan excluidos del stock por trigger DB además del guard K5.
+- `Otros`: cuando Mistral extrae un total positivo se guarda en `purchase_invoices.total_amount/base_amount` y se marca `mapped` **sin crear stock**. Si no existe IVA validado, se conserva el importe bruto como gasto y no se inventa un porcentaje. Históricamente, se recuperaron seis importes de OCR que figuraban como cero; hay un registro de auditoría `otros_expense_backfill_audit`.
+- Antes de la nueva regla se habían creado cinco recepciones para `Otros`; se han dejado intactas para no modificar el inventario sin conciliación de mercancía.
+- Las futuras compras de `Otros` escaneadas también pasan por el OCR automático y contabilizan su gasto; no necesitan mapearse a ingredientes.
+- El código de la app debe desplegarse en Vercel tras el commit de `src/app/api/internal/albaranes/mistral-process/route.ts` y `src/app/api/internal/albaranes/k5/auto-apply/route.ts`. Las migraciones de Supabase por sí solas no activan la nueva lógica de la API.
+- Excepciones OCR ambiguas quedan pendientes de revisión. Nunca se crean nuevos ingredientes por simple coincidencia de nombre o se convierten unidades arbitrariamente.
