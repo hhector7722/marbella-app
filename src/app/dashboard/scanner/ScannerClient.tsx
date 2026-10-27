@@ -622,6 +622,10 @@ export function ScannerClient({
             onClick={scanQuickDeliveryDocument} disabled={isProcessing}>
             Escanear un albarán o justificante
           </Button>
+          <p className="text-center text-xs opacity-65">
+            Escanear guarda el documento. Para sumar la entrega al inventario,
+            introduce el número de envases y pulsa Guardar entrega.
+          </p>
         </div>
       </Modal>
 
