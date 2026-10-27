@@ -23,14 +23,14 @@ Cuenta de recepción: `marbellaremote@gmail.com`.
 - Solo después de esa decisión se crea una cabecera `purchase_invoices` con `source='email'`, se encola Mistral K3 y se conserva el enlace al original.
 - Un email nunca confirma stock por sí solo: K5 auto-apply lo omite. En facturas mensuales además hay una salvaguarda en base de datos contra `PURCHASE` y `purchase_receipt_confirmations`. La conciliación con entregas anteriores es manual; las facturas mensuales NO deben generar una segunda recepción.
 - Las fotografías de compras imprevistas siguen funcionando con `ScannerClient`, normalmente seleccionando proveedor «Otros».
-- Don Hielo se registra en `/dashboard/albaranes/hielo`: cantidad física en kg, convertida a gramos de ingrediente Hielo, como ajuste manual auditado, sin registrar importe económico hasta que exista evidencia. El proveedor Don Hielo se mantiene separado del proveedor Hielo Fenix.
+- Hielo Fenix se registra en `/dashboard/albaranes/hielo`: cantidad física en kg, convertida a gramos de ingrediente Hielo, como ajuste manual auditado, sin registrar importe económico hasta que exista evidencia. Se utiliza únicamente el proveedor existente Hielo Fenix (id 13).
 
 ## Verificación
 - Reenviar el mismo PDF en otro mensaje y confirmar un único registro original, el reenvío en `duplicate`.
 - Dos adjuntos distintos del mismo mensaje generan dos registros independientes.
 - Volver a pulsar «Guardar y leer»: la función de promoción debe devolver el mismo ID sin duplicar factura.
 - Clasificar una factura mensual y comprobar que el trigger rechaza cualquier intento de incrementar stock desde sus líneas.
-- Repetir una solicitud de Don Hielo con el mismo UUID: no debe duplicar el movimiento.
+- Repetir una solicitud de Hielo Fenix con el mismo UUID: no debe duplicar el movimiento.
 - Verificar que nóminas y actividades siguen funcionando y que no hay efectos económicos por recibir un simple correo.
 
 ## Limitaciones deliberadas
@@ -57,11 +57,11 @@ permanecen separadas. No se realiza OCR/stock automáticamente al recibir email.
 La dirección `otificaciones@spairal.com` se ha mantenido exactamente como
 la facilitó el responsable. Confirmar ortografía si dejan de llegar documentos.
 
-**Excepciones sin email:** `/dashboard/albaranes/hielo` (Don Hielo, kg)
+**Excepciones sin email:** `/dashboard/albaranes/hielo` (Hielo Fenix, kg)
 y `/dashboard/albaranes/vermut` (Vermut (proveedor), Vermut (producto), litros).
 Ambas producen entradas de stock idempotentes con coste pendiente de
 factura/justificante. Los originales recibidos posteriormente pueden
-fotografiarse, pero los documentos de Don Hielo o Pons no pueden generar
+fotografiarse, pero los documentos de Hielo Fenix o Pons no pueden generar
 otra recepción de stock: salvaguarda de base de datos + control K5.
 
 
@@ -71,7 +71,7 @@ otra recepción de stock: salvaguarda de base de datos + control K5.
 - Los remitentes previamente confirmados se validan por dirección completa; el webhook llama `auto_import_purchase_email_document` y registra de forma idempotente factura + cola Mistral. Ninguna confirmación humana es necesaria para poner en marcha el OCR.
 - Proveedores/desconocidos o suplantaciones quedan para revisión; nunca entran al stock por el mero hecho de enviar correo.
 - Los albaranes identificados inequívocamente como **delivery_note** pueden pasar K5 automático después de OCR si el proveedor, número de documento, no-duplicación contra escáner y todas las equivalencias/costos superan K4/K5. No se rebajan controles de precio, reconciliación ni confianza por venir por Gmail.
-- Facturas mensuales, anexos ambiguos, recibos de Don Hielo y Vermut y **todos los documentos del proveedor Otros** quedan excluidos del stock por trigger DB además del guard K5.
+- Facturas mensuales, anexos ambiguos, recibos de Hielo Fenix y Vermut y **todos los documentos del proveedor Otros** quedan excluidos del stock por trigger DB además del guard K5.
 - `Otros`: cuando Mistral extrae un total positivo se guarda en `purchase_invoices.total_amount/base_amount` y se marca `mapped` **sin crear stock**. Si no existe IVA validado, se conserva el importe bruto como gasto y no se inventa un porcentaje. Históricamente, se recuperaron seis importes de OCR que figuraban como cero; hay un registro de auditoría `otros_expense_backfill_audit`.
 - Antes de la nueva regla se habían creado cinco recepciones para `Otros`; se han dejado intactas para no modificar el inventario sin conciliación de mercancía.
 - Las futuras compras de `Otros` escaneadas también pasan por el OCR automático y contabilizan su gasto; no necesitan mapearse a ingredientes.
@@ -82,10 +82,16 @@ otra recepción de stock: salvaguarda de base de datos + control K5.
 ## UX unificada: Albaranes (27/10/2026)
 - **No hay nuevas páginas para trabajar.** `/dashboard/albaranes` es la única lista: documentos Gmail verificados crean filas `purchase_invoices.source='email'` automáticamente; remitentes por validar también generan una fila visible, sin stock ni extracción hasta confirmar origen.
 - La barra de Albaranes solo muestra los botones existentes (filtro, refrescar, Escanear). Se han eliminado los tres accesos a Email/Hielo/Vermut.
-- **Escanear → Don Hielo:** modal oscuro compacto con número entero de **sacos**. Cada saco contiene 5 bolsas de 2 kg: **10 kg/saco**. `Guardar entrega` registra +10.000 g por saco en el ingrediente Hielo, y una fila normal de albarán con una línea descriptiva y sin importe ficticio.
+- **Escanear → Hielo Fenix:** modal oscuro compacto con número entero de **sacos**. Cada saco contiene 5 bolsas de 2 kg: **10 kg/saco**. `Guardar entrega` registra +10.000 g por saco en el ingrediente Hielo, y una fila normal de albarán con una línea descriptiva y sin importe ficticio.
 - **Escanear → Vermut:** modal idéntico con número entero de **garrafas**. Cada garrafa son **10 litros**. `Guardar entrega` registra +10.000 ml por garrafa en el ingrediente Vermut y una fila normal de albarán, sin coste supuesto.
 - Ambos modales ofrecen **Escanear un albarán o justificante**, la vía documental existente. Esta alternativa no debe contabilizar de nuevo el stock. El flujo rápido contabiliza mercancía física; la foto aporta evidencia separada.
 - El registro físico y la fila de Albaranes se crean en **una transacción** por `public.record_manual_package_invoice`, protegida por UUID idempotente. Los usuarios manager/admin autorizados pueden guardar; no se registran dos entradas al reintentar el mismo UUID.
 - Las filas manuales no tienen imagen obligatoria. El detalle muestra un mensaje «Entrega registrada sin justificante adjunto» y las trata como recibidas, sin avisos de OCR pendientes. Se han ocultado acciones destructivas; triggers de BD impiden que futuras ediciones las desincronicen del stock sin rectificación auditada.
 - Enlaces antiguos `/dashboard/albaranes/email` redirigen al listado; `/hielo` y `/vermut` redirigen al mismo listado abriendo Escanear.
 - El sistema no ha sufrido pruebas con entregas físicas de cliente; para validar usar una entrega real autorizada, nunca introducir cantidades ficticias.
+
+
+## Limpieza de capturas del 27 de octubre (solicitud del titular)
+- Se retiraron del listado, marcados `discarded`, los tres albaranes escaneados de **Sanilec**, **Videla** y **Abril** del 27/10/2026. Se conservan originales y líneas por trazabilidad. No tuvieron confirmaciones de recepción ni modificaciones de inventario.
+- Sus entradas definitivas se esperan por correo, evitando dobles recepciones.
+- El proveedor creado por error `Don Hielo` (id 22) se eliminó. Las nuevas recepciones de sacos de hielo usan el proveedor histórico `Hielo Fenix` (id 13) con **10 kg/saco** (5 bolsas × 2 kg).
