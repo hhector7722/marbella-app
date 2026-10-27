@@ -8551,6 +8551,21 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   }
   [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
     > :is([data-element='closing-half'], [data-element='monthly-container']) {
-    background: var(--color-envolvente-bajo);
+    background: var(--home-widget-fallback);
+    box-shadow: var(--home-widget-shadow);
+  }
+  /* Mismo cristal que la superficie del widget Horarios. */
+  @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+      > :is([data-element='closing-half'], [data-element='monthly-container']) {
+      background: var(--home-widget-fill);
+      -webkit-backdrop-filter: saturate(var(--home-widget-saturate)) blur(var(--home-widget-blur));
+      backdrop-filter: saturate(var(--home-widget-saturate)) blur(var(--home-widget-blur));
+    }
+  }
+  /* Más respiración entre el ranking inferior de Ventas y el borde del widget. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    padding-bottom: 10px;
   }
 }
