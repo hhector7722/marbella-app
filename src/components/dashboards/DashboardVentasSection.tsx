@@ -250,6 +250,37 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         // eslint-disable-next-line react-hooks/exhaustive-deps -- suscripción única al montar
     }, [supabase]);
 
+    // En la vista inicial, si hoy todavía no hay ventas, presentar el último
+    // día con actividad real. No sustituir por ceros una jornada anterior.
+    useEffect(() => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        if (salesViewDate !== today) return;
+        let active = true;
+
+        const selectLastSalesDay = async () => {
+            const { data: stats, error: statsError } = await supabase.rpc(
+                'get_daily_sales_stats', { target_date: today }
+            );
+            if (!active || statsError || Number(stats?.total_ventas ?? 0) > 0) return;
+
+            const { data: previous, error } = await supabase
+                .from('tickets_marbella')
+                .select('fecha')
+                .lt('fecha', today)
+                .gt('total_documento', 0)
+                .order('fecha', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            if (!active || error || !previous?.fecha) return;
+            const lastDate = String(previous.fecha).split('T')[0];
+            if (salesViewDateRef.current === today && lastDate < today) {
+                setSalesViewDate(lastDate);
+            }
+        };
+        void selectLastSalesDay();
+        return () => { active = false; };
+    }, [salesViewDate, supabase]);
+
     salesViewDateRef.current = salesViewDate;
 
     // El ranking visible usa exactamente la misma fecha que las ventas y la gráfica.
