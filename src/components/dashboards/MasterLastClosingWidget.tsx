@@ -326,65 +326,64 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                     ) : !closing ? (
                         <div className="flex min-h-0 flex-1 items-center justify-center text-[10px] text-white/65">Sin cierres registrados</div>
                     ) : (
-                        <>
-                            <div className="grid min-h-0 w-full grid-cols-3 items-stretch gap-0.5">
+                        <div className="flex min-h-0 flex-1 items-center justify-center">
+                            <div className="grid w-full min-w-0 grid-cols-3 items-stretch gap-x-0.5 gap-y-1">
                                 <button type="button" onClick={() => {
                                     void fetchSalesData(String(closing.closing_date));
                                     setIsSalesModalOpen(true);
                                 }} title="Ver detalles de las ventas del cierre"
-                                    className="flex h-full w-full min-w-0 flex-col justify-center overflow-hidden rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
-                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Ventas</span>
+                                    className="flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Ventas</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.tpvSales)}>
                                         {formatCurrencySpanish(metrics.tpvSales)}
-                                    </strong>
+                                    </strong></div>
                                 </button>
-                                <div className="flex h-full w-full min-w-0 flex-col justify-center overflow-hidden rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-0.5">
-                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Venta neta</span>
+                                <div className="flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-0.5">
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Venta neta</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.netSales)}>
                                         {formatCurrencySpanish(metrics.netSales)}
-                                    </strong>
+                                    </strong></div>
                                 </div>
                                 <div className={cn(
-                                    'flex h-full w-full min-w-0 flex-col justify-center overflow-hidden rounded-md border px-1 py-0.5',
+                                    'flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border px-1 py-0.5',
                                     compactPerformance?.date !== String(closing.closing_date).split('T')[0] || compactPerformance.percent === null
                                         ? 'border-white/15 bg-white/[0.035]'
                                         : compactPerformance.percent >= 0
                                             ? 'border-emerald-400/50 bg-emerald-500/10'
                                             : 'border-rose-400/55 bg-rose-500/15'
                                 )} title="Comparación con la venta neta media de hasta 8 cierres previos del mismo día de la semana">
-                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Rendimiento</span>
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Rendimiento</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white">
                                         {compactPerformance?.date === String(closing.closing_date).split('T')[0] && compactPerformance.percent !== null
                                             ? `${compactPerformance.percent >= 0 ? '▲' : '▼'} ${formatNumberSpanish(Math.abs(compactPerformance.percent), 1)}%`
                                             : '—'}
-                                    </strong>
+                                    </strong></div>
                                 </div>
-                            </div>
-                            <div className="grid min-w-0 grid-cols-3 gap-0.5">
+
                                 <button type="button" onClick={() => setIsCashModalOpen(true)}
-                                    className="flex min-w-0 flex-col justify-center rounded-md px-0.5 py-0.5 text-left hover:bg-white/10"
+                                    className="flex min-w-0 flex-col items-center justify-center rounded-md px-0.5 py-0.5 text-left hover:bg-white/10"
                                     title="Ver desglose del efectivo">
-                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Efectivo</span>
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Efectivo</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.5vw,10px)] font-semibold leading-tight text-white"
-                                        title={formatCurrencySpanish(metrics.cashCounted)}>{formatCurrencySpanish(metrics.cashCounted)}</strong>
+                                        title={formatCurrencySpanish(metrics.cashCounted)}>{formatCurrencySpanish(metrics.cashCounted)}</strong></div>
                                 </button>
-                                <div className="flex min-w-0 flex-col justify-center rounded-md px-0.5 py-0.5">
-                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Tarjeta</span>
+                                <div className="flex min-w-0 flex-col items-center justify-center rounded-md px-0.5 py-0.5">
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Tarjeta</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.5vw,10px)] font-semibold leading-tight text-white"
-                                        title={formatCurrencySpanish(metrics.salesCard)}>{formatCurrencySpanish(metrics.salesCard)}</strong>
+                                        title={formatCurrencySpanish(metrics.salesCard)}>{formatCurrencySpanish(metrics.salesCard)}</strong></div>
                                 </div>
-                                <div className="flex min-w-0 flex-col justify-center rounded-md px-0.5 py-0.5"
+                                <div className="flex min-w-0 flex-col items-center justify-center rounded-md px-0.5 py-0.5"
                                     title="Diferencia del arqueo de caja">
-                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Diferencia</span>
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Diferencia</span>
                                     <strong className={cn('block whitespace-nowrap text-[clamp(8px,1.5vw,10px)] font-semibold leading-tight',
                                         Math.abs(metrics.difference) < 0.005 ? 'text-emerald-200' : 'text-amber-200')}>
                                         {formatClosingDifference(metrics.difference)}
-                                    </strong>
+                                    </strong></div>
                                 </div>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
             ) : (
