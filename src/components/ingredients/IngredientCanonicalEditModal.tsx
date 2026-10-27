@@ -30,6 +30,7 @@ export interface Ingredient {
   image_url?: string | null
   allergens?: string[]
   order_unit?: string | null
+  preferred_invoice_unit?: string | null
   recipe_unit?: string | null
   recommended_stock?: number | null
   archived_at?: string | null
