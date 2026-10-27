@@ -16,12 +16,15 @@ export type LastClosingMetrics = {
     difference: number;
 };
 
+export function formatNumberSpanish(val: number, digits = 0): string {
+    const [integer, decimals] = val.toFixed(digits).split('.');
+    const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return decimals === undefined ? grouped : `${grouped},${decimals}`;
+}
+
 export function formatCurrencySpanish(val: number): string {
     const isWhole = Math.abs(val - Math.round(val)) < 0.005;
-    const formatted = val.toLocaleString('es-ES', {
-        minimumFractionDigits: isWhole ? 0 : 2,
-        maximumFractionDigits: 2,
-    });
+    const formatted = formatNumberSpanish(val, isWhole ? 0 : 2);
     return `${formatted}€`;
 }
 
@@ -70,7 +73,7 @@ export function buildLastClosingMetrics(closing: Record<string, unknown> | null)
 
 /** Cero en lectura se muestra como espacio en blanco: CONTENIDO-Y-TONO §3. */
 export function formatClosingValue(val: number, type: ClosingMetricType): string {
-    if (type === 'tickets_count') return val === 0 ? ' ' : val.toLocaleString('es-ES');
+    if (type === 'tickets_count') return val === 0 ? ' ' : formatNumberSpanish(val);
     if (val === 0) return ' ';
     return formatCurrencySpanish(val);
 }
