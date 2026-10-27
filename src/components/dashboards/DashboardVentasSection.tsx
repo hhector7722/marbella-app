@@ -21,6 +21,7 @@ import { KpiStat } from '@/components/ui/KpiStat';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { formatCurrencySpanish, formatNumberSpanish } from '@/lib/cash-closing-metrics';
+import { SalesPreviewModal, type SalesPreview } from './SalesPreviewModal';
 import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
 import { HomeTopProducts } from './HomeSalesWidgetDetails';
 
@@ -44,6 +45,7 @@ type DashboardVentasSectionProps = {
 };
 
 export default function DashboardVentasSection({ initialData }: DashboardVentasSectionProps) {
+    const [salesPreview, setSalesPreview] = useState<SalesPreview | null>(null);
     const supabase = useMemo(() => createClient(), []);
 
     const [liveTickets, setLiveTickets] = useState(initialData?.liveTickets || { total: 0, count: 0 });
@@ -452,6 +454,12 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </Link>
                 </div>
 
+                <div className="min-h-0 flex-1 cursor-pointer lg:cursor-auto" onClick={(event) => {
+                    if (window.matchMedia('(min-width: 1024px)').matches) return;
+                    const target = event.target as HTMLElement;
+                    if (target.closest('button, a, input')) return;
+                    setSalesPreview({ mode: 'day', date: format(new Date(), 'yyyy-MM-dd') });
+                }}>
                 <HomeSalesMobileSummary
                     sales={formatCurrencySpanish(displaySummary.total)}
                     net={formatCurrencySpanish(displaySummary.total / 1.1)}
@@ -460,6 +468,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     products={mobileTopProducts}
                     hasSales={displaySummary.total > 0}
                 />
+                </div>
                 <div
                     data-element="metrics"
                     className={cn(
@@ -596,6 +605,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 </div>
             </Surface>
 
+            <SalesPreviewModal preview={salesPreview} onClose={() => setSalesPreview(null)}/>
             <Modal
                 open={isSalesDateModalOpen}
                 onClose={() => setIsSalesDateModalOpen(false)}
