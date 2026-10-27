@@ -1564,7 +1564,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: {
     const mobileActiveSelection = crossSelection?.scope === mobileScope ? crossSelection : null;
     // Si se filtra una hora, conservar los datos originales de las horas vecinas
     // para que sigan visibles y atenuadas, como en los widgets del inicio.
-    const mobileHoursSource = previewMode === 'month' ? monthBreakdown?.hours ?? visibleMonthReport?.hours : mobileActiveSelection?.kind === 'hour'
+    const mobileHoursSource = previewMode === 'month' ? visibleMonthReport?.hours : mobileActiveSelection?.kind === 'hour'
         ? dailyReport?.hours
         : periodBreakdown?.hours ?? dailyReport?.hours;
     const mobileHours = Array.from({ length: 16 }, (_, i) => {
@@ -1708,7 +1708,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: {
                 <section className="flex h-[143px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 py-1.5">
                     <div className="mb-0.5 flex shrink-0 items-center justify-between">
                         <h2 className="text-[11px] font-bold uppercase">Horas</h2>
-                        {!previewMode && mobileActiveSelection?.kind === 'hour' && (
+                        {mobileActiveSelection?.kind === 'hour' && (
                             <button type="button" data-crossfilter-trigger data-mobile-hour-select
                                 onClick={() => onChooseCross(mobileActiveSelection)}
                                 className="text-[9px] font-semibold text-sky-200 hover:text-white">
@@ -1734,7 +1734,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: {
                         )}
                         {mobileHours.map((hour, index) => (
                             <button key={hour.hour} type="button" data-crossfilter-trigger data-mobile-hour-select
-                                onClick={() => { if (!previewMode) onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' }); }}
+                                onClick={() => onChooseCross({ kind: 'hour', hour: hour.hour, scope: mobileMonth ? 'month' : 'period' })}
                                 aria-pressed={currentHour === hour.hour}
                                 aria-label={`${hour.hour}:00 a ${hour.hour + 1}:00, ${hour.count} tickets, ${euro(hour.total)}. Pulsar para ${currentHour === hour.hour ? 'quitar el filtro' : 'filtrar ventas, productos y tickets'}`}
                                 title={`${hour.hour}:00 - ${hour.hour + 1}:00 · ${euro(hour.total)}`}
@@ -1752,7 +1752,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: {
                         </div>
                         {mobileVisibleHours.map((hour, index) => hour ? (
                             <button key={hour.hour} type="button" data-crossfilter-trigger data-mobile-hour-select
-                                onClick={() => { if (!previewMode) onChooseCross({ kind: 'hour', hour: hour.hour, scope: 'period' }); }}
+                                onClick={() => onChooseCross({ kind: 'hour', hour: hour.hour, scope: mobileMonth ? 'month' : 'period' })}
                                 aria-pressed={mobileActiveSelection?.kind === 'hour' && mobileActiveSelection.hour === hour.hour}
                                 className={cn('grid h-[18px] w-full grid-cols-[minmax(0,1.15fr)_minmax(0,0.65fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-1 rounded px-1 text-left text-[9px] leading-none tabular-nums transition-opacity',
                                     mobileActiveSelection?.kind === 'hour' && hour.hour !== mobileActiveSelection.hour && 'opacity-35',
@@ -1784,8 +1784,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: {
                   : mobileView === 'products' ? (
                     <div className="h-[350px] min-w-0">
                         <SalesBreakdown report={previewMode === 'month' ? monthBreakdown : periodBreakdown} baseReport={previewMode === 'month' ? visibleMonthReport : dailyReport} scope={previewMode === 'month' ? 'month' : 'period'}
-                            selection={previewMode ? null : paymentOnly ? null : mobileActiveSelection}
-                            onSelect={previewMode ? () => {} : onChooseCross} productThumbnails={productThumbnails}
+                            selection={paymentOnly ? null : mobileActiveSelection}
+                            onSelect={onChooseCross} productThumbnails={productThumbnails}
                             rangeStart={previewMode === 'month' ? monthStart : period.start} rangeEnd={previewMode === 'month' ? monthEnd : period.end} mobileView="products"/>
                     </div>
                   ) : (
