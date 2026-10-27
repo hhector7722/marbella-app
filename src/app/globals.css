@@ -8561,3 +8561,195 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   position: relative;
   z-index: 1;
 }
+
+/* Escala interna exclusiva de escritorio: ninguna regla modifica el grid
+   de HomeScreen, los slots, sus dimensiones ni los accesos vecinos. */
+@media (min-width: 1024px) {
+  /* Ventas: jerarquía en dos columnas y cuatro áreas, con rankings respirados. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='header'] {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-inline: 12px;
+    min-height: 34px;
+    overflow: visible;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='header'] > a[data-style='calculator-primary'] {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    left: auto;
+    transform: translateY(-50%);
+    margin: 0;
+    z-index: 20;
+    flex-shrink: 0;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='centered-date-controls'] {
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    box-sizing: border-box;
+    grid-template-areas: 'financial chart' 'products hours';
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(80px, 0.95fr) minmax(0, 1fr);
+    gap: clamp(10px, 1.1vw, 18px) clamp(14px, 1.5vw, 24px);
+    padding: 8px clamp(12px, 1.3vw, 20px) clamp(14px, 1.5vw, 22px);
+    align-content: stretch;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] {
+    grid-area: financial;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: clamp(8px, 1.1vh, 14px);
+    min-width: 0;
+    height: 100%;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div {
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    flex: 1 1 0;
+    padding: 8px clamp(8px, 1vw, 15px);
+    gap: 8px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div > span {
+    font-size: clamp(11px, .85vw, 14px);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div > strong {
+    font-size: clamp(16px, 1.35vw, 23px);
+    overflow: visible;
+    text-overflow: clip;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hour-chart'] {
+    grid-area: chart;
+    height: 100%;
+    align-items: center;
+    align-self: stretch;
+    min-height: 55px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hour-chart'] > svg {
+    height: clamp(52px, 6vh, 95px);
+    max-height: 100%;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-products'] {
+    grid-area: products;
+    align-content: space-evenly;
+    row-gap: clamp(5px, .65vh, 11px);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hours'] {
+    grid-area: hours;
+    align-content: space-evenly;
+    row-gap: clamp(5px, .65vh, 11px);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours']) > div {
+    font-size: clamp(11px, .78vw, 14px);
+    line-height: 1.3;
+    min-width: 0;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours'])
+    :is([data-element='mobile-sales-units'], [data-element='mobile-sales-amount']) {
+    font-size: clamp(10px, .75vw, 13px);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-product-bar'] {
+    height: 5px;
+  }
+  /* Último cierre: dos filas de tres KPIs, centrados como grupos,
+     conservando alineación izquierda entre etiqueta y valor. */
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    [data-element='closing-compact'] {
+    box-sizing: border-box;
+    justify-content: space-between;
+    padding: clamp(8px, .8vw, 13px) clamp(10px, 1vw, 16px);
+    gap: clamp(8px, .8vh, 14px);
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] > div:first-child {
+    min-height: 22px;
+    height: auto;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] > div:first-child a {
+    font-size: clamp(12px, .95vw, 16px);
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] > div:first-child > span {
+    font-size: clamp(10px, .7vw, 13px);
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 {
+    flex: 1 1 auto;
+    align-content: space-evenly;
+    gap: clamp(8px, .75vw, 13px) clamp(5px, .65vw, 11px);
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 :is(button, div) {
+    min-width: 0;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 span {
+    font-size: clamp(10px, .7vw, 12px);
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 strong {
+    font-size: clamp(12px, .9vw, 16px);
+    overflow-wrap: anywhere;
+  }
+  /* Mensual: dos cifras principales y tres secundarias distribuidas
+     equitativamente en el alto, sin modificar ni los colores ni el fondo. */
+  [data-component='HomeScreen'] [data-element='monthly-half'] {
+    box-sizing: border-box;
+    justify-content: space-between;
+    padding: clamp(8px, .8vw, 13px) clamp(10px, 1vw, 16px);
+    gap: clamp(8px, .8vh, 14px);
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half'] > div:first-child {
+    height: auto;
+    min-height: 22px;
+    gap: clamp(5px, .5vw, 10px);
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half'] > div:first-child span {
+    font-size: clamp(12px, .95vw, 16px);
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half'] > div:first-child svg {
+    width: 16px;
+    height: 16px;
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 {
+    height: 100%;
+    align-content: space-evenly;
+    column-gap: clamp(5px, .55vw, 10px);
+    row-gap: clamp(7px, .85vh, 14px);
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half'] [data-metric] {
+    max-width: 100%;
+    padding: 4px clamp(5px, .6vw, 10px);
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half'] [data-metric] span {
+    font-size: clamp(10px, .7vw, 12px);
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half'] [data-metric] strong {
+    font-size: clamp(12px, .9vw, 17px);
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+}
