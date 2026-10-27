@@ -1,11 +1,23 @@
 'use client';
+
+import dynamic from 'next/dynamic';
 import { Modal } from '@/components/ui/modal';
+
+const EmbeddedSales = dynamic(() => import('@/components/dashboard/ventas/VentasDesktopWorkspace'), {
+    ssr: false,
+});
+
 export type SalesPreview = { mode: 'day' | 'month'; date: string };
+
 export function SalesPreviewModal({ preview, onClose }: { preview: SalesPreview | null; onClose: () => void }) {
     if (!preview) return null;
     const title = preview.mode === 'month' ? 'Ventas mensuales' : 'Detalle de ventas';
-    const url = '/dashboard/ventas?preview=' + preview.mode + '&date=' + encodeURIComponent(preview.date);
-    return <Modal open onClose={onClose} title={title} scheme="dark" variant="amplify" instance="home-sales-preview" scrollContent={false}>
-        <iframe key={url} title={title} src={url} className="block h-[min(76dvh,760px)] w-full rounded-md border-0 bg-transparent" loading="eager"/>
-    </Modal>;
+    return (
+        <Modal open onClose={onClose} title={title} scheme="dark" variant="amplify"
+            instance="home-sales-preview" scrollContent={true}>
+            <div className="max-h-[75dvh] min-h-0 w-full overflow-y-auto overflow-x-hidden">
+                <EmbeddedSales key={preview.mode + preview.date} embeddedMode={preview.mode} embeddedDate={preview.date}/>
+            </div>
+        </Modal>
+    );
 }
