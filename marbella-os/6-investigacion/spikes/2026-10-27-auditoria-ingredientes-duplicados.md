@@ -1,49 +1,49 @@
-# Auditoría de duplicados de ingredientes — 27 de octubre de 2026
+# Auditoría y unificación de ingredientes — 27/10/2026
 
-## Resumen de evidencia
-- 261 ingredientes a fecha de diagnóstico; 38 sin imagen (pista, no criterio suficiente).
-- 32 ingredientes sin imagen creados entre 7 y 23 de octubre.
-- Tres correspondencias verificadas y consolidadas con el registro `ingredient_consolidation_aliases`.
-- El `stock_current` de los ingredientes implicados permaneció idéntico. No se crearon, editaron ni borraron movimientos de stock.
-- El histórico de `purchase_invoice_lines`, `purchase_receipt_confirmations`, `stock_movements` e `ingredient_price_history` se mantiene intacto.
-- Las referencias FUTURAS en `supplier_item_mappings` se redirigieron a ingredientes canónicos cuando la unidad de base y el precio coincidían.
-- Un índice único de nombre normalizado en ingredientes no archivados impide repetir nombres diferenciados solo por mayúsculas o acentos.
+## Resultado
+- **15 identidades duplicadas unificadas** en `public.ingredient_consolidation_aliases`: 3 de la primera revisión + 12 verificadas contra albaranes en la segunda revisión.
+- Ningún movimiento de `public.stock_movements` editado, eliminado o generado durante la migración.
+- El registro `ingredients.stock_current` no se escribió; el SQL compara antes/después y revierte todo si detecta diferencias.
+- Los duplicados no se borraron: `archived_at` y `inventory_visible=false`, reteniendo los IDs y las confirmaciones/facturas históricas.
+- Los alias de referencia se preservan y las correspondencias futuras con unidad física compatible se redirigen al producto activo.
 
-## Consolidaciones verificadas
-| Original ambiguo | Nombre que queda | Decisión |
-|---|---|---|
-| Orégano (ficha antigua sin stock, sin receta y precio 0) | Orégano (ficha reciente con receta y precio 2,66) | Se archiva la antigua; se conserva la ficha con precio y receta. No se modifica precio/stock. |
-| Queso Rulo Cabra 1 Kg | Queso de cabra | Ambas fichas en gramos y precio 13,63. Se conserva la imagen de la antigua, el histórico de dos recepciones del duplicado y se redirige el mapeo de futuras compras. |
-| Sanet jabón manual | Jabón Manos | Ambas fichas en mililitros y precio 1,156. Mismo artículo SANET en el proveedor; se conserva la imagen y el mapeo histórico y se redirige el futuro. |
+## Correspondencias consolidadas
 
-## Posibles coincidencias NO fusionadas: revisión de equivalencia física
-| Ficha nueva | Ficha previa | Por qué no fusionar automáticamente |
-|---|---|---|
-| Apio (pieza) | Apio | Unidad nueva: ud; anterior: g. Falta peso por pieza. |
-| Cebollino (manojo) | Cebollino | Unidad nueva: ud; anterior: g. Falta peso por manojo. |
-| Croquetas de cocido (kg) | Croquetas cocido | Nueva: g; antigua: ud. Falta peso por croqueta y comprobar variedad. |
-| Croquetas de brandada (kg) | Croquetas bacalao | Nueva: g; antigua: ud. Puede ser otro relleno; falta conversión. |
-| Olivas El Faro Gigantes (unidad) | Olivas el Faro | Nueva: ud; antigua: g. Falta contenido por unidad / bote. |
-| Bacon Food Service Galno (unidad; peso no indicado) | Bacon | Nueva: ud; antigua: g. El propio nombre indica peso desconocido. |
-| DT-MAQ lavavajillas máquina | Lavavajillas Máquina | Nueva: g; anterior: ud, y el detergente puede expresarse por envase. |
-| TR-FLOR fregasuelos floral | Friegasuelos | Nueva: g; anterior: ml. Falta densidad/presentación. |
-| Haribo Ositos Oro 100 g | Haribo | Misma unidad ud pero posible variedad/formato diferente y precios 0,80 vs 0. |
-| Agua con gas Lidl | Agua gas Malavella | Distinta marca; podrían ser SKU diferentes. |
-| Red Bull Sugarfree | Red bull | Variante sin azúcar; distinta referencia comercial. |
-| Bolsa papel pasta kraft 9+5x23 | Bolsa papel pasta kraft 9+5x32 | Tamaños diferentes; conservar ambos. |
-| Nuez | Nuez moscada | Ingredientes diferentes; no fusionar. |
+| Ingrediente duplicado | Ingrediente conservado | Unidad en el albarán | Tratamiento de entrada futura |
+|---|---|---|---|
+| Oregano | Orégano | kg | Seguro, ambos gramos (primera revisión) |
+| Queso Rulo Cabra 1 Kg | Queso de cabra | kg | Seguro, ambos gramos (primera revisión) |
+| Sanet jabón manual | Jabón Manos | l | Seguro, ambos ml (primera revisión) |
+| Haribo Ositos Oro 100 g | Haribo | ud | Seguro: ambos ud, mismo producto exacto facturado |
+| Paleta cocida extra | Jamón york | kg | Seguro: mismo artículo `ESPATLLE CUITA EXTRA 11x11`, ambos gramos |
+| Centro pernil C/V | Jamón Serrano | kg | Seguro: misma denominación `CENTRE PERNIL C/V`, ambos gramos |
+| Centro paleta cebo 50% | Jamón Ibérico | kg | Ambos gramos; precio 41,2008 €/kg, tipo cebo ibérico |
+| Apio (pieza) | Apio | ud | Requiere peso real por pieza: ud vs g |
+| Cebollino (manojo) | Cebollino | manojo | Requiere peso real por manojo: ud vs g |
+| Croquetas de cocido (kg) | Croquetas cocido | kg | Requiere unidades/kg antes de convertir a ud |
+| Croquetas de brandada (kg) | Croquetas bacalao | kg | Requiere unidades/kg antes de convertir a ud |
+| Bacon Food Service Galno | Bacon | kg (histórico; último albarán marcó «unidades») | Requiere peso por unidad de envase |
+| Olivas El Faro Gigantes (unidad) | Olivas el Faro | ud | Requiere peso neto por recipiente |
+| DT-MAQ lavavajillas máquina | Lavavajillas Máquina | kg | Stock anterior en ud: requiere precisar tamaño/formato |
+| TR-FLOR fregasuelos floral | Friegasuelos | kg | Inventario previo en ml: requiere densidad o equivalencia kg/l |
 
-## Por qué no se sumaron compras antiguas al stock
-`public.update_ingredient_stock_trigger` **no modifica `stock_current`**
-cuando recibe `PURCHASE` con `reference_type='purchase_invoice_line'` y
-`origin='receipt_confirmation'`. Por ello algunos duplicados tienen movimientos
-de compra positivos, pero `stock_current=0`. Contarlos como stock nuevo ahora
-falsearía las existencias. El proceso deja esos apuntes vinculados al ID histórico
-y mantiene un alias explícito para resolver la identidad canónica en desarrollos futuros.
+## Unidad según el albarán, sin alterar la física
+Se añadió `ingredients.preferred_invoice_unit` para reflejar la unidad que realmente aparece en los albaranes, independientemente de `purchase_unit/base_unit` cuando los datos históricos de recetas/stock usan otra dimensión. Cambiar `purchase_unit` sin convertir su `base_unit` viola la restricción canónica `ingredients_purchase_base_unit_canonical`; convertir el stock sin un peso o densidad verificados falsificaría existencias.
 
-## Acciones para futuras revisiones
-1. Comprobar unidad, envase, variante, precio y producto real antes de aceptar un duplicado.
-2. Si las unidades difieren, exigir una conversión demostrable, no deducirla por nombre.
-3. Nunca modificar/borrar asientos del libro de stock; hacer correcciones auditadas de forma aditiva.
-4. Evitar crear nuevos ingredientes si la ficha canónica normalizada ya existe.
-5. Si se decide unificar una posible equivalencia, registrar su alias y conservar facturas/recibos y stock sin doble conteo.
+Los **8 ingredientes con unidad física diferente** han quedado unificados como identidades, pero conservan **9 referencias concretas de proveedor a revisar** en `ingredient_consolidation_conversion_reviews`.
+Las filas `supplier_item_mappings` afectadas mantienen su descripción, cantidad, unidad de albarán y precio previo, pero quedan sin asignación de ingrediente `ingredient_id=NULL` hasta conocer la equivalencia. Evita que las próximas facturas se contabilicen como 1 gramo por 1 pieza o 1 ml por 1 kg. Revisión en `/dashboard/inventory/unificaciones`.
+
+## Artículos similares que no son duplicados
+- Agua con gas Lidl vs Agua con gas Malavella: marcas distintas.
+- Red Bull Sugarfree vs Red Bull: variante sin azúcar distinta.
+- Nuez vs Nuez moscada: productos distintos.
+- Bolsa papel kraft 9+5x23 vs 9+5x32: tamaños distintos.
+- Pincho caracol 100 uds vs palillos normales 1000 uds: productos distintos.
+- Té sin variedad determinada vs té negro/rojo/verde: falta especificar variedad para identificar una coincidencia, por tanto no se ha fusionado.
+- Croqueta crema catalana vs croquetas saladas: productos distintos.
+- Envases y bandejas con tamaños/capacidades diferentes: productos distintos.
+
+## Salvaguardas
+La fecha de creación y ausencia de foto se usaron solo como pistas, nunca como evidencia suficiente.
+El archivo de la migración `20261027113000_supplier_invoice_evidence_ingredient_merges.sql` contiene los IDs de entrada, evidencias y validaciones transaccionales.
+Las consultas de verificación posteriores deben comprobar conteos de alias, recetas y stock, así como ausencia de futuros mapeos a ingredientes archivados.
