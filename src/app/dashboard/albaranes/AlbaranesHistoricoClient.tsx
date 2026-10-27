@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import {
   AlertCircle,
   Check,
@@ -9,6 +10,7 @@ import {
   ChevronRight,
   FileSearch,
   Loader2,
+  Mail,
   Minus,
   MinusCircle,
   Plus,
@@ -1365,6 +1367,15 @@ export default function AlbaranesHistoricoClient({
   // → iconos blancos. Filtro a la izquierda, mismo icono que el resto (P7).
   const headerActions = (
     <>
+      <Link
+        href="/dashboard/albaranes/email"
+        title="Documentos recibidos por correo"
+        aria-label="Ver documentos por correo"
+        className="inline-flex h-9 items-center gap-1 rounded-lg border border-white/20 px-2 text-xs font-semibold"
+      >
+        <Mail className="h-4 w-4" />
+        <span className="hidden sm:inline">Correo</span>
+      </Link>
       <PeriodFilterButton instance="albaranes-filter-open" onClick={() => void openFilterModal()} />
       <Button
         type="button"
