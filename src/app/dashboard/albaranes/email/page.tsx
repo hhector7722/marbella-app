@@ -49,8 +49,9 @@ export default async function EmailAlbaranesPage({
         </Link>
       </header>
       <div className="rounded-xl border border-zinc-200 p-4 text-sm text-zinc-600">
-        <p className="font-semibold text-zinc-900">{pending.length} adjuntos sin clasificar</p>
-        <p>Se conservan los originales sin aumentar el stock. Al asignar el proveedor y tipo se inicia la lectura OCR. Las facturas mensuales nunca generan una segunda recepción de mercancía.</p>
+        <p className="font-semibold text-zinc-900">{pending.length} documentos pendientes de revisión</p>
+        <p>Los remitentes verificados se incorporan automáticamente y pasan al OCR. Los albaranes de entrega solo generan stock cuando el reconocimiento, la ausencia de duplicados y las conversiones son fiables. Las facturas mensuales y los documentos dudosos nunca lo generan automáticamente.</p>
+        <p className="mt-1"><strong>Otros:</strong> el importe reconocido cuenta como gasto, sin entrada de inventario. Si falta importe o existe ambigüedad, queda pendiente de revisión.</p>
         <p className="mt-1">Don Hielo y Vermut: utiliza la recepción manual de un producto; compras imprevistas: utiliza la cámara en Albaranes.</p>
       </div>
       {params.error ? <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{params.error}</p> : null}
