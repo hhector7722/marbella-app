@@ -175,7 +175,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
 
     const dateLabel = useMemo(() => {
         if (!closing) return '';
-        const raw = format(parseLocalSafe(closing.closing_date as string), 'EEE d MMM', { locale: es });
+        const raw = format(parseLocalSafe(closing.closing_date as string), 'd MMM', { locale: es });
         return raw.charAt(0).toUpperCase() + raw.slice(1);
     }, [closing]);
 
@@ -326,19 +326,19 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                         <div className="flex min-h-0 flex-1 items-center justify-center text-[10px] text-white/65">Sin cierres registrados</div>
                     ) : (
                         <>
-                            <div className="grid min-h-0 grid-cols-[minmax(0,1.15fr)_minmax(0,1.15fr)_minmax(0,0.85fr)] gap-0.5">
+                            <div className="grid min-h-0 grid-cols-[max-content_max-content_minmax(max-content,1fr)] gap-0.5">
                                 <button type="button" onClick={() => {
                                     void fetchSalesData(String(closing.closing_date));
                                     setIsSalesModalOpen(true);
                                 }} title="Ver detalles de las ventas del cierre"
-                                    className="flex min-w-0 flex-col justify-center rounded-md border border-sky-400/25 bg-sky-500/10 px-0.5 py-0.5 text-left">
+                                    className="flex min-w-0 flex-col justify-center rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
                                     <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Ventas</span>
-                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.45vw,13px)] font-bold leading-tight tracking-tight text-white"
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,12px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.tpvSales)}>
                                         {formatCurrencySpanish(metrics.tpvSales)}
                                     </strong>
                                 </button>
-                                <div className="flex min-w-0 flex-col justify-center rounded-md border border-emerald-400/25 bg-emerald-500/10 px-0.5 py-0.5">
+                                <div className="flex min-w-0 flex-col justify-center rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-0.5">
                                     <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Venta neta</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.45vw,13px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.netSales)}>
@@ -346,7 +346,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                     </strong>
                                 </div>
                                 <div className={cn(
-                                    'flex min-w-0 flex-col justify-center rounded-md border px-0.5 py-0.5',
+                                    'flex min-w-0 flex-col justify-center rounded-md border px-1 py-0.5',
                                     compactPerformance?.date !== String(closing.closing_date).split('T')[0] || compactPerformance.percent === null
                                         ? 'border-white/15 bg-white/[0.035]'
                                         : compactPerformance.percent >= 0
