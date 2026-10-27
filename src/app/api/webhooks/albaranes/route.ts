@@ -200,5 +200,5 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  return NextResponse.json({ error: 'Usa la bandeja /dashboard/albaranes/email' }, { status: 405 })
+  return NextResponse.json({ error: 'Los documentos recibidos se muestran en /dashboard/albaranes' }, { status: 405 })
 }
