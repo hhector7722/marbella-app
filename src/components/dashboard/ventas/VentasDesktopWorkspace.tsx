@@ -1791,11 +1791,11 @@ export default function VentasDesktopWorkspace() {
                   ) : (
                     <div className="space-y-1">
                         <div className="custom-scrollbar max-h-[390px] space-y-1 overflow-y-auto">
-                            {visibleTickets.map((ticket, index) => (
+                            {(previewMode ? mobileTicketRows : visibleTickets).map((ticket, index) => (
                                 <MobileSalesTicket key={ticket.numero_documento || index} ticket={ticket}
                                     cachedItems={linesByTicket[ticket.numero_documento]}/>
                             ))}
-                            {!visibleTickets.length && !dayLoading && !crossLoading &&
+                            {!(previewMode ? mobileTicketRows : visibleTickets).length && !dayLoading && !crossLoading &&
                                 <p className="py-6 text-center text-xs text-white/55">No hay facturas para este periodo.</p>}
                         </div>
                         {(crossSelection ? crossError : dayError) && (
@@ -1804,8 +1804,10 @@ export default function VentasDesktopWorkspace() {
                         {(crossSelection ? crossLoading : dayLoading) && (
                             <p className="text-center text-xs text-white/60">Cargando tickets…</p>
                         )}
-                        {canLoadMore && (
-                            <button type="button" onClick={() => crossSelection
+                        {(previewMode ? mobileMoreTickets : canLoadMore) && (
+                            <button type="button" onClick={() => previewMode === 'month'
+                                ? setMonthTicketPage(current => current + 20)
+                                : crossSelection
                                 ? setCrossPage(current => current + PAGE_SIZE)
                                 : setPage(current => current + PAGE_SIZE)}
                                 className="w-full rounded-md border border-white/25 py-2 text-xs">Ver más</button>
