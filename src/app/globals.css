@@ -8514,3 +8514,43 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     align-items: end;
   }
 }
+
+/* Solo smartphone: invertir el orden de los dos primeros widgets y dar
+   a Último cierre / Mensual el mismo fondo que Horarios. */
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'][data-layout='ops-admin'] {
+    grid-template-areas:
+      'cierre cierre cierre cierre'
+      'ventas ventas ventas ventas'
+      'horarios horarios horarios cinicial'
+      'horarios horarios horarios plant'
+      'mobra stock recetas albaranes'
+      'mas asis cajascambio ingredientes';
+  }
+  [data-component='HomeScreen'][data-layout='master'],
+  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
+    grid-template-areas:
+      'ultcierre ultcierre ultcierre ultcierre'
+      'ventas ventas ventas ventas'
+      'horario horario horario asis'
+      'horario horario horario caja'
+      'reservas ingred recetas albaran'
+      'otros cajascambio plantilla cambio';
+    grid-template-rows: repeat(6, var(--home-row-track));
+  }
+  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
+    grid-template-areas:
+      'ultcierre ultcierre ultcierre ultcierre'
+      'ventas ventas ventas ventas'
+      'horario horario horario asis'
+      'horario horario horario asis'
+      'reservas ingred recetas albaran'
+      'otros cajascambio plantilla cambio'
+      'caja . . .';
+    grid-template-rows: repeat(7, var(--home-row-track));
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    > :is([data-element='closing-half'], [data-element='monthly-container']) {
+    background: var(--color-envolvente-bajo);
+  }
+}
