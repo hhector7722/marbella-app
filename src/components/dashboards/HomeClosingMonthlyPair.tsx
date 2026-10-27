@@ -5,7 +5,7 @@ import { addMonths, endOfMonth, format, isAfter, startOfMonth, subMonths } from 
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
+import { formatCurrencySpanish, formatNumberSpanish } from '@/lib/cash-closing-metrics';
 import { MasterLastClosingWidget } from './MasterLastClosingWidget';
 
 type MonthlySnapshot = {
@@ -139,7 +139,7 @@ function HomeMonthlySalesWidget() {
                     <div className="grid min-w-0 grid-cols-3 items-start gap-0.5 text-left">
                         <MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
                             title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
-                        <MonthlyMetric label="Tickets" value={visible.tickets.toLocaleString('es-ES')}/>
+                        <MonthlyMetric label="Tickets" value={formatNumberSpanish(visible.tickets)}/>
                         <MonthlyMetric label="T. medio" value={visible.tickets ? formatCurrencySpanish(visible.average) : '—'}/>
                     </div>
                 </>
