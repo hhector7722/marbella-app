@@ -50,9 +50,9 @@ function reply(message: string, status: number) {
 }
 
 /**
- * Gmail Apps Script is ONLY a transporter. It never adds products, invoices or
- * stock. The original is held in a private bucket until a manager assigns a
- * supplier and document type from /dashboard/albaranes/email.
+ * Gmail transports supplier evidence. Approved sender addresses automatically
+ * create a purchase document and durable OCR job; stock only flows through
+ * the K5 confirmed delivery-note policy and no-stock database guards.
  */
 export async function POST(request: Request) {
   if (!authenticated(request)) return reply('No autorizado', 401)
@@ -97,10 +97,22 @@ export async function POST(request: Request) {
     .from('purchase_email_documents').select('id,status,invoice_id')
     .eq('gmail_message_id', messageId).eq('attachment_index', index).maybeSingle()
   if (ackError) return reply('No se pudo consultar el registro de recepción', 503)
-  if (acknowledged) return NextResponse.json({
-    success: true, accepted: true, processing: 'already_acknowledged',
-    documentId: acknowledged.id, invoiceId: acknowledged.invoice_id,
-  })
+  if (acknowledged) {
+    // An acknowledged but still pending upload may be retried after a temporary
+    // database error. Do not silently tell Apps Script that OCR was enqueued.
+    if (acknowledged.status === 'received') {
+      const { data: promoted, error: promotionError } = await supabase.rpc(
+        'auto_import_purchase_email_document', { p_document_id: acknowledged.id })
+      if (promotionError) return reply('Recepción guardada, pero falló la cola OCR; reintentar', 503)
+      return NextResponse.json({ success: true, accepted: true,
+        processing: promoted?.automated ? 'ocr_queued' : 'pending_review',
+        documentId: acknowledged.id, invoiceId: promoted?.invoice_id ?? null })
+    }
+    return NextResponse.json({
+      success: true, accepted: true, processing: 'already_acknowledged',
+      documentId: acknowledged.id, invoiceId: acknowledged.invoice_id,
+    })
+  }
 
   // Remitentes confirmados por propietario: coincidencia de email completo,
   // nunca por dominio genérico. No autoriza por sí sola una recepción de stock.
@@ -164,9 +176,25 @@ export async function POST(request: Request) {
     console.error('[albaranes-email] failed to archive inbox record', insertError?.message)
     return reply('No se pudo registrar el adjunto recibido', 503)
   }
+  if (!duplicate) {
+    // Only full addresses approved by the owner are eligible for auto-import.
+    // The DB guard enforces the same source verification and idempotency.
+    const { data: promoted, error: promotionError } = await supabase.rpc(
+      'auto_import_purchase_email_document', { p_document_id: inserted.id })
+    if (promotionError) {
+      console.error('[albaranes-email] OCR queue error:', promotionError.code)
+      return reply('Archivo guardado; cola OCR no disponible, reintentar', 503)
+    }
+    return NextResponse.json({
+      success: true, accepted: true,
+      processing: promoted?.automated ? 'ocr_queued' : 'pending_review',
+      documentId: inserted.id,
+      invoiceId: promoted?.invoice_id ?? null,
+    })
+  }
   return NextResponse.json({
     success: true, accepted: true,
-    processing: duplicate ? 'duplicate' : 'awaiting_manager_review',
+    processing: 'duplicate',
     documentId: inserted.id,
   })
 }
