@@ -26,13 +26,13 @@ function MonthlyMetric({ label, value, tone, title }: {
 }) {
     return (
         <div data-metric={tone} title={title}
-            className={'min-w-0 rounded-md px-1 py-0.5 ' + (
+            className={'flex h-fit min-w-0 flex-col justify-center rounded-md px-0.5 py-0.5 ' + (
                 tone === 'sales' ? 'border border-sky-400/25 bg-sky-500/10'
                     : tone === 'net' ? 'border border-emerald-400/25 bg-emerald-500/10'
                         : '')}>
-            <span className="block truncate text-[7px] leading-none text-white/65">{label}</span>
-            <strong className={'block truncate leading-tight text-white ' +
-                (tone ? 'text-[clamp(9px,2.4vw,14px)] font-bold' : 'text-[9px] font-semibold')}
+            <span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">{label}</span>
+            <strong className={'block whitespace-nowrap leading-tight tracking-tight text-white ' +
+                (tone ? 'text-[clamp(8px,1.8vw,13px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
                 title={value}>{value}</strong>
         </div>
     );
@@ -108,14 +108,14 @@ function HomeMonthlySalesWidget() {
 
     return (
         <section data-element="monthly-half"
-            className="flex h-full min-h-0 min-w-0 flex-col justify-between gap-0.5 px-1.5 py-1 text-white tabular-nums"
+            className="flex h-full min-h-0 min-w-0 flex-col justify-center gap-1 px-1.5 py-1 text-white tabular-nums"
             aria-label="Resumen mensual de ventas">
             <div className="grid h-[15px] shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-0.5">
                 <button type="button" aria-label="Mes anterior" title="Mes anterior"
                     onClick={() => setMonth(value => subMonths(value, 1))}
                     className="justify-self-start rounded p-0.5 text-white/75 hover:bg-white/10"><ChevronLeft size={12}/></button>
                 <span className="whitespace-nowrap text-center text-[10px] font-bold capitalize leading-none text-white">
-                    {format(month, 'MMM yy', { locale: es }).replace('.', '')}
+                    {format(month, 'MMMM yyyy', { locale: es })}
                 </span>
                 <button type="button" aria-label="Mes siguiente" title="Mes siguiente"
                     disabled={isCurrentMonth || isAfter(addMonths(month, 1), startOfMonth(new Date()))}
@@ -133,14 +133,14 @@ function HomeMonthlySalesWidget() {
                 <>
                     <div className="grid min-h-0 grid-cols-2 gap-0.5">
                         <MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/>
-                        <MonthlyMetric label="V neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
+                        <MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
                             tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
                     </div>
                     <div className="grid min-w-0 grid-cols-3 gap-x-0.5 text-center">
+                        <MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
+                            title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
                         <MonthlyMetric label="Tickets" value={visible.tickets.toLocaleString('es-ES')}/>
                         <MonthlyMetric label="T. medio" value={visible.tickets ? formatCurrencySpanish(visible.average) : '—'}/>
-                        <MonthlyMetric label="Media/día" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
-                            title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
                     </div>
                 </>
             ) : null}

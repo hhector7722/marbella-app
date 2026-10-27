@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CloudSun } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
@@ -82,6 +82,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
     const [topHours, setTopHours] = useState<any[]>([]);
     const [salesSummary, setSalesSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
     const [mobileClosingSnapshot, setMobileClosingSnapshot] = useState<{ date: string; hours: { hora: number; total: number }[]; products: HomeWidgetTopProduct[] } | null>(null);
+    const [compactPerformance, setCompactPerformance] = useState<{ date: string; percent: number | null } | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -123,6 +124,54 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
     }, [supabase]);
 
     const metrics = useMemo(() => buildLastClosingMetrics(closing), [closing]);
+
+    // Mismo cálculo de Rendimiento que Ventas: venta neta frente a cierres
+    // previos del mismo día de la semana (hasta 8, excluyendo agosto).
+    useEffect(() => {
+        if (!compact || !closing?.closing_date) return;
+        const date = String(closing.closing_date).split('T')[0];
+        const currentDate = parseLocalSafe(date);
+        const dates = Array.from({ length: 16 }, (_, i) => subWeeks(currentDate, i + 1))
+            .filter(day => day.getMonth() !== 7)
+            .map(day => format(day, 'yyyy-MM-dd'));
+        let active = true;
+        void supabase.from('cash_closings')
+            .select('closing_date,net_sales,closed_at')
+            .in('closing_date', dates)
+            .order('closed_at', { ascending: true })
+            .then(({ data, error }) => {
+                if (!active) return;
+                if (error) {
+                    console.warn('No se pudo obtener el rendimiento histórico del cierre', error);
+                    setCompactPerformance({ date, percent: null });
+                    return;
+                }
+                const netByDate = new Map((data ?? []).map(row =>
+                    [String(row.closing_date), Number(row.net_sales ?? 0)] as const));
+                let total = 0;
+                let seen = 0;
+                let missing = 0;
+                for (let weeks = 1; weeks <= 16 && seen + missing < 8; weeks++) {
+                    const previous = subWeeks(currentDate, weeks);
+                    if (previous.getMonth() === 7) continue;
+                    const net = netByDate.get(format(previous, 'yyyy-MM-dd'));
+                    if (net !== undefined && net > 0) {
+                        total += net;
+                        seen++;
+                    } else {
+                        missing++;
+                    }
+                }
+                const expected = seen > 0 ? total / seen : null;
+                setCompactPerformance({
+                    date,
+                    percent: expected && expected > 0
+                        ? (Number(closing.net_sales ?? 0) - expected) / expected * 100
+                        : null,
+                });
+            });
+        return () => { active = false; };
+    }, [supabase, compact, closing?.closing_date, closing?.net_sales]);
 
     const dateLabel = useMemo(() => {
         if (!closing) return '';
@@ -254,7 +303,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
     return (
         <div data-has-closing={closing ? "true" : "false"} className="flex h-full min-h-0 flex-col overflow-hidden">
             {compact ? (
-                <div data-element="closing-compact" className="flex h-full min-h-0 flex-col justify-between gap-0.5 px-1.5 py-1 tabular-nums">
+                <div data-element="closing-compact" className="flex h-full min-h-0 flex-col justify-center gap-1 px-1.5 py-1 tabular-nums">
                     <div className="flex h-[15px] min-w-0 shrink-0 items-center justify-between gap-1">
                         <Link href="/dashboard/history"
                             className="shrink-0 whitespace-nowrap text-[9px] font-bold leading-none text-white hover:text-sky-200">
@@ -262,7 +311,13 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                         </Link>
                         <span className="inline-flex min-w-0 items-center gap-0.5 text-right text-[8px] text-white/65">
                             {metrics.weatherIcon && <img src={metrics.weatherIcon} alt="" title={metrics.weatherLabel ?? ''} className="h-3 w-3 shrink-0 object-contain"/>}
-                            <span className="truncate whitespace-nowrap">{closing ? dateLabel : '—'}</span>
+                            <span className="whitespace-nowrap">{closing ? dateLabel : '—'}</span>
+                            {closing && (
+                                <span className="shrink-0 whitespace-nowrap text-white/85"
+                                    title={`${metrics.tickets.toLocaleString('es-ES')} tickets`}>
+                                    {metrics.tickets.toLocaleString('es-ES')} t
+                                </span>
+                            )}
                         </span>
                     </div>
                     {loading ? (
@@ -271,40 +326,61 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                         <div className="flex min-h-0 flex-1 items-center justify-center text-[10px] text-white/65">Sin cierres registrados</div>
                     ) : (
                         <>
-                            <div className="grid min-h-0 grid-cols-2 gap-0.5">
+                            <div className="grid min-h-0 grid-cols-[minmax(0,1.15fr)_minmax(0,1.15fr)_minmax(0,0.85fr)] gap-0.5">
                                 <button type="button" onClick={() => {
-                                        void fetchSalesData(String(closing.closing_date));
-                                        setIsSalesModalOpen(true);
-                                    }}
-                                    title="Ver detalles de las ventas del cierre" className="min-w-0 rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
-                                    <span className="block truncate text-[7px] leading-none text-white/70">Ventas</span>
-                                    <strong className="block truncate text-[clamp(9px,2.4vw,14px)] font-bold leading-tight text-white" title={formatCurrencySpanish(metrics.tpvSales)}>
+                                    void fetchSalesData(String(closing.closing_date));
+                                    setIsSalesModalOpen(true);
+                                }} title="Ver detalles de las ventas del cierre"
+                                    className="flex min-w-0 flex-col justify-center rounded-md border border-sky-400/25 bg-sky-500/10 px-0.5 py-0.5 text-left">
+                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Ventas</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.45vw,13px)] font-bold leading-tight tracking-tight text-white"
+                                        title={formatCurrencySpanish(metrics.tpvSales)}>
                                         {formatCurrencySpanish(metrics.tpvSales)}
                                     </strong>
                                 </button>
-                                <div className="min-w-0 rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-0.5">
-                                    <span className="block truncate text-[7px] leading-none text-white/70">V neta</span>
-                                    <strong className="block truncate text-[clamp(9px,2.4vw,14px)] font-bold leading-tight text-white" title={formatCurrencySpanish(metrics.netSales)}>
+                                <div className="flex min-w-0 flex-col justify-center rounded-md border border-emerald-400/25 bg-emerald-500/10 px-0.5 py-0.5">
+                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Venta neta</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.45vw,13px)] font-bold leading-tight tracking-tight text-white"
+                                        title={formatCurrencySpanish(metrics.netSales)}>
                                         {formatCurrencySpanish(metrics.netSales)}
                                     </strong>
                                 </div>
+                                <div className={cn(
+                                    'flex min-w-0 flex-col justify-center rounded-md border px-0.5 py-0.5',
+                                    compactPerformance?.date !== String(closing.closing_date).split('T')[0] || compactPerformance.percent === null
+                                        ? 'border-white/15 bg-white/[0.035]'
+                                        : compactPerformance.percent >= 0
+                                            ? 'border-emerald-400/50 bg-emerald-500/10'
+                                            : 'border-rose-400/55 bg-rose-500/15'
+                                )} title="Comparación con la venta neta media de hasta 8 cierres previos del mismo día de la semana">
+                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Rendimiento</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.45vw,13px)] font-bold leading-tight tracking-tight text-white">
+                                        {compactPerformance?.date === String(closing.closing_date).split('T')[0] && compactPerformance.percent !== null
+                                            ? `${compactPerformance.percent >= 0 ? '▲' : '▼'} ${Math.abs(compactPerformance.percent).toFixed(1)}%`
+                                            : '—'}
+                                    </strong>
+                                </div>
                             </div>
-                            <div className="grid min-w-0 grid-cols-3 gap-x-0.5 text-center">
+                            <div className="grid min-w-0 grid-cols-3 gap-0.5">
                                 <button type="button" onClick={() => setIsCashModalOpen(true)}
-                                    className="min-w-0 rounded-md hover:bg-white/10" title="Ver desglose del efectivo">
-                                    <span className="block truncate text-[8px] text-white/60">Efectivo</span>
-                                    <strong className="block truncate text-[10px] font-semibold text-white">{formatCurrencySpanish(metrics.cashCounted)}</strong>
+                                    className="flex min-w-0 flex-col justify-center rounded-md px-0.5 py-0.5 text-left hover:bg-white/10"
+                                    title="Ver desglose del efectivo">
+                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Efectivo</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.5vw,10px)] font-semibold leading-tight text-white"
+                                        title={formatCurrencySpanish(metrics.cashCounted)}>{formatCurrencySpanish(metrics.cashCounted)}</strong>
                                 </button>
-                                <div className="min-w-0" title="Diferencia del arqueo de caja">
-                                    <span className="block truncate text-[8px] text-white/60">Diferencia</span>
-                                    <strong className={cn('block truncate text-[10px] font-semibold',
+                                <div className="flex min-w-0 flex-col justify-center rounded-md px-0.5 py-0.5">
+                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Tarjeta</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.5vw,10px)] font-semibold leading-tight text-white"
+                                        title={formatCurrencySpanish(metrics.salesCard)}>{formatCurrencySpanish(metrics.salesCard)}</strong>
+                                </div>
+                                <div className="flex min-w-0 flex-col justify-center rounded-md px-0.5 py-0.5"
+                                    title="Diferencia del arqueo de caja">
+                                    <span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Diferencia</span>
+                                    <strong className={cn('block whitespace-nowrap text-[clamp(8px,1.5vw,10px)] font-semibold leading-tight',
                                         Math.abs(metrics.difference) < 0.005 ? 'text-emerald-200' : 'text-amber-200')}>
                                         {formatClosingDifference(metrics.difference)}
                                     </strong>
-                                </div>
-                                <div className="min-w-0">
-                                    <span className="block truncate text-[8px] text-white/60">Tickets</span>
-                                    <strong className="block truncate text-[10px] font-semibold text-white">{metrics.tickets.toLocaleString('es-ES')}</strong>
                                 </div>
                             </div>
                         </>
