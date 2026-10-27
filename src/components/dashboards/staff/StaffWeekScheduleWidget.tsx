@@ -503,11 +503,12 @@ export function StaffWeekScheduleWidget({
             el.getAttribute('data-expanded') === 'true'
         ) as HTMLElement | undefined;
         if (!selected) return;
-        const bottom = selected.offsetTop + selected.offsetHeight;
-        if (bottom > viewport.scrollTop + viewport.clientHeight) {
-            viewport.scrollTop = bottom - viewport.clientHeight;
-        } else if (selected.offsetTop < viewport.scrollTop) {
-            viewport.scrollTop = selected.offsetTop;
+        const viewRect = viewport.getBoundingClientRect();
+        const itemRect = selected.getBoundingClientRect();
+        if (itemRect.bottom > viewRect.bottom) {
+            viewport.scrollTop += itemRect.bottom - viewRect.bottom;
+        } else if (itemRect.top < viewRect.top) {
+            viewport.scrollTop -= viewRect.top - itemRect.top;
         }
     }, [expandedWeekStart, monthAnchor]);
 
