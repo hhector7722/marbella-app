@@ -779,7 +779,7 @@ export default function AlbaranesHistoricoClient({
       setDetail(res.detail)
 
       const status = String(res.detail.status ?? '').toLowerCase()
-      if (isManager && status !== 'processing' && status !== 'ocr_failed') {
+      if (isManager && res.detail.source !== 'manual' && status !== 'processing' && status !== 'ocr_failed') {
         const review = await loadInlineReview(id, reqId)
         if (detailReqRef.current !== reqId) return
         if (review.linesChanged) {
@@ -1598,7 +1598,8 @@ export default function AlbaranesHistoricoClient({
                   setSupplierError(null)
                 }}
                 className="text-left w-full min-w-0 font-black uppercase tracking-wider text-zinc-700 hover:opacity-80 transition-opacity text-[clamp(0.5625rem,2.4vw,0.75rem)] leading-none break-words"
-                title="Cambiar proveedor"
+                title={detail.source === 'manual' ? 'Proveedor de entrega registrado' : 'Cambiar proveedor'}
+                disabled={detail.source === 'manual'}
               >
                 {detail.supplier_name ?? 'Añadir proveedor'}
               </button>
@@ -1608,7 +1609,7 @@ export default function AlbaranesHistoricoClient({
         }
         headerTrailing={
           <>
-                    {isManager && detail?.id ? (
+                    {isManager && detail?.id && detail.source !== 'manual' ? (
                       <button
                         type="button"
                         onClick={() => setDestructiveConfirm({ kind: 'deleteInvoice', invoiceId: detail.id })}
@@ -1916,7 +1917,7 @@ export default function AlbaranesHistoricoClient({
 
                           {detail.lines.map((l) => {
                             const stock = stockStatusByLineId[l.id]
-                            const stockApplied = Boolean(stock?.stockApplied)
+                            const stockApplied = detail.source === 'manual' || Boolean(stock?.stockApplied)
                             const rectified = (stock?.rectifiedCount ?? 0) > 0
                             const excluded = isInvoiceLineExcluded(l)
                             const expenseOnly = isInvoiceLineExpenseOnly(l)
@@ -1935,7 +1936,7 @@ export default function AlbaranesHistoricoClient({
                             // resuelta (tick de stock) o cuando tiene la cruz roja
                             // sola, sin etiqueta de estado detrás.
                             const showEditPencil =
-                              !backgroundPhase && (stockApplied || (noMatch && !reviewLabelTextVisible))
+                              detail.source !== 'manual' && !backgroundPhase && (stockApplied || (noMatch && !reviewLabelTextVisible))
                             const displayName = l.ingredient_name
                               ? l.ingredient_name
                               : l.original_name || 'Sin nombre'
