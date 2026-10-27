@@ -20,7 +20,7 @@ import { Surface } from '@/components/ui/Surface';
 import { KpiStat } from '@/components/ui/KpiStat';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
-import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
+import { formatCurrencySpanish, formatNumberSpanish } from '@/lib/cash-closing-metrics';
 import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
 import { HomeTopProducts } from './HomeSalesWidgetDetails';
 
@@ -535,7 +535,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                         <div className="fixed z-[100] pointer-events-none" style={{ left: pointLeft, top: pointTop, transform: 'translate(-50%, -100%)', marginTop: '-4px' }}>
                                             <div ref={tooltipRef} className="rounded-lg bg-white border border-zinc-200 shadow-lg px-2.5 py-1.5 text-center min-w-[4rem]">
                                                 <div className="text-[10px] md:text-xs font-mono font-bold text-zinc-800 leading-tight">{String(selectedChartHour).padStart(2, '0')}:00</div>
-                                                <div className="text-[10px] md:text-xs font-black tabular-nums text-emerald-600 leading-tight">{totalHastaHora.toFixed(2)}€</div>
+                                                <div className="text-[10px] md:text-xs font-black tabular-nums text-emerald-600 leading-tight">{formatNumberSpanish(totalHastaHora, 2)}€</div>
                                             </div>
                                             <div className="absolute left-1/2 top-full w-3 h-3 rounded-full bg-ds-marca border-2 border-white shadow-sm -translate-x-1/2 -translate-y-1/2" />
                                         </div>
@@ -699,7 +699,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                             <div className="grid grid-cols-3 mb-3 shrink-0">
                                 <div className="flex flex-col items-center justify-center text-center">
                                     <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
-                                        {displaySummary.total > 0 ? `${displaySummary.total.toFixed(2)}€` : " "}
+                                        {displaySummary.total > 0 ? `${formatNumberSpanish(displaySummary.total, 2)}€` : " "}
                                     </span>
                                     <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ventas Totales</span>
                                 </div>
@@ -713,7 +713,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
                                 <div className="flex flex-col items-center justify-center text-center border-l border-white/10 italic">
                                     <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
-                                        {displaySummary.count > 0 ? `${(displaySummary.total / displaySummary.count).toFixed(2)}€` : " "}
+                                        {displaySummary.count > 0 ? `${formatNumberSpanish((displaySummary.total / displaySummary.count), 2)}€` : " "}
                                     </span>
                                     <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ticket Medio</span>
                                 </div>
@@ -779,13 +779,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                                             {prod.nombre_articulo}
                                                         </td>
                                                         <td className="py-1 text-center text-white/60 tabular-nums">
-                                                            {Number(prod.cantidad_total).toFixed(0)}
+                                                            {NumberformatNumberSpanish((prod.cantidad_total), 0)}
                                                         </td>
                                                         <td className="py-1 text-center text-white/50 tabular-nums">
-                                                            {Number(prod.precio_medio).toFixed(1)}€
+                                                            {NumberformatNumberSpanish((prod.precio_medio), 1)}€
                                                         </td>
                                                         <td className="py-1 text-right font-black tabular-nums text-emerald-400">
-                                                            {Number(prod.total_ingresos).toFixed(1)}€
+                                                            {NumberformatNumberSpanish((prod.total_ingresos), 1)}€
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -817,10 +817,10 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                                             {row.cant}
                                                         </td>
                                                         <td className="py-1 text-center text-white/50 tabular-nums">
-                                                            {row.media.toFixed(1)}€
+                                                            {formatNumberSpanish(row.media, 1)}€
                                                         </td>
                                                         <td className="py-1 text-right font-black tabular-nums text-emerald-400">
-                                                            {row.total.toFixed(1)}€
+                                                            {formatNumberSpanish(row.total, 1)}€
                                                         </td>
                                                     </tr>
                                                 ))}
