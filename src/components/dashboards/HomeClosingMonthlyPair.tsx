@@ -136,7 +136,7 @@ function HomeMonthlySalesWidget() {
                         <div className="flex min-w-0 justify-center"><MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
                             tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/></div>
                     </div>
-                    <div className="grid min-w-0 grid-cols-3 items-start gap-0.5 text-left">
+                    <div className="grid min-w-0 grid-cols-3 items-start gap-0.5 text-left [&>div]:!items-start [&>div]:!justify-start [&>div]:!text-left">
                         <MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
                             title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
                         <MonthlyMetric label="Tickets" value={formatNumberSpanish(visible.tickets)}/>
