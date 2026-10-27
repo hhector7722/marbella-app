@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import {
   AlertCircle,
   Check,
@@ -10,7 +9,6 @@ import {
   ChevronRight,
   FileSearch,
   Loader2,
-  Mail,
   Minus,
   MinusCircle,
   Plus,
@@ -398,7 +396,7 @@ export default function AlbaranesHistoricoClient({
     ).length,
     [inlineReviewRows]
   )
-  const legacyPendingCount = detail?.lines.filter((line) =>
+  const legacyPendingCount = detail?.source === 'manual' ? 0 : detail?.lines.filter((line) =>
     !line.interpretation_proposal_id
     && !stockStatusByLineId[line.id]?.stockApplied
     && !isInvoiceLineExcluded(line)
@@ -521,6 +519,7 @@ export default function AlbaranesHistoricoClient({
   }
 
   function lineNeedsStockRepair(l: PurchaseInvoiceDetail['lines'][number]) {
+    if (detail?.source === 'manual') return false
     if (isInvoiceLineExcluded(l)) return false
     if (!l.ingredient_id || String(l.status ?? '') !== 'mapped') return false
     const st = stockStatusByLineId[l.id]
@@ -1367,31 +1366,6 @@ export default function AlbaranesHistoricoClient({
   // → iconos blancos. Filtro a la izquierda, mismo icono que el resto (P7).
   const headerActions = (
     <>
-      <Link
-        href="/dashboard/albaranes/email"
-        title="Documentos recibidos por correo"
-        aria-label="Ver documentos por correo"
-        className="inline-flex h-9 items-center gap-1 rounded-lg border border-white/20 px-2 text-xs font-semibold"
-      >
-        <Mail className="h-4 w-4" />
-        <span className="hidden sm:inline">Correo</span>
-      </Link>
-      <Link
-        href="/dashboard/albaranes/hielo"
-        title="Registrar entrega de hielo"
-        aria-label="Registrar entrega de hielo"
-        className="inline-flex h-9 items-center rounded-lg border border-white/20 px-2 text-xs font-semibold"
-      >
-        Hielo
-      </Link>
-      <Link
-        href="/dashboard/albaranes/vermut"
-        title="Registrar entrega de Vermut"
-        aria-label="Registrar entrega de Vermut"
-        className="inline-flex h-9 items-center rounded-lg border border-white/20 px-2 text-xs font-semibold"
-      >
-        Vermut
-      </Link>
       <PeriodFilterButton instance="albaranes-filter-open" onClick={() => void openFilterModal()} />
       <Button
         type="button"
