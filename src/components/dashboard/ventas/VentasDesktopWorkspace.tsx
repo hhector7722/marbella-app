@@ -1635,15 +1635,15 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate }: {
             <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-2 pt-2">
                 <div className="flex min-w-0 items-center justify-between gap-2 border-b border-white/15 pb-2">
                     <div className="flex min-w-0 items-center gap-0.5">
-                        <button type="button" disabled={previewMode === 'day'} onClick={() => navigateMobilePeriod(-1)}
-                            aria-label="Fecha anterior" className="shrink-0 rounded p-1 text-white/75"><ChevronLeft size={16}/></button>
+                        {previewMode !== 'day' && <button type="button" onClick={() => navigateMobilePeriod(-1)}
+                            aria-label="Fecha anterior" className="shrink-0 rounded p-1 text-white/75"><ChevronLeft size={16}/></button>}
                         <strong className="min-w-0 whitespace-nowrap text-[11px] font-semibold capitalize tabular-nums">
                             {previewMode === 'month' ? monthLabel :
                                 isSingleDay ? format(parseISO(period.start), 'EEE d MMM yy', { locale: es }).replace('.', '')
                                 : periodTitle}
                         </strong>
-                        <button type="button" disabled={previewMode === 'day'} onClick={() => navigateMobilePeriod(1)}
-                            aria-label="Fecha siguiente" className="shrink-0 rounded p-1 text-white/75"><ChevronRight size={16}/></button>
+                        {previewMode !== 'day' && <button type="button" onClick={() => navigateMobilePeriod(1)}
+                            aria-label="Fecha siguiente" className="shrink-0 rounded p-1 text-white/75"><ChevronRight size={16}/></button>}
                         {isSingleDay && selectedClosing?.weather && (
                             <span className="inline-flex min-w-0 items-center gap-1 text-[10px] text-white/65"
                                 title={selectedClosing.weather}>
