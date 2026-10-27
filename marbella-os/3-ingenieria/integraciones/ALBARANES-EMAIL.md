@@ -77,3 +77,15 @@ otra recepción de stock: salvaguarda de base de datos + control K5.
 - Las futuras compras de `Otros` escaneadas también pasan por el OCR automático y contabilizan su gasto; no necesitan mapearse a ingredientes.
 - El código de la app debe desplegarse en Vercel tras el commit de `src/app/api/internal/albaranes/mistral-process/route.ts` y `src/app/api/internal/albaranes/k5/auto-apply/route.ts`. Las migraciones de Supabase por sí solas no activan la nueva lógica de la API.
 - Excepciones OCR ambiguas quedan pendientes de revisión. Nunca se crean nuevos ingredientes por simple coincidencia de nombre o se convierten unidades arbitrariamente.
+
+
+## UX unificada: Albaranes (27/10/2026)
+- **No hay nuevas páginas para trabajar.** `/dashboard/albaranes` es la única lista: documentos Gmail verificados crean filas `purchase_invoices.source='email'` automáticamente; remitentes por validar también generan una fila visible, sin stock ni extracción hasta confirmar origen.
+- La barra de Albaranes solo muestra los botones existentes (filtro, refrescar, Escanear). Se han eliminado los tres accesos a Email/Hielo/Vermut.
+- **Escanear → Don Hielo:** modal oscuro compacto con número entero de **sacos**. Cada saco contiene 5 bolsas de 2 kg: **10 kg/saco**. `Guardar entrega` registra +10.000 g por saco en el ingrediente Hielo, y una fila normal de albarán con una línea descriptiva y sin importe ficticio.
+- **Escanear → Vermut:** modal idéntico con número entero de **garrafas**. Cada garrafa son **10 litros**. `Guardar entrega` registra +10.000 ml por garrafa en el ingrediente Vermut y una fila normal de albarán, sin coste supuesto.
+- Ambos modales ofrecen **Escanear un albarán o justificante**, la vía documental existente. Esta alternativa no debe contabilizar de nuevo el stock. El flujo rápido contabiliza mercancía física; la foto aporta evidencia separada.
+- El registro físico y la fila de Albaranes se crean en **una transacción** por `public.record_manual_package_invoice`, protegida por UUID idempotente. Los usuarios manager/admin autorizados pueden guardar; no se registran dos entradas al reintentar el mismo UUID.
+- Las filas manuales no tienen imagen obligatoria. El detalle muestra un mensaje «Entrega registrada sin justificante adjunto» y las trata como recibidas, sin avisos de OCR pendientes. Se han ocultado acciones destructivas; triggers de BD impiden que futuras ediciones las desincronicen del stock sin rectificación auditada.
+- Enlaces antiguos `/dashboard/albaranes/email` redirigen al listado; `/hielo` y `/vermut` redirigen al mismo listado abriendo Escanear.
+- El sistema no ha sufrido pruebas con entregas físicas de cliente; para validar usar una entrega real autorizada, nunca introducir cantidades ficticias.
