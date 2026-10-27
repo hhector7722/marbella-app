@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatCurrencySpanish, formatNumberSpanish } from '@/lib/cash-closing-metrics';
 import { MasterLastClosingWidget } from './MasterLastClosingWidget';
+import { SalesPreviewModal, type SalesPreview } from './SalesPreviewModal';
 
 type MonthlySnapshot = {
     key: string;
@@ -39,6 +40,7 @@ function MonthlyMetric({ label, value, tone, title }: {
 }
 
 function HomeMonthlySalesWidget() {
+    const [preview, setPreview] = useState<SalesPreview | null>(null);
     const supabase = useMemo(() => createClient(), []);
     const [month, setMonth] = useState(() => startOfMonth(new Date()));
     const [snapshot, setSnapshot] = useState<MonthlySnapshot | null>(null);
@@ -107,7 +109,11 @@ function HomeMonthlySalesWidget() {
     }, [refresh, isCurrentMonth]);
 
     return (
-        <section data-element="monthly-half"
+        <>
+        <section data-element="monthly-half" onClick={(event) => {
+            if ((event.target as HTMLElement).closest('button')) return;
+            setPreview({ mode: 'month', date: format(month, 'yyyy-MM-dd') });
+        }}
             className="flex h-full min-h-0 min-w-0 flex-col justify-center gap-1 px-1.5 py-1 text-white tabular-nums"
             aria-label="Resumen mensual de ventas">
             <div className="flex h-[15px] shrink-0 items-center justify-center gap-0.5">
@@ -153,6 +159,8 @@ function HomeMonthlySalesWidget() {
                 </div>
             ) : null}
         </section>
+        <SalesPreviewModal preview={preview} onClose={() => setPreview(null)}/>
+        </>
     );
 }
 
