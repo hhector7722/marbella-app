@@ -25,9 +25,12 @@ export function normalizeSupplierText(value: string): string {
 }
 
 function nameKey(value: string): string {
-  const normalized = normalizeSupplierText(value)
+  // El número RPP/ENV es el registro administrativo del envasador y puede
+  // cambiar o salir truncado en el OCR. No forma parte de la presentación.
+  // El nombre, el tamaño y las unidades anteriores permanecen intactos.
+  const withoutRpp = value.replace(/\s+RPP\s*:\s*ENV\s*[\/: -]\s*\d{4}\s*[\/: -]\s*\d+\s*$/i, '')
+  const normalized = normalizeSupplierText(withoutRpp)
   // Algunos documentos incluyen un lote técnico largo delante del nombre.
-  // Conservarlo en evidencia, pero comparar también el nombre sin ese prefijo.
   return normalized.replace(/^[A-Z0-9]{8,}\s+(?=[A-Z])/, (prefix) =>
     /\d/.test(prefix) ? '' : prefix)
 }
@@ -125,9 +128,19 @@ function resolved(rows: SupplierProductMemory[], source: ProductMatch['source'],
   alternatives: ProductMatch['alternatives'] = []): ProductMatch {
   const signatures = new Set(rows.filter((row) => row.trustedPresentation)
     .map((row) => row.presentationSignature ?? row.mappingVersionId).filter(Boolean))
-  if (signatures.size > 1) return unresolved('ambiguous', rows.map((row) => ({
-    ingredientId: row.ingredientId, score, name: row.observedName,
-  })))
+  if (signatures.size > 1) {
+    // El ingrediente puede ser inequívoco aunque existan presentaciones
+    // confirmadas distintas (pack frente a unidades). Conservar su identidad
+    // sugerida, pero NUNCA elegir una conversión ni autorizar stock.
+    const candidates = rows.map((row) => ({
+      ingredientId: row.ingredientId, score, name: row.observedName,
+    }))
+    const ingredients = new Set(rows.map((row) => row.ingredientId))
+    return ingredients.size === 1
+      ? { ingredientId: rows[0]!.ingredientId, mappingVersionId: null,
+        source: 'ambiguous', score, alternatives: candidates, trustedPresentation: false }
+      : unresolved('ambiguous', candidates)
+  }
   const preferred = rows.find((row) => row.trustedPresentation && row.mappingVersionId) ?? rows[0]!
   return { ingredientId: preferred.ingredientId, mappingVersionId: preferred.mappingVersionId,
     source, score, alternatives, trustedPresentation: preferred.trustedPresentation }

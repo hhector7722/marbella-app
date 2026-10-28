@@ -35,6 +35,35 @@ test('dos presentaciones verificadas con el mismo nombre quedan ambiguas', () =>
       { ...memory[0]!, mappingVersionId: 'm4', presentationSignature: '12|caja|12|ud' },
     ] })
   assert.equal(match.source, 'ambiguous')
+  assert.equal(match.ingredientId, 'cola')
+  assert.equal(match.mappingVersionId, null)
+})
+
+test('la variación del código legal RPP no exige mapear otra vez', () => {
+  const confirmed: SupplierProductMemory = {
+    supplierId: 9, ingredientId: 'desengrasante', supplierProductCode: null,
+    observedName: 'MULTIGRAS PLANCHAS Env. 6 kg. dm RPP: ENV/2023/00',
+    mappingVersionId: 'version-confirmada', trustedPresentation: true,
+    presentationSignature: '1|kg|1|kg',
+  }
+  const match = matchSupplierProduct({ supplierId: 9, productCode: null,
+    description: 'MULTIGRAS PLANCHAS Env. 6 kg. dm RPP: ENV/2023/000',
+    memory: [confirmed] })
+  assert.equal(match.source, 'exact_name')
+  assert.equal(match.mappingVersionId, 'version-confirmada')
+})
+
+test('un tamaño distinto sigue impidiendo reutilizar la presentación', () => {
+  const confirmed: SupplierProductMemory = {
+    supplierId: 9, ingredientId: 'desengrasante', supplierProductCode: null,
+    observedName: 'MULTIGRAS PLANCHAS Env. 6 kg. dm RPP: ENV/2023/00',
+    mappingVersionId: 'version-confirmada', trustedPresentation: true,
+    presentationSignature: '1|kg|1|kg',
+  }
+  const match = matchSupplierProduct({ supplierId: 9, productCode: null,
+    description: 'MULTIGRAS PLANCHAS Env. 12 kg. dm RPP: ENV/2023/000',
+    memory: [confirmed] })
+  assert.notEqual(match.source, 'exact_name')
 })
 
 test('normaliza cero y letra O en códigos de presentación', () => {

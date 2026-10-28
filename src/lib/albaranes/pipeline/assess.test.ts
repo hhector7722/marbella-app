@@ -128,3 +128,20 @@ test('Videla: la propuesta usa 10 kg y 5,56 €/kg del bulto impreso', () => {
   assert.equal(result.lines[0]?.economicQuantity, '10.000')
   assert.equal(result.lines[0]?.effectiveUnitPrice, '5.5600')
 })
+
+
+test('mismo ingrediente con pack y unidades confirmados exige elegir presentación, sin volver a identificar producto', () => {
+  const units: PresentationMemory = { ...presentation,
+    mappingVersionId: 'm-units', presentationSignature: '50|ud|50|ud',
+    conversionFactor: '50', lineBillingUnit: 'ud', lineContentQty: '50' }
+  const pack: PresentationMemory = { ...presentation,
+    mappingVersionId: 'm-pack', presentationSignature: '50|pack|50|ud',
+    conversionFactor: '50', lineBillingUnit: 'pack', lineContentQty: '50' }
+  const result = assessDocument({ document: document({}), supplierId: 7,
+    memory: [units, pack], presentations: [units, pack] })
+  assert.equal(result.lines[0]?.ingredientId, 'cola')
+  assert.equal(result.lines[0]?.mappingVersionId, null)
+  assert.equal(result.lines[0]?.status, 'needs_review')
+  assert.ok(result.lines[0]?.reasons.includes('presentacion_sin_validar'))
+  assert.equal(result.lines[0]?.normalized, null)
+})
