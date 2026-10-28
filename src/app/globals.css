@@ -6080,10 +6080,8 @@ html:has(.dashboard-mosaic-switcher) {
     --staff-week-expansion-max: none;
   }
   /* Desktop: la asistencia Master permanece en su zona 2×1; no despliega el grid. */
-  [data-component='HomeScreen'][data-layout='master'] [data-instance='master-asistencia'] button[aria-label='Desplegar asistencia'],
-  [data-component='HomeScreen'][data-layout='master'] [data-instance='master-asistencia'] button[aria-label='Minimizar asistencia'] {
-    display: none;
-  }
+  /* Cuando hay seis o más registros, el acceso compacto abre el resumen
+     en escritorio; en móvil conserva su comportamiento desplegable. */
   [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='month-weeks'] {
     justify-content: flex-start;
   }
@@ -6843,32 +6841,10 @@ html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-
   [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .truncate {
     min-width: 0;
   }
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-gradient-to-b button {
-    padding: 1px 2px;
-    min-height: 0;
-  }
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-gradient-to-b span {
-    font-size: 7px;
-    letter-spacing: -0.03em;
-    line-height: 1;
-  }
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-white .m-auto {
-    margin-block: auto;
-  }
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-white .m-auto > button {
-    gap: 1px;
-    padding: 1px 2px;
-  }
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-white .m-auto > button > span {
-    font-size: 6px;
-    line-height: 1.05;
-    letter-spacing: -0.025em;
-  }
-  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] .bg-white .m-auto > button > span:last-child {
-    flex-shrink: 0;
-    gap: 0;
-    font-size: 5.5px;
-    letter-spacing: -0.035em;
+  /* La escala de fecha, nombres y horas depende del tamaño observado
+     y del número de fichajes; no imponer aquí 5–7 px a los datos. */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-attendance-row] {
+    min-width: 0;
   }
   [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-component='EmptyState'] {
     font-size: 7px;
@@ -10321,3 +10297,25 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 ) > [data-element='body'] {
   background: #192e59;
 }
+
+/* Inicio: Ventas / Venta neta de escritorio — alto intrínseco, no 84px
+   obligatorios. El resto del área se devuelve a la gráfica y rankings. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    grid-template-rows: max-content minmax(26px, .43fr) minmax(0, 1.55fr);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] {
+    height: auto;
+    min-height: 0;
+    grid-template-rows: max-content;
+    align-items: start;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div {
+    height: auto;
+    min-height: 0;
+    padding-block: 9px;
+    justify-content: center;
+  }

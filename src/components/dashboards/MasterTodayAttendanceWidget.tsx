@@ -81,9 +81,14 @@ export function MasterTodayAttendanceWidget({
 
     const redBarRef = useRef<HTMLDivElement>(null);
     const logsBlockRef = useRef<HTMLDivElement>(null);
+    const fitRef = useRef<HTMLDivElement>(null);
+    const [fontScale, setFontScale] = useState({ date: 10, row: 9, inset: 7 });
 
     const hasExpandableLogs = logs.length >= 6;
-    const visibleLogs = !expanded && hasExpandableLogs ? logs.slice(0, 4) : logs;
+    const visibleLogs = useMemo(
+        () => (!expanded && hasExpandableLogs ? logs.slice(0, 4) : logs),
+        [expanded, hasExpandableLogs, logs],
+    );
 
     useEffect(() => {
         if (loading) return;
@@ -104,9 +109,75 @@ export function MasterTodayAttendanceWidget({
 
     const dateLabel = useMemo(() => {
         if (!today) return '';
-        const raw = format(new Date(`${today}T12:00:00`), "EEEE d 'de' MMM", { locale: es });
-        return raw.charAt(0).toUpperCase() + raw.slice(1);
+        const raw = format(new Date(`${today}T12:00:00`), "EEE d 'de' MMM", { locale: es });
+        const short = raw.replace('.', '');
+        return short.charAt(0).toUpperCase() + short.slice(1);
     }, [today]);
+
+    // Medir la celda real (squircle en escritorio y móvil), el número de
+    // fichajes y la anchura de sus nombres/horas. Nunca forzar 5–7 px fijos:
+    // 1–2 fichajes pueden crecer; más filas o una salida reducen la escala.
+    useEffect(() => {
+        const element = fitRef.current;
+        if (!element || typeof ResizeObserver === 'undefined') return;
+
+        const update = () => {
+            const width = element.clientWidth;
+            const height = element.clientHeight;
+            if (!width || !height) return;
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const family = getComputedStyle(element).fontFamily || 'sans-serif';
+            const inset = Math.min(12, Math.max(6, width * 0.07));
+            const dateText = dateLabel || 'Mié 28 de oct';
+            const headerMax = Math.min(17, Math.max(10, width * 0.115));
+            let dateSize = headerMax;
+            if (context) {
+                context.font = `700 12px ${family}`;
+                const dateWidth = context.measureText(dateText).width;
+                if (dateWidth > 0) dateSize = Math.min(dateSize, (width - 10) * 12 / dateWidth);
+            }
+            dateSize = Math.max(7, dateSize);
+
+            const count = visibleLogs.length;
+            const countFactor = count <= 2 ? 1 : count === 3 ? 0.96 : count === 4 ? 0.92 : 0.83;
+            const idealFont = Math.min(17, Math.max(10, width * 0.14)) * countFactor;
+            const moreControlHeight = hasExpandableLogs ? 16 : 0;
+            const verticalSpace = Math.max(0, height - (dateSize * 1.3 + 6) - 12 - 4 - moreControlHeight);
+            const heightLimit = count ? (verticalSpace / count - 2.5) / 1.28 : idealFont;
+            let widthLimit = idealFont;
+            if (context && count) {
+                const available = Math.max(12, width - 2 * inset - 4);
+                let largest = 0;
+                for (const log of visibleLogs) {
+                    context.font = `500 12px ${family}`;
+                    const name = context.measureText(firstGivenName(log.first_name, 'Trabajador')).width;
+                    context.font = `700 12px ${family}`;
+                    const inTime = formatCompactHour(log.in_time) || '--:--';
+                    const time = log.out_time ? `${inTime} - ${formatCompactHour(log.out_time)}` : inTime;
+                    largest = Math.max(largest, name + context.measureText(time).width);
+                }
+                if (largest > 0) widthLimit = Math.min(widthLimit, available * 12 / largest);
+            }
+            // Si excepcionalmente el nombre es larguísimo, se parte en líneas
+            // y la lista se desplaza: nunca se oculta ni se añade ellipsis.
+            const rowSize = Math.max(7, Math.min(idealFont, widthLimit, heightLimit));
+            const next = {
+                date: Math.round(dateSize * 10) / 10,
+                row: Math.round(rowSize * 10) / 10,
+                inset: Math.round(inset),
+            };
+            setFontScale((previous) => (
+                previous.date === next.date && previous.row === next.row && previous.inset === next.inset
+                    ? previous : next
+            ));
+        };
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, [dateLabel, hasExpandableLogs, visibleLogs]);
 
     const loadDay = useCallback(async (ymd: string, isCancelled?: () => boolean) => {
         const supabase = createClient();
@@ -248,7 +319,7 @@ export function MasterTodayAttendanceWidget({
 
     return (
         <>
-            <div className="relative flex h-full min-h-0 flex-col" data-fit="today">
+            <div ref={fitRef} className="relative flex h-full min-h-0 flex-col" data-fit="today">
                 {loading ? (
                     <div
                         className="absolute inset-0 z-10 flex items-center justify-center"
@@ -265,9 +336,10 @@ export function MasterTodayAttendanceWidget({
                                 type="button"
                                 onClick={() => setIsSummaryModalOpen(true)}
                                 aria-label={`Resumen de fichajes del ${dateLabel}`}
-                                className="relative flex w-full min-w-0 items-center justify-center px-1 py-0.5 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                                className="relative flex w-full min-w-0 items-center justify-center px-1 py-1"
                             >
-                                <span className="truncate text-[6px] lg:text-[9px] font-bold leading-none tracking-wide text-white drop-shadow-sm">
+                                <span data-attendance-date className="whitespace-nowrap font-bold leading-tight tracking-normal text-white drop-shadow-sm"
+                                    style={{ fontSize: fontScale.date }}>
                                     {dateLabel}
                                 </span>
                             </button>
@@ -276,8 +348,8 @@ export function MasterTodayAttendanceWidget({
                             {logs.length === 0 ? (
                                 <EmptyState instance="master-today-none" variant="none" title="Sin fichajes" />
                             ) : (
-                                <div className={`flex min-h-0 flex-1 flex-col ${expanded ? 'overflow-y-auto' : 'overflow-hidden'}`}>
-                                    <div className="m-auto flex w-full flex-col" ref={logsBlockRef}>
+                                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none]">
+                                    <div className="my-auto flex w-full flex-col py-0.5" ref={logsBlockRef}>
                                         {visibleLogs.map((log) => {
                                             const isNoRegistered =
                                                 log.event_type === 'no_registered' ||
@@ -287,12 +359,18 @@ export function MasterTodayAttendanceWidget({
                                                     key={log.id}
                                                     type="button"
                                                     onClick={() => setIsSummaryModalOpen(true)}
-                                                    className="flex w-full min-w-0 items-center justify-between gap-1 px-2 py-0.5 text-left transition-colors hover:bg-zinc-50"
+                                                    data-attendance-row
+                                                    className="flex w-full min-w-0 items-center justify-between gap-[3px] py-[1px] text-left transition-colors hover:bg-zinc-50"
+                                                    style={{ paddingInline: fontScale.inset }}
                                                 >
-                                                    <span className="min-w-0 flex-1 truncate text-[7px] lg:text-[11px] font-medium leading-none text-zinc-700">
+                                                    <span data-attendance-name
+                                                        className="min-w-0 flex-1 whitespace-normal break-words font-medium leading-[1.18] text-zinc-700"
+                                                        style={{ fontSize: fontScale.row }}>
                                                         {firstGivenName(log.first_name, 'Trabajador')}
                                                     </span>
-                                                    <span className="flex shrink-0 items-center text-[7px] lg:text-[11px] font-bold leading-none tabular-nums">
+                                                    <span data-attendance-hours
+                                                        className="flex shrink-0 items-center gap-[2px] whitespace-nowrap font-bold leading-[1.18] tabular-nums"
+                                                        style={{ fontSize: fontScale.row }}>
                                                         <span className={isNoRegistered ? 'text-rose-700' : 'text-emerald-700'}>
                                                             {formatCompactHour(log.in_time) || '--:--'}
                                                         </span>
@@ -309,17 +387,25 @@ export function MasterTodayAttendanceWidget({
                                             );
                                         })}
                                         {hasExpandableLogs && (
-                                            <div className="flex w-full shrink-0 items-center justify-center mt-1">
+                                            <div className="flex w-full shrink-0 items-center justify-center">
                                                 <button
                                                     type="button"
-                                                    onClick={() => onExpandChange?.(!expanded)}
-                                                    className="flex w-full min-h-[48px] items-center justify-center text-zinc-400 hover:text-zinc-600 transition-colors"
-                                                    aria-label={expanded ? "Minimizar asistencia" : "Desplegar asistencia"}
+                                                    onClick={() => {
+                                                        if (window.matchMedia('(min-width: 1024px)').matches) {
+                                                            setIsSummaryModalOpen(true);
+                                                        } else {
+                                                            onExpandChange?.(!expanded);
+                                                        }
+                                                    }}
+                                                    data-attendance-more
+                                                    className="flex h-4 w-full items-center justify-center gap-1 text-[9px] text-zinc-500 transition-colors hover:text-zinc-700"
+                                                    aria-label={expanded ? "Minimizar asistencia" : "Ver todos los fichajes"}
                                                 >
+                                                    <span>{expanded ? 'Menos' : `+${logs.length - visibleLogs.length}`}</span>
                                                     {expanded ? (
-                                                        <ChevronUp size={12} className="stroke-[2.5]" />
+                                                        <ChevronUp size={10} className="stroke-[2.5]" />
                                                     ) : (
-                                                        <ChevronDown size={12} className="stroke-[2.5]" />
+                                                        <ChevronDown size={10} className="stroke-[2.5]" />
                                                     )}
                                                 </button>
                                             </div>
@@ -327,19 +413,22 @@ export function MasterTodayAttendanceWidget({
                                     </div>
                                 </div>
                             )}
-                            <button
-                                type="button"
-                                onClick={goPrevDay}
-                                aria-label="Día anterior"
-                                className="absolute bottom-0 left-0 flex h-12 w-1/2 items-start justify-start"
-                            />
-                            <button
-                                type="button"
-                                onClick={goNextDay}
-                                disabled={!canGoNext}
-                                aria-label="Día siguiente"
-                                className="absolute bottom-0 right-0 flex h-12 w-1/2 items-start justify-end disabled:pointer-events-none"
-                            />
+                            {/* Área de navegación propia, sin superponerse a los fichajes. */}
+                            <div className="flex h-3 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={goPrevDay}
+                                    aria-label="Día anterior"
+                                    className="h-full w-1/2"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={goNextDay}
+                                    disabled={!canGoNext}
+                                    aria-label="Día siguiente"
+                                    className="h-full w-1/2 disabled:pointer-events-none"
+                                />
+                            </div>
                         </div>
                     </>
                 ) : !loading ? (

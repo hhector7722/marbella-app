@@ -766,7 +766,14 @@ describe('Master escritorio: ajustes de Ventas, Último cierre, Asistencia y acc
         const css = desktopCss();
         assert.match(css, /\[data-instance='master-asistencia'\] \{\s*container-type: size;/);
         assert.match(css, /\[data-instance='master-asistencia'\] > \[data-element='body'\] \{[\s\S]*?width: var\(--home-icon-size\);[\s\S]*?height: var\(--home-icon-size\);/);
-        assert.match(css, /\[data-instance='master-asistencia'\][\s\S]*?font-size: 6px;/);
+        assert.doesNotMatch(css, /\[data-fit='today'\] \.bg-white \.m-auto > button > span \{\s*font-size: 6px;/, 'escritorio no fuerza nombres de 6px');
+        const attendance = readFileSync(join(SRC_ROOT, 'components/dashboards/MasterTodayAttendanceWidget.tsx'), 'utf8');
+        assert.match(attendance, /ResizeObserver/, 'asistencia mide el espacio real disponible');
+        assert.match(attendance, /EEE d 'de' MMM/, 'día de la semana abreviado');
+        assert.match(attendance, /data-attendance-name/, 'nombre adaptable');
+        assert.match(attendance, /data-attendance-hours/, 'horario adaptable');
+        assert.doesNotMatch(attendance, /flex-1 truncate text-\[7px\]/, 'el nombre no se recorta');
+        assert.match(css, /grid-template-rows: max-content minmax\(26px, \.43fr\)/, 'ventas usa la altura de sus datos');
         assert.match(css, /--home-shortcut-label-band: calc\(var\(--espacio-1\) \+ 23px\);/);
         assert.match(css, /\[data-component='DashboardShortcut'\]\[data-variant='icon-card-text-outside'\][\s\S]*?\[data-element='text'\] \{[\s\S]*?overflow: visible;[\s\S]*?-webkit-line-clamp: unset;/);
         assert.match(css, /\[data-element='name'\] \{[\s\S]*?-webkit-line-clamp: unset;/);
