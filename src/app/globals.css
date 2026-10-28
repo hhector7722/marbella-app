@@ -9817,3 +9817,174 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
       0 13px 26px rgb(1 10 26 / .31);
   }
 }
+
+
+/* Ajustes del mosaico final: el primer y segundo renglón de los widgets
+   Último cierre y Mensual ocupan exactamente las mismas pistas.
+   Los conceptos+valores quedan como unidad centrada con alineación izquierda. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen']
+    :is([data-element='closing-compact'], [data-element='monthly-half'])
+    > :nth-child(2) {
+    box-sizing: border-box;
+    display: flex;
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  [data-component='HomeScreen']
+    :is([data-element='closing-compact'] .grid.grid-cols-3, [data-element='monthly-half'] .grid.grid-cols-6) {
+    flex: 1 1 0;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+    align-self: stretch;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(4px, .55vw, 10px);
+    row-gap: clamp(3px, .52dvh, 7px);
+    align-content: stretch;
+    place-items: stretch;
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric],
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(div, button) > div {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    width: fit-content;
+    max-width: 100%;
+    height: fit-content;
+    margin-inline: auto;
+    padding: 3px 6px;
+    min-width: 0;
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric]
+    > [data-element='monthly-metric-content'] {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-width: 0;
+    max-width: 100%;
+    font-size: inherit;
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric]
+    > [data-element='monthly-metric-content'] > span,
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(div,button) > div > span {
+    font-size: clamp(9px, .70vw, 11px);
+    font-weight: 400;
+    line-height: 1.12;
+    text-align: left;
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric]
+    > [data-element='monthly-metric-content'] > strong,
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(div,button) > div > strong {
+    font-size: clamp(12px, 3.85cqi, 18px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -.025em;
+    text-align: left;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @container closing-metrics (max-width: 339px) {
+    [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @container monthly-metrics (max-width: 339px) {
+    [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* Ventas: dos tarjetas del mismo lenguaje que los demás KPIs:
+     concepto arriba, cifra debajo, altura mayor y ancho del propio contenido. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    grid-template-rows: clamp(65px, 9.7dvh, 90px) minmax(26px, .43fr) minmax(0, 1.55fr);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    justify-items: center;
+    gap: clamp(4px, .6vw, 10px);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div {
+    box-sizing: border-box;
+    width: fit-content;
+    min-width: clamp(115px, 9.8vw, 165px);
+    max-width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    justify-self: center;
+    gap: 3px;
+    padding: clamp(7px, 1dvh, 12px) clamp(11px, 1vw, 17px);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div > span {
+    font-size: clamp(10px, .77vw, 12px);
+    font-weight: 500;
+    width: auto;
+    line-height: 1.2;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div > strong {
+    font-size: clamp(16px, 1.35vw, 24px);
+    line-height: 1.17;
+    max-width: 100%;
+  }
+}
+@media (min-width: 1024px) and (max-height: 730px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    grid-template-rows: clamp(57px, 8.5dvh, 72px) minmax(25px, .38fr) minmax(0, 1.55fr);
+  }
+}
+
+/* Eliminar únicamente el borde inferior del ranking de productos
+   en el modal de detalles. No afecta a los divisores entre productos. */
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='products-section'] {
+  border-bottom: 0;
+}
+
+/* El acabado premium mantiene el mismo bisel en las tres cards,
+   pero Ventas conserva un azul marino ligeramente más intenso,
+   frente al azul petróleo de Último cierre y Mensual. */
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
+  > [data-element='body'] {
+  background: linear-gradient(157deg,
+    rgb(25 58 99 / .98) 0%,
+    rgb(12 35 72 / .99) 51%,
+    rgb(7 23 51 / .99) 100%);
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container']) {
+  background: linear-gradient(158deg,
+    rgb(32 62 88 / .96) 0%,
+    rgb(17 38 62 / .98) 46%,
+    rgb(10 26 44 / .99) 100%);
+}
