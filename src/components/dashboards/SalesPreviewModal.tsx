@@ -14,8 +14,8 @@ export function SalesPreviewModal({ preview, onClose }: { preview: SalesPreview 
     const title = preview.mode === 'month' ? 'Ventas mensuales' : 'Detalle de ventas';
     return (
         <Modal open onClose={onClose} title={title} scheme="dark" variant="amplify"
-            instance="home-sales-preview" scrollContent={true}>
-            <div className="max-h-[75dvh] min-h-0 w-full overflow-y-auto overflow-x-hidden">
+            instance="home-sales-preview" scrollContent={false}>
+            <div data-element="sales-preview-viewport" className="flex h-[min(74dvh,730px)] min-h-0 w-full flex-col overflow-hidden">
                 <EmbeddedSales key={preview.mode + preview.date} embeddedMode={preview.mode === 'current' ? 'day' : preview.mode} embeddedDate={preview.date} embeddedShowLive={preview.mode === 'current'}/>
             </div>
         </Modal>
