@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { format } from 'date-fns';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { createClient } from '@/utils/supabase/client';
 import { ProductRankingThumbnail } from '@/components/dashboard/ventas/ProductRankingThumbnail';
@@ -21,6 +22,16 @@ export function HomeSalesMobileSummary({
 }) {
     const supabase = useMemo(() => createClient(), []);
     const chartRef = useRef<HTMLDivElement>(null);
+    const [clock, setClock] = useState(() => new Date());
+    useEffect(() => {
+        const syncClock = () => setClock(new Date());
+        const interval = window.setInterval(syncClock, 30_000);
+        window.addEventListener('focus', syncClock);
+        return () => { window.clearInterval(interval); window.removeEventListener('focus', syncClock); };
+    }, []);
+    const currentHour = date === format(clock, 'yyyy-MM-dd') &&
+        clock.getHours() >= BUSINESS_HOURS.start && clock.getHours() <= BUSINESS_HOURS.end
+        ? clock.getHours() : null;
     const [hourSelection, setHourSelection] = useState<{ date: string; hour: number } | null>(null);
     const selectedHour = hourSelection?.date === date ? hourSelection.hour : null;
     const [filteredSnapshot, setFilteredSnapshot] = useState<{ key: string; products: HomeWidgetTopProduct[] } | null>(null);
@@ -71,16 +82,17 @@ export function HomeSalesMobileSummary({
         return () => { active = false; };
     }, [date, filterKey, hasSales, selectedHour, supabase]);
 
-    const rankedHours = useMemo(() =>
-        hours
-            .filter(item =>
-                item.hora >= BUSINESS_HOURS.start &&
-                item.hora <= BUSINESS_HOURS.end &&
-                Number(item.total) > 0
-            )
-            .sort((a, b) => Number(b.total) - Number(a.total))
-            .slice(0, 3),
-    [hours]);
+    // La franja en curso siempre encabeza las tres filas, incluso sin tickets aún.
+    // Las otras dos siguen siendo las de mayor venta; días históricos no cambian.
+    const rankedHours = useMemo(() => {
+        const best = hours
+            .filter(item => item.hora >= BUSINESS_HOURS.start &&
+                item.hora <= BUSINESS_HOURS.end && item.hora !== currentHour && Number(item.total) > 0)
+            .sort((a, b) => Number(b.total) - Number(a.total));
+        if (currentHour === null) return best.slice(0, 3);
+        const live = hours.find(item => Number(item.hora) === currentHour) ?? { hora: currentHour, total: 0 };
+        return [live, ...best.slice(0, 2)];
+    }, [hours, currentHour]);
 
     // El detalle de Ventas muestra tramo seleccionado y los adyacentes;
     // conservar tres filas (también en los extremos del horario).
@@ -208,13 +220,16 @@ export function HomeSalesMobileSummary({
         );
         const maximum = Math.max(0, ...values);
         if (maximum === 0) return null;
-        const path = values.map((value, index) => {
+        // La gráfica llega hasta la franja en curso: no inventa una caída a
+        // cero en las horas futuras que todavía no han comenzado.
+        const plotLength = currentHour === null ? values.length : currentHour - BUSINESS_HOURS.start + 1;
+        const path = values.slice(0, plotLength).map((value, index) => {
             const x = (index / Math.max(1, values.length - 1)) * 160;
             const y = 19 - (value / maximum) * 15;
             return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
         }).join(' ');
         return { values, maximum, path };
-    }, [hours]);
+    }, [hours, currentHour]);
 
     const pointIndex = selectedHour === null ? -1 : selectedHour - BUSINESS_HOURS.start;
     const dotPosition = chartData && pointIndex >= 0 && pointIndex < chartData.values.length ? {
@@ -284,7 +299,7 @@ export function HomeSalesMobileSummary({
                             {displayHours.map((hour, index) => hour ? (
                                 <div key={hour.hora} data-muted-hour={selectedHour !== null && selectedHour !== hour.hora ? 'true' : undefined}
                                     className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
-                                    title={`${hour.hora}h - ${hour.hora + 1}h: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
+                                    title={`${hour.hora}h - ${hour.hora + 1}h${hour.hora === currentHour ? ' (en curso)' : ''}: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]">
                                         <span className="lg:hidden">{hour.hora}h - {hour.hora + 1}h</span>
                                         <span className="hidden lg:inline">{hour.hora}:00 - {hour.hora + 1}:00</span>
