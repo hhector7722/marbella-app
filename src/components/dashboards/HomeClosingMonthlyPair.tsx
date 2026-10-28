@@ -39,11 +39,13 @@ function MonthlyMetric({ label, value, tone, title, trend }: {
                         ? 'border border-white/20 bg-white/[0.035]'
                         : trend >= 0 ? 'border border-emerald-400/50 bg-emerald-500/10'
                             : 'border border-rose-400/55 bg-rose-500/15') : '')}>
-            <span className={'block whitespace-nowrap leading-tight text-white/65 ' + 'text-[7px]'}>{label}</span>
-            <strong className={'block whitespace-nowrap leading-tight tracking-tight ' +
-                (trend == null ? 'text-white ' : trend >= 0 ? 'text-emerald-200 ' : 'text-rose-200 ') +
-                (tone ? 'text-[clamp(8px,1.2vw,10px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
-                title={value}>{value}</strong>
+            <div data-element="monthly-metric-content" className="flex w-fit max-w-full min-w-0 flex-col items-start justify-center text-left">
+                <span className={'block whitespace-nowrap leading-tight text-white/65 ' + 'text-[7px]'}>{label}</span>
+                <strong className={'block whitespace-nowrap leading-tight tracking-tight ' +
+                    (trend == null ? 'text-white ' : trend >= 0 ? 'text-emerald-200 ' : 'text-rose-200 ') +
+                    (tone ? 'text-[clamp(8px,1.2vw,10px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
+                    title={value}>{value}</strong>
+            </div>
         </div>
     );
 }
