@@ -342,12 +342,18 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         const load = async () => {
             for (let attempt = 0; attempt < 2; attempt++) {
                 try {
-                    const { data, error } = await supabase.rpc('get_product_sales_ranking', {
+                    const rankingQuery = supabase.rpc('get_product_sales_ranking', {
                         p_start_date: requestDate,
                         p_end_date: requestDate,
                         p_start_time: null,
                         p_end_time: null,
-                    }).order('total_ingresos', { ascending: false }).limit(3);
+                    });
+                    // Ante una incompatibilidad con ORDER de PostgREST, el
+                    // segundo intento aprovecha el orden canónico de la RPC.
+                    // Ambos envían LIMIT 3 a la base de datos.
+                    const { data, error } = attempt === 0
+                        ? await rankingQuery.order('total_ingresos', { ascending: false }).limit(3)
+                        : await rankingQuery.limit(3);
                     if (!active || salesViewDateRef.current !== requestDate) return;
                     if (error) {
                         console.warn('Ranking breve del widget de ventas:', error);
