@@ -9654,7 +9654,7 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   flex: 0 0 auto;
 }
 [data-component='Modal'][data-instance='home-sales-preview']
-  [data-element='mobile-sales-detail-card'] > :not(nav) {
+  [data-element='mobile-sales-detail-card'] > :not(nav):not([data-element='mobile-sales-loading']) {
   flex: 1 1 auto;
   min-height: 0;
   max-height: 100%;
@@ -9683,5 +9683,137 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='mobile-sales-products'] > div:not([data-element='desktop-sales-section-title']):hover {
     filter: brightness(1.12);
+  }
+}
+
+
+/* Modal compartido (Ventas / Último cierre / Mensual): geometría FIJA.
+   El tamaño se decide por la ventana al abrir, no por el contenido ni por
+   respuestas async: Live, tramos, productos, tickets y carga inicial. */
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='frame'] > [role='dialog'] {
+  box-sizing: border-box;
+  flex: 0 1 auto;
+  height: min(800px, 100%);
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='container'] {
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='body'] {
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='sales-preview-viewport'] {
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='mobile-sales-detail-card'] {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='mobile-ventas-live'] {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='mobile-sales-loading'] {
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Smartphone: las unidades de producto son información secundaria. El
+   importe mantiene su contraste; horas y escritorio no cambian. */
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-products'] [data-element='mobile-sales-units'] {
+    color: rgb(178 200 223 / .52);
+    font-weight: 400;
+  }
+}
+
+/* Tres superficies premium, sin modificar el grid, tamaños o márgenes:
+   reborde luminoso frío + doble bisel interior + sombra de contacto y
+   sombra lejana. Sólo Ventas, Último cierre y Mensual. */
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
+  > [data-element='body'],
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container']) {
+  border: 1px solid rgb(135 193 235 / .49);
+  border-radius: var(--home-widget-radius);
+  background: linear-gradient(158deg,
+    rgb(32 62 88 / .96) 0%,
+    rgb(17 38 62 / .98) 46%,
+    rgb(10 26 44 / .99) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(231 249 255 / .32),
+    inset 1px 0 0 rgb(164 214 250 / .11),
+    inset 0 -1px 0 rgb(2 9 22 / .58),
+    0 0 0 1px rgb(3 13 28 / .42),
+    0 2px 4px rgb(2 10 24 / .34),
+    0 10px 23px rgb(1 10 26 / .27);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+/* La capa de cristal previa no debe tapar el acabado premium del par. */
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container'])::before {
+  background: linear-gradient(160deg,
+    rgb(181 222 252 / .075) 0%,
+    transparent 45%,
+    rgb(1 11 25 / .14) 100%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
+    > [data-element='body']:hover,
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    > :is([data-element='closing-half'], [data-element='monthly-container']):hover {
+    border-color: rgb(170 219 255 / .64);
+    box-shadow:
+      inset 0 1px 0 rgb(245 253 255 / .42),
+      inset 1px 0 0 rgb(174 222 255 / .13),
+      inset 0 -1px 0 rgb(2 9 22 / .58),
+      0 0 0 1px rgb(3 13 28 / .44),
+      0 3px 6px rgb(2 10 24 / .34),
+      0 13px 26px rgb(1 10 26 / .31);
   }
 }
