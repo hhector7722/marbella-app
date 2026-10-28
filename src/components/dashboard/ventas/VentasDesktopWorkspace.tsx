@@ -889,6 +889,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     }, [supabase]);
     const [mobileScope, setMobileScope] = useState<CrossScope>('period');
     const [mobileView, setMobileView] = useState<'products' | 'hours' | 'tickets' | 'live'>('products');
+    const [invoiceLive, setInvoiceLive] = useState(false);
     const [reportMenuOpen, setReportMenuOpen] = useState(false);
     const [mobileInfo, setMobileInfo] = useState<'cash' | 'performance' | null>(null);
     const [editingClosingId, setEditingClosingId] = useState<string | null>(null);
@@ -1663,10 +1664,12 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         )}
                     </div>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <div className={cn("mt-2 grid gap-1.5", previewMode && embeddedShowLive ? "grid-cols-1" : "grid-cols-2")}>
                     {[
                         { label: 'Ventas', value: mobileReport ? euro(mobileReport.summary.totalSales) : '', tone: 'border-sky-400/35 bg-sky-500/10' },
-                        { label: 'Venta neta', value: mobileExtras ? euro(mobileExtras.net) : '', tone: 'border-emerald-400/30 bg-emerald-500/10' },
+                        ...(!previewMode || !embeddedShowLive ? [{
+                            label: 'Venta neta', value: mobileExtras ? euro(mobileExtras.net) : '', tone: 'border-emerald-400/30 bg-emerald-500/10'
+                        }] : []),
                     ].map(item => (
                         <div key={item.label} className={cn('min-w-0 rounded-lg border px-2.5 py-1.5', item.tone)}>
                             <span className="block text-[11px] font-medium text-white/75">{item.label}</span>
@@ -1769,7 +1772,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     </div>
                 </section>
             </div>
-            <section className="min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
+            <section data-element="mobile-sales-detail-card" className="min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
                 <nav className="mb-2 grid grid-cols-3 gap-1 border-b border-white/15 pb-2" aria-label="Detalle de ventas">
                     {(previewMode && !embeddedShowLive
                     ? ([{ id: 'products', label: 'Productos' }, { id: 'tickets', label: 'Tickets' }] as const)
@@ -1984,7 +1987,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     </section>
                     <section data-element="invoices" className="sales-desktop-invoices mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-2 pt-2 text-white">
                         <div className="mb-2 flex shrink-0 items-center justify-between gap-2 px-1">
-                            <strong className="text-[11px] font-bold">Facturas simplificadas</strong>
+                            <strong className="text-[11px] font-bold">{invoiceLive ? 'Mesas abiertas' : 'Facturas simplificadas'}</strong>
                             {crossSelection && (
                                 <span className="min-w-0 flex-1 truncate text-right text-[10px] text-sky-200"
                                     title={`${crossScopeStart} – ${crossScopeEnd} · ${crossLabel(crossSelection)}`}>
@@ -1992,12 +1995,26 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                     {crossLabel(crossSelection)}
                                 </span>
                             )}
-                            <span className="shrink-0 text-[10px] text-white/60">
+                            <button type="button" aria-pressed={invoiceLive}
+                                onClick={() => setInvoiceLive(value => !value)}
+                                className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors',
+                                    invoiceLive ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-100'
+                                        : 'border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/10')}>
+                                {!invoiceLive && <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-emerald-400"/>}
+                                {invoiceLive ? 'Facturas' : 'Live'}
+                            </button>
+                            {!invoiceLive && <span className="shrink-0 text-[10px] text-white/60">
                                 {visibleTickets.length.toLocaleString('es-ES')} de {crossSelection
                                     ? (crossResult?.summary.count ?? 0).toLocaleString('es-ES')
                                     : (dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES')}
-                            </span>
+                            </span>}
                         </div>
+                        {invoiceLive ? (
+                            <div data-element="invoices-live" className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-1 pb-2">
+                                <RadarSala variant="ventas"/>
+                            </div>
+                        ) : (
+                            <>
                         <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-1">
                             {visibleTickets.map((ticket, i) => (
                                 <SalesTicket key={ticket.numero_documento || i} ticket={ticket} items={linesByTicket[ticket.numero_documento] ?? EMPTY_ITEMS}
@@ -2029,6 +2046,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 className="mt-1 shrink-0 rounded-md border border-white/25 px-3 py-1.5 text-center text-[11px] text-white/85 hover:bg-white/10">
                                 <ChevronDown size={13} className="mr-1 inline-block"/> Ver más
                             </button>
+                        )}
+                            </>
                         )}
                     </section>
                 </div>
