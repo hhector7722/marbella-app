@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-28
 
+- **La venta neta del día abierto coincide en widget, página y detalle.** Las tres vistas consultan la misma venta en directo y aplican el mismo cálculo provisional; los días cerrados mantienen la cifra registrada en el cierre. El modal de detalle presenta Productos sobre una sola superficie azul compartida con el resumen. En smartphone, las unidades del widget pierden peso visual para destacar los importes.
+
 - **Ventas unifica su acabado azul premium en inicio, página y detalles.** El widget Ventas conserva el protagonismo; Último cierre, Ventas mensuales y Horarios usan un azul secundario sin matiz petróleo. En escritorio, Último cierre y Ventas mensuales recuperan seis métricas en dos filas de tres columnas, mientras que las tarjetas Ventas y Venta neta muestran el concepto encima del importe, con más altura y texto íntegro. Se conservan los datos, las acciones y la distribución móvil.
 
 - **El azul de Ventas gana contraste visible en el mosaico.** El brillo y el canto del widget principal se diferencian claramente de Cierre, Mensual y Horarios; las tarjetas de importes dejan los tonos verde turquesa y los eventos de Horarios reciben el mismo tratamiento azul secundario, también en móvil.

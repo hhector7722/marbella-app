@@ -13,6 +13,8 @@ import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { timeFilterBounds, type TimeFilterValue } from '@/components/time/time-filter-types';
 import { cn } from '@/lib/utils';
+import { randomId } from '@/lib/random-id';
+import { displayedNetSales } from '@/lib/live-sales-net';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
@@ -923,6 +925,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
     const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
+    const [liveDaySales, setLiveDaySales] = useState<{ date: string; total: number } | null>(null);
     const [monthReport, setMonthReport] = useState<TicketReport | null>(null);
     const [loadedMonthKey, setLoadedMonthKey] = useState<string | null>(null);
     const [monthClosings, setMonthClosings] = useState<CloseRow[]>([]);
@@ -1269,6 +1272,29 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         return () => { active = false; };
     }, [supabase, period.start, period.end, initializing]);
 
+    // La cifra provisional del día abierto procede del mismo RPC que el widget.
+    // Releerla ante nuevos tickets evita que la página y el modal se queden atrás.
+    useEffect(() => {
+        if (initializing || period.start !== period.end || period.start !== format(new Date(), 'yyyy-MM-dd')) return;
+        const date = period.start;
+        let active = true;
+        const refresh = async () => {
+            const { data, error } = await supabase.rpc('get_daily_sales_stats', { target_date: date });
+            if (active && !error) setLiveDaySales({ date, total: Number(data?.total_ventas ?? 0) });
+        };
+        void refresh();
+        const channel = supabase.channel(`realtime_ventas_detail:${randomId()}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets_marbella' }, payload => {
+                if (String(payload.new?.fecha ?? '').split('T')[0] === date) void refresh();
+            }).subscribe();
+        const interval = setInterval(() => { void refresh(); }, 60000);
+        return () => {
+            active = false;
+            clearInterval(interval);
+            void supabase.removeChannel(channel);
+        };
+    }, [supabase, period.start, period.end, initializing]);
+
     useEffect(() => {
         if (initializing) return;
         let active = true;
@@ -1534,6 +1560,18 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         recovered: closingSum(periodClosings, 'debt_recovered'),
         difference: closingSum(periodClosings, 'difference')
     }), [periodClosings]);
+    const isCurrentDay = isSingleDay && period.start === format(new Date(), 'yyyy-MM-dd');
+    const liveGross = isCurrentDay
+        ? liveDaySales?.date === period.start ? liveDaySales.total : dailyReport?.summary.totalSales ?? null
+        : null;
+    const displayedDaySales = isCurrentDay && liveGross !== null
+        ? liveGross : dailyReport?.summary.totalSales ?? null;
+    const displayedDayNet = displayedNetSales({
+        isCurrentDay,
+        liveGross,
+        closingNet: hasClosingData ? periodTotals.net : null,
+        previewGross: previewMode ? dailyReport?.summary.totalSales ?? null : null,
+    });
     // "Rendimiento" follows the existing history definition: net sales
     // compared with the mean of up to eight prior same-weekday closings.
     // This is not accounting profitability; that would require product costs.
@@ -1671,10 +1709,13 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
                     {[
-                        { label: 'Ventas', value: mobileReport ? euro(mobileReport.summary.totalSales) : '', tone: 'border-sky-400/35 bg-sky-500/10' },
+                        { label: 'Ventas', value: mobileMonth
+                            ? mobileReport ? euro(mobileReport.summary.totalSales) : ''
+                            : displayedDaySales !== null ? euro(displayedDaySales) : '', tone: 'border-sky-400/35 bg-sky-500/10' },
                         { label: 'Venta neta',
-                          value: mobileExtras ? euro(mobileExtras.net)
-                              : previewMode && mobileReport ? euro(mobileReport.summary.totalSales / 1.10) : '',
+                          value: mobileMonth
+                              ? mobileExtras ? euro(mobileExtras.net) : ''
+                              : displayedDayNet !== null ? euro(displayedDayNet) : '',
                           tone: 'border-emerald-400/30 bg-emerald-500/10' },
                     ].map(item => (
                         <div key={item.label} className={cn('min-w-0 rounded-lg border px-2.5 py-1.5', item.tone)}>
@@ -1885,8 +1926,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         </header>
                         <div data-element="day-financials" className="shrink-0 border-b border-white/10 px-3 py-3">
                             <FinancialKpiHeader
-                                sales={dailyReport ? euro(dailyReport.summary.totalSales) : ''}
-                                net={hasClosingData ? euro(periodTotals.net) : ''}
+                                sales={displayedDaySales !== null ? euro(displayedDaySales) : ''}
+                                net={displayedDayNet !== null ? euro(displayedDayNet) : ''}
                                 items={financialSummaryItems(hasClosingData ? periodTotals : undefined, periodPerformance, periodTicketPercentages, performanceTooltip)}
                                 scope="period" selection={crossSelection} onSelect={onChooseCross} cashBreakdown={periodCashBreakdown}/>
                         </div>

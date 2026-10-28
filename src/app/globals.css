@@ -10088,6 +10088,33 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   outline: 1px solid var(--ventas-premium-edge);
   box-shadow: var(--ventas-premium-shadow-main), var(--elevacion-modal);
 }
+/* En el detalle, las dos tarjetas comparten una única superficie. El ranking
+   de productos no añade un segundo fondo dentro de su tarjeta. */
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='mobile-sales-detail-card'] {
+  background: var(--ventas-premium-secondary);
+  border-color: var(--ventas-premium-edge-soft);
+  box-shadow: var(--ventas-premium-shadow-secondary);
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='products-section'] {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-units'] {
+    color: rgb(178 200 223 / .38);
+    font-weight: 400;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-amount'] {
+    color: var(--home-widget-ink-secondary);
+    font-weight: 600;
+  }
+}
 
 @media (min-width: 1024px) {
   /* Seis métricas en dos filas estables incluso en una tarjeta estrecha. */

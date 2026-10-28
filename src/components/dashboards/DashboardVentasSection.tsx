@@ -21,6 +21,7 @@ import { KpiStat } from '@/components/ui/KpiStat';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { formatCurrencySpanish, formatNumberSpanish } from '@/lib/cash-closing-metrics';
+import { liveNetSales } from '@/lib/live-sales-net';
 import { SalesPreviewModal, type SalesPreview } from './SalesPreviewModal';
 import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
 import { HomeTopProducts } from './HomeSalesWidgetDetails';
@@ -467,7 +468,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 }}>
                 <HomeSalesMobileSummary
                     sales={formatCurrencySpanish(displaySummary.total)}
-                    net={formatCurrencySpanish(displaySummary.total / 1.1)}
+                    net={formatCurrencySpanish(liveNetSales(displaySummary.total))}
                     date={salesViewDate}
                     hours={salesChartData}
                     products={mobileTopProducts}
@@ -595,7 +596,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </div>
                     <div className="flex flex-col items-center justify-center text-center">
                         <KpiStat instance="dashboard-ventas-neta" label="Venta Neta" tone="positive">
-                        <PremiumCountUp value={displaySummary.total > 0 ? displaySummary.total / 1.1 : 0} suffix="€" decimals={2} />
+                        <PremiumCountUp value={liveNetSales(displaySummary.total)} suffix="€" decimals={2} />
                         </KpiStat>
                     </div>
                     <div className="flex flex-col items-center justify-center text-center">
