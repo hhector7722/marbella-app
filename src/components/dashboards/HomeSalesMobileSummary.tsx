@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { createClient } from '@/utils/supabase/client';
@@ -23,6 +23,9 @@ export function HomeSalesMobileSummary({
 }) {
     const supabase = useMemo(() => createClient(), []);
     const chartRef = useRef<HTMLDivElement>(null);
+    const graphId = useId();
+    const graphLineId = `${graphId}-line`;
+    const graphAreaId = `${graphId}-area`;
     const [clock, setClock] = useState(() => new Date());
     useEffect(() => {
         const syncClock = () => setClock(new Date());
@@ -271,19 +274,33 @@ export function HomeSalesMobileSummary({
                         {chartData ? (
                             <>
                                 <svg viewBox="0 0 160 22" preserveAspectRatio="none"
-                                    className="pointer-events-none block h-[17px] w-full shrink-0 text-[#70b5ff]" role="img"
-                                    aria-label="Gráfica de facturación por hora, con eje horizontal y área bajo la curva">
-                                    <path data-element="hour-axis-baseline" d="M0 19 H160" fill="none" stroke="currentColor"
+                                    className="pointer-events-none block h-full w-full shrink-0" role="img"
+                                    aria-label="Gráfica de facturación por hora, con azules degradados y eje horizontal">
+                                    <defs>
+                                        <linearGradient id={graphLineId} x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stopColor="#70b5ff" />
+                                            <stop offset="55%" stopColor="#4e9ff9" />
+                                            <stop offset="100%" stopColor="#2783ee" />
+                                        </linearGradient>
+                                        <linearGradient id={graphAreaId} x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stopColor="#70b5ff" stopOpacity=".29" />
+                                            <stop offset="58%" stopColor="#3c8de8" stopOpacity=".17" />
+                                            <stop offset="100%" stopColor="#1452a4" stopOpacity=".045" />
+                                        </linearGradient>
+                                    </defs>
+                                    <path data-element="hour-axis-baseline" d="M0 19 H160" fill="none" stroke="#70b5ff"
                                         strokeOpacity=".28" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                                    <path d={chartData.area} fill="currentColor" fillOpacity=".12" />
-                                    <path d={chartData.path} fill="none" stroke="currentColor" strokeWidth="1.6"
+                                    <path data-element="hour-chart-fill" d={chartData.area} fill={`url(#${graphAreaId})`} />
+                                    <path data-element="hour-chart-line" d={chartData.path} fill="none"
+                                        stroke={`url(#${graphLineId})`} strokeWidth="1.8"
                                         strokeLinecap="round" strokeLinejoin="round"
                                         vectorEffect="non-scaling-stroke" />
                                 </svg>
                                 <div data-element="mobile-sales-hour-axis" aria-hidden="true"
-                                    className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between text-[7px] leading-none text-white/55 lg:text-[10px]">
-                                    <span>{BUSINESS_HOURS.start}h</span>
-                                    <span>{BUSINESS_HOURS.end}h</span>
+                                    style={{ bottom: 'calc(13.64% + 3px)' }}
+                                    className="pointer-events-none absolute inset-x-0 z-[2] flex items-center justify-between text-[7px] leading-none text-white/65 lg:text-[10px]">
+                                    <span className="rounded-sm bg-[#10294a]/80 px-0.5">{BUSINESS_HOURS.start}h</span>
+                                    <span className="rounded-sm bg-[#10294a]/80 px-0.5">{BUSINESS_HOURS.end}h</span>
                                 </div>
                                 {dotPosition && (
                                     <span data-element="mobile-sales-selected-overlay" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[17px] lg:h-full">
