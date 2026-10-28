@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-07
+revisado: 2026-10-28
 caducidad: 6 meses
 supersede: —
 ---
@@ -63,7 +63,19 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | `color.superficie.hundida` | `#FAFAFA` | Fondo de zonas agrupadas dentro de una superficie | adoptado (variable `--color-superficie-hundida`) |
 | `color.superficie.inactiva` | `#F4F4F5` | Elementos deshabilitados, cabeceras de tabla | adoptado (piloto Button vía `--color-superficie-inactiva`) |
 
-`color.superficie` no pinta el cuerpo del widget de HomeScreen. Ese hueco es material de sistema (`--home-widget-fill` + blur del `--color-envolvente`). Claro u oscuro según la luminancia del wallpaper. PageScreen, Modal y Surface fuera del mosaico siguen blancos, salvo la excepción documentada en [SISTEMA-DE-COMPONENTES](SISTEMA-DE-COMPONENTES.md) Tarjeta: en `/staff/propinas` las cards del historial (`staff-propinas-history-entry`) usan el relleno secundario del mosaico (`--home-widget-fill-secondary`, el mismo que sáb/dom del widget de horario); «Último reparto» permanece en papel.
+`color.superficie` no pinta el cuerpo del widget de HomeScreen. Ese hueco es material de sistema (`--home-widget-fill` + blur del `--color-envolvente`). Claro u oscuro según la luminancia del wallpaper. PageScreen, Modal y Surface fuera del mosaico siguen blancos, salvo las excepciones locales expresas. En `/staff/propinas` las cards del historial (`staff-propinas-history-entry`) usan el relleno secundario del mosaico (`--home-widget-fill-secondary`, el mismo que sáb/dom del widget de horario); «Último reparto» permanece en papel. En Ventas y sus detalles se aplica la excepción cromática siguiente.
+
+Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepciones-visuales-locales.md)): el dato de ventas se lee sobre azul marino, con un tono más intenso en Ventas y el detalle diario, y otro azul más discreto en Último cierre, Mensual, Horarios y resúmenes. No sustituye `color.superficie` en el resto del producto ni cambia el color de marca.
+
+| Token local | Valor | Papel | Estado |
+|---|---|---|---|
+| `ventas.premium.principal` | degradado `#193A63` → `#0C2348` → `#071733` | Ventas y detalle diario | adoptado (`--ventas-premium-main`) |
+| `ventas.premium.secundario` | degradado `#233F73` → `#172F5C` → `#101F43` | Último cierre, Mensual, Horarios y paneles secundarios de Ventas | adoptado (`--ventas-premium-secondary`) |
+| `ventas.premium.borde` | `rgb(135 193 235 / 0.49)` | Canto protagonista | adoptado (`--ventas-premium-edge`) |
+| `ventas.premium.borde-suave` | `rgb(135 193 235 / 0.32)` | Canto de panel secundario | adoptado (`--ventas-premium-edge-soft`) |
+| `ventas.premium.sombra-secundaria` | bisel superior tenue y sombra de `0 7px 17px` | Elevación menor para Cierre, Mensual, Horarios y resúmenes | adoptado (`--ventas-premium-shadow-secondary`) |
+| `ventas.premium.kpi-alto` | 84 px | Altura mínima de Ventas y Venta neta en escritorio | adoptado (`--ventas-premium-kpi-height`) |
+| `ventas.premium.kpi-ancho` | 180 px | Ancho máximo igualado de ambas tarjetas en escritorio | adoptado (`--ventas-premium-kpi-max-width`) |
 
 ## 4. Texto
 

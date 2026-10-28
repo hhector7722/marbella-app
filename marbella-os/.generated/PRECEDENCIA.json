@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "14d9a04d89a5c5f2",
+  "_huella": "e5ef9cb5fdcdbd1b",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -474,7 +474,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-04-12",
+      "vence": "2027-04-28",
       "depende_de": []
     },
     {
@@ -486,7 +486,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-04-07",
+      "vence": "2027-04-28",
       "depende_de": []
     },
     {
@@ -611,6 +611,18 @@
       "citable": true,
       "precedencia": 20,
       "vence": "2027-02-25",
+      "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/3-ingenieria/integraciones/ALBARANES-EMAIL.md",
+      "documento": "INTEGRACION-ALBARANES-EMAIL",
+      "clase": "vivo",
+      "estado": "vigente",
+      "capa": "ingenieria",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 20,
+      "vence": "2027-04-27",
       "depende_de": []
     },
     {
@@ -1782,6 +1794,18 @@
     {
       "ruta": "marbella-os/6-investigacion/spikes/2026-08-15-modal-design-system-contract.md",
       "documento": "SPIKE-MODAL-DESIGN-SYSTEM-CONTRACT",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-10-27-auditoria-ingredientes-duplicados.md",
+      "documento": "SPIKE-AUDITORIA-INGREDIENTES-DUPLICADOS-2026-10-27",
       "clase": "inmutable",
       "estado": "vigente",
       "capa": "investigacion",

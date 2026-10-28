@@ -1,3 +1,16 @@
+---
+documento: SPIKE-AUDITORIA-INGREDIENTES-DUPLICADOS-2026-10-27
+clase: inmutable
+estado: vigente
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-10-27
+caducidad: no aplica
+supersede: —
+---
+
 # Auditoría y unificación de ingredientes — 27/10/2026
 
 ## Resultado

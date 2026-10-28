@@ -1,3 +1,16 @@
+---
+documento: INTEGRACION-ALBARANES-EMAIL
+clase: vivo
+estado: vigente
+capa: ingenieria
+normativo: true
+precedencia: 20
+responsable: propiedad del producto
+revisado: 2026-10-27
+caducidad: 6 meses
+supersede: —
+---
+
 # Recepción de documentos por Gmail — La Marbella
 
 ## Estado
