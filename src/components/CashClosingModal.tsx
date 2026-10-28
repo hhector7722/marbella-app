@@ -72,6 +72,7 @@ interface CashClosingModalProps {
 export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, initialTotalSales = 0, initialTicketsCount = 0 }: CashClosingModalProps) {
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
+    const [salesSync, setSalesSync] = useState<{ key: string; ready: boolean } | null>(null);
     const [step, setStep] = useState<ClosingStep>('tpv_data');
     const [cashToolsOpen, setCashToolsOpen] = useState<QuickCashTool | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
@@ -193,6 +194,7 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
     // No borramos fotos al salir: deben persistir si reabres el proceso.
     if (isOpen !== weatherSyncedOpen) {
         setWeatherSyncedOpen(isOpen);
+        setSalesSync(null);
         if (isOpen) setWeatherId(null);
     }
 
@@ -243,8 +245,11 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
         ? `${userId}|${format(parseDateTimeLocal(selectedDateTime), 'yyyy-MM-dd')}`
         : null;
 
+    const salesSyncReady = Boolean(autofillKey && salesSync?.key === autofillKey && salesSync.ready);
+
     useEffect(() => {
         if (!autofillKey) return;
+        let cancelled = false;
 
         /** Autorellena desde RPC get_closing_sales_breakdown (tickets + cobros de otra fecha). */
         (async () => {
@@ -257,7 +262,8 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
                     p_date: dateStr,
                 });
 
-                if (error) throw error;
+                if (error || data == null) throw error ?? new Error('Respuesta de cierre vacía');
+                if (cancelled) return;
 
                 const magnitudes = closingMagnitudesFromBreakdown((data ?? {}) as {
                     total_bruto?: number
@@ -285,6 +291,7 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
                 const { data: existingClosings, error: closingCheckError } = await supabase
                     .from('cash_closings').select('id').eq('closing_date', dateStr).limit(1);
                 if (closingCheckError) throw closingCheckError;
+                if (cancelled) return;
                 if ((existingClosings?.length ?? 0) > 0) {
                     setTpv2Auto({ total: 0 });
                 } else {
@@ -292,18 +299,24 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
                         .from('tpv2_pending_purchases').select('amount')
                         .eq('purchase_date', dateStr).is('closing_id', null);
                     if (purchasesError) throw purchasesError;
+                    if (cancelled) return;
                     const total = (pendingPurchases ?? []).reduce(
                         (sum, row) => sum + Number(row.amount ?? 0), 0
                     );
                     setTpv2Auto({ total: Math.round(total * 100) / 100 });
                 }
+                if (!cancelled) setSalesSync({ key: autofillKey, ready: true });
             } catch (error) {
-                console.error('Error fetching closing breakdown:', error);
-                toast.error('Error al sincronizar datos de cierre desde BDP');
+                if (!cancelled) {
+                    setSalesSync({ key: autofillKey, ready: false });
+                    console.error('Error fetching closing breakdown:', error);
+                    toast.error('No se han podido verificar las ventas BDP. Cierre bloqueado.');
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         })();
+        return () => { cancelled = true; };
     }, [autofillKey]);
 
     // --- CALCULATIONS ---
@@ -405,6 +418,10 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
     };
 
     const handleAdvanceStep = () => {
+        if (!salesSyncReady) {
+            toast.error('Ventas BDP sin verificar. Reabre el cierre cuando se restablezca la conexión.');
+            return;
+        }
         if (step === 'tpv_data') {
             if (!ensureWeatherSelected()) return;
             if (!ensurePhotosAttached()) return;
@@ -419,12 +436,33 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
     };
 
     const handleFinalizeClose = async () => {
-        if (!ensurePhotosAttached()) return;
+        if (!salesSyncReady || !ensurePhotosAttached()) return;
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
             const chosenDate = parseDateTimeLocal(selectedDateTime);
             const closingDateStr = format(chosenDate, "yyyy-MM-dd");
+
+            // Una caída de Supabase o un catch-up BDP posterior invalida un cierre preparado.
+            // Comprobar ANTES de subir fotos o escribir movimientos de caja.
+            const { data: freshData, error: freshError } = await supabase.rpc('get_closing_sales_breakdown', {
+                p_date: closingDateStr,
+            });
+            if (freshError || freshData == null) {
+                setSalesSync({ key: autofillKey!, ready: false });
+                throw new Error('No se pueden verificar las ventas actuales de BDP. No se ha guardado el cierre.');
+            }
+            const fresh = closingMagnitudesFromBreakdown(freshData as Parameters<typeof closingMagnitudesFromBreakdown>[0]);
+            if (fresh.ventas !== tpvData.totalSales || fresh.tickets !== tpvData.ticketsCount) {
+                setTpvData((prev) => ({
+                    ...prev, totalSales: fresh.ventas, ticketsCount: fresh.tickets,
+                    cardSales: fresh.tarjeta, pendingSales: fresh.pendiente,
+                    debtRecovered: fresh.cobros,
+                }));
+                setStep('tpv_data');
+                throw new Error('Han cambiado las ventas BDP durante el cierre. Revisa los importes actualizados antes de continuar.');
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
             const closingBatchId = randomId();
 
             const uploadOne = async (file: File, kind: 'dataphone' | 'bdp-ticket') => {
@@ -619,7 +657,7 @@ export default function CashClosingModal({ isOpen, onClose, onBack, onSuccess, i
                             variant="primary"
                             instance="cash-closing-advance"
                             onClick={handleAdvanceStep}
-                            disabled={loading || (step === 'summary' && !photosReady)}
+                            disabled={loading || !salesSyncReady || (step === 'summary' && !photosReady)}
                             loading={loading}
                         >
                             {step === 'summary' ? 'Confirmar Cierre' : 'Siguiente'}
