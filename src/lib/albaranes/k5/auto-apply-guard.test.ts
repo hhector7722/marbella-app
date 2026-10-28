@@ -7,12 +7,11 @@ const ready = {
   ingredientId: 'ingredient', lineQuantity: 2, observedUnitPrice: 3,
   physicalQuantity: 2, purchaseQuantity: 2, normalizedUnitPrice: 3,
   lineUnit: 'kg', baseUnit: 'kg', purchaseUnit: 'kg', mappingReusable: true,
-  alreadyConfirmed: false, pendingOrder: false,
+  alreadyConfirmed: false,
 }
 
-test('la puerta común bloquea pedidos pendientes aun con origen Mistral confiable', () => {
-  assert.equal(commonAutoApplyBlockReason({ ...ready, pendingOrder: true }),
-    'pending_order_requires_allocation')
+test('la recepción física verificada no depende de conciliar los pedidos existentes', () => {
+  assert.equal(commonAutoApplyBlockReason(ready), null)
 })
 
 test('la puerta común bloquea revisión, presentación y magnitudes incompletas', () => {

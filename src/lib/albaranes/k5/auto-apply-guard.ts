@@ -14,7 +14,6 @@ type Candidate = {
   purchaseUnit: string
   mappingReusable: boolean
   alreadyConfirmed: boolean
-  pendingOrder: boolean
 }
 
 function hasItems(value: unknown): boolean {
@@ -43,6 +42,7 @@ export function commonAutoApplyBlockReason(candidate: Candidate): string | null 
   }
   if (!candidate.mappingReusable) return 'mapping_not_reusable_leaf'
   if (candidate.alreadyConfirmed) return 'already_confirmed'
-  if (candidate.pendingOrder) return 'pending_order_requires_allocation'
+  // Un pedido pendiente no cambia que la mercancía ya fue entregada.
+  // Aplicar stock ahora y conciliar el pedido después son operaciones independientes.
   return null
 }

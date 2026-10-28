@@ -1,7 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { K2_RECONCILIATION_TRUST_START } from '@/lib/albaranes/k5/batch-review'
 import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineage'
 import { documentPageEvidenceBlockReason } from '@/lib/albaranes/pipeline/pages'
 import { duplicatedPageEvidence } from '@/lib/albaranes/pipeline/duplicate-page-evidence'
@@ -280,7 +279,6 @@ async function autoApplyDeterministicReceipts(
     return text(interpreted.alias_source_mapping_version_id)
   }).filter(Boolean))]
   const allMappingIds = [...new Set([...mappingIds, ...aliasSourceIds])]
-  const ingredientIds = [...new Set(active.map((proposal) => text(proposal.ingredient_id)).filter(Boolean))]
 
   const { data: lineRows, error: lineError } = await supabase
     .from('purchase_invoice_lines')
@@ -347,28 +345,8 @@ async function autoApplyDeterministicReceipts(
   }
 
   const supplierId = text(invoice.supplier_id)
-  const { data: trustedOrderRows, error: trustedOrderError } = ingredientIds.length
-    ? await supabase
-        .from('purchase_orders')
-        .select('id')
-        .eq('supplier_id', supplierId)
-        .gte('created_at', K2_RECONCILIATION_TRUST_START)
-    : { data: [] as Array<Record<string, unknown>>, error: null }
-  if (trustedOrderError) throw new Error('No se pudo comprobar la conciliación de pedidos K2.')
-  const trustedOrderIds = ((trustedOrderRows ?? []) as Array<Record<string, unknown>>).map((row) => text(row.id)).filter(Boolean)
-
-  const { data: pendingRows, error: pendingError } = ingredientIds.length && trustedOrderIds.length
-    ? await supabase
-        .from('purchase_order_item_reconciliation')
-        .select('ingredient_id')
-        .in('ingredient_id', ingredientIds)
-        .in('purchase_order_id', trustedOrderIds)
-        .gt('quantity_pending', 0)
-    : { data: [] as Array<Record<string, unknown>>, error: null }
-  if (pendingError) throw new Error('No se pudo comprobar si hay pedidos pendientes que requieran asignación.')
-  const ingredientsWithPendingOrders = new Set(
-    ((pendingRows ?? []) as Array<Record<string, unknown>>).map((row) => text(row.ingredient_id)).filter(Boolean)
-  )
+  // La entrega ya ocurrió. No condicionar el movimiento de stock a la
+  // conciliación opcional de pedidos abiertos; K4 sigue validando cada línea.
 
   const blocked: AutoApplyBlocked[] = []
   const largePriceChanges: Array<{ lineId: string; ingredientId: string; ratio: number }> = []
@@ -439,7 +417,6 @@ async function autoApplyDeterministicReceipts(
         && (isK5ReusableMappingVersion(mappingVersion) || trustedMistralAlias)
         && !supersededMappings.has(mappingVersionId)),
       alreadyConfirmed: confirmedLines.has(lineId ?? ''),
-      pendingOrder: ingredientsWithPendingOrders.has(ingredientId),
     })
 
     if (blockReason) {
