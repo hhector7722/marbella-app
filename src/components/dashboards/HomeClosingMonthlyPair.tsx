@@ -22,11 +22,12 @@ type MonthlySnapshot = {
     monthChange: number | null;
 };
 
-function MonthlyMetric({ label, value, tone, title }: {
+function MonthlyMetric({ label, value, tone, title, trend }: {
     label: string;
     value: string;
     tone?: 'sales' | 'net';
     title?: string;
+    trend?: number | null;
 }) {
     return (
         <div data-metric={tone} title={title}
@@ -36,7 +37,8 @@ function MonthlyMetric({ label, value, tone, title }: {
                         : '')}>
             <span className={'block whitespace-nowrap leading-tight text-white/65 ' + 'text-[7px]'}>{label}</span>
             <strong className={'block whitespace-nowrap leading-tight tracking-tight text-white ' +
-                (tone ? 'text-[clamp(8px,1.2vw,10px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
+                (tone ? 'text-[clamp(8px,1.2vw,10px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold') +
+                (trend == null ? '' : trend >= 0 ? ' text-emerald-200' : ' text-rose-200')}
                 title={value}>{value}</strong>
         </div>
     );
@@ -170,7 +172,8 @@ function HomeMonthlySalesWidget() {
                             <MonthlyMetric label="Mes anterior"
                                 value={visible.monthChange === null ? '—'
                                     : `${visible.monthChange >= 0 ? '▲' : '▼'} ${formatNumberSpanish(Math.abs(visible.monthChange), 1)}%`}
-                                title={`Comparación con ${visible.previousMonthLabel}`}/>
+                                title={`Comparación con ${visible.previousMonthLabel}`}
+                                trend={visible.monthChange}/>
                         </div>
                         <div className="col-span-2 flex min-w-0 justify-center">
                             <MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
