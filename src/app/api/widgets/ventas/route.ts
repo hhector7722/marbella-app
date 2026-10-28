@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
     const bestHours = hours
       .filter(item => item.hour !== currentHour && item.total > 0)
       .sort((a, b) => b.total - a.total || a.hour - b.hour);
-    const selectedHours = inBusinessHours
+    const selectedHours = inBusinessHours && currentHour !== null
       ? [fullHourly[currentHour], ...bestHours.slice(0, 2)]
       : bestHours.slice(0, 3);
 
