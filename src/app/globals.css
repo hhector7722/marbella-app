@@ -10216,3 +10216,99 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     padding-block: 0;
   }
 }
+
+
+/* 2026-10-28 — Relieve premium del par, sin modificar su fondo azul. */
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container']) {
+  border: 1px solid rgb(151 203 255 / 0.48);
+  box-shadow:
+    inset 0 1px 0 rgb(241 250 255 / 0.29),
+    inset 1px 0 0 rgb(162 211 255 / 0.13),
+    inset -1px 0 0 rgb(3 16 42 / 0.20),
+    inset 0 -1px 0 rgb(2 11 32 / 0.46),
+    0 0 0 1px rgb(7 22 53 / 0.34),
+    0 3px 7px rgb(0 10 30 / 0.26),
+    0 11px 24px rgb(0 12 37 / 0.24),
+    0 0 16px rgb(87 151 246 / 0.09);
+}
+@media (hover: hover) {
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    > :is([data-element='closing-half'], [data-element='monthly-container']):hover {
+    border-color: rgb(175 223 255 / 0.62);
+    box-shadow:
+      inset 0 1px 0 rgb(241 250 255 / 0.38),
+      inset 1px 0 0 rgb(162 211 255 / 0.17),
+      inset -1px 0 0 rgb(3 16 42 / 0.20),
+      inset 0 -1px 0 rgb(2 11 32 / 0.46),
+      0 0 0 1px rgb(7 22 53 / 0.34),
+      0 4px 9px rgb(0 10 30 / 0.28),
+      0 13px 28px rgb(0 12 37 / 0.27),
+      0 0 18px rgb(87 151 246 / 0.12);
+  }
+}
+
+/* Detalle común: el origen fija el MISMO degradado que su widget.
+   Un único canto en todo el perímetro, sin juntas entre cabecera y cuerpo. */
+[data-component='Modal'][data-instance='home-sales-preview'] {
+  --sales-preview-surface: var(--ventas-home-main);
+}
+[data-component='Modal'][data-instance='home-sales-preview']:is(
+  .home-sales-preview--closing,
+  .home-sales-preview--monthly
+) {
+  --sales-preview-surface: var(--ventas-premium-secondary);
+}
+[data-component='Modal'][data-instance='home-sales-preview'] [data-element='container'] {
+  background: var(--sales-preview-surface);
+  border: 1px solid var(--ventas-premium-edge);
+  outline: none;
+  box-shadow: var(--ventas-premium-shadow-main), var(--elevacion-modal);
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  :is([data-element='header'], [data-element='body']) {
+  background: transparent;
+}
+[data-component='Modal'][data-instance='home-sales-preview'] [data-element='header'] {
+  border-bottom: 0;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='frame'] > [role='dialog'] {
+  height: min(710px, calc(100dvh - 2.5rem));
+  max-height: 100%;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='sales-preview-viewport'] {
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+}
+/* La vista de resumen de cierre que no usa SalesPreview conserva su origen. */
+[data-component='Modal'][data-instance='master-last-closing-sales-summary']
+  [data-element='container'] {
+  background: var(--ventas-premium-secondary);
+  border: 1px solid var(--ventas-premium-edge-soft);
+  outline: none;
+}
+
+/* Horarios: ajustar huecos al alto disponible; en casos límite permitir
+   desplazarse por las semanas en lugar de cortar sábado y domingo finales.
+   El mes sigue ocupando exactamente el espacio asignado al widget. */
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) [data-component='StaffWeekSchedule'] [data-element='month-weeks'] {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 191 248 / 0.30) transparent;
+}
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) > [data-element='body'] > [data-component='StaffWeekSchedule'] {
+    --staff-calendar-gap: clamp(2px, 0.4dvh, 5px);
+    --staff-week-day-size: clamp(16px, 2.55dvh, 24px);
+  }
+}
