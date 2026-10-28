@@ -9506,3 +9506,164 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     row-gap: 2px;
   }
 }
+
+
+/* Widgets de cierres en escritorio: geometría interna idéntica.
+   Ambos usan 2×3 si la tarjeta es estrecha y 3×2 si es amplia,
+   repartiendo de manera uniforme las celdas y aumentando ligeramente
+   los importes sin variar las dimensiones exteriores de las cards. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] :is([data-element='closing-compact'], [data-element='monthly-half']) {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 5px;
+    padding: 6px clamp(7px, .8vw, 13px);
+    min-height: 0;
+  }
+  [data-component='HomeScreen'] :is([data-element='closing-compact'], [data-element='monthly-half']) > div:first-child {
+    flex: 0 0 19px;
+    height: 19px;
+    min-height: 19px;
+    max-height: 19px;
+    margin: 0;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3,
+  [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 {
+    display: grid;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    align-content: stretch;
+    align-items: stretch;
+    column-gap: clamp(4px, .55vw, 10px);
+    row-gap: clamp(3px, .52dvh, 7px);
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3 > :is(button,div) {
+    grid-area: auto !important;
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+  }
+  [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 > div {
+    grid-column: auto !important;
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(button,div) > div,
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric] {
+    box-sizing: border-box;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: auto;
+    text-align: left;
+    gap: 1px;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(button,div) > div > span,
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric] > span {
+    font-size: clamp(9px, .7vw, 11px);
+    line-height: 1.12;
+    text-align: left;
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(button,div) > div > strong,
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric] > strong {
+    font-size: clamp(12px, 3.85cqi, 18px);
+    line-height: 1.15;
+    letter-spacing: -.025em;
+    white-space: nowrap;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  @container closing-metrics (min-width: 340px) {
+    [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      grid-template-rows: repeat(2, minmax(0,1fr));
+    }
+  }
+  @container monthly-metrics (min-width: 340px) {
+    [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 {
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      grid-template-rows: repeat(2, minmax(0,1fr));
+    }
+  }
+}
+
+/* Vista previa desde Ventas, Último cierre y Mensual: la tarjeta inferior
+   se ve hasta su borde y su contenido es quien se desplaza, no el modal.
+   Se utiliza el mismo criterio en escritorio y smartphone. */
+[data-component='Modal'][data-instance='home-sales-preview'] [data-element='body'] {
+  min-height: 0;
+  overflow-y: hidden;
+}
+[data-component='Modal'][data-instance='home-sales-preview'] [data-element='sales-preview-viewport'] {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  height: min(74dvh, 730px);
+  max-height: 100%;
+  overflow: hidden;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated'] {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  padding-bottom: 8px !important;
+  gap: clamp(5px, 1dvh, 10px);
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='mobile-sales-detail-card'] {
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 8px;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='mobile-sales-detail-card'] > nav {
+  flex: 0 0 auto;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='mobile-sales-detail-card'] > :not(nav) {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  height: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='mobile-sales-detail-card'] .custom-scrollbar {
+  max-height: none;
+  overscroll-behavior: contain;
+}
