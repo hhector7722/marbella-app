@@ -10472,3 +10472,73 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   box-sizing: border-box;
   padding-bottom: clamp(18px, 2.7dvh, 28px);
 }
+
+
+/* Horarios (todos los dashboards): cabecera del mes más próxima a las
+   abreviaturas de los días; no reducir tamaño táctil de las flechas. */
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='month-heading'] {
+  margin-bottom: -2px;
+}
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='month-heading'] {
+    margin-bottom: -1px;
+  }
+}
+
+/* Fin de semana: la retícula determina el tamaño de sábado y domingo.
+   Los datos nunca alteran la altura externa; el overflow es interno. */
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='week-expansion'] {
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-card'] {
+  align-self: stretch;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-day'] {
+  min-height: 0;
+  height: 100%;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-details'] {
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 191 248 / .32) transparent;
+}
+
+/* Turno y Evento comparten la primera línea, con un margen flexible.
+   La anchura de Evento depende del contenido real de Turno: no hay
+   columnas de anchura fija ni posiciones absolutas. */
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-primary'] {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  column-gap: clamp(4px, .55vw, 10px);
+  width: 100%;
+  min-width: 0;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-primary'] > [data-element='weekend-turno'] {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 38px);
+  margin-top: 0;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-primary'] > [data-element='weekend-evento'] {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-top: 0;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule']
+  :is([data-element='weekend-turno-value'], [data-element='weekend-evento-value']) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  text-overflow: clip;
+}

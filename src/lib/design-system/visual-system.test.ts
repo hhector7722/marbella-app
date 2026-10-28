@@ -862,6 +862,14 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'utf8'
         );
         const weekScheduleCss = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(weekSchedule, /data-element="month-heading"/, 'la cabecera del mes permite ajustar separación respecto a los días');
+        assert.match(weekSchedule, /data-element="weekend-primary"/, 'Turno y Evento comparten la fila principal');
+        assert.match(weekSchedule, /data-element="weekend-turno"[\s\S]*?data-element="weekend-evento"/, 'Turno precede a Evento y ambos conservan sus etiquetas');
+        assert.doesNotMatch(weekSchedule, /\{!masterMode && \(/, 'el concepto Turno se presenta aunque no haya turno o se consulte Master');
+        assert.match(weekScheduleCss, /\[data-element='weekend-primary'\] > \[data-element='weekend-turno'\] \{[\s\S]*?flex: 0 1 auto;/, 'Turno ocupa la anchura real del contenido');
+        assert.match(weekScheduleCss, /grid-template-rows: minmax\(0, 1fr\);/, 'el alto de los dos días es independiente del contenido');
+        assert.match(weekScheduleCss, /\[data-element='weekend-details'\] \{[\s\S]*?overflow-y: auto;/, 'la actividad extensa se desplaza dentro de la tarjeta sin cambiar su tamaño');
+        assert.match(weekScheduleCss, /\[data-element='month-heading'\] \{[\s\S]*?margin-bottom: -2px;/, 'la cabecera y días se acercan discretamente');
         assert.match(
             weekSchedule,
             /grid-cols-3/,

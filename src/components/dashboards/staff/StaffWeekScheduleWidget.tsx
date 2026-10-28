@@ -282,34 +282,35 @@ function WeekendDayColumn({
                 </p>
 
                 <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
-                    {!masterMode && (
+                    {/* Un único renglón: Evento comienza después del ancho real de Turno,
+                        dejando margen entre ambos. Las etiquetas permanecen si faltan datos. */}
+                    <div data-element="weekend-primary" className="flex w-full min-w-0 items-start">
                         <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                             {shiftStart && shiftEnd ? (
                                 <span
                                     data-element="weekend-turno-value"
-                                    className="min-w-0 truncate text-[6px] lg:text-[11px] font-medium tabular-nums leading-none text-white"
+                                    className="min-w-0 break-words text-[6px] lg:text-[11px] font-medium tabular-nums leading-tight text-white"
                                     aria-label={`Turno ${shiftStart} a ${shiftEnd}`}
                                 >
                                     {shiftStart} – {shiftEnd}
                                 </span>
                             ) : (
-                                <span data-element="weekend-turno-label" className="shrink-0 text-[6px] lg:text-[11px] font-medium leading-none tracking-wide">
+                                <span data-element="weekend-turno-label" className="text-[6px] lg:text-[11px] font-medium leading-tight tracking-wide">
                                     Turno
                                 </span>
                             )}
                         </div>
-                    )}
-
-                    <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                        {eventLabel ? (
-                            <span data-element="weekend-evento-value" className="min-w-0 truncate text-[6px] lg:text-[11px] font-medium leading-none">
-                                {eventLabel}
-                            </span>
-                        ) : (
-                            <span data-element="weekend-evento-label" className="shrink-0 text-[6px] lg:text-[11px] font-medium leading-none tracking-wide">
-                                Evento
-                            </span>
-                        )}
+                        <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
+                            {eventLabel ? (
+                                <span data-element="weekend-evento-value" className="min-w-0 break-words text-[6px] lg:text-[11px] font-medium leading-tight">
+                                    {eventLabel}
+                                </span>
+                            ) : (
+                                <span data-element="weekend-evento-label" className="text-[6px] lg:text-[11px] font-medium leading-tight tracking-wide">
+                                    Evento
+                                </span>
+                            )}
+                        </div>
                     </div>
                     {eventDetailRows.length > 0 ? (
                         <div data-element="weekend-evento-detail" className="flex w-full min-w-0 flex-col">
@@ -651,7 +652,7 @@ export function StaffWeekScheduleWidget({
                     <LoadingSpinner size="sm" className="h-2.5 w-2.5 text-white/60" />
                 </div>
             )}
-            <div className="flex shrink-0 items-center justify-center gap-0.5 pb-px">
+            <div data-element="month-heading" className="flex shrink-0 items-center justify-center gap-0.5 pb-px">
                 <button
                     type="button"
                     onClick={(e) => {
