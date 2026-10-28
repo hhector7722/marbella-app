@@ -82,6 +82,7 @@ export function MasterTodayAttendanceWidget({
     const redBarRef = useRef<HTMLDivElement>(null);
     const logsBlockRef = useRef<HTMLDivElement>(null);
     const fitRef = useRef<HTMLDivElement>(null);
+    const logViewportRef = useRef<HTMLDivElement>(null);
     const [fontScale, setFontScale] = useState({ date: 13, row: 11, inset: 9 });
 
     const hasExpandableLogs = logs.length >= 6;
@@ -143,9 +144,6 @@ export function MasterTodayAttendanceWidget({
             const count = visibleLogs.length;
             const countFactor = count <= 2 ? 1 : count === 3 ? 0.96 : count === 4 ? 0.92 : 0.83;
             const idealFont = Math.min(19, Math.max(11, width * 0.15)) * countFactor;
-            const moreControlHeight = hasExpandableLogs ? 16 : 0;
-            const verticalSpace = Math.max(0, height - (dateSize * 1.3 + 6) - 12 - 4 - moreControlHeight);
-            const heightLimit = count ? (verticalSpace / count - 2.5) / 1.28 : idealFont;
             let widthLimit = idealFont;
             if (context && count) {
                 const available = Math.max(12, width - 2 * inset - 4);
@@ -160,9 +158,42 @@ export function MasterTodayAttendanceWidget({
                 }
                 if (largest > 0) widthLimit = Math.min(widthLimit, available * 12 / largest);
             }
-            // Si excepcionalmente el nombre es larguísimo, se parte en líneas
-            // y la lista se desplaza: nunca se oculta ni se añade ellipsis.
-            const rowSize = Math.max(8, Math.min(idealFont, widthLimit, heightLimit));
+            // Medir la ALTURA REAL de todas las filas (también si un nombre
+            // se envuelve en dos líneas o hay un enlace de "más fichajes").
+            // La estimación anterior no contaba todas las alturas de DOM y
+            // en móviles podía cortar la última fila a pesar del scroll.
+            const viewport = logViewportRef.current;
+            const list = logsBlockRef.current;
+            const maximum = Math.max(6, Math.min(idealFont, widthLimit));
+            let rowSize = maximum;
+            if (viewport && list && count > 0) {
+                const nameNodes = list.querySelectorAll<HTMLElement>('[data-attendance-name]');
+                const hourNodes = list.querySelectorAll<HTMLElement>('[data-attendance-hours]');
+                const applySize = (size: number) => {
+                    for (const node of nameNodes) node.style.fontSize = `${size}px`;
+                    for (const node of hourNodes) node.style.fontSize = `${size}px`;
+                };
+                // Dejar al menos 3px de margen inferior: el último descendente
+                // no debe quedar oculto en la zona blanca.
+                const fits = (size: number) => {
+                    applySize(size);
+                    return list.scrollHeight <= viewport.clientHeight - 3;
+                };
+                const minimum = Math.min(6, maximum);
+                if (!fits(minimum)) {
+                    rowSize = minimum; // Caso extremo: scroll interno, sin clip.
+                } else {
+                    let lower = minimum;
+                    let upper = maximum;
+                    for (let i = 0; i < 9; i++) {
+                        const mid = (lower + upper) / 2;
+                        if (fits(mid)) lower = mid;
+                        else upper = mid;
+                    }
+                    rowSize = Math.max(minimum, Math.floor(lower * 10) / 10);
+                }
+                applySize(rowSize);
+            }
             const next = {
                 date: Math.round(dateSize * 10) / 10,
                 row: Math.round(rowSize * 10) / 10,
@@ -176,6 +207,7 @@ export function MasterTodayAttendanceWidget({
         update();
         const observer = new ResizeObserver(update);
         observer.observe(element);
+        if (logViewportRef.current) observer.observe(logViewportRef.current);
         return () => observer.disconnect();
     }, [dateLabel, hasExpandableLogs, visibleLogs]);
 
@@ -348,8 +380,8 @@ export function MasterTodayAttendanceWidget({
                             {logs.length === 0 ? (
                                 <EmptyState instance="master-today-none" variant="none" title="Sin fichajes" />
                             ) : (
-                                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none]">
-                                    <div className="my-auto flex w-full flex-col py-0.5" ref={logsBlockRef}>
+                                <div ref={logViewportRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none]">
+                                    <div className="my-auto flex w-full shrink-0 flex-col py-0.5" ref={logsBlockRef}>
                                         {visibleLogs.map((log) => {
                                             const isNoRegistered =
                                                 log.event_type === 'no_registered' ||

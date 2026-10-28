@@ -11,7 +11,7 @@ export type HomeWidgetTopProduct = { name: string; quantity: number; revenue: nu
 type HourProductResponse = { products?: { nombre_articulo: string | null; cantidad_total: number | null; total_ingresos: number | null }[] };
 
 export function HomeSalesMobileSummary({
-    sales, net, date, hours, products, hasSales,
+    sales, net, date, hours, products, hasSales, isDayClosed = false,
 }: {
     sales: string;
     net: string;
@@ -19,6 +19,7 @@ export function HomeSalesMobileSummary({
     hours: HourlySale[];
     products: HomeWidgetTopProduct[];
     hasSales: boolean;
+    isDayClosed?: boolean;
 }) {
     const supabase = useMemo(() => createClient(), []);
     const chartRef = useRef<HTMLDivElement>(null);
@@ -29,7 +30,9 @@ export function HomeSalesMobileSummary({
         window.addEventListener('focus', syncClock);
         return () => { window.clearInterval(interval); window.removeEventListener('focus', syncClock); };
     }, []);
-    const currentHour = date === format(clock, 'yyyy-MM-dd') &&
+    // La franja en curso se destaca solo mientras la jornada está abierta.
+    // Con cierre registrado o sin ventas, volver al ranking por importe.
+    const currentHour = hasSales && !isDayClosed && date === format(clock, 'yyyy-MM-dd') &&
         clock.getHours() >= BUSINESS_HOURS.start && clock.getHours() <= BUSINESS_HOURS.end
         ? clock.getHours() : null;
     const [hourSelection, setHourSelection] = useState<{ date: string; hour: number } | null>(null);
@@ -310,6 +313,7 @@ export function HomeSalesMobileSummary({
                         <div data-element="mobile-sales-hours" className="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)_max-content] content-start gap-x-1 gap-y-0.5 pr-1.5 text-left">
                             {displayHours.map((hour, index) => hour ? (
                                 <div key={hour.hora} data-muted-hour={selectedHour !== null && selectedHour !== hour.hora ? 'true' : undefined}
+                                    data-current-hour={hour.hora === currentHour ? 'true' : undefined}
                                     className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
                                     title={`${hour.hora}h - ${hour.hora + 1}h${hour.hora === currentHour ? ' (en curso)' : ''}: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]">

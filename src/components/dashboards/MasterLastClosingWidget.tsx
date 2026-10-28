@@ -427,6 +427,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                     products={mobileClosingSnapshot?.date === String(closing.closing_date).split('T')[0]
                         ? mobileClosingSnapshot.products : []}
                     hasSales={metrics.tpvSales > 0}
+                    isDayClosed
                 />
             )}
             <div data-element="metrics" className="hidden min-h-0 flex-1 flex-col justify-between px-2 pb-1 pt-0 lg:flex lg:px-3 lg:pb-2 lg:pt-1">

@@ -55,6 +55,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     );
     const [salesTickets, setSalesTickets] = useState<any[]>([]);
     const [salesViewDate, setSalesViewDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [salesClosure, setSalesClosure] = useState<{ date: string; closed: boolean } | null>(null);
     const salesViewDateRef = useRef(salesViewDate);
     const initialLoadDoneRef = useRef(false);
     const hourlyFetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,6 +76,35 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const [salesProducts, setSalesProducts] = useState<any[]>([]);
     const [topHours, setTopHours] = useState<any[]>([]);
     const [mobileTopProducts, setMobileTopProducts] = useState<HomeWidgetTopProduct[]>([]);
+
+    // El cierre puede registrarse hoy: no basta con comprobar la fecha.
+    // Evita destacar una franja como "en curso" tras el cierre de caja.
+    useEffect(() => {
+        let active = true;
+        const checkClosed = async () => {
+            const { data, error } = await supabase.from('cash_closings')
+                .select('closing_date')
+                .eq('closing_date', salesViewDate)
+                .limit(1)
+                .maybeSingle();
+            if (!active) return;
+            if (error) {
+                console.warn('No se pudo comprobar el cierre de ventas:', error);
+                return;
+            }
+            setSalesClosure({ date: salesViewDate, closed: Boolean(data) });
+        };
+        void checkClosed();
+        const channel = supabase
+            .channel(`home:sales-closing:${randomId()}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_closings' }, () => {
+                void checkClosed();
+            }).subscribe();
+        return () => {
+            active = false;
+            void supabase.removeChannel(channel);
+        };
+    }, [supabase, salesViewDate]);
 
     const titleDate = useMemo(() => {
         const [y, m, d] = salesViewDate.split('-').map(Number);
@@ -477,6 +507,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     hours={salesChartData}
                     products={mobileTopProducts}
                     hasSales={displaySummary.total > 0}
+                    isDayClosed={salesClosure?.date !== salesViewDate || salesClosure.closed}
                 />
                 </div>
                 <div

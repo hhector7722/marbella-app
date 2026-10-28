@@ -10542,3 +10542,15 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   overflow: visible;
   text-overflow: clip;
 }
+
+
+/* Widget de Ventas: franja activa verde en el ranking horario, en todas
+   las versiones. El resto mantiene su jerarquía y colores habituales. */
+[data-component='HomeScreen'] [data-element='mobile-sales-hours']
+  [data-current-hour='true'] > span {
+  color: #4ade80;
+}
+[data-component='HomeScreen'] [data-element='mobile-sales-hours']
+  [data-current-hour='true'] [data-element='mobile-sales-amount'] {
+  color: #4ade80;
+}
