@@ -1650,7 +1650,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         </strong>
                         {previewMode !== 'day' && <button type="button" onClick={() => navigateMobilePeriod(1)}
                             aria-label="Fecha siguiente" className="shrink-0 rounded p-1 text-white/75"><ChevronRight size={16}/></button>}
-                        {isSingleDay && selectedClosing?.weather && (
+                        {!previewMode && isSingleDay && selectedClosing?.weather && (
                             <span className="inline-flex min-w-0 items-center gap-1 text-[10px] text-white/65"
                                 title={selectedClosing.weather}>
                                 <CloudSun size={13} className="shrink-0"/>
