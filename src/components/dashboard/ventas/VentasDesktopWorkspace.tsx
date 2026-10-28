@@ -1123,7 +1123,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         void (async () => {
             try {
                 if (previewMode) {
-                    const day = previewDate && /^\\d{4}-\\d{2}-\\d{2}$/.test(previewDate)
+                    const day = previewDate && /^\d{4}-\d{2}-\d{2}$/.test(previewDate)
                         ? previewDate : format(new Date(), 'yyyy-MM-dd');
                     setLastClosingDate(day);
                     changePeriod({ start: day, end: day, kind: 'day' });
