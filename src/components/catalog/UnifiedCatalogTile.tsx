@@ -35,7 +35,7 @@ export function CatalogSquare({
       data-element="square"
       className={cn(
         'relative aspect-square w-full min-w-0 overflow-hidden rounded-2xl border border-zinc-100 shadow-sm',
-        compactDesktop && 'lg:rounded-xl',
+        compactDesktop && 'lg:w-[94%] lg:self-center lg:rounded-xl',
         className,
       )}
     >

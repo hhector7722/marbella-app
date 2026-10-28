@@ -1445,6 +1445,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(catalog, /lg:gap-x-5 lg:gap-y-5 xl:gap-x-6 xl:gap-y-6/, 'el catálogo deja más aire entre filas y columnas sin reducir las columnas');
         assert.match(tile, /lg:h-10/, 'el nombre conserva espacio para dos líneas legibles en escritorio compacto');
         assert.match(tile, /data-quiet-desktop/, 'solo las celdas compactas activan el aspecto relajado');
+        assert.match(tile, /lg:w-\[94%\] lg:self-center/, 'las imágenes se reducen levemente y se centran en escritorio compacto');
         assert.match(tile, /aspect-square/, 'el recuadro de imagen es cuadrado');
         assert.match(tile, /object-contain/, 'la imagen se reduce para caber');
         assert.match(tile, /data-element="square"/, 'el recuadro blanco es explícito');
