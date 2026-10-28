@@ -10364,3 +10364,98 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     align-self: start;
   }
 }
+
+/* Corrección móvil: fondo idéntico y semanas completas de Horarios. */
+/* Un solo material opaco para los tres widgets: ni cristal ni degradados
+   distintos según la altura de cada tarjeta. Se conservan sombras y bordes. */
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container']),
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) > [data-element='body'] {
+  background-color: #192e59 !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container'])::before {
+  content: none !important;
+}
+/* El calendario no puede heredar el mínimo rígido de 5.5rem para la semana
+   abierta: ese mínimo expulsa la última fila del espacio del widget. */
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) [data-component='StaffWeekSchedule'] {
+  --staff-week-expansion-min: 0px;
+  --staff-week-expansion-max: none;
+  --staff-calendar-inset-bottom: 2px;
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) [data-element='month-weeks'] {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) [data-element='week-block'][data-expanded='true'] {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: visible;
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) [data-element='week-expansion'] {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) [data-element='weekend-card'] {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 191 248 / .32) transparent;
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) [data-element='weekend-day'] {
+  min-height: 0;
+}
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-component='StaffWeekSchedule'] {
+    --staff-calendar-gap: 1px;
+    --staff-week-day-size: 11px;
+    padding-block: 1px;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='week-block']:not([data-expanded='true']) {
+    flex: 0 1 auto;
+    padding-block: 0;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='week-expansion'] {
+    padding-block: 1px;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-title'] {
+    margin-bottom: 1px;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-details'] {
+    gap: 1px;
+  }
+}
