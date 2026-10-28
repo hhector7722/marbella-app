@@ -7,6 +7,7 @@ import {
   INVOICE_LINE_STATUS_EXPENSE_ONLY,
 } from '@/lib/albaranes-line-status'
 import { createClient } from '@/utils/supabase/server'
+import { readIngredientReclassification } from '@/lib/albaranes/price-change-alerts'
 import { revalidatePath } from 'next/cache'
 import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoices-list'
 import { deriveVariableWeightEvidence } from '@/lib/albaranes/k5/variable-weight'
@@ -327,6 +328,7 @@ export type PurchaseInvoiceLine = {
   status: string | null
   ingredient_id: string | null
   ingredient_name: string | null
+  corrected_ingredient_name?: string | null
   /** Unidad literal extraída del albarán (escáner). */
   line_unit: string | null
   /** Factor en `supplier_item_mappings` para esta línea mapeada (mismo proveedor + nombre + ingrediente). */
@@ -485,6 +487,7 @@ export async function getPurchaseInvoiceDetailAction(
     status: l.status ?? null,
     ingredient_id: l.mapped_ingredient_id ?? null,
     ingredient_name: l.ingredients?.name ?? null,
+    corrected_ingredient_name: null as string | null,
     line_unit: l.line_unit ?? null,
     conversion_factor: null as number | null,
     line_billing_unit: null as string | null,
@@ -503,6 +506,26 @@ export async function getPurchaseInvoiceDetailAction(
     proposal_review_reasons: [] as string[],
     printed_has_adjustments: false,
   })) as PurchaseInvoiceLine[]
+
+  // K4 fact rows are append-only. A reclassification is shown as the
+  // effective ingredient in the document, while original evidence remains intact.
+  const { data: reclassificationMovements, error: correctionError } = await gate.supabase
+    .from('stock_movements').select('provenance')
+    .eq('movement_type','ADJUSTMENT')
+    .contains('provenance',{
+      schema_version:'albaran-reclassification-v1',kind:'correction_credit',invoice_id:id
+    })
+  if (correctionError) {
+    console.error('albaran ingredient reclassification lookup:', correctionError.message)
+  } else {
+    const effectiveNames = new Map((reclassificationMovements ?? []).flatMap((movement) => {
+      const correction = readIngredientReclassification(movement.provenance)
+      return correction ? [[correction.lineId,correction.effectiveIngredientName] as const] : []
+    }))
+    for (const line of lines) {
+      line.corrected_ingredient_name = effectiveNames.get(line.id) ?? null
+    }
+  }
 
   const proposalIds = lines.map((line) => line.interpretation_proposal_id).filter((id): id is string => Boolean(id))
   if (proposalIds.length > 0) {

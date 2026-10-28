@@ -1,7 +1,9 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { isImportantPriceChange, priceChangeRatio } from '@/lib/albaranes/price-change-alerts'
+import {
+  isImportantPriceChange, priceChangeRatio, readIngredientReclassification
+} from '@/lib/albaranes/price-change-alerts'
 
 export type AlbaranPriceChange = {
   lineId: string
@@ -32,9 +34,24 @@ export async function getAlbaranPriceChangesAction(invoiceId: string): Promise<
     .eq('purchase_invoice_id', invoiceId)
   if (error) return { success: false, message: 'No se han podido consultar los precios del albarán.' }
 
+  const { data: corrections, error: correctionError } = await supabase.from('stock_movements')
+    .select('provenance')
+    .eq('movement_type','ADJUSTMENT')
+    .contains('provenance',{
+      schema_version:'albaran-reclassification-v1', kind:'correction_credit', invoice_id:invoiceId
+    })
+  if (correctionError) return { success:false, message:'No se pudieron consultar las rectificaciones del albarán.' }
+  const reclassifications = (corrections ?? []).map((row) =>
+    readIngredientReclassification(row.provenance)).filter((row) => row !== null)
+  const correctedByLine = new Map(reclassifications.map((correction) => [correction.lineId, correction]))
+  const invalidatedPriceLines = new Set(reclassifications
+    .map((correction) => correction.invalidatedPriceLineId).filter(Boolean))
+
   const important = (data ?? []).flatMap((row) => {
-    const before = row.price_before == null ? null : Number(row.price_before)
-    const after = row.price_after == null ? null : Number(row.price_after)
+    if (invalidatedPriceLines.has(row.purchase_invoice_line_id)) return []
+    const correction = correctedByLine.get(row.purchase_invoice_line_id)
+    const before = correction ? correction.priceBefore : row.price_before == null ? null : Number(row.price_before)
+    const after = correction ? correction.priceAfter : row.price_after == null ? null : Number(row.price_after)
     if (!isImportantPriceChange(before, after, row.price_locked === true)) return []
     const delta = priceChangeRatio(before, after)
     if (delta == null) return []
@@ -56,6 +73,6 @@ export async function getAlbaranPriceChangesAction(invoiceId: string): Promise<
   const names = new Map((lines ?? []).map((row) => [row.id, row.original_name ?? 'Artículo']))
 
   return { success: true, changes: important.map((change) => ({
-    ...change, description: names.get(change.lineId) ?? 'Artículo',
+    ...change, description: correctedByLine.get(change.lineId)?.effectiveIngredientName ?? names.get(change.lineId) ?? 'Artículo',
   })) }
 }

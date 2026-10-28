@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { albaranPriceChangeUrl, notificationDestination, isImportantPriceChange, priceChangeRatio } from './price-change-alerts.ts'
+import { albaranPriceChangeUrl, notificationDestination, isImportantPriceChange, priceChangeRatio, readIngredientReclassification } from './price-change-alerts.ts'
 
 const id = 'c756690f-399d-460a-81f6-024c93bb86d7'
 test('nuevo aviso apunta al albarán concreto y abre diferencias de precio', () => {
@@ -20,4 +20,17 @@ test('precios anteriores y nuevos: subida o bajada y guardas de precio', () => {
   assert.equal(isImportantPriceChange(1,1.25),false)
   assert.equal(isImportantPriceChange(null,2),false)
   assert.equal(isImportantPriceChange(1,2,true),false)
+})
+
+
+test('la rectificación Nanas no confunde el precio de Uninox con el de Nanas', () => {
+  const correction = readIngredientReclassification({
+    schema_version:'albaran-reclassification-v1',kind:'correction_credit',
+    line_id:'nanas-line',invalidated_price_line_id:'uninox-line',
+    new_ingredient_name:'Nanas',price_before:1.56,price_after:1.09
+  })
+  assert.equal(correction?.effectiveIngredientName,'Nanas')
+  assert.equal(correction?.invalidatedPriceLineId,'uninox-line')
+  assert.equal(isImportantPriceChange(correction!.priceBefore,correction!.priceAfter),true)
+  assert.equal(readIngredientReclassification({kind:'other',line_id:'nanas-line'}),null)
 })

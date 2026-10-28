@@ -2019,10 +2019,10 @@ export default function AlbaranesHistoricoClient({
                             // resuelta (tick de stock) o cuando tiene la cruz roja
                             // sola, sin etiqueta de estado detrás.
                             const showEditPencil =
-                              detail.source !== 'manual' && !backgroundPhase && (stockApplied || (noMatch && !reviewLabelTextVisible))
-                            const displayName = l.ingredient_name
-                              ? l.ingredient_name
-                              : l.original_name || 'Sin nombre'
+                              detail.source !== 'manual' && !l.corrected_ingredient_name
+                              && !backgroundPhase && (stockApplied || (noMatch && !reviewLabelTextVisible))
+                            const displayName = l.corrected_ingredient_name ?? l.ingredient_name
+                              ?? l.original_name ?? 'Sin nombre'
                             const discountedPrice = detail.supplier_id === 2
                               ? reviewDiscountedLine({
                                   quantity: l.quantity,
@@ -2036,14 +2036,18 @@ export default function AlbaranesHistoricoClient({
                               <div
                                 key={l.id}
                                 onClick={() => {
-                                  if (backgroundPhase) return
+                                  if (backgroundPhase || l.corrected_ingredient_name) return
                                   openLineForEdit(l)
                                 }}
-                                className="group flex flex-row items-center gap-1.5 sm:gap-3 px-1 py-1.5 min-h-12 hover:bg-zinc-50 rounded-lg transition-colors cursor-pointer"
-                                title="Editar línea"
+                                className={cn('group flex flex-row items-center gap-1.5 sm:gap-3 px-1 py-1.5 min-h-12 rounded-lg transition-colors',
+                                  l.corrected_ingredient_name ? 'cursor-default' : 'hover:bg-zinc-50 cursor-pointer')}
+                                title={l.corrected_ingredient_name ? 'Ingrediente rectificado; recepción histórica conservada' : 'Editar línea'}
                               >
                                 <div className="flex-1 min-w-0 flex items-center gap-1.5">
                                   <span className="text-xs font-medium text-zinc-900 truncate min-w-0" title={displayName}>{displayName}</span>
+                                  {l.corrected_ingredient_name ? (
+                                    <span className="shrink-0 text-[9px] font-semibold text-amber-700" title="El movimiento original se ha compensado en inventario y la entrada ahora pertenece a este ingrediente">Rectificado</span>
+                                  ) : null}
 
                                   {/* Estado */}
                                   <div className="shrink-0 flex items-center">
