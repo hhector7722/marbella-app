@@ -96,11 +96,15 @@ async function autoApplyDeterministicReceipts(
   if (invoiceError || !invoice || invoice.supplier_id == null) {
     return { ok: true, applied: 0, blocked: [{ proposalId: '', lineId: null, reason: 'invoice_or_supplier_unavailable' }] }
   }
-  // Gmail intake is transport/evidence, never authorization for physical stock.
-  // Human K4 receipt confirmation is separate from extraction. Monthly totals
-  // additionally have a DB-level receipt/purchase guard.
-  // Hielo Fenix and Vermut always record physical goods via the
-  // dedicated one-product form. Invoices are economic evidence only.
+  // Business rule: when a supplier's delivery note reaches La Marbella,
+  // the goods have ALREADY been physically delivered. No second human
+  // 'receipt confirmation' is required. An automatic K4 confirmation is a
+  // technical, idempotent inventory ledger entry, not a request to receive.
+  // Still require verified sender, matching document and trustworthy stock
+  // quantities to prevent duplicate or incorrect entries.
+  // Hielo Fenix and Vermut keep their separate stock-entry mechanism: never
+  // apply the email document on top of a dedicated manual entry.
+  // Monthly invoices are economic evidence, never a second physical entry.
   const { data: supplierRow, error: supplierLookupError } = await supabase
     .from('suppliers').select('name').eq('id', invoice.supplier_id).maybeSingle()
   if (supplierLookupError) throw new Error('No se pudo validar el proveedor')

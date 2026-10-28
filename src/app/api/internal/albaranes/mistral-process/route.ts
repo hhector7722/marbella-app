@@ -187,9 +187,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // The configured scanner automatic policy is preserved. A verified email
-    // delivery note is additionally eligible for trusted K5 auto-receipt.
-    // Monthly invoices, unknown documents and "Otros" are always no-stock.
+    // Business rule: a received email delivery note represents goods already
+    // delivered. Once OCR, supplier identity and stock units are verified,
+    // register inventory automatically without any second human acceptance.
+    // Scanner documents retain their existing automation setting. Monthly
+    // invoices, unknown documents and 'Otros' never create duplicate stock.
     const emailDelivery = invoiceRow.source === 'email'
       && invoiceRow.document_kind === 'delivery_note'
     const autoAllowed = job.replay_mode === 'live'

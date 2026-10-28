@@ -1896,7 +1896,7 @@ export default function AlbaranesHistoricoClient({
                             : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
                               ? 'No hay líneas: la evidencia falló y el original se conserva para reintentar.'
                               : String(detail.status ?? '').toLowerCase() === 'pending_mapping'
-                                ? 'Preparando las líneas recuperadas para revisión…'
+                                ? 'Preparando los artículos para su registro automático; solo se mostrarán incidencias si las hay…'
                                 : 'No hay líneas guardadas.'}
                         </div>
                       ) : (
