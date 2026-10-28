@@ -40,10 +40,10 @@ export function CatalogGrid({
             className={cn(
                 'grid items-start gap-5 sm:gap-6 md:gap-8 lg:gap-4 xl:gap-5',
                 CATALOG_GRID_COLS[columns],
-                columns === 4 && 'lg:grid-cols-6 xl:grid-cols-7',
+                columns === 4 && (compactDesktop ? 'lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-9' : 'lg:grid-cols-6 xl:grid-cols-7'),
                 columns === 5 && 'lg:grid-cols-6 xl:grid-cols-8',
                 columns === 6 && 'lg:grid-cols-7 xl:grid-cols-8',
-                compactDesktop && 'lg:grid-cols-9 xl:grid-cols-11 2xl:grid-cols-12 lg:gap-x-3 lg:gap-y-3',
+                compactDesktop && 'lg:gap-x-4 lg:gap-y-3 xl:gap-y-4',
             )}
         >
             {children}

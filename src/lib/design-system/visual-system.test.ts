@@ -1441,8 +1441,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(catalog, /function AccessMenuGrid/, 'los menús de acceso usan la misma rejilla');
         assert.match(catalog, /columns = 3/, 'los menús de acceso van a 3 columnas por defecto');
         assert.match(catalog, /gap-5/, 'hay aire entre celdas');
-        assert.match(catalog, /lg:grid-cols-9 xl:grid-cols-11 2xl:grid-cols-12/, 'la rejilla densa aprovecha el ancho de escritorio');
-        assert.match(tile, /lg:h-8/, 'el nombre reserva menos altura en escritorio compacto');
+        assert.match(catalog, /lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-9/, 'la rejilla equilibrada aprovecha el ancho de escritorio');
+        assert.match(tile, /lg:h-10/, 'el nombre conserva espacio para dos líneas legibles en escritorio compacto');
         assert.match(tile, /aspect-square/, 'el recuadro de imagen es cuadrado');
         assert.match(tile, /object-contain/, 'la imagen se reduce para caber');
         assert.match(tile, /data-element="square"/, 'el recuadro blanco es explícito');

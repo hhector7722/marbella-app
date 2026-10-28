@@ -44,7 +44,7 @@ export function CatalogSquare({
         className={cn(
           'relative z-[1] flex h-full w-full items-center justify-center overflow-hidden px-2 pt-2 sm:px-3 sm:pt-3',
           hasPrice || valueLabel ? 'pb-6 sm:pb-7' : 'pb-2 sm:pb-3',
-          compactDesktop && 'lg:px-2 lg:pt-2 lg:pb-5',
+          compactDesktop && 'lg:px-2.5 lg:pt-2.5 lg:pb-6',
         )}
       >
         {imageSrc ? (
@@ -125,7 +125,7 @@ export function CatalogTileUnificado({
       data-catalog-tile
       className="w-full min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left shadow-none"
     >
-      <div className={cn('flex w-full min-w-0 flex-col gap-2', compactDesktop && 'lg:gap-1')}>
+      <div className={cn('flex w-full min-w-0 flex-col gap-2', compactDesktop && 'lg:gap-1.5')}>
         <CatalogSquare
           imageSrc={imageSrc}
           imageAlt={imageAlt}
@@ -141,13 +141,13 @@ export function CatalogTileUnificado({
 
         <div
           data-element="name-slot"
-          className={cn('flex h-[2.5rem] w-full shrink-0 items-start justify-center overflow-hidden sm:h-[2.75rem]', compactDesktop && 'lg:h-8')}
+          className={cn('flex h-[2.5rem] w-full shrink-0 items-start justify-center overflow-hidden sm:h-[2.75rem]', compactDesktop && 'lg:h-10')}
         >
           <span
             data-element="name"
             className={cn(
               'line-clamp-2 min-w-0 text-center text-[11px] font-bold leading-snug sm:text-xs md:text-sm',
-              compactDesktop && 'lg:text-xs',
+              compactDesktop && 'lg:text-sm',
               nameTone === 'invertido' ? 'text-ds-texto-invertido' : 'text-gray-700',
             )}
           >
