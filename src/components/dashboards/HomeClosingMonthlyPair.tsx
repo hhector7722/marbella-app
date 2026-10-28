@@ -17,6 +17,9 @@ type MonthlySnapshot = {
     average: number;
     daily: number | null;
     closingDays: number;
+    previousSales: number | null;
+    previousMonthLabel: string;
+    monthChange: number | null;
 };
 
 function MonthlyMetric({ label, value, tone, title }: {
@@ -49,13 +52,18 @@ function HomeMonthlySalesWidget() {
     const monthEnd = format(endOfMonth(month), 'yyyy-MM-dd');
     const key = monthStart + ':' + monthEnd;
     const isCurrentMonth = format(month, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
+    // Agosto es mes de cierre: en septiembre la referencia válida es julio.
+    const comparisonMonth = month.getMonth() === 8 ? subMonths(month, 2) : subMonths(month, 1);
+    const comparisonStart = format(startOfMonth(comparisonMonth), 'yyyy-MM-dd');
+    const comparisonEnd = format(endOfMonth(comparisonMonth), 'yyyy-MM-dd');
+    const comparisonLabel = format(comparisonMonth, 'MMMM yyyy', { locale: es });
     const visible = snapshot?.key === key ? snapshot : null;
     const failed = errorKey === key;
 
     const refresh = useCallback(async (signal?: AbortSignal) => {
         // Reutilizar las mismas fuentes que el resumen mensual de /dashboard/ventas.
         // La RPC contiene todas las facturas del periodo, independientemente del cierre.
-        const [ticketsResult, closingsResult] = await Promise.all([
+        const [ticketsResult, closingsResult, comparisonResult] = await Promise.all([
             supabase.rpc('get_ventas_crossfilter', {
                 p_start_date: monthStart, p_end_date: monthEnd, p_limit: 1,
             }),
@@ -63,6 +71,9 @@ function HomeMonthlySalesWidget() {
                 .select('closing_date,closed_at,tpv_sales,net_sales')
                 .gte('closing_date', monthStart).lte('closing_date', monthEnd)
                 .order('closed_at', { ascending: true }),
+            supabase.rpc('get_ventas_crossfilter', {
+                p_start_date: comparisonStart, p_end_date: comparisonEnd, p_limit: 1,
+            }),
         ]);
         if (signal?.aborted) return;
         if (ticketsResult.error) {
@@ -76,6 +87,10 @@ function HomeMonthlySalesWidget() {
             return;
         }
         const sales = Number(summary.totalSales ?? 0);
+        const previousRaw = (comparisonResult.data as { summary?: { totalSales?: number } } | null)?.summary?.totalSales;
+        const previousSales = !comparisonResult.error && previousRaw != null && Number(previousRaw) > 0
+            ? Number(previousRaw) : null;
+        const monthChange = previousSales !== null ? (sales - previousSales) / previousSales * 100 : null;
         const tickets = Number(summary.count ?? 0);
         // Un cierre por día; nunca duplicar cierres si un día se reabre.
         const unique = new Map<string, { tpv_sales: number; net_sales: number }>();
@@ -94,9 +109,12 @@ function HomeMonthlySalesWidget() {
             tickets, average: tickets > 0 ? sales / tickets : 0,
             daily: closingDays ? closedSales / closingDays : null,
             closingDays,
+            previousSales,
+            previousMonthLabel: comparisonLabel,
+            monthChange,
         });
         setErrorKey(null);
-    }, [supabase, monthStart, monthEnd, key]);
+    }, [supabase, monthStart, monthEnd, comparisonStart, comparisonEnd, comparisonLabel, key]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -144,6 +162,15 @@ function HomeMonthlySalesWidget() {
                         <div className="col-span-3 flex min-w-0 justify-center">
                             <MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
                                 tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
+                        </div>
+                        <div data-element="monthly-comparison" className="hidden min-w-0 justify-center lg:flex"
+                            title={visible.previousSales === null
+                                ? 'Sin datos del mes de referencia'
+                                : `Comparación con ${visible.previousMonthLabel}: ${formatCurrencySpanish(visible.previousSales)}`}>
+                            <MonthlyMetric label="Mes anterior"
+                                value={visible.monthChange === null ? '—'
+                                    : `${visible.monthChange >= 0 ? '▲' : '▼'} ${formatNumberSpanish(Math.abs(visible.monthChange), 1)}%`}
+                                title={`Comparación con ${visible.previousMonthLabel}`}/>
                         </div>
                         <div className="col-span-2 flex min-w-0 justify-center">
                             <MonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
