@@ -10312,3 +10312,12 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     --staff-week-day-size: clamp(16px, 2.55dvh, 24px);
   }
 }
+
+/* Igualar exactamente el fondo de Cierre, Mensual y Horarios (sin tocar relieve). */
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container']),
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) > [data-element='body'] {
+  background: #192e59;
+}
