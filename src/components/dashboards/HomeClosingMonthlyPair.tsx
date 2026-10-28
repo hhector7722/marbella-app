@@ -36,9 +36,9 @@ function MonthlyMetric({ label, value, tone, title, trend }: {
                     : tone === 'net' ? 'border border-emerald-400/25 bg-emerald-500/10'
                         : '')}>
             <span className={'block whitespace-nowrap leading-tight text-white/65 ' + 'text-[7px]'}>{label}</span>
-            <strong className={'block whitespace-nowrap leading-tight tracking-tight text-white ' +
-                (tone ? 'text-[clamp(8px,1.2vw,10px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold') +
-                (trend == null ? '' : trend >= 0 ? ' text-emerald-200' : ' text-rose-200')}
+            <strong className={'block whitespace-nowrap leading-tight tracking-tight ' +
+                (trend == null ? 'text-white ' : trend >= 0 ? 'text-emerald-200 ' : 'text-rose-200 ') +
+                (tone ? 'text-[clamp(8px,1.2vw,10px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
                 title={value}>{value}</strong>
         </div>
     );
