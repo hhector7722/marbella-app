@@ -10621,9 +10621,11 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     align-items: flex-start;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
-    [data-element='mobile-sales-hour-chart'] > svg {
-    height: 17px;
-    max-height: 17px;
+    [data-element='mobile-sales-hour-chart'] > svg,
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-selected-overlay'] {
+    height: 100%;
+    max-height: 100%;
   }
   /* La h hereda el mismo tono discreto que las unidades de su fila. */
   [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
@@ -10631,11 +10633,13 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     :is([data-element='mobile-sales-units'], [data-element='mobile-sales-hour-suffix']) {
     color: rgb(178 200 223 / .38);
   }
+  /* Las h y las unidades NUNCA se vuelven verdes; los números de
+     la hora y el importe mantienen el destaque verde del tramo actual. */
   [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
     > [data-element='body'] [data-element='mobile-sales-hours']
     [data-current-hour='true']
     :is([data-element='mobile-sales-units'], [data-element='mobile-sales-hour-suffix']) {
-    color: #4ade80;
+    color: rgb(178 200 223 / .38);
   }
 }
 @media (min-width: 1024px) {
@@ -10647,7 +10651,21 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     [data-element='mobile-sales-hour-chart'] > svg,
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='mobile-sales-selected-overlay'] {
-    height: calc(100% - 12px);
-    max-height: calc(100% - 12px);
+    height: 100%;
+    max-height: 100%;
   }
+}
+
+/* El trazo y el área no dependen de currentColor: el modo oscuro fuerza
+   blanco sobre cada <path>. Las tintas reales son gradientes SVG azules. */
+[data-component='HomeScreen'][data-widget-scheme='dark']
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  > [data-element='body'] [data-element='mobile-sales-hour-chart']
+  [data-element='hour-chart-line'] {
+  stroke-width: 1.8px;
+  fill: none;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-hour-chart'] [data-element='hour-chart-fill'] {
+  stroke: none;
 }
