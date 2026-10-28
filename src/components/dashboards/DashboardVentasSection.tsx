@@ -489,7 +489,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </Link>
                 </div>
 
-                <div className="min-h-0 flex-1 cursor-pointer lg:cursor-auto" onClick={(event) => {
+                <div data-element="sales-widget-content" className="min-h-0 flex-1 cursor-pointer lg:cursor-auto" onClick={(event) => {
                     const target = event.target as HTMLElement;
                     // En escritorio solo las cifras y los productos abren el resumen.
                     // La gráfica y las horas conservan su selección interactiva.
