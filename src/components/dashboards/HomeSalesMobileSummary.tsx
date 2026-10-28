@@ -12,6 +12,7 @@ type HourProductResponse = { products?: { nombre_articulo: string | null; cantid
 
 export function HomeSalesMobileSummary({
     sales, net, date, hours, products, hasSales, isDayClosed = false,
+    productsLoading = false, productsError = false,
 }: {
     sales: string;
     net: string;
@@ -20,6 +21,8 @@ export function HomeSalesMobileSummary({
     products: HomeWidgetTopProduct[];
     hasSales: boolean;
     isDayClosed?: boolean;
+    productsLoading?: boolean;
+    productsError?: boolean;
 }) {
     const supabase = useMemo(() => createClient(), []);
     const chartRef = useRef<HTMLDivElement>(null);
@@ -33,9 +36,10 @@ export function HomeSalesMobileSummary({
         window.addEventListener('focus', syncClock);
         return () => { window.clearInterval(interval); window.removeEventListener('focus', syncClock); };
     }, []);
-    // La franja en curso se destaca solo mientras la jornada está abierta.
-    // Con cierre registrado o sin ventas, volver al ranking por importe.
-    const currentHour = hasSales && !isDayClosed && date === format(clock, 'yyyy-MM-dd') &&
+    // El verde se aplica únicamente al tramo REAL en curso de HOY,
+    // con la jornada abierta. Sin ventas aún también es una hora en curso;
+    // en fechas históricas nunca se destaca la primera fila por defecto.
+    const currentHour = !isDayClosed && date === format(clock, 'yyyy-MM-dd') &&
         clock.getHours() >= BUSINESS_HOURS.start && clock.getHours() <= BUSINESS_HOURS.end
         ? clock.getHours() : null;
     const [hourSelection, setHourSelection] = useState<{ date: string; hour: number } | null>(null);
@@ -191,24 +195,22 @@ export function HomeSalesMobileSummary({
     useEffect(() => {
         if (!hasSales || !date || unitHours.length === 0) return;
         let active = true;
-        void Promise.all(unitHours.map(async ({ hora }) => {
-            const { data, error } = await supabase.rpc('get_ventas_crossfilter', {
-                p_start_date: date, p_end_date: date, p_hour: hora, p_offset: 0, p_limit: 1,
-            });
-            if (error) {
-                console.warn('Unidades por franja horaria:', error);
-                return null;
-            }
-            const result = data as { products?: { cantidad_total?: number | null }[] } | null;
-            const units = (result?.products ?? []).reduce(
-                (sum, item) => sum + Number(item.cantidad_total ?? 0), 0,
-            );
-            return { hora, units };
-        })).then(results => {
+        // Una sola consulta devuelve únicamente las unidades de hasta tres
+        // tramos visibles. No descargar desgloses completos de productos
+        // antes de que se aplique un filtro o se abra el modal.
+        void supabase.rpc('get_home_sales_visible_hour_units', {
+            p_date: date,
+            p_hours: unitHours.map(item => item.hora).slice(0, 3),
+        }).then(({ data, error }) => {
             if (!active) return;
+            if (error) {
+                console.warn('Unidades de los tramos visibles:', error);
+                setUnitSnapshot({ key: snapshotKey, values: {} });
+                return;
+            }
             const values: Record<number, number> = {};
-            for (const item of results) {
-                if (item) values[item.hora] = item.units;
+            for (const row of (data ?? []) as { hora: number; unidades: number }[]) {
+                values[Number(row.hora)] = Number(row.unidades ?? 0);
             }
             setUnitSnapshot({ key: snapshotKey, values });
         });
@@ -376,6 +378,11 @@ export function HomeSalesMobileSummary({
                                 <span className="col-span-4 truncate text-[8px] text-[var(--home-widget-ink-secondary)]" role="status">
                                     {isFiltering ? 'Filtrando productos…' : filterError?.key === filterKey
                                         ? 'No se pudieron cargar' : 'Sin productos en este tramo'}
+                                </span>
+                            )}
+                            {selectedHour === null && displayProducts.length === 0 && (productsLoading || productsError) && (
+                                <span className="col-span-4 truncate text-[8px] text-[var(--home-widget-ink-secondary)]" role="status">
+                                    {productsLoading ? 'Cargando productos…' : 'No se pudieron cargar los productos'}
                                 </span>
                             )}
                         </div>
