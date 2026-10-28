@@ -2,9 +2,15 @@
 
 import dynamic from 'next/dynamic';
 import { Modal } from '@/components/ui/modal';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const EmbeddedSales = dynamic(() => import('@/components/dashboard/ventas/VentasDesktopWorkspace'), {
     ssr: false,
+    loading: () => (
+        <div className="flex h-full min-h-0 w-full flex-1 items-center justify-center" role="status" aria-label="Cargando detalle de ventas">
+            <LoadingSpinner size="lg" className="text-sky-200"/>
+        </div>
+    ),
 });
 
 export type SalesPreview = { mode: 'current' | 'day' | 'month'; date: string };
