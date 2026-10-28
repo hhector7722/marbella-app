@@ -1479,6 +1479,25 @@ html[data-quick-fab='open'] main {
 [data-component='PageScreen'] [data-element='lead'] [data-element='square'] {
   border-color: var(--color-borde);
 }
+
+/* Recetas e ingredientes en escritorio: menor contraste y menos ruido visual,
+   sin modificar la densidad de columnas, los catálogos ajenos ni el móvil. */
+@media (min-width: 1024px) {
+  [data-component='PageScreen'][data-work='catalog'] [data-catalog-tile][data-quiet-desktop='true'] [data-element='square'] {
+    border-color: rgb(255 255 255 / 0.10);
+    box-shadow: none;
+  }
+  [data-component='PageScreen'][data-work='catalog'] [data-catalog-tile][data-quiet-desktop='true'] [data-element='square-fill'] {
+    background-color: color-mix(in srgb, var(--color-envolvente) 28%, var(--color-superficie));
+  }
+  [data-component='PageScreen'][data-work='catalog'] [data-catalog-tile][data-quiet-desktop='true'] [data-element='name'] {
+    color: rgb(255 255 255 / 0.84);
+    font-weight: 500;
+  }
+  [data-component='PageScreen'][data-work='catalog'] [data-catalog-tile][data-quiet-desktop='true'] [data-element='price'] > span:first-child {
+    font-weight: 600;
+  }
+}
 [data-component='PageScreen'][data-work='catalog'] {
   --home-widget-radius: var(--radio-superficie);
   --home-widget-fill: var(--chrome-glass-fill);

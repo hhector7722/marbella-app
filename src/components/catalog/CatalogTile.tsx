@@ -43,7 +43,7 @@ export function CatalogGrid({
                 columns === 4 && (compactDesktop ? 'lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-9' : 'lg:grid-cols-6 xl:grid-cols-7'),
                 columns === 5 && 'lg:grid-cols-6 xl:grid-cols-8',
                 columns === 6 && 'lg:grid-cols-7 xl:grid-cols-8',
-                compactDesktop && 'lg:gap-x-4 lg:gap-y-3 xl:gap-y-4',
+                compactDesktop && 'lg:gap-x-5 lg:gap-y-5 xl:gap-x-6 xl:gap-y-6',
             )}
         >
             {children}

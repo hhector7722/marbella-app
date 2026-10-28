@@ -1442,7 +1442,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(catalog, /columns = 3/, 'los menús de acceso van a 3 columnas por defecto');
         assert.match(catalog, /gap-5/, 'hay aire entre celdas');
         assert.match(catalog, /lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-9/, 'la rejilla equilibrada aprovecha el ancho de escritorio');
+        assert.match(catalog, /lg:gap-x-5 lg:gap-y-5 xl:gap-x-6 xl:gap-y-6/, 'el catálogo deja más aire entre filas y columnas sin reducir las columnas');
         assert.match(tile, /lg:h-10/, 'el nombre conserva espacio para dos líneas legibles en escritorio compacto');
+        assert.match(tile, /data-quiet-desktop/, 'solo las celdas compactas activan el aspecto relajado');
         assert.match(tile, /aspect-square/, 'el recuadro de imagen es cuadrado');
         assert.match(tile, /object-contain/, 'la imagen se reduce para caber');
         assert.match(tile, /data-element="square"/, 'el recuadro blanco es explícito');
@@ -1453,6 +1455,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tile, /data-element="name-slot"/, 'el nombre reserva hueco fijo fuera del recuadro');
         assert.doesNotMatch(tile, /truncate/, 'el nombre no se abrevia en una sola fila');
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(css, /\[data-catalog-tile\]\[data-quiet-desktop='true'\] \[data-element='square-fill'\]/, 'el fondo suavizado se limita al catálogo de escritorio');
+        assert.match(css, /font-weight: 500;/, 'los nombres de escritorio no requieren negrita intensa');
         assert.match(
             css,
             /\[data-component='PageScreen'\]\[data-work='catalog'\] \[data-component='Surface'\]\[data-variant='page'\]/,

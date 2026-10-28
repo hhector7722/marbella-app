@@ -123,6 +123,7 @@ export function CatalogTileUnificado({
       onClick={onClick}
       aria-label={title}
       data-catalog-tile
+      data-quiet-desktop={compactDesktop ? 'true' : undefined}
       className="w-full min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left shadow-none"
     >
       <div className={cn('flex w-full min-w-0 flex-col gap-2', compactDesktop && 'lg:gap-1.5')}>
