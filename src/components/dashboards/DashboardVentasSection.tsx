@@ -75,7 +75,11 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const [salesSummaryLoading, setSalesSummaryLoading] = useState(false);
     const [salesProducts, setSalesProducts] = useState<any[]>([]);
     const [topHours, setTopHours] = useState<any[]>([]);
-    const [mobileTopProducts, setMobileTopProducts] = useState<HomeWidgetTopProduct[]>([]);
+    // La tarjeta solo conserva los tres productos visibles de la fecha exacta.
+    // El ranking completo se solicita únicamente desde el modal de detalle.
+    const [productSnapshot, setProductSnapshot] = useState<{ date: string; items: HomeWidgetTopProduct[] } | null>(null);
+    const [productRefresh, setProductRefresh] = useState(0);
+    const mobileTopProducts = productSnapshot?.date === salesViewDate ? productSnapshot.items : [];
 
     // El cierre puede registrarse hoy: no basta con comprobar la fecha.
     // Evita destacar una franja como "en curso" tras el cierre de caja.
@@ -234,6 +238,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
             const nowStr = format(new Date(), 'yyyy-MM-dd');
             if (salesViewDateRef.current !== nowStr) return;
             void fetchHourlySales(nowStr);
+            setProductRefresh(value => value + 1);
             void supabase.rpc('get_daily_sales_stats', { target_date: nowStr })
                 .then(({ data, error }) => {
                     if (error || salesViewDateRef.current !== nowStr) return;
@@ -271,6 +276,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     }
                     hourlyFetchDebounceRef.current = setTimeout(() => {
                         void fetchHourlySales(todayStr);
+                        setProductRefresh(value => value + 1);
                         hourlyFetchDebounceRef.current = null;
                     }, 300);
                 }
@@ -320,29 +326,47 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
     salesViewDateRef.current = salesViewDate;
 
-    // El ranking visible usa exactamente la misma fecha que las ventas y la gráfica.
+    // La petición del widget trae solo las tres líneas con mayor facturación.
+    // `.order().limit(3)` limita el resultado en PostgREST, no en memoria.
+    // El snapshot fechado evita productos del día anterior durante la navegación.
     useEffect(() => {
+        const requestDate = salesViewDate;
         let active = true;
-        setMobileTopProducts([]);
-        void supabase.rpc('get_product_sales_ranking', {
-            p_start_date: salesViewDate,
-            p_end_date: salesViewDate,
-            p_start_time: null,
-            p_end_time: null,
-        }).then(({ data, error }) => {
-            if (!active) return;
-            if (error) {
-                console.warn('No se pudo cargar el ranking móvil de ventas:', error);
-                return;
+        setProductSnapshot(current => current?.date === requestDate ? current : null);
+        const load = async () => {
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    const { data, error } = await supabase.rpc('get_product_sales_ranking', {
+                        p_start_date: requestDate,
+                        p_end_date: requestDate,
+                        p_start_time: null,
+                        p_end_time: null,
+                    }).order('total_ingresos', { ascending: false }).limit(3);
+                    if (!active || salesViewDateRef.current !== requestDate) return;
+                    if (error) {
+                        console.warn('Ranking breve del widget de ventas:', error);
+                        continue;
+                    }
+                    const items = ((data ?? []) as { nombre_articulo: string; cantidad_total: number; total_ingresos: number }[]).map(item => ({
+                        name: String(item.nombre_articulo ?? 'Producto'),
+                        quantity: Number(item.cantidad_total ?? 0),
+                        revenue: Number(item.total_ingresos ?? 0),
+                    }));
+                    setProductSnapshot({ date: requestDate, items });
+                    return;
+                } catch (error) {
+                    if (!active) return;
+                    console.warn('Reintento del ranking breve de ventas:', error);
+                }
             }
-            setMobileTopProducts(((data ?? []) as { nombre_articulo: string; cantidad_total: number; total_ingresos: number }[]).slice(0, 3).map(item => ({
-                name: String(item.nombre_articulo ?? 'Producto'),
-                quantity: Number(item.cantidad_total ?? 0),
-                revenue: Number(item.total_ingresos ?? 0),
-            })));
-        });
+            // No dejar los productos del día anterior ni datos inventados.
+            if (active && salesViewDateRef.current === requestDate) {
+                setProductSnapshot({ date: requestDate, items: [] });
+            }
+        };
+        void load();
         return () => { active = false; };
-    }, [salesViewDate, supabase]);
+    }, [salesViewDate, productRefresh, supabase]);
 
     useEffect(() => {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -491,6 +515,9 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
                 <div data-element="sales-widget-content" className="min-h-0 flex-1 cursor-pointer lg:cursor-auto" onClick={(event) => {
                     const target = event.target as HTMLElement;
+                    // La tarjeta Venta neta no abre modal en smartphone.
+                    if (window.matchMedia('(max-width: 1023px)').matches &&
+                        target.closest('[data-element="mobile-sales-net-kpi"]')) return;
                     // En escritorio solo las cifras y los productos abren el resumen.
                     // La gráfica y las horas conservan su selección interactiva.
                     if (window.matchMedia('(min-width: 1024px)').matches) {
