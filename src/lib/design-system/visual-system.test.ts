@@ -863,18 +863,18 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         const weekScheduleCss = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(weekSchedule, /data-element="month-heading"/, 'la cabecera del mes permite ajustar separación respecto a los días');
-        assert.match(weekSchedule, /data-element="weekend-primary"/, 'Turno y Evento comparten la fila principal');
-        assert.match(weekSchedule, /data-element="weekend-turno"[\s\S]*?data-element="weekend-evento"/, 'Turno precede a Evento y ambos conservan sus etiquetas');
+        assert.match(weekSchedule, /data-element="weekend-content"/, 'las dos filas se centran como un solo grupo');
+        assert.match(weekSchedule, /data-element="weekend-evento-row"/, 'Evento comparte el segundo renglón con los datos del evento');
+        assert.match(weekSchedule, /data-element="weekend-turno"[\s\S]*?data-element="weekend-evento-row"/, 'Turno ocupa la primera línea y Evento comienza la segunda');
+        assert.match(weekSchedule, /visibleEventDetails = eventDetailRows.length > 0/, 'si faltan actividades también se muestran los conceptos');
+        assert.match(weekSchedule, /hours: 'Horario', pax: 'Participantes', categories: 'Categorías'/, 'los tres conceptos aparecen sin actividad');
         assert.doesNotMatch(weekSchedule, /\{!masterMode && \(/, 'el concepto Turno se presenta aunque no haya turno o se consulte Master');
-        assert.match(weekScheduleCss, /\[data-element='weekend-primary'\] > \[data-element='weekend-turno'\] \{[\s\S]*?flex: 0 1 auto;/, 'Turno ocupa la anchura real del contenido');
+        assert.match(weekScheduleCss, /\[data-element='weekend-content'\] \{[\s\S]*?margin-block: auto;/, 'el grupo se centra verticalmente');
+        assert.match(weekScheduleCss, /\[data-element='weekend-evento-row'\] \{[\s\S]*?flex-wrap: nowrap;/, 'la fila mantiene Evento y sus detalles juntos');
+        assert.match(weekScheduleCss, /\[data-element='weekend-evento-detail-row'\] \{[\s\S]*?display: flex;/, 'las columnas ocupan su ancho real, no tercios fijos');
         assert.match(weekScheduleCss, /grid-template-rows: minmax\(0, 1fr\);/, 'el alto de los dos días es independiente del contenido');
         assert.match(weekScheduleCss, /\[data-element='weekend-details'\] \{[\s\S]*?overflow-y: auto;/, 'la actividad extensa se desplaza dentro de la tarjeta sin cambiar su tamaño');
         assert.match(weekScheduleCss, /\[data-element='month-heading'\] \{[\s\S]*?margin-bottom: -2px;/, 'la cabecera y días se acercan discretamente');
-        assert.match(
-            weekSchedule,
-            /grid-cols-3/,
-            'horario, participantes y categoría ocupan tres columnas iguales'
-        );
         assert.match(
             weekSchedule,
             /formatEventClock\(act\.startTime\)[\s\S]{0,40}formatEventClock\(act\.endTime\)/,
@@ -887,13 +887,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             weekScheduleCss,
-            /\[data-element='weekend-evento-detail-row'\][\s\S]{0,160}grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/,
-            'las tres columnas del detalle del evento tienen el mismo ancho'
-        );
-        assert.match(
-            weekScheduleCss,
-            /\[data-element='weekend-evento-detail-value'\][\s\S]{0,200}text-align:\s*center/,
-            'cada valor del detalle del evento se centra en su columna'
+            /\[data-element='weekend-evento-detail-value'\] \{[\s\S]*?width: auto;/,
+            'horas, participantes y categorías se adaptan a su longitud'
         );
         assert.doesNotMatch(
             weekSchedule,

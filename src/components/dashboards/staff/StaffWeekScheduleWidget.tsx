@@ -264,6 +264,10 @@ function WeekendDayColumn({
     const ymd = format(day, 'yyyy-MM-dd');
     const shiftStart = shift != null ? fmtHour(formatClockTime(shift.start_time)) : null;
     const shiftEnd = shift != null ? fmtHour(formatClockTime(shift.end_time)) : null;
+    // Mostrar también los conceptos cuando el día no tiene actividades.
+    const visibleEventDetails = eventDetailRows.length > 0
+        ? eventDetailRows
+        : [{ hours: 'Horario', pax: 'Participantes', categories: 'Categorías' }];
 
     return (
         <button
@@ -282,10 +286,11 @@ function WeekendDayColumn({
                 </p>
 
                 <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
-                    {/* Un único renglón: Evento comienza después del ancho real de Turno,
-                        dejando margen entre ambos. Las etiquetas permanecen si faltan datos. */}
-                    <div data-element="weekend-primary" className="flex w-full min-w-0 items-start">
-                        <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
+                    {/* El conjunto de Turno + Evento queda centrado entre el
+                        título del día y el final de la card. Si hay mucho
+                        contenido, solo se desplaza esta zona interna. */}
+                    <div data-element="weekend-content" className="my-auto flex w-full shrink-0 flex-col">
+                        <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 self-start border-l-2 pl-0.5">
                             {shiftStart && shiftEnd ? (
                                 <span
                                     data-element="weekend-turno-value"
@@ -300,49 +305,53 @@ function WeekendDayColumn({
                                 </span>
                             )}
                         </div>
-                        <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                            {eventLabel ? (
-                                <span data-element="weekend-evento-value" className="min-w-0 break-words text-[6px] lg:text-[11px] font-medium leading-tight">
-                                    {eventLabel}
-                                </span>
-                            ) : (
-                                <span data-element="weekend-evento-label" className="text-[6px] lg:text-[11px] font-medium leading-tight tracking-wide">
-                                    Evento
-                                </span>
-                            )}
+
+                        {/* Evento + Horario + Participantes + Categorías:
+                            una fila de flex con anchuras naturales y separación
+                            mínima. Ninguna columna tiene una posición fija. */}
+                        <div data-element="weekend-evento-row" className="flex w-full min-w-0 items-start">
+                            <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
+                                {eventLabel ? (
+                                    <span data-element="weekend-evento-value" className="min-w-0 break-words text-[6px] lg:text-[11px] font-medium leading-tight">
+                                        {eventLabel}
+                                    </span>
+                                ) : (
+                                    <span data-element="weekend-evento-label" className="text-[6px] lg:text-[11px] font-medium leading-tight tracking-wide">
+                                        Evento
+                                    </span>
+                                )}
+                            </div>
+                            <div data-element="weekend-evento-detail" className="flex min-w-0 flex-1 flex-col">
+                                {visibleEventDetails.map((row, i) => (
+                                    <div
+                                        key={i}
+                                        data-element="weekend-evento-detail-row"
+                                        className="flex min-w-0 items-baseline"
+                                    >
+                                        {(
+                                            [
+                                                { kind: 'hours', text: row.hours || 'Horario' },
+                                                { kind: 'pax', text: row.pax || 'Participantes' },
+                                                { kind: 'categories', text: row.categories || 'Categorías' },
+                                            ] as const
+                                        ).map((cell) => (
+                                            <span
+                                                key={cell.kind}
+                                                data-element="weekend-evento-detail-value"
+                                                data-segment-kind={cell.kind}
+                                                className={cn(
+                                                    "min-w-0 text-[6px] lg:text-[11px] font-medium leading-tight opacity-80",
+                                                    cell.kind === 'hours' && masterMode && "font-semibold",
+                                                )}
+                                            >
+                                                {cell.text}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                    {eventDetailRows.length > 0 ? (
-                        <div data-element="weekend-evento-detail" className="flex w-full min-w-0 flex-col">
-                            {eventDetailRows.map((row, i) => (
-                                <div
-                                    key={i}
-                                    data-element="weekend-evento-detail-row"
-                                    className="grid w-full min-w-0 grid-cols-3"
-                                >
-                                    {(
-                                        [
-                                            { kind: 'hours', text: row.hours },
-                                            { kind: 'pax', text: row.pax },
-                                            { kind: 'categories', text: row.categories },
-                                        ] as const
-                                    ).map((cell) => (
-                                        <span
-                                            key={cell.kind}
-                                            data-element="weekend-evento-detail-value"
-                                            data-segment-kind={cell.kind}
-                                            className={cn(
-                                                "min-w-0 w-full truncate text-center text-[6px] lg:text-[11px] font-medium leading-none opacity-80",
-                                                cell.kind === 'hours' && masterMode && "font-semibold",
-                                            )}
-                                        >
-                                            {cell.text}
-                                        </span>
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                    ) : null}
                 </div>
             </div>
         </button>

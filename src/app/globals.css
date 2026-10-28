@@ -10513,27 +10513,60 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   scrollbar-color: rgb(148 191 248 / .32) transparent;
 }
 
-/* Turno y Evento comparten la primera línea, con un margen flexible.
-   La anchura de Evento depende del contenido real de Turno: no hay
-   columnas de anchura fija ni posiciones absolutas. */
-[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-primary'] {
+/* Sábado / Domingo: dos filas centradas en el hueco disponible.
+   "my-auto" coloca el conjunto equidistante entre título y borde inferior;
+   la altura de la card sigue siendo la establecida por el calendario. */
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-content'] {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  gap: clamp(2px, .4vw, 5px);
+  margin-block: auto;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-content'] > [data-element='weekend-turno'] {
+  margin-top: 0;
+}
+/* El segundo renglón reparte su anchura según la longitud de cada valor.
+   Solo se reserva un pequeño gap; no hay rejilla ni anchos de columna fijos. */
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] {
+  display: flex;
   flex-wrap: nowrap;
-  column-gap: clamp(4px, .55vw, 10px);
+  align-items: flex-start;
+  gap: clamp(3px, .5vw, 8px);
   width: 100%;
   min-width: 0;
 }
-[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-primary'] > [data-element='weekend-turno'] {
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] > [data-element='weekend-evento'] {
   flex: 0 1 auto;
+  max-width: 48%;
   min-width: 0;
-  max-width: calc(100% - 38px);
   margin-top: 0;
 }
-[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-primary'] > [data-element='weekend-evento'] {
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] > [data-element='weekend-evento-detail'] {
   flex: 1 1 auto;
   min-width: 0;
+  width: auto;
   margin-top: 0;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-row'] {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  column-gap: clamp(3px, .5vw, 8px);
+  width: 100%;
+  min-width: 0;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'] {
+  flex: 0 1 auto;
+  min-width: 0;
+  width: auto;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  text-overflow: clip;
 }
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule']
   :is([data-element='weekend-turno-value'], [data-element='weekend-evento-value']) {
@@ -10542,7 +10575,6 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   overflow: visible;
   text-overflow: clip;
 }
-
 
 /* Widget de Ventas: franja activa verde en el ranking horario, en todas
    las versiones. El resto mantiene su jerarquía y colores habituales. */
