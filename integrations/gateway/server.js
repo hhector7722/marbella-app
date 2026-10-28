@@ -209,7 +209,7 @@ app.post('/api/ventas', async (req, res) => {
                 .maybeSingle();
 
             if (existingErr) {
-                console.error(`[VENTAS] Error consultando ticket ${v.numero_documento}:`, existingErr.message);
+                throw new Error(`[VENTAS] Error consultando ticket ${v.numero_documento}: ${existingErr.message}`);
             }
 
             const ts = resolveVentaTimestamps(v, existingTicket?.fecha || null);
@@ -234,8 +234,7 @@ app.post('/api/ventas', async (req, res) => {
             }], { onConflict: 'numero_documento' });
 
             if (errCab) {
-                console.error(`Error cabecera ${v.numero_documento}:`, errCab.message);
-                continue;
+                throw new Error(`Error cabecera ${v.numero_documento}: ${errCab.message}`);
             }
 
             if (v.lineas && v.lineas.length > 0) {
@@ -257,8 +256,7 @@ app.post('/api/ventas', async (req, res) => {
                 );
 
                 if (errLin) {
-                    console.error(`Error líneas de ${v.numero_documento}:`, errLin.message);
-                    continue;
+                    throw new Error(`Error líneas de ${v.numero_documento}: ${errLin.message}`);
                 }
             }
 

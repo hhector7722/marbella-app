@@ -168,7 +168,7 @@ export async function POST(req: Request) {
         .maybeSingle()
 
       if (existingErr) {
-        console.error(`[BDP Webhook] Error consultando ticket ${v.numero_documento}:`, existingErr.message)
+        throw new Error(`[BDP Webhook] Error consultando ticket ${v.numero_documento}: ${existingErr.message}`)
       }
 
       const ts = resolveVentaTimestamps(v, existingTicket?.fecha || null)
@@ -198,8 +198,7 @@ export async function POST(req: Request) {
       )
 
       if (errCab) {
-        console.error(`[BDP Webhook] Error cabecera ${v.numero_documento}:`, errCab.message)
-        continue
+        throw new Error(`[BDP Webhook] Error cabecera ${v.numero_documento}: ${errCab.message}`)
       }
 
       if (v.lineas && v.lineas.length > 0) {
@@ -230,8 +229,7 @@ export async function POST(req: Request) {
           { onConflict: 'numero_documento,linea' }
         )
         if (errLin) {
-          console.error(`[BDP Webhook] Error líneas de ${v.numero_documento}:`, errLin.message)
-          continue
+          throw new Error(`[BDP Webhook] Error líneas de ${v.numero_documento}: ${errLin.message}`)
         }
       }
 
