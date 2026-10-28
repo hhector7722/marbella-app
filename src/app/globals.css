@@ -10808,3 +10808,32 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     gap: clamp(3px, .38dvh, 5px);
   }
 }
+
+/* Ranking Ventas escritorio: ampliar texto manteniendo los tres renglones. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
+    > div > :is(span:first-child, [data-element='mobile-sales-product-label']) {
+    font-size: clamp(11px, .98vw, 16px);
+    line-height: 1.2;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
+    > div > [data-element='mobile-sales-units'] {
+    font-size: clamp(12px, .98vw, 16px);
+    line-height: 1.2;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
+    > div > [data-element='mobile-sales-amount'] {
+    font-size: clamp(14px, 1.17vw, 19px);
+    line-height: 1.2;
+  }
+}
+/* El verde depende del dato hora-en-curso (no de ser la primera fila).
+   Ese atributo solo existe para hoy, mientras la jornada sigue abierta. */
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-hours'] > [data-current-hour='true']
+  > [data-element='mobile-sales-units'] {
+  color: rgb(178 200 223 / .38);
+}
