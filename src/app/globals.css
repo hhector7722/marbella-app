@@ -10104,12 +10104,16 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 }
 
 @media (max-width: 1023px) {
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
+    > [data-element='body']
+    [data-element='mobile-sales-snapshot']
     [data-element='mobile-sales-units'] {
     color: rgb(178 200 223 / .38);
     font-weight: 400;
   }
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
+    > [data-element='body']
+    [data-element='mobile-sales-snapshot']
     [data-element='mobile-sales-amount'] {
     color: var(--home-widget-ink-secondary);
     font-weight: 600;
