@@ -1659,7 +1659,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         )}
                     </div>
                     <div className="flex min-w-0 shrink-0 items-center gap-1.5">
-                        <TicketHeaderStats report={previewMode === 'month' ? visibleMonthReport : dailyReport}/>
+                        {!previewMode && <TicketHeaderStats report={mobileMonth ? visibleMonthReport : dailyReport}/>} 
                         {!previewMode && isSingleDay && selectedClosing && canEditClosings && (
                             <button type="button" aria-label="Editar cierre" title="Editar cierre"
                                 onClick={() => setEditingClosingId(selectedClosing.id)}
@@ -1669,12 +1669,13 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         )}
                     </div>
                 </div>
-                <div className={cn("mt-2 grid gap-1.5", previewMode && embeddedShowLive ? "grid-cols-1" : "grid-cols-2")}>
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
                     {[
                         { label: 'Ventas', value: mobileReport ? euro(mobileReport.summary.totalSales) : '', tone: 'border-sky-400/35 bg-sky-500/10' },
-                        ...(!previewMode || !embeddedShowLive ? [{
-                            label: 'Venta neta', value: mobileExtras ? euro(mobileExtras.net) : '', tone: 'border-emerald-400/30 bg-emerald-500/10'
-                        }] : []),
+                        { label: 'Venta neta',
+                          value: mobileExtras ? euro(mobileExtras.net)
+                              : previewMode && mobileReport ? euro(mobileReport.summary.totalSales / 1.10) : '',
+                          tone: 'border-emerald-400/30 bg-emerald-500/10' },
                     ].map(item => (
                         <div key={item.label} className={cn('min-w-0 rounded-lg border px-2.5 py-1.5', item.tone)}>
                             <span className="block text-[11px] font-medium text-white/75">{item.label}</span>
