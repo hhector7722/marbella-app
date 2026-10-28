@@ -69,11 +69,12 @@ Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepcion
 
 | Token local | Valor | Papel | Estado |
 |---|---|---|---|
-| `ventas.premium.principal` | degradado `#193A63` → `#0C2348` → `#071733` | Ventas y detalle diario | adoptado (`--ventas-premium-main`) |
-| `ventas.premium.secundario` | degradado `#233F73` → `#172F5C` → `#101F43` | Último cierre, Mensual, Horarios y paneles secundarios de Ventas | adoptado (`--ventas-premium-secondary`) |
-| `ventas.premium.borde` | `rgb(135 193 235 / 0.49)` | Canto protagonista | adoptado (`--ventas-premium-edge`) |
-| `ventas.premium.borde-suave` | `rgb(135 193 235 / 0.32)` | Canto de panel secundario | adoptado (`--ventas-premium-edge-soft`) |
-| `ventas.premium.sombra-secundaria` | bisel superior tenue y sombra de `0 7px 17px` | Elevación menor para Cierre, Mensual, Horarios y resúmenes | adoptado (`--ventas-premium-shadow-secondary`) |
+| `ventas.premium.principal` | brillo azul radial sobre degradado `#2059AD` → `#143B82` → `#09204A` | Ventas y detalle diario; foco visual reconocible también en móvil | adoptado (`--ventas-premium-main`) |
+| `ventas.premium.secundario` | degradado `#243E74` → `#192E59` → `#112348` | Último cierre, Mensual, Horarios y paneles secundarios de Ventas | adoptado (`--ventas-premium-secondary`) |
+| `ventas.premium.borde` | `rgb(140 211 255 / 0.84)` | Canto luminoso protagonista | adoptado (`--ventas-premium-edge`) |
+| `ventas.premium.borde-suave` | `rgb(143 188 244 / 0.27)` | Canto de panel secundario | adoptado (`--ventas-premium-edge-soft`) |
+| `ventas.premium.sombra-principal` | bisel luminoso, relieve azul y sombra de `0 10px 26px` | Elevación de Ventas y sus modales de detalle | adoptado (`--ventas-premium-shadow-main`) |
+| `ventas.premium.sombra-secundaria` | bisel superior tenue y sombra de `0 6px 14px` | Elevación menor para Cierre, Mensual, Horarios y resúmenes | adoptado (`--ventas-premium-shadow-secondary`) |
 | `ventas.premium.kpi-alto` | 84 px | Altura mínima de Ventas y Venta neta en escritorio | adoptado (`--ventas-premium-kpi-height`) |
 | `ventas.premium.kpi-ancho` | 180 px | Ancho máximo igualado de ambas tarjetas en escritorio | adoptado (`--ventas-premium-kpi-max-width`) |
 

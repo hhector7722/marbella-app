@@ -22,14 +22,22 @@
   --color-envolvente-alto: #2a5a96;
   --color-envolvente-bajo: #0b1c36;
   /* Excepción local de Ventas: marino protagonista y azul secundario. */
-  --ventas-premium-main: linear-gradient(157deg, #193a63 0%, #0c2348 51%, #071733 100%);
-  --ventas-premium-secondary: linear-gradient(158deg, #233f73 0%, #172f5c 48%, #101f43 100%);
-  --ventas-premium-edge: rgb(135 193 235 / 0.49);
-  --ventas-premium-edge-soft: rgb(135 193 235 / 0.32);
+  --ventas-premium-main:
+    radial-gradient(ellipse at 16% 0%, rgb(91 167 255 / 0.34), transparent 52%),
+    linear-gradient(148deg, #2059ad 0%, #143b82 48%, #09204a 100%);
+  --ventas-premium-secondary: linear-gradient(155deg, #243e74 0%, #192e59 49%, #112348 100%);
+  --ventas-premium-edge: rgb(140 211 255 / 0.84);
+  --ventas-premium-edge-soft: rgb(143 188 244 / 0.27);
+  --ventas-premium-shadow-main:
+    inset 0 1px 0 rgb(245 252 255 / 0.42),
+    inset 0 -1px 0 rgb(2 13 39 / 0.6),
+    0 0 0 1px rgb(23 91 177 / 0.55),
+    0 10px 26px rgb(1 12 38 / 0.37),
+    0 0 22px rgb(54 133 245 / 0.2);
   --ventas-premium-shadow-secondary:
-    inset 0 1px 0 rgb(231 249 255 / 0.23),
-    0 0 0 1px rgb(3 13 28 / 0.32),
-    0 7px 17px rgb(1 10 26 / 0.19);
+    inset 0 1px 0 rgb(231 249 255 / 0.15),
+    0 0 0 1px rgb(3 13 28 / 0.22),
+    0 6px 14px rgb(1 10 26 / 0.16);
   --ventas-premium-kpi-height: 84px;
   --ventas-premium-kpi-max-width: 180px;
   --marbella-shell-image:
@@ -10006,12 +10014,31 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
   > [data-element='body'] {
   background: var(--ventas-premium-main);
+  border-color: var(--ventas-premium-edge);
+  box-shadow: var(--ventas-premium-shadow-main);
 }
 [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
   > :is([data-element='closing-half'], [data-element='monthly-container']) {
   background: var(--ventas-premium-secondary);
   border-color: var(--ventas-premium-edge-soft);
   box-shadow: var(--ventas-premium-shadow-secondary);
+}
+
+/* Los importes de venta son azules en todos los widgets. La diferencia de
+   jerarquía queda en el brillo de las tarjetas y de sus superficies. */
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-kpis'] > div {
+  background: linear-gradient(145deg, rgb(103 177 255 / 0.27), rgb(35 98 193 / 0.18));
+  border-color: rgb(159 220 255 / 0.7);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 4px 12px rgb(0 17 53 / 0.24);
+}
+[data-component='HomeScreen'] [data-element='closing-compact']
+  .grid.grid-cols-3 > :is(button, div),
+[data-component='HomeScreen'] [data-element='monthly-half']
+  .grid.grid-cols-6 > div > [data-metric] {
+  background: rgb(96 150 232 / 0.12);
+  border-color: rgb(138 185 247 / 0.27);
+  box-shadow: inset 0 1px 0 rgb(235 248 255 / 0.06);
 }
 
 /* Horarios comparte el azul secundario y la elevación discreta de los resúmenes. */
@@ -10024,6 +10051,13 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   box-shadow: var(--ventas-premium-shadow-secondary);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='master-horarios'], [data-instance='staff-horarios']
+) [data-element='weekend-card'] {
+  background: linear-gradient(145deg, rgb(76 121 205 / 0.28), rgb(51 85 158 / 0.17));
+  border: 1px solid rgb(143 188 244 / 0.23);
+  box-shadow: inset 0 1px 0 rgb(239 250 255 / 0.08);
 }
 
 /* La página y el detalle de Ventas comparten el material premium sin cambiar
@@ -10052,7 +10086,7 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 ) [data-element='container'] {
   background: var(--ventas-premium-main);
   outline: 1px solid var(--ventas-premium-edge);
-  box-shadow: var(--elevacion-modal);
+  box-shadow: var(--ventas-premium-shadow-main), var(--elevacion-modal);
 }
 
 @media (min-width: 1024px) {

@@ -17,6 +17,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 - **Ventas unifica su acabado azul premium en inicio, página y detalles.** El widget Ventas conserva el protagonismo; Último cierre, Ventas mensuales y Horarios usan un azul secundario sin matiz petróleo. En escritorio, Último cierre y Ventas mensuales recuperan seis métricas en dos filas de tres columnas, mientras que las tarjetas Ventas y Venta neta muestran el concepto encima del importe, con más altura y texto íntegro. Se conservan los datos, las acciones y la distribución móvil.
 
+- **El azul de Ventas gana contraste visible en el mosaico.** El brillo y el canto del widget principal se diferencian claramente de Cierre, Mensual y Horarios; las tarjetas de importes dejan los tonos verde turquesa y los eventos de Horarios reciben el mismo tratamiento azul secundario, también en móvil.
+
 ## 2026-10-17
 
 - **Se concilian cuatro errores de lectura heredados con la evidencia Mistral ya completada.** Ametller 15/09, Sant Aniol 10/09, Sanilec 10/09 y Santa Teresa 09/09 conservaban el fallo anterior de Gemini pese a tener todas sus hojas extraídas correctamente y líneas activas vinculadas. Una reparación de datos verificada retira solo la marca de error y devuelve las fichas a revisión; no confirma líneas ni crea movimientos de stock.
