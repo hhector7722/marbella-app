@@ -9372,3 +9372,137 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     padding-block: 4px 7px;
   }
 }
+
+
+/* Ventas en escritorio: KPIs protagonistas y dos rankings visualmente separados.
+   Se limita al widget compartido de /dashboard y /master/dashboard. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    grid-template-areas: 'financial financial' 'chart chart' 'products hours';
+    grid-template-columns: minmax(0, 1.14fr) minmax(0, .86fr);
+    grid-template-rows: clamp(50px, 7dvh, 74px) minmax(28px, .48fr) minmax(0, 1.56fr);
+    gap: clamp(5px, .85dvh, 10px) clamp(9px, 1vw, 18px);
+    padding: clamp(5px, .7dvh, 10px) clamp(10px, 1vw, 18px) clamp(8px, 1dvh, 15px);
+    min-width: 0;
+    min-height: 0;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    height: 100%;
+    min-height: 0;
+    gap: clamp(7px, .9vw, 15px);
+    align-items: stretch;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div {
+    display: flex;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    min-height: 0;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: clamp(7px, .95dvh, 12px) clamp(10px, 1.1vw, 18px);
+    border-radius: 10px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div > span {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: clamp(11px, .83vw, 14px);
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div > strong {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: clamp(16px, 1.35vw, 25px);
+    font-weight: 750;
+    line-height: 1.1;
+    letter-spacing: -.025em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Cada ranking tiene su propio fondo, borde y cabecera, sin cambiar el
+     tamaño de los widgets ni el significado de los datos. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours']) {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    align-content: space-evenly;
+    align-self: stretch;
+    gap: clamp(3px, .5dvh, 7px) clamp(3px, .4vw, 7px);
+    padding: clamp(6px, .7dvh, 10px) clamp(7px, .75vw, 13px);
+    border: 1px solid rgb(255 255 255 / .10);
+    border-radius: 11px;
+    background: rgb(255 255 255 / .035);
+    overflow: hidden;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-products'] {
+    background: linear-gradient(145deg, rgb(42 118 199 / .11), rgb(255 255 255 / .02) 65%);
+    border-color: rgb(112 181 255 / .17);
+    grid-template-columns: minmax(0, 1fr) minmax(13px, .25fr) max-content max-content;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hours'] {
+    background: linear-gradient(145deg, rgb(24 146 133 / .10), rgb(255 255 255 / .02) 65%);
+    border-color: rgb(100 205 183 / .16);
+    grid-template-columns: minmax(0, 1fr) max-content max-content;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='desktop-sales-section-title'] {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    align-self: start;
+    min-height: 14px;
+    padding-bottom: clamp(2px, .35dvh, 5px);
+    border-bottom: 1px solid rgb(255 255 255 / .09);
+    color: rgb(235 244 255 / .9);
+    font-size: clamp(9px, .7vw, 11px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-products'] [data-element='desktop-sales-section-title'] {
+    grid-column: 1 / -1;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hours'] [data-element='desktop-sales-section-title'] {
+    grid-column: 1 / -1;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours'])
+    > div:not([data-element='desktop-sales-section-title']) {
+    min-height: 0;
+    font-size: clamp(9px, .68vw, 12px);
+    line-height: 1.15;
+  }
+}
+@media (min-width: 1024px) and (max-height: 730px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    grid-template-rows: 49px minmax(25px, .40fr) minmax(0, 1.55fr);
+    row-gap: 4px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours']) {
+    padding: 5px 7px;
+    row-gap: 2px;
+  }
+}
