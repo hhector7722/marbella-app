@@ -267,21 +267,26 @@ export function HomeSalesMobileSummary({
                         </div>
                     </div>
                     <div ref={chartRef} data-element="mobile-sales-hour-chart"
-                        className="relative flex h-[16px] w-full shrink-0 items-end">
+                        className="relative flex h-[26px] w-full shrink-0 items-start">
                         {chartData ? (
                             <>
                                 <svg viewBox="0 0 160 22" preserveAspectRatio="none"
-                                    className="pointer-events-none block h-[15px] w-full shrink-0 text-[#70b5ff]" role="img"
+                                    className="pointer-events-none block h-[17px] w-full shrink-0 text-[#70b5ff]" role="img"
                                     aria-label="Gráfica de facturación por hora, con eje horizontal y área bajo la curva">
-                                    <path d="M0 19 H160" fill="none" stroke="currentColor"
+                                    <path data-element="hour-axis-baseline" d="M0 19 H160" fill="none" stroke="currentColor"
                                         strokeOpacity=".28" strokeWidth="1" vectorEffect="non-scaling-stroke" />
                                     <path d={chartData.area} fill="currentColor" fillOpacity=".12" />
                                     <path d={chartData.path} fill="none" stroke="currentColor" strokeWidth="1.6"
                                         strokeLinecap="round" strokeLinejoin="round"
                                         vectorEffect="non-scaling-stroke" />
                                 </svg>
+                                <div data-element="mobile-sales-hour-axis" aria-hidden="true"
+                                    className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between text-[7px] leading-none text-white/55 lg:text-[10px]">
+                                    <span>{BUSINESS_HOURS.start}h</span>
+                                    <span>{BUSINESS_HOURS.end}h</span>
+                                </div>
                                 {dotPosition && (
-                                    <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[15px] lg:h-full">
+                                    <span data-element="mobile-sales-selected-overlay" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[17px] lg:h-full">
                                         <span data-element="selected-hour-dot"
                                             className="absolute z-[2] h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-[#70b5ff] shadow-sm"
                                             style={dotPosition} />
@@ -317,7 +322,7 @@ export function HomeSalesMobileSummary({
                                     className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
                                     title={`${hour.hora}h - ${hour.hora + 1}h${hour.hora === currentHour ? ' (en curso)' : ''}: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]">
-                                        <span className="lg:hidden">{hour.hora}h - {hour.hora + 1}h</span>
+                                        <span className="lg:hidden">{hour.hora}<span data-element="mobile-sales-hour-suffix">h</span>{' - '}{hour.hora + 1}<span data-element="mobile-sales-hour-suffix">h</span></span>
                                         <span className="hidden lg:inline">{hour.hora}:00 - {hour.hora + 1}:00</span>
                                     </span>
                                     <span data-element="mobile-sales-units" className="justify-self-center whitespace-nowrap text-center text-[7px]">
