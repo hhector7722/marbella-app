@@ -772,6 +772,9 @@ describe('Master escritorio: ajustes de Ventas, Último cierre, Asistencia y acc
         assert.match(attendance, /EEE d 'de' MMM/, 'día de la semana abreviado');
         assert.match(attendance, /data-attendance-name/, 'nombre adaptable');
         assert.match(attendance, /data-attendance-hours/, 'horario adaptable');
+        assert.match(attendance, /data-attendance-responsive="true"/, 'móvil y escritorio comparten el ajuste por medidas');
+        assert.match(css, /@media \(max-width: 1023px\) \{[\s\S]*?\[data-attendance-name\]/, 'móvil conserva nombres completos');
+        assert.match(css, /\[data-layout='master'\][\s\S]*?\[data-element='mobile-sales-snapshot'\] \{\s*grid-template-rows: max-content minmax\(0, 1fr\);/, 'ventas móvil adapta también la altura de sus tarjetas');
         assert.doesNotMatch(attendance, /flex-1 truncate text-\[7px\]/, 'el nombre no se recorta');
         assert.match(css, /grid-template-rows: max-content minmax\(26px, \.43fr\)/, 'ventas usa la altura de sus datos');
         assert.match(css, /--home-shortcut-label-band: calc\(var\(--espacio-1\) \+ 23px\);/);

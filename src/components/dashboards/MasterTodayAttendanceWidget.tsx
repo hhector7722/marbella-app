@@ -82,7 +82,7 @@ export function MasterTodayAttendanceWidget({
     const redBarRef = useRef<HTMLDivElement>(null);
     const logsBlockRef = useRef<HTMLDivElement>(null);
     const fitRef = useRef<HTMLDivElement>(null);
-    const [fontScale, setFontScale] = useState({ date: 10, row: 9, inset: 7 });
+    const [fontScale, setFontScale] = useState({ date: 13, row: 11, inset: 9 });
 
     const hasExpandableLogs = logs.length >= 6;
     const visibleLogs = useMemo(
@@ -129,9 +129,9 @@ export function MasterTodayAttendanceWidget({
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             const family = getComputedStyle(element).fontFamily || 'sans-serif';
-            const inset = Math.min(12, Math.max(6, width * 0.07));
+            const inset = Math.min(14, Math.max(8, width * 0.065));
             const dateText = dateLabel || 'Mié 28 de oct';
-            const headerMax = Math.min(17, Math.max(10, width * 0.115));
+            const headerMax = Math.min(19, Math.max(12, width * 0.125));
             let dateSize = headerMax;
             if (context) {
                 context.font = `700 12px ${family}`;
@@ -142,7 +142,7 @@ export function MasterTodayAttendanceWidget({
 
             const count = visibleLogs.length;
             const countFactor = count <= 2 ? 1 : count === 3 ? 0.96 : count === 4 ? 0.92 : 0.83;
-            const idealFont = Math.min(17, Math.max(10, width * 0.14)) * countFactor;
+            const idealFont = Math.min(19, Math.max(11, width * 0.15)) * countFactor;
             const moreControlHeight = hasExpandableLogs ? 16 : 0;
             const verticalSpace = Math.max(0, height - (dateSize * 1.3 + 6) - 12 - 4 - moreControlHeight);
             const heightLimit = count ? (verticalSpace / count - 2.5) / 1.28 : idealFont;
@@ -162,7 +162,7 @@ export function MasterTodayAttendanceWidget({
             }
             // Si excepcionalmente el nombre es larguísimo, se parte en líneas
             // y la lista se desplaza: nunca se oculta ni se añade ellipsis.
-            const rowSize = Math.max(7, Math.min(idealFont, widthLimit, heightLimit));
+            const rowSize = Math.max(8, Math.min(idealFont, widthLimit, heightLimit));
             const next = {
                 date: Math.round(dateSize * 10) / 10,
                 row: Math.round(rowSize * 10) / 10,
@@ -319,7 +319,7 @@ export function MasterTodayAttendanceWidget({
 
     return (
         <>
-            <div ref={fitRef} className="relative flex h-full min-h-0 flex-col" data-fit="today">
+            <div ref={fitRef} className="relative flex h-full min-h-0 flex-col" data-fit="today" data-attendance-responsive="true">
                 {loading ? (
                     <div
                         className="absolute inset-0 z-10 flex items-center justify-center"

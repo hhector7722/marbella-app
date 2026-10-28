@@ -10320,3 +10320,47 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     justify-content: center;
   }
 }
+
+
+/* Master smartphone/tablet: el widget de asistencia usa la tipografía
+   calculada a partir del espacio real. Sin reglas heredadas de 6–7 px;
+   respetar márgenes, registro de salidas y texto sin recortes. */
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='master-asistencia'] [data-fit='today'] {
+    min-width: 0;
+    font-size: inherit;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='master-asistencia'] [data-attendance-row] {
+    min-width: 0;
+    width: 100%;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='master-asistencia'] [data-attendance-name] {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* El resumen de Ventas también adapta sus tarjetas al contenido
+     en smartphone: no imponer una fila de 16px ni estirar las cards. */
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-snapshot'] {
+    grid-template-rows: max-content minmax(0, 1fr);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-kpis'] {
+    height: auto;
+    min-height: 0;
+    align-items: start;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-kpis'] > div {
+    height: auto;
+    min-height: 0;
+    padding-block: 3px;
+    align-self: start;
+  }
+}
