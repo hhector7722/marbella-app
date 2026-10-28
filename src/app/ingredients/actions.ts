@@ -460,3 +460,43 @@ export async function uploadIngredientPhotoAction(
 
   return { ok: true, imageUrl: updated.image_url }
 }
+
+
+export async function listIngredientSuppliersAction(): Promise<
+  { ok: true; suppliers: string[] } | { ok: false; message: string }
+> {
+  const gate = await requireIngredientManager()
+  if (!gate.ok) return { ok: false, message: gate.message }
+  const { data, error } = await gate.supabase.from('suppliers').select('name').order('name')
+  if (error) return { ok: false, message: 'No se pudieron cargar los proveedores.' }
+  return { ok: true, suppliers: [...new Set((data ?? []).map(row => String(row.name ?? '').trim()).filter(Boolean))] }
+}
+
+export async function updateIngredientSuppliersAction(
+  ingredientId: string,
+  supplier: string | null,
+  supplier2: string | null,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const id = String(ingredientId ?? '').trim()
+  if (!INGREDIENT_ID_RE.test(id)) return { ok: false, message: 'Ingrediente no válido.' }
+  const gate = await requireIngredientManager()
+  if (!gate.ok) return { ok: false, message: gate.message }
+  const primary = String(supplier ?? '').trim() || null
+  const secondary = String(supplier2 ?? '').trim() || null
+  if (primary && secondary && primary === secondary) {
+    return { ok: false, message: 'Selecciona proveedores diferentes.' }
+  }
+  const { data, error } = await gate.supabase.from('suppliers').select('name')
+  if (error) return { ok: false, message: 'No se pudieron validar los proveedores.' }
+  const allowed = new Set((data ?? []).map(row => String(row.name ?? '').trim()))
+  if ((primary && !allowed.has(primary)) || (secondary && !allowed.has(secondary))) {
+    return { ok: false, message: 'Selecciona un proveedor existente.' }
+  }
+  const { error: updateError } = await gate.supabase.from('ingredients')
+    .update({ supplier: primary, supplier_2: secondary }).eq('id', id)
+  if (updateError) return { ok: false, message: 'No se pudieron guardar los proveedores.' }
+  revalidatePath('/ingredients')
+  revalidatePath(`/ingredients/${id}`)
+  revalidatePath('/dashboard/inventory')
+  return { ok: true }
+}

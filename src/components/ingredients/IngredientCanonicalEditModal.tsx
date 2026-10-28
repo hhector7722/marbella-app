@@ -9,6 +9,8 @@ import { Field } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/modal'
 import {
   getIngredientCanonicalConfigAction,
+  listIngredientSuppliersAction,
+  updateIngredientSuppliersAction,
   setIngredientArchivedAction,
   setIngredientPriceAndUnitAction,
   transitionIngredientToMetersAction,
@@ -95,6 +97,9 @@ export function IngredientCanonicalEditModal({
   const [baselineImageUrl, setBaselineImageUrl] = useState(ingredient.image_url ?? null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null)
+  const [supplier, setSupplier] = useState(ingredient.supplier ?? '')
+  const [supplier2, setSupplier2] = useState(ingredient.supplier_2 ?? '')
+  const [supplierOptions, setSupplierOptions] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [archiving, setArchiving] = useState(false)
   const [confirmArchive, setConfirmArchive] = useState(false)
@@ -118,12 +123,14 @@ export function IngredientCanonicalEditModal({
       ? baselineDensity !== parsedDensity
       : Math.abs(baselineDensity - parsedDensity) >= 1e-9
   const imageChanged = selectedFile != null
+  const suppliersChanged = supplier !== (ingredient.supplier ?? '') || supplier2 !== (ingredient.supplier_2 ?? '')
   const requiresUnitTransition = unitChanged && newUnit === 'm' && baselineBaseUnit !== 'm'
   const openingMeters = Number(openingMetersInput.trim().replace(',', '.'))
   const validOpeningMeters = openingMetersInput.trim() !== ''
     && Number.isFinite(openingMeters) && openingMeters >= 0
   const canonicalChanged = priceChanged || unitChanged || recipeUnitChanged || densityChanged
   const canSave =
+    (suppliersChanged && !canonicalChanged && !imageChanged) ||
     (imageChanged && !canonicalChanged) ||
     (canonicalChanged && validPrice && validDensity
       && (!requiresUnitTransition || validOpeningMeters))
@@ -140,6 +147,11 @@ export function IngredientCanonicalEditModal({
 
   useEffect(() => {
     let active = true
+    void listIngredientSuppliersAction().then(result => {
+      if (!active) return
+      if (result.ok) setSupplierOptions(result.suppliers)
+      else toast.error(result.message)
+    })
     void getIngredientCanonicalConfigAction(ingredient.id).then((result) => {
       if (!active) return
       if (!result.ok) {
@@ -211,11 +223,15 @@ export function IngredientCanonicalEditModal({
       toast.error('La densidad debe ser mayor que cero o quedar vacía.')
       return
     }
-    if (!imageChanged && !canonicalChanged) return
+    if (!imageChanged && !canonicalChanged && !suppliersChanged) return
 
     setSaving(true)
     try {
       let imagePersisted = false
+      if (suppliersChanged) {
+        const suppliersResult = await updateIngredientSuppliersAction(ingredient.id, supplier || null, supplier2 || null)
+        if (!suppliersResult.ok) { toast.error(suppliersResult.message); return }
+      }
 
       if (selectedFile) {
         const formData = new FormData()
@@ -231,7 +247,7 @@ export function IngredientCanonicalEditModal({
       }
 
       if (!canonicalChanged) {
-        toast.success('Imagen actualizada.')
+        toast.success(suppliersChanged ? 'Proveedor actualizado.' : 'Imagen actualizada.')
         onSaved()
         onClose()
         return
@@ -289,6 +305,10 @@ export function IngredientCanonicalEditModal({
       if (!result.ok) {
         toast.error(result.message)
         return
+      }
+      if (suppliersChanged) {
+        const suppliersResult = await updateIngredientSuppliersAction(ingredient.id, supplier || null, supplier2 || null)
+        if (!suppliersResult.ok) toast.warning(suppliersResult.message)
       }
       setConfirmUnitTransition(false)
       toast.success(`Unidad actualizada a metros. Saldo inicial: ${result.openingMeters.toLocaleString('es-ES')} m.`)
@@ -417,6 +437,18 @@ export function IngredientCanonicalEditModal({
                 <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-zinc-700">
                   Compra
                 </h3>
+              </div>
+              <div className="grid gap-4 px-4 pt-4 sm:grid-cols-2">
+                {([['supplier', 'Proveedor principal', supplier, setSupplier], ['supplier2', 'Proveedor secundario', supplier2, setSupplier2]] as const).map(([id, label, value, setter]) => (
+                  <Field key={id} instance={`ingredient-${id}`} label={label} htmlFor={`ingredient-${id}`}>
+                    <select id={`ingredient-${id}`} value={value} onChange={event => setter(event.target.value)} disabled={saving || configLoading}>
+                      <option value="">Sin asignar</option>
+                      {[...new Set([...supplierOptions, value].filter(Boolean))].sort((a,b) => a.localeCompare(b)).map(name => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                ))}
               </div>
               <div className="grid gap-4 p-4 sm:grid-cols-2">
                 <Field
