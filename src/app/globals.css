@@ -10554,3 +10554,68 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-current-hour='true'] [data-element='mobile-sales-amount'] {
   color: #4ade80;
 }
+
+/* Widget Ventas: paridad de azul/eje con la gráfica de /dashboard/ventas. */
+/* La cascada global del modo oscuro no puede blanquear el SVG ni las marcas
+   del eje: la página de Ventas usa el mismo #70b5ff. */
+[data-component='HomeScreen'][data-widget-scheme='dark']
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  > [data-element='body'] [data-element='mobile-sales-hour-chart'] > svg,
+[data-component='HomeScreen']
+  [data-instance='dashboard-ventas'] [data-element='mobile-sales-hour-chart'] > svg {
+  color: #70b5ff;
+}
+[data-component='HomeScreen'][data-widget-scheme='dark']
+  > [data-element='slot'][data-instance='dashboard-ventas']
+  > [data-element='body'] [data-element='mobile-sales-hour-axis'],
+[data-component='HomeScreen']
+  [data-instance='dashboard-ventas'] [data-element='mobile-sales-hour-axis'] {
+  color: rgb(255 255 255 / .55);
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-hour-chart'] > svg
+  [data-element='hour-axis-baseline'] {
+  stroke-width: 1px;
+}
+@media (max-width: 1023px) {
+  /* 17px de curva + 7px de etiquetas, sin superposición con la línea. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    grid-template-rows: minmax(26px, max-content) minmax(0, 1fr);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hour-chart'] {
+    height: 26px;
+    align-items: flex-start;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hour-chart'] > svg {
+    height: 17px;
+    max-height: 17px;
+  }
+  /* La h hereda el mismo tono discreto que las unidades de su fila. */
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
+    > [data-element='body'] [data-element='mobile-sales-snapshot']
+    :is([data-element='mobile-sales-units'], [data-element='mobile-sales-hour-suffix']) {
+    color: rgb(178 200 223 / .38);
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
+    > [data-element='body'] [data-element='mobile-sales-hours']
+    [data-current-hour='true']
+    :is([data-element='mobile-sales-units'], [data-element='mobile-sales-hour-suffix']) {
+    color: #4ade80;
+  }
+}
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hour-chart'] {
+    align-items: flex-start;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hour-chart'] > svg,
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-selected-overlay'] {
+    height: calc(100% - 12px);
+    max-height: calc(100% - 12px);
+  }
+}
