@@ -8953,3 +8953,66 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     text-overflow: ellipsis;
   }
 }
+
+
+/* Dashboard adaptativo a la ventana REAL del navegador (incluido zoom).
+   Los accesos siguen siendo iconos de una sola celda: nunca crecen hasta
+   ocupar el ancho/alto del widget ni generan una sexta fila. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen']:is([data-layout='master'], [data-layout='ops-admin']) {
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    min-height: 0;
+  }
+  [data-component='HomeScreen']:is([data-layout='master'], [data-layout='ops-admin'])
+    > [data-element='slot'][data-slot='icon'] {
+    /* 100cqi/cqb se miden en la propia celda; 6vw y 88px impiden
+       iconos gigantes en ventanas compactas o con zoom de Windows. */
+    --home-icon-size: min(
+      88px,
+      6vw,
+      100cqi,
+      max(0px, calc(100cqb - var(--home-shortcut-label-band)))
+    );
+    min-width: 0;
+    min-height: 0;
+  }
+  [data-component='HomeScreen']:is([data-layout='master'], [data-layout='ops-admin'])
+    > [data-element='slot'][data-slot='icon']
+    :is([data-component='DashboardShortcut'], [data-component='CajaInicialControl'], [data-component='MasterCajasCambioControl'], [data-component='StaffFichajeControl']) {
+    box-sizing: border-box;
+    width: var(--home-icon-size);
+    max-width: 100%;
+    min-width: 0;
+  }
+  [data-component='HomeScreen']:is([data-layout='master'], [data-layout='ops-admin'])
+    > [data-element='slot'][data-slot='icon']
+    :is([data-component='DashboardShortcut'], [data-component='CajaInicialControl'], [data-component='MasterCajasCambioControl'], [data-component='StaffFichajeControl'])
+    [data-element='iconWrap'] {
+    box-sizing: border-box;
+    width: var(--home-icon-size);
+    max-width: 100%;
+    min-width: 0;
+  }
+  [data-component='HomeScreen']:is([data-layout='master'], [data-layout='ops-admin'])
+    > [data-element='slot'][data-slot='icon']
+    [data-element='iconBox'] {
+    max-width: 100%;
+  }
+}
+
+/* Menor espacio útil = menor separación; no cambia el orden ni las áreas.
+   La altura dinámica responde a la ventana visible, no al monitor físico. */
+@media (min-width: 1024px) and (max-width: 1440px),
+       (min-width: 1024px) and (max-height: 800px) {
+  [data-component='HomeScreen']:is([data-layout='master'], [data-layout='ops-admin']) {
+    --home-row-gap: clamp(6px, 1.15dvh, 12px);
+    --home-shortcut-label-band: clamp(17px, 2.4dvh, 23px);
+    column-gap: clamp(7px, 0.9vw, 14px);
+  }
+  [data-component='HomeScreen']:is([data-layout='master'], [data-layout='ops-admin'])
+    > [data-element='slot'][data-slot='icon']
+    [data-component='DashboardShortcut'] [data-element='text'] {
+    font-size: clamp(9px, 0.76vw, 11px);
+    line-height: 1.12;
+  }
+}
