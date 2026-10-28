@@ -9317,25 +9317,25 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
    2 cifras principales arriba y 3 secundarias debajo. */
 @media (min-width: 1024px) {
   @container closing-metrics (min-width: 340px) {
-    [data-element='closing-compact'] .grid.grid-cols-3 {
+    [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       grid-template-rows: repeat(2, minmax(0, 1fr));
     }
-    [data-element='closing-compact'] .grid.grid-cols-3
+    [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3
       > :is(:nth-child(1), :nth-child(2), :nth-child(3),
             :nth-child(4), :nth-child(5), :nth-child(6)) {
       grid-area: auto;
     }
   }
   @container monthly-metrics (min-width: 340px) {
-    [data-element='monthly-half'] .grid.grid-cols-6 {
+    [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 {
       grid-template-columns: repeat(6, minmax(0, 1fr));
       grid-template-rows: repeat(2, minmax(0, 1fr));
     }
-    [data-element='monthly-half'] .grid.grid-cols-6 > div:nth-child(-n+2) {
+    [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 > div:nth-child(-n+2) {
       grid-column: span 3;
     }
-    [data-element='monthly-half'] .grid.grid-cols-6 > div:nth-child(n+3) {
+    [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 > div:nth-child(n+3) {
       grid-column: span 2;
     }
   }
