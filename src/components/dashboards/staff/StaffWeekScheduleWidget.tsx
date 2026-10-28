@@ -29,6 +29,7 @@ import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
 import { formatEventClock } from '@/components/dashboards/staff/format-event-clock';
+import { getHomeScheduleWeeks } from '@/lib/schedule/home-widget-weeks';
 
 const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const;
 
@@ -212,14 +213,6 @@ function shiftForDay(shifts: ShiftRow[], day: Date): ShiftRow | null {
             return format(start, 'yyyy-MM-dd') === key;
         }) ?? null
     );
-}
-
-function chunkWeeks(days: Date[]): Date[][] {
-    const weeks: Date[][] = [];
-    for (let i = 0; i < days.length; i += 7) {
-        weeks.push(days.slice(i, i + 7));
-    }
-    return weeks;
 }
 
 function formatWeekdayHeading(day: Date): string {
@@ -504,7 +497,16 @@ export function StaffWeekScheduleWidget({
         [visibleRange],
     );
 
-    const monthWeeks = useMemo(() => chunkWeeks(monthDays), [monthDays]);
+    // Cinco semanas como máximo: omitir por completo la sexta (p. ej.,
+    // 30 de noviembre, 31 de agosto, 30/31 de marzo y 31 de mayo de 2027).
+    const monthWeeks = useMemo(() => getHomeScheduleWeeks(monthDays), [monthDays]);
+    // Si hoy pertenece a la sexta semana oculta, expandir la quinta visible,
+    // no una semana inexistente. También se usa para cargar su fin de semana.
+    const displayedExpandedWeekStart = useMemo(() => (
+        monthWeeks.some(week => isSameWeek(week[0], expandedWeekStart, { weekStartsOn: 1 }))
+            ? expandedWeekStart
+            : monthWeeks[monthWeeks.length - 1]?.[0] ?? expandedWeekStart
+    ), [monthWeeks, expandedWeekStart]);
 
     useEffect(() => {
         const viewport = monthWeeksRef.current;
@@ -520,7 +522,7 @@ export function StaffWeekScheduleWidget({
         } else if (itemRect.top < viewRect.top) {
             viewport.scrollTop -= viewRect.top - itemRect.top;
         }
-    }, [expandedWeekStart, monthAnchor]);
+    }, [displayedExpandedWeekStart, monthAnchor]);
 
     const { weeks: overtimeWeekList, loading: overtimeLoading } = useOvertimeWeeks(
         rangeStart,
@@ -536,8 +538,8 @@ export function StaffWeekScheduleWidget({
     }, [overtimeWeekList]);
 
     const loadedActivityDatesRef = useRef<Set<string>>(new Set());
-    const expandedSatKey = useMemo(() => format(addDays(expandedWeekStart, 5), 'yyyy-MM-dd'), [expandedWeekStart]);
-    const expandedSunKey = useMemo(() => format(addDays(expandedWeekStart, 6), 'yyyy-MM-dd'), [expandedWeekStart]);
+    const expandedSatKey = useMemo(() => format(addDays(displayedExpandedWeekStart, 5), 'yyyy-MM-dd'), [displayedExpandedWeekStart]);
+    const expandedSunKey = useMemo(() => format(addDays(displayedExpandedWeekStart, 6), 'yyyy-MM-dd'), [displayedExpandedWeekStart]);
 
     const loadWeekendActivities = useCallback(async (satKey: string, sunKey: string) => {
         if (loadedActivityDatesRef.current.has(satKey) && loadedActivityDatesRef.current.has(sunKey)) {
@@ -707,7 +709,7 @@ export function StaffWeekScheduleWidget({
                     {monthWeeks.map((weekDays) => {
                         const weekStart = weekDays[0];
                         const weekKey = format(weekStart, 'yyyy-MM-dd');
-                        const isExpanded = isSameWeek(weekStart, expandedWeekStart, { weekStartsOn: 1 });
+                        const isExpanded = isSameWeek(weekStart, displayedExpandedWeekStart, { weekStartsOn: 1 });
 
                                 const dayButtons = weekDays.map((day) => {
                                     const inMonth = isSameMonth(day, monthAnchor);
