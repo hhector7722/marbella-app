@@ -9667,3 +9667,21 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   max-height: none;
   overscroll-behavior: contain;
 }
+
+
+/* En Ventas escritorio, las cifras y productos abren el resumen del día
+   mostrado. Los tramos/gráfica conservan su interacción de filtrado. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div,
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-products'] > div:not([data-element='desktop-sales-section-title']) {
+    cursor: pointer;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > div:hover,
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-products'] > div:not([data-element='desktop-sales-section-title']):hover {
+    filter: brightness(1.12);
+  }
+}
