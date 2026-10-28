@@ -6,6 +6,7 @@ import { parseRadiografiaTimestamp, parseDBDate, formatLocalTime } from '@/utils
 import { cn } from '@/lib/utils';
 import { Surface } from '@/components/ui/Surface';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 function isEmptyish(v: unknown): boolean {
   if (v == null) return true;
@@ -170,6 +171,7 @@ function RadarSalaActive({ variant }: { variant: 'default' | 'ventas' }) {
   const [mesas, setMesas] = useState<any[]>([]);
   const [ultimaAct, setUltimaAct] = useState<Date | null>(null);
   const [syncError, setSyncError] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
   /** Evita parpadeo: el TPV a veces manda el ticket ganador sin nombre en un ciclo; conservamos el último por id_ticket. */
   const lastNombreByTicketRef = useRef<Record<string, string>>({});
@@ -276,6 +278,7 @@ function RadarSalaActive({ variant }: { variant: 'default' | 'ventas' }) {
           setSyncError(true);
         }
       } finally {
+        if (active) setInitialLoading(false);
         inflight = false;
       }
     };
@@ -317,6 +320,14 @@ function RadarSalaActive({ variant }: { variant: 'default' | 'ventas' }) {
   });
 
   if (variant === 'ventas') {
+    if (initialLoading) {
+      return (
+        <div role="status" aria-label="Cargando mesas abiertas"
+             className="flex h-full min-h-[120px] w-full items-center justify-center">
+          <LoadingSpinner size="lg" className="text-sky-200"/>
+        </div>
+      );
+    }
     return (
       <div className="space-y-3 text-white">
         <div className="flex flex-wrap items-center justify-between gap-2">
