@@ -234,7 +234,7 @@ export function HomeSalesMobileSummary({
                                 title={sales}>{sales}</strong>
                         </div>
                         <div className="inline-flex w-max max-w-full min-w-0 shrink-0 items-center gap-[3px] rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1 py-0.5">
-                            <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]"><span className="lg:hidden">Venta neta</span><span className="hidden lg:inline">V neta</span></span>
+                            <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]">Venta neta</span>
                             <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
                                 title={net}>{net}</strong>
                         </div>
@@ -281,6 +281,10 @@ export function HomeSalesMobileSummary({
                     </div>
                     <div data-element="mobile-sales-rankings" className="contents tabular-nums">
                         <div data-element="mobile-sales-hours" className="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)_max-content] content-start gap-x-1 gap-y-0.5 pr-1.5 text-left">
+                            <div data-element="desktop-sales-section-title" className="hidden lg:flex col-span-3 min-w-0 items-center gap-1.5">
+                                <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-teal-300" />
+                                <span>Tramos horarios</span>
+                            </div>
                             {displayHours.map((hour, index) => hour ? (
                                 <div key={hour.hora} data-muted-hour={selectedHour !== null && selectedHour !== hour.hora ? 'true' : undefined}
                                     className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
@@ -297,6 +301,10 @@ export function HomeSalesMobileSummary({
                             ) : <div key={`empty-hour-${index}`} className="col-span-3" aria-hidden="true" />)}
                         </div>
                         <div data-element="mobile-sales-products" className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(22px,0.35fr)_max-content_max-content] content-start gap-x-1 gap-y-0.5 text-left">
+                            <div data-element="desktop-sales-section-title" className="hidden lg:flex col-span-4 min-w-0 items-center gap-1.5">
+                                <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-300" />
+                                <span>Productos</span>
+                            </div>
                             {displayProducts.map((product, index) => (
                                 <div key={`${product.name}-${index}`}
                                     className="col-span-4 grid min-w-0 grid-cols-subgrid items-center text-[8px] leading-[1.15]"
