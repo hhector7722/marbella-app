@@ -556,7 +556,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                 instance="master-last-closing-cash-breakdown"
             />
 
-            <SalesPreviewModal preview={preview} onClose={() => setPreview(null)}/>
+            <SalesPreviewModal preview={preview} source="closing" onClose={() => setPreview(null)}/>
 
             {/* Modal Resumen de Ventas */}
             <Modal
