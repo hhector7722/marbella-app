@@ -263,7 +263,7 @@ export function HomeSalesMobileSummary({
                             <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
                                 title={sales}>{sales}</strong>
                         </div>
-                        <div className="inline-flex w-max max-w-full min-w-0 shrink-0 items-center gap-[3px] rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1 py-0.5">
+                        <div data-element="mobile-sales-net-kpi" className="inline-flex w-max max-w-full min-w-0 shrink-0 cursor-default items-center gap-[3px] rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1 py-0.5">
                             <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]">Venta neta</span>
                             <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
                                 title={net}>{net}</strong>
