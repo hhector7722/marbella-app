@@ -10020,23 +10020,28 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   box-shadow: none;
 }
 
-/* La página y el detalle de Ventas comparten el material premium sin cambiar
-   el calendario claro, las dimensiones del Modal ni el flujo de navegación. */
-[data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
-  :is(section, [data-element='mobile-sales-detail-card']),
+/* Ventas: superficie principal del mismo azul marino degradado del widget
+   Ventas en inicio. Escritorio: sólo la ficha central; los otros bloques
+   conservan sus colores. Smartphone: todas las cards de la página. */
 [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
-  :is(.history-desktop-summary, .history-desktop-day, [data-element='invoices']) {
+  :is(.history-desktop-summary, [data-element='invoices']) {
   background: var(--ventas-premium-secondary);
   border-color: var(--ventas-premium-edge-soft);
   box-shadow: var(--ventas-premium-shadow-secondary);
 }
 [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] .history-desktop-day {
-  background: var(--ventas-premium-main);
+  background: var(--ventas-home-main);
   border-color: var(--ventas-premium-edge);
+  box-shadow: var(--ventas-premium-shadow-secondary);
+}
+[data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+  :is(section, [data-element='mobile-sales-detail-card']) {
+  background: var(--ventas-home-main);
+  border-color: var(--ventas-premium-edge-soft);
+  box-shadow: var(--ventas-premium-shadow-secondary);
 }
 [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
   [data-element='mobile-sales-detail-card'] {
-  background: var(--ventas-premium-main);
   border-color: var(--ventas-premium-edge);
 }
 [data-component='Modal']:is(
