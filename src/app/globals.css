@@ -10076,11 +10076,15 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     color: rgb(178 200 223 / .38);
     font-weight: 400;
   }
+  /* El importe usa el blanco del nombre de su propia fila.
+     La franja en curso se excluye para mantener sus números verdes. */
   [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
     > [data-element='body']
     [data-element='mobile-sales-snapshot']
-    [data-element='mobile-sales-amount'] {
-    color: var(--home-widget-ink-secondary);
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
+    > div:not([data-current-hour='true'])
+    > [data-element='mobile-sales-amount'] {
+    color: var(--home-widget-ink);
     font-weight: 600;
   }
 }
