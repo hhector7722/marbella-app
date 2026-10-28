@@ -368,7 +368,7 @@ export function HomeSalesMobileSummary({
                                         <span className="block h-full rounded-full bg-[#70b5ff]"
                                             style={{ width: `${topProductRevenue > 0 ? Math.min(100, Math.max(0, Number(product.revenue) / topProductRevenue * 100)) : 0}%` }} />
                                     </span>
-                                    <span data-element="mobile-sales-units" className="justify-self-end whitespace-nowrap text-right text-[7px]">{product.quantity.toLocaleString('es-ES')}<span className="hidden lg:inline"> u</span></span>
+                                    <span data-element="mobile-sales-units" className="justify-self-end whitespace-nowrap text-right text-[7px]">{product.quantity.toLocaleString('es-ES')}</span>
                                     <span data-element="mobile-sales-amount" className="justify-self-end whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">{product.revenue.toLocaleString('es-ES', { maximumFractionDigits: 2 })}€</span>
                                 </div>
                             ))}
