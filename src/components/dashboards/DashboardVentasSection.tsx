@@ -78,8 +78,11 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     // La tarjeta solo conserva los tres productos visibles de la fecha exacta.
     // El ranking completo se solicita únicamente desde el modal de detalle.
     const [productSnapshot, setProductSnapshot] = useState<{ date: string; items: HomeWidgetTopProduct[] } | null>(null);
+    const productCacheRef = useRef<Map<string, HomeWidgetTopProduct[]>>(new Map());
+    const [productRequest, setProductRequest] = useState<{ date: string; loading: boolean; error: boolean } | null>(null);
     const [productRefresh, setProductRefresh] = useState(0);
-    const mobileTopProducts = productSnapshot?.date === salesViewDate ? productSnapshot.items : [];
+    const mobileTopProducts = productSnapshot?.date === salesViewDate
+        ? productSnapshot.items : productCacheRef.current.get(salesViewDate) ?? [];
 
     // El cierre puede registrarse hoy: no basta con comprobar la fecha.
     // Evita destacar una franja como "en curso" tras el cierre de caja.
@@ -332,48 +335,49 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
     salesViewDateRef.current = salesViewDate;
 
-    // La petición del widget trae solo las tres líneas con mayor facturación.
-    // `.order().limit(3)` limita el resultado en PostgREST, no en memoria.
-    // El snapshot fechado evita productos del día anterior durante la navegación.
+    // La consulta trae como máximo tres productos, ordenados por facturación.
+    // Respuestas, caché y estado de carga tienen fecha: al cambiar de día no
+    // aparecen datos antiguos ni se deja el ranking vacío por una petición lenta.
     useEffect(() => {
         const requestDate = salesViewDate;
         let active = true;
-        setProductSnapshot(current => current?.date === requestDate ? current : null);
+        const cached = productCacheRef.current.get(requestDate);
+        if (cached) setProductSnapshot({ date: requestDate, items: cached });
+        setProductRequest({ date: requestDate, loading: true, error: false });
+
         const load = async () => {
             for (let attempt = 0; attempt < 2; attempt++) {
                 try {
-                    const rankingQuery = supabase.rpc('get_product_sales_ranking', {
-                        p_start_date: requestDate,
-                        p_end_date: requestDate,
-                        p_start_time: null,
-                        p_end_time: null,
+                    const query = supabase.rpc('get_product_sales_ranking', {
+                        p_start_date: requestDate, p_end_date: requestDate,
+                        p_start_time: null, p_end_time: null,
                     });
-                    // Ante una incompatibilidad con ORDER de PostgREST, el
-                    // segundo intento aprovecha el orden canónico de la RPC.
-                    // Ambos envían LIMIT 3 a la base de datos.
                     const { data, error } = attempt === 0
-                        ? await rankingQuery.order('total_ingresos', { ascending: false }).limit(3)
-                        : await rankingQuery.limit(3);
+                        ? await query.order('total_ingresos', { ascending: false }).limit(3)
+                        : await query.limit(3);
                     if (!active || salesViewDateRef.current !== requestDate) return;
                     if (error) {
                         console.warn('Ranking breve del widget de ventas:', error);
                         continue;
                     }
-                    const items = ((data ?? []) as { nombre_articulo: string; cantidad_total: number; total_ingresos: number }[]).map(item => ({
+                    const items = ((data ?? []) as {
+                        nombre_articulo: string; cantidad_total: number; total_ingresos: number;
+                    }[]).map(item => ({
                         name: String(item.nombre_articulo ?? 'Producto'),
                         quantity: Number(item.cantidad_total ?? 0),
                         revenue: Number(item.total_ingresos ?? 0),
                     }));
+                    productCacheRef.current.set(requestDate, items);
                     setProductSnapshot({ date: requestDate, items });
+                    setProductRequest({ date: requestDate, loading: false, error: false });
                     return;
                 } catch (error) {
-                    if (!active) return;
-                    console.warn('Reintento del ranking breve de ventas:', error);
+                    if (!active || salesViewDateRef.current !== requestDate) return;
+                    console.warn('Reintentando el top 3 del widget:', error);
                 }
             }
-            // No dejar los productos del día anterior ni datos inventados.
             if (active && salesViewDateRef.current === requestDate) {
-                setProductSnapshot({ date: requestDate, items: [] });
+                setProductRequest({ date: requestDate, loading: false, error: true });
             }
         };
         void load();
@@ -545,6 +549,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     date={salesViewDate}
                     hours={salesChartData}
                     products={mobileTopProducts}
+                    productsLoading={productRequest?.date === salesViewDate && productRequest.loading && mobileTopProducts.length === 0}
+                    productsError={productRequest?.date === salesViewDate && productRequest.error && mobileTopProducts.length === 0}
                     hasSales={displaySummary.total > 0}
                     isDayClosed={salesClosure?.date !== salesViewDate || salesClosure.closed}
                 />
