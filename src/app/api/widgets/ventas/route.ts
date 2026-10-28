@@ -79,8 +79,24 @@ export async function GET(request: NextRequest) {
       })
     : await createCookieClient();
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(bearer ?? undefined);
-  if (authError || !user) return json({ error: 'Sesión no válida' }, 401);
+  // No utilizar auth.getUser() en un cliente creado con accessToken:
+  // @supabase/supabase-js deshabilita supabase.auth en ese modo.
+  // Un cliente independiente verifica el JWT con GoTrue; el cliente de
+  // consultas mantiene el JWT del usuario, respetando RLS.
+  const authClient = bearer
+    ? createSupabaseClient(url, anonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : supabase;
+  let user: { id: string; email?: string | null } | null = null;
+  try {
+    const { data, error: authError } = await authClient.auth.getUser(bearer ?? undefined);
+    if (authError || !data.user) return json({ error: 'Sesión no válida' }, 401);
+    user = data.user;
+  } catch (error) {
+    console.error('Error validando sesión del widget:', error);
+    return json({ error: 'No se pudo validar la sesión' }, 503);
+  }
   if (!isMasterDashboardUser(user.email)) return json({ error: 'Sin permiso' }, 403);
 
   const today = madridToday();
