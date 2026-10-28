@@ -195,7 +195,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     const h = Number(r.hora);
                     if (h >= 0 && h < 24) hourly[h] = { hora: h, total: Number(r.total) || 0 };
                 });
-                setSalesChartData(hourly);
+                if (salesViewDateRef.current === dateStr) setSalesChartData(hourly);
                 return;
             }
             const { data: tickets } = await supabase
@@ -207,9 +207,11 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 const hour = getBusinessHourFromTicket(t);
                 hourly[hour].total += Number(t.total_documento) || 0;
             });
-            setSalesChartData(hourly);
+            if (salesViewDateRef.current === dateStr) setSalesChartData(hourly);
         } catch {
-            setSalesChartData(Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 })));
+            if (salesViewDateRef.current === dateStr) {
+                setSalesChartData(Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 })));
+            }
         }
     };
 
@@ -219,15 +221,19 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
             await fetchHourlySales(dateStr);
             try {
                 const { data: salesStats } = await supabase.rpc('get_daily_sales_stats', { target_date: dateStr });
-                setLiveTickets({
-                    total: salesStats?.total_ventas ?? 0,
-                    count: salesStats?.recuento_tickets ?? 0,
-                });
+                if (salesViewDateRef.current === dateStr) {
+                    setLiveTickets({
+                        total: Number(salesStats?.total_ventas ?? 0),
+                        count: Number(salesStats?.recuento_tickets ?? 0),
+                    });
+                }
             } catch {
-                setLiveTickets({ total: 0, count: 0 });
+                if (salesViewDateRef.current === dateStr) {
+                    setLiveTickets({ total: 0, count: 0 });
+                }
             }
         } finally {
-            setSalesLoading(false);
+            if (salesViewDateRef.current === dateStr) setSalesLoading(false);
         }
     };
 
