@@ -9472,7 +9472,8 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     [data-element='mobile-sales-hours'] {
     background: linear-gradient(145deg, rgb(24 146 133 / .10), rgb(255 255 255 / .02) 65%);
     border-color: rgb(100 205 183 / .16);
-    grid-template-columns: minmax(0, 1fr) max-content max-content;
+    /* Hora a la izquierda, unidades centradas en el hueco e importe a la derecha. */
+    grid-template-columns: max-content minmax(20px, 1fr) max-content;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='desktop-sales-section-title'] {
@@ -10716,4 +10717,32 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 [data-component='HomeScreen'] [data-instance='dashboard-ventas']
   [data-element='mobile-sales-hour-chart'] [data-element='hour-chart-fill'] {
   stroke: none;
+}
+
+/* Escritorio: importes destacados y unidades discretas como en smartphone. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
+    > div > [data-element='mobile-sales-amount'] {
+    font-weight: 700;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
+    > div > [data-element='mobile-sales-units'] {
+    color: rgb(178 200 223 / .38);
+    font-weight: 400;
+  }
+  /* Incluso en la franja en curso, el verde es para la hora y el importe,
+     nunca para las unidades. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hours'] [data-current-hour='true']
+    > [data-element='mobile-sales-units'] {
+    color: rgb(178 200 223 / .38);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hours'] > div
+    > [data-element='mobile-sales-units'] {
+    justify-self: center;
+    text-align: center;
+  }
 }
