@@ -37,13 +37,24 @@ export function financialEvidence(doc: CanonicalDocument) {
   // a gross expense, rather than the previous implicit 10% tax assumption.
   const consistent = subtotal != null && tax != null
     && Math.abs(subtotal + tax - gross) < 0.04
+  // A supplier can print one partial taxable base as 'subtotal'. Recover a
+  // single valid tax band only when the ENTIRE sum of item totals plus that
+  // band's rounded VAT equals the document's printed total.
+  const inferredRate = !consistent && tax == null && listedTotal != null
+    && sumLines != null && sumLines > 0 && subtotal != null
+    && subtotal > 0 && subtotal < sumLines
+    ? [4, 10, 21].find((rate) => Math.abs(
+        sumLines + Math.round(sumLines * rate) / 100 - listedTotal) < 0.03) ?? null
+    : null
+  const inferredTax = inferredRate != null && sumLines != null
+    ? Math.round((gross - sumLines) * 100) / 100 : null
   return {
     total_amount: gross,
-    base_amount: consistent ? subtotal! : gross,
-    tax_amount: consistent ? tax! : null,
+    base_amount: consistent ? subtotal! : inferredRate != null ? sumLines! : gross,
+    tax_amount: consistent ? tax! : inferredTax,
     tax_rate: consistent && subtotal! > 0
-      ? Math.round((tax! / subtotal!) * 10000) / 100 : null,
-    tax_unknown: !consistent,
+      ? Math.round((tax! / subtotal!) * 10000) / 100 : inferredRate,
+    tax_unknown: !consistent && inferredRate == null,
     from_document_total: listedTotal != null,
   }
 }

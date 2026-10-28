@@ -468,3 +468,22 @@ test('descuento porcentual del 100 % con neto 0 reconcilia; otros no', () => {
   assert.equal(reconcilePercentageDiscountedUnitPrice({ ...gift, discount_raw: '99' }), null)
   assert.equal(reconcilePercentageDiscountedUnitPrice({ ...gift, line_total_raw: '0,01' }), null)
 })
+
+
+
+test('Sanilec: subtotal parcial con IVA 21% exacto no bloquea el documento', () => {
+  const source: CanonicalDocument = {
+    supplier_name_raw:'Sanilec', document_number_raw:'A/64227',
+    document_date_raw:'2026-10-26', currency_raw:'EUR',
+    subtotal_raw:'149,22',tax_raw:null,total_raw:'192,78',
+    lines:[row({ description_raw:'Envases',quantity_raw:'2',unit_price_raw:'79,66',
+      line_total_raw:'159,32',tax_rate_raw:null })]
+  }
+  const result=validateObservedDocument(source)
+  assert.equal(result.lineSum,159.32)
+  assert.deepEqual(result.reasons,[])
+  assert.ok(validateObservedDocument({...source,total_raw:'191,40'}).reasons
+    .includes('lineas_subtotal_no_reconcilian'))
+  assert.ok(validateObservedDocument({...source,total_raw:'200,00'}).reasons
+    .includes('lineas_subtotal_no_reconcilian'))
+})

@@ -143,7 +143,7 @@ export async function POST(request: Request) {
     // accounting, especially for the dedicated supplier "Otros".
     const { data: invoiceRow, error: invoiceLookupError } = await db
       .from('purchase_invoices')
-      .select('id,supplier_id,source,document_kind,total_amount,base_amount,invoice_number,status')
+      .select('id,supplier_id,source,document_kind,total_amount,base_amount,tax_amount,tax_rate,invoice_number,status')
       .eq('id', job.invoice_id).single()
     if (invoiceLookupError || !invoiceRow) throw new Error('invoice_financial_lookup_failed')
     const { data: supplierRow, error: supplierLookupError } = await db
@@ -158,7 +158,17 @@ export async function POST(request: Request) {
         patch.total_amount = evidence.total_amount
         patch.base_amount = evidence.base_amount
         patch.tax_amount = evidence.tax_amount
-        patch.tax_rate = evidence.tax_rate
+        patch.tax_rate = evidence.tax_rate == null ? null : evidence.tax_rate / 100
+      } else if (evidence && invoiceRow.source === 'email'
+        && evidence.tax_unknown === false && evidence.tax_amount != null
+        && invoiceRow.tax_amount == null
+        && Math.abs(Number(invoiceRow.total_amount) - evidence.total_amount) < 0.01
+        && Math.abs(Number(invoiceRow.base_amount) - evidence.total_amount) < 0.01) {
+        // Repair previous gross-only evidence when the full VAT breakdown is
+        // mathematically established. Never overwrite manually classified tax.
+        patch.base_amount = evidence.base_amount
+        patch.tax_amount = evidence.tax_amount
+        patch.tax_rate = evidence.tax_rate == null ? null : evidence.tax_rate / 100
       }
       const invoiceNumber = (canonical.document_number_raw ?? '').trim()
       if (invoiceRow.source === 'email' && invoiceNumber.length >= 3
@@ -193,6 +203,8 @@ export async function POST(request: Request) {
     metrics = { ...metrics, duration_ms: Date.now() - started,
       line_count: canonical.lines.length, mapped_line_count: proposals.ready,
       auto_applied_line_count: Number(auto?.applied ?? 0),
+      significant_price_change_count: Array.isArray(auto?.largePriceChanges)
+        ? auto.largePriceChanges.length : 0,
       exception_count: Array.isArray(auto?.blocked) ? auto.blocked.length : proposals.exceptions,
       auto_block_reason: typeof auto?.reason === 'string' ? auto.reason : null,
       proposal_count: proposals.created, skipped: proposals.skipped ?? null }

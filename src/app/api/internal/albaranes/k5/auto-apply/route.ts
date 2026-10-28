@@ -14,7 +14,8 @@ import {
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const MAX_PRICE_DELTA_RATIO = 0.25
+// Variation threshold is informational: validated economic changes must not block receipts.
+const PRICE_CHANGE_ALERT_RATIO = 0.25
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AdminClient = ReturnType<typeof createClient<any>>
@@ -366,6 +367,7 @@ async function autoApplyDeterministicReceipts(
   )
 
   const blocked: AutoApplyBlocked[] = []
+  const largePriceChanges: Array<{ lineId: string; ingredientId: string; ratio: number }> = []
   const applied: Array<Record<string, unknown>> = []
   let eligible = 0
 
@@ -473,17 +475,17 @@ async function autoApplyDeterministicReceipts(
     const priceLocked = preview.price_locked === true
     const priceBefore = numberOrNull(preview.price_before)
     const priceAfter = numberOrNull(preview.price_after)
-    if (!priceLocked) {
-      if (priceBefore == null || priceBefore <= 0 || priceAfter == null || priceAfter <= 0) {
-        blocked.push({ proposalId, lineId, reason: 'price_baseline_missing' })
-        continue
-      }
-      const deltaRatio = Math.abs(priceAfter - priceBefore) / priceBefore
-      if (!Number.isFinite(deltaRatio) || deltaRatio > MAX_PRICE_DELTA_RATIO) {
-        blocked.push({ proposalId, lineId, reason: 'price_delta_over_25_percent' })
-        continue
-      }
+    // K4's validated exact economics are authoritative. Prior price is useful
+    // for notifying the owner, not for invalidating a legitimate supplier price.
+    if (!priceLocked && (priceAfter == null || priceAfter < 0)) {
+      blocked.push({ proposalId, lineId, reason: 'price_after_unavailable' })
+      continue
     }
+    const deltaRatio = !priceLocked && priceBefore != null && priceBefore > 0
+      && priceAfter != null
+      ? Math.abs(priceAfter - priceBefore) / priceBefore : null
+    const largePriceChange = deltaRatio != null && Number.isFinite(deltaRatio)
+      && deltaRatio > PRICE_CHANGE_ALERT_RATIO
 
     if (payload.previewOnly) continue
 
@@ -509,6 +511,37 @@ async function autoApplyDeterministicReceipts(
       idempotent: result.idempotent === true,
       priceChanged: result.price_changed === true,
     })
+    if (largePriceChange && lineId && result.idempotent !== true) {
+      largePriceChanges.push({ lineId, ingredientId, ratio: deltaRatio! })
+    }
+  }
+
+  // Informational notification: do not roll back an already validated receipt
+  // if the alerts service is temporarily unavailable. Deduplicate by invoice.
+  if (largePriceChanges.length && !payload.previewOnly) {
+    try {
+      const { data: owner } = await supabase.from('profiles')
+        .select('id').eq('email','hhector7722@gmail.com').maybeSingle()
+      if (owner?.id) {
+        const { data: prior } = await supabase.from('user_notifications')
+          .select('id').eq('user_id',owner.id)
+          .eq('type','albaran_price_variation')
+          .eq('entity_id',payload.invoiceId).limit(1).maybeSingle()
+        if (!prior) {
+          const { error: alertError } = await supabase.from('user_notifications').insert({
+            user_id: owner.id, type: 'albaran_price_variation',
+            title: 'Variación importante de precio en albarán',
+            body: largePriceChanges.length + ' artículo(s) con variación superior al 25%. '
+              + 'La recepción verificada se ha realizado automáticamente.',
+            action_url: '/dashboard/albaranes',
+            entity_type: 'purchase_invoice', entity_id: payload.invoiceId,
+          })
+          if (alertError) console.error('[k5] Unable to notify price variation:', alertError.code)
+        }
+      }
+    } catch (error) {
+      console.error('[k5] Unexpected price notification issue:', error)
+    }
   }
 
   return {
@@ -518,7 +551,8 @@ async function autoApplyDeterministicReceipts(
     previewOnly: payload.previewOnly,
     blocked,
     appliedItems: applied,
-    maxPriceDeltaRatio: MAX_PRICE_DELTA_RATIO,
+    largePriceChanges,
+    priceAlertRatio: PRICE_CHANGE_ALERT_RATIO,
   }
 }
 

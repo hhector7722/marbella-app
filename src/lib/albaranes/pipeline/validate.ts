@@ -568,16 +568,15 @@ export function validateObservedDocument(document: CanonicalDocument): {
   lineSum: number | null
 } {
   const lines = document.lines.map(validateObservedLine)
-  const economicLines = lines.filter((_, index) => {
-    const source = document.lines[index]!
-    return !isAdministrativeNonProductRow({
+  const economicIndexes = document.lines.flatMap((source, index) =>
+    isAdministrativeNonProductRow({
       name: source.description_raw,
       supplierProductCode: source.supplier_product_code_raw,
       quantity: source.quantity_raw, unitPrice: source.unit_price_raw,
       total: source.line_total_raw, netUnitPrice: source.net_unit_price_raw,
       discount: source.discount_raw,
-    })
-  })
+    }) ? [] : [index])
+  const economicLines = economicIndexes.map((index) => lines[index]!)
   const reasons: string[] = []
   if (economicLines.length === 0) reasons.push('sin_lineas')
   const complete = economicLines.every((line) => line.lineTotal != null)
@@ -589,9 +588,27 @@ export function validateObservedDocument(document: CanonicalDocument): {
   // Algunos albaranes imprimen varias bases de IVA y el OCR devuelve una
   // sola en subtotal_raw. Si todas las líneas leídas más el IVA cuadran con
   // el total, la conciliación documental está demostrada sin esa base parcial.
+  const explicitLineRates = economicIndexes.map((index) =>
+    parseObservedDecimal((document.lines[index]!.tax_rate_raw ?? '')
+      .replace('%', '').trim() || null))
+  // Cuando Mistral captura una sola base parcial, el total puede ser la suma
+  // de las líneas MÁS el IVA. Admitir únicamente el tipo legal respaldado
+  // matemáticamente; no inventar desglose si los tipos de línea son mixtos.
+  const rates = [4, 10, 21]
+  const explicitVat = economicLines.length > 0 && explicitLineRates.length === economicLines.length
+    && explicitLineRates.every((rate) => rate != null && [0, ...rates].includes(rate))
+    ? economicLines.reduce((sum, line, i) =>
+        sum + Number((line.lineTotal! * (explicitLineRates[i]! / 100)).toFixed(2)), 0)
+    : null
+  const inferredSingleRate = lineSum != null && total != null && subtotal != null
+    && subtotal > 0 && subtotal < lineSum && tax == null
+    && explicitVat == null && rates.some((rate) => near(
+      lineSum + Number((lineSum * rate / 100).toFixed(2)), total))
   const linesAndTaxMatchTotal = lineSum != null && subtotal != null && subtotal > 0
-    && subtotal < lineSum && tax != null && total != null
-    && near(lineSum + tax, total)
+    && subtotal < lineSum && total != null
+    && ((tax != null && near(lineSum + tax, total))
+      || (explicitVat != null && near(lineSum + explicitVat, total))
+      || inferredSingleRate)
   if (subtotal == null && total == null) reasons.push('total_documento_no_verificable')
   if (subtotal != null && tax != null && total != null && !linesAndTaxMatchTotal
     && !near(subtotal + tax, total)) {

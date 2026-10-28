@@ -24,7 +24,7 @@ export function normalizeSupplierText(value: string): string {
     .split(' ').map((token) => /\d/.test(token) ? token.replace(/[OQ]/g, '0') : token).join(' ')
 }
 
-function nameKey(value: string): string {
+export function supplierNameKey(value: string): string {
   // El número RPP/ENV es el registro administrativo del envasador y puede
   // cambiar o salir truncado en el OCR. No forma parte de la presentación.
   // El nombre, el tamaño y las unidades anteriores permanecen intactos.
@@ -36,7 +36,7 @@ function nameKey(value: string): string {
 }
 
 function numericTokens(value: string): string {
-  return nameKey(value).split(' ').filter((part) => /^\d/.test(part)).join('|')
+  return supplierNameKey(value).split(' ').filter((part) => /^\d/.test(part)).join('|')
 }
 
 function compatiblePresentationName(observed: string, remembered: string): boolean {
@@ -83,7 +83,7 @@ export function matchSupplierProduct(input: {
   memory: SupplierProductMemory[]
 }): ProductMatch {
   const code = normalizeSupplierText(input.productCode ?? '').replace(/ /g, '')
-  const name = nameKey(input.description)
+  const name = supplierNameKey(input.description)
   const rows = input.memory.filter((row) => row.supplierId === input.supplierId && row.ingredientId)
 
   const codeRows = code ? rows.filter((row) =>
@@ -93,11 +93,11 @@ export function matchSupplierProduct(input: {
   if (codeIngredients.size > 1) return unresolved('ambiguous', codeRows.map((row) =>
     ({ ingredientId: row.ingredientId, score: 1, name: row.observedName })))
   if (codeIngredients.size === 1) {
-    const exactCodeRows = codeRows.filter((row) => nameKey(row.observedName) === name)
+    const exactCodeRows = codeRows.filter((row) => supplierNameKey(row.observedName) === name)
     return resolved(exactCodeRows.length ? exactCodeRows : codeRows, 'code', 1)
   }
 
-  const exact = name ? rows.filter((row) => nameKey(row.observedName) === name) : []
+  const exact = name ? rows.filter((row) => supplierNameKey(row.observedName) === name) : []
   const exactIngredients = new Set(exact.map((row) => row.ingredientId))
   if (exactIngredients.size > 1) return unresolved('ambiguous', exact.map((row) =>
     ({ ingredientId: row.ingredientId, score: 1, name: row.observedName })))
@@ -106,7 +106,7 @@ export function matchSupplierProduct(input: {
   const byIngredient = new Map<string, { row: SupplierProductMemory; score: number }>()
   for (const row of rows) {
     const score = compatiblePresentationName(input.description, row.observedName)
-      ? similarity(name, nameKey(row.observedName)) : 0
+      ? similarity(name, supplierNameKey(row.observedName)) : 0
     const previous = byIngredient.get(row.ingredientId)
     if (!previous || score > previous.score ||
         (score === previous.score && row.trustedPresentation && !previous.row.trustedPresentation)) {

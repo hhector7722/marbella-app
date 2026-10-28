@@ -35,3 +35,15 @@ test('document date accepts Spanish and ISO formats only', () => {
   assert.equal(documentedInvoiceDate('31/02/2026'),null)
   assert.equal(documentedInvoiceDate('ayer'),null)
 })
+
+
+test('Sanilec: subtotal parcial, suma de líneas y 21% IVA verifican base y total', () => {
+  const doc = { total_raw:'192,78', subtotal_raw:'149,22', tax_raw:null,
+    lines: [{line_total_raw:'159,32'}] } as unknown as CanonicalDocument
+  assert.deepEqual(financialEvidence(doc), {
+    total_amount:192.78,base_amount:159.32,tax_amount:33.46,tax_rate:21,
+    tax_unknown:false,from_document_total:true
+  })
+  const invalid = {...doc,total_raw:'191,40'}
+  assert.equal(financialEvidence(invalid)?.tax_unknown,true)
+})

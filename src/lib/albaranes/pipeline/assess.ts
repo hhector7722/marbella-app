@@ -1,6 +1,6 @@
 import type { CanonicalDocument } from '../extractors/canonical.ts'
 import { buildExactMappedSnapshot, type ExactMappingInput } from '../k5/mapped-snapshot.ts'
-import { matchSupplierProduct, type SupplierProductMemory } from './matcher.ts'
+import { matchSupplierProduct, normalizeSupplierText, supplierNameKey, type SupplierProductMemory } from './matcher.ts'
 import {
   isMisreadDiscountAmount,
   reconcileFixedDiscountedUnitPrice,
@@ -14,6 +14,14 @@ import { isAdministrativeNonProductRow } from './non-product-line.ts'
 export type PresentationMemory = SupplierProductMemory & ExactMappingInput & {
   lineBillingUnit: string
   status: 'confirmed' | 'trusted_legacy' | 'unverified'
+}
+
+/** Exact, owner-confirmed supplier SKU + presentation. Never use for a renamed product. */
+export type VerifiedSkuRule = {
+  supplier_code: string
+  expected_description: string
+  ingredient_id: string
+  mapping_version_id: string
 }
 
 export type LineAssessment = {
@@ -53,6 +61,7 @@ export function assessDocument(params: {
   supplierId: number
   memory: SupplierProductMemory[]
   presentations: PresentationMemory[]
+  verifiedSkuRules?: VerifiedSkuRule[]
 }): { lines: LineAssessment[]; documentReasons: string[]; readyCount: number } {
   const validation = validateObservedDocument(params.document)
   const lines = params.document.lines.flatMap((line, rowIndex): LineAssessment[] => {
@@ -66,8 +75,24 @@ export function assessDocument(params: {
       discount: line.discount_raw,
     })) return []
     const check = validation.lines[rowIndex]!
-    const match = matchSupplierProduct({ supplierId: params.supplierId,
-      productCode: line.supplier_product_code_raw, description: line.description_raw, memory: params.memory })
+    const code = normalizeSupplierText(line.supplier_product_code_raw ?? '').replaceAll(' ', '')
+    const verifiedRule = code && (params.verifiedSkuRules ?? []).find((rule) =>
+      normalizeSupplierText(rule.supplier_code).replaceAll(' ', '') === code
+      && supplierNameKey(rule.expected_description) === supplierNameKey(line.description_raw))
+    const verifiedPresentation = verifiedRule && params.presentations.find((item) =>
+      item.mappingVersionId === verifiedRule.mapping_version_id
+      && item.ingredientId === verifiedRule.ingredient_id
+      && item.status !== 'unverified')
+    // A SKU authoritatively confirmed by the owner wins over contradictory
+    // historic aliases ONLY if the product description and presentation agree.
+    const match = verifiedRule && verifiedPresentation
+      ? { ingredientId: verifiedRule.ingredient_id,
+          mappingVersionId: verifiedRule.mapping_version_id,
+          source: 'code' as const, score: 1, alternatives: [],
+          trustedPresentation: true }
+      : matchSupplierProduct({ supplierId: params.supplierId,
+          productCode: line.supplier_product_code_raw,
+          description: line.description_raw, memory: params.memory })
     const reasons = [...check.reasons]
     if (!match.ingredientId) reasons.push(match.source === 'ambiguous' ? 'varios_ingredientes_posibles' : 'producto_sin_mapping')
     if (match.ingredientId && match.source === 'fuzzy') reasons.push('mapping_requires_human_review')

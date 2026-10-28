@@ -196,8 +196,14 @@ export async function proposeMistralExtraction(params: {
   const memory = buildSupplierMemory({ legacy: (legacyResult.data ?? []) as LegacyMappingRow[],
     versions, ingredients: (ingredientResult.data ?? []) as IngredientUnitRow[],
     observedCodes })
+  const { data: verifiedRules, error: verifiedRulesError } = await db
+    .from('purchase_supplier_sku_rules')
+    .select('supplier_code,expected_description,ingredient_id,mapping_version_id')
+    .eq('supplier_id', supplierId)
+  if (verifiedRulesError) throw new Error('mistral_verified_sku_rules_unavailable')
   const assessment = assessDocument({ document: params.canonical, supplierId,
-    memory: memory.identities, presentations: memory.presentations })
+    memory: memory.identities, presentations: memory.presentations,
+    verifiedSkuRules: verifiedRules ?? [] })
 
   const { data: existing, error: existingError } = await db.from('purchase_interpretation_proposals')
     .select('id,source_row_index,supplier_profile_hash,created_at,provenance').eq('document_extraction_id', params.extractionId)
