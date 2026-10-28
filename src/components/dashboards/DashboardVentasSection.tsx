@@ -455,10 +455,15 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 </div>
 
                 <div className="min-h-0 flex-1 cursor-pointer lg:cursor-auto" onClick={(event) => {
-                    if (window.matchMedia('(min-width: 1024px)').matches) return;
                     const target = event.target as HTMLElement;
-                    if (target.closest('[data-element="mobile-sales-hour-chart"], [data-element="mobile-sales-hours"], [data-element="mobile-sales-hour-row"], [data-mobile-hour-select]')) return;
-                    setSalesPreview({ mode: 'current', date: format(new Date(), 'yyyy-MM-dd') });
+                    // En escritorio solo las cifras y los productos abren el resumen.
+                    // La gráfica y las horas conservan su selección interactiva.
+                    if (window.matchMedia('(min-width: 1024px)').matches) {
+                        if (!target.closest('[data-element="mobile-sales-kpis"], [data-element="mobile-sales-products"]')) return;
+                    } else if (target.closest('[data-element="mobile-sales-hour-chart"], [data-element="mobile-sales-hours"], [data-element="mobile-sales-hour-row"], [data-mobile-hour-select]')) {
+                        return;
+                    }
+                    setSalesPreview({ mode: 'current', date: salesViewDate });
                 }}>
                 <HomeSalesMobileSummary
                     sales={formatCurrencySpanish(displaySummary.total)}
