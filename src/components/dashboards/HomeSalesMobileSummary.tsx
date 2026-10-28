@@ -339,7 +339,7 @@ export function HomeSalesMobileSummary({
                                     className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
                                     title={`${hour.hora}h - ${hour.hora + 1}h${hour.hora === currentHour ? ' (en curso)' : ''}: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]">
-                                        <span className="lg:hidden">{hour.hora}<span data-element="mobile-sales-hour-suffix">h</span>{' - '}{hour.hora + 1}<span data-element="mobile-sales-hour-suffix">h</span></span>
+                                        <span className="lg:hidden">{hour.hora} - {hour.hora + 1}</span>
                                         <span className="hidden lg:inline">{hour.hora}:00 - {hour.hora + 1}:00</span>
                                     </span>
                                     <span data-element="mobile-sales-units" className="justify-self-center whitespace-nowrap text-center text-[7px]">
@@ -368,7 +368,7 @@ export function HomeSalesMobileSummary({
                                         <span className="block h-full rounded-full bg-[#70b5ff]"
                                             style={{ width: `${topProductRevenue > 0 ? Math.min(100, Math.max(0, Number(product.revenue) / topProductRevenue * 100)) : 0}%` }} />
                                     </span>
-                                    <span data-element="mobile-sales-units" className="justify-self-end whitespace-nowrap text-right text-[7px]">{product.quantity.toLocaleString('es-ES')} u</span>
+                                    <span data-element="mobile-sales-units" className="justify-self-end whitespace-nowrap text-right text-[7px]">{product.quantity.toLocaleString('es-ES')}<span className="hidden lg:inline"> u</span></span>
                                     <span data-element="mobile-sales-amount" className="justify-self-end whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">{product.revenue.toLocaleString('es-ES', { maximumFractionDigits: 2 })}€</span>
                                 </div>
                             ))}
