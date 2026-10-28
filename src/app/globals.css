@@ -10610,14 +10610,41 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   stroke-width: 1px;
 }
 @media (max-width: 1023px) {
-  /* 17px de curva + 7px de etiquetas, sin superposición con la línea. */
+  /* Ventas: no perder la última fila por la retícula de altura cero.
+     El cuerpo entrega su altura real a la retícula, que se compone
+     arriba y mantiene espacio inferior incluso en iPhone compacto. */
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
-    [data-element='mobile-sales-snapshot'] {
-    grid-template-rows: minmax(26px, max-content) minmax(0, 1fr);
+    [data-element='sales-widget-content'] {
+    box-sizing: border-box;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot'] {
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    grid-template-rows: 20px minmax(max-content, 1fr);
+    align-content: start;
+    row-gap: 4px;
+    padding-top: 0;
+    padding-bottom: 9px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+  }
+  /* Con la etiqueta 7h/23h sobre el eje, el SVG no necesita 26px.
+     Los 6px recuperados quedan para las tres filas del ranking. */
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='mobile-sales-hour-chart'] {
-    height: 26px;
+    height: 20px;
+    min-height: 20px;
     align-items: flex-start;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
