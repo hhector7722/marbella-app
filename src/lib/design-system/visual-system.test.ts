@@ -871,13 +871,17 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(weekSchedule, /row\.(?:hours|pax|categories) \|\|/, 'nunca se sustituyen campos vacíos por etiquetas');
         assert.match(weekSchedule, /eventValueRef/, 'el nombre del evento se adapta al ancho real');
         assert.match(weekSchedule, /ResizeObserver\(fit\)/, 'el ajuste del evento reacciona a cambios de anchura');
+        assert.match(weekSchedule, /context\.measureText\(node\.textContent \?\? ''\)\.width/, 'el ajuste mide la anchura de cada valor');
+        assert.match(weekSchedule, /width - gaps - 7/, 'se respeta la separación mínima entre todos los valores');
+        assert.match(weekScheduleCss, /\[data-element='weekend-evento-row'\] \{[\s\S]*?justify-content: space-between;/, 'el espacio sobrante se reparte por igual entre todos los valores');
+        assert.match(weekScheduleCss, /\[data-element='weekend-evento-detail-row'\] \{\s*display: contents;/, 'los valores comparten un solo contenedor flex, sin posiciones fijas');
         assert.match(weekSchedule, /whitespace-nowrap[^"]*" title=\{eventLabel\}/, 'el nombre del evento conserva una sola línea y el texto íntegro');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-value'\] \{[\s\S]*?white-space: nowrap;/, 'no se puede envolver el nombre del evento');
         assert.doesNotMatch(weekScheduleCss, /max-width: 48%/, 'no se reserva porcentaje fijo para Evento');
         assert.doesNotMatch(weekSchedule, /\{!masterMode && \(/, 'el concepto Turno se presenta aunque no haya turno o se consulte Master');
         assert.match(weekScheduleCss, /\[data-element='weekend-content'\] \{[\s\S]*?margin-block: auto;/, 'el grupo se centra verticalmente');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-row'\] \{[\s\S]*?flex-wrap: nowrap;/, 'la fila mantiene Evento y sus detalles juntos');
-        assert.match(weekScheduleCss, /\[data-element='weekend-evento-detail-row'\] \{[\s\S]*?display: flex;/, 'las columnas ocupan su ancho real, no tercios fijos');
+        assert.doesNotMatch(weekScheduleCss, /\[data-element='weekend-evento-detail-row'\] \{\s*display: grid;/, 'ningún valor ocupa una columna rígida');
         assert.match(weekScheduleCss, /grid-template-rows: minmax\(0, 1fr\);/, 'el alto de los dos días es independiente del contenido');
         assert.match(weekScheduleCss, /\[data-element='weekend-details'\] \{[\s\S]*?overflow-y: auto;/, 'la actividad extensa se desplaza dentro de la tarjeta sin cambiar su tamaño');
         assert.match(weekScheduleCss, /\[data-element='month-heading'\] \{[\s\S]*?margin-bottom: -2px;/, 'la cabecera y días se acercan discretamente');

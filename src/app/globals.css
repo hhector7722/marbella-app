@@ -3264,10 +3264,8 @@ button[data-element='catalog-filter'] {
   border-left-color: #fb923c;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-row'] {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: 100%;
-  min-width: 0;
+  /* Detalles y Evento comparten el reparto horizontal del padre. */
+  display: contents;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'] {
   min-width: 0;
@@ -10533,15 +10531,22 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-content'] > [data-element='weekend-turno'] {
   margin-top: 0;
 }
-/* El segundo renglón reparte su anchura según la longitud de cada valor.
-   Solo se reserva un pequeño gap; no hay rejilla ni anchos de columna fijos. */
+/* El segundo renglón usa TODA la anchura interna disponible.
+   Evento, Horario, Participantes y Categoría reparten por igual el espacio
+   sobrante (space-between); gap es solo la separación mínima de seguridad.
+   Los bordes exteriores y márgenes del widget permanecen intactos. */
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] {
   display: flex;
   flex-wrap: nowrap;
-  align-items: flex-start;
-  gap: clamp(3px, .5vw, 8px);
+  justify-content: space-between;
+  align-items: baseline;
+  column-gap: 3px;
   width: 100%;
   min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] > [data-element='weekend-evento'] {
   flex: 0 0 auto;
@@ -10562,25 +10567,12 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   text-overflow: clip;
   scrollbar-width: none;
 }
-[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] > [data-element='weekend-evento-detail'] {
-  flex: 1 1 auto;
-  min-width: 0;
-  width: auto;
-  margin-top: 0;
-}
-[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail'] {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  overscroll-behavior-x: contain;
-}
+/* display: contents aplana únicamente los envoltorios. Los cuatro valores
+   son hijos flex efectivos de la misma fila: no se forman dos distribuciones
+   independientes que desperdicien espacio junto a Evento. */
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] > [data-element='weekend-evento-detail'],
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-row'] {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: baseline;
-  column-gap: clamp(3px, .5vw, 8px);
-  width: max-content;
-  min-width: max-content;
+  display: contents;
 }
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'] {
   flex: 0 0 auto;

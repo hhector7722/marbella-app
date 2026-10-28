@@ -263,38 +263,55 @@ function WeekendDayColumn({
         row.hours?.trim() || row.pax?.trim() || row.categories?.trim()
     ));
 
-    // El nombre del evento tiene prioridad sobre el resto de valores:
-    // se ajusta a la anchura REAL del día, siempre en una sola línea.
-    // Si el título es excepcionalmente largo, conserva desplazamiento
-    // horizontal en vez de elipsis o salto de línea.
+    // Los cuatro valores comparten la MISMA distribución flex:
+    // el espacio libre se reparte por igual entre elementos con
+    // justify-content: space-between, manteniendo un gap mínimo.
+    // Si no caben, medimos los textos REALES y ajustamos su tamaño
+    // conjuntamente antes de permitir ningún solapamiento.
     useEffect(() => {
         const row = eventRowRef.current;
-        const label = eventValueRef.current;
-        if (!row || !label || !eventLabel) return;
+        if (!row) return;
 
         const fit = () => {
             const width = row.clientWidth;
             if (!width) return;
-            label.style.fontSize = '';
-            const style = getComputedStyle(label);
-            const originalSize = parseFloat(style.fontSize) || 6;
+            const nodes = Array.from(row.querySelectorAll<HTMLElement>(
+                '[data-element="weekend-evento-value"], ' +
+                '[data-element="weekend-evento-label"], ' +
+                '[data-element="weekend-evento-detail-value"]',
+            ));
+            if (!nodes.length) return;
+
+            // Restablecer tamaño base para que el cálculo no se acumule
+            // cuando se redimensiona la ventana o se cambian las actividades.
+            nodes.forEach(node => { node.style.fontSize = ''; });
             const context = document.createElement('canvas').getContext('2d');
             if (!context) return;
-            context.font = `${style.fontWeight} ${originalSize}px ${style.fontFamily}`;
-            const naturalWidth = context.measureText(eventLabel).width;
-            // Dejar un pequeño espacio para los detalles, si existen, sin
-            // imponer un porcentaje de ancho fijo al nombre del evento.
-            const available = Math.max(8, width - 5 - (eventDetailsExist ? 12 : 0));
-            const fittedSize = naturalWidth > 0
-                ? Math.min(originalSize, originalSize * available / naturalWidth)
-                : originalSize;
-            label.style.fontSize = `${Math.max(3, fittedSize).toFixed(2)}px`;
+            let naturalWidth = 0;
+            const sizes = nodes.map(node => {
+                const style = getComputedStyle(node);
+                const size = parseFloat(style.fontSize) || 6;
+                context.font = `${style.fontWeight} ${size}px ${style.fontFamily}`;
+                naturalWidth += context.measureText(node.textContent ?? '').width;
+                return size;
+            });
+            const minimumGap = parseFloat(getComputedStyle(row).columnGap) || 3;
+            const gaps = Math.max(0, nodes.length - 1) * minimumGap;
+            // Incluye el borde izquierdo y padding de Evento y una
+            // salvaguarda subpíxel para que no roce ningún contenido.
+            const availableTextWidth = Math.max(1, width - gaps - 7);
+            const ratio = naturalWidth > 0
+                ? Math.min(1, availableTextWidth / naturalWidth)
+                : 1;
+            nodes.forEach((node, i) => {
+                node.style.fontSize = `${(sizes[i] * ratio).toFixed(2)}px`;
+            });
         };
         fit();
         const observer = new ResizeObserver(fit);
         observer.observe(row);
         return () => observer.disconnect();
-    }, [eventLabel, eventDetailsExist]);
+    }, [eventLabel, eventDetailRows]);
 
     return (
         <button
