@@ -26,7 +26,7 @@ type PreviewHeader = {
     avgTicket: number | null;
 };
 
-export function SalesPreviewModal({ preview, onClose }: { preview: SalesPreview | null; onClose: () => void }) {
+export function SalesPreviewModal({ preview, onClose, source = 'sales' }: { preview: SalesPreview | null; onClose: () => void; source?: 'sales' | 'closing' | 'monthly' }) {
     const supabase = useMemo(() => createClient(), []);
     const [facts, setFacts] = useState<PreviewHeader | null>(null);
     const previewKey = preview ? preview.mode + ':' + preview.date : '';
@@ -71,6 +71,7 @@ export function SalesPreviewModal({ preview, onClose }: { preview: SalesPreview 
     const currentFacts = facts?.key === previewKey ? facts : null;
     return (
         <Modal open onClose={onClose} title={title} scheme="dark" variant="amplify"
+            containerClassName={`home-sales-preview--${source}`}
             instance="home-sales-preview" scrollContent={false}
             headerTrailing={
                 <div className="flex max-w-[66vw] min-w-0 items-center gap-2 pr-1 text-[10px] text-white/75 tabular-nums sm:gap-3 sm:text-[11px]">
@@ -90,7 +91,7 @@ export function SalesPreviewModal({ preview, onClose }: { preview: SalesPreview 
                     </span>
                 </div>
             }>
-            <div data-element="sales-preview-viewport" className="flex h-[min(74dvh,730px)] min-h-0 w-full flex-col overflow-hidden">
+            <div data-element="sales-preview-viewport" className="flex h-[min(68dvh,670px)] min-h-0 w-full flex-col overflow-hidden">
                 <EmbeddedSales key={previewKey} embeddedMode={preview.mode === 'current' ? 'day' : preview.mode}
                     embeddedDate={preview.date} embeddedShowLive={preview.mode === 'current'}/>
             </div>
