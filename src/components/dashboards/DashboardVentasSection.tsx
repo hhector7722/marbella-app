@@ -198,18 +198,21 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     };
 
     useEffect(() => {
-        let lastDateStr = format(new Date(), 'yyyy-MM-dd');
+        // Reconciliar la franja en curso, incluso si se pierde algún evento
+        // realtime. También mantiene al día la gráfica sin cambiar de fecha.
         const dayCheckInterval = setInterval(() => {
             const nowStr = format(new Date(), 'yyyy-MM-dd');
-            if (nowStr !== lastDateStr) {
-                lastDateStr = nowStr;
-                if (salesViewDateRef.current === nowStr) {
-                    fetchHourlySales(nowStr);
-                }
-            }
-        }, 60000);
-
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
+            if (salesViewDateRef.current !== nowStr) return;
+            void fetchHourlySales(nowStr);
+            void supabase.rpc('get_daily_sales_stats', { target_date: nowStr })
+                .then(({ data, error }) => {
+                    if (error || salesViewDateRef.current !== nowStr) return;
+                    setLiveTickets({
+                        total: Number(data?.total_ventas ?? 0),
+                        count: Number(data?.recuento_tickets ?? 0),
+                    });
+                });
+        }, 60_000);
         // Nombre único: reutilizar el mismo topic tras subscribe() (Strict Mode / remount)
         // lanza "cannot add postgres_changes callbacks ... after subscribe()".
         const channelName = `realtime_tickets_dashboard:${randomId()}`;
@@ -223,6 +226,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     table: 'tickets_marbella',
                 },
                 (payload: any) => {
+                    const todayStr = format(new Date(), 'yyyy-MM-dd');
                     if (salesViewDateRef.current !== todayStr) return;
                     const rawFecha = payload.new?.fecha as string | Date | undefined;
                     const ticketFecha = rawFecha == null ? '' : String(rawFecha).split('T')[0];
@@ -490,7 +494,10 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     const numPoints = rangeData.length;
                     const maxSelectableHour = isToday(parseSalesViewDate()) ? new Date().getHours() : BUSINESS_HOURS.end;
                     const toPath = (data: { hora: number; total: number }[]) => {
-                        const pts = data.map((d, i) => {
+                        const currentHour = isToday(parseSalesViewDate()) ? new Date().getHours() : null;
+                        const lastHour = currentHour === null ? BUSINESS_HOURS.end : Math.min(BUSINESS_HOURS.end, currentHour);
+                        const visible = data.slice(0, Math.max(0, lastHour - BUSINESS_HOURS.start + 1));
+                        const pts = visible.map((d, i) => {
                             const x = (i / (numPoints - 1 || 1)) * 120;
                             const y = 16 - (d.total / scaleMax) * 13;
                             return `${x},${y}`;
