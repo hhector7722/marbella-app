@@ -868,6 +868,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(weekSchedule, /data-element="weekend-turno"[\s\S]*?data-element="weekend-evento-row"/, 'Turno ocupa la primera línea y Evento comienza la segunda');
         assert.match(weekSchedule, /eventDetailsExist \? \(/, 'los detalles no se presentan si no tienen datos');
         assert.match(weekSchedule, /cells\.filter\(cell => cell\.text\?\.trim\(\)\)/, 'solo se muestran valores presentes');
+        assert.match(weekSchedule, /values\.map\(\(cell, index\) =>/, 'los separadores siguen el orden de los valores existentes');
+        assert.match(weekSchedule, /\{index > 0 \? \([\s\S]*?data-element="weekend-evento-separator"/, 'la barra aparece solo entre dos valores presentes');
+        assert.match(weekSchedule, /\[data-element="weekend-evento-separator"\]/, 'el cálculo de anchura incluye cada separador para evitar solapamientos');
         assert.doesNotMatch(weekSchedule, /row\.(?:hours|pax|categories) \|\|/, 'nunca se sustituyen campos vacíos por etiquetas');
         assert.match(weekSchedule, /eventValueRef/, 'el nombre del evento se adapta al ancho real');
         assert.match(weekSchedule, /ResizeObserver\(fit\)/, 'el ajuste del evento reacciona a cambios de anchura');

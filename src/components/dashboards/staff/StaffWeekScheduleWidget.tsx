@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
     addDays,
@@ -278,7 +278,8 @@ function WeekendDayColumn({
             const nodes = Array.from(row.querySelectorAll<HTMLElement>(
                 '[data-element="weekend-evento-value"], ' +
                 '[data-element="weekend-evento-label"], ' +
-                '[data-element="weekend-evento-detail-value"]',
+                '[data-element="weekend-evento-detail-value"], ' +
+                '[data-element="weekend-evento-separator"]',
             ));
             if (!nodes.length) return;
 
@@ -377,18 +378,28 @@ function WeekendDayColumn({
                                         if (values.length === 0) return null;
                                         return (
                                             <div key={i} data-element="weekend-evento-detail-row" className="flex min-w-0 items-baseline">
-                                                {values.map(cell => (
-                                                    <span
-                                                        key={cell.kind}
-                                                        data-element="weekend-evento-detail-value"
-                                                        data-segment-kind={cell.kind}
-                                                        className={cn(
-                                                            "shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight opacity-80",
-                                                            cell.kind === 'hours' && masterMode && "font-semibold",
-                                                        )}
-                                                    >
-                                                        {cell.text}
-                                                    </span>
+                                                {values.map((cell, index) => (
+                                                    <Fragment key={cell.kind}>
+                                                        {/* Separar solo dos valores presentes. Nunca antes
+                                                            de Horario ni entre Evento y Horario. */}
+                                                        {index > 0 ? (
+                                                            <span
+                                                                data-element="weekend-evento-separator"
+                                                                aria-hidden="true"
+                                                                className="shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight opacity-70"
+                                                            >/</span>
+                                                        ) : null}
+                                                        <span
+                                                            data-element="weekend-evento-detail-value"
+                                                            data-segment-kind={cell.kind}
+                                                            className={cn(
+                                                                "shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight opacity-80",
+                                                                cell.kind === 'hours' && masterMode && "font-semibold",
+                                                            )}
+                                                        >
+                                                            {cell.text}
+                                                        </span>
+                                                    </Fragment>
                                                 ))}
                                             </div>
                                         );
