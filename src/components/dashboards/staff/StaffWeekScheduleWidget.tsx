@@ -693,7 +693,7 @@ export function StaffWeekScheduleWidget({
                     ) : null}
                 </div>
 
-                <div ref={monthWeeksRef} data-element="month-weeks" className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
+                <div ref={monthWeeksRef} data-element="month-weeks" className="flex min-h-0 flex-1 flex-col overflow-visible">
                     {monthWeeks.map((weekDays) => {
                         const weekStart = weekDays[0];
                         const weekKey = format(weekStart, 'yyyy-MM-dd');

@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-10-28
 
+- **El mosaico recupera el color original de Ventas y de sus indicadores.** Las cards interiores de Ventas, Último cierre y Mensual vuelven a sus tonos anteriores. En escritorio, los dos importes de Ventas quedan en tarjetas altas ajustadas al contenido y centradas en cada mitad; Último cierre y Mensual comparten medidas y posiciones en su retícula 3×2. Se elimina la sombra exterior del par y Horarios muestra sus semanas sin scroll dentro del widget.
+
 - **La venta neta del día abierto coincide en widget, página y detalle.** Las tres vistas consultan la misma venta en directo y aplican el mismo cálculo provisional; los días cerrados mantienen la cifra registrada en el cierre. El modal de detalle presenta Productos sobre una sola superficie azul compartida con el resumen. En smartphone, las unidades del widget pierden peso visual para destacar los importes.
 
 - **Ventas unifica su acabado azul premium en inicio, página y detalles.** El widget Ventas conserva el protagonismo; Último cierre, Ventas mensuales y Horarios usan un azul secundario sin matiz petróleo. En escritorio, Último cierre y Ventas mensuales recuperan seis métricas en dos filas de tres columnas, mientras que las tarjetas Ventas y Venta neta muestran el concepto encima del importe, con más altura y texto íntegro. Se conservan los datos, las acciones y la distribución móvil.

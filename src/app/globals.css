@@ -25,6 +25,7 @@
   --ventas-premium-main:
     radial-gradient(ellipse at 16% 0%, rgb(91 167 255 / 0.34), transparent 52%),
     linear-gradient(148deg, #2059ad 0%, #143b82 48%, #09204a 100%);
+  --ventas-home-main: linear-gradient(157deg, #193a63 0%, #0c2348 51%, #071733 100%);
   --ventas-premium-secondary: linear-gradient(155deg, #243e74 0%, #192e59 49%, #112348 100%);
   --ventas-premium-edge: rgb(140 211 255 / 0.84);
   --ventas-premium-edge-soft: rgb(143 188 244 / 0.27);
@@ -3122,10 +3123,7 @@ button[data-element='catalog-filter'] {
   overflow: hidden;
 }
 [data-component='StaffWeekSchedule'] [data-element='month-weeks'] {
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -10013,32 +10011,17 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
    secundario sin matiz petróleo. */
 [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas']
   > [data-element='body'] {
-  background: var(--ventas-premium-main);
-  border-color: var(--ventas-premium-edge);
-  box-shadow: var(--ventas-premium-shadow-main);
+  background: var(--ventas-home-main);
 }
 [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
   > :is([data-element='closing-half'], [data-element='monthly-container']) {
   background: var(--ventas-premium-secondary);
   border-color: var(--ventas-premium-edge-soft);
-  box-shadow: var(--ventas-premium-shadow-secondary);
+  box-shadow: inset 0 1px 0 rgb(231 249 255 / 0.15);
 }
-
-/* Los importes de venta son azules en todos los widgets. La diferencia de
-   jerarquía queda en el brillo de las tarjetas y de sus superficies. */
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
-  [data-element='mobile-sales-kpis'] > div {
-  background: linear-gradient(145deg, rgb(103 177 255 / 0.27), rgb(35 98 193 / 0.18));
-  border-color: rgb(159 220 255 / 0.7);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 4px 12px rgb(0 17 53 / 0.24);
-}
-[data-component='HomeScreen'] [data-element='closing-compact']
-  .grid.grid-cols-3 > :is(button, div),
-[data-component='HomeScreen'] [data-element='monthly-half']
-  .grid.grid-cols-6 > div > [data-metric] {
-  background: rgb(96 150 232 / 0.12);
-  border-color: rgb(138 185 247 / 0.27);
-  box-shadow: inset 0 1px 0 rgb(235 248 255 / 0.06);
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  > :is([data-element='closing-half'], [data-element='monthly-container'])::before {
+  content: none;
 }
 
 /* Horarios comparte el azul secundario y la elevación discreta de los resúmenes. */
@@ -10122,10 +10105,29 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 
 @media (min-width: 1024px) {
   /* Seis métricas en dos filas estables incluso en una tarjeta estrecha. */
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) {
+    box-sizing: border-box;
+    justify-content: space-between;
+    gap: 5px;
+    padding: 6px 8px;
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) > div:first-child {
+    flex: 0 0 19px;
+    height: 19px;
+    min-height: 19px;
+    max-height: 19px;
+  }
   [data-component='HomeScreen'] [data-element='closing-compact'] .grid.grid-cols-3,
   [data-component='HomeScreen'] [data-element='monthly-half'] .grid.grid-cols-6 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: repeat(2, minmax(0, 1fr));
+    column-gap: 5px;
+    row-gap: 4px;
+    width: 100%;
+    height: 100%;
+    align-items: stretch;
   }
   [data-component='HomeScreen'] [data-element='closing-compact']
     .grid.grid-cols-3 > :nth-child(n) {
@@ -10135,6 +10137,27 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     .grid.grid-cols-6 > div:nth-child(n) {
     grid-area: auto;
     grid-column: auto;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(button, div),
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric] {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+  }
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(button, div) > div,
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content'] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    padding: 0 6px;
+    margin: 0;
   }
   /* El título y el importe tienen su propia línea. La altura de la fila se
      adapta al contenido, y si el widget queda bajo se puede desplazar. */
@@ -10148,15 +10171,18 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     [data-element='mobile-sales-kpis'] {
     min-height: var(--ventas-premium-kpi-height);
     align-items: stretch;
+    grid-template-rows: minmax(0, 1fr);
+    justify-items: center;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='mobile-sales-kpis'] > div {
     min-height: var(--ventas-premium-kpi-height);
     height: auto;
-    width: 100%;
+    width: max-content;
     max-width: var(--ventas-premium-kpi-max-width);
     min-width: 0;
     overflow: visible;
+    justify-self: center;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='mobile-sales-kpis'] > div > strong {
@@ -10164,5 +10190,29 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     overflow: visible;
     text-overflow: clip;
     overflow-wrap: anywhere;
+  }
+}
+
+/* Horarios reparte todas las semanas dentro del widget. En ventanas bajas se
+   compacta el aire entre filas para no crear un scroll interno. */
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) > [data-element='body'] > [data-component='StaffWeekSchedule'] {
+    --staff-calendar-gap: 2px;
+    --staff-week-day-size: 11px;
+  }
+}
+@media (min-width: 1024px) and (max-height: 700px) {
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) > [data-element='body'] > [data-component='StaffWeekSchedule'] {
+    --staff-calendar-gap: 3px;
+    --staff-week-day-size: 18px;
+    --staff-week-expansion-min: 4.75rem;
+  }
+  [data-component='HomeScreen'] [data-component='StaffWeekSchedule']
+    [data-element='week-block']:not([data-expanded='true']) {
+    padding-block: 0;
   }
 }

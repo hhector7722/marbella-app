@@ -65,15 +65,16 @@ Es el único token con implementación centralizada real: existe como utilidad �
 
 `color.superficie` no pinta el cuerpo del widget de HomeScreen. Ese hueco es material de sistema (`--home-widget-fill` + blur del `--color-envolvente`). Claro u oscuro según la luminancia del wallpaper. PageScreen, Modal y Surface fuera del mosaico siguen blancos, salvo las excepciones locales expresas. En `/staff/propinas` las cards del historial (`staff-propinas-history-entry`) usan el relleno secundario del mosaico (`--home-widget-fill-secondary`, el mismo que sáb/dom del widget de horario); «Último reparto» permanece en papel. En Ventas y sus detalles se aplica la excepción cromática siguiente.
 
-Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepciones-visuales-locales.md)): el dato de ventas se lee sobre azul marino, con un tono más intenso en Ventas y el detalle diario, y otro azul más discreto en Último cierre, Mensual, Horarios y resúmenes. No sustituye `color.superficie` en el resto del producto ni cambia el color de marca.
+Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepciones-visuales-locales.md)): el dato de ventas se lee sobre azul marino. El widget Ventas conserva su marino original; el detalle diario usa el azul más luminoso. Último cierre, Mensual, Horarios y los resúmenes emplean un azul más discreto. Los indicadores interiores conservan sus tonos semánticos originales de ventas, neto y tendencia. No sustituye `color.superficie` en el resto del producto ni cambia el color de marca.
 
 | Token local | Valor | Papel | Estado |
 |---|---|---|---|
-| `ventas.premium.principal` | brillo azul radial sobre degradado `#2059AD` → `#143B82` → `#09204A` | Ventas y detalle diario; foco visual reconocible también en móvil | adoptado (`--ventas-premium-main`) |
+| `ventas.premium.principal` | brillo azul radial sobre degradado `#2059AD` → `#143B82` → `#09204A` | Página y detalle diario de Ventas | adoptado (`--ventas-premium-main`) |
+| `ventas.home.principal` | degradado `#193A63` → `#0C2348` → `#071733` | Fondo original del widget Ventas en todos los tamaños | adoptado (`--ventas-home-main`) |
 | `ventas.premium.secundario` | degradado `#243E74` → `#192E59` → `#112348` | Último cierre, Mensual, Horarios y paneles secundarios de Ventas | adoptado (`--ventas-premium-secondary`) |
-| `ventas.premium.borde` | `rgb(140 211 255 / 0.84)` | Canto luminoso protagonista | adoptado (`--ventas-premium-edge`) |
+| `ventas.premium.borde` | `rgb(140 211 255 / 0.84)` | Canto luminoso de página y detalle | adoptado (`--ventas-premium-edge`) |
 | `ventas.premium.borde-suave` | `rgb(143 188 244 / 0.27)` | Canto de panel secundario | adoptado (`--ventas-premium-edge-soft`) |
-| `ventas.premium.sombra-principal` | bisel luminoso, relieve azul y sombra de `0 10px 26px` | Elevación de Ventas y sus modales de detalle | adoptado (`--ventas-premium-shadow-main`) |
+| `ventas.premium.sombra-principal` | bisel luminoso, relieve azul y sombra de `0 10px 26px` | Elevación de los modales de detalle de Ventas | adoptado (`--ventas-premium-shadow-main`) |
 | `ventas.premium.sombra-secundaria` | bisel superior tenue y sombra de `0 6px 14px` | Elevación menor para Cierre, Mensual, Horarios y resúmenes | adoptado (`--ventas-premium-shadow-secondary`) |
 | `ventas.premium.kpi-alto` | 84 px | Altura mínima de Ventas y Venta neta en escritorio | adoptado (`--ventas-premium-kpi-height`) |
 | `ventas.premium.kpi-ancho` | 180 px | Ancho máximo igualado de ambas tarjetas en escritorio | adoptado (`--ventas-premium-kpi-max-width`) |
