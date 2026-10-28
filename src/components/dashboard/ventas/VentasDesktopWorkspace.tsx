@@ -19,6 +19,7 @@ import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos
 import { getProductMarginRanking } from '@/app/dashboard/insights/actions';
 import { ProductRankingThumbnail } from './ProductRankingThumbnail';
 import RadarSala from '@/components/dashboards/RadarSala';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import VentasClosingEditor from './VentasClosingEditor';
 import { Modal } from '@/components/ui/modal';
 
@@ -1598,7 +1599,11 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
             selectDate(format(new Date(start.getFullYear(), start.getMonth(), start.getDate() + delta), 'yyyy-MM-dd'));
         }
     };
-    if (initializing) return <div className="w-full py-12 text-center text-sm text-white/65">Cargando ventas y cierres…</div>;
+    if (initializing) return (
+        <div className="flex h-full min-h-0 w-full flex-1 items-center justify-center" role="status" aria-label="Cargando ventas y cierres">
+            <LoadingSpinner size="lg" className="text-sky-200"/>
+        </div>
+    );
     return (
         <>
         <div data-component="HistoryMobileWorkspace" data-page="ventas-consolidated"
@@ -1772,7 +1777,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     </div>
                 </section>
             </div>
-            <section data-element="mobile-sales-detail-card" className="min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
+            <section data-element="mobile-sales-detail-card" className="relative min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
                 <nav className="mb-2 grid grid-cols-3 gap-1 border-b border-white/15 pb-2" aria-label="Detalle de ventas">
                     {(previewMode && !embeddedShowLive
                     ? ([{ id: 'products', label: 'Productos' }, { id: 'tickets', label: 'Tickets' }] as const)
@@ -1818,6 +1823,12 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 : setPage(current => current + PAGE_SIZE)}
                                 className="w-full rounded-md border border-white/25 py-2 text-xs">Ver más</button>
                         )}
+                    </div>
+                )}
+                {previewMode && (crossLoading || dayLoading) && mobileView !== 'live' && (
+                    <div data-element="mobile-sales-loading" role="status" aria-label="Cargando detalle de ventas"
+                         className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-[var(--color-envolvente-bajo)]/90">
+                        <LoadingSpinner size="lg" className="text-sky-200"/>
                     </div>
                 )}
             </section>
