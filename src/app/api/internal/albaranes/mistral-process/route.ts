@@ -6,6 +6,7 @@ import { extractWithMistral, fileSha256, MISTRAL_EXTRACTOR_VERSION,
   MISTRAL_OCR_MODEL } from '@/lib/albaranes/extractors/mistral'
 import { proposeMistralExtraction } from '@/lib/albaranes/pipeline/propose'
 import { documentedInvoiceDate, financialEvidence } from '@/lib/albaranes/email-financial'
+import { documentStockFullyRegistered } from '@/lib/albaranes/k5/fully-processed'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -216,6 +217,30 @@ export async function POST(request: Request) {
       p_metrics: metrics, p_error: null, p_retryable: false,
     })
     if (completeError) throw new Error('job_completion_failed')
+    // The invoice is physically delivered on arrival. Once every product
+    // has an idempotent stock movement, mark the document processed instead
+    // of leaving 'pending_mapping' (which incorrectly suggests user action).
+    if (job.replay_mode === 'live' && auto && Number(auto.applied ?? 0) > 0
+      && !isOtherExpense) {
+      const [activeLines, savedReceipts] = await Promise.all([
+        db.from('purchase_invoice_lines').select('id,status')
+          .eq('invoice_id',job.invoice_id).is('superseded_by_extraction_id',null),
+        db.from('purchase_receipt_confirmations')
+          .select('purchase_invoice_line_id,stock_movement_id')
+          .eq('purchase_invoice_id',job.invoice_id),
+      ])
+      if (!activeLines.error && !savedReceipts.error
+        && documentStockFullyRegistered(activeLines.data ?? [],savedReceipts.data ?? [])) {
+        const { error: markError } = await db.from('purchase_invoices')
+          .update({ status: 'mapped' }).eq('id',job.invoice_id)
+          .in('status',['processing','pending_mapping'])
+        if (markError) console.error('[mistral] Could not mark fully received document:', markError.code)
+      } else if (activeLines.error || savedReceipts.error) {
+        console.error('[mistral] Could not verify full stock posting:', {
+          lines: activeLines.error?.code, confirmations: savedReceipts.error?.code,
+        })
+      }
+    }
     // A valid Otros ticket is an expense even without mapped ingredients.
     // Never count an empty/failed extraction as a paid purchase.
     if (job.replay_mode === 'live' && isOtherExpense && evidence) {
