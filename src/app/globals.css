@@ -1422,8 +1422,11 @@ html[data-quick-fab='open'] main {
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
+/* La fuente de título la aplica next/font/local en el propio h1
+   (catalogTitleFont.className). No volver a definir font-family aquí:
+   si el token CSS no está disponible, esa regla anulaba la fuente local
+   y el navegador podía mostrar la Inter heredada. */
 [data-component='PageScreen'] [data-element='title'][data-face='display'] {
-  font-family: var(--font-easports), sans-serif;
   font-weight: 400;
 }
 [data-component='PageScreen'][data-work='catalog'] [data-element='title'][data-face='display'] {
@@ -1486,9 +1489,6 @@ html[data-quick-fab='open'] main {
   [data-component='PageScreen'][data-work='catalog'] [data-catalog-tile][data-quiet-desktop='true'] [data-element='square'] {
     border-color: rgb(255 255 255 / 0.10);
     box-shadow: none;
-  }
-  [data-component='PageScreen'][data-work='catalog'] [data-catalog-tile][data-quiet-desktop='true'] [data-element='square-fill'] {
-    background-color: color-mix(in srgb, var(--color-envolvente) 28%, var(--color-superficie));
   }
   [data-component='PageScreen'][data-work='catalog'] [data-catalog-tile][data-quiet-desktop='true'] [data-element='name'] {
     color: rgb(255 255 255 / 0.84);

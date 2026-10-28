@@ -1441,7 +1441,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(catalog, /function AccessMenuGrid/, 'los menús de acceso usan la misma rejilla');
         assert.match(catalog, /columns = 3/, 'los menús de acceso van a 3 columnas por defecto');
         assert.match(catalog, /gap-5/, 'hay aire entre celdas');
-        assert.match(catalog, /lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-9/, 'la rejilla equilibrada aprovecha el ancho de escritorio');
+        assert.match(catalog, /lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8/, 'recetas e ingredientes muestran una columna menos en escritorio');
         assert.match(catalog, /lg:gap-x-5 lg:gap-y-5 xl:gap-x-6 xl:gap-y-6/, 'el catálogo deja más aire entre filas y columnas sin reducir las columnas');
         assert.match(tile, /lg:h-10/, 'el nombre conserva espacio para dos líneas legibles en escritorio compacto');
         assert.match(tile, /data-quiet-desktop/, 'solo las celdas compactas activan el aspecto relajado');
@@ -1455,8 +1455,19 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tile, /data-element="name-slot"/, 'el nombre reserva hueco fijo fuera del recuadro');
         assert.doesNotMatch(tile, /truncate/, 'el nombre no se abrevia en una sola fila');
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        assert.match(css, /\[data-catalog-tile\]\[data-quiet-desktop='true'\] \[data-element='square-fill'\]/, 'el fondo suavizado se limita al catálogo de escritorio');
+        assert.doesNotMatch(css, /\[data-catalog-tile\]\[data-quiet-desktop='true'\] \[data-element='square-fill'\]/, 'las imágenes vuelven a fondo blanco');
         assert.match(css, /font-weight: 500;/, 'los nombres de escritorio no requieren negrita intensa');
+        const pageScreen = readFileSync(join(SRC_ROOT, 'components/dashboard/DashboardDetailLayout.tsx'), 'utf8');
+        const titleFont = readFileSync(join(SRC_ROOT, 'lib/fonts/catalog-title.ts'), 'utf8');
+        const recipeDetails = readFileSync(join(SRC_ROOT, 'app/recipes/[id]/page.tsx'), 'utf8');
+        const ingredientDetails = readFileSync(join(SRC_ROOT, 'app/ingredients/[id]/page.tsx'), 'utf8');
+        for (const [name, page] of [['recetas', recipes], ['ingredientes', ingredients], ['ficha receta', recipeDetails], ['ficha ingrediente', ingredientDetails]] as const) {
+            assert.match(page, /titleFace="display"/, `${name} debe mantener la fuente EA Sports`);
+        }
+        assert.match(titleFont, /EASPORTS15\.ttf/, 'la fuente de catálogo procede del archivo EA Sports local');
+        assert.match(pageScreen, /titleFace === 'display' \? catalogTitleFont\.className : null/, 'el título recibe directamente la clase de next font');
+        assert.doesNotMatch(css, /font-family: var\(--font-easports\)/, 'un override CSS no debe sustituir la clase real de next/font/local');
+        assert.match(css, /\[data-element='square-fill'\] \{\s*background-color: var\(--color-superficie\)/, 'el fondo base del catálogo es blanco');
         assert.match(
             css,
             /\[data-component='PageScreen'\]\[data-work='catalog'\] \[data-component='Surface'\]\[data-variant='page'\]/,
