@@ -672,14 +672,15 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
     });
 
-    it('horario compacta únicamente semanas completas pasadas en Actividades y oculta chips incompletos', () => {
+    it('horario compacta todas las semanas en Actividades, con un máximo de dos chips por día', () => {
         const horario = readFileSync(join(SRC_ROOT, 'app/horario/page.tsx'), 'utf8');
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        assert.match(horario, /viewMode === 'actividades' && isBefore\(week\[6\]!, today\)/);
-        assert.match(horario, /data-past-activities-week=\{compactPastWeek \? 'true' : undefined\}/);
+        assert.match(horario, /const compactActivitiesWeek = viewMode === 'actividades'/);
+        assert.match(horario, /data-compact-activities-week=\{compactActivitiesWeek \? 'true' : undefined\}/);
+        assert.match(horario, /activities\.slice\(0, 2\)\.map/);
         assert.match(horario, /const needed = \(child as HTMLElement\)\.getBoundingClientRect\(\)\.height/);
         assert.match(horario, /hidden = compact && i >= visibleCount/);
-        assert.match(css, /\.month-cal-week\[data-past-activities-week='true'\] \{[\s\S]*?height: var\(--month-cal-cell-min-h\)/);
+        assert.match(css, /\.month-cal-week\[data-compact-activities-week='true'\] \{[\s\S]*?height: var\(--month-cal-cell-min-h\)/);
     });
 
     it('horario muestra Actividades por defecto a todos y pinta en gris solo las actividades pasadas del calendario', () => {

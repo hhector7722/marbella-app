@@ -135,7 +135,7 @@ function parseLocalSafe(dateStr: string): Date {
 
 type GroupedActivity = ReturnType<typeof groupActivities>[number];
 
-/** Mantiene íntegras las primeras actividades que caben bajo la fecha de una semana ya terminada. */
+/** Muestra como máximo dos actividades completas por día, independientemente del mes. */
 function CalendarActivityChips({
   activities,
   compact,
@@ -146,7 +146,7 @@ function CalendarActivityChips({
   isPastDay: boolean;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
-  const [visibleCount, setVisibleCount] = useState(activities.length);
+  const [visibleCount, setVisibleCount] = useState(Math.min(2, activities.length));
 
   useLayoutEffect(() => {
     if (!compact) return;
@@ -181,7 +181,7 @@ function CalendarActivityChips({
 
   return (
     <div ref={listRef} className={cn('mt-0.5 flex w-full flex-col gap-0.5 month-cal-chips', compact && 'shrink-0')}>
-      {activities.map((act, i) => {
+      {activities.slice(0, 2).map((act, i) => {
         const bgColor = isPastDay ? '#71717a' : (act.activityColor || stringToHslColor(act.activityName));
         const hasParticipants = act.totalParticipants != null || (act.categories && act.categories.length > 0);
         const hidden = compact && i >= visibleCount;
@@ -498,11 +498,11 @@ export default function HorarioPage() {
             >
                 <div className="month-cal-weeks">
                   {calendarWeeks.map((week) => {
-                    const compactPastWeek = viewMode === 'actividades' && isBefore(week[6]!, today);
+                    const compactActivitiesWeek = viewMode === 'actividades';
                     return (
                   <div
                     key={format(week[0]!, 'yyyy-MM-dd')}
-                    data-past-activities-week={compactPastWeek ? 'true' : undefined}
+                    data-compact-activities-week={compactActivitiesWeek ? 'true' : undefined}
                     className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week"
                   >
                   {week.map((day) => {
@@ -605,7 +605,7 @@ export default function HorarioPage() {
                               return (
                                 <CalendarActivityChips
                                   activities={grouped}
-                                  compact={compactPastWeek}
+                                  compact={compactActivitiesWeek}
                                   isPastDay={isPastDay}
                                 />
                               );
