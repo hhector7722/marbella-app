@@ -10738,3 +10738,73 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     text-align: center;
   }
 }
+
+/* Legibilidad del mosaico: unidades, importes y separación concepto-valor. */
+/* Ventas, solo escritorio. La atenuación de franjas seleccionadas no debe
+   alterar el color de las unidades de la segunda y tercera fila. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hours'] [data-muted-hour='true'] {
+    opacity: 1;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-hours'] [data-muted-hour='true']
+    > :is(span:first-child, [data-element='mobile-sales-amount']) {
+    opacity: .4;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours'])
+    > div > [data-element='mobile-sales-units'] {
+    color: rgb(178 200 223 / .38);
+    opacity: 1;
+    font-size: clamp(11px, .88vw, 14px);
+    font-weight: 400;
+    line-height: 1.15;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours'])
+    > div > [data-element='mobile-sales-amount'] {
+    font-size: clamp(13px, 1.06vw, 17px);
+    font-weight: 750;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Último cierre y Mensual: el contenedor interno permite que etiqueta y
+   cantidad respiren como dos renglones separados sin mover la card. */
+[data-component='HomeScreen'] [data-element='closing-compact']
+  .grid.grid-cols-3 > :is(button, div) > div,
+[data-component='HomeScreen'] [data-element='monthly-half']
+  .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content'] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  max-width: 100%;
+  min-width: 0;
+}
+[data-component='HomeScreen'] [data-element='closing-compact']
+  .grid.grid-cols-3 > :is(button, div) > div > span,
+[data-component='HomeScreen'] [data-element='monthly-half']
+  .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content'] > span {
+  color: rgb(255 255 255 / .78);
+  line-height: 1.15;
+}
+[data-component='HomeScreen'] [data-element='closing-compact']
+  .grid.grid-cols-3 > :is(button, div) > div > strong,
+[data-component='HomeScreen'] [data-element='monthly-half']
+  .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content'] > strong {
+  line-height: 1.24;
+  letter-spacing: -.008em;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-element='closing-compact']
+    .grid.grid-cols-3 > :is(button, div) > div,
+  [data-component='HomeScreen'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content'] {
+    gap: clamp(3px, .38dvh, 5px);
+  }
+}
