@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, it } from 'node:test';
 import {
@@ -1464,7 +1464,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         for (const [name, page] of [['recetas', recipes], ['ingredientes', ingredients], ['ficha receta', recipeDetails], ['ficha ingrediente', ingredientDetails]] as const) {
             assert.match(page, /titleFace="display"/, `${name} debe mantener la fuente EA Sports`);
         }
-        assert.match(titleFont, /EASPORTS15\.ttf/, 'la fuente de catálogo procede del archivo EA Sports local');
+        assert.match(titleFont, /EASPORTS15-ES\.ttf/, 'la fuente de catálogo usa glifos EA Sports con acentos reparados');
+        assert.ok(existsSync(join(REPO_ROOT, 'public/fonts/EASPORTS15-ES.ttf')), 'la fuente EA Sports corregida debe existir');
         assert.match(pageScreen, /titleFace === 'display' \? catalogTitleFont\.className : null/, 'el título recibe directamente la clase de next font');
         assert.doesNotMatch(css, /font-family: var\(--font-easports\)/, 'un override CSS no debe sustituir la clase real de next/font/local');
         assert.match(css, /\[data-element='square-fill'\] \{\s*background-color: var\(--color-superficie\)/, 'el fondo base del catálogo es blanco');
