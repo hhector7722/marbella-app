@@ -213,7 +213,7 @@ function HomeMonthlySalesWidget() {
                 </div>
             ) : null}
         </section>
-        <SalesPreviewModal preview={preview} onClose={() => setPreview(null)}/>
+        <SalesPreviewModal preview={preview} source="monthly" onClose={() => setPreview(null)}/>
         </>
     );
 }
