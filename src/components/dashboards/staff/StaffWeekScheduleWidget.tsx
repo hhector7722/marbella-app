@@ -490,7 +490,7 @@ function WeekExtCell({
                     <span
                         data-element="weekend-ext-value"
                         className={cn(
-                            'text-[7px] lg:text-[11px] tabular-nums leading-none',
+                            'text-[7px] lg:text-[14px] xl:text-[15px] tabular-nums leading-none',
                             paid ? 'font-semibold text-white/90' : 'font-semibold text-white/70',
                         )}
                     >
