@@ -10460,3 +10460,10 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     gap: 1px;
   }
 }
+
+/* El modal compartido deja aire real bajo la card de Productos. */
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='sales-preview-viewport'] {
+  box-sizing: border-box;
+  padding-bottom: clamp(18px, 2.7dvh, 28px);
+}
