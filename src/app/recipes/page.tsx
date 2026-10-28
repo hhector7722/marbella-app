@@ -391,9 +391,10 @@ function RecipesContent() {
             >
                 {!loading && (
                     <div className="pt-1">
-                        <CatalogGrid columns={4}>
+                        <CatalogGrid columns={4} compactDesktop>
                             {filteredRecipes.map((recipe) => (
                                 <CatalogTileUnificado
+                                    compactDesktop
                                     key={recipe.id}
                                     title={recipe.name}
                                     imageSrc={recipe.photo_url}

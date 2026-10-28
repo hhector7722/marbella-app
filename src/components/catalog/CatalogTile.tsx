@@ -28,9 +28,12 @@ export { CatalogSquare, CatalogTileUnificado, type CatalogNameTone } from './Uni
 export function CatalogGrid({
     children,
     columns = 4,
+    compactDesktop = false,
 }: {
     children: ReactNode;
     columns?: CatalogGridColumns;
+    /** Más elementos por fila solo en escritorio (catálogos de recetas e ingredientes). */
+    compactDesktop?: boolean;
 }) {
     return (
         <div
@@ -40,6 +43,7 @@ export function CatalogGrid({
                 columns === 4 && 'lg:grid-cols-6 xl:grid-cols-7',
                 columns === 5 && 'lg:grid-cols-6 xl:grid-cols-8',
                 columns === 6 && 'lg:grid-cols-7 xl:grid-cols-8',
+                compactDesktop && 'lg:grid-cols-9 xl:grid-cols-11 2xl:grid-cols-12 lg:gap-x-3 lg:gap-y-3',
             )}
         >
             {children}

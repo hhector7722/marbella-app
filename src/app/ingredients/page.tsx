@@ -147,9 +147,10 @@ export default function IngredientsPage() {
           </div>
         ) : (
           <div className="pt-1">
-            <CatalogGrid columns={4}>
+            <CatalogGrid columns={4} compactDesktop>
               {filteredIngredients.map((ingredient) => (
                 <CatalogTileUnificado
+                  compactDesktop
                   key={ingredient.id}
                   title={ingredient.name}
                   imageSrc={ingredient.image_url}
