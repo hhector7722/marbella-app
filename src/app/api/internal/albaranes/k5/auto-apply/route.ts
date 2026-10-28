@@ -5,6 +5,7 @@ import { selectCurrentProposalLineage } from '@/lib/albaranes/k5/proposal-lineag
 import { documentPageEvidenceBlockReason } from '@/lib/albaranes/pipeline/pages'
 import { duplicatedPageEvidence } from '@/lib/albaranes/pipeline/duplicate-page-evidence'
 import { commonAutoApplyBlockReason } from '@/lib/albaranes/k5/auto-apply-guard'
+import { albaranPriceChangeUrl } from '@/lib/albaranes/price-change-alerts'
 import {
   isK5ReusableMappingVersion,
   isTrustedLegacyImportedMappingVersion,
@@ -514,7 +515,7 @@ async function autoApplyDeterministicReceipts(
             title: 'Variación importante de precio en albarán',
             body: largePriceChanges.length + ' artículo(s) con variación superior al 25%. '
               + 'La recepción verificada se ha realizado automáticamente.',
-            action_url: '/dashboard/albaranes',
+            action_url: albaranPriceChangeUrl(payload.invoiceId),
             entity_type: 'purchase_invoice', entity_id: payload.invoiceId,
           })
           if (alertError) console.error('[k5] Unable to notify price variation:', alertError.code)

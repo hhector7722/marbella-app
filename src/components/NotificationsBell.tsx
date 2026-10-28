@@ -7,6 +7,7 @@ import { Bell, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useUnreadNotifications } from '@/contexts/UnreadNotificationsContext'
+import { notificationDestination } from '@/lib/albaranes/price-change-alerts'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
@@ -195,7 +196,7 @@ export function NotificationsBell() {
     async (row: UserNotificationRow) => {
       await markRead(row.id)
       setOpen(false)
-      router.push(row.action_url)
+      router.push(notificationDestination(row))
     },
     [markRead, router]
   )

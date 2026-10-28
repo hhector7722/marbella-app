@@ -70,6 +70,7 @@ import {
   PURCHASE_INVOICES_PAGE_SIZE,
 } from '@/lib/albaranes/purchase-invoices-list'
 import { collectDocumentReviewReasons } from '@/lib/albaranes/k5/document-review'
+import { getAlbaranPriceChangesAction, type AlbaranPriceChange } from './price-change-actions'
 import { isPassiveLineReviewAction, lineReviewActionLabel } from '@/lib/albaranes/k5/line-review-action'
 import {
   deletePurchaseInvoiceAction,
@@ -186,6 +187,10 @@ export default function AlbaranesHistoricoClient({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detail, setDetail] = useState<PurchaseInvoiceDetail | null>(null)
   const [detailError, setDetailError] = useState<string | null>(null)
+  const [priceChangesVisible, setPriceChangesVisible] = useState(false)
+  const [priceChangesLoading, setPriceChangesLoading] = useState(false)
+  const [priceChangesError, setPriceChangesError] = useState<string | null>(null)
+  const [priceChanges, setPriceChanges] = useState<AlbaranPriceChange[]>([])
   const [isPending, startTransition] = useTransition()
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
   const [savingLineId, setSavingLineId] = useState<string | null>(null)
@@ -749,8 +754,24 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
-  async function openDetail(id: string, focusLineId: string | null = null) {
+  async function openDetail(id: string, focusLineId: string | null = null, showPriceChanges = false) {
     const reqId = ++detailReqRef.current
+    setPriceChangesVisible(showPriceChanges)
+    setPriceChangesLoading(showPriceChanges)
+    setPriceChangesError(null)
+    setPriceChanges([])
+    if (showPriceChanges) {
+      void getAlbaranPriceChangesAction(id).then((result) => {
+        if (detailReqRef.current !== reqId) return
+        if (result.success) setPriceChanges(result.changes)
+        else setPriceChangesError(result.message)
+        setPriceChangesLoading(false)
+      }).catch(() => {
+        if (detailReqRef.current !== reqId) return
+        setPriceChangesError('No se pudieron recuperar los cambios de precio.')
+        setPriceChangesLoading(false)
+      })
+    }
     setSelectedId(id)
     setDetail(null)
     setDetailError(null)
@@ -827,11 +848,12 @@ export default function AlbaranesHistoricoClient({
   useEffect(() => {
     const targetId = searchParams.get('id')?.trim()
     const targetLineId = searchParams.get('line')?.trim() || null
+    const showPriceChanges = searchParams.get('price_changes') === '1'
     if (!targetId) return
-    const deepLinkKey = `${targetId}:${targetLineId ?? ''}`
+    const deepLinkKey = `${targetId}:${targetLineId ?? ''}:${showPriceChanges}`
     if (deepLinkHandledRef.current === deepLinkKey) return
     deepLinkHandledRef.current = deepLinkKey
-    void openDetail(targetId, targetLineId)
+    void openDetail(targetId, targetLineId, showPriceChanges)
   }, [searchParams])
 
   async function handleAppendSheetFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -900,6 +922,11 @@ export default function AlbaranesHistoricoClient({
 
   function closeModal() {
     detailReqRef.current++
+    deepLinkHandledRef.current = null
+    setPriceChangesVisible(false)
+    setPriceChangesLoading(false)
+    setPriceChangesError(null)
+    setPriceChanges([])
     setSelectedId(null)
     setDetail(null)
     setDetailError(null)
@@ -1644,6 +1671,60 @@ export default function AlbaranesHistoricoClient({
           onChange={handleReplaceImageFileChange}
         />
         <div className="space-y-2.5 min-w-0 max-w-full">
+
+                  {priceChangesVisible ? (
+                    <section
+                      aria-label="Cambios de precio del albarán"
+                      data-testid="albaran-price-changes"
+                      className="rounded-xl border border-amber-200/70 bg-amber-50/50 px-3 py-3 sm:px-4"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black uppercase tracking-wide text-amber-900">Cambios de precio</span>
+                        {detail?.invoice_number ? <span className="text-[11px] font-medium text-amber-800/75">· {detail.invoice_number}</span> : null}
+                      </div>
+                      {priceChangesLoading ? (
+                        <p className="mt-2 flex items-center gap-2 text-xs text-zinc-600">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Consultando precios anteriores y nuevos…
+                        </p>
+                      ) : priceChangesError ? (
+                        <p className="mt-2 text-xs font-medium text-rose-700">{priceChangesError}</p>
+                      ) : priceChanges.length === 0 ? (
+                        <p className="mt-2 text-xs text-zinc-600">No hay variaciones superiores al 25 % registradas en este albarán.</p>
+                      ) : (
+                        <>
+                          <p className="mt-1 text-xs text-amber-800/80">
+                            {priceChanges.length} artículo{priceChanges.length === 1 ? '' : 's'} · coste registrado antes y después de contabilizar este albarán.
+                          </p>
+                          <div className="mt-2 space-y-2">
+                            {priceChanges.map((change) => {
+                              const rising = change.changePercent > 0
+                              const money = (value: number) => value.toLocaleString('es-ES', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: Math.abs(value) < 0.1 ? 6 : 4,
+                              })
+                              return (
+                                <div key={change.lineId} className="rounded-lg border border-amber-100 bg-white/85 px-3 py-2">
+                                  <p className="text-xs font-semibold leading-snug text-zinc-800 break-words">{change.description}</p>
+                                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs tabular-nums">
+                                    <span className="text-zinc-500">Anterior: <strong className="font-semibold text-zinc-700">{money(change.priceBefore)} €</strong></span>
+                                    <span aria-hidden="true" className="text-zinc-400">→</span>
+                                    <span className="text-zinc-500">Nuevo: <strong className="font-semibold text-zinc-900">{money(change.priceAfter)} €</strong></span>
+                                    <span className={cn('ml-auto font-bold', rising ? 'text-amber-800' : 'text-emerald-700')}>
+                                      {rising ? '+' : ''}{change.changePercent.toLocaleString('es-ES', { maximumFractionDigits: 1 })} %
+                                    </span>
+                                  </div>
+                                  <p className="mt-0.5 text-[10px] text-zinc-400">Precio por {change.unit}</p>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <p className="mt-2 text-[11px] leading-snug text-amber-900/70">
+                            El precio anterior procede del ingrediente en inventario; si hay varias referencias mapeadas al mismo ingrediente, la comparación puede ser entre variedades distintas.
+                          </p>
+                        </>
+                      )}
+                    </section>
+                  ) : null}
 
                   {/* Status & Errors */}
                   {deleteError ? (
