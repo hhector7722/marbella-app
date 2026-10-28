@@ -190,7 +190,7 @@ type EventDetailRow = {
     categories: string | null;
 };
 
-/** Una fila por actividad: tres datos (horas, participantes, categoría) que reparten el ancho en tres columnas. */
+/** Una fila por actividad: únicamente los valores existentes, con anchuras intrínsecas. */
 function formatDayEventDetailRows(acts: BarActivity[] | undefined): EventDetailRow[] {
     const primary = selectPrimaryActivity(acts ?? []);
     const grouped = groupActivities(primary);
@@ -257,10 +257,44 @@ function WeekendDayColumn({
     const ymd = format(day, 'yyyy-MM-dd');
     const shiftStart = shift != null ? fmtHour(formatClockTime(shift.start_time)) : null;
     const shiftEnd = shift != null ? fmtHour(formatClockTime(shift.end_time)) : null;
-    // Mostrar también los conceptos cuando el día no tiene actividades.
-    const visibleEventDetails = eventDetailRows.length > 0
-        ? eventDetailRows
-        : [{ hours: 'Horario', pax: 'Participantes', categories: 'Categorías' }];
+    const eventRowRef = useRef<HTMLDivElement>(null);
+    const eventValueRef = useRef<HTMLSpanElement>(null);
+    const eventDetailsExist = eventDetailRows.some(row => Boolean(
+        row.hours?.trim() || row.pax?.trim() || row.categories?.trim()
+    ));
+
+    // El nombre del evento tiene prioridad sobre el resto de valores:
+    // se ajusta a la anchura REAL del día, siempre en una sola línea.
+    // Si el título es excepcionalmente largo, conserva desplazamiento
+    // horizontal en vez de elipsis o salto de línea.
+    useEffect(() => {
+        const row = eventRowRef.current;
+        const label = eventValueRef.current;
+        if (!row || !label || !eventLabel) return;
+
+        const fit = () => {
+            const width = row.clientWidth;
+            if (!width) return;
+            label.style.fontSize = '';
+            const style = getComputedStyle(label);
+            const originalSize = parseFloat(style.fontSize) || 6;
+            const context = document.createElement('canvas').getContext('2d');
+            if (!context) return;
+            context.font = `${style.fontWeight} ${originalSize}px ${style.fontFamily}`;
+            const naturalWidth = context.measureText(eventLabel).width;
+            // Dejar un pequeño espacio para los detalles, si existen, sin
+            // imponer un porcentaje de ancho fijo al nombre del evento.
+            const available = Math.max(8, width - 5 - (eventDetailsExist ? 12 : 0));
+            const fittedSize = naturalWidth > 0
+                ? Math.min(originalSize, originalSize * available / naturalWidth)
+                : originalSize;
+            label.style.fontSize = `${Math.max(3, fittedSize).toFixed(2)}px`;
+        };
+        fit();
+        const observer = new ResizeObserver(fit);
+        observer.observe(row);
+        return () => observer.disconnect();
+    }, [eventLabel, eventDetailsExist]);
 
     return (
         <button
@@ -302,10 +336,10 @@ function WeekendDayColumn({
                         {/* Evento + Horario + Participantes + Categorías:
                             una fila de flex con anchuras naturales y separación
                             mínima. Ninguna columna tiene una posición fija. */}
-                        <div data-element="weekend-evento-row" className="flex w-full min-w-0 items-start">
+                        <div ref={eventRowRef} data-element="weekend-evento-row" className="flex w-full min-w-0 items-start">
                             <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                                 {eventLabel ? (
-                                    <span data-element="weekend-evento-value" className="min-w-0 break-words text-[6px] lg:text-[11px] font-medium leading-tight">
+                                    <span ref={eventValueRef} data-element="weekend-evento-value" className="block max-w-full shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight" title={eventLabel}>
                                         {eventLabel}
                                     </span>
                                 ) : (
@@ -314,35 +348,36 @@ function WeekendDayColumn({
                                     </span>
                                 )}
                             </div>
-                            <div data-element="weekend-evento-detail" className="flex min-w-0 flex-1 flex-col">
-                                {visibleEventDetails.map((row, i) => (
-                                    <div
-                                        key={i}
-                                        data-element="weekend-evento-detail-row"
-                                        className="flex min-w-0 items-baseline"
-                                    >
-                                        {(
-                                            [
-                                                { kind: 'hours', text: row.hours || 'Horario' },
-                                                { kind: 'pax', text: row.pax || 'Participantes' },
-                                                { kind: 'categories', text: row.categories || 'Categorías' },
-                                            ] as const
-                                        ).map((cell) => (
-                                            <span
-                                                key={cell.kind}
-                                                data-element="weekend-evento-detail-value"
-                                                data-segment-kind={cell.kind}
-                                                className={cn(
-                                                    "min-w-0 text-[6px] lg:text-[11px] font-medium leading-tight opacity-80",
-                                                    cell.kind === 'hours' && masterMode && "font-semibold",
-                                                )}
-                                            >
-                                                {cell.text}
-                                            </span>
-                                        ))}
-                                    </div>
-                                ))}
-                            </div>
+                            {eventDetailsExist ? (
+                                <div data-element="weekend-evento-detail" className="flex min-w-0 flex-1 flex-col">
+                                    {eventDetailRows.map((row, i) => {
+                                        const cells = [
+                                            { kind: 'hours', text: row.hours },
+                                            { kind: 'pax', text: row.pax },
+                                            { kind: 'categories', text: row.categories },
+                                        ] as const;
+                                        const values = cells.filter(cell => cell.text?.trim());
+                                        if (values.length === 0) return null;
+                                        return (
+                                            <div key={i} data-element="weekend-evento-detail-row" className="flex min-w-0 items-baseline">
+                                                {values.map(cell => (
+                                                    <span
+                                                        key={cell.kind}
+                                                        data-element="weekend-evento-detail-value"
+                                                        data-segment-kind={cell.kind}
+                                                        className={cn(
+                                                            "shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight opacity-80",
+                                                            cell.kind === 'hours' && masterMode && "font-semibold",
+                                                        )}
+                                                    >
+                                                        {cell.text}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : null}
                         </div>
                     </div>
                 </div>

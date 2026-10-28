@@ -10543,10 +10543,23 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   min-width: 0;
 }
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] > [data-element='weekend-evento'] {
-  flex: 0 1 auto;
-  max-width: 48%;
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: calc(100% - 6px);
   min-width: 0;
   margin-top: 0;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-value'] {
+  display: block;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overflow-wrap: normal;
+  text-overflow: clip;
+  scrollbar-width: none;
 }
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] > [data-element='weekend-evento-detail'] {
   flex: 1 1 auto;
@@ -10554,26 +10567,30 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   width: auto;
   margin-top: 0;
 }
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail'] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-row'] {
   display: flex;
   flex-wrap: nowrap;
   align-items: baseline;
   column-gap: clamp(3px, .5vw, 8px);
-  width: 100%;
-  min-width: 0;
+  width: max-content;
+  min-width: max-content;
 }
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'] {
-  flex: 0 1 auto;
-  min-width: 0;
-  width: auto;
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: max-content;
   text-align: left;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   overflow: visible;
   text-overflow: clip;
 }
-[data-component='HomeScreen'] [data-component='StaffWeekSchedule']
-  :is([data-element='weekend-turno-value'], [data-element='weekend-evento-value']) {
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-turno-value'] {
   white-space: normal;
   overflow-wrap: anywhere;
   overflow: visible;
