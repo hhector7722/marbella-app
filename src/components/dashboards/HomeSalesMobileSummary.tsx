@@ -223,12 +223,21 @@ export function HomeSalesMobileSummary({
         // La gráfica llega hasta la franja en curso: no inventa una caída a
         // cero en las horas futuras que todavía no han comenzado.
         const plotLength = currentHour === null ? values.length : currentHour - BUSINESS_HOURS.start + 1;
-        const path = values.slice(0, plotLength).map((value, index) => {
-            const x = (index / Math.max(1, values.length - 1)) * 160;
-            const y = 19 - (value / maximum) * 15;
-            return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
-        }).join(' ');
-        return { values, maximum, path };
+        const points = values.slice(0, plotLength).map((value, index) => ({
+            x: (index / Math.max(1, values.length - 1)) * 160,
+            y: 19 - (value / maximum) * 15,
+        }));
+        // Igual que en la página de Ventas: línea base en el eje X y área
+        // semitransparente bajo la curva. Sin extender la venta a horas futuras.
+        // Para el primer tramo, dar ancho a la franja en curso sin simular ventas nuevas.
+        const last = points[points.length - 1];
+        const firstHourWidth = 160 / Math.max(1, values.length - 1);
+        const path = points.map((point, index) =>
+            `${index === 0 ? 'M' : 'L'}${point.x.toFixed(1)} ${point.y.toFixed(1)}`
+        ).join(' ') + (points.length === 1 ? ` L${firstHourWidth.toFixed(1)} ${last.y.toFixed(1)}` : '');
+        const endX = points.length === 1 ? firstHourWidth : last.x;
+        const area = `${path} L${endX.toFixed(1)} 19 L0 19 Z`;
+        return { values, maximum, path, area };
     }, [hours, currentHour]);
 
     const pointIndex = selectedHour === null ? -1 : selectedHour - BUSINESS_HOURS.start;
@@ -259,9 +268,12 @@ export function HomeSalesMobileSummary({
                         {chartData ? (
                             <>
                                 <svg viewBox="0 0 160 22" preserveAspectRatio="none"
-                                    className="pointer-events-none block h-[15px] w-full shrink-0" role="img"
-                                    aria-label="Gráfica de facturación por hora, de 7 a 23 h">
-                                    <path d={chartData.path} fill="none" stroke="#70b5ff" strokeWidth="1.6"
+                                    className="pointer-events-none block h-[15px] w-full shrink-0 text-[#70b5ff]" role="img"
+                                    aria-label="Gráfica de facturación por hora, con eje horizontal y área bajo la curva">
+                                    <path d="M0 19 H160" fill="none" stroke="currentColor"
+                                        strokeOpacity=".28" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                                    <path d={chartData.area} fill="currentColor" fillOpacity=".12" />
+                                    <path d={chartData.path} fill="none" stroke="currentColor" strokeWidth="1.6"
                                         strokeLinecap="round" strokeLinejoin="round"
                                         vectorEffect="non-scaling-stroke" />
                                 </svg>
