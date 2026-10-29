@@ -27,6 +27,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (process.env.CAMERA_STATUS_EMERGENCY_PAUSE === '1') {
+    return NextResponse.json(
+      { error: 'Camera presence temporarily unavailable' },
+      { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '60' } },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

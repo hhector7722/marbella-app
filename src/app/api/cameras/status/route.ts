@@ -13,6 +13,13 @@ const CAMERA_ID = 'reolink-duo-3';
 const APP_VIEWER_STALE_MS = 5 * 60_000;
 
 export async function GET() {
+  if (process.env.CAMERA_STATUS_EMERGENCY_PAUSE === '1') {
+    return NextResponse.json(
+      { error: 'Camera presence temporarily unavailable' },
+      { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '60' } },
+    );
+  }
+
   const supabase = await createClient();
   const user = await resolveSessionUser(supabase);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
