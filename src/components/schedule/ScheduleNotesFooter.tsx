@@ -390,7 +390,6 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
             {isWeekend(date) && generalNote ? (
                 <div data-element="schedule-general-note"
                     className="mx-auto mt-1 flex w-fit max-w-[94%] items-center gap-2 rounded-lg bg-white/10 px-2.5 py-1.5 text-white">
-                    <span className="shrink-0 text-[10px] font-semibold text-amber-200">General</span>
                     <button type="button" onClick={() => setGeneralExpanded((prev) => !prev)}
                         aria-label={generalExpanded ? 'Contraer nota general' : 'Ver nota general completa'}
                         className={`min-w-0 break-words text-left text-[11px] leading-snug ${generalExpanded ? 'whitespace-pre-wrap' : 'line-clamp-1'}`}>

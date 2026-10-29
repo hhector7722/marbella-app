@@ -16,6 +16,9 @@ describe('Fin de semana: notas integradas y navegación entre modales', () => {
         assert.doesNotMatch(modal, /<WeekendPublicScheduleNote/);
         assert.match(modal, /footer=\{[\s\S]*?<ScheduleNotesFooter/);
         assert.match(notes, /data-element="schedule-general-note"/);
+        assert.doesNotMatch(notes, /<span[^>]*>General<\/span>/, 'la nota general muestra el contenido sin la etiqueta General');
+        assert.match(notes, /data-element="schedule-general-note"[\s\S]*?\{generalNote\}/, 'se conserva el mensaje de la nota');
+
         assert.match(notes, /line-clamp-1/);
         assert.match(notes, /Ver nota general completa/);
     });
