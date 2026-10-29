@@ -473,7 +473,8 @@ function WeekExtCell({
             }
             className={cn(
                 'relative z-10 flex w-full items-center justify-center gap-0.5 transition-colors',
-                'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
+                // No extender el área táctil hacia la semana expandida:
+                // los pseudo-elementos de 48px interceptaban sábado/domingo.
                 week && 'hover:bg-white/10',
                 !week && 'cursor-default',
             )}
@@ -680,12 +681,11 @@ export function StaffWeekScheduleWidget({
     }, [loadNoteDates, refreshKey]);
 
     const handleDaySelect = (day: Date) => {
+        // Seleccionar una semana jamás cambia el mes visible, aunque
+        // la fila contenga días del mes anterior o siguiente.
+        // Solo las flechas de la cabecera llaman a handleMonthChange.
         setExpandedWeekStart(startOfWeek(day, { weekStartsOn: 1 }));
-        if (!isSameMonth(day, monthAnchor)) {
-            setMonthAnchor(startOfMonth(day));
-        }
     };
-
     const handleMonthChange = (direction: -1 | 1) => {
         setMonthAnchor((current) => {
             const next = direction < 0 ? subMonths(current, 1) : addMonths(current, 1);
@@ -776,7 +776,7 @@ export function StaffWeekScheduleWidget({
                                             aria-current={today ? 'date' : undefined}
                                             className={cn(
                                                 'relative z-10 flex w-full items-center justify-center transition-colors',
-                                                'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
+                                                                                // Limitar el toque al día visible, sin cubrir las tarjetas debajo.
                                                 !today && !hasNote && 'hover:bg-white/10',
                                             )}
                                         >

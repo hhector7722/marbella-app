@@ -899,6 +899,20 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(weekendTouchCss, /\[data-element='weekend-day'\] \{[\s\S]*?pointer-events: none;/, 'todos los elementos interiores delegan el toque en el botón');
         assert.match(weekendTouchCss, /\[data-element='weekend-details'\] \{[\s\S]*?overflow: hidden;/, 'ningún scroll vertical interno roba la pulsación');
         assert.match(weekScheduleCss, /\[data-element='month-weeks'\] \{[\s\S]*?overflow-y: auto;/, 'el calendario mensual sigue desplazándose');
+        assert.match(weekSchedule, /const handleDaySelect = \(day: Date\) => \{[\s\S]*?setExpandedWeekStart\(startOfWeek\(day, \{ weekStartsOn: 1 \}\)\);\s*\}/, 'tocar una fecha solo expande su semana');
+        assert.doesNotMatch(weekSchedule, /setMonthAnchor\(startOfMonth\(day\)\)/, 'ninguna fecha cambia el mes visible');
+        assert.match(weekSchedule, /const handleMonthChange = \(direction: -1 \| 1\) => \{[\s\S]*?setMonthAnchor\(\(current\) =>/, 'las flechas son las únicas que cambian el mes');
+        const weekDayControls = weekSchedule.slice(
+            weekSchedule.indexOf('function WeekExtCell'),
+            weekSchedule.indexOf('function StaffWeekScheduleWidget'),
+        ) + weekSchedule.slice(
+            weekSchedule.indexOf('const dayButtons = weekDays.map'),
+            weekSchedule.indexOf('const extCell = masterMode'),
+        );
+        assert.doesNotMatch(weekDayControls, /before:min-h-\[var\(--tactil-minimo\)\]/, 'las fechas y Ext no solapan las tarjetas con zonas invisibles');
+        assert.match(weekSchedule, /aria-label="Mes anterior"[\s\S]*?before:min-h-\[var\(--tactil-minimo\)\]/, 'las flechas mantienen su zona táctil ampliada');
+        const dayHitCss = weekScheduleCss.slice(weekScheduleCss.indexOf('/* Horarios — la zona invisible de 48px'));
+        assert.match(dayHitCss, /\[data-week-row\] button::before \{\s*content: none;\s*pointer-events: none;/, 'las zonas táctiles invisibles no pueden interceptar el fin de semana');
         assert.match(weekSchedule, /onPointerUp=\{\(event\) => \{[\s\S]*?isWeekendCardTap/, 'el modal abre en el gesto táctil completo');
         assert.match(weekSchedule, /onPointerCancel=\{\(\) => \{[\s\S]*?touchStartRef.current = null;/, 'un scroll cancelado no abre el modal');
         assert.match(weekSchedule, /onClick=\{\(event\) => \{[\s\S]*?event.detail !== 0/, 'no se abre dos veces con el click sintético');

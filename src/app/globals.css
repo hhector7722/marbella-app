@@ -11126,3 +11126,14 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-element='weekend-details'] {
   overflow: hidden;
 }
+
+
+/* Horarios — la zona invisible de 48px de los botones de fecha invadía la
+   parte superior de sábado/domingo y capturaba sus pulsaciones.
+   Una fecha solo ocupa su propia celda; la semana expandida queda libre.
+   NO afecta a las flechas del mes, que conservan su zona táctil ampliada. */
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule']
+  [data-week-row] button::before {
+  content: none;
+  pointer-events: none;
+}
