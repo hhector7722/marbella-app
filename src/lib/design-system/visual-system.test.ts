@@ -874,8 +874,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-row'\] \{[\s\S]*?column-gap: 3px;/, 'cada elemento y separador conserva un margen mínimo sin solapamientos');
         assert.doesNotMatch(weekSchedule, /row\.(?:hours|pax|categories) \|\|/, 'nunca se sustituyen campos vacíos por etiquetas');
         assert.doesNotMatch(weekSchedule, /node\.style\.fontSize|measureText\(/, 'el texto no puede encogerse de forma ilimitada');
-        assert.match(weekSchedule, /data-element="weekend-evento-value"[^\n]*text-\[10px\] lg:text-\[12px\]/, 'Evento conserva un tamaño mínimo legible');
-        assert.match(weekSchedule, /data-element="weekend-evento-detail-value"[\s\S]*?text-\[10px\] lg:text-\[12px\]/, 'los detalles también son legibles');
+        assert.match(weekSchedule, /data-element="weekend-evento-value"[^\n]*text-\[6px\] lg:text-\[11px\]/, 'Evento tiene el mismo máximo tipográfico que Turno');
+        assert.match(weekSchedule, /data-element="weekend-evento-detail-value"[\s\S]*?text-\[6px\] lg:text-\[11px\]/, 'el detalle respeta el máximo tipográfico de Turno');
+        assert.match(weekSchedule, /data-element="weekend-turno-value"[\s\S]*?text-\[6px\] lg:text-\[11px\]/, 'el máximo tipográfico se deriva de Turno');
+        assert.match(weekSchedule, /data-element="weekend-evento-separator"[\s\S]*?text-\[6px\] lg:text-\[11px\]/, 'las barras también comparten el mismo tamaño que Turno');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-row'\] \{[\s\S]*?overflow-x: auto;/, 'se puede leer todo el contenido al desplazar horizontalmente');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-value'\] \{[\s\S]*?min-width: max-content;/, 'nunca se comprime el nombre completo del evento');
         assert.match(weekSchedule, /cell.kind === 'categories' \? "min-w-0 truncate" : "shrink-0 whitespace-nowrap"/, 'solo Categoría admite truncamiento');

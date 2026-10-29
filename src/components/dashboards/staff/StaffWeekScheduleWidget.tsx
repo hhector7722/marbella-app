@@ -307,11 +307,11 @@ function WeekendDayColumn({
                         <div data-element="weekend-evento-row" className="flex w-full min-w-0 items-start" title="Desliza horizontalmente para consultar todos los datos del evento">
                             <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                                 {eventLabel ? (
-                                    <span data-element="weekend-evento-value" className="block shrink-0 whitespace-nowrap text-[10px] lg:text-[12px] font-medium leading-tight" title={eventLabel}>
+                                    <span data-element="weekend-evento-value" className="block shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight" title={eventLabel}>
                                         {eventLabel}
                                     </span>
                                 ) : (
-                                    <span data-element="weekend-evento-label" className="shrink-0 whitespace-nowrap text-[10px] lg:text-[12px] font-medium leading-tight tracking-wide">
+                                    <span data-element="weekend-evento-label" className="shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight tracking-wide">
                                         Evento
                                     </span>
                                 )}
@@ -336,7 +336,7 @@ function WeekendDayColumn({
                                                             <span
                                                                 data-element="weekend-evento-separator"
                                                                 aria-hidden="true"
-                                                                className="shrink-0 whitespace-nowrap text-[10px] lg:text-[12px] font-medium leading-tight opacity-70"
+                                                                className="shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight opacity-70"
                                                             >/</span>
                                                         ) : null}
                                                         <span
@@ -344,7 +344,7 @@ function WeekendDayColumn({
                                                             data-segment-kind={cell.kind}
                                                             title={cell.kind === 'categories' ? (cell.text ?? undefined) : undefined}
                                                             className={cn(
-                                                                "text-[10px] lg:text-[12px] font-medium leading-tight opacity-80",
+                                                                "text-[6px] lg:text-[11px] font-medium leading-tight opacity-80",
                                                                 cell.kind === 'categories' ? "min-w-0 truncate" : "shrink-0 whitespace-nowrap",
                                                                 cell.kind === 'hours' && masterMode && "font-semibold",
                                                             )}
