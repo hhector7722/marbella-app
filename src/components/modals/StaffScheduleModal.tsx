@@ -20,7 +20,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
-import { WeekendPublicScheduleNote } from '@/components/schedule/WeekendPublicScheduleNote';
+import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { fetchBarActivitiesForRangeClient, type BarActivity } from '@/lib/pavilion/bar-activities-range';
 import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 
@@ -167,6 +167,7 @@ export const StaffScheduleModal = ({
     const supabase = createClient();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [activityDetailDate, setActivityDetailDate] = useState<string | null>(null);
     const lastFocusedDateRef = useRef<string | null>(null);
     const dayRequestRef = useRef(0);
     const scheduleEditorRef = useRef<ScheduleDayEditorHandle>(null);
@@ -376,11 +377,12 @@ export const StaffScheduleModal = ({
         return () => window.clearTimeout(timeout);
     }, [navigatingToActividades]);
 
-    const handleBack = () => { dayRequestRef.current += 1; setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); setDayShellReady(false); };
+    const handleBack = () => { setActivityDetailDate(null); dayRequestRef.current += 1; setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); setDayShellReady(false); };
     const handleClose = async () => {
         // Coordina con la persistencia en curso; si falla, el editor ya avisa,
         // pero el cierre no queda atrapado.
         await scheduleEditorRef.current?.flushSave();
+        setActivityDetailDate(null);
         dayRequestRef.current += 1;
         setSelectedDate(null);
         setDayShifts([]);
@@ -674,12 +676,6 @@ export const StaffScheduleModal = ({
                 ) : (
                     // VISTA B: TABLA IDÉNTICA AL EDITOR — SÓLO LECTURA
                     <div className="flex flex-col flex-1 overflow-hidden min-h-0 day-modal-body">
-                        {[0, 6].includes(selectedDate.getDay()) ? (
-                            <WeekendPublicScheduleNote
-                                key={format(selectedDate, 'yyyy-MM-dd')}
-                                date={format(selectedDate, 'yyyy-MM-dd')}
-                            />
-                        ) : null}
                         {!dayShellReady ? (
                             <div className="flex-1 flex items-center justify-center py-20">
                                 <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
@@ -688,7 +684,24 @@ export const StaffScheduleModal = ({
                             <>
                                 {/* Resumen del evento — visible en cuanto hay semilla o fetch */}
                                 <div data-element="schedule-event-summary" className="p-2 w-full shrink-0">
-                                    <div className="flex w-full max-w-2xl mx-auto flex-col gap-1 rounded-[var(--radio-control)] bg-white/10 p-1.5">
+                                    <div
+                                        role={hasAct1 || hasAct2 ? 'button' : undefined}
+                                        tabIndex={hasAct1 || hasAct2 ? 0 : undefined}
+                                        aria-label={hasAct1 || hasAct2 ? 'Ver horario de actividades de este día' : undefined}
+                                        onClick={() => {
+                                            if (hasAct1 || hasAct2) setActivityDetailDate(format(selectedDate, 'yyyy-MM-dd'));
+                                        }}
+                                        onKeyDown={(event) => {
+                                            if ((event.key === 'Enter' || event.key === ' ') && (hasAct1 || hasAct2)) {
+                                                event.preventDefault();
+                                                setActivityDetailDate(format(selectedDate, 'yyyy-MM-dd'));
+                                            }
+                                        }}
+                                        className={cn(
+                                            'flex w-full max-w-2xl mx-auto flex-col gap-1 rounded-[var(--radio-control)] bg-white/10 p-1.5',
+                                            (hasAct1 || hasAct2) && 'cursor-pointer transition-colors hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300',
+                                        )}
+                                    >
                                         {dayLoadError ? (
                                             <p role="alert" className="py-3 text-center text-[10px] font-semibold text-white">
                                                 {dayLoadError}
@@ -798,6 +811,20 @@ export const StaffScheduleModal = ({
                 </>
                 )}
             </Modal>
+            <PavilionDayModal
+                open={isOpen && Boolean(activityDetailDate)}
+                onClose={() => setActivityDetailDate(null)}
+                date={activityDetailDate}
+                onNavigateDay={(delta) => {
+                    setActivityDetailDate((current) => {
+                        if (!current) return null;
+                        const [y, m, d] = current.split('-').map(Number);
+                        const next = new Date(y, m - 1, d + delta);
+                        return format(next, 'yyyy-MM-dd');
+                    });
+                }}
+                parentInstance="staff-schedule"
+            />
         </>
     );
 };

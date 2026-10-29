@@ -5,6 +5,10 @@ import { createClient } from '@/utils/supabase/client';
 import { sendScheduleNoteNotification } from '@/app/actions/notifications';
 import { createPrivateScheduleNoteReply } from '@/app/actions/schedule-note-replies';
 import { NOTIFICATION_HECTOR_EMAIL } from '@/lib/notification-recipients';
+import {
+    saveWeekendPublicScheduleNote,
+    deleteWeekendPublicScheduleNote,
+} from '@/app/actions/schedule-weekend-public-note';
 import { Button } from '@/components/ui/button';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
@@ -58,6 +62,7 @@ function firstNameOnly(name: string | null | undefined): string {
 }
 
 const HINT_STORAGE_KEY = 'weekend_schedule_note_hint_seen';
+const HECTOR_ID = 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6';
 
 function isWeekend(dateStr: string | null): boolean {
     if (!dateStr) return false;
@@ -85,6 +90,8 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
     const [draft, setDraft] = useState('');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [generalNote, setGeneralNote] = useState<string | null>(null);
+    const [generalExpanded, setGeneralExpanded] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -108,6 +115,24 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
     // Supabase RLS comprueba de nuevo el email de Héctor al escribir.
     const mayReply = authEmail?.trim().toLowerCase() === NOTIFICATION_HECTOR_EMAIL
         && !identity?.isViewingAs;
+    const maySaveGeneral = mayReply && authUserId === HECTOR_ID && isWeekend(date);
+
+    useEffect(() => {
+        let cancelled = false;
+        // El footer se remonta con key=fecha desde StaffScheduleModal.
+        // Su estado inicial se limpia sin renders encadenados en un efecto.
+        if (!isWeekend(date)) return;
+        void supabase.from('schedule_weekend_public_notes')
+            .select('content')
+            .eq('note_date', date!)
+            .maybeSingle()
+            .then(({ data, error: loadError }) => {
+                if (cancelled) return;
+                setGeneralNote(loadError ? null : data?.content ?? null);
+            });
+        return () => { cancelled = true; };
+    }, [date, supabase]);
+
 
     const fetchNotes = useCallback(async (): Promise<NoteRow[]> => {
         if (!date) return [];
@@ -257,6 +282,53 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
         }
     };
 
+    const handleSaveGeneral = async () => {
+        if (!date || !maySaveGeneral || saving || !draft.trim()) return;
+        setSaving(true);
+        setError(null);
+        try {
+            const result = await saveWeekendPublicScheduleNote(date, draft);
+            if (!result.success) {
+                setError(result.error);
+                return;
+            }
+            setGeneralNote(result.content);
+            setGeneralExpanded(false);
+            setComposing(false);
+            setDraft('');
+        } catch {
+            setError('No se ha podido guardar la nota general.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteGeneral = async () => {
+        if (!date || !maySaveGeneral || saving) return;
+        setSaving(true);
+        setError(null);
+        try {
+            const result = await deleteWeekendPublicScheduleNote(date);
+            if (!result.success) {
+                setError(result.error);
+                return;
+            }
+            setGeneralNote(null);
+            setDraft('');
+            setComposing(false);
+        } catch {
+            setError('No se ha podido eliminar la nota general.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const startComposeGeneral = () => {
+        setDraft(generalNote ?? '');
+        setComposing(true);
+        setError(null);
+    };
+
     const handleCancel = () => {
         setComposing(false);
         setDraft('');
@@ -313,6 +385,29 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
 
     return (
         <div className="flex w-full min-w-0 flex-col" data-schedule-notes-footer>
+            {/* General es una nota de esta misma sección, no una card superior
+                que reduzca el espacio disponible para el horario del día. */}
+            {isWeekend(date) && generalNote ? (
+                <div data-element="schedule-general-note"
+                    className="mx-auto mt-1 flex w-fit max-w-[94%] items-center gap-2 rounded-lg bg-white/10 px-2.5 py-1.5 text-white">
+                    <span className="shrink-0 text-[10px] font-semibold text-amber-200">General</span>
+                    <button type="button" onClick={() => setGeneralExpanded((prev) => !prev)}
+                        aria-label={generalExpanded ? 'Contraer nota general' : 'Ver nota general completa'}
+                        className={`min-w-0 break-words text-left text-[11px] leading-snug ${generalExpanded ? 'whitespace-pre-wrap' : 'line-clamp-1'}`}>
+                        {generalNote}
+                    </button>
+                    {maySaveGeneral ? (
+                        <div className="flex shrink-0 gap-1">
+                            <Button type="button" variant="tertiary"
+                                instance="schedule-general-note-edit"
+                                onClick={startComposeGeneral}>Editar</Button>
+                            <Button type="button" variant="destructive"
+                                instance="schedule-general-note-delete"
+                                disabled={saving} onClick={() => void handleDeleteGeneral()}>Eliminar</Button>
+                        </div>
+                    ) : null}
+                </div>
+            ) : null}
             {showWeekendHint && !composing && !myNote ? (
                 <div className="mb-3 flex w-full justify-center px-3">
                     <div className="relative z-10 flex w-fit max-w-full flex-col items-center rounded-lg border border-ds-positivo bg-white px-2.5 py-1.5 shadow-sm">
@@ -331,7 +426,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
             ) : null}
 
             <div className="flex w-full items-center justify-center">
-                {!composing && !myNote ? (
+                {!composing && (!myNote || maySaveGeneral) ? (
                     <Button
                         type="button"
                         variant="tertiary"
@@ -370,10 +465,23 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                             onClick={() => void handleSave()}
                             loading={saving}
                             loadingLabel="Guardar"
-                            disabled={!draft.trim()}
+                            disabled={!draft.trim() || saving}
                         >
                             Guardar
                         </Button>
+                        {maySaveGeneral ? (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                instance="schedule-note-save-general"
+                                onClick={() => void handleSaveGeneral()}
+                                loading={saving}
+                                loadingLabel="Guardando"
+                                disabled={!draft.trim() || draft.trim().length > 1500 || saving}
+                            >
+                                General
+                            </Button>
+                        ) : null}
                     </div>
                 </div>
             ) : null}

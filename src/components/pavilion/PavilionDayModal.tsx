@@ -23,6 +23,8 @@ type PavilionDayModalProps = {
   /** Si va, muestra «Añadir nota» / «Ver nota» en el pie (p. ej. mosaico Staff). */
   userId?: string | null;
   onOpenNote?: (ymd: string) => void;
+  /** Opcional: desde el horario personal, mantener el modal origen vivo. */
+  parentInstance?: string;
 };
 
 function parseLocalSafe(dateStr: string): Date {
@@ -41,6 +43,7 @@ export function PavilionDayModal({
   onNavigateDay,
   userId,
   onOpenNote,
+  parentInstance,
 }: PavilionDayModalProps) {
   const router = useRouter();
   const [isHector, setIsHector] = useState(false);
@@ -155,8 +158,10 @@ export function PavilionDayModal({
       onClose={onClose}
       title={formattedDate}
       variant="day"
-      layer="base"
+      layer={parentInstance ? 'derived' : 'base'}
       instance="pavilion-day"
+      parentInstance={parentInstance}
+      dismissScope={parentInstance ? 'self' : 'chain'}
       headerCompact
       usageId="pavilion-day"
       usageLabel="Pavelló dia"
