@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-10-07
+revisado: 2026-10-29
 caducidad: 6 meses
 supersede: —
 ---
@@ -90,6 +90,8 @@ Decide con dos datos, en este orden: **si hay sesión** y **cuál es el rol**. S
 | Máquina | `api` | Secreto compartido, sesión o nada |
 
 **La superficie de máquina no pasa por el guardián de rutas.** Cada punto de acceso se autentica solo. Es correcto por diseño —un webhook no tiene sesión— pero significa que **olvidarse de autenticar deja el punto abierto**, sin red de seguridad.
+
+El indicador de presencia de cámaras consulta una ruta de servidor. Mientras responde, la pantalla visible lo actualiza cada cinco segundos; si falla, espera un minuto antes de reintentar y deja de consultar cuando la pestaña está oculta. La ruta limita su ejecución a diez segundos para que una caída de Supabase no acumule peticiones de cámara durante minutos.
 
 **La carta comercial solo proyecta recetas con `is_sellable`.** El selector y los editores ignoran un mapeo TPV hacia una elaboración interna: no lo borran, no usan su precio ni su foto, y el artículo queda libre para enlazarse a una vendible. Las fichas de cocina siguen incluyendo ambas. Recetas TPV también limita el selector a vendibles y lee sus materias primas con `recipe_stock_requirements_v2_rows`. La importación legacy solo sobreescribe una receta directa: si ya contiene elaboraciones, no la toca. El Copilot lee esa misma expansión y el coste de `get_recipe_cost_v2`. [ADR-0018](../4-decisiones/ADR-0018-elaboraciones-intermedias.md).
 

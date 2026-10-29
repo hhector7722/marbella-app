@@ -1,5 +1,5 @@
 <!-- Generado desde 47 documentos de marbella-os/.
-     Huella del origen: cd05dfea0bfec80b
+     Huella del origen: b96db099f6dedb35
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -40,7 +40,6 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-04-03 | `marbella-os/1-producto/ACTORES-Y-ROLES.md` | 2026-10-03 | 6 meses | propiedad del producto |
 | 2027-04-03 | `marbella-os/3-ingenieria/operacion/README.md` | 2026-10-03 | 6 meses | propiedad del producto |
 | 2027-04-07 | `marbella-os/2-diseno/PATRONES.md` | 2026-10-07 | 6 meses | propiedad del producto |
-| 2027-04-07 | `marbella-os/3-ingenieria/ARQUITECTURA.md` | 2026-10-07 | 6 meses | propiedad del producto |
 | 2027-04-07 | `marbella-os/GLOSARIO.md` | 2026-10-07 | 6 meses | propiedad del producto |
 | 2027-04-08 | `marbella-os/3-ingenieria/dominio/TESORERIA.md` | 2026-10-08 | 6 meses | propiedad del producto |
 | 2027-04-11 | `marbella-os/3-ingenieria/MODELO-DE-DATOS.md` | 2026-10-11 | 6 meses | propiedad del producto |
@@ -48,6 +47,7 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-04-27 | `marbella-os/3-ingenieria/integraciones/ALBARANES-EMAIL.md` | 2026-10-27 | 6 meses | propiedad del producto |
 | 2027-04-28 | `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` | 2026-10-28 | 6 meses | propiedad del producto |
 | 2027-04-28 | `marbella-os/2-diseno/TOKENS.md` | 2026-10-28 | 6 meses | propiedad del producto |
+| 2027-04-29 | `marbella-os/3-ingenieria/ARQUITECTURA.md` | 2026-10-29 | 6 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/PRINCIPIOS.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/VISION.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/2-diseno/LENGUAJE-VISUAL.md` | 2026-07-29 | 12 meses | propiedad del producto |

@@ -63,31 +63,55 @@ export default function Navbar() {
     }
 
     let active = true;
+    let loading = false;
+    let timer: number | undefined;
+    let controller: AbortController | null = null;
+    const schedule = (delay: number) => {
+      window.clearTimeout(timer);
+      if (active && !document.hidden) timer = window.setTimeout(() => void loadCameraStatus(), delay);
+    };
     const loadCameraStatus = async () => {
+      if (!active || document.hidden || loading) return;
+      window.clearTimeout(timer);
+      loading = true;
+      controller = new AbortController();
+      const requestTimeout = window.setTimeout(() => controller?.abort(), 8000);
+      let succeeded = false;
       try {
-        const response = await fetch('/api/cameras/status', { cache: 'no-store' });
-        if (!response.ok) {
-          if (active) setCameraExternalOnline(false);
-          return;
-        }
+        const response = await fetch('/api/cameras/status', { cache: 'no-store', signal: controller.signal });
+        if (!response.ok) throw new Error('Camera status unavailable');
         const data = await response.json() as { externalOnline?: boolean; checkedAt?: string | null };
         const checkedAt = data.checkedAt ? new Date(data.checkedAt).getTime() : 0;
         const fresh = checkedAt > 0 && Date.now() - checkedAt < 20_000;
         if (active) setCameraExternalOnline(Boolean(data.externalOnline && fresh));
+        succeeded = true;
       } catch {
-        if (active) setCameraExternalOnline(false);
+        if (active && !document.hidden) setCameraExternalOnline(false);
+      } finally {
+        window.clearTimeout(requestTimeout);
+        controller = null;
+        loading = false;
+        schedule(succeeded ? 5_000 : 60_000);
       }
     };
 
     void loadCameraStatus();
-    const timer = window.setInterval(() => void loadCameraStatus(), 5_000);
     const refreshOnFocus = () => void loadCameraStatus();
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        window.clearTimeout(timer);
+        controller?.abort();
+      } else void loadCameraStatus();
+    };
     window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       active = false;
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
+      controller?.abort();
       window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [canSeeCamera, isHectorCameraUser]);
 

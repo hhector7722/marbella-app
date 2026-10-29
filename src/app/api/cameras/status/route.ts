@@ -6,6 +6,8 @@ import { MASTER_DASHBOARD_EMAIL } from '@/lib/master-dashboard';
 import { canAccessCameras } from '@/lib/cameras/access';
 
 export const dynamic = 'force-dynamic';
+// Camera presence is optional; never let a stalled read occupy a function for minutes.
+export const maxDuration = 10;
 const CAMERA_ID = 'reolink-duo-3';
 // Los temporizadores de Safari/PWA pueden pausarse durante bastante más de 20 s aunque la vista siga abierta.
 const APP_VIEWER_STALE_MS = 5 * 60_000;
