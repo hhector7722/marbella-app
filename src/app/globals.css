@@ -11023,3 +11023,59 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     overflow-y: auto;
   }
 }
+
+/* Widgets de inicio en escritorio: las miniaturas no se pisan.
+   Cada fila reserva espacio real para una foto de 22 px; cuando el widget
+   es bajo, las filas sobrantes se desplazan dentro de la tarjeta. */
+@media (min-width: 1024px) {
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-products'] {
+  grid-auto-rows: minmax(27px, auto);
+  row-gap: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-products'] > div:not([data-element='desktop-sales-section-title']) {
+  min-height: 27px;
+  align-items: center;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-product-label'] {
+  min-height: 22px;
+  align-items: center;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-product-label'] > span:has(> [aria-hidden='true']) {
+  display: inline-flex;
+  flex: 0 0 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+}
+
+}
+
+/* Scroll sigue funcionando con ratón, rueda y táctil; no se ven las barras
+   verticales dentro de los widgets del HomeScreen (no afecta a modales
+   ni a los scrolls de la propia página). */
+[data-component='HomeScreen'] > [data-element='slot']
+  :is([data-element='body'], [data-element='mobile-sales-snapshot'],
+      [data-element='mobile-sales-products'], [data-element='mobile-sales-hours'],
+      [data-element='weekend-details'], [data-element='week-list'],
+      [data-element='week-expansion'], [data-element='weekend-evento-row']),
+[data-component='HomeScreen'] > [data-element='slot'] [class~='overflow-y-auto'] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+[data-component='HomeScreen'] > [data-element='slot']
+  :is([data-element='body'], [data-element='mobile-sales-snapshot'],
+      [data-element='mobile-sales-products'], [data-element='mobile-sales-hours'],
+      [data-element='weekend-details'], [data-element='week-list'],
+      [data-element='week-expansion'], [data-element='weekend-evento-row'])::-webkit-scrollbar,
+[data-component='HomeScreen'] > [data-element='slot'] [class~='overflow-y-auto']::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}

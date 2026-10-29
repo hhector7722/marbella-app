@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -36,6 +36,14 @@ import {
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { isManualTimeLogEntry } from '@/lib/staff/time-log-origin';
+import {
+    createStaffClockPreview,
+    parseStaffClockPreview,
+    readStaffClockPreviewSnapshot,
+    rememberStaffClockPreview,
+    subscribeStaffClockPreview,
+    type StaffClockPreview,
+} from '@/lib/staff/clock-preview';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 import { invalidateHomeHistoryWeekCache } from '@/hooks/useEmployeeHistoryWeek';
 import { StaffAttendanceSummaryWidget } from '@/components/dashboards/staff/StaffAttendanceSummaryWidget';
@@ -123,6 +131,10 @@ const applyRoundingRule = (totalMinutes: number): number => {
 
 const FICHAJE_LABEL = 'Registro';
 
+function getEmptyClockPreviewSnapshot(): null {
+    return null;
+}
+
 function StaffFichajeShortcutShell({
     label,
     hideLabel = false,
@@ -169,10 +181,12 @@ function StaffFichajeShortcutShell({
 function StaffFichajeWorkingControl({
     clockIn,
     actionLoading,
+    verifying,
     onClockOut,
 }: {
     clockIn?: string;
     actionLoading: boolean;
+    verifying: boolean;
     onClockOut: () => void;
 }) {
     return (
@@ -198,7 +212,7 @@ function StaffFichajeWorkingControl({
                         type="button"
                         data-element="iconBox"
                         onClick={onClockOut}
-                        disabled={actionLoading}
+                        disabled={actionLoading || verifying}
                         aria-label="Salida"
                         className={cn(
                             'relative touch-manipulation text-white transition-[filter] active:brightness-[0.99] disabled:opacity-70',
@@ -207,7 +221,7 @@ function StaffFichajeWorkingControl({
                         style={{ ['--shortcut-fill' as string]: '#e8365a' }}
                     >
                         <div data-element="asset" className="flex h-full w-full items-center justify-center bg-gradient-to-b from-rose-500 to-[#e8365a]">
-                            {actionLoading ? (
+                            {actionLoading || verifying ? (
                                 <LoadingSpinner size="sm" className="text-white" />
                             ) : (
                                 <span className="text-[10px] font-black uppercase leading-none tracking-wide">Salida</span>
@@ -226,6 +240,7 @@ function StaffFichajeIcon({
     clockLoading,
     actionLoading,
     todayLog,
+    preview,
     onClockIn,
     onClockOut,
 }: {
@@ -233,42 +248,43 @@ function StaffFichajeIcon({
     clockLoading: boolean;
     actionLoading: boolean;
     todayLog: TimeLogRow | null;
+    preview: StaffClockPreview | null;
     onClockIn: () => void;
     onClockOut: () => void;
 }) {
-    if (clockLoading) {
-        return (
-            <StaffFichajeShortcutShell label={FICHAJE_LABEL} hideLabel>
-                <div data-element="asset" className="flex h-full w-full items-center justify-center bg-black/25">
-                    <LoadingSpinner size="sm" className="text-white" />
-                </div>
-            </StaffFichajeShortcutShell>
-        );
-    }
+    // Conservar siempre la geometría y el color DEFINITIVOS de cada estado.
+    // Si tenemos el último fichaje del día en este dispositivo, se anticipa
+    // la forma correcta. El botón permanece deshabilitado hasta validar con DB.
+    const visualStatus = clockLoading ? preview?.status ?? 'idle' : status;
 
-    if (status === 'working') {
+    if (visualStatus === 'working') {
         return (
             <StaffFichajeWorkingControl
-                clockIn={todayLog?.clock_in}
+                clockIn={clockLoading ? preview?.clockIn ?? undefined : todayLog?.clock_in}
                 actionLoading={actionLoading}
+                verifying={clockLoading}
                 onClockOut={onClockOut}
             />
         );
     }
 
-    if (status === 'finished') {
+    if (visualStatus === 'finished') {
         return (
             <StaffFichajeShortcutShell
                 label={FICHAJE_LABEL}
                 shortcutFill="var(--color-positivo)"
             >
-                <StaffElapsedDigits
-                    value={formatStaffElapsedHms(todayLog?.clock_in, todayLog?.clock_out)}
-                    tone="quiet"
-                    compact
-                    mini
-                    inverted
-                />
+                {clockLoading ? (
+                    <LoadingSpinner size="sm" className="text-white" />
+                ) : (
+                    <StaffElapsedDigits
+                        value={formatStaffElapsedHms(todayLog?.clock_in, todayLog?.clock_out)}
+                        tone="quiet"
+                        compact
+                        mini
+                        inverted
+                    />
+                )}
             </StaffFichajeShortcutShell>
         );
     }
@@ -280,7 +296,7 @@ function StaffFichajeIcon({
                     type="button"
                     data-element="iconBox"
                     onClick={onClockIn}
-                    disabled={actionLoading}
+                    disabled={actionLoading || clockLoading}
                     aria-label="Entrada"
                     className={cn(
                         'relative touch-manipulation text-white transition-[filter] active:brightness-[0.99] disabled:opacity-70',
@@ -289,7 +305,7 @@ function StaffFichajeIcon({
                     style={{ ['--shortcut-fill' as string]: '#0eab78' }}
                 >
                     <div data-element="asset" className="flex h-full w-full items-center justify-center bg-gradient-to-b from-emerald-500 to-[#0eab78]">
-                        {actionLoading ? (
+                        {actionLoading || clockLoading ? (
                             <LoadingSpinner size="sm" className="text-white" />
                         ) : (
                             <span className="text-[10px] font-black uppercase leading-none tracking-wide">Entrada</span>
@@ -325,6 +341,21 @@ export default function StaffDashboardView({
     const [userEmail, setUserEmail] = useState<string>(() => initialEmail ?? '');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<TimeLogRow | null>(null);
+    const clockPreviewUserId = identity?.isViewingAs
+        ? identity.effectiveUserId
+        : (initialUserId ?? userId);
+    const getClockPreviewSnapshot = useCallback(
+        () => readStaffClockPreviewSnapshot(clockPreviewUserId ?? ''),
+        [clockPreviewUserId],
+    );
+    const clockPreviewSnapshot = useSyncExternalStore(
+        subscribeStaffClockPreview,
+        getClockPreviewSnapshot,
+        getEmptyClockPreviewSnapshot,
+    );
+    const currentClockPreview = parseStaffClockPreview(
+        clockPreviewSnapshot, clockPreviewUserId ?? '', formatYmdInMadrid(new Date()),
+    );
     const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
     const [clockMessages, setClockMessages] = useState<StaffClockMessage[]>([]);
     const queuedClockVideoRef = useRef<(() => void) | null>(null);
@@ -578,6 +609,8 @@ export default function StaffDashboardView({
                 .maybeSingle();
 
             const todayLogRow = (log ?? null) as TimeLogRow | null;
+            const freshPreview = createStaffClockPreview(effectiveUserId, todayLogRow, todayYmd);
+            rememberStaffClockPreview(freshPreview);
             if (todayLogRow) {
                 setTodayLog(todayLogRow);
                 setStatus(todayLogRow.clock_out ? 'finished' : 'working');
@@ -817,6 +850,7 @@ export default function StaffDashboardView({
                     .single();
                 if (inErr) throw inErr;
                 setTodayLog((data ?? null) as TimeLogRow | null); setStatus('working'); toast.success("¡Jornada iniciada!");
+                rememberStaffClockPreview(createStaffClockPreview(userId, (data ?? null) as TimeLogRow | null, formatYmdInMadrid(now)));
                 if (isCameraFovNoticePending(cameraFovNoticeAckedAt)) {
                     const ackedAt = now.toISOString();
                     const { error: ackErr } = await supabase
@@ -864,6 +898,7 @@ export default function StaffDashboardView({
                 if (outErr) throw outErr;
 
                 setTodayLog((data ?? null) as TimeLogRow | null); setStatus('finished'); toast.success("Jornada finalizada.");
+                rememberStaffClockPreview(createStaffClockPreview(userId, (data ?? null) as TimeLogRow | null, formatYmdInMadrid(now)));
                 const dayYmd = formatYmdInMadrid(now);
                 const sync = await syncOvertimeCostAfterTimeLogChange(userId, dayYmd);
                 if (!sync.success) {
@@ -890,7 +925,7 @@ export default function StaffDashboardView({
     };
 
     const openConfirmation = (action?: 'in' | 'out') => {
-        if (status === 'finished' || actionLoading) return;
+        if (clockLoading || status === 'finished' || actionLoading) return;
         setModalAction(action ?? (status === 'idle' ? 'in' : 'out'));
         setFichajeOverlay('confirm');
     };
@@ -1018,6 +1053,7 @@ export default function StaffDashboardView({
                         clockLoading={clockLoading}
                         actionLoading={actionLoading}
                         todayLog={todayLog}
+                        preview={currentClockPreview}
                         onClockIn={() => openConfirmation()}
                         onClockOut={() => openConfirmation('out')}
                     />

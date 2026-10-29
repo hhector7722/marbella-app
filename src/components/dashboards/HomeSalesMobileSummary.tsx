@@ -358,7 +358,7 @@ export function HomeSalesMobileSummary({
                                     title={`${product.name}: ${product.quantity} unidades · ${product.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span data-element="mobile-sales-product-label" className="flex min-w-0 items-center gap-1 text-left text-[var(--home-widget-ink)]">
                                         <span className="shrink-0 lg:hidden">{index + 1}.</span>
-                                        <span className="hidden shrink-0 lg:inline-flex">
+                                        <span className="hidden h-[22px] w-[22px] shrink-0 items-center justify-center lg:inline-flex">
                                             <ProductRankingThumbnail key={productThumbnails[product.name] ?? product.name}
                                                 src={productThumbnails[product.name]} name={product.name} />
                                         </span>

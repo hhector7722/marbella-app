@@ -456,6 +456,16 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(staff, /<StaffAttendanceSummaryWidget/);
         assert.doesNotMatch(staff, /instance="staff-semana"[^>]*label=/);
         assert.match(staff, /size="icon" instance="staff-fichaje"/);
+        assert.doesNotMatch(staff, /StaffFichajeShortcutShell label=\{FICHAJE_LABEL\} hideLabel/, 'el fichaje no sustituye su forma final por un rectángulo vacío');
+        assert.match(staff, /const visualStatus = clockLoading \? preview\?\.status \?\? 'idle' : status;/, 'el fichaje tiene estado previo visual antes de cargar');
+        assert.match(staff, /disabled=\{actionLoading \|\| clockLoading\}/, 'no permite fichar hasta confirmar el estado real');
+        assert.match(staff, /rememberStaffClockPreview\(freshPreview\)/, 'reconcilia el aspecto con el estado de la base de datos');
+        assert.match(staff, /readStaffClockPreviewSnapshot\(clockPreviewUserId/, 'recupera el último estado conocido por empleado');
+        assert.match(staff, /useSyncExternalStore\(/, 'la caché visual se hidrata sin destellos ni estado React duplicado');
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(css, /\[data-element='mobile-sales-products'\] \{[\s\S]*?grid-auto-rows: minmax\(27px, auto\);/, 'las filas reservan espacio suficiente para miniaturas de 22px');
+        assert.match(css, /\[data-element='mobile-sales-products'\] > div:not\(\[data-element='desktop-sales-section-title'\]\) \{[\s\S]*?min-height: 27px;/, 'las filas de producto no se solapan');
+        assert.match(css, /scrollbar-width: none;/, 'los widgets pueden desplazar sin barras visibles');
         assert.match(staff, /label="Entrada"/);
         assert.match(staff, /size="panel" instance="staff-horarios"/);
         assert.match(staff, /<StaffWeekScheduleBlock/);
