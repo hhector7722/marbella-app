@@ -894,9 +894,19 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-row'\] \{[\s\S]*?flex-wrap: nowrap;/, 'la fila mantiene Evento y sus detalles juntos');
         assert.doesNotMatch(weekScheduleCss, /\[data-element='weekend-evento-detail-row'\] \{\s*display: grid;/, 'ningún valor ocupa una columna rígida');
         assert.match(weekScheduleCss, /grid-template-rows: minmax\(0, 1fr\);/, 'el alto de los dos días es independiente del contenido');
-        assert.match(weekScheduleCss, /\[data-element='weekend-details'\] \{[\s\S]*?overflow-y: auto;/, 'la actividad extensa se desplaza dentro de la tarjeta sin cambiar su tamaño');
+        const weekendTouchCss = weekScheduleCss.slice(weekScheduleCss.indexOf('/* Horarios: sábado/domingo son botones táctiles'));
+        assert.match(weekendTouchCss, /\[data-element='weekend-card'\] \{[\s\S]*?overflow: hidden;[\s\S]*?touch-action: manipulation;/, 'la card no compite con el scroll táctil y permite taps directos');
+        assert.match(weekendTouchCss, /\[data-element='weekend-day'\] \{[\s\S]*?pointer-events: none;/, 'todos los elementos interiores delegan el toque en el botón');
+        assert.match(weekendTouchCss, /\[data-element='weekend-details'\] \{[\s\S]*?overflow: hidden;/, 'ningún scroll vertical interno roba la pulsación');
+        assert.match(weekScheduleCss, /\[data-element='month-weeks'\] \{[\s\S]*?overflow-y: auto;/, 'el calendario mensual sigue desplazándose');
+        assert.match(weekSchedule, /onPointerUp=\{\(event\) => \{[\s\S]*?isWeekendCardTap/, 'el modal abre en el gesto táctil completo');
+        assert.match(weekSchedule, /onPointerCancel=\{\(\) => \{[\s\S]*?touchStartRef.current = null;/, 'un scroll cancelado no abre el modal');
+        assert.match(weekSchedule, /onClick=\{\(event\) => \{[\s\S]*?event.detail !== 0/, 'no se abre dos veces con el click sintético');
         assert.match(weekScheduleCss, /\[data-element='month-heading'\] \{[\s\S]*?margin-bottom: -2px;/, 'la cabecera y días se acercan discretamente');
-        const hiddenScheduleScrollbars = weekScheduleCss.slice(weekScheduleCss.indexOf('/* Horarios — ocultar completamente los indicadores de scroll'));
+        const hiddenScheduleScrollbars = weekScheduleCss.slice(
+            weekScheduleCss.indexOf('/* Horarios — ocultar completamente los indicadores de scroll'),
+            weekScheduleCss.indexOf('/* Horarios: sábado/domingo son botones táctiles'),
+        );
         assert.match(hiddenScheduleScrollbars, /\[data-instance='staff-horarios'\], \[data-instance='master-horarios'\]/, 'se ocultan tanto en Staff como en Master');
         assert.match(hiddenScheduleScrollbars, /\[data-component='StaffWeekSchedule'\] \* \{[\s\S]*?scrollbar-width: none;/, 'todos los descendientes de Horarios, incluidas las cards, ocultan la barra en Firefox');
         assert.match(hiddenScheduleScrollbars, /\[data-component='StaffWeekSchedule'\] \*::-webkit-scrollbar \{[\s\S]*?display: none;/, 'también se oculta la barra de las cards en Chrome y Safari');

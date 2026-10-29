@@ -30,6 +30,7 @@ import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
 import { formatEventClock } from '@/components/dashboards/staff/format-event-clock';
 import { getHomeScheduleWeeks } from '@/lib/schedule/home-widget-weeks';
+import { isWeekendCardTap, type WeekendCardTouchPoint } from '@/lib/schedule/weekend-card-touch';
 
 const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const;
 
@@ -255,6 +256,9 @@ function WeekendDayColumn({
     masterMode?: boolean;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
+    const touchStartRef = useRef<WeekendCardTouchPoint | null>(null);
+    const openedByPointerRef = useRef(false);
+    const openWeekend = () => onOpenDay?.(ymd, cachedActivities);
     const shiftStart = shift != null ? fmtHour(formatClockTime(shift.start_time)) : null;
     const shiftEnd = shift != null ? fmtHour(formatClockTime(shift.end_time)) : null;
     const eventDetailsExist = eventDetailRows.some(row => Boolean(
@@ -268,9 +272,35 @@ function WeekendDayColumn({
         <button
             type="button"
             data-element="weekend-card"
-            onClick={(e) => {
-                e.stopPropagation();
-                onOpenDay?.(ymd, cachedActivities);
+            onPointerDown={(event) => {
+                openedByPointerRef.current = false;
+                touchStartRef.current = event.pointerType === 'touch' || event.pointerType === 'pen'
+                    ? { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
+                    : null;
+            }}
+            onPointerUp={(event) => {
+                const start = touchStartRef.current;
+                touchStartRef.current = null;
+                if (!isWeekendCardTap(start, { pointerId: event.pointerId, x: event.clientX, y: event.clientY })) return;
+                // Abrir al levantar el dedo sin esperar al click sintético de iOS.
+                openedByPointerRef.current = true;
+                event.stopPropagation();
+                openWeekend();
+            }}
+            onPointerCancel={() => {
+                // Un scroll real emite pointercancel; nunca debe abrir el modal.
+                touchStartRef.current = null;
+                openedByPointerRef.current = false;
+            }}
+            onClick={(event) => {
+                event.stopPropagation();
+                if (openedByPointerRef.current && event.detail !== 0) {
+                    openedByPointerRef.current = false;
+                    return;
+                }
+                openedByPointerRef.current = false;
+                // Ratón, teclado y navegadores sin eventos Pointer compatibles.
+                openWeekend();
             }}
             aria-label={`Ver ${formatWeekdayHeading(day)}`}
             className="relative text-left outline-none transition-opacity hover:opacity-90 active:opacity-80 before:absolute before:inset-0 before:-m-0.5 before:min-h-[var(--tactil-minimo)] before:content-['']"

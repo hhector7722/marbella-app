@@ -11104,3 +11104,25 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   width: 0;
   height: 0;
 }
+
+
+/* Horarios: sábado/domingo son botones táctiles, no listas desplazables.
+   El overflow-y:auto anterior competía con el click en iOS, incluso con
+   barras invisibles. Mantener el scroll únicamente en month-weeks.
+   El texto es contenido pasivo: un toque en cualquier punto llega al botón. */
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule']
+  [data-element='weekend-card'] {
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule']
+  [data-element='weekend-day'] {
+  pointer-events: none;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule']
+  [data-element='weekend-details'] {
+  overflow: hidden;
+}
