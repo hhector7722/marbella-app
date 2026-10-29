@@ -39,36 +39,30 @@ export function ClockMessagePrompt({
   return (
     <Modal
       open={Boolean(message)}
-      onClose={() => { /* Requiere confirmación explícita de lectura. */ }}
+      onClose={() => { /* Solo se cierra tras confirmar la lectura. */ }}
       closeOnBackdrop={false}
+      hideHeader
       hideCloseButton
-      title="Mensaje de Héctor"
+      title="Mensaje"
+      ariaLabel="Mensaje pendiente de fichaje"
       instance="staff-clock-message"
-      layer="system"
+      layer="base"
       scheme="dark"
-      footer={
-        <div className="flex justify-center">
-          <Button
-            variant="primary"
-            instance="staff-clock-message-acknowledge"
-            disabled={confirming}
-            loading={confirming}
-            loadingLabel="Confirmando…"
-            onClick={() => void confirm()}
-          >
-            Entendido
-          </Button>
-        </div>
-      }
     >
-      <div className="space-y-3 py-3">
-        <p className="text-xs opacity-70">Mensaje recibido al registrar tu entrada o salida.</p>
-        <p className="whitespace-pre-wrap break-words text-base font-medium leading-relaxed">
+      <div className="flex flex-col items-center gap-6 px-4 py-6 text-center">
+        <p className="w-full whitespace-pre-wrap break-words text-base font-medium leading-relaxed">
           {message?.body ?? ''}
         </p>
-        {messages.length > 1 && (
-          <p className="text-xs opacity-65">{messages.length - 1} mensaje(s) más pendientes</p>
-        )}
+        <Button
+          variant="primary"
+          instance="staff-clock-message-acknowledge"
+          disabled={confirming}
+          loading={confirming}
+          loadingLabel="Confirmando…"
+          onClick={() => void confirm()}
+        >
+          Entendido
+        </Button>
       </div>
     </Modal>
   );

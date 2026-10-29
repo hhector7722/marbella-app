@@ -327,17 +327,31 @@ export default function StaffDashboardView({
     const [todayLog, setTodayLog] = useState<TimeLogRow | null>(null);
     const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
     const [clockMessages, setClockMessages] = useState<StaffClockMessage[]>([]);
+    const queuedClockVideoRef = useRef<(() => void) | null>(null);
 
     // Se consulta únicamente DESPUÉS de guardar correctamente el fichaje.
     // En modo "ver como" no se entregan mensajes de terceros al propietario.
-    const showClockMessagesAfterPunch = async (punchedUserId: string) => {
+    // Devolver los mensajes permite posponer el vídeo hasta la confirmación.
+    const showClockMessagesAfterPunch = async (punchedUserId: string): Promise<StaffClockMessage[]> => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user || user.id !== punchedUserId) return;
+            if (!user || user.id !== punchedUserId) return [];
             const messages = await getPendingStaffClockMessages();
             setClockMessages(messages);
+            return messages;
         } catch (error) {
             console.error('No se pudieron cargar los mensajes de fichaje:', error);
+            return [];
+        }
+    };
+
+    const confirmClockMessage = (id: string) => {
+        const remaining = clockMessages.filter((message) => message.id !== id);
+        setClockMessages(remaining);
+        if (remaining.length === 0) {
+            const playVideo = queuedClockVideoRef.current;
+            queuedClockVideoRef.current = null;
+            playVideo?.();
         }
     };
 
@@ -803,7 +817,6 @@ export default function StaffDashboardView({
                     .single();
                 if (inErr) throw inErr;
                 setTodayLog((data ?? null) as TimeLogRow | null); setStatus('working'); toast.success("¡Jornada iniciada!");
-                void showClockMessagesAfterPunch(userId);
                 if (isCameraFovNoticePending(cameraFovNoticeAckedAt)) {
                     const ackedAt = now.toISOString();
                     const { error: ackErr } = await supabase
@@ -827,8 +840,13 @@ export default function StaffDashboardView({
                 const { data: { user: u } } = await supabase.auth.getUser();
                 const email = u?.email?.toLowerCase().trim() ?? '';
                 const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
+                const messages = await showClockMessagesAfterPunch(userId);
                 if (overlayConfig) {
-                    openGiffOverlay(overlayConfig.entrada);
+                    if (messages.length > 0) {
+                        queuedClockVideoRef.current = () => openGiffOverlay(overlayConfig.entrada);
+                    } else {
+                        openGiffOverlay(overlayConfig.entrada);
+                    }
                 }
             } else if (action === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
@@ -846,7 +864,6 @@ export default function StaffDashboardView({
                 if (outErr) throw outErr;
 
                 setTodayLog((data ?? null) as TimeLogRow | null); setStatus('finished'); toast.success("Jornada finalizada.");
-                void showClockMessagesAfterPunch(userId);
                 const dayYmd = formatYmdInMadrid(now);
                 const sync = await syncOvertimeCostAfterTimeLogChange(userId, dayYmd);
                 if (!sync.success) {
@@ -857,8 +874,13 @@ export default function StaffDashboardView({
                 const { data: { user: u } } = await supabase.auth.getUser();
                 const email = u?.email?.toLowerCase().trim() ?? '';
                 const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
+                const messages = await showClockMessagesAfterPunch(userId);
                 if (overlayConfig) {
-                    openGiffOverlay(overlayConfig.salida);
+                    if (messages.length > 0) {
+                        queuedClockVideoRef.current = () => openGiffOverlay(overlayConfig.salida);
+                    } else {
+                        openGiffOverlay(overlayConfig.salida);
+                    }
                 }
             }
             setTimeout(() => initialize(), 0);
@@ -1119,7 +1141,7 @@ export default function StaffDashboardView({
 
             <ClockMessagePrompt
                 messages={clockMessages}
-                onAcknowledged={(id) => setClockMessages((current) => current.filter((item) => item.id !== id))}
+                onAcknowledged={confirmClockMessage}
             />
 
             {fichajeOverlay === 'consumption' ? (

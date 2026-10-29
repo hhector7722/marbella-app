@@ -17,6 +17,9 @@ describe('Mensajes privados entregados al próximo fichaje', () => {
   it('solo Héctor puede enviar, también a su propio perfil', () => {
     assert.match(profile, /isMasterDashboardUser\(currentUser\?\.email\)/);
     assert.match(profile, /sendStaffClockMessage\(profile\.id, clockMessageDraft\)/);
+    assert.match(profile, /isMasterDashboardUser\(currentUser\?\.email\) && \(\s*<div className="mt-4 flex justify-center">/,
+      'Héctor encuentra un botón claramente visible en el menú de su perfil');
+    assert.match(profile, /Enviar mensaje al fichar/);
     assert.match(actions, /if \(authError \|\| !user \|\| !isMasterDashboardUser\(user\.email\)\)/);
     assert.match(sql, /CREATE POLICY staff_clock_messages_owner_insert/);
     assert.match(sql, /'hhector7722@gmail\.com'/);
@@ -27,9 +30,25 @@ describe('Mensajes privados entregados al próximo fichaje', () => {
     assert.match(sql, /ALTER TABLE public\.staff_clock_messages ENABLE ROW LEVEL SECURITY;/);
     assert.match(sql, /tl\.clock_in > staff_clock_messages\.created_at\s+OR tl\.clock_out > staff_clock_messages\.created_at/);
     assert.match(sql, /coalesce\(tl\.is_manual_entry, false\) = false/);
-    assert.match(clock, /void showClockMessagesAfterPunch\(userId\)/);
+    assert.equal((clock.match(/const messages = await showClockMessagesAfterPunch\(userId\)/g) ?? []).length, 2,
+      'entrada y salida esperan la consulta de mensajes antes de abrir el vídeo');
     assert.match(legacy, /void showClockMessagesAfterPunch\(\)/);
     assert.match(clock, /if \(!user \|\| user\.id !== punchedUserId\) return/);
+  });
+
+  it('avisa antes del vídeo, difumina el fondo y solo presenta el mensaje y Entendido', () => {
+    assert.match(modal, /hideHeader/);
+    assert.match(modal, /layer="base"/);
+    assert.doesNotMatch(modal, /footer=\{/);
+    assert.doesNotMatch(modal, /Mensaje de Héctor|Mensaje recibido al registrar|mensaje\(s\) más pendientes/);
+    assert.match(modal, /\{message\?\.body \?\? ''\}/);
+    assert.match(modal, /Entendido/);
+    assert.match(clock, /queuedClockVideoRef\.current = \(\) => openGiffOverlay\(overlayConfig\.entrada\)/);
+    assert.match(clock, /queuedClockVideoRef\.current = \(\) => openGiffOverlay\(overlayConfig\.salida\)/);
+    assert.match(clock, /const remaining = clockMessages\.filter/);
+    assert.match(clock, /if \(remaining\.length === 0\) \{[\s\S]*?playVideo\?\.\(\)/);
+    const css = source('src/app/globals.css');
+    assert.match(css, /\[data-modal-backdrop='base'\] \{[\s\S]*?backdrop-filter: var\(--modal-overlay-base-filter\)/);
   });
 
   it('nadie más puede cambiar los mensajes y la lectura requiere confirmación', () => {

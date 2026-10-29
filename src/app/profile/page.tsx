@@ -10,7 +10,7 @@ import { Surface } from '@/components/ui/Surface';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CreditCard, MessageSquarePlus, Pencil, Plus } from 'lucide-react';
+import { CreditCard, Pencil, Plus } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
@@ -522,29 +522,15 @@ function ProfileContent() {
                 template="detail"
                 maxWidthClass="max-w-2xl"
                 rightSlot={
-                    isMasterDashboardUser(currentUser?.email) || showPersonalPurchasesAccountsButton ? (
-                        <div className="flex items-center gap-2">
-                            {isMasterDashboardUser(currentUser?.email) && (
-                                <Button
-                                    type="button"
-                                    variant="tertiary"
-                                    instance="profile-clock-message"
-                                    onClick={() => setClockMessageComposerOpen(true)}
-                                    aria-label={`Enviar mensaje para el próximo fichaje de ${fullName}`}
-                                    icon={<MessageSquarePlus size={20} strokeWidth={2.25} />}
-                                />
-                            )}
-                            {showPersonalPurchasesAccountsButton && (
-                                <Button
-                                    type="button"
-                                    variant="tertiary"
-                                    instance="profile-cuentas-personales"
-                                    onClick={() => router.push('/dashboard/ledger')}
-                                    aria-label="Cuentas de compras personales"
-                                    icon={<CreditCard size={20} strokeWidth={2.25} />}
-                                />
-                            )}
-                        </div>
+                    showPersonalPurchasesAccountsButton ? (
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="profile-cuentas-personales"
+                            onClick={() => router.push('/dashboard/ledger')}
+                            aria-label="Cuentas de compras personales"
+                            icon={<CreditCard size={20} strokeWidth={2.25} />}
+                        />
                     ) : null
                 }
             >
@@ -572,6 +558,18 @@ function ProfileContent() {
                             );
                         })}
                     </div>
+                    {isMasterDashboardUser(currentUser?.email) && (
+                        <div className="mt-4 flex justify-center">
+                            <Button
+                                type="button"
+                                variant="primary"
+                                instance="profile-clock-message"
+                                onClick={() => setClockMessageComposerOpen(true)}
+                            >
+                                Enviar mensaje al fichar
+                            </Button>
+                        </div>
+                    )}
                 </Surface>
 
                         {isManager && (
