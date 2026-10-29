@@ -281,25 +281,27 @@ function WeekendDayColumn({
                 </p>
 
                 <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
-                    {/* El conjunto de Turno + Evento queda centrado entre el
+                    {/* El contenido de Turno (solo Staff) y Evento queda centrado entre el
                         título del día y el final de la card. Si hay mucho
                         contenido, solo se desplaza esta zona interna. */}
                     <div data-element="weekend-content" className="my-auto flex w-full shrink-0 flex-col">
-                        <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 self-start border-l-2 pl-0.5">
-                            {shiftStart && shiftEnd ? (
-                                <span
-                                    data-element="weekend-turno-value"
-                                    className="min-w-0 break-words text-[6px] lg:text-[11px] font-medium tabular-nums leading-tight text-white"
-                                    aria-label={`Turno ${shiftStart} a ${shiftEnd}`}
-                                >
-                                    {shiftStart} – {shiftEnd}
-                                </span>
-                            ) : (
-                                <span data-element="weekend-turno-label" className="text-[6px] lg:text-[11px] font-medium leading-tight tracking-wide">
-                                    Turno
-                                </span>
-                            )}
-                        </div>
+                        {!masterMode && (
+                            <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 self-start border-l-2 pl-0.5">
+                                {shiftStart && shiftEnd ? (
+                                    <span
+                                        data-element="weekend-turno-value"
+                                        className="min-w-0 break-words text-[6px] lg:text-[11px] font-medium tabular-nums leading-tight text-white"
+                                        aria-label={`Turno ${shiftStart} a ${shiftEnd}`}
+                                    >
+                                        {shiftStart} – {shiftEnd}
+                                    </span>
+                                ) : (
+                                    <span data-element="weekend-turno-label" className="text-[6px] lg:text-[11px] font-medium leading-tight tracking-wide">
+                                        Turno
+                                    </span>
+                                )}
+                            </div>
+                        )}
 
                         {/* Evento + Horario + Participantes + Categorías:
                             una fila de flex con anchuras naturales y separación
