@@ -10531,10 +10531,10 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-content'] > [data-element='weekend-turno'] {
   margin-top: 0;
 }
-/* El segundo renglón usa TODA la anchura interna disponible.
-   Evento, Horario, Participantes y Categoría reparten por igual el espacio
-   sobrante (space-between); gap es solo la separación mínima de seguridad.
-   Los bordes exteriores y márgenes del widget permanecen intactos. */
+/* Evento y datos: usar toda la anchura y repartir el sobrante.
+   Nunca reducir el texto a letras microscópicas para forzar que quepa:
+   si no entra en una fila, se desplaza horizontalmente con su tamaño legible.
+   Mantener márgenes externos, separación mínima y valor de Evento sin saltos. */
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] {
   display: flex;
   flex-wrap: nowrap;
@@ -10546,26 +10546,26 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 191 248 / .55) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-row'] > [data-element='weekend-evento'] {
   flex: 0 0 auto;
   width: max-content;
-  max-width: calc(100% - 6px);
-  min-width: 0;
+  min-width: max-content;
+  max-width: none;
   margin-top: 0;
 }
 [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-evento-value'] {
   display: block;
   flex: 0 0 auto;
-  min-width: 0;
-  max-width: 100%;
+  min-width: max-content;
+  max-width: none;
   white-space: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: visible;
   overflow-wrap: normal;
   text-overflow: clip;
-  scrollbar-width: none;
 }
 /* display: contents aplana únicamente los envoltorios. Los cuatro valores
    son hijos flex efectivos de la misma fila: no se forman dos distribuciones

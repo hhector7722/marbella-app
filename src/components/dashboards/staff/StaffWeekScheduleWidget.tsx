@@ -257,63 +257,13 @@ function WeekendDayColumn({
     const ymd = format(day, 'yyyy-MM-dd');
     const shiftStart = shift != null ? fmtHour(formatClockTime(shift.start_time)) : null;
     const shiftEnd = shift != null ? fmtHour(formatClockTime(shift.end_time)) : null;
-    const eventRowRef = useRef<HTMLDivElement>(null);
-    const eventValueRef = useRef<HTMLSpanElement>(null);
     const eventDetailsExist = eventDetailRows.some(row => Boolean(
         row.hours?.trim() || row.pax?.trim() || row.categories?.trim()
     ));
-
-    // Los cuatro valores comparten la MISMA distribución flex:
-    // el espacio libre se reparte por igual entre elementos con
-    // justify-content: space-between, manteniendo un gap mínimo.
-    // Si no caben, medimos los textos REALES y ajustamos su tamaño
-    // conjuntamente antes de permitir ningún solapamiento.
-    useEffect(() => {
-        const row = eventRowRef.current;
-        if (!row) return;
-
-        const fit = () => {
-            const width = row.clientWidth;
-            if (!width) return;
-            const nodes = Array.from(row.querySelectorAll<HTMLElement>(
-                '[data-element="weekend-evento-value"], ' +
-                '[data-element="weekend-evento-label"], ' +
-                '[data-element="weekend-evento-detail-value"], ' +
-                '[data-element="weekend-evento-separator"]',
-            ));
-            if (!nodes.length) return;
-
-            // Restablecer tamaño base para que el cálculo no se acumule
-            // cuando se redimensiona la ventana o se cambian las actividades.
-            nodes.forEach(node => { node.style.fontSize = ''; });
-            const context = document.createElement('canvas').getContext('2d');
-            if (!context) return;
-            let naturalWidth = 0;
-            const sizes = nodes.map(node => {
-                const style = getComputedStyle(node);
-                const size = parseFloat(style.fontSize) || 6;
-                context.font = `${style.fontWeight} ${size}px ${style.fontFamily}`;
-                naturalWidth += context.measureText(node.textContent ?? '').width;
-                return size;
-            });
-            const minimumGap = parseFloat(getComputedStyle(row).columnGap) || 3;
-            const gaps = Math.max(0, nodes.length - 1) * minimumGap;
-            // Incluye el borde izquierdo y padding de Evento y una
-            // salvaguarda subpíxel para que no roce ningún contenido.
-            const availableTextWidth = Math.max(1, width - gaps - 7);
-            const ratio = naturalWidth > 0
-                ? Math.min(1, availableTextWidth / naturalWidth)
-                : 1;
-            nodes.forEach((node, i) => {
-                node.style.fontSize = `${(sizes[i] * ratio).toFixed(2)}px`;
-            });
-        };
-        fit();
-        const observer = new ResizeObserver(fit);
-        observer.observe(row);
-        return () => observer.disconnect();
-    }, [eventLabel, eventDetailRows]);
-
+    // La legibilidad tiene prioridad: el ajuste proporcional anterior podía
+    // reducir la letra a menos de 1 px cuando había mucho texto. Los datos
+    // conservan un tamaño mínimo legible y la fila se desplaza horizontalmente
+    // cuando no hay espacio para todos. Nunca se superponen ni se eliden.
     return (
         <button
             type="button"
@@ -354,14 +304,14 @@ function WeekendDayColumn({
                         {/* Evento + Horario + Participantes + Categorías:
                             una fila de flex con anchuras naturales y separación
                             mínima. Ninguna columna tiene una posición fija. */}
-                        <div ref={eventRowRef} data-element="weekend-evento-row" className="flex w-full min-w-0 items-start">
+                        <div data-element="weekend-evento-row" className="flex w-full min-w-0 items-start" title="Desliza horizontalmente para consultar todos los datos del evento">
                             <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                                 {eventLabel ? (
-                                    <span ref={eventValueRef} data-element="weekend-evento-value" className="block max-w-full shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight" title={eventLabel}>
+                                    <span data-element="weekend-evento-value" className="block shrink-0 whitespace-nowrap text-[10px] lg:text-[12px] font-medium leading-tight" title={eventLabel}>
                                         {eventLabel}
                                     </span>
                                 ) : (
-                                    <span data-element="weekend-evento-label" className="text-[6px] lg:text-[11px] font-medium leading-tight tracking-wide">
+                                    <span data-element="weekend-evento-label" className="shrink-0 whitespace-nowrap text-[10px] lg:text-[12px] font-medium leading-tight tracking-wide">
                                         Evento
                                     </span>
                                 )}
@@ -386,14 +336,14 @@ function WeekendDayColumn({
                                                             <span
                                                                 data-element="weekend-evento-separator"
                                                                 aria-hidden="true"
-                                                                className="shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight opacity-70"
+                                                                className="shrink-0 whitespace-nowrap text-[10px] lg:text-[12px] font-medium leading-tight opacity-70"
                                                             >/</span>
                                                         ) : null}
                                                         <span
                                                             data-element="weekend-evento-detail-value"
                                                             data-segment-kind={cell.kind}
                                                             className={cn(
-                                                                "shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight opacity-80",
+                                                                "shrink-0 whitespace-nowrap text-[10px] lg:text-[12px] font-medium leading-tight opacity-80",
                                                                 cell.kind === 'hours' && masterMode && "font-semibold",
                                                             )}
                                                         >
