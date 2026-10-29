@@ -878,6 +878,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(weekSchedule, /data-element="weekend-evento-detail-value"[\s\S]*?text-\[10px\] lg:text-\[12px\]/, 'los detalles también son legibles');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-row'\] \{[\s\S]*?overflow-x: auto;/, 'se puede leer todo el contenido al desplazar horizontalmente');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-value'\] \{[\s\S]*?min-width: max-content;/, 'nunca se comprime el nombre completo del evento');
+        assert.match(weekSchedule, /cell.kind === 'categories' \? "min-w-0 truncate" : "shrink-0 whitespace-nowrap"/, 'solo Categoría admite truncamiento');
+        assert.match(weekSchedule, /title=\{cell.kind === 'categories' \?/, 'el nombre completo de categoría sigue disponible en escritorio');
+        assert.match(weekScheduleCss, /\[data-element='weekend-evento-detail-value'\]\[data-segment-kind='categories'\] \{[\s\S]*?flex: 0 1 auto;[\s\S]*?text-overflow: ellipsis;/, 'Categoría se acorta cuando supera el espacio restante');
+        assert.match(weekScheduleCss, /\[data-element='weekend-evento-detail-value'\] \{[\s\S]*?min-width: max-content;/, 'horario y participantes mantienen su ancho íntegro');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-row'\] \{[\s\S]*?justify-content: space-between;/, 'el espacio sobrante se reparte por igual entre todos los valores');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-detail-row'\] \{\s*display: contents;/, 'los valores comparten un solo contenedor flex, sin posiciones fijas');
         assert.match(weekSchedule, /whitespace-nowrap[^"]*" title=\{eventLabel\}/, 'el nombre del evento conserva una sola línea y el texto íntegro');

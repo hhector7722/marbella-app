@@ -342,8 +342,10 @@ function WeekendDayColumn({
                                                         <span
                                                             data-element="weekend-evento-detail-value"
                                                             data-segment-kind={cell.kind}
+                                                            title={cell.kind === 'categories' ? (cell.text ?? undefined) : undefined}
                                                             className={cn(
-                                                                "shrink-0 whitespace-nowrap text-[10px] lg:text-[12px] font-medium leading-tight opacity-80",
+                                                                "text-[10px] lg:text-[12px] font-medium leading-tight opacity-80",
+                                                                cell.kind === 'categories' ? "min-w-0 truncate" : "shrink-0 whitespace-nowrap",
                                                                 cell.kind === 'hours' && masterMode && "font-semibold",
                                                             )}
                                                         >
