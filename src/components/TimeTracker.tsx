@@ -10,12 +10,22 @@ import { trackGeofenceRejection } from '@/lib/usage/client';
 import { formatMadridHmFromIso, formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 import { isManualTimeLogEntry } from '@/lib/staff/time-log-origin';
+import { getPendingStaffClockMessages, type StaffClockMessage } from '@/app/actions/staff-clock-messages';
+import { ClockMessagePrompt } from '@/components/staff/ClockMessagePrompt';
 
 export default function TimeTracker() {
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [currentLog, setCurrentLog] = useState<any>(null);
     const [elapsed, setElapsed] = useState<string>("00:00:00");
+    const [clockMessages, setClockMessages] = useState<StaffClockMessage[]>([]);
+    const showClockMessagesAfterPunch = async () => {
+        try {
+            setClockMessages(await getPendingStaffClockMessages());
+        } catch (error) {
+            console.error('Mensajes de fichaje:', error);
+        }
+    };
 
     useEffect(() => {
         checkStatus();
@@ -108,6 +118,7 @@ export default function TimeTracker() {
 
             setCurrentLog(data);
             toast.success("Turno iniciado");
+            void showClockMessagesAfterPunch();
         } catch (e: any) { toast.error(e.message); }
         finally { setLoading(false); }
     };
@@ -155,6 +166,7 @@ export default function TimeTracker() {
             setCurrentLog(null);
             setElapsed("00:00:00");
             toast.success(`Turno finalizado (${totalHours.toFixed(2)}h)`);
+            void showClockMessagesAfterPunch();
         } catch (e: any) { toast.error(e.message); }
         finally { setLoading(false); }
     };
@@ -162,6 +174,11 @@ export default function TimeTracker() {
     if (loading) return <div className="h-48 bg-white/10 animate-pulse rounded-2xl"></div>;
 
     return (
+        <>
+        <ClockMessagePrompt
+            messages={clockMessages}
+            onAcknowledged={(id) => setClockMessages((current) => current.filter((item) => item.id !== id))}
+        />
         <div className={`rounded-2xl p-8 shadow-xl transition-all relative overflow-hidden flex flex-col items-center justify-center text-center gap-4 border-4 ${currentLog ? 'bg-[#5B8FB9] border-[#5B8FB9] text-white' : 'bg-white border-white text-gray-800'}`}>
 
             {/* Indicador de Estado */}
@@ -214,5 +231,6 @@ export default function TimeTracker() {
                 </p>
             )}
         </div>
+        </>
     );
 }

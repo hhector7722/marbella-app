@@ -68,6 +68,8 @@ import {
 } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { getPendingStaffClockMessages, type StaffClockMessage } from '@/app/actions/staff-clock-messages';
+import { ClockMessagePrompt } from '@/components/staff/ClockMessagePrompt';
 import { trackGeofenceRejection } from '@/lib/usage/client';
 
 const CONTACTS_DATA = [
@@ -324,6 +326,21 @@ export default function StaffDashboardView({
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<TimeLogRow | null>(null);
     const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
+    const [clockMessages, setClockMessages] = useState<StaffClockMessage[]>([]);
+
+    // Se consulta únicamente DESPUÉS de guardar correctamente el fichaje.
+    // En modo "ver como" no se entregan mensajes de terceros al propietario.
+    const showClockMessagesAfterPunch = async (punchedUserId: string) => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user || user.id !== punchedUserId) return;
+            const messages = await getPendingStaffClockMessages();
+            setClockMessages(messages);
+        } catch (error) {
+            console.error('No se pudieron cargar los mensajes de fichaje:', error);
+        }
+    };
+
 
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [fichajeOverlay, setFichajeOverlay] = useState<'none' | 'confirm' | 'consumption'>('none');
@@ -786,6 +803,7 @@ export default function StaffDashboardView({
                     .single();
                 if (inErr) throw inErr;
                 setTodayLog((data ?? null) as TimeLogRow | null); setStatus('working'); toast.success("¡Jornada iniciada!");
+                void showClockMessagesAfterPunch(userId);
                 if (isCameraFovNoticePending(cameraFovNoticeAckedAt)) {
                     const ackedAt = now.toISOString();
                     const { error: ackErr } = await supabase
@@ -828,6 +846,7 @@ export default function StaffDashboardView({
                 if (outErr) throw outErr;
 
                 setTodayLog((data ?? null) as TimeLogRow | null); setStatus('finished'); toast.success("Jornada finalizada.");
+                void showClockMessagesAfterPunch(userId);
                 const dayYmd = formatYmdInMadrid(now);
                 const sync = await syncOvertimeCostAfterTimeLogChange(userId, dayYmd);
                 if (!sync.success) {
@@ -1097,6 +1116,11 @@ export default function StaffDashboardView({
                     />
                 </HomeScreenSlot>
             </HomeScreen>
+
+            <ClockMessagePrompt
+                messages={clockMessages}
+                onAcknowledged={(id) => setClockMessages((current) => current.filter((item) => item.id !== id))}
+            />
 
             {fichajeOverlay === 'consumption' ? (
                 <ConsumptionModal

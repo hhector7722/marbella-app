@@ -10,7 +10,7 @@ import { Surface } from '@/components/ui/Surface';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CreditCard, Pencil, Plus } from 'lucide-react';
+import { CreditCard, MessageSquarePlus, Pencil, Plus } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
@@ -34,6 +34,7 @@ import {
     type PlantillaEmployee,
 } from '@/components/modals/StaffSelectionModal';
 import type { User } from '@supabase/supabase-js';
+import { sendStaffClockMessage } from '@/app/actions/staff-clock-messages';
 
 interface UserProfile {
     id: string;
@@ -90,6 +91,29 @@ function ProfileContent() {
     const [contratoOpen, setContratoOpen] = useState(false);
     const [companyPdfDoc, setCompanyPdfDoc] = useState<CompanyPdfDocumentKind | null>(null);
     const [logoutConfirm, setLogoutConfirm] = useState(false);
+    const [clockMessageComposerOpen, setClockMessageComposerOpen] = useState(false);
+    const [clockMessageDraft, setClockMessageDraft] = useState('');
+    const [clockMessageSending, setClockMessageSending] = useState(false);
+
+    const sendClockMessage = async () => {
+        if (!profile || !isMasterDashboardUser(currentUser?.email) || clockMessageSending) return;
+        setClockMessageSending(true);
+        try {
+            const result = await sendStaffClockMessage(profile.id, clockMessageDraft);
+            if (!result.success) {
+                toast.error(result.error ?? 'No se ha podido guardar el mensaje.');
+                return;
+            }
+            toast.success('Mensaje guardado para el próximo fichaje.');
+            setClockMessageDraft('');
+            setClockMessageComposerOpen(false);
+        } catch {
+            toast.error('No se ha podido guardar el mensaje.');
+        } finally {
+            setClockMessageSending(false);
+        }
+    };
+
 
     useModalUsageTracking({
         open: logoutConfirm,
@@ -498,15 +522,29 @@ function ProfileContent() {
                 template="detail"
                 maxWidthClass="max-w-2xl"
                 rightSlot={
-                    showPersonalPurchasesAccountsButton ? (
-                        <Button
-                            type="button"
-                            variant="tertiary"
-                            instance="profile-cuentas-personales"
-                            onClick={() => router.push('/dashboard/ledger')}
-                            aria-label="Cuentas de compras personales"
-                            icon={<CreditCard size={20} strokeWidth={2.25} />}
-                        />
+                    isMasterDashboardUser(currentUser?.email) || showPersonalPurchasesAccountsButton ? (
+                        <div className="flex items-center gap-2">
+                            {isMasterDashboardUser(currentUser?.email) && (
+                                <Button
+                                    type="button"
+                                    variant="tertiary"
+                                    instance="profile-clock-message"
+                                    onClick={() => setClockMessageComposerOpen(true)}
+                                    aria-label={`Enviar mensaje para el próximo fichaje de ${fullName}`}
+                                    icon={<MessageSquarePlus size={20} strokeWidth={2.25} />}
+                                />
+                            )}
+                            {showPersonalPurchasesAccountsButton && (
+                                <Button
+                                    type="button"
+                                    variant="tertiary"
+                                    instance="profile-cuentas-personales"
+                                    onClick={() => router.push('/dashboard/ledger')}
+                                    aria-label="Cuentas de compras personales"
+                                    icon={<CreditCard size={20} strokeWidth={2.25} />}
+                                />
+                            )}
+                        </div>
                     ) : null
                 }
             >
@@ -596,6 +634,48 @@ function ProfileContent() {
                             </div>
                         )}
             </DashboardDetailLayout>
+
+            {/* El propietario puede preparar mensajes para cualquier perfil, incluido el propio. */}
+            <Modal
+                open={clockMessageComposerOpen && isMasterDashboardUser(currentUser?.email)}
+                onClose={() => { if (!clockMessageSending) setClockMessageComposerOpen(false); }}
+                title={`Mensaje para ${fullName}`}
+                instance="profile-clock-message-composer"
+                scheme="work"
+                footer={
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" variant="secondary" instance="clock-message-cancel"
+                            onClick={() => setClockMessageComposerOpen(false)} disabled={clockMessageSending}>
+                            Cancelar
+                        </Button>
+                        <Button type="button" variant="primary" instance="clock-message-send"
+                            disabled={!clockMessageDraft.trim() || clockMessageSending}
+                            loading={clockMessageSending} loadingLabel="Guardando…"
+                            onClick={() => void sendClockMessage()}>
+                            Guardar mensaje
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-3">
+                    <p className="text-sm text-zinc-600">
+                        {fullName} verá este mensaje después de su próximo fichaje de entrada o salida.
+                    </p>
+                    <label htmlFor="clock-message-body" className="block text-sm font-medium">
+                        Mensaje
+                    </label>
+                    <textarea
+                        id="clock-message-body"
+                        value={clockMessageDraft}
+                        onChange={(event) => setClockMessageDraft(event.target.value)}
+                        maxLength={2000}
+                        rows={5}
+                        placeholder="Escribe tu mensaje…"
+                        className="w-full resize-y rounded-xl border border-zinc-300 bg-white p-3 text-base text-zinc-900 outline-none focus:border-blue-500"
+                    />
+                    <p className="text-right text-xs text-zinc-500">{clockMessageDraft.length}/2000</p>
+                </div>
+            </Modal>
 
             {/* Modales */}
             <DatosPersonalesModal
