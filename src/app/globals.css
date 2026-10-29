@@ -10850,3 +10850,176 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   > [data-element='mobile-sales-units'] {
   color: rgb(178 200 223 / .38);
 }
+
+
+/*
+ * /dashboard — escritorio de poca altura útil (incluido zoom del sistema).
+ * La retícula de 8×5 y las medidas exteriores NO cambian. Los widgets
+ * adaptan sus áreas interiores, sin reducir toda la pantalla con scale().
+ */
+@media (min-width: 1024px) and (max-height: 900px) {
+  /* Los 3×2 de Mensual y Último cierre conservan sus seis indicadores.
+     Evitar que la cabecera o los márgenes resten sitio a las cifras. */
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) {
+    gap: 2px;
+    padding: 5px 7px;
+    min-height: 0;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half'])
+    > div:first-child {
+    flex-basis: 19px;
+    height: 19px;
+    min-height: 19px;
+    max-height: 19px;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3,
+        [data-element='monthly-half'] .grid.grid-cols-6) {
+    column-gap: 3px;
+    row-gap: 1px;
+    min-height: 0;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3 > :is(button, div) > div,
+        [data-element='monthly-half'] .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content']) {
+    padding: 1px 3px;
+    gap: 1px;
+    min-width: 0;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3 > :is(button, div) > div,
+        [data-element='monthly-half'] .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content']) > span {
+    font-size: clamp(9px, .68vw, 11px);
+    line-height: 1.1;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3 > :is(button, div) > div,
+        [data-element='monthly-half'] .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content']) > strong {
+    font-size: clamp(12px, .91vw, 16px);
+    line-height: 1.12;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  /* Ventas: repartir primero el espacio real entre cifras, curva y tres
+     renglones de rankings. El tamaño del importe no fuerza alturas fijas. */
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-snapshot'] {
+    box-sizing: border-box;
+    grid-template-rows: max-content minmax(27px, .42fr) minmax(68px, 1.48fr);
+    row-gap: clamp(3px, .55dvh, 6px);
+    column-gap: clamp(9px, 1.1vw, 17px);
+    padding: 4px 10px 7px;
+    min-height: 0;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-kpis'] {
+    min-height: 0;
+    height: auto;
+    gap: 5px;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-kpis'] > div {
+    min-height: 0;
+    height: auto;
+    max-width: 100%;
+    padding: 5px 8px;
+    gap: 2px;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-kpis'] > div > strong {
+    font-size: clamp(16px, 1.15vw, 20px);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-hour-chart'] {
+    height: 100%;
+    min-height: 0;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours']) {
+    min-height: 0;
+    align-content: space-evenly;
+    row-gap: 2px;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours'])
+    > div {
+    min-width: 0;
+    column-gap: 4px;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours'])
+    > div > :is(span:first-child, [data-element='mobile-sales-product-label']) {
+    font-size: clamp(11px, .78vw, 13px);
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours'])
+    > div > [data-element='mobile-sales-units'] {
+    font-size: clamp(10px, .68vw, 12px);
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-products'], [data-element='mobile-sales-hours'])
+    > div > [data-element='mobile-sales-amount'] {
+    font-size: clamp(12px, .88vw, 15px);
+  }
+
+  /* Horarios: filas cerradas compactas y semana desplegada flexible.
+     Si los datos exceden el espacio, solo la zona de semanas desplaza,
+     nunca se corta el contenido de sábado y domingo en silencio. */
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='master-horarios'] [data-component='StaffWeekSchedule'] {
+    --staff-calendar-gap: 2px;
+    --staff-week-day-size: clamp(17px, 2.25dvh, 21px);
+    --staff-week-expansion-min: 0px;
+    padding-top: 1px;
+    padding-bottom: 2px;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='master-horarios'] [data-element='month-weeks'] {
+    gap: 2px;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='master-horarios']
+    [data-element='week-block']:not([data-expanded='true']) {
+    flex: 0 0 auto;
+    padding-block: 1px;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='master-horarios'] [data-element='week-block'][data-expanded='true'] {
+    flex: 1 0 128px;
+    min-height: 128px;
+    overflow: hidden;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='master-horarios'] [data-element='week-expansion'] {
+    min-height: 0;
+    padding-block: 2px;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='master-horarios'] [data-element='weekend-details'] {
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
