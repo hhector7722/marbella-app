@@ -11079,3 +11079,28 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   height: 0;
   display: none;
 }
+
+/* Horarios — ocultar completamente los indicadores de scroll de TODO el
+   calendario (semanas y tarjetas de sábado / domingo) en Staff y Master.
+   No tocar overflow: las semanas, detalles y eventos largos siguen
+   desplazándose con rueda, trackpad o gesto táctil. Incluye descendientes
+   porque cada uno puede activar su propio scroll en layouts estrechos. */
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='staff-horarios'], [data-instance='master-horarios']
+) [data-component='StaffWeekSchedule'],
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='staff-horarios'], [data-instance='master-horarios']
+) [data-component='StaffWeekSchedule'] * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='staff-horarios'], [data-instance='master-horarios']
+) [data-component='StaffWeekSchedule']::-webkit-scrollbar,
+[data-component='HomeScreen'] > [data-element='slot']:is(
+  [data-instance='staff-horarios'], [data-instance='master-horarios']
+) [data-component='StaffWeekSchedule'] *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}

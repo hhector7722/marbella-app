@@ -889,13 +889,18 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(weekSchedule, /whitespace-nowrap[^"]*" title=\{eventLabel\}/, 'el nombre del evento conserva una sola línea y el texto íntegro');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-value'\] \{[\s\S]*?white-space: nowrap;/, 'no se puede envolver el nombre del evento');
         assert.doesNotMatch(weekScheduleCss, /max-width: 48%/, 'no se reserva porcentaje fijo para Evento');
-        assert.doesNotMatch(weekSchedule, /\{!masterMode && \(/, 'el concepto Turno se presenta aunque no haya turno o se consulte Master');
+        assert.match(weekSchedule, /\{!masterMode && \(/, 'la fila Turno se muestra en Staff y no en Master');
         assert.match(weekScheduleCss, /\[data-element='weekend-content'\] \{[\s\S]*?margin-block: auto;/, 'el grupo se centra verticalmente');
         assert.match(weekScheduleCss, /\[data-element='weekend-evento-row'\] \{[\s\S]*?flex-wrap: nowrap;/, 'la fila mantiene Evento y sus detalles juntos');
         assert.doesNotMatch(weekScheduleCss, /\[data-element='weekend-evento-detail-row'\] \{\s*display: grid;/, 'ningún valor ocupa una columna rígida');
         assert.match(weekScheduleCss, /grid-template-rows: minmax\(0, 1fr\);/, 'el alto de los dos días es independiente del contenido');
         assert.match(weekScheduleCss, /\[data-element='weekend-details'\] \{[\s\S]*?overflow-y: auto;/, 'la actividad extensa se desplaza dentro de la tarjeta sin cambiar su tamaño');
         assert.match(weekScheduleCss, /\[data-element='month-heading'\] \{[\s\S]*?margin-bottom: -2px;/, 'la cabecera y días se acercan discretamente');
+        const hiddenScheduleScrollbars = weekScheduleCss.slice(weekScheduleCss.indexOf('/* Horarios — ocultar completamente los indicadores de scroll'));
+        assert.match(hiddenScheduleScrollbars, /\[data-instance='staff-horarios'\], \[data-instance='master-horarios'\]/, 'se ocultan tanto en Staff como en Master');
+        assert.match(hiddenScheduleScrollbars, /\[data-component='StaffWeekSchedule'\] \* \{[\s\S]*?scrollbar-width: none;/, 'todos los descendientes de Horarios, incluidas las cards, ocultan la barra en Firefox');
+        assert.match(hiddenScheduleScrollbars, /\[data-component='StaffWeekSchedule'\] \*::-webkit-scrollbar \{[\s\S]*?display: none;/, 'también se oculta la barra de las cards en Chrome y Safari');
+        assert.doesNotMatch(hiddenScheduleScrollbars, /overflow-(?:x|y): hidden|overflow: hidden/, 'el scroll sigue disponible al ocultar las barras');
         assert.match(
             weekSchedule,
             /formatEventClock\(act\.startTime\)[\s\S]{0,40}formatEventClock\(act\.endTime\)/,
