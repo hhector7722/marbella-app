@@ -128,7 +128,7 @@ export async function sendScheduleNotifications(
 
     const { data: subscriptions, error } = await supabase
         .from('push_subscriptions')
-        .select('subscription, user_id')
+        .select('id, subscription, user_id')
         .in('user_id', userIds);
 
     if (error) {
@@ -204,20 +204,16 @@ export async function sendScheduleNotifications(
         .filter((id): id is string => id !== null);
 
     // Clean up expired subscriptions
-    const expiredSubIds = failures
-        .map((f: any, idx) => {
-            if (f.reason?.statusCode === 404 || f.reason?.statusCode === 410) {
-                return subs[idx].user_id;
-            }
-            return null;
+    const expiredSubIds = results
+        .map((result, idx) => {
+            if (result.status !== 'rejected') return null;
+            const code = (result.reason as { statusCode?: number })?.statusCode;
+            return code === 404 || code === 410 ? subs[idx].id : null;
         })
-        .filter(Boolean);
+        .filter((id): id is string => id !== null);
 
     if (expiredSubIds.length > 0) {
-        await supabase
-            .from('push_subscriptions')
-            .delete()
-            .in('user_id', expiredSubIds);
+        await supabase.from('push_subscriptions').delete().in('id', expiredSubIds);
     }
 
     return {
@@ -265,7 +261,7 @@ export async function sendClosingNotification(data: {
     // 2. Get subscriptions for these managers
     const { data: subscriptions, error: subError } = await supabase
         .from('push_subscriptions')
-        .select('subscription, user_id')
+        .select('id, subscription, user_id')
         .in('user_id', managerIds);
 
     if (subError) {
@@ -297,20 +293,16 @@ export async function sendClosingNotification(data: {
 
     // Clean up expired subscriptions (copy of logic from schedule notifications)
     const failures = results.filter(r => r.status === 'rejected');
-    const expiredSubIds = failures
-        .map((f: any, idx) => {
-            if (f.reason?.statusCode === 404 || f.reason?.statusCode === 410) {
-                return subscriptions[idx].user_id;
-            }
-            return null;
+    const expiredSubIds = results
+        .map((result, idx) => {
+            if (result.status !== 'rejected') return null;
+            const code = (result.reason as { statusCode?: number })?.statusCode;
+            return code === 404 || code === 410 ? subscriptions[idx].id : null;
         })
-        .filter(Boolean);
+        .filter((id): id is string => id !== null);
 
     if (expiredSubIds.length > 0) {
-        await supabase
-            .from('push_subscriptions')
-            .delete()
-            .in('user_id', expiredSubIds);
+        await supabase.from('push_subscriptions').delete().in('id', expiredSubIds);
     }
 
     return { success: true, sentCount };
@@ -398,7 +390,7 @@ export async function sendScheduleNoteNotification(input: {
 
     const { data: subscriptions, error: subError } = await admin
         .from('push_subscriptions')
-        .select('subscription, user_id')
+        .select('id, subscription, user_id')
         .eq('user_id', hectorProfile.id);
 
     if (subError) {
@@ -430,17 +422,14 @@ export async function sendScheduleNoteNotification(input: {
             if (r.status !== 'rejected') return null;
             const statusCode = (r.reason as { statusCode?: number })?.statusCode;
             if (statusCode === 404 || statusCode === 410) {
-                return subscriptions[idx].user_id;
+                return subscriptions[idx].id;
             }
             return null;
         })
-        .filter(Boolean);
+        .filter((id): id is string => id !== null);
 
     if (expiredSubIds.length > 0) {
-        await admin
-            .from('push_subscriptions')
-            .delete()
-            .in('user_id', expiredSubIds as string[]);
+        await admin.from('push_subscriptions').delete().in('id', expiredSubIds);
     }
 
     return { success: true, sentCount };
