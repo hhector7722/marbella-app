@@ -154,7 +154,7 @@ export async function POST(req: Request) {
 
         const { data: subscriptions, error: subError } = await supabase
             .from('push_subscriptions')
-            .select('subscription, user_id')
+            .select('id, subscription, user_id')
             .in('user_id', managerIds);
 
         if (subError) {
@@ -181,22 +181,36 @@ export async function POST(req: Request) {
                 if (r.status !== 'rejected') return null;
                 const statusCode = (r.reason as { statusCode?: number })?.statusCode;
                 if (statusCode === 404 || statusCode === 410) {
-                    return subscriptions[idx].user_id;
+                    return subscriptions[idx].id;
                 }
                 return null;
             })
-            .filter(Boolean);
+            .filter((id): id is string => id !== null);
 
         if (expiredSubIds.length > 0) {
-            await supabase
-                .from('push_subscriptions')
-                .delete()
-                .in('user_id', expiredSubIds as string[]);
+            // Eliminar solo el dispositivo caducado, no los demás del usuario.
+            await supabase.from('push_subscriptions').delete().in('id', expiredSubIds);
         }
 
         const sentCount = results.filter((r) => r.status === 'fulfilled').length;
+        const failed = results
+            .map((r, idx) => r.status === 'rejected'
+                ? { userId: subscriptions[idx].user_id,
+                    status: (r.reason as { statusCode?: number })?.statusCode ?? null }
+                : null)
+            .filter((entry) => entry !== null);
 
-        return NextResponse.json({ success: true, sentCount });
+        // La respuesta de Web Push confirma aceptación por el proveedor,
+        // no que iOS/Android haya mostrado la notificación en pantalla.
+        console.info('[reservation-push] Provider delivery attempts', {
+            targets: subscriptions.length, accepted: sentCount, failed,
+        });
+        return NextResponse.json({
+            success: failed.length === 0,
+            sentCount,
+            targetCount: subscriptions.length,
+            failedCount: failed.length,
+        }, { status: failed.length > 0 ? 207 : 200 });
     } catch (err: unknown) {
         console.error('Error procesando webhook reservations-push:', err);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
