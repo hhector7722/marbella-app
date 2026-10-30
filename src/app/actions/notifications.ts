@@ -37,10 +37,12 @@ export async function saveSubscription(subscription: any) {
 
     const { error } = await supabase
         .from('push_subscriptions')
+        // Cada dispositivo conserva su propia suscripción. El endpoint del
+        // proveedor es único; iniciar sesión en otro móvil no reemplaza este.
         .upsert({
             user_id: user.id,
             subscription: subscription,
-        }, { onConflict: 'user_id' });
+        }, { onConflict: 'endpoint' });
 
     if (error) {
         console.error('Error saving subscription:', error);
@@ -60,6 +62,7 @@ export async function getPushSubscriptionStatus(): Promise<{ hasSubscription: bo
         .from('push_subscriptions')
         .select('user_id')
         .eq('user_id', user.id)
+        .limit(1)
         .maybeSingle();
 
     if (error) {
