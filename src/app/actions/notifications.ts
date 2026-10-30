@@ -195,7 +195,6 @@ export async function sendScheduleNotifications(
     );
 
     const sentCount = results.filter(r => r.status === 'fulfilled').length;
-    const failures = results.filter(r => r.status === 'rejected');
     const sentUserIds = results
         .map((r, idx) => (r.status === 'fulfilled' ? subs[idx].user_id : null))
         .filter((id): id is string => id !== null);
@@ -292,7 +291,6 @@ export async function sendClosingNotification(data: {
     const sentCount = results.filter(r => r.status === 'fulfilled').length;
 
     // Clean up expired subscriptions (copy of logic from schedule notifications)
-    const failures = results.filter(r => r.status === 'rejected');
     const expiredSubIds = results
         .map((result, idx) => {
             if (result.status !== 'rejected') return null;
