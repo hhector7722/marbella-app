@@ -12,6 +12,7 @@ import {
   PUSH_PROMPT_PREVIEW_EMAIL,
 } from '@/lib/push-notifications-copy'
 import {
+  ensureServiceWorkerRegistered,
   isPushSupported,
   isStandalonePWA,
   PUSH_PROMPT_DISMISS_KEY,
@@ -97,8 +98,14 @@ export function PushNotificationsPrompt() {
 
     void (async () => {
       const { hasSubscription } = await getPushSubscriptionStatus()
+      // Una suscripción de otro teléfono no demuestra que ESTE dispositivo
+      // pueda recibir push. Comprobar la suscripción local del service worker.
+      const registration = await ensureServiceWorkerRegistered()
+      const localSubscription = registration
+        ? await registration.pushManager.getSubscription()
+        : null
       if (cancelled) return
-      if (!hasSubscription) {
+      if (!hasSubscription || !localSubscription) {
         setPermissionDenied(
           typeof Notification !== 'undefined' && Notification.permission === 'denied',
         )
