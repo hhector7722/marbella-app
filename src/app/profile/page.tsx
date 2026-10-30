@@ -34,7 +34,11 @@ import {
     type PlantillaEmployee,
 } from '@/components/modals/StaffSelectionModal';
 import type { User } from '@supabase/supabase-js';
-import { sendStaffClockMessage } from '@/app/actions/staff-clock-messages';
+import {
+    checkPendingStaffClockMessage,
+    sendStaffClockMessage,
+    type StaffClockMessage,
+} from '@/app/actions/staff-clock-messages';
 
 interface UserProfile {
     id: string;
@@ -94,6 +98,34 @@ function ProfileContent() {
     const [clockMessageComposerOpen, setClockMessageComposerOpen] = useState(false);
     const [clockMessageDraft, setClockMessageDraft] = useState('');
     const [clockMessageSending, setClockMessageSending] = useState(false);
+    const [clockMessageChecking, setClockMessageChecking] = useState(false);
+    const [clockMessagePending, setClockMessagePending] = useState<StaffClockMessage | null>(null);
+
+    const openClockMessage = async () => {
+        if (!profile || !isMasterDashboardUser(currentUser?.email) || clockMessageChecking) return;
+        setClockMessageChecking(true);
+        try {
+            // Comprobar siempre al pulsar: no depender de un estado cacheado
+            // en el perfil (podría haber fichado desde otro dispositivo).
+            const check = await checkPendingStaffClockMessage(profile.id);
+            if (!check.success) {
+                toast.error(check.error);
+                return;
+            }
+            if (check.pending) {
+                setClockMessagePending(check.pending);
+                setClockMessageComposerOpen(false);
+            } else {
+                setClockMessagePending(null);
+                setClockMessageDraft('');
+                setClockMessageComposerOpen(true);
+            }
+        } catch {
+            toast.error('No se ha podido consultar si hay un mensaje pendiente.');
+        } finally {
+            setClockMessageChecking(false);
+        }
+    };
 
     const sendClockMessage = async () => {
         if (!profile || !isMasterDashboardUser(currentUser?.email) || clockMessageSending) return;
@@ -101,7 +133,14 @@ function ProfileContent() {
         try {
             const result = await sendStaffClockMessage(profile.id, clockMessageDraft);
             if (!result.success) {
-                toast.error(result.error ?? 'No se ha podido guardar el mensaje.');
+                // Puede llegar otro mensaje desde otra sesión entre la
+                // comprobación inicial y el guardado: mostrar el mismo aviso.
+                if (result.pending) {
+                    setClockMessageComposerOpen(false);
+                    setClockMessagePending(result.pending);
+                } else {
+                    toast.error(result.error);
+                }
                 return;
             }
             toast.success('Mensaje guardado para el próximo fichaje.');
@@ -564,7 +603,10 @@ function ProfileContent() {
                                 type="button"
                                 variant="primary"
                                 instance="profile-clock-message"
-                                onClick={() => setClockMessageComposerOpen(true)}
+                                onClick={() => void openClockMessage()}
+                                loading={clockMessageChecking}
+                                loadingLabel="Comprobando…"
+                                disabled={clockMessageChecking}
                             >
                                 Enviar mensaje al fichar
                             </Button>
@@ -632,6 +674,38 @@ function ProfileContent() {
                             </div>
                         )}
             </DashboardDetailLayout>
+
+            {/* Si existe un mensaje aún no confirmado, mostrar cuál es y bloquear el editor. */}
+            <Modal
+                open={clockMessagePending !== null && isMasterDashboardUser(currentUser?.email)}
+                onClose={() => setClockMessagePending(null)}
+                title={`Mensaje pendiente para ${fullName}`}
+                instance="profile-clock-message-already-pending"
+                scheme="work"
+                footer={
+                    <Button
+                        type="button"
+                        variant="primary"
+                        instance="profile-clock-message-pending-close"
+                        onClick={() => setClockMessagePending(null)}
+                    >
+                        Entendido
+                    </Button>
+                }
+            >
+                <div className="space-y-3">
+                    <p className="text-sm text-zinc-700">
+                        Este usuario ya tiene un mensaje pendiente. No puedes enviarle otro hasta
+                        que registre su entrada o salida y confirme que lo ha leído.
+                    </p>
+                    <div
+                        data-element="profile-pending-clock-message"
+                        className="whitespace-pre-wrap break-words rounded-xl border border-amber-200 bg-amber-50 p-4 text-base font-medium leading-relaxed text-zinc-900"
+                    >
+                        {clockMessagePending?.body}
+                    </div>
+                </div>
+            </Modal>
 
             {/* El propietario puede preparar mensajes para cualquier perfil, incluido el propio. */}
             <Modal
