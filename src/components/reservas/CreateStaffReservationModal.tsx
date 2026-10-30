@@ -102,14 +102,21 @@ export function CreateStaffReservationModal({
             />
           </Field>
           <Field instance="reservas-create-time" label="Hora" htmlFor="staff-reservation-time">
-            <input
+            <select
               id="staff-reservation-time"
               name="reservation_time"
-              type="time"
-              step={1800}
+              defaultValue=""
               disabled={busy}
               required
-            />
+            >
+              <option value="" disabled>Selecciona una hora</option>
+              {Array.from({ length: 48 }, (_, index) => {
+                const hour = String(Math.floor(index / 2)).padStart(2, '0')
+                const minute = index % 2 === 0 ? '00' : '30'
+                const time = `${hour}:${minute}`
+                return <option key={time} value={time}>{time}</option>
+              })}
+            </select>
           </Field>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
