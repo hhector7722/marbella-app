@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-10-31
+
+- **El asistente admite fotografías y PDF grandes dentro del límite de Vercel.** El navegador comprime imágenes antes de enviar archivos demasiado grandes y extrae localmente el texto de PDF voluminosos, conservando los límites de tamaño y páginas. Las herramientas de IA devuelven error explícito si la operación de base de datos falla o no está implementada, sin anunciar un éxito inexistente.
+
 ## 2026-10-28
 
 - **El mosaico recupera el color original de Ventas y de sus indicadores.** Las cards interiores de Ventas, Último cierre y Mensual vuelven a sus tonos anteriores. En escritorio, los dos importes de Ventas quedan en tarjetas altas ajustadas al contenido y centradas en cada mitad; Último cierre y Mensual comparten medidas y posiciones en su retícula 3×2. Se elimina la sombra exterior del par y Horarios muestra sus semanas sin scroll dentro del widget.
