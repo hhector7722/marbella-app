@@ -1272,15 +1272,22 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         return () => { active = false; };
     }, [supabase, period.start, period.end, initializing]);
 
-    // La cifra provisional del día abierto procede del mismo RPC que el widget.
-    // Releerla ante nuevos tickets evita que la página y el modal se queden atrás.
+    // Mantener sincronizadas las ventas, los tickets y los tramos horarios del
+    // día abierto: el informe inicial queda obsoleto cuando llegan tickets.
     useEffect(() => {
         if (initializing || period.start !== period.end || period.start !== format(new Date(), 'yyyy-MM-dd')) return;
         const date = period.start;
         let active = true;
+        let latestRequest = 0;
         const refresh = async () => {
-            const { data, error } = await supabase.rpc('get_daily_sales_stats', { target_date: date });
-            if (active && !error) setLiveDaySales({ date, total: Number(data?.total_ventas ?? 0) });
+            const request = ++latestRequest;
+            const [sales, report] = await Promise.all([
+                supabase.rpc('get_daily_sales_stats', { target_date: date }),
+                supabase.rpc('get_ventas_crossfilter', { p_start_date: date, p_end_date: date, p_limit: 1 }),
+            ]);
+            if (!active || request !== latestRequest) return;
+            if (!sales.error) setLiveDaySales({ date, total: Number(sales.data?.total_ventas ?? 0) });
+            if (!report.error && report.data) setDailyReport(report.data as TicketReport);
         };
         void refresh();
         const channel = supabase.channel(`realtime_ventas_detail:${randomId()}`)
