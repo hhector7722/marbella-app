@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { ACTION_SCHEMA, type CopilotAction } from "./actions";
-import { canExecute, type RoleName } from "./permissions";
+import { ACTION_SCHEMA, type CopilotAction } from "./actions.ts";
+import { canExecute, type RoleName } from "./permissions.ts";
 
 export type CopilotToolResult =
   | { ok: true; actionName: CopilotAction; rpc: string; params: Record<string, unknown>; data: unknown }
@@ -127,6 +127,9 @@ export async function executeCopilotTool(params: {
     };
   }
   const { data: rpcResult, error: rpcErr } = await supabase.rpc(def.rpc, rpcPayload);
+  const isNotImplemented = !rpcErr && rpcResult !== null &&
+    typeof rpcResult === "object" && !Array.isArray(rpcResult) &&
+    "error" in rpcResult && rpcResult.error === "no_implementada";
   const resultData = rpcErr ? { error: `Error en base de datos: ${rpcErr.message}` } : rpcResult;
 
   const { error: logErr } = await supabase.from("ai_call_logs").insert({
@@ -151,8 +154,19 @@ export async function executeCopilotTool(params: {
       actionName,
       rpc: def.rpc,
       params: rpcPayload,
-      status: 200,
+      status: 502,
       error: `Error en base de datos: ${rpcErr.message}`,
+    };
+  }
+
+  if (isNotImplemented) {
+    return {
+      ok: false,
+      actionName,
+      rpc: def.rpc,
+      params: rpcPayload,
+      status: 501,
+      error: "Esta operación todavía no está implementada en la aplicación.",
     };
   }
 

@@ -12,6 +12,7 @@ import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useChatVisualViewport } from '@/hooks/useChatVisualViewport';
 import { useFreezeChatBackground } from '@/hooks/useFreezeChatBackground';
 import VoiceConversation from '@/components/chat/VoiceConversation';
+import { prepareChatImage, readLargeChatPdfInBrowser } from '@/lib/copilot/browser-attachment';
 
 // Helper para extraer texto del Vercel AI SDK
 function messageCombinedText(parts: unknown): string {
@@ -247,13 +248,24 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       setUploadingFile(true);
       const toastId = toast.loading(`Analizando ${selectedFile.name}…`);
       try {
-        const fd = new FormData();
-        fd.append('file', selectedFile);
-        const response = await fetch('/api/copiloto/attachments', {
-          method:'POST',body:fd,credentials:'same-origin',
-        });
-        const data = await response.json() as {error?:string;name?:string;kind?:string;content?:string;pages?:number;truncated?:boolean};
-        if(!response.ok || !data.content)throw new Error(data.error||'No se pudo adjuntar el archivo.');
+        let data: {error?:string;name?:string;kind?:string;content?:string;pages?:number;truncated?:boolean};
+        if(/\.pdf$/i.test(selectedFile.name) && selectedFile.size>3_800_000){
+          // Evita 413 en Vercel: sólo sube al chat el texto del PDF local.
+          const extracted=await readLargeChatPdfInBrowser(selectedFile);
+          data={name:selectedFile.name,kind:'pdf',pages:extracted.pages,content:extracted.content,truncated:extracted.truncated};
+        }else{
+          // Las fotos del iPhone suelen pesar >4,5MB. Convertir/limitar a JPG.
+          const upload=selectedFile.type.startsWith('image/')
+            ? await prepareChatImage(selectedFile) : selectedFile;
+          const fd=new FormData();
+          fd.append('file',upload);
+          const response=await fetch('/api/copiloto/attachments',{
+            method:'POST',body:fd,credentials:'same-origin',
+          });
+          data=await response.json() as typeof data;
+          if(!response.ok)throw new Error(data.error||'No se pudo adjuntar el archivo.');
+        }
+        if(!data.content)throw new Error(data.error||'No se pudo interpretar el adjunto.');
         context = `Archivo temporal adjunto: ${data.name} (${data.kind}${data.pages?`, ${data.pages} páginas`:''}).\n${data.content}`;
         fileContextRef.current=context;
         fileLabel=`📎 ${data.name}${data.truncated?' (texto abreviado)':''}`;
