@@ -24,6 +24,7 @@ export type Slot = {
   label: string
   level_number: number
   capacity: number
+  units_per_position: number
   sort_order: number
 }
 export type Product = { id: string; name: string; base_unit: string }
@@ -36,7 +37,7 @@ const WORK_HEIGHT = 240
 
 function unitLabel(slot: Slot, products: Map<string, string>): string {
   const name = products.get(slot.ingredient_id) ?? 'Producto'
-  return name + (slot.label ? ' · ' + slot.label : '') + ' · Nivel ' + slot.level_number
+  return name + (slot.label ? ' · ' + slot.label : '') + (slot.level_number > 1 ? ' · Fila ' + slot.level_number : '')
 }
 
 export function ReplenishmentClient({ fridges, slots, products, canManage, error }: {
@@ -61,6 +62,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
   const [slotLabel, setSlotLabel] = useState('')
   const [level, setLevel] = useState('1')
   const [capacity, setCapacity] = useState('12')
+  const [unitsPerPosition, setUnitsPerPosition] = useState('1')
   const [busy, setBusy] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -115,11 +117,15 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
       overlay.stroke()
     }
 
+    // Un círculo es una posición; el número de unidades ocultas se supone, no se observa.
     const count = circles.length
     setDetected(count)
     historyRef.current = [...historyRef.current.slice(-3), count]
-    setStable(isStableCount(historyRef.current, activeSlot?.capacity ?? 0))
-  }, [activeSlot?.capacity])
+    const multiplier = activeSlot?.units_per_position ?? 1
+    const stablePositions = isStableCount(historyRef.current,
+      Math.floor((activeSlot?.capacity ?? 0) / multiplier))
+    setStable(stablePositions === null ? null : stablePositions * multiplier)
+  }, [activeSlot?.capacity, activeSlot?.units_per_position])
 
   useEffect(() => {
     if (!isScanning) return
@@ -278,7 +284,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                       <Surface variant="block" instance="replenishment-capture" className="flex flex-col gap-3 p-3">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-sm font-semibold text-zinc-900">{unitLabel(activeSlot, productNames)}</span>
-                          <span className="text-xs tabular-nums text-zinc-500">Capacidad {activeSlot.capacity}</span>
+                          <span className="text-xs tabular-nums text-zinc-500">{activeSlot.capacity / activeSlot.units_per_position} posiciones × {activeSlot.units_per_position} ud. = {activeSlot.capacity}</span>
                         </div>
                         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-zinc-950">
                           {isScanning ? (
@@ -288,7 +294,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                               <canvas ref={overlayRef} width={WORK_WIDTH} height={WORK_HEIGHT}
                                 className="pointer-events-none absolute inset-0 h-full w-full" />
                               <div className="absolute bottom-2 left-2 rounded bg-black/75 px-3 py-2 text-white">
-                                <span className="block text-xs">Latas visibles estimadas</span>
+                                <span className="block text-xs">Posiciones visibles estimadas</span>
                                 <strong className="text-2xl tabular-nums">{detected ?? '—'}</strong>
                                 <span className="ml-2 text-xs">{stable !== null ? 'Estable' : 'Buscando…'}</span>
                                 {stable !== null && activeSlot ? (
@@ -338,8 +344,9 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                           Confirmar este nivel
                         </Button>
                         <p className="text-xs text-zinc-500">
-                          El reconocimiento es orientativo: revisa la cifra. Nunca se dan por contadas las latas ocultas.
-                          Cada nivel se guarda una sola vez y puedes volver a corregirlo.
+                          El reconocimiento es orientativo: cada círculo se multiplica por {activeSlot.units_per_position} unidades
+                          según la distribución. La cámara no puede comprobar las latas ocultas ni detectar pilas parcialmente vacías.
+                          Revisa y corrige la cantidad real antes de confirmar.
                         </p>
                       </Surface>
                     )}
@@ -400,7 +407,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                         void run(async () => {
                           await createReplenishmentSlot({
                             fridgeId: currentFridgeId, ingredientId: productId, label: slotLabel,
-                            level: Number(level), capacity: Number(capacity),
+                            level: Number(level), capacity: Number(capacity), unitsPerPosition: Number(unitsPerPosition),
                           })
                           setSlotLabel('')
                         })
@@ -419,17 +426,22 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                             placeholder="Ej. Columna izquierda" />
                         </Field>
                         <div className="grid grid-cols-2 gap-3">
-                          <Field instance="replenishment-new-level" label="Nivel o piso" htmlFor="replenishment-new-level">
+                          <Field instance="replenishment-new-level" label="Fila o grupo" htmlFor="replenishment-new-level">
                             <input id="replenishment-new-level" className={fieldClass} type="number"
                               min={1} max={30} step={1} required value={level}
                               onChange={event => setLevel(event.target.value)} />
                           </Field>
-                          <Field instance="replenishment-new-capacity" label="Capacidad" htmlFor="replenishment-new-capacity">
+                          <Field instance="replenishment-new-capacity" label="Capacidad total (unidades)" htmlFor="replenishment-new-capacity">
                             <input id="replenishment-new-capacity" className={fieldClass} type="number"
                               min={1} max={500} step={1} required value={capacity}
                               onChange={event => setCapacity(event.target.value)} />
                           </Field>
                         </div>
+                        <Field instance="replenishment-new-multiplier" label="Unidades por posición visible (1 botella; 4 latas apiladas)" htmlFor="replenishment-new-multiplier">
+                          <input id="replenishment-new-multiplier" className={fieldClass} type="number"
+                            min={1} max={20} step={1} required value={unitsPerPosition}
+                            onChange={event => setUnitsPerPosition(event.target.value)} />
+                        </Field>
                         <Button type="submit" variant="primary" instance="replenishment-add-slot"
                           disabled={busy || !productId}>Añadir zona</Button>
                       </form>
@@ -438,7 +450,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                       <h3 className="mb-2 text-sm font-semibold">Zonas configuradas</h3>
                       {fridgeSlots.map(slot => (
                         <div key={slot.id} className="flex min-h-12 items-center justify-between gap-2 border-b border-zinc-100">
-                          <span className="min-w-0 text-sm">{unitLabel(slot, productNames)} · {slot.capacity} ud.</span>
+                          <span className="min-w-0 text-sm">{unitLabel(slot, productNames)} · {slot.capacity / slot.units_per_position} × {slot.units_per_position} = {slot.capacity} ud.</span>
                           <Button variant="tertiary" instance={'replenishment-delete-' + slot.id}
                             icon={<Trash2 className="h-4 w-4" />} aria-label="Eliminar zona"
                             onClick={() => setDeleteTarget({ kind: 'slot', id: slot.id })} />

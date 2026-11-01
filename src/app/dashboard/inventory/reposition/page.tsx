@@ -14,7 +14,7 @@ export default async function ReplenishmentPage() {
   const [fridgesResult, slotsResult, productsResult] = await Promise.all([
     supabase.from('replenishment_fridges').select('id,name').order('created_at', { ascending: true }),
     supabase.from('replenishment_slots')
-      .select('id,fridge_id,ingredient_id,label,level_number,capacity,sort_order')
+      .select('id,fridge_id,ingredient_id,label,level_number,capacity,sort_order,units_per_position')
       .order('level_number', { ascending: true }).order('sort_order', { ascending: true }),
     supabase.from('ingredients').select('id,name,base_unit').eq('base_unit', 'ud')
       .is('archived_at', null).order('name', { ascending: true }),

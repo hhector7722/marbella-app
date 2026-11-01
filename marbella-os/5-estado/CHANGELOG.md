@@ -15,6 +15,9 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-11-01
 
+- **Reposición por posición cenital y pilas de cuatro.** Las cuatro neveras quedan configuradas con las posiciones observadas: Coca-cola 48×4=192; Cerveza 41×4=164; Refrescos 27×4=108; Botellas 32×1=32. `replenishment_slots.units_per_position` permite convertir el recuento de círculos en una estimación de unidades, sin deducir la cantidad real en pilas parcialmente vacías. Se mantienen confirmación humana, ausencia de movimientos contables y acceso privado a la cuenta propietaria.
+
+
 - **Primera versión de reposición visual de neveras, piloto privado.** Solo `hhector7722@gmail.com` ve «Reponer», lo encuentra en la búsqueda y puede acceder a la ruta y sus datos (RLS). Esa cuenta configura neveras, productos, niveles y capacidades, abre la cámara, obtiene candidatos de latas mediante detección circular local, revisa o corrige el número y confirma zonas. Los faltantes solo se presentan completos tras revisar todas las zonas. El escaneo no modifica stock, no envía vídeo al servidor y requiere validación presencial antes de considerarse recuento automático fiable.
 
 ## 2026-10-31

@@ -45,12 +45,15 @@ export async function createReplenishmentSlot(input: {
   label: string
   level: number
   capacity: number
+  unitsPerPosition: number
 }) {
   requireUuid(input.fridgeId)
   requireUuid(input.ingredientId)
   const label = input.label.trim()
   if (label.length > 80 || !Number.isInteger(input.level) || input.level < 1 || input.level > 30 ||
-      !Number.isInteger(input.capacity) || input.capacity < 1 || input.capacity > 500) {
+      !Number.isInteger(input.capacity) || input.capacity < 1 || input.capacity > 500 ||
+      !Number.isInteger(input.unitsPerPosition) || input.unitsPerPosition < 1 || input.unitsPerPosition > 20 ||
+      input.capacity % input.unitsPerPosition !== 0) {
     throw new Error('Configuración no válida.')
   }
   const { supabase } = await requirePilotOwner()
@@ -65,6 +68,7 @@ export async function createReplenishmentSlot(input: {
     label,
     level_number: input.level,
     capacity: input.capacity,
+    units_per_position: input.unitsPerPosition,
   })
   if (error) throw new Error('No se pudo guardar la zona: ' + error.message)
   revalidatePath(PAGE)
