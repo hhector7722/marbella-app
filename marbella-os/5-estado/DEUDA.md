@@ -472,6 +472,16 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ---
 
+## D35 · Detección circular de latas sin validación en cámaras reales
+
+**Prioridad: media.** La primera versión de reposición visual usa detección geométrica de fondos circulares en el dispositivo. Reconoce candidatos, no marcas ni latas ocultas, y solo permite confirmar el recuento por zona/nivel después de revisar la cifra. No ejecuta un barrido 3D continuo ni guarda sesiones de reposición entre dispositivos.
+
+**Coste**: reflejos, rejillas, cambios de escala u oclusiones pueden generar falsos positivos o negativos; sigue siendo necesaria la revisión humana antes de rellenar una nevera. No debe anunciarse precisión automática certificada.
+
+**Disparador de pago**: probar con fotografías y vídeos de cada nevera real, calcular precisión por zona y nivel frente a recuento manual de referencia, y adoptar un detector entrenado/calibrado solo si mejora los resultados y reduce el tiempo total de reposición.
+
+---
+
 ## Cómo se usa esta lista
 
 - **Antes de empezar algo grande**, se comprueba si su disparador ya se cumplió.

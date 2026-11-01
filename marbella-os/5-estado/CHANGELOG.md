@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-11-01
+
+- **Primera versión de reposición visual de neveras, piloto privado.** Solo `hhector7722@gmail.com` ve «Reponer», lo encuentra en la búsqueda y puede acceder a la ruta y sus datos (RLS). Esa cuenta configura neveras, productos, niveles y capacidades, abre la cámara, obtiene candidatos de latas mediante detección circular local, revisa o corrige el número y confirma zonas. Los faltantes solo se presentan completos tras revisar todas las zonas. El escaneo no modifica stock, no envía vídeo al servidor y requiere validación presencial antes de considerarse recuento automático fiable.
+
 ## 2026-10-31
 
 - **El asistente admite fotografías y PDF grandes dentro del límite de Vercel.** El navegador comprime imágenes antes de enviar archivos demasiado grandes y extrae localmente el texto de PDF voluminosos, conservando los límites de tamaño y páginas. Las herramientas de IA devuelven error explícito si la operación de base de datos falla o no está implementada, sin anunciar un éxito inexistente.

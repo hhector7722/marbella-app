@@ -1,13 +1,15 @@
 import { isMasterDashboardUser } from '../staff/simulation-identity.ts';
+import { isReplenishmentPilotUser } from '../replenishment/access.ts';
 import { STAFF_MANUAL_MENU } from '../staff-manuals.ts';
 
 export type SearchIdentity = { userId: string; role: string | null; email: string | null; isViewingAs: boolean };
 export type SearchResult = { type: 'function' | 'ingredient' | 'recipe' | 'supplier' | 'employee' | 'invoice'; id: string; title: string; subtitle: string; icon?: string; image?: string; href: string; score: number };
-type CatalogItem = { id: string; label: string; aliases: string[]; description: string; icon: string; href: (identity: SearchIdentity) => string; access: 'all' | 'management' | 'master' };
+type CatalogItem = { id: string; label: string; aliases: string[]; description: string; icon: string; href: (identity: SearchIdentity) => string; access: 'all' | 'management' | 'master' | 'replenishment-pilot' };
 
 const CATALOG: CatalogItem[] = [
   { id: 'stock', label: 'Stock', aliases: ['existencias', 'stock teórico'], description: 'Existencias y movimientos', icon: '/icons/productes.png', href: () => '/dashboard/inventory/ledger', access: 'management' },
   { id: 'inventory', label: 'Inventario', aliases: ['recuento', 'contar stock'], description: 'Recuento de existencias', icon: '/icons/inventory.png', href: () => '/dashboard/inventory', access: 'all' },
+  { id: 'replenishment', label: 'Reposición visual', aliases: ['rellenar neveras', 'reponer bebidas', 'cargar cámaras'], description: 'Escanear latas y calcular faltantes', icon: '/icons/inventory.png', href: () => '/dashboard/inventory/reposition', access: 'replenishment-pilot' },
   { id: 'schedules', label: 'Horarios', aliases: ['horas', 'turnos'], description: 'Horario de trabajo', icon: '/icons/schedule.png', href: () => '/horario', access: 'all' },
   { id: 'attendance', label: 'Asistencia', aliases: ['fichaje', 'fichajes', 'horas'], description: 'Historial de asistencia', icon: '/icons/calendar.png', href: () => '/staff/history', access: 'all' },
   { id: 'team', label: 'Plantilla', aliases: ['personal', 'empleados', 'trabajadores'], description: 'Equipo de trabajo', icon: '/icons/staff-card.png', href: () => '/profile?open=plantilla', access: 'management' },
@@ -49,6 +51,7 @@ export function searchFunctions(query: string, identity: SearchIdentity): Search
   return CATALOG.flatMap((item) => {
     if (item.access === 'management' && !canManageSearch(identity)) return [];
     if (item.access === 'master' && (identity.isViewingAs || !isMasterDashboardUser(identity.email))) return [];
+    if (item.access === 'replenishment-pilot' && (identity.isViewingAs || !isReplenishmentPilotUser(identity.email))) return [];
     const matches = [item.label, ...item.aliases].map(normalizeSearchText);
     const score = matches.reduce((best, candidate) => Math.max(best, candidate === term ? 110 : candidate.startsWith(term) ? 90 : candidate.includes(term) ? 70 : 0), 0);
     return score ? [{ type: 'function' as const, id: item.id, title: item.label, subtitle: item.description, icon: item.icon, href: item.href(identity), score }] : [];

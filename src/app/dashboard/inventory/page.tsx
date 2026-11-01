@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { isMasterDashboardUser } from '@/lib/master-dashboard'
+import { isReplenishmentPilotUser } from '@/lib/replenishment/access'
 import { MASTER_VIEW_AS_COOKIE } from '@/lib/master-view-as'
 import { InventoryClient, type ManagerIngredientRow } from './InventoryClient'
 import { InventoryPageShell } from './InventoryPageShell'
@@ -67,6 +68,7 @@ export default async function InventoryPage() {
   }
 
   const canEditInventoryList = effectiveRole === 'manager' || effectiveRole === 'admin'
+  const showReplenishmentAccess = effectiveUserId === user.id && isReplenishmentPilotUser(user.email)
 
   if (canEditInventoryList) {
     const { data: allRows, error } = await supabase
@@ -87,6 +89,7 @@ export default async function InventoryPage() {
     return (
       <InventoryPageShell
         userId={effectiveUserId}
+        showReplenishmentAccess={showReplenishmentAccess}
         visibleIngredients={visibleForGrid}
         managerFullList={managerFullList}
         managerEmptyHint={visibleForGrid.length === 0}
@@ -107,5 +110,5 @@ export default async function InventoryPage() {
     throw new Error('Fallo al cargar la base de inventario')
   }
 
-  return <InventoryClient initialIngredients={ingredients ?? []} userId={effectiveUserId} />
+  return <InventoryClient initialIngredients={ingredients ?? []} userId={effectiveUserId} showReplenishmentAccess={showReplenishmentAccess} />
 }

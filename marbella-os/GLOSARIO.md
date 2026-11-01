@@ -180,6 +180,8 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Pedido** | Solicitud de mercancía a un proveedor. ⚠ conflicto: «pedido» designa también el encargo de un cliente en el dominio de eventos. En documentación, distinguir **pedido a proveedor** y **encargo de cliente**. | `purchase_orders` |
 | **Pedido tramitado** | Pedido a proveedor que, en el último paso, se ha enviado con Descargar, Enviar o Proveedor. Generar el documento no basta. | `purchase_orders.dispatched_at` |
 | **Movimiento** | Cambio en el stock de un ingrediente. | — |
+| **Zona de reposición** | Una ubicación configurada de una nevera, asignada a producto, nivel y capacidad máxima. Su lectura visual no es un movimiento de stock. | `replenishment_slots` |
+| **Nevera de reposición** | Agrupación operativa de zonas y niveles que se rellenan mediante recuento visual confirmado. | `replenishment_fridges` |
 | **Ajuste** | Movimiento de corrección manual del stock. | tipo `ADJUSTMENT` |
 | **Merma** | Producto perdido, caducado o inutilizable. | — |
 | **Rectificación** | Corrección de una línea de albarán ya aplicada al stock. | — |
