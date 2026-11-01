@@ -15,6 +15,8 @@ import {
   deleteReplenishmentFridge, deleteReplenishmentSlot,
 } from './actions'
 import { detectCanEnds, isStableCount, missingUnits } from '@/lib/replenishment/vision'
+import { colaLayoutMatchesCapacities } from '@/lib/replenishment/assisted-scan'
+import { CocaColaAssistedScan } from './CocaColaAssistedScan'
 
 export type Fridge = { id: string; name: string }
 export type Slot = {
@@ -76,6 +78,14 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
       .sort((a, b) => a.level_number - b.level_number || a.sort_order - b.sort_order),
     [slots, currentFridgeId],
   )
+  const isConfiguredCola = fridges.find(f => f.id === currentFridgeId)?.name === 'Coca-cola'
+    && fridgeSlots.length === 2
+    && colaLayoutMatchesCapacities(
+      fridgeSlots.filter(s => productNames.get(s.ingredient_id)?.toLowerCase() === 'coca cola')
+        .reduce((total, slot) => total + slot.capacity, 0),
+      fridgeSlots.filter(s => productNames.get(s.ingredient_id)?.toLowerCase() === 'coca cola zero')
+        .reduce((total, slot) => total + slot.capacity, 0),
+    )
   const activeSlot = fridgeSlots.find(s => s.id === slotId) ?? fridgeSlots[0] ?? null
   const activeSlotId = activeSlot?.id ?? ''
 
@@ -194,13 +204,13 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
   const saveCount = () => {
     if (!activeSlot) return
     const value = Number(observed)
-    if (observed.trim() === '' || !Number.isInteger(value) || value < 0 || value > activeSlot.capacity) {
-      toast.error('Introduce un número entre 0 y ' + activeSlot.capacity + '.')
+    if (observed.trim() === '' || !Number.isInteger(value) || value < 0) {
+      toast.error('Introduce un número válido de unidades presentes.')
       return
     }
     setConfirmed(previous => ({
       ...previous,
-      [activeSlot.id]: { count: value, source: stable === value ? 'camera' : 'manual' },
+      [activeSlot.id]: { count: Math.min(activeSlot.capacity, value), source: stable === value ? 'camera' : 'manual' },
     }))
     setScanning(false)
     const next = fridgeSlots.find(s => s.id !== activeSlot.id && confirmed[s.id] === undefined)
@@ -267,6 +277,8 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                   <Notice instance="replenishment-slots-empty" variant="info">
                     Esta nevera no tiene zonas configuradas. Añádelas desde Configurar.
                   </Notice>
+                ) : isConfiguredCola ? (
+                  <CocaColaAssistedScan />
                 ) : (
                   <>
                     <Field instance="replenishment-slot" label="Producto y nivel a escanear" htmlFor="replenishment-slot">
@@ -336,7 +348,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                         </div>
                         <Field instance="replenishment-observed" label="Unidades presentes (revisar y corregir)" htmlFor="replenishment-observed">
                           <input type="number" inputMode="numeric" id="replenishment-observed"
-                            className={fieldClass} min={0} max={activeSlot.capacity} step={1}
+                            className={fieldClass} min={0} step={1}
                             value={observed} onChange={event => setObserved(event.target.value)}
                             placeholder="Introduce o acepta el recuento" />
                         </Field>
@@ -346,7 +358,8 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                         <p className="text-xs text-zinc-500">
                           El reconocimiento es orientativo: cada círculo se multiplica por {activeSlot.units_per_position} unidades
                           según la distribución. La cámara no puede comprobar las latas ocultas ni detectar pilas parcialmente vacías.
-                          Revisa y corrige la cantidad real antes de confirmar.
+                          Revisa y corrige la cantidad real antes de confirmar. Las unidades por encima de la capacidad
+                          se ignoran para reposición: nunca restan de otra zona ni generan faltantes negativos.
                         </p>
                       </Surface>
                     )}

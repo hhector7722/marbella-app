@@ -148,8 +148,9 @@ export function detectCanEnds(
 
 export function missingUnits(capacity: number, observed: number | null): number | null {
   if (observed === null || !Number.isInteger(observed) ||
-      observed < 0 || observed > capacity) return null
-  return capacity - observed
+      observed < 0 || !Number.isInteger(capacity) || capacity < 0) return null
+  // Las latas que sobresalen de una pila o zona no producen negativos ni trasvases.
+  return Math.max(0, capacity - Math.min(observed, capacity))
 }
 
 export function isStableCount(history: number[], capacity: number): number | null {
