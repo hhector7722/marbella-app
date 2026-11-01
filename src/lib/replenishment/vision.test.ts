@@ -28,7 +28,9 @@ test('capacidad menos unidades confirmadas; no inventa recuentos sin comprobar',
   assert.equal(missingUnits(36, 24), 12)
   assert.equal(missingUnits(36, 0), 36)
   assert.equal(missingUnits(36, null), null)
-  assert.equal(missingUnits(36, 37), null)
+  assert.equal(missingUnits(36, 37), 0)
+  assert.equal(missingUnits(4, 5), 0)
+  assert.equal(missingUnits(4, 2), 2)
   assert.equal(missingUnits(36, 1.5), null)
 })
 

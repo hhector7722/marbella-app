@@ -15,6 +15,9 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-11-01
 
+- **Piloto guiado de Coca-Cola con cámara dinámica y preguntas cerradas.** Presenta 48 pilas por ubicación fija, conserva las confirmaciones mientras se mueve el móvil, aporta pistas visuales de bases alineadas sin dar por ciertas las latas ocultas y permite responder 0, 1, 2, 3 o 4+. Calcula faltantes por producto solo al completar las posiciones pertinentes. Nunca descuenta de otras pilas ni genera cantidades negativas: la quinta lata ocasional se ignora a efectos de reposición. La cámara no reconoce todavía una posición automáticamente al cambiar de perspectiva; la selección de pila permanece manual y el piloto requiere prueba presencial.
+
+
 - **Reposición por posición cenital y pilas de cuatro.** Las cuatro neveras quedan configuradas con las posiciones observadas: Coca-cola 48×4=192; Cerveza 41×4=164; Refrescos 27×4=108; Botellas 32×1=32. `replenishment_slots.units_per_position` permite convertir el recuento de círculos en una estimación de unidades, sin deducir la cantidad real en pilas parcialmente vacías. Se mantienen confirmación humana, ausencia de movimientos contables y acceso privado a la cuenta propietaria.
 
 
