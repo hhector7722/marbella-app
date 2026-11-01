@@ -943,6 +943,22 @@ describe('Historial de cierres escritorio: un único día central', () => {
     });
 });
 
+describe('Ventas mensuales — mes inicial sin ventas', () => {
+    it('muestra el mes anterior si el actual no tiene ventas, respetando la navegación manual', () => {
+        const widget = readFileSync(join(SRC_ROOT, 'components/dashboards/HomeClosingMonthlyPair.tsx'), 'utf8');
+        assert.match(widget, /const sales = Number\(summary\.totalSales \?\? 0\)/,
+            'decide a partir de las ventas reales devueltas por la RPC');
+        assert.match(widget, /if \(isCurrentMonth && sales === 0 && !manualMonthSelectionRef\.current\) \{[\s\S]*?setMonth\(value => subMonths\(value, 1\)\);\s*return;/,
+            'si el mes actual tiene 0 €, pasa al mes anterior sin presentar un resumen vacío');
+        assert.match(widget, /if \(ticketsResult\.error\) \{[\s\S]*?setErrorKey\(key\);\s*return;/,
+            'no confunde un error de carga con un mes sin ventas');
+        assert.equal((widget.match(/manualMonthSelectionRef\.current = true/g) ?? []).length, 2,
+            'ambas flechas desactivan el cambio automático para las fechas seleccionadas');
+        assert.match(widget, /disabled=\{isCurrentMonth \|\| isAfter\(addMonths\(month, 1\), startOfMonth\(new Date\(\)\)\)\}/,
+            'no permite navegar hacia meses futuros');
+    });
+});
+
 describe('Historial mensual: datos completos sin paginación de tickets', () => {
     it('consulta un solo agregado SQL del mes visible para importes, horas y productos', () => {
         const page = readFileSync(join(SRC_ROOT, 'app/dashboard/history/page.tsx'), 'utf8');

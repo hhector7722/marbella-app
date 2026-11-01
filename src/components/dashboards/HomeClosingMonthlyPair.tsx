@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, addMonths, endOfMonth, format, isAfter, startOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -54,6 +54,9 @@ function HomeMonthlySalesWidget() {
     const [preview, setPreview] = useState<SalesPreview | null>(null);
     const supabase = useMemo(() => createClient(), []);
     const [month, setMonth] = useState(() => startOfMonth(new Date()));
+    // El cambio automático solo se aplica al mes inicial, nunca a una fecha
+    // elegida expresamente con las flechas del widget.
+    const manualMonthSelectionRef = useRef(false);
     const [snapshot, setSnapshot] = useState<MonthlySnapshot | null>(null);
     const [errorKey, setErrorKey] = useState<string | null>(null);
     const monthStart = format(startOfMonth(month), 'yyyy-MM-dd');
@@ -105,6 +108,12 @@ function HomeMonthlySalesWidget() {
             return;
         }
         const sales = Number(summary.totalSales ?? 0);
+        if (isCurrentMonth && sales === 0 && !manualMonthSelectionRef.current) {
+            // Al empezar un mes sin ventas, enseñar el anterior en lugar de 0 €.
+            // No hacerlo ante un error de consulta ni al navegar manualmente.
+            setMonth(value => subMonths(value, 1));
+            return;
+        }
         const previousRaw = (comparisonResult.data as { summary?: { totalSales?: number } } | null)?.summary?.totalSales;
         const previousSales = !comparisonResult.error && previousRaw != null && Number(previousRaw) > 0
             ? Number(previousRaw) : null;
@@ -140,7 +149,7 @@ function HomeMonthlySalesWidget() {
             monthChange,
         });
         setErrorKey(null);
-    }, [supabase, monthStart, monthEnd, comparisonStart, comparisonEnd, matchingCurrentEnd, comparisonLabel, comparisonDays, key]);
+    }, [supabase, monthStart, monthEnd, comparisonStart, comparisonEnd, matchingCurrentEnd, comparisonLabel, comparisonDays, key, isCurrentMonth]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -162,14 +171,20 @@ function HomeMonthlySalesWidget() {
             aria-label="Resumen mensual de ventas">
             <div className="flex h-[15px] shrink-0 items-center justify-center gap-0.5">
                 <button type="button" aria-label="Mes anterior" title="Mes anterior"
-                    onClick={() => setMonth(value => subMonths(value, 1))}
+                    onClick={() => {
+                        manualMonthSelectionRef.current = true;
+                        setMonth(value => subMonths(value, 1));
+                    }}
                     className="shrink-0 rounded p-0.5 text-white/75 hover:bg-white/10"><ChevronLeft size={12}/></button>
                 <span className="whitespace-nowrap text-center text-[10px] font-bold capitalize leading-none text-white">
                     {format(month, 'MMMM yyyy', { locale: es })}
                 </span>
                 <button type="button" aria-label="Mes siguiente" title="Mes siguiente"
                     disabled={isCurrentMonth || isAfter(addMonths(month, 1), startOfMonth(new Date()))}
-                    onClick={() => setMonth(value => addMonths(value, 1))}
+                    onClick={() => {
+                        manualMonthSelectionRef.current = true;
+                        setMonth(value => addMonths(value, 1));
+                    }}
                     className="shrink-0 rounded p-0.5 text-white/75 hover:bg-white/10 disabled:opacity-25"><ChevronRight size={12}/></button>
             </div>
             {!visible && !failed ? (
