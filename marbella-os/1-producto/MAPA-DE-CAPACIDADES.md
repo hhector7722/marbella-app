@@ -117,8 +117,8 @@ Recibir mercancía, saber lo que cuesta y detectar cuándo sube.
 Saber qué hay, qué se ha ido y por qué.
 
 - **Actores**: cualquier persona autenticada (captura del recuento); responsable de operación (certificación del recuento).
-- **Superficies**: inventario, historial de movimientos por ingrediente, mermas.
-- **Reglas propias**: todo cambio de stock deja rastro con su origen; las correcciones son movimientos, no ediciones; cualquier persona puede contar y guardar, pero solo gerencia certifica y produce el movimiento de stock ([ADR-0019](../4-decisiones/ADR-0019-inventario-captura-y-certificacion.md)).
+- **Superficies**: inventario, historial de movimientos por ingrediente, mermas y reposición visual de neveras (`/dashboard/inventory/reposition`).
+- **Reglas propias**: todo cambio de stock deja rastro con su origen; las correcciones son movimientos, no ediciones; cualquier persona puede contar y guardar, pero solo gerencia certifica y produce el movimiento de stock ([ADR-0019](../4-decisiones/ADR-0019-inventario-captura-y-certificacion.md)). La reposición visual es un cálculo operativo distinto del recuento contable: gerencia configura producto, zona, nivel y capacidad; el personal escanea cada zona/nivel y confirma la cifra visible antes de calcular faltantes. Los niveles ocultos no se infieren, no se presenta total definitivo mientras haya zonas pendientes y ningún escaneo produce movimientos de stock.
 - **Estado**: frágil.
 - **Especificación**: pendiente.
 

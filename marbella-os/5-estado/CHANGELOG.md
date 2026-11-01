@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-11-01
+
+- **Primera versión de reposición visual de neveras.** Gerencia configura neveras, productos, niveles y capacidades; el personal puede abrir la cámara, obtener candidatos de latas mediante detección circular local, revisar o corregir el número y confirmar zonas. Los faltantes solo se presentan completos tras revisar todas las zonas. El escaneo no modifica stock, no envía vídeo al servidor y requiere validación presencial antes de considerarse recuento automático fiable.
+
 ## 2026-10-31
 
 - **El asistente admite fotografías y PDF grandes dentro del límite de Vercel.** El navegador comprime imágenes antes de enviar archivos demasiado grandes y extrae localmente el texto de PDF voluminosos, conservando los límites de tamaño y páginas. Las herramientas de IA devuelven error explícito si la operación de base de datos falla o no está implementada, sin anunciar un éxito inexistente.

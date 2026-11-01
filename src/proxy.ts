@@ -60,7 +60,9 @@ function isStaffDashboardAllowed(path: string): boolean {
     // Recuento de inventario: captura libre para todos. La certificación
     // (ledger) sigue solo en /dashboard/inventory/ledger y /waste, no aquí.
     path === "/dashboard/inventory" ||
-    path === "/dashboard/inventory/"
+    path === "/dashboard/inventory/" ||
+    path === "/dashboard/inventory/reposition" ||
+    path === "/dashboard/inventory/reposition/"
   );
 }
 

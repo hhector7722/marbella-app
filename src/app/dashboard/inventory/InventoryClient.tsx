@@ -821,7 +821,10 @@ export function InventoryClient({
         title="Ingredientes"
         maxWidthClass="max-w-7xl"
         showBackButton={false}
-        rightSlot={rightSlot}
+        rightSlot={rightSlot ?? (
+          <Button variant="tertiary" instance="inventory-replenishment-open"
+            onClick={() => router.push('/dashboard/inventory/reposition')}>Reponer</Button>
+        )}
         toolbarSlot={toolbar}
       >
         <EmptyState
@@ -844,7 +847,10 @@ export function InventoryClient({
       subtitle={visibilityEditMode ? 'Activa o desactiva artículos del recuento' : undefined}
       maxWidthClass="max-w-7xl"
       showBackButton={false}
-      rightSlot={rightSlot}
+      rightSlot={rightSlot ?? (
+        <Button variant="tertiary" instance="inventory-replenishment-open"
+          onClick={() => router.push('/dashboard/inventory/reposition')}>Reponer</Button>
+      )}
       toolbarSlot={toolbar}
     >
       {catalog}

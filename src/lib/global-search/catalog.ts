@@ -8,6 +8,7 @@ type CatalogItem = { id: string; label: string; aliases: string[]; description: 
 const CATALOG: CatalogItem[] = [
   { id: 'stock', label: 'Stock', aliases: ['existencias', 'stock teórico'], description: 'Existencias y movimientos', icon: '/icons/productes.png', href: () => '/dashboard/inventory/ledger', access: 'management' },
   { id: 'inventory', label: 'Inventario', aliases: ['recuento', 'contar stock'], description: 'Recuento de existencias', icon: '/icons/inventory.png', href: () => '/dashboard/inventory', access: 'all' },
+  { id: 'replenishment', label: 'Reposición visual', aliases: ['rellenar neveras', 'reponer bebidas', 'cargar cámaras'], description: 'Escanear latas y calcular faltantes', icon: '/icons/inventory.png', href: () => '/dashboard/inventory/reposition', access: 'all' },
   { id: 'schedules', label: 'Horarios', aliases: ['horas', 'turnos'], description: 'Horario de trabajo', icon: '/icons/schedule.png', href: () => '/horario', access: 'all' },
   { id: 'attendance', label: 'Asistencia', aliases: ['fichaje', 'fichajes', 'horas'], description: 'Historial de asistencia', icon: '/icons/calendar.png', href: () => '/staff/history', access: 'all' },
   { id: 'team', label: 'Plantilla', aliases: ['personal', 'empleados', 'trabajadores'], description: 'Equipo de trabajo', icon: '/icons/staff-card.png', href: () => '/profile?open=plantilla', access: 'management' },
