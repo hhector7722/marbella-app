@@ -15,6 +15,12 @@ describe('catálogo de búsqueda global', () => {
     assert.equal(searchFunctions('invent', staff)[0]?.id, 'inventory');
     assert.equal(searchFunctions('horas', staff).length, 2);
   });
+  it('oculta reposición visual salvo al propietario y fuera del modo ver-como', () => {
+    assert.equal(searchFunctions('reposicion visual', master)[0]?.id, 'replenishment');
+    assert.deepEqual(searchFunctions('reposicion visual', staff), []);
+    assert.deepEqual(searchFunctions('reposicion visual', manager), []);
+    assert.deepEqual(searchFunctions('reposicion visual', { ...master, isViewingAs: true }), []);
+  });
   it('recorta funciones con la identidad efectiva', () => {
     assert.ok(searchFunctions('stock', staff).every((row) => row.id !== 'stock'));
     assert.equal(searchFunctions('stock', master)[0]?.id, 'stock');

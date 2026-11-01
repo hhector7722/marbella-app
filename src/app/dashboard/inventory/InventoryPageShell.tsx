@@ -19,6 +19,7 @@ import {
 
 type Props = {
   userId: string
+  showReplenishmentAccess: boolean
   visibleIngredients: ManagerIngredientRow[]
   managerFullList: ManagerIngredientRow[]
   managerEmptyHint: boolean
@@ -38,6 +39,7 @@ function formatPendingDate(value: string): string {
 
 export function InventoryPageShell({
   userId,
+  showReplenishmentAccess,
   visibleIngredients,
   managerFullList,
   managerEmptyHint,
@@ -157,6 +159,7 @@ export function InventoryPageShell({
       <InventoryClient
         initialIngredients={visibleIngredients}
         userId={userId}
+        showReplenishmentAccess={showReplenishmentAccess}
         managerFullList={managerFullList}
         visibilityEditMode={visibilityEditMode}
         onCloseVisibilityEditMode={() => setVisibilityEditMode(false)}

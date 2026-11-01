@@ -33,6 +33,8 @@ interface InventoryClientProps {
   initialIngredients: Ingredient[]
   /** Usuario con sesión: da identidad al borrador local del recuento. */
   userId?: string | null
+  /** Pilotaje privado: solo la cuenta autorizada puede ver el acceso. */
+  showReplenishmentAccess?: boolean
   /** Solo gerencia: si no hay artículos visibles, muestra ayuda para el icono de edición. */
   managerEmptyHint?: boolean
   managerFullList?: ManagerIngredientRow[]
@@ -188,6 +190,7 @@ function InventoryProductCard({
 export function InventoryClient({
   initialIngredients,
   userId = null,
+  showReplenishmentAccess = false,
   managerEmptyHint = false,
   managerFullList,
   visibilityEditMode = false,
@@ -821,10 +824,10 @@ export function InventoryClient({
         title="Ingredientes"
         maxWidthClass="max-w-7xl"
         showBackButton={false}
-        rightSlot={rightSlot ?? (
+        rightSlot={rightSlot ?? (showReplenishmentAccess ? (
           <Button variant="tertiary" instance="inventory-replenishment-open"
             onClick={() => router.push('/dashboard/inventory/reposition')}>Reponer</Button>
-        )}
+        ) : undefined)}
         toolbarSlot={toolbar}
       >
         <EmptyState
@@ -847,10 +850,10 @@ export function InventoryClient({
       subtitle={visibilityEditMode ? 'Activa o desactiva artículos del recuento' : undefined}
       maxWidthClass="max-w-7xl"
       showBackButton={false}
-      rightSlot={rightSlot ?? (
+      rightSlot={rightSlot ?? (showReplenishmentAccess ? (
         <Button variant="tertiary" instance="inventory-replenishment-open"
           onClick={() => router.push('/dashboard/inventory/reposition')}>Reponer</Button>
-      )}
+      ) : undefined)}
       toolbarSlot={toolbar}
     >
       {catalog}

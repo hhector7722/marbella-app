@@ -28,28 +28,14 @@ REVOKE ALL ON TABLE public.replenishment_slots FROM PUBLIC, anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.replenishment_fridges TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.replenishment_slots TO authenticated;
 
-CREATE POLICY replenishment_fridges_read ON public.replenishment_fridges
-  FOR SELECT TO authenticated USING (true);
-CREATE POLICY replenishment_fridges_manage ON public.replenishment_fridges
+-- Piloto privado: ni la lectura ni la escritura se conceden a otros empleados,
+-- aunque intenten acceder directamente a la API de Supabase.
+CREATE POLICY replenishment_fridges_owner ON public.replenishment_fridges
   FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.profiles p
-    WHERE p.id = (SELECT auth.uid()) AND p.role IN ('manager','admin')
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.profiles p
-    WHERE p.id = (SELECT auth.uid()) AND p.role IN ('manager','admin')
-  ));
+  USING (lower(coalesce((SELECT auth.jwt() ->> 'email'), '')) = 'hhector7722@gmail.com')
+  WITH CHECK (lower(coalesce((SELECT auth.jwt() ->> 'email'), '')) = 'hhector7722@gmail.com');
 
-CREATE POLICY replenishment_slots_read ON public.replenishment_slots
-  FOR SELECT TO authenticated USING (true);
-CREATE POLICY replenishment_slots_manage ON public.replenishment_slots
+CREATE POLICY replenishment_slots_owner ON public.replenishment_slots
   FOR ALL TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.profiles p
-    WHERE p.id = (SELECT auth.uid()) AND p.role IN ('manager','admin')
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.profiles p
-    WHERE p.id = (SELECT auth.uid()) AND p.role IN ('manager','admin')
-  ));
+  USING (lower(coalesce((SELECT auth.jwt() ->> 'email'), '')) = 'hhector7722@gmail.com')
+  WITH CHECK (lower(coalesce((SELECT auth.jwt() ->> 'email'), '')) = 'hhector7722@gmail.com');
