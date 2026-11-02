@@ -97,7 +97,8 @@ export function buildSupplierMemory(input: {
       presentationByLegacy.set(version.legacy_mapping_id, presentation)
     }
   }
-  const identities: SupplierProductMemory[] = input.legacy.filter((row) => row.ingredient_id)
+  const identities: SupplierProductMemory[] = input.legacy.filter((row) =>
+    row.ingredient_id && ingredientById.has(row.ingredient_id))
     .map((row) => {
       const presentation = presentationByLegacy.get(row.id)
       return { supplierId: row.supplier_id, ingredientId: row.ingredient_id!,

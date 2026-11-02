@@ -171,7 +171,7 @@ export async function proposeMistralExtraction(params: {
     ...versions.map((row) => row.ingredient_id),
   ].filter((value): value is string => Boolean(value)))]
   const ingredientResult = ingredientIds.length
-    ? await db.from('ingredients').select('id,purchase_unit,base_unit').in('id', ingredientIds)
+    ? await db.from('ingredients').select('id,purchase_unit,base_unit').in('id', ingredientIds).is('archived_at', null)
     : { data: [] as IngredientUnitRow[], error: null }
   if (ingredientResult.error) throw new Error('mistral_ingredient_units_unavailable')
   const receiptLineIds = [...new Set((receiptsResult.data ?? [])
