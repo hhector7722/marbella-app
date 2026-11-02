@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/Notice'
 import { Surface } from '@/components/ui/Surface'
 import { detectCanEnds } from '@/lib/replenishment/vision'
+import { useCocaColaGridTracking } from './useCocaColaGridTracking'
 import {
   COLA_LAYOUT, computeStackTotals, mergeStackReading,
   stableHint, visibleStackHint, type StackCounts, type StackPosition,
@@ -37,6 +38,10 @@ export function CocaColaAssistedScan() {
     setHint(null)
     history.current = []
   }
+  const tracking = useCocaColaGridTracking(activeId, choose)
+  const trackFrameRef = useRef(tracking.renderFrame)
+  useEffect(() => { trackFrameRef.current = tracking.renderFrame }, [tracking.renderFrame])
+
   const confirm = (amount: number, method: 'manual' | 'confirmed-suggestion') => {
     setCounts(prev => mergeStackReading(prev, active.id, amount, method))
     setHint(null)
@@ -60,7 +65,8 @@ export function CocaColaAssistedScan() {
     const sh = sourceRatio > ratio ? video.videoHeight : video.videoWidth / ratio
     ctx.drawImage(video, (video.videoWidth - sw) / 2, (video.videoHeight - sh) / 2,
       sw, sh, 0, 0, W, H)
-    const circles = detectCanEnds(ctx.getImageData(0, 0, W, H))
+    const image = ctx.getImageData(0, 0, W, H)
+    const circles = detectCanEnds(image)
     overlay.clearRect(0, 0, W, H)
     overlay.strokeStyle = 'rgba(255,255,255,0.9)'
     overlay.lineWidth = 2
@@ -71,6 +77,7 @@ export function CocaColaAssistedScan() {
       overlay.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2)
       overlay.stroke()
     }
+    trackFrameRef.current(image, overlay, circles)
     const candidate = visibleStackHint(circles, W, H)
     history.current = [...history.current.slice(-2), candidate]
     setHint(stableHint(history.current))
@@ -121,8 +128,8 @@ export function CocaColaAssistedScan() {
           <span className="text-xs tabular-nums text-zinc-500">{totals.confirmed}/{totals.positions} confirmadas</span>
         </div>
         <p className="text-xs text-zinc-600">
-          Selecciona una posición, muéstrala desde distintos ángulos y confirma la cantidad.
-          Filas desde el fondo hacia la puerta. El sistema no asigna detecciones a otra pila.
+          Selecciona la pila en el mapa o toca su posición sobre la cámara calibrada.
+          Muéstrala desde distintos ángulos y confirma la cantidad. Filas del fondo hacia la puerta.
         </p>
         <div className="overflow-x-auto">
           <div className="grid min-w-[348px] grid-cols-7 gap-0.5">
@@ -144,7 +151,7 @@ export function CocaColaAssistedScan() {
                     className={'min-h-12 min-w-12 border text-xs tabular-nums ' +
                       (selected ? 'border-zinc-900 ring-2 ring-zinc-900 ' : 'border-zinc-200 ') + tone}>
                     <span className="block text-[10px]">{position.product === 'original' ? 'CC' : 'Zero'}</span>
-                    <strong>{saved ? (saved.count >= 4 ? '4+' : saved.count) : '·'}</strong>
+                    <strong>{saved ? (saved.count >= 4 ? '4+' : saved.count) : tracking.seenIds.includes(position.id) ? '◦' : '·'}</strong>
                   </button>
                 )
               }),
@@ -160,13 +167,35 @@ export function CocaColaAssistedScan() {
           </span>
           <span className="text-xs text-zinc-500">4 máximo</span>
         </div>
+        {scanning && (
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button instance="cola-grid-calibrate" variant="secondary" onClick={tracking.calibrate}>
+                {tracking.mode === 'tracking' ? 'Recalibrar mapa' : 'Calibrar mapa'}
+              </Button>
+              <span className="text-xs text-zinc-600">
+                {tracking.mode === 'tracking' ? 'Mapa seguido · toca una pila en la cámara' :
+                  tracking.mode === 'calibrating' ? 'Marca 4 esquinas: fondo izq. → der. → frente der. → izq. (' + tracking.corners.length + '/4)' :
+                    tracking.mode === 'lost' ? 'Referencia perdida · recalibra' : 'Mapa sin calibrar'}
+              </span>
+            </div>
+            {tracking.alignmentError && (
+              <Notice instance="cola-grid-alignment-error" variant="warning">{tracking.alignmentError}</Notice>
+            )}
+            <p className="text-xs text-zinc-500">
+              {tracking.seenIds.length} posiciones observadas en cámara, no contadas. Cada pila requiere confirmación.
+            </p>
+          </div>
+        )}
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-zinc-950">
           {scanning ? (
             <>
               <video ref={videoRef} muted autoPlay playsInline aria-label="Cámara para revisar la pila"
                 className="absolute inset-0 h-full w-full object-cover" />
               <canvas ref={overlayRef} width={W} height={H}
-                className="pointer-events-none absolute inset-0 h-full w-full" />
+                onPointerUp={tracking.onPointerUp}
+                className={'absolute inset-0 h-full w-full touch-manipulation ' +
+                  (tracking.mode === 'tracking' || tracking.mode === 'calibrating' ? 'cursor-crosshair' : 'pointer-events-none')} />
               <span className="absolute bottom-2 left-2 rounded bg-black/75 px-2 py-1 text-xs text-white">
                 {hint === null ? 'Sin pista fiable; confirma con los botones' :
                   'Pista: ' + (hint >= 4 ? '4 o más' : hint) + ' visibles (verificar)'}
@@ -182,7 +211,7 @@ export function CocaColaAssistedScan() {
         {error && <Notice instance="cola-assisted-camera-error" variant="negative">{error}</Notice>}
         <div className="flex flex-wrap gap-2">
           <Button instance="cola-assisted-toggle" variant="secondary"
-            onClick={() => { setError(null); setHint(null); history.current = []; setScanning(value => !value) }}>
+            onClick={() => { setError(null); setHint(null); history.current = []; tracking.reset(); setScanning(value => !value) }}>
             {scanning ? 'Detener cámara' : 'Abrir cámara'}
           </Button>
           {hint !== null && (
