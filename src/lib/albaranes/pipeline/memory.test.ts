@@ -31,3 +31,25 @@ test('una corrección confirmada sustituye la presentación anterior', () => {
   })
   assert.deepEqual(memory.presentations.map((row) => row.mappingVersionId), ['corrected'])
 })
+
+
+test('no reutiliza mapeos legacy de ingredientes archivados', () => {
+  const oldIngredient = 'ingrediente-archivado'
+  const activeIngredient = 'ingrediente-activo'
+  const memory = buildSupplierMemory({
+    legacy: [
+      { id: 'legacy-old', supplier_id: 7, supplier_item_name: 'LECHE OBSOLETA', ingredient_id: oldIngredient },
+      { id: 'legacy-active', supplier_id: 7, supplier_item_name: 'LECHE ACTUAL', ingredient_id: activeIngredient },
+    ],
+    ingredients: [{ id: activeIngredient, purchase_unit: 'l', base_unit: 'ml' }],
+    versions: [
+      { ...confirmed, id: 'old-version', legacy_mapping_id: 'legacy-old',
+        supplier_item_name: 'LECHE OBSOLETA', ingredient_id: oldIngredient },
+      { ...confirmed, id: 'active-version', legacy_mapping_id: 'legacy-active',
+        supplier_item_name: 'LECHE ACTUAL', ingredient_id: activeIngredient },
+    ],
+  })
+  assert.equal(memory.identities.some((item) => item.ingredientId === oldIngredient), false)
+  assert.equal(memory.presentations.some((item) => item.ingredientId === oldIngredient), false)
+  assert.equal(memory.identities.some((item) => item.ingredientId === activeIngredient), true)
+})
