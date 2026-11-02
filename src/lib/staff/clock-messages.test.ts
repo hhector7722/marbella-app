@@ -31,23 +31,30 @@ describe('Mensajes privados entregados al próximo fichaje', () => {
     assert.match(sql, /ALTER TABLE public\.staff_clock_messages ENABLE ROW LEVEL SECURITY;/);
     assert.match(sql, /tl\.clock_in > staff_clock_messages\.created_at\s+OR tl\.clock_out > staff_clock_messages\.created_at/);
     assert.match(sql, /coalesce\(tl\.is_manual_entry, false\) = false/);
-    assert.equal((clock.match(/const messages = await showClockMessagesAfterPunch\(userId\)/g) ?? []).length, 2,
-      'entrada y salida esperan la consulta de mensajes antes de abrir el vídeo');
+    assert.equal((clock.match(/await showClockMessagesAfterPunch\(userId\)/g) ?? []).length, 2,
+      'entrada y salida consultan los mensajes tras registrar el fichaje');
     assert.match(legacy, /void showClockMessagesAfterPunch\(\)/);
     assert.match(clock, /if \(!user \|\| user\.id !== punchedUserId\) return/);
   });
 
-  it('avisa antes del vídeo, difumina el fondo y solo presenta el mensaje y Entendido', () => {
+  it('entrega el mensaje tras el vídeo inmediato, difumina el fondo y conserva Entendido', () => {
     assert.match(modal, /hideHeader/);
     assert.match(modal, /layer="base"/);
     assert.doesNotMatch(modal, /footer=\{/);
     assert.doesNotMatch(modal, /Mensaje de Héctor|Mensaje recibido al registrar|mensaje\(s\) más pendientes/);
     assert.match(modal, /\{message\?\.body \?\? ''\}/);
     assert.match(modal, /Entendido/);
-    assert.match(clock, /queuedClockVideoRef\.current = \(\) => openGiffOverlay\(overlayConfig\.entrada\)/);
-    assert.match(clock, /queuedClockVideoRef\.current = \(\) => openGiffOverlay\(overlayConfig\.salida\)/);
-    assert.match(clock, /const remaining = clockMessages\.filter/);
-    assert.match(clock, /if \(remaining\.length === 0\) \{[\s\S]*?playVideo\?\.\(\)/);
+    assert.match(clock, /if \(overlayConfig\) openGiffOverlay\(overlayConfig\[action === 'in' \? 'entrada' : 'salida'\]\)/);
+    assert.match(clock, /if \(giffOverlayVisibleRef\.current\) \{\s*pendingClockMessagesRef\.current = messages;/);
+    assert.match(clock, /const messages = pendingClockMessagesRef\.current;[\s\S]*?setClockMessages\(messages\)/);
+    assert.match(clock, /setClockMessages\(\(messages\) => messages\.filter\(\(message\) => message\.id !== id\)\)/);
+    const clockAction = clock.slice(clock.indexOf('const handleClockAction = async'), clock.indexOf('const openConfirmation'));
+    assert.ok(clockAction.indexOf('openGiffOverlay(overlayConfig[') < clockAction.indexOf('await getCurrentPosition()'),
+      'el vídeo se abre antes de esperar al GPS');
+    assert.ok(clockAction.indexOf('openGiffOverlay(overlayConfig[') < clockAction.indexOf(".from('time_logs')"),
+      'el vídeo también se abre antes de escribir el fichaje');
+    assert.match(clockAction, /closeGiffOverlay\(\);[\s\S]*?toast\.error\(formatGeofenceRejectionMessage\(distance\)\)/,
+      'un fichaje rechazado cierra el vídeo y muestra el error');
     const css = source('src/app/globals.css');
     assert.match(css, /\[data-modal-backdrop='base'\] \{[\s\S]*?backdrop-filter: var\(--modal-overlay-base-filter\)/);
   });

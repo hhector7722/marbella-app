@@ -358,32 +358,29 @@ export default function StaffDashboardView({
     );
     const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
     const [clockMessages, setClockMessages] = useState<StaffClockMessage[]>([]);
-    const queuedClockVideoRef = useRef<(() => void) | null>(null);
+    const pendingClockMessagesRef = useRef<StaffClockMessage[]>([]);
+    const giffOverlayVisibleRef = useRef(false);
 
-    // Se consulta únicamente DESPUÉS de guardar correctamente el fichaje.
+    // Los mensajes se consultan solo DESPUÉS de guardar el fichaje.
+    // Si el vídeo está visible, se entregan al terminar para no taparlo.
     // En modo "ver como" no se entregan mensajes de terceros al propietario.
-    // Devolver los mensajes permite posponer el vídeo hasta la confirmación.
-    const showClockMessagesAfterPunch = async (punchedUserId: string): Promise<StaffClockMessage[]> => {
+    const showClockMessagesAfterPunch = async (punchedUserId: string): Promise<void> => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user || user.id !== punchedUserId) return [];
+            if (!user || user.id !== punchedUserId) return;
             const messages = await getPendingStaffClockMessages();
-            setClockMessages(messages);
-            return messages;
+            if (giffOverlayVisibleRef.current) {
+                pendingClockMessagesRef.current = messages;
+            } else {
+                setClockMessages(messages);
+            }
         } catch (error) {
             console.error('No se pudieron cargar los mensajes de fichaje:', error);
-            return [];
         }
     };
 
     const confirmClockMessage = (id: string) => {
-        const remaining = clockMessages.filter((message) => message.id !== id);
-        setClockMessages(remaining);
-        if (remaining.length === 0) {
-            const playVideo = queuedClockVideoRef.current;
-            queuedClockVideoRef.current = null;
-            playVideo?.();
-        }
+        setClockMessages((messages) => messages.filter((message) => message.id !== id));
     };
 
 
@@ -415,6 +412,33 @@ export default function StaffDashboardView({
         }
     };
 
+    const closeGiffOverlay = () => {
+        clearGiffFadeTimer();
+        clearGiffSafetyTimer();
+        giffOverlayVisibleRef.current = false;
+        giffFadingRef.current = false;
+        setShowGiffOverlay(false);
+        setGiffOverlayFading(false);
+        setGiffActive(false);
+        const messages = pendingClockMessagesRef.current;
+        pendingClockMessagesRef.current = [];
+        if (messages.length > 0) setClockMessages(messages);
+    };
+
+    const openGiffOverlay = (src: string) => {
+        clearGiffFadeTimer();
+        clearGiffSafetyTimer();
+        giffOverlayVisibleRef.current = true;
+        giffFadingRef.current = false;
+        setGiffOverlayFading(false);
+        setGiffOverlaySrc(src);
+        setGiffActive(true);
+        setShowGiffOverlay(true);
+
+        const safetyMs = src.includes('hernan-river') ? 12000 : 10000;
+        giffSafetyTimerRef.current = setTimeout(() => beginGiffOverlayFadeOut(), safetyMs);
+    };
+
     const beginGiffOverlayFadeOut = () => {
         if (giffFadingRef.current) return;
         giffFadingRef.current = true;
@@ -422,12 +446,7 @@ export default function StaffDashboardView({
         setGiffActive(false);
         clearGiffFadeTimer();
         clearGiffSafetyTimer();
-        giffFadeTimerRef.current = setTimeout(() => {
-            setShowGiffOverlay(false);
-            setGiffOverlayFading(false);
-            giffFadingRef.current = false;
-            giffFadeTimerRef.current = null;
-        }, GIFF_FADE_MS);
+        giffFadeTimerRef.current = setTimeout(closeGiffOverlay, GIFF_FADE_MS);
     };
 
     useEffect(() => {
@@ -778,9 +797,13 @@ export default function StaffDashboardView({
     const handleClockAction = async (forcedAction?: 'in' | 'out') => {
         if (!userId) return;
         const action = forcedAction ?? modalAction;
-        trackStaffClockConfirm(action === 'in' ? 'Entrada' : 'Salida', { action: action ?? '' });
+        if (action !== 'in' && action !== 'out') return;
+        const overlayConfig = getFichajeOverlayVideos(userEmail, formatYmdInMadrid(new Date()));
+        trackStaffClockConfirm(action === 'in' ? 'Entrada' : 'Salida', { action });
         setFichajeOverlay('none');
         setActionLoading(true);
+        // Reproducir en la misma pulsación: no esperar GPS, base de datos ni horas extras.
+        if (overlayConfig) openGiffOverlay(overlayConfig[action === 'in' ? 'entrada' : 'salida']);
         try {
             let lat: number | null = null;
             let lng: number | null = null;
@@ -797,6 +820,7 @@ export default function StaffDashboardView({
                     (userEmail?.toLowerCase() === 'marbellaremote@gmail.com') ||
                     (userEmail?.toLowerCase() === 'hernang6799@gmail.com');
                 if (!exemptLocation) {
+                    closeGiffOverlay();
                     toast.error(readErrorMessage(geoError, "Ubicación necesaria para fichar"));
                     setActionLoading(false);
                     return;
@@ -810,6 +834,7 @@ export default function StaffDashboardView({
                 const clockAction = action === 'in' ? 'in' : 'out';
                 logGeofenceRejection({ action: clockAction, lat, lng, distanceMeters: distance });
                 trackGeofenceRejection(clockAction, lat, lng, distance, window.location.pathname);
+                closeGiffOverlay();
                 toast.error(formatGeofenceRejectionMessage(distance));
                 setActionLoading(false);
                 return;
@@ -817,26 +842,6 @@ export default function StaffDashboardView({
 
             const now = new Date();
             const logCoords = { input_lat: lat, input_lng: lng };
-
-            const openGiffOverlay = (src: string) => {
-                clearGiffFadeTimer();
-                clearGiffSafetyTimer();
-                giffFadingRef.current = false;
-                setGiffOverlayFading(false);
-                setGiffOverlaySrc(src);
-                setGiffActive(false);
-                setShowGiffOverlay(true);
-                setTimeout(() => {
-                    setGiffActive(true);
-                }, 50);
-
-                // Safety timeout: closes the overlay automatically after 10-12 seconds max (fallback)
-                const isHernan = src.includes('hernan-river');
-                const safetyMs = isHernan ? 12000 : 10000;
-                giffSafetyTimerRef.current = setTimeout(() => {
-                    beginGiffOverlayFadeOut();
-                }, safetyMs);
-            };
 
             if (action === 'in') {
                 const { data, error: inErr } = await supabase.from('time_logs')
@@ -871,17 +876,7 @@ export default function StaffDashboardView({
                 }
                 invalidateHomeHistoryWeekCache();
                 setAttendanceRefreshKey((k) => k + 1);
-                const { data: { user: u } } = await supabase.auth.getUser();
-                const email = u?.email?.toLowerCase().trim() ?? '';
-                const overlayConfig = getFichajeOverlayVideos(email, dayYmd);
-                const messages = await showClockMessagesAfterPunch(userId);
-                if (overlayConfig) {
-                    if (messages.length > 0) {
-                        queuedClockVideoRef.current = () => openGiffOverlay(overlayConfig.entrada);
-                    } else {
-                        openGiffOverlay(overlayConfig.entrada);
-                    }
-                }
+                await showClockMessagesAfterPunch(userId);
             } else if (action === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffMinutes = differenceInMinutes(now, clockIn);
@@ -906,20 +901,11 @@ export default function StaffDashboardView({
                 }
                 invalidateHomeHistoryWeekCache();
                 setAttendanceRefreshKey((k) => k + 1);
-                const { data: { user: u } } = await supabase.auth.getUser();
-                const email = u?.email?.toLowerCase().trim() ?? '';
-                const overlayConfig = getFichajeOverlayVideos(email, dayYmd);
-                const messages = await showClockMessagesAfterPunch(userId);
-                if (overlayConfig) {
-                    if (messages.length > 0) {
-                        queuedClockVideoRef.current = () => openGiffOverlay(overlayConfig.salida);
-                    } else {
-                        openGiffOverlay(overlayConfig.salida);
-                    }
-                }
+                await showClockMessagesAfterPunch(userId);
             }
             setTimeout(() => initialize(), 0);
         } catch (error) {
+            closeGiffOverlay();
             toast.error(readErrorMessage(error, "Error al fichar"));
         } finally { setActionLoading(false); }
     };
@@ -1218,7 +1204,7 @@ export default function StaffDashboardView({
                 return (
                     <div
                         role="dialog"
-                        aria-label="Fichaje registrado"
+                        aria-label="Vídeo del fichaje"
                         className={cn(
                             "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none transition-opacity ease-in-out",
                             giffActive && !giffOverlayFading ? "opacity-100 duration-300" : "opacity-0 duration-[900ms]",
@@ -1262,13 +1248,7 @@ export default function StaffDashboardView({
                                     beginGiffOverlayFadeOut();
                                 }}
                                 onEnded={() => beginGiffOverlayFadeOut()}
-                                onError={() => {
-                                    clearGiffFadeTimer();
-                                    clearGiffSafetyTimer();
-                                    giffFadingRef.current = false;
-                                    setGiffOverlayFading(false);
-                                    setShowGiffOverlay(false);
-                                }}
+                                onError={closeGiffOverlay}
                             />
                         </div>
                     </div>
