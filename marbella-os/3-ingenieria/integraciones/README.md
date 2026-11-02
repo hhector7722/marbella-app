@@ -20,6 +20,7 @@ Sistemas que no controlamos y con los que Marbella intercambia datos. Un documen
 |---|---|---|
 | [Punto de venta](./BDP-TPV.md) | Ventas, estado de sala y líneas de cocina | Vigente |
 | [Nóminas](./NOMINAS.md) | Coste mensual de empresa desde la gestoría | Vigente, con parte del diseño sin implementar |
+| [Huawei Wi-Fi](./HUAWEI-WIFI.md) | Asociación Wi-Fi de un dispositivo → avisos en Marbella | Desarrollada, pendiente de activación en el bar |
 
 ## Pendientes
 
