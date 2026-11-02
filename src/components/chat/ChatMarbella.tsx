@@ -126,9 +126,15 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       if (typeof opts?.body === 'string') {
         try {
           const j = JSON.parse(opts.body) as Record<string, unknown>;
+          const supplierName = window.location.pathname === '/orders/new'
+            ? new URLSearchParams(window.location.search).get('supplier')?.trim()
+            : null;
           mergedBody = JSON.stringify({
             ...j,
             sessionId: getActiveSessionId(),
+            pageContext: supplierName
+              ? { kind: 'supplier_draft', supplier: supplierName.slice(0, 120) }
+              : null,
           });
         } catch {
           mergedBody = opts.body;
@@ -157,8 +163,8 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
 
   const { messages, sendMessage, status, error } = useChat({
     transport,
-    onError: (err: Error) => {
-      toast.error(`Error: ${err.message}`);
+    onError: () => {
+      toast.error('No se ha podido obtener respuesta del servicio de IA.');
     },
   });
 
@@ -337,7 +343,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
         )}
         {error && (
           <div className="mx-auto rounded-xl border border-rose-400/30 bg-rose-950/60 px-4 py-2 text-xs text-rose-200">
-            Error de conexión.
+            No se ha podido obtener una respuesta del asistente. No necesariamente es un problema de Internet.
           </div>
         )}
       </div>

@@ -37,7 +37,7 @@ type MoreFunctionsItem = {
 );
 
 export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
-    { label: 'Asistente IA', instance: 'asistente', action: 'asistente', icon: BotMessageSquare },
+    { label: 'Agente IA', instance: 'asistente', action: 'asistente', icon: BotMessageSquare },
     { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/suplier.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
