@@ -1,5 +1,5 @@
-<!-- Generado desde 70 documentos de marbella-os/.
-     Huella del origen: 19b5ea2664e87249
+<!-- Generado desde 71 documentos de marbella-os/.
+     Huella del origen: b19bda85aec3e5f5
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -84,6 +84,7 @@ es `CANON §5`.
 | 20 | `marbella-os/3-ingenieria/FRONTEND.md` |
 | 20 | `marbella-os/3-ingenieria/integraciones/ALBARANES-EMAIL.md` |
 | 20 | `marbella-os/3-ingenieria/integraciones/BDP-TPV.md` |
+| 20 | `marbella-os/3-ingenieria/integraciones/HUAWEI-WIFI.md` |
 | 20 | `marbella-os/3-ingenieria/integraciones/NOMINAS.md` |
 | 20 | `marbella-os/3-ingenieria/MODELO-DE-DATOS.md` |
 | 20 | `marbella-os/3-ingenieria/operacion/RUNBOOK-ALBARANES-MISTRAL.md` |

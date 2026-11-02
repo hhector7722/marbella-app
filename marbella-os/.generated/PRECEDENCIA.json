@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "21f312728de41e24",
+  "_huella": "4d1d415bec99f00b",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -636,6 +636,21 @@
       "precedencia": 20,
       "vence": "2027-01-29",
       "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/3-ingenieria/integraciones/HUAWEI-WIFI.md",
+      "documento": "INTEGRACION-HUAWEI-WIFI",
+      "clase": "vivo",
+      "estado": "vigente",
+      "capa": "ingenieria",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 20,
+      "vence": "2027-05-02",
+      "depende_de": [
+        "SEGURIDAD",
+        "ARQUITECTURA"
+      ]
     },
     {
       "ruta": "marbella-os/3-ingenieria/integraciones/NOMINAS.md",
