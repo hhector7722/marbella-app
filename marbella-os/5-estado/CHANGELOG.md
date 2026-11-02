@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-11-02
+
+- **Calibración de posiciones en cámara para Coca-Cola.** El piloto proyecta el mapa fijo de 48 pilas tras marcar cuatro esquinas, permite seleccionar una pila tocando su punto en el visor y seguir desplazamientos pequeños mediante textura local entre fotogramas. Si pierde la referencia visual, detiene la atribución de posiciones hasta recalibrar. Las marcas «observadas» no equivalen a cantidades confirmadas ni generan faltantes automáticamente; se mantiene la revisión por pila, el máximo de cuatro unidades y la ausencia de movimientos contables. Requiere pruebas con vídeos reales para verificar comportamiento con giros, perspectiva, reflejos y huecos.
+
 ## 2026-11-01
 
 - **Piloto guiado de Coca-Cola con cámara dinámica y preguntas cerradas.** Presenta 48 pilas por ubicación fija, conserva las confirmaciones mientras se mueve el móvil, aporta pistas visuales de bases alineadas sin dar por ciertas las latas ocultas y permite responder 0, 1, 2, 3 o 4+. Calcula faltantes por producto solo al completar las posiciones pertinentes. Nunca descuenta de otras pilas ni genera cantidades negativas: la quinta lata ocasional se ignora a efectos de reposición. La cámara no reconoce todavía una posición automáticamente al cambiar de perspectiva; la selección de pila permanece manual y el piloto requiere prueba presencial.
