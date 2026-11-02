@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 import type { Tables, TablesInsert } from '@/types/supabase';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, formatGeofenceRejectionMessage, isOutsideGeofence, logGeofenceRejection } from '@/lib/location';
-import { DEFAULT_FICHAJE_OVERLAY_VIDEO, FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
+import { DEFAULT_FICHAJE_OVERLAY_VIDEO, getFichajeOverlayVideos } from '@/lib/fichaje-overlay-videos';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 import {
     PLANTILLA_EMPLOYEE_SELECT,
@@ -873,7 +873,7 @@ export default function StaffDashboardView({
                 setAttendanceRefreshKey((k) => k + 1);
                 const { data: { user: u } } = await supabase.auth.getUser();
                 const email = u?.email?.toLowerCase().trim() ?? '';
-                const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
+                const overlayConfig = getFichajeOverlayVideos(email, dayYmd);
                 const messages = await showClockMessagesAfterPunch(userId);
                 if (overlayConfig) {
                     if (messages.length > 0) {
@@ -908,7 +908,7 @@ export default function StaffDashboardView({
                 setAttendanceRefreshKey((k) => k + 1);
                 const { data: { user: u } } = await supabase.auth.getUser();
                 const email = u?.email?.toLowerCase().trim() ?? '';
-                const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
+                const overlayConfig = getFichajeOverlayVideos(email, dayYmd);
                 const messages = await showClockMessagesAfterPunch(userId);
                 if (overlayConfig) {
                     if (messages.length > 0) {
@@ -1588,7 +1588,7 @@ export default function StaffDashboardView({
             )}
 
             {userEmail && (() => {
-                const preloads = FICHAJE_OVERLAY_VIDEOS[userEmail.toLowerCase().trim()];
+                const preloads = getFichajeOverlayVideos(userEmail, formatYmdInMadrid(new Date()));
                 if (!preloads) return null;
                 return (
                     <div className="hidden pointer-events-none w-0 h-0 overflow-hidden" aria-hidden="true">
