@@ -37,7 +37,7 @@ export function canProposeWeekendNote(user: { id: string; email?: string | null 
 }
 
 export function wantsToWriteWeekendNote(question: string): boolean {
-  return /crea|crear|guarda|guardar|pon|poner|escribe|escribir|anota|apunta|añade|agrega|actualiza|cambia/i.test(question)
+  return /(?:^|[\s,¿¡])(?:crea|crear|guarda|guardar|pon|poner|escribe|escribir|anota|apunta|añade|agrega|actualiza|cambia)(?=$|[\s,.:])/i.test(question)
     && /nota|anota|apunta|aviso/i.test(question)
     && /fin de semana|calendario|horario|s[aá]bado|domingo/i.test(question);
 }
