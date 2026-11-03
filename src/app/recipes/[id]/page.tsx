@@ -125,12 +125,22 @@ type RecipeComponentChild = {
     yield_unit: string | null;
 };
 
+type RecipeConsumptionFormat = {
+    id: string;
+    recipe_id: string;
+    code: string;
+    label: string;
+    portions_per_batch: number;
+};
+
 type RecipeSubrecipeLine = {
     id: string;
     parent_recipe_id: string;
     child_recipe_id: string;
     quantity: number;
     unit: string;
+    format_full_id: string | null;
+    format_half_id: string | null;
     child: RecipeComponentChild;
 };
 
@@ -179,6 +189,7 @@ function RecipeDetailContent() {
         setMarbellaPricing({ recipeId: id, isPlate, maximum });
     }, []);
     const [subrecipes, setSubrecipes] = useState<RecipeSubrecipeLine[]>([]);
+    const [consumptionFormats, setConsumptionFormats] = useState<RecipeConsumptionFormat[]>([]);
     const [subrecipesLoaded, setSubrecipesLoaded] = useState(false);
     const [componentKind, setComponentKind] = useState<'ingredient' | 'elaboration'>('ingredient');
     const [recipeCandidates, setRecipeCandidates] = useState<RecipeComponentChild[]>([]);
@@ -321,7 +332,8 @@ function RecipeDetailContent() {
     };
 
     const fetchRecursiveCost = async () => {
-        const { data, error } = await supabase.rpc('get_recipe_cost_v2', { p_recipe_id: recipeId });
+        const rpc = viewSizeRef.current === 'half' ? 'get_recipe_cost_v2_half' : 'get_recipe_cost_v2';
+        const { data, error } = await supabase.rpc(rpc, { p_recipe_id: recipeId });
         if (error || !data || typeof data !== 'object' || Array.isArray(data)) {
             setElaborationCost({ ok: false, total_cost_eur: null, errors: [{ status: 'RECIPE_NOT_FOUND' }], components: [] });
             return;
@@ -335,6 +347,8 @@ function RecipeDetailContent() {
             isSellable: current ? current.is_sellable !== false : true,
             hasSubrecipes: subrecipesRef.current.length > 0,
             portion: viewSizeRef.current,
+            supportsHalfSubrecipes: subrecipesRef.current.length > 0
+                && subrecipesRef.current.every((line) => line.format_half_id !== null),
         });
         if (source === 'legacy') {
             await fetchLegacyCost(viewSizeRef.current);
@@ -348,7 +362,7 @@ function RecipeDetailContent() {
     const fetchRecipeSubrecipes = async (): Promise<RecipeSubrecipeLine[]> => {
         const { data, error } = await supabase
             .from('recipe_subrecipes')
-            .select('id, parent_recipe_id, child_recipe_id, quantity, unit, child:recipes!recipe_subrecipes_child_recipe_id_fkey (id, name, photo_url, is_sellable, yield_quantity, yield_unit)')
+            .select('id, parent_recipe_id, child_recipe_id, quantity, unit, format_full_id, format_half_id, child:recipes!recipe_subrecipes_child_recipe_id_fkey (id, name, photo_url, is_sellable, yield_quantity, yield_unit)')
             .eq('parent_recipe_id', recipeId);
         if (error) {
             toast.error('No se pudieron cargar las elaboraciones');
@@ -364,6 +378,8 @@ function RecipeDetailContent() {
                 child_recipe_id: row.child_recipe_id,
                 quantity: Number(row.quantity),
                 unit: row.unit,
+                format_full_id: row.format_full_id,
+                format_half_id: row.format_half_id,
                 child,
             }];
         }).sort((a, b) => a.child.name.localeCompare(b.child.name, 'es'));
@@ -466,6 +482,7 @@ function RecipeDetailContent() {
         fetchRecipe();
         fetchAvailableIngredients();
         fetchAllRecipes();
+        void loadConsumptionFormats();
         const checkRole = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
@@ -529,6 +546,8 @@ function RecipeDetailContent() {
             isSellable: recipe.is_sellable !== false,
             hasSubrecipes: subrecipes.length > 0,
             portion: activePortion,
+            supportsHalfSubrecipes: subrecipes.length > 0
+                && subrecipes.every((line) => line.format_half_id !== null),
         })
         : null;
     const sheetCostEur: number | null = (() => {
@@ -745,6 +764,19 @@ function RecipeDetailContent() {
         setShowIngredientModal(true);
     };
 
+    const loadConsumptionFormats = async () => {
+        const { data, error } = await supabase
+            .from('recipe_consumption_formats')
+            .select('id, recipe_id, code, label, portions_per_batch');
+        if (error) {
+            toast.error('No se pudieron cargar los formatos de consumo');
+            return;
+        }
+        setConsumptionFormats((data ?? []).map((row) => ({
+            ...row, portions_per_batch: Number(row.portions_per_batch),
+        })));
+    };
+
     const loadRecipeCandidates = async () => {
         const { data, error } = await supabase
             .from('recipes')
@@ -760,11 +792,21 @@ function RecipeDetailContent() {
 
     const handleAddSubrecipe = async (child: RecipeComponentChild) => {
         if (!canAddRecipeComponent({ yieldQuantity: child.yield_quantity, yieldUnit: child.yield_unit }) || !child.yield_unit) return;
+        const formats = consumptionFormats.filter((f) => f.recipe_id === child.id);
+        if (child.name === 'Tortilla' && formats.length === 0) {
+            toast.error('No están disponibles los formatos de tortilla');
+            return;
+        }
+        const preferred = recipe?.name === 'Pincho tortilla' ? 'pincho' : 'entero';
+        const full = formats.find((f) => f.code === preferred);
+        const half = recipe?.name === 'Tortilla patatas' ? formats.find((f) => f.code === 'medio') : undefined;
         const { error } = await supabase.from('recipe_subrecipes').insert({
             parent_recipe_id: recipeId,
             child_recipe_id: child.id,
             quantity: 1,
             unit: child.yield_unit,
+            format_full_id: full?.id ?? null,
+            format_half_id: half?.id ?? null,
         });
         if (error) {
             toast.error(subrecipeWriteErrorMessage(error, 'add'));
@@ -790,6 +832,21 @@ function RecipeDetailContent() {
             toast.error(subrecipeWriteErrorMessage(error, 'save'));
             rememberSubrecipes(previous);
             setSubrecipeEpoch((epoch) => epoch + 1);
+            return;
+        }
+        await refreshSheetCost();
+    };
+
+    const handleSubrecipeFormatChange = async (line: RecipeSubrecipeLine, formatId: string) => {
+        const field = activePortion === 'half' ? 'format_half_id' : 'format_full_id';
+        const candidate = consumptionFormats.find((item) => item.id === formatId && item.recipe_id === line.child_recipe_id);
+        if (!candidate) return;
+        const previous = subrecipesRef.current;
+        rememberSubrecipes(previous.map((row) => row.id === line.id ? { ...row, [field]: candidate.id } : row));
+        const { error } = await supabase.from('recipe_subrecipes').update({ [field]: candidate.id }).eq('id', line.id);
+        if (error) {
+            rememberSubrecipes(previous);
+            toast.error('No se pudo guardar el formato');
             return;
         }
         await refreshSheetCost();
@@ -1435,6 +1492,8 @@ function RecipeDetailContent() {
                                             : { status: '', costEur: null };
                                         const unitOptions = compatibleComponentUnits(line.child.yield_unit);
                                         const unitChoices = unitOptions.includes(line.unit) ? unitOptions : [line.unit, ...unitOptions];
+                                        const lineFormats = consumptionFormats.filter((format) => format.recipe_id === line.child_recipe_id);
+                                        const selectedFormatId = activePortion === 'half' ? line.format_half_id : line.format_full_id;
                                         const yieldText = line.child.yield_quantity != null && line.child.yield_unit
                                             ? `${formatYieldQuantity(Number(line.child.yield_quantity))} ${line.child.yield_unit}`
                                             : null;
@@ -1445,7 +1504,7 @@ function RecipeDetailContent() {
                                                     <div className="text-[8px] font-semibold uppercase tracking-wide text-zinc-400">
                                                         {isInternalRecipe(line.child.is_sellable) ? 'Elaboración' : 'Vendible'}
                                                         {yieldText ? ` · ${yieldText}` : ''}
-                                                        {!fullPortion ? ' · receta completa' : ''}
+                                                        {!fullPortion && lineFormats.length === 0 ? ' · receta completa' : ''}
                                                     </div>
                                                 </td>
                                                 <td className="px-0.5 py-1 text-center align-middle">
@@ -1461,7 +1520,25 @@ function RecipeDetailContent() {
                                                     )}
                                                 </td>
                                                 <td className="px-0.5 py-1 text-center align-middle">
-                                                    {isRestricted ? (
+                                                    {lineFormats.length > 0 ? (
+                                                        isRestricted ? (
+                                                            <span className="text-[10px] font-bold text-gray-600">
+                                                                {lineFormats.find((f) => f.id === selectedFormatId)?.label ?? 'Sin formato'}
+                                                            </span>
+                                                        ) : (
+                                                            <select
+                                                                aria-label="Formato de tortilla"
+                                                                value={selectedFormatId ?? ''}
+                                                                onChange={(e) => { void handleSubrecipeFormatChange(line, e.target.value); }}
+                                                                className="max-w-[135px] rounded border border-gray-100 bg-white px-1 py-1 text-[10px] font-bold outline-none focus:border-[#36606F]"
+                                                            >
+                                                                <option value="" disabled>Seleccionar formato</option>
+                                                                {lineFormats.map((f) => (
+                                                                    <option key={f.id} value={f.id}>{f.label}</option>
+                                                                ))}
+                                                            </select>
+                                                        )
+                                                    ) : isRestricted ? (
                                                         <span className="font-bold text-gray-400">{line.unit}</span>
                                                     ) : (
                                                         <select
