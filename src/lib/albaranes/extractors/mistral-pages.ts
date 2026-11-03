@@ -20,12 +20,13 @@ const MAX_PARALLEL_PAGES = 3
 export function mergePageObservations(
   parts: DocumentExtraction[],
   sourceSha: string,
+  pageSourceShas?: string[],
 ): DocumentExtraction {
   if (!parts.length || parts.length > MAX_PARALLEL_PAGES) {
     throw new Error('unexpected_ocr_page_count')
   }
-  for (const part of parts) {
-    if (part.fileSha256 !== sourceSha || part.pageCount !== 1 ||
+  for (const [index, part] of parts.entries()) {
+    if (part.fileSha256 !== (pageSourceShas?.[index] ?? sourceSha) || part.pageCount !== 1 ||
       !part.rawResponse || typeof part.rawResponse !== 'object' ||
       !Array.isArray((part.rawResponse as { pages?: unknown }).pages) ||
       ((part.rawResponse as { pages: unknown[] }).pages.length !== 1)) {
@@ -77,6 +78,8 @@ export function mergePageObservations(
       model: MISTRAL_OCR_MODEL,
       pages,
       document_annotation: canonical,
+      page_source_sha256: pageSourceShas ?? null,
+      original_document_sha256: sourceSha,
       usage_info: { mode: 'verified_individual_pages', page_count: parts.length },
     },
     pageCount: pages.length,
@@ -99,8 +102,31 @@ export async function countSourcePdfPages(bytes: Uint8Array): Promise<number> {
 }
 
 /**
- * pdfjs checks the actual PDF page count, which the invoice's expected_pages
- * metadata may not represent. Never trust the latter to limit extraction.
+ * Construct one independent, 1-page PDF per original page. Mistral then
+ * receives only the actual page bytes, not the entire PDF repeatedly.
+ * Every split-page hash is saved alongside the original source hash.
+ */
+export async function splitSourcePdfPages(bytes: Uint8Array): Promise<Uint8Array[]> {
+  const { PDFDocument } = await import('pdf-lib')
+  const source = await PDFDocument.load(bytes, {
+    updateMetadata: false,
+    ignoreEncryption: false,
+  })
+  const count = source.getPageCount()
+  if (count < 1 || count > MAX_PARALLEL_PAGES) throw new Error('unsupported_split_page_count')
+  const pages: Uint8Array[] = []
+  for (let index = 0; index < count; index++) {
+    const part = await PDFDocument.create()
+    const [page] = await part.copyPages(source, [index])
+    part.addPage(page)
+    pages.push(await part.save())
+  }
+  return pages
+}
+
+/**
+ * The invoice's expected_pages metadata may not equal the real PDF pages.
+ * Use the original document, not an untrusted header, for this count.
  */
 export async function extractWithMistralPageBounded(params: {
   bytes: Uint8Array
@@ -116,13 +142,16 @@ export async function extractWithMistralPageBounded(params: {
     return extractWithMistral(params)
   }
   const started = Date.now()
-  const results = await Promise.all(Array.from({ length: pageCount }, (_, i) =>
+  const sourcePages = await splitSourcePdfPages(params.bytes)
+  if (sourcePages.length !== pageCount) throw new Error('split_pdf_page_count_changed')
+  const pageShas = sourcePages.map(fileSha256)
+  const results = await Promise.all(sourcePages.map((bytes) =>
     extractWithMistral({
       ...params,
-      pages: [i],
+      bytes,
       signal: params.signal ?? AbortSignal.timeout(90_000),
     }),
   ))
-  const merged = mergePageObservations(results, sourceHash)
+  const merged = mergePageObservations(results, sourceHash, pageShas)
   return { ...merged, elapsedMs: Date.now() - started }
 }

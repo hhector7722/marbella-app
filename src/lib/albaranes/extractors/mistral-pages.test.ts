@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   mergePageObservations,
   countSourcePdfPages,
+  splitSourcePdfPages,
 } from './mistral-pages.ts'
 import {
   MISTRAL_EXTRACTOR_VERSION,
@@ -10,6 +11,7 @@ import {
   type DocumentExtraction,
 } from './mistral.ts'
 import { CANONICAL_EXTRACTION_SCHEMA_VERSION } from './canonical.ts'
+import { createHash } from 'node:crypto'
 
 const SHA = 'a'.repeat(64)
 
@@ -99,6 +101,26 @@ test('can read an actual three-page PDF in Node without a browser DOMMatrix glob
   pdf.text('Page three', 10, 10)
   const data = new Uint8Array(pdf.output('arraybuffer'))
   assert.equal(await countSourcePdfPages(data), 3)
+  const originals = await splitSourcePdfPages(data)
+  assert.equal(originals.length, 3)
+  for (const original of originals) {
+    assert.equal(await countSourcePdfPages(original), 1)
+    assert.notEqual(createHash('sha256').update(original).digest('hex'),
+      createHash('sha256').update(data).digest('hex'))
+  }
+  assert.equal(new Set(originals.map(p => createHash('sha256').update(p).digest('hex'))).size, 3)
+})
+test('merge binds each one-page OCR response to its actual split PDF SHA', () => {
+  const parts = [page(0, 'Aceite'), page(1, 'Arroz'), page(2, 'Tomate', true)]
+  const pageShas = ['b'.repeat(64),'c'.repeat(64),'d'.repeat(64)]
+  parts.forEach((p,i) => { p.fileSha256 = pageShas[i] })
+  const merged = mergePageObservations(parts, SHA, pageShas)
+  assert.equal(merged.fileSha256, SHA)
+  const evidence = merged.rawResponse as {page_source_sha256: string[],original_document_sha256: string}
+  assert.deepEqual(evidence.page_source_sha256, pageShas)
+  assert.equal(evidence.original_document_sha256, SHA)
+  assert.throws(() => mergePageObservations(parts, SHA, [pageShas[1],pageShas[0],pageShas[2]]),
+    /mistral_page_identity_or_response_invalid/)
 })
 
 test('prevents emission of empty economic evidence', () => {
