@@ -568,8 +568,8 @@ export default function MovementsPage() {
                 .neq('type', 'ADJUSTMENT')
                 .neq('type', 'SWAP')
                 .or(HIDE_CASH_EXCHANGES_FILTER)
-                .order('created_at', { ascending: dateSortDir === 'asc' })
-                .order('id', { ascending: dateSortDir === 'asc' })
+                .order('created_at', { ascending: true })
+                .order('id', { ascending: true })
                 .range(from, to);
 
             if (boxData?.id) {
@@ -648,10 +648,22 @@ export default function MovementsPage() {
                 return;
             }
 
+            const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+            }[char] ?? char));
+
+            const today = format(new Date(), 'yyyy-MM-dd');
+            const periodStart = filterMode === 'single' ? selectedDate : (rangeStart && rangeEnd ? rangeStart : today);
+            const periodEnd = filterMode === 'single' ? selectedDate : (rangeStart && rangeEnd ? rangeEnd : today);
+            const startLabel = format(parseLocalSafe(periodStart), 'dd/MM/yyyy');
+            const endLabel = format(parseLocalSafe(periodEnd), 'dd/MM/yyyy');
+            const periodLabel = periodStart === periodEnd
+                ? startLabel
+                : `Del ${startLabel} al ${endLabel}`;
+
             const rowsHtml = all.map((mov) => {
                 const d = new Date(mov.created_at);
                 const dateStr = isNaN(d.getTime()) ? '' : format(d, 'dd/MM/yyyy', { locale: es });
-
                 const concept = mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja');
 
                 const signedAmount =
@@ -665,13 +677,20 @@ export default function MovementsPage() {
 
                 return `<tr>
   <td>${dateStr}</td>
-  <td>${concept}</td>
+  <td>${escapeHtml(concept)}</td>
   <td>${signedAmount}</td>
   <td>${saldo}</td>
 </tr>`;
-            }).join('\n');
+            }).join('');
 
-            const html = `<h1>Movimientos</h1><table>
+            const html = `<header class="movements-print-heading">
+  <img src="/icons/logo-white.png" alt="Bar La Marbella" width="88" height="90" />
+  <div class="movements-print-heading-text">
+    <h1>Movimientos de tesorería</h1>
+    <p>Período: ${escapeHtml(periodLabel)}</p>
+  </div>
+</header>
+<table class="movements-print-table">
   <thead>
     <tr>
       <th>FECHA</th>
@@ -680,13 +699,51 @@ export default function MovementsPage() {
       <th>SALDO</th>
     </tr>
   </thead>
-  <tbody>
-    ${rowsHtml}
-  </tbody>
+  <tbody>${rowsHtml}</tbody>
 </table>`;
 
+            // Precarga del logo para que esté disponible cuando se abra la impresión/PDF.
+            const logo = new Image();
+            logo.src = '/icons/logo-white.png';
+            try { await logo.decode(); } catch { /* El documento sigue siendo imprimible. */ }
+
             printHtml(html, {
-                extraCss: 'thead th, tbody td { text-align: center; }',
+                extraCss: `
+                    @page { size: A4 portrait; margin: 16mm 14mm; }
+                    .movements-print-heading {
+                        display: flex; align-items: center; gap: 16px;
+                        margin-bottom: 24px; padding-bottom: 16px;
+                        border-bottom: 1px solid #D9E2EC;
+                    }
+                    .movements-print-heading img {
+                        width: 88px; height: 90px; object-fit: contain; flex-shrink: 0;
+                    }
+                    .movements-print-heading h1 {
+                        font-size: 14px; font-weight: 400; margin: 0 0 8px;
+                        color: #18181B; letter-spacing: 0;
+                    }
+                    .movements-print-heading p {
+                        margin: 0; font-size: 12px; font-weight: 400; color: #52525B;
+                    }
+                    .movements-print-table {
+                        border-collapse: separate; border-spacing: 0;
+                        border: 1px solid #D9E2EC; border-radius: 12px;
+                        width: 100%; background: white;
+                    }
+                    .movements-print-table thead th {
+                        background: #15345C; color: white; text-align: center;
+                        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+                    }
+                    .movements-print-table thead th:first-child { border-top-left-radius: 11px; }
+                    .movements-print-table thead th:last-child { border-top-right-radius: 11px; }
+                    .movements-print-table tbody td,
+                    .movements-print-table tbody tr:nth-child(even) td {
+                        background: white; text-align: center;
+                    }
+                    .movements-print-table tbody tr:last-child td:first-child { border-bottom-left-radius: 11px; }
+                    .movements-print-table tbody tr:last-child td:last-child { border-bottom-right-radius: 11px; }
+                    .movements-print-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+                `,
             });
         } catch (e) {
             console.error(e);

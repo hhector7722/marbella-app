@@ -43,6 +43,23 @@ describe('exportaciones Excel / PDF / impresión', () => {
         }
     });
 
+
+    it('Tesorería exporta cronológicamente y usa cabecera corporativa blanca y azul marino', () => {
+        const src = readFileSync(join(SRC, 'app/dashboard/movements/page.tsx'), 'utf8');
+        const query = src.split('const fetchAllFilteredMovementsForExport')[1]
+            ?.split('const exportFilteredTableToExcel')[0] ?? '';
+        const print = src.split('const printFilteredTable')[1]?.split('    return (')[0] ?? '';
+
+        assert.match(query, /\.order\('created_at', \{ ascending: true \}\)/);
+        assert.match(query, /\.order\('id', \{ ascending: true \}\)/);
+        assert.match(print, /src="\/icons\/logo-white\.png"/);
+        assert.match(print, /Período:/);
+        assert.match(print, /font-size: 14px; font-weight: 400/);
+        assert.match(print, /border-radius: 12px/);
+        assert.match(print, /background: #15345C/);
+        assert.match(print, /tbody tr:nth-child\(even\) td\s*\{\s*background: white/);
+    });
+
     it('las descargas Excel no usan XLSX.writeFile', () => {
         const files = [
             ...TABLE_EXPORT_SURFACES,
