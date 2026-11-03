@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { useRouter, usePathname } from 'next/navigation';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/SearchField';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { trackUsageModalApply } from '@/lib/usage/client';
@@ -139,17 +140,17 @@ export function SupplierSelectionModal({
             usageLabel={usageLabel}
             scrollContent={false}
             headerTrailing={!onSelect ? (
-                <button
+                <Button
                     type="button"
-                    data-instance="supplier-picker-albaranes"
+                    variant="primary"
+                    instance="supplier-picker-albaranes"
                     onClick={() => {
                         onClose();
                         router.push('/dashboard/albaranes');
                     }}
-                    className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-500 active:bg-emerald-700"
                 >
                     Albaranes
-                </button>
+                </Button>
             ) : undefined}
         >
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2.5 sm:p-3">
