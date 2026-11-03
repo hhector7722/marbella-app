@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Mic, Phone, Plus, Send, FileText, Image as ImageIcon } from 'lucide-react';
+import { Mic, Phone, Plus, Send, FileText, Image as ImageIcon, X } from 'lucide-react';
 import Image from 'next/image';
 import { useAIStore } from '@/store/aiStore';
 import { useChat } from '@ai-sdk/react';
@@ -12,6 +12,7 @@ import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useChatVisualViewport } from '@/hooks/useChatVisualViewport';
 import { useFreezeChatBackground } from '@/hooks/useFreezeChatBackground';
 import VoiceConversation from '@/components/chat/VoiceConversation';
+import VoiceRecordingBar from '@/components/chat/VoiceRecordingBar';
 import WeekendNoteApproval, { weekendNoteFromToolPart } from '@/components/chat/WeekendNoteApproval';
 import { prepareChatImage, readLargeChatPdfInBrowser } from '@/lib/copilot/browser-attachment';
 
@@ -103,20 +104,33 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const [input, setInput] = useState('');
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
+
+  const changeSelectedFile = useCallback((file: File | null) => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    const url = file?.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+    previewUrlRef.current = url;
+    setSelectedImagePreview(url);
+    setSelectedFile(file);
+  }, []);
+
+  useEffect(() => () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+  }, []);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileContextRef = useRef('');
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [pressingMic, setPressingMic] = useState(false);
-  const micHeldRef = useRef(false);
+  const [micStarting, setMicStarting] = useState(false);
   const micStartingRef = useRef(false);
-  const micReadyRef = useRef(false);
   const micStoppingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { status: voiceStatus, startRecording, stopRecording } = useVoiceRecorder();
-  const isRecording = voiceStatus === 'recording';
+  const { status: voiceStatus, durationMs, startRecording, stopRecording, pauseRecording,
+    resumeRecording, cancelRecording, getStream } = useVoiceRecorder();
+  const isVoiceActive = voiceStatus === 'recording' || voiceStatus === 'paused';
 
   useEffect(() => beginSessionLifetime(), []);
 
@@ -176,7 +190,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
 
   const handleTranscription = async (audioBlob: Blob) => {
     if (!audioBlob || audioBlob.size < 500) {
-      toast.info('Mantén pulsado el micrófono un momento para dictar.');
+      toast.info('Graba un mensaje de voz un poco más largo.');
       return;
     }
     setIsTranscribing(true);
@@ -205,13 +219,24 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     }
   };
 
-  // Push-to-talk: mismo micrófono pequeño para iniciar y terminar la captura.
-  // Si la persona suelta durante el diálogo de permiso, paramos tan pronto
-  // como el grabador quede preparado; no dejamos el micrófono abierto.
-  const stopMicAndTranscribe = async () => {
-    if (micStoppingRef.current || !micReadyRef.current) return;
+  // Una pulsación abre la grabadora. Enviar es una acción separada.
+  const startVoiceNote = async () => {
+    if (micStartingRef.current || isVoiceActive || isTranscribing || micStoppingRef.current) return;
+    micStartingRef.current = true;
+    setMicStarting(true);
+    try {
+      await startRecording();
+    } catch (cause) {
+      toast.error('Error de micrófono: ' + (cause instanceof Error ? cause.message : String(cause)));
+    } finally {
+      micStartingRef.current = false;
+      setMicStarting(false);
+    }
+  };
+
+  const sendVoiceNote = async () => {
+    if (micStoppingRef.current || !isVoiceActive) return;
     micStoppingRef.current = true;
-    micReadyRef.current = false;
     try {
       const audioBlob = await stopRecording();
       if (audioBlob) await handleTranscription(audioBlob);
@@ -220,32 +245,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     }
   };
 
-  const startMicOnHold = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (e.button !== 0 || micStartingRef.current || micReadyRef.current || micStoppingRef.current || isTranscribing) return;
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    micHeldRef.current = true;
-    micStartingRef.current = true;
-    setPressingMic(true);
-    void startRecording().then(() => {
-      micReadyRef.current = true;
-      if (!micHeldRef.current) void stopMicAndTranscribe();
-    }).catch((err: unknown) => {
-      toast.error('Error de micrófono: ' + (err instanceof Error ? err.message : String(err)));
-    }).finally(() => {
-      micStartingRef.current = false;
-      if (!micHeldRef.current && micReadyRef.current) void stopMicAndTranscribe();
-    });
-  };
-
-  const releaseMic = () => {
-    if (!micHeldRef.current) return;
-    micHeldRef.current = false;
-    setPressingMic(false);
-    if (micReadyRef.current) void stopMicAndTranscribe();
-  };
-
-  const busy = (status !== 'ready' && status !== 'error') || uploadingFile;
+  const busy = (status !== 'ready' && status !== 'error') || uploadingFile || isTranscribing;
   const handleSend = async () => {
     const value = input.trim();
     if ((!value && !selectedFile) || busy) return;
@@ -276,7 +276,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
         context = `Archivo temporal adjunto: ${data.name} (${data.kind}${data.pages?`, ${data.pages} páginas`:''}).\n${data.content}`;
         fileContextRef.current=context;
         fileLabel=`📎 ${data.name}${data.truncated?' (texto abreviado)':''}`;
-        setSelectedFile(null);
+        changeSelectedFile(null);
         toast.success('Archivo analizado y añadido a la consulta.',{id:toastId});
       } catch (cause) {
         toast.error(cause instanceof Error?cause.message:'Error al adjuntar el archivo.',{id:toastId});
@@ -302,7 +302,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     if(file.size>(/\.pdf$/i.test(file.name)?20:10)*1024*1024){
       toast.error('Archivo demasiado grande (PDF 20 MB, imagen 10 MB).');return;
     }
-    setSelectedFile(file);
+    changeSelectedFile(file);
   };
 
   return (
@@ -356,12 +356,45 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       {/* Input bar — no top border */}
       <div data-element="chat-composer" className="box-border w-full min-w-0 shrink-0 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
         {selectedFile && (
-          <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2 rounded-xl bg-[#192b52] px-3 py-2 text-xs text-sky-100">
-            <span className="min-w-0 truncate">📎 {selectedFile.name}</span>
-            <button type="button" aria-label="Quitar adjunto" className="shrink-0 text-white/70" onClick={()=>setSelectedFile(null)}>✕</button>
+          <div className="mb-2 flex min-w-0 items-start">
+            {selectedImagePreview ? (
+              <div className="relative mr-2">
+                <Image src={selectedImagePreview} alt={selectedFile.name}
+                  width={72} height={72} unoptimized
+                  className="h-[72px] w-[72px] rounded-lg border border-white/15 object-cover" />
+                <button type="button" aria-label="Quitar imagen adjunta" title="Eliminar imagen"
+                  onClick={() => changeSelectedFile(null)}
+                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white shadow-lg hover:bg-rose-600">
+                  <X size={14} strokeWidth={3} />
+                </button>
+              </div>
+            ) : (
+              <div className="relative flex max-w-full items-center gap-2 rounded-xl bg-[#192b52] px-3 py-2 text-xs text-sky-100">
+                <FileText size={16} className="shrink-0 text-sky-300" />
+                <span className="truncate">{selectedFile.name}</span>
+                <button type="button" aria-label="Quitar adjunto" title="Eliminar adjunto"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white hover:bg-rose-600"
+                  onClick={() => changeSelectedFile(null)}><X size={13}/></button>
+              </div>
+            )}
           </div>
         )}
         <div className="flex min-w-0 items-end gap-1.5">
+          {isVoiceActive ? (
+            <VoiceRecordingBar stream={getStream()} paused={voiceStatus === 'paused'}
+              durationMs={durationMs} disabled={isTranscribing}
+              onCancel={() => { if (!micStoppingRef.current) cancelRecording(); }}
+              onTogglePause={() => {
+                if (micStoppingRef.current) return;
+                if (voiceStatus === 'paused') resumeRecording(); else pauseRecording();
+              }}
+              onSend={() => void sendVoiceNote()}/>
+          ) : micStarting ? (
+            <div role="status" className="flex h-11 min-w-0 flex-1 items-center justify-center rounded-xl bg-[#192b52] text-sm text-sky-100">
+              Activando micrófono…
+            </div>
+          ) : (
+          <>
           {/* + button */}
           <div className="relative shrink-0">
             <button
@@ -430,31 +463,22 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             <Send size={18} />
           </button>
 
-          {/* Mantener pulsado para hablar; soltar para transcribir. */}
-          <button
-            type="button"
-            onPointerDown={startMicOnHold}
-            onPointerUp={releaseMic}
-            onPointerCancel={releaseMic}
-            onLostPointerCapture={releaseMic}
-            onContextMenu={(e) => e.preventDefault()}
-            disabled={isTranscribing}
-            className={cn(
-              "flex h-10 w-8 shrink-0 touch-none select-none items-center justify-center rounded-xl transition-colors disabled:opacity-40",
-              pressingMic || isRecording ? "bg-rose-400/15 text-rose-300" : "text-sky-100/75 hover:bg-white/10 hover:text-white"
-            )}
-            aria-label="Mantener pulsado para dictar, soltar para transcribir"
-            aria-pressed={pressingMic || isRecording}
-            title="Mantén pulsado para hablar"
-          >
+          {/* Una pulsación abre grabadora con pausa, borrado y envío. */}
+          <button type="button" onClick={() => void startVoiceNote()}
+            disabled={isTranscribing || busy}
+            className="flex h-10 w-8 shrink-0 items-center justify-center rounded-xl text-sky-100/75 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
+            aria-label="Grabar mensaje de voz" title="Grabar mensaje de voz">
             <Mic size={18} />
           </button>
+          </>
+          )}
 
           {/* Llamada más discreta en el extremo derecho. */}
           <button
             type="button"
             onClick={onCallOpen}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white transition-colors hover:bg-emerald-600"
+            disabled={isVoiceActive || micStarting || isTranscribing}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white transition-colors hover:bg-emerald-600 disabled:opacity-40"
             aria-label="Iniciar llamada de voz"
             title="Llamada de voz"
           >

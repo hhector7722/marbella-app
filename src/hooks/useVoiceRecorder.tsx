@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export type VoiceRecorderStatus = 'idle' | 'recording' | 'error';
+export type VoiceRecorderStatus = 'idle' | 'recording' | 'paused' | 'error';
 
 export function useVoiceRecorder() {
   const [status, setStatus] = useState<VoiceRecorderStatus>('idle');
@@ -11,6 +11,8 @@ export function useVoiceRecorder() {
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const startAtRef = useRef<number | null>(null);
+  const pauseAtRef = useRef<number | null>(null);
+  const pausedMsRef = useRef(0);
   const timerRef = useRef<number | null>(null);
 
   const clearTimer = () => {
@@ -40,6 +42,8 @@ export function useVoiceRecorder() {
   async function startRecording() {
     setError(null);
     setDurationMs(0);
+    pauseAtRef.current = null;
+    pausedMsRef.current = 0;
 
     if (typeof window === 'undefined') return;
     if (!navigator.mediaDevices || typeof window.MediaRecorder === 'undefined') {
@@ -73,8 +77,20 @@ export function useVoiceRecorder() {
         clearTimer();
         timerRef.current = window.setInterval(() => {
           const startAt = startAtRef.current;
-          if (startAt) setDurationMs(Date.now() - startAt);
+          if (startAt) {
+            const now = pauseAtRef.current ?? Date.now();
+            setDurationMs(Math.max(0, now - startAt - pausedMsRef.current));
+          }
         }, 200);
+      };
+      mr.onpause = () => {
+        pauseAtRef.current = Date.now();
+        setStatus('paused');
+      };
+      mr.onresume = () => {
+        if (pauseAtRef.current !== null) pausedMsRef.current += Date.now() - pauseAtRef.current;
+        pauseAtRef.current = null;
+        setStatus('recording');
       };
       mr.onerror = () => {
         setError('Error interno del grabador.');
@@ -94,6 +110,16 @@ export function useVoiceRecorder() {
     }
   }
 
+  function pauseRecording() {
+    const mr = mediaRecorderRef.current;
+    if (mr?.state === 'recording') mr.pause();
+  }
+
+  function resumeRecording() {
+    const mr = mediaRecorderRef.current;
+    if (mr?.state === 'paused') mr.resume();
+  }
+
   function stopRecording(): Promise<Blob | null> {
     return new Promise((resolve) => {
       const mr = mediaRecorderRef.current;
@@ -105,6 +131,8 @@ export function useVoiceRecorder() {
       mr.onstop = () => {
         clearTimer();
         setDurationMs(0);
+        pauseAtRef.current = null;
+        pausedMsRef.current = 0;
 
         const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/mp4' });
         chunksRef.current = [];
@@ -136,6 +164,8 @@ export function useVoiceRecorder() {
     mediaRecorderRef.current = null;
     chunksRef.current = [];
     setDurationMs(0);
+    pauseAtRef.current = null;
+    pausedMsRef.current = 0;
     setStatus('idle');
   }
 
@@ -145,6 +175,8 @@ export function useVoiceRecorder() {
     durationMs,
     startRecording,
     stopRecording,
+    pauseRecording,
+    resumeRecording,
     cancelRecording,
     getStream: () => streamRef.current,
   };
