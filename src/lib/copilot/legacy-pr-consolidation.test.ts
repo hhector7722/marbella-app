@@ -21,7 +21,9 @@ describe('PR #107: integración en el agente operativo actual', () => {
     const route = source('app/api/copiloto/route.ts');
     const chat = source('components/chat/ChatMarbella.tsx');
     assert.match(chat, /api: '\/api\/copiloto'/);
-    assert.match(route, /const apiKey = process\.env\.GROQ_API_KEY/);
+    assert.match(route, /groq: process\.env\.GROQ_API_KEY/);
+    assert.match(route, /operationalFreeProviderKeys\(/);
+    assert.match(route, /completeFreeChat\(/);
     assert.match(route, /const READ_ONLY_TOOLS = new Set/);
     assert.match(route, /Nunca sugieras que has ejecutado una acción de escritura/);
   });

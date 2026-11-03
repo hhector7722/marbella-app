@@ -11,13 +11,8 @@ import {
   zodInputToRealtimeSchema,
   type CopilotSupabaseClient,
 } from "@/lib/copilot/tool-runtime";
-import {
-  completeGroqChat,
-  GroqApiError,
-  selectGroqTools,
-  type GroqChatMessage,
-  type GroqTool,
-} from "@/lib/copilot/groq-chat";
+import { selectGroqTools, type GroqChatMessage, type GroqTool } from "@/lib/copilot/groq-chat";
+import { completeFreeChat, configuredFreeProviders, operationalFreeProviderKeys, FreeChatError, type FreeProviderKeys, type FreeProvider } from "@/lib/copilot/free-chat-router";
 import { resolveCopilotFollowup } from "@/lib/copilot/followup-context";
 import { appDataToolForRole, runAppDataTool } from "@/lib/copilot/app-data-catalog";
 import { WEEKEND_NOTE_TOOL, WEEKEND_NOTE_TOOL_NAME, canProposeWeekendNote, prepareWeekendNoteProposal, wantsToWriteWeekendNote } from "@/lib/copilot/weekend-note-proposal";
@@ -127,11 +122,17 @@ export async function POST(req: Request) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return Response.json({ error: "No autorizado" }, { status: 401 });
 
-  // El servidor no realizará llamadas facturables con claves de otros proveedores.
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  if (!apiKey) {
+  // Solo claves del servidor. Los IDs de modelo del router son explícitamente gratuitos.
+  const freeKeys: FreeProviderKeys = operationalFreeProviderKeys({
+    groq: process.env.GROQ_API_KEY,
+    xkiro: process.env.XKIRO_API_KEY,
+    // OpenRouter está configurado, pero el endpoint gratis de NVIDIA no
+    // admite datos personales/confidenciales. El copiloto nunca lo usa.
+    openrouter: process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER,
+  });
+  if (configuredFreeProviders(freeKeys).length === 0) {
     return Response.json(
-      { error: "Falta configurar GROQ_API_KEY en Vercel. El chat gratuito no está disponible todavía." },
+      { error: "Falta configurar al menos una API gratuita para el copiloto." },
       { status: 503 },
     );
   }
@@ -285,11 +286,19 @@ ${body.attachmentContext}`;
         }
         const dataQuestion = tools.some(tool => tool.function.name === WEEKEND_NOTE_TOOL_NAME) || Boolean(resolved) || /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|manual|importe|ingreso|coste|precio|informe|report|cobr|pag|nomina|salario|sueldo/i.test(userText);
         const started = Date.now();
-        for (let step = 0; step < 5 && Date.now() - started < 47500; step++) {
-          const completion = await completeGroqChat(history, tools, {
-            apiKey, timeoutMs: 13500,
+        const deadlineMs = started + 47500;
+        let preferredProvider: FreeProvider | undefined;
+        for (let step = 0; step < 5 && Date.now() < deadlineMs; step++) {
+          const completion = await completeFreeChat(history, tools, {
+            keys: freeKeys,
+            timeoutMs: 12000,
+            deadlineMs,
+            preferredProvider,
             toolChoice: step === 0 && dataQuestion && tools.length > 0 ? "required" : "auto",
           });
+          // Mantener proveedor entre pasos para evitar repetir un 429 ya observado.
+          preferredProvider = completion.provider;
+          console.info("[copiloto-model]", completion.provider);
           if (!completion.toolCalls.length) {
             answer = completion.content.trim() || "No he recibido una respuesta válida del modelo.";
             break;
@@ -349,9 +358,9 @@ ${body.attachmentContext}`;
           }
         }
       } catch (error) {
-        answer = error instanceof GroqApiError ? error.message
+        answer = error instanceof FreeChatError ? error.message
           : "No se ha podido conectar con el asistente. Inténtalo de nuevo.";
-        console.error("[copiloto-groq]", error instanceof GroqApiError ? error.status : "connection_failure");
+        console.error("[copiloto-model]", error instanceof FreeChatError ? error.status : "connection_failure");
       }
 
       writer.write({ type: "text-start", id: "answer" });
