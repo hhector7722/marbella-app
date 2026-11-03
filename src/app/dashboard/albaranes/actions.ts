@@ -813,6 +813,7 @@ export type StockLineStatus = {
   lineId: string
   stockApplied: boolean
   stockAppliedQty: number | null
+  reconciled: boolean
   rectifiedCount: number
 }
 
@@ -869,13 +870,29 @@ export async function getInvoiceStockStatusesAction(params: {
     }
   }
 
+  // Economic invoices can refer to stock already posted by a prior delivery.
+  // This RPC returns only links with a live, non-reversed original receipt.
+  const { data: reconciledRows, error: reconciledError } = await gate.supabase
+    .rpc('list_verified_invoice_delivery_reconciliations', { p_line_ids: lineIds })
+  if (reconciledError) return { success: false, message: reconciledError.message }
+  const reconciledMap = new Map<string, number>()
+  for (const row of reconciledRows ?? []) {
+    const lineId = String(row.line_id ?? '')
+    const quantity = Number(row.physical_quantity)
+    if (lineIds.includes(lineId) && Number.isFinite(quantity) && quantity > 0) {
+      reconciledMap.set(lineId, quantity)
+    }
+  }
+
   const statuses: StockLineStatus[] = lineIds.map((lineId) => {
     const appliedRef = `ALB-LINE-${lineId}`
     const qty = appliedMap.get(appliedRef)
+    const reconciledQty = reconciledMap.get(lineId)
     return {
       lineId,
-      stockApplied: qty != null,
-      stockAppliedQty: qty != null ? qty : null,
+      stockApplied: qty != null || reconciledQty != null,
+      stockAppliedQty: qty != null ? qty : (reconciledQty ?? null),
+      reconciled: reconciledQty != null,
       rectifiedCount: rectCountMap.get(lineId) ?? 0,
     }
   })

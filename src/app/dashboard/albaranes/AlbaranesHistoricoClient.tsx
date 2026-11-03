@@ -213,7 +213,7 @@ export default function AlbaranesHistoricoClient({
   const [supplierSaving, setSupplierSaving] = useState(false)
 
   const [stockStatusByLineId, setStockStatusByLineId] = useState<
-    Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }>
+    Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number; reconciled?: boolean }>
   >({})
   /** Línea abierta en el modal de edición (datos + acciones). */
   const [lineForEditModal, setLineForEditModal] = useState<PurchaseInvoiceLine | null>(null)
@@ -831,7 +831,7 @@ export default function AlbaranesHistoricoClient({
       const lineIds = res.detail.lines.map((l) => l.id)
       const st = await getInvoiceStockStatusesAction({ lineIds })
       if (st.success) {
-        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number; reconciled?: boolean }> = {}
         for (const s of st.statuses) {
           map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
         }
@@ -900,7 +900,7 @@ export default function AlbaranesHistoricoClient({
       const lineIds = refreshed.detail.lines.map((l) => l.id)
       const st = await getInvoiceStockStatusesAction({ lineIds })
       if (st.success) {
-        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number; reconciled?: boolean }> = {}
         for (const s of st.statuses) {
           map[s.lineId] = {
             stockApplied: s.stockApplied,
@@ -1134,7 +1134,7 @@ export default function AlbaranesHistoricoClient({
       if (dRes.success) {
         const st = await getInvoiceStockStatusesAction({ lineIds: dRes.detail.lines.map((l) => l.id) })
         if (st.success) {
-          const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+          const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number; reconciled?: boolean }> = {}
           for (const s of st.statuses) map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
           setStockStatusByLineId(map)
         }
@@ -1214,7 +1214,7 @@ export default function AlbaranesHistoricoClient({
     })
     const st = await getInvoiceStockStatusesAction({ lineIds: dRes.detail.lines.map((l) => l.id) })
     if (st.success) {
-      const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+      const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number; reconciled?: boolean }> = {}
       for (const s of st.statuses)
         map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
       setStockStatusByLineId(map)
@@ -1324,7 +1324,7 @@ export default function AlbaranesHistoricoClient({
       setDetail(dRes.detail)
       const st = await getInvoiceStockStatusesAction({ lineIds: dRes.detail.lines.map((l) => l.id) })
       if (st.success) {
-        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number }> = {}
+        const map: Record<string, { stockApplied: boolean; stockAppliedQty: number | null; rectifiedCount: number; reconciled?: boolean }> = {}
         for (const s of st.statuses)
           map[s.lineId] = { stockApplied: s.stockApplied, stockAppliedQty: s.stockAppliedQty, rectifiedCount: s.rectifiedCount }
         setStockStatusByLineId(map)
@@ -2001,18 +2001,19 @@ export default function AlbaranesHistoricoClient({
                           {detail.lines.map((l) => {
                             const stock = stockStatusByLineId[l.id]
                             const stockApplied = detail.source === 'manual' || Boolean(stock?.stockApplied)
+                            const reconciled = Boolean(stock?.reconciled)
                             const rectified = (stock?.rectifiedCount ?? 0) > 0
                             const excluded = isInvoiceLineExcluded(l)
                             const expenseOnly = isInvoiceLineExpenseOnly(l)
                             const noMatch = !excluded && !expenseOnly && !l.ingredient_name
                             const reviewRow = inlineReviewByLineId.get(l.id) ?? null
-                            const reviewLabel = expenseOnly ? 'Otros · Gasto' : lineReviewActionLabel(reviewRow)
+                            const reviewLabel = reconciled ? 'Conciliado' : expenseOnly ? 'Otros · Gasto' : lineReviewActionLabel(reviewRow)
                             const backgroundPhase = backgroundLineActions[l.id] ?? null
-                            const needsRepair = lineNeedsStockRepair(l)
+                            const needsRepair = !reconciled && lineNeedsStockRepair(l)
                             // El aviso «DOCUMENTO» se muestra solo en la
                             // cabecera; las líneas pendientes siempre son
                             // accionables mediante Revisar/Mapear/Confirmar.
-                            const reviewLabelPassive = isPassiveLineReviewAction(reviewRow, expenseOnly)
+                            const reviewLabelPassive = reconciled || isPassiveLineReviewAction(reviewRow, expenseOnly)
                             const reviewLabelTextVisible =
                               Boolean(reviewLabel) && (reviewLabelPassive || isManager)
                             // Lápiz de edición: aparece cuando la línea ya está
@@ -2064,7 +2065,11 @@ export default function AlbaranesHistoricoClient({
                                       <span className="inline-flex text-amber-600" aria-label="Pendiente de confirmar" title="Pendiente de confirmar"><AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {stockApplied ? (
-                                      <span className="inline-flex text-emerald-600" aria-label="Stock aplicado" title="Stock aplicado"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>
+                                      <span className="inline-flex text-emerald-600"
+                                        aria-label={reconciled ? 'Stock conciliado con entrega anterior' : 'Stock aplicado'}
+                                        title={reconciled ? 'Stock contabilizado en el albarán de entrega original, sin duplicarlo' : 'Stock aplicado'}>
+                                        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                                      </span>
                                     ) : null}
                                     {rectified ? (
                                       <span className="inline-flex text-amber-500" aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`} title={`Stock rectificado (REV${stock?.rectifiedCount})`}><RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
@@ -2078,7 +2083,7 @@ export default function AlbaranesHistoricoClient({
                                       reviewLabelPassive ? (
                                         <span className={cn(
                                           'ml-1 text-[9px] font-black uppercase tracking-wide',
-                                          expenseOnly ? 'text-emerald-700' : inlineReviewTone(reviewRow)
+                                          reconciled || expenseOnly ? 'text-emerald-700' : inlineReviewTone(reviewRow)
                                         )}>
                                           {reviewLabel}
                                         </span>
