@@ -478,7 +478,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             type="button"
             onClick={onCallOpen}
             disabled={isVoiceActive || micStarting || isTranscribing}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white transition-colors hover:bg-emerald-600 disabled:opacity-40"
+            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white transition-colors hover:bg-emerald-600 disabled:opacity-40"
             aria-label="Iniciar llamada de voz"
             title="Llamada de voz"
           >
