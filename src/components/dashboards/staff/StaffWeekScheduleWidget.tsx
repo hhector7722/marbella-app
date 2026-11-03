@@ -336,7 +336,7 @@ function WeekendDayColumn({
                         {/* Evento + Horario + Participantes + Categorías:
                             una fila de flex con anchuras naturales y separación
                             mínima. Ninguna columna tiene una posición fija. */}
-                        <div data-element="weekend-evento-row" className="flex w-full min-w-0 items-start" title="Desliza horizontalmente para consultar todos los datos del evento">
+                        <div data-element="weekend-evento-row" data-details-below={masterMode ? 'true' : undefined} className="flex w-full min-w-0 items-start" title="Desliza horizontalmente para consultar todos los datos del evento">
                             <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                                 {eventLabel ? (
                                     <span data-element="weekend-evento-value" className="block shrink-0 whitespace-nowrap text-[6px] lg:text-[11px] font-medium leading-tight" title={eventLabel}>

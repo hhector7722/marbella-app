@@ -11075,3 +11075,30 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   content: none;
   pointer-events: none;
 }
+
+/* Horarios — Admin/Master: los datos del evento van en una fila debajo de su nombre.
+   Staff mantiene la disposición horizontal original. */
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule']
+  [data-element='weekend-evento-row'][data-details-below='true'] {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  row-gap: 2px;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule']
+  [data-element='weekend-evento-row'][data-details-below='true'] > [data-element='weekend-evento-detail'] {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 100%;
+  padding-left: 4px;
+}
+[data-component='HomeScreen'] [data-component='StaffWeekSchedule']
+  [data-element='weekend-evento-row'][data-details-below='true'] [data-element='weekend-evento-detail-row'] {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  column-gap: 3px;
+  width: 100%;
+  min-width: 0;
+}

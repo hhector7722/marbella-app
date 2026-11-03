@@ -60,6 +60,9 @@ export function RecipeNamePhotoEditModal({
     const [kindDraft, setKindDraft] = useState<RecipeKind>('sellable');
     const [yieldQuantityDraft, setYieldQuantityDraft] = useState('');
     const [yieldUnitDraft, setYieldUnitDraft] = useState('');
+    const [tortillaFormats, setTortillaFormats] = useState<Record<string, string>>({ entero: '7', medio: '14', pincho: '6' });
+    const [formatsLoaded, setFormatsLoaded] = useState(false);
+    const isTortilla = initialName.trim().toLocaleLowerCase('es') === 'tortilla' && kindDraft === 'internal';
     const [baselinePhotoUrl, setBaselinePhotoUrl] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
@@ -99,6 +102,27 @@ export function RecipeNamePhotoEditModal({
         return () => revokeStagedBlob();
     }, []);
 
+    useEffect(() => {
+        if (!open || initialName.trim().toLocaleLowerCase('es') !== 'tortilla') return;
+        let current = true;
+        setFormatsLoaded(false);
+        supabase.from('recipe_consumption_formats')
+            .select('code, portions_per_batch')
+            .eq('recipe_id', recipeId)
+            .then(({ data, error }) => {
+                if (!current) return;
+                if (error) {
+                    toast.error('No se pudieron cargar los formatos de tortilla');
+                    return;
+                }
+                const values: Record<string, string> = { entero: '7', medio: '14', pincho: '6' };
+                for (const row of data ?? []) values[row.code] = String(row.portions_per_batch);
+                setTortillaFormats(values);
+                setFormatsLoaded(true);
+            });
+        return () => { current = false; };
+    }, [open, initialName, recipeId, supabase]);
+
     const displayPhotoSrc = previewBlobUrl ?? baselinePhotoUrl ?? null;
 
     const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,6 +154,20 @@ export function RecipeNamePhotoEditModal({
             toast.error(yieldSave.message);
             return;
         }
+        if (isTortilla) {
+            if (!formatsLoaded) {
+                toast.error('Los formatos todavía no están disponibles');
+                return;
+            }
+            if (yieldSave.yield_quantity !== 1 || yieldSave.yield_unit !== 'ud') {
+                toast.error('Una tortilla completa debe tener un rendimiento de 1 ud');
+                return;
+            }
+            if (['entero', 'medio', 'pincho'].some(code => !/^[1-9]\d*$/.test(tortillaFormats[code] ?? '') || !Number.isSafeInteger(Number(tortillaFormats[code])))) {
+                toast.error('Indica cuántos formatos enteros salen de una tortilla');
+                return;
+            }
+        }
 
         setSaving(true);
         try {
@@ -159,6 +197,26 @@ export function RecipeNamePhotoEditModal({
                 return;
             }
 
+            if (isTortilla) {
+                const options = [
+                    { code: 'entero', label: 'Bocadillo entero' },
+                    { code: 'medio', label: 'Medio bocadillo' },
+                    { code: 'pincho', label: 'Pincho' },
+                ];
+                const { error: formatError } = await supabase.from('recipe_consumption_formats').upsert(
+                    options.map(({ code, label }) => ({
+                        recipe_id: recipeId,
+                        code,
+                        label,
+                        portions_per_batch: Number(tortillaFormats[code]),
+                    })),
+                    { onConflict: 'recipe_id,code' },
+                );
+                if (formatError) {
+                    toast.error('No se pudieron guardar los formatos: ' + formatError.message);
+                    return;
+                }
+            }
             toast.success('Receta actualizada');
             onSaved({
                 name: trimmed,
@@ -274,6 +332,32 @@ export function RecipeNamePhotoEditModal({
                         </select>
                     </div>
                 </Field>
+
+                {isTortilla ? (
+                    <div className="flex flex-col gap-2 border-t border-zinc-100 pt-3">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Formatos de consumo</span>
+                        <p className="text-[11px] text-zinc-500">Unidades que salen de una tortilla completa. Sólo se configuran aquí.</p>
+                        {([
+                            ['entero', 'Bocadillo entero'],
+                            ['medio', 'Medio bocadillo'],
+                            ['pincho', 'Pincho'],
+                        ] as const).map(([code, label]) => (
+                            <div key={code} className="grid grid-cols-[1fr_84px] items-center gap-3">
+                                <label htmlFor={'tortilla-format-' + code} className="text-sm font-semibold text-zinc-700">{label}</label>
+                                <input
+                                    id={'tortilla-format-' + code}
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    disabled={saving || !formatsLoaded}
+                                    value={tortillaFormats[code]}
+                                    onChange={(e) => setTortillaFormats((prev) => ({ ...prev, [code]: e.target.value }))}
+                                    className="text-center"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
 
                 {kindDraft === 'sellable' && onCategoryChange && categories.length > 0 ? (
                     <Field instance="recipe-edit-category" label="Categoría" htmlFor="recipe-edit-category">
