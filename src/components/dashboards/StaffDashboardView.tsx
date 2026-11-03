@@ -91,6 +91,7 @@ const CONTACTS_DATA = [
 const STAFF_INFO_MENU = [
     { title: 'Contactos', imageSrc: '/icons/contact.png', kind: 'contactos' as const },
     { title: 'Manuales', imageSrc: '/icons/guide.png', kind: 'manuales' as const },
+    { title: 'Web', imageSrc: '/icons/web.png', kind: 'web' as const },
 ];
 
 const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
@@ -1043,8 +1044,8 @@ export default function StaffDashboardView({
                     />
                 </HomeScreenSlot>
 
-                <HomeScreenSlot size="icon" instance="staff-albaranes">
-                    <DashboardShortcut instance="staff-albaranes" label="Albaranes" img="/icons/scan.png" onClick={() => router.push('/dashboard/albaranes')} />
+                <HomeScreenSlot size="icon" instance="staff-asistencia">
+                    <DashboardShortcut instance="staff-asistencia" label="Asistencia" img="/icons/calendar.png" onClick={() => router.push('/staff/history')} />
                 </HomeScreenSlot>
                 <HomeScreenSlot size="icon" instance="staff-recetas">
                     <DashboardShortcut instance="staff-recetas" label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes?view=staff')} />
@@ -1132,19 +1133,19 @@ export default function StaffDashboardView({
                         }}
                     />
                 </HomeScreenSlot>
-                <HomeScreenSlot size="icon" instance="staff-info">
-                    <DashboardShortcut instance="staff-info" label="Info" img="/icons/information.png" onClick={() => setActiveMenu('info')} />
-                </HomeScreenSlot>
-                <HomeScreenSlot size="icon" instance="staff-web">
+                <HomeScreenSlot size="icon" instance="staff-calendario">
                     <DashboardShortcut
-                        instance="staff-web"
-                        label="Web"
-                        img="/icons/web.png"
+                        instance="staff-calendario"
+                        label="Calendario"
+                        img="/icons/calendario-premium.webp"
                         onClick={() => {
-                            trackStaffShortcut('Web');
-                            window.open(STAFF_WEB_HREF, '_blank', 'noopener,noreferrer');
+                            trackStaffShortcut('Calendario');
+                            router.push('/horario');
                         }}
                     />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-info">
+                    <DashboardShortcut instance="staff-info" label="Info" img="/icons/information.png" onClick={() => setActiveMenu('info')} />
                 </HomeScreenSlot>
                 <HomeScreenSlot size="icon" instance="staff-perfil">
                     <DashboardShortcut
@@ -1275,6 +1276,12 @@ export default function StaffDashboardView({
                                         if (item.kind === 'contactos') {
                                             trackStaffInfoMenu(item.title);
                                             setInfoSubMenu('contactos');
+                                            return;
+                                        }
+                                        if (item.kind === 'web') {
+                                            trackStaffInfoMenu(item.title);
+                                            closeMenus();
+                                            window.open(STAFF_WEB_HREF, '_blank', 'noopener,noreferrer');
                                             return;
                                         }
                                         trackStaffInfoMenu(item.title);

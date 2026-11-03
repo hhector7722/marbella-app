@@ -34,7 +34,7 @@ export const ADMIN_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Pedidos', instance: 'staff-pedidos', action: 'pedidos', img: '/icons/shipment.png' },
     { label: 'Consumo', instance: 'consumo', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },
     { label: 'Cambio', instance: 'cambio', action: 'cambio', img: '/icons/change.png' },
-    { label: 'Horarios', instance: 'horarios', href: '/horario', img: '/icons/schedule.png' },
+    { label: 'Calendario', instance: 'horarios', href: '/horario', img: '/icons/calendario-premium.webp' },
     { label: 'Cierre', instance: 'staff-cierre', action: 'cierre', img: '/icons/lock.png' },
     { label: 'Reservas', instance: 'reservas', href: '/staff/reservas', img: '/icons/reservas.png' },
     { label: 'Propinas', instance: 'propinas', href: '/dashboard/propinas', img: '/icons/tip.png' },

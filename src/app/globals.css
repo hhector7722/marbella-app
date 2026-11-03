@@ -3396,16 +3396,16 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-recetas'] {
   grid-area: recetas;
 }
-[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-info'] {
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-calendario'] {
   grid-area: info;
 }
-[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-web'] {
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-info'] {
   grid-area: web;
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-perfil'] {
   display: none;
 }
-[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-albaranes'] {
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-asistencia'] {
   grid-area: albaranes;
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-cambio'] {
@@ -4246,10 +4246,10 @@ button[data-element='catalog-filter'] {
   top: -13.5%;
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='horarios'] [data-element='asset'] img {
-  width: 146%;
-  height: 146%;
-  left: -23%;
-  top: -23%;
+  width: 126%;
+  height: 126%;
+  left: -13%;
+  top: -13%;
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='reservas'] [data-element='asset'] img {
   width: 106%;

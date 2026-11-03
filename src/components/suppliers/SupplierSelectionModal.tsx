@@ -138,6 +138,19 @@ export function SupplierSelectionModal({
             usageId={applyId}
             usageLabel={usageLabel}
             scrollContent={false}
+            headerTrailing={!onSelect ? (
+                <button
+                    type="button"
+                    data-instance="supplier-picker-albaranes"
+                    onClick={() => {
+                        onClose();
+                        router.push('/dashboard/albaranes');
+                    }}
+                    className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-500 active:bg-emerald-700"
+                >
+                    Albaranes
+                </button>
+            ) : undefined}
         >
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2.5 sm:p-3">
                 <div className="mb-4 shrink-0">

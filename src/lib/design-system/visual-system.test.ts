@@ -457,7 +457,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
-            /\[data-instance='horarios'\] \[data-element='asset'\] img \{[\s\S]*?width:\s*146%/,
+            /\[data-instance='horarios'\] \[data-element='asset'\] img \{[\s\S]*?width:\s*126%/,
             'Horarios: mínimo para tocar el recorte'
         );
         assert.match(
@@ -971,7 +971,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(staff, /from-emerald-500/, 'Entrada tiene volumen en el verde');
         assert.match(staff, /from-rose-500/, 'Salida tiene volumen en el rosa');
         assert.match(staff, /formatStaffElapsedHms/, 'el turno cerrado enseña el tiempo real');
-        assert.match(staff, /instance="staff-albaranes"/);
+        assert.match(staff, /instance="staff-asistencia"/);
+        assert.match(staff, /instance="staff-calendario"/);
         assert.match(staff, /instance="staff-cambio"/);
         const timer = readFileSync(join(SRC_ROOT, 'components/ui/WorkTimer.tsx'), 'utf8');
         assert.doesNotMatch(timer, /No has fichado/);

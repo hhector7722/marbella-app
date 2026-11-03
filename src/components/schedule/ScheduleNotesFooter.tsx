@@ -424,16 +424,21 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                 </div>
             ) : null}
 
-            <div className="flex w-full items-center justify-center">
+            <div className="flex w-full flex-col items-center justify-center gap-1">
                 {!composing && (!myNote || maySaveGeneral) ? (
-                    <Button
-                        type="button"
-                        variant="tertiary"
-                        instance="schedule-note-toggle"
-                        onClick={startCompose}
-                    >
-                        Añadir nota
-                    </Button>
+                    <>
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="schedule-note-toggle"
+                            onClick={startCompose}
+                        >
+                            Añadir nota
+                        </Button>
+                        <p className="text-center text-[10px] leading-tight text-white/55">
+                            Solo tú y el administrador podéis ver esta nota.
+                        </p>
+                    </>
                 ) : null}
             </div>
 

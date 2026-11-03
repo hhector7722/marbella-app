@@ -473,7 +473,9 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(weekWidget, /data-fit="week"/);
         assert.match(weekWidget, /<WeekSummary/);
         assert.match(weekWidget, /useEmployeeHistoryWeek/);
-        assert.match(staff, /instance="staff-albaranes"/);
+        assert.match(staff, /instance="staff-asistencia"/);
+        assert.match(staff, /instance="staff-calendario"/);
+        assert.doesNotMatch(staff, /instance="staff-web"/);
         assert.match(staff, /instance="staff-cambio"/);
         assert.match(staff, /instance="staff-perfil"/);
         assert.match(staff, /label="Perfil"/);

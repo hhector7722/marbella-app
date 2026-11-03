@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Calendar, Clock, Home, Package, User, type LucideIcon } from 'lucide-react';
 import { trackUsageTabSwitch } from '@/lib/usage/client';
@@ -20,11 +21,12 @@ type StaffNavItem = {
   name: string;
   href: string;
   icon: LucideIcon;
+  iconSrc?: string;
   action?: NavAction;
 };
 
 const STAFF_NAV_ITEMS: StaffNavItem[] = [
-  { name: 'Horarios', href: '#horarios', icon: Calendar, action: 'scheduleModal' },
+  { name: 'Calendario', href: '#horarios', icon: Calendar, iconSrc: '/icons/calendario-premium.webp', action: 'scheduleModal' },
   { name: 'Asistencia', href: '/staff/history', icon: Clock },
   { name: 'Inicio', href: '/staff/dashboard', icon: Home, action: 'home' },
   { name: 'Pedidos', href: '/orders/new', icon: Package, action: 'supplierModal' },
@@ -175,7 +177,11 @@ export default function StaffBottomNav() {
               }}
             >
               <span data-element="icon" aria-hidden>
-                <Icon strokeWidth={active ? 2 : 1.75} fill="none" />
+                {item.iconSrc ? (
+                  <Image src={item.iconSrc} alt="" width={28} height={28} className="h-full w-full object-contain" />
+                ) : (
+                  <Icon strokeWidth={active ? 2 : 1.75} fill="none" />
+                )}
               </span>
               <span data-element="label">{item.name}</span>
             </Link>
