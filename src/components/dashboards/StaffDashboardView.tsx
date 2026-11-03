@@ -13,7 +13,6 @@ import {
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
-import { AlbaranesOptionsModal } from './AlbaranesOptionsModal';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
@@ -476,7 +475,6 @@ export default function StaffDashboardView({
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
     const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
-    const [isAlbaranesModalOpen, setIsAlbaranesModalOpen] = useState(false);
     const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
     const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
     const searchParams = useSearchParams();
@@ -1046,7 +1044,7 @@ export default function StaffDashboardView({
                 </HomeScreenSlot>
 
                 <HomeScreenSlot size="icon" instance="staff-albaranes">
-                    <DashboardShortcut instance="staff-albaranes" label="Albaranes" img="/icons/scan.png" onClick={() => setIsAlbaranesModalOpen(true)} />
+                    <DashboardShortcut instance="staff-albaranes" label="Albaranes" img="/icons/scan.png" onClick={() => router.push('/dashboard/albaranes')} />
                 </HomeScreenSlot>
                 <HomeScreenSlot size="icon" instance="staff-recetas">
                     <DashboardShortcut instance="staff-recetas" label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes?view=staff')} />
@@ -1533,10 +1531,6 @@ export default function StaffDashboardView({
                 onClose={() => setIsSupplierModalOpen(false)}
             />
 
-            <AlbaranesOptionsModal
-                isOpen={isAlbaranesModalOpen}
-                onClose={() => setIsAlbaranesModalOpen(false)}
-            />
 
             <AttendanceDetailModal
                 isOpen={isDayDetailModalOpen}

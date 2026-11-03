@@ -64,7 +64,6 @@ import type {
 } from './actions'
 import { appendScannerPageToInvoiceAction, replaceScannerImageAction, retryOcrInvoiceAction,
   reprocessMistralInvoiceAction } from '../scanner/actions'
-import { ScannerClient } from '../scanner/ScannerClient'
 import {
   PURCHASE_INVOICES_INITIAL_LIMIT,
   PURCHASE_INVOICES_PAGE_SIZE,
@@ -1421,25 +1420,13 @@ export default function AlbaranesHistoricoClient({
       template="list"
       work="table"
       toolbarSlot={
-      <ScannerClient
-        onSuccess={refresh}
-        autoStart={searchParams.get('scan') === '1'}
-        compactTrigger
-        renderTrigger={(trigger) => (
-          <div className="flex w-full shrink-0 items-stretch gap-2" data-element="albaranes-toolbar">
-            <div className="min-w-0 flex-1">
-              <SearchField
-                instance="albaranes-search"
-                placeholder="Buscar..."
-                value={query}
-                onChange={setQuery}
-                ariaLabel="Buscar albaranes"
-              />
-            </div>
-            {trigger}
-          </div>
-        )}
-      />
+        <SearchField
+          instance="albaranes-search"
+          placeholder="Buscar..."
+          value={query}
+          onChange={setQuery}
+          ariaLabel="Buscar albaranes"
+        />
       }
     >
     <div className="flex flex-col gap-2">

@@ -22,7 +22,6 @@ import { DesktopMoreShortcuts } from '@/components/dashboards/DesktopMoreShortcu
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import { InfoMenuModals } from '@/components/modals/InfoMenuModals';
-import { AlbaranesOptionsModal } from '@/components/dashboards/AlbaranesOptionsModal';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
@@ -189,7 +188,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [desktopOtherShortlist, setDesktopOtherShortlist] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-    const [isAlbaranesModalOpen, setIsAlbaranesModalOpen] = useState(false);
     const [attendanceExpanded, setAttendanceExpanded] = useState(false);
 
     const changeBoxes = useMemo(
@@ -595,7 +593,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                         setIsStaffModalOpen(true);
                         void ensureActivePlantillaEmployees();
                     }}
-                    onOpenAlbaranes={() => setIsAlbaranesModalOpen(true)}
+                    onOpenAlbaranes={() => router.push('/dashboard/albaranes')}
                     pendingReservationsCount={pendingReservationsCount}
                 />
                 <DesktopMoreShortcuts
@@ -749,10 +747,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 usagePrefix="master"
             />
 
-            <AlbaranesOptionsModal
-                isOpen={isAlbaranesModalOpen}
-                onClose={() => setIsAlbaranesModalOpen(false)}
-            />
 
             <Modal
                 open={isCajaInicialActionsOpen}

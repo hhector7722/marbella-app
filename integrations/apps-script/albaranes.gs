@@ -33,7 +33,8 @@ var CONFIG_ALBARANES = {
     'facturacion@panabad.com',
     'administracion@panabad.com',
     'compras@panabad.com',
-    'facturacion@zanderfoods.com'
+    'facturacion@zanderfoods.com',
+    'facturas@hielofenix.cat'
   ],
   // Los proveedores nuevos también entran cuando el asunto o fichero
   // describe claramente un documento de compra.

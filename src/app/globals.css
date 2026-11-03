@@ -806,37 +806,6 @@ html[data-quick-fab='open'] main {
 }
 
 /*
- * Albaranes options: el par se centra en el ancho del modal; no hereda el
- * flex-end del pie. Tipo del Button de sistema (12 px), no el 1.25 rem del fichaje.
- */
-[data-component='Modal'][data-instance='albaranes-options-modal'] [data-element='body']:empty {
-  display: none;
-  padding: 0;
-  min-height: 0;
-}
-[data-component='Modal'][data-instance='albaranes-options-modal'] [data-element='body']:empty ~ [data-element='footer'] {
-  border-top: none;
-}
-[data-component='Modal'][data-instance='albaranes-options-modal'] [data-element='footer'] {
-  border-top: none;
-  padding-top: var(--espacio-4);
-  padding-bottom: var(--espacio-4);
-  justify-content: center;
-}
-[data-component='Modal'][data-instance='albaranes-options-modal'] [data-element='footer'] > [data-element='footer-actions'] {
-  margin-inline: auto;
-}
-[data-component='Modal'][data-instance='albaranes-options-modal'] [data-component='Button'][data-layout='hug'] {
-  font-size: 12px;
-}
-[data-component='Modal'][data-instance='albaranes-options-modal'] [data-component='Button'][data-layout='hug']::before {
-  top: 0;
-  bottom: 0;
-  height: auto;
-  transform: none;
-}
-
-/*
  * Contrato Button. La especificidad del atributo impide que utilidades
  * Tailwind de altura, color, radio o tipo escapen del contrato.
  * Hit-area 48px transparente. El relleno visual abraza el texto/icono
@@ -2668,21 +2637,6 @@ html[data-quick-fab='open'] main {
   }
 }
 
-/*
- * Albaranes — «Escanear» a la misma altura que el buscador compacto (SearchField).
- */
-[data-element='albaranes-toolbar'] [data-component='Button'][data-instance='scanner-escanear'] {
-  height: var(--espacio-8);
-  min-height: var(--espacio-8);
-  max-height: var(--espacio-8);
-  font-size: 12px;
-}
-[data-element='albaranes-toolbar'] [data-component='Button'][data-instance='scanner-escanear']::before {
-  top: 0;
-  bottom: 0;
-  height: auto;
-  transform: none;
-}
 
 /*
  * CatalogFilter — CAT / PROV / FC. Flota sobre el fondo, sin mini-card.

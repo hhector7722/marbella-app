@@ -1022,37 +1022,28 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
     });
 
-    it('las opciones de Albaranes centran el par de botones en el modal', () => {
-        const modal = readFileSync(
-            join(SRC_ROOT, 'components/dashboards/AlbaranesOptionsModal.tsx'),
-            'utf8'
+    it('los accesos a Albaranes abren directamente el listado sin modal ni escáner', () => {
+        for (const name of ['AdminDashboardView', 'MasterDashboardView', 'StaffDashboardView']) {
+            const source = readFileSync(
+                join(SRC_ROOT, 'components/dashboards', name + '.tsx'), 'utf8'
+            );
+            assert.doesNotMatch(source, /AlbaranesOptionsModal|isAlbaranesModalOpen/);
+            assert.match(source, /router\.push\('\/dashboard\/albaranes'\)/,
+                name + ' abre directamente el listado');
+        }
+        const history = readFileSync(
+            join(SRC_ROOT, 'app/dashboard/albaranes/AlbaranesHistoricoClient.tsx'), 'utf8'
         );
-        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        assert.match(modal, /instance="albaranes-options-modal"/);
-        assert.match(modal, /instance="albaranes-options-list"/);
-        assert.match(modal, /instance="albaranes-options-scan"/);
-        assert.doesNotMatch(
-            modal,
-            /footer=\{\s*<div className="flex w-full/,
-            'el par no se estira a todo el pie'
+        assert.doesNotMatch(history, /<ScannerClient\b/);
+        assert.match(history, /instance="albaranes-search"/);
+        const hielo = readFileSync(
+            join(SRC_ROOT, 'app/dashboard/albaranes/hielo/page.tsx'), 'utf8'
         );
-        assert.match(
-            css,
-            /\[data-component='Modal'\]\[data-instance='albaranes-options-modal'\] \[data-element='footer'\] > \[data-element='footer-actions'\][\s\S]*?margin-inline:\s*auto/,
-            'el conjunto se centra como el fichaje staff'
+        assert.match(hielo, /redirect\('\/dashboard\/albaranes'\)/);
+        const script = readFileSync(
+            join(SRC_ROOT, '../integrations/apps-script/albaranes.gs'), 'utf8'
         );
-        assert.match(
-            css,
-            /\[data-component='Modal'\]\[data-instance='albaranes-options-modal'\] \[data-element='footer'\] \{[\s\S]*?justify-content:\s*center/,
-        );
-        assert.match(
-            css,
-            /\[data-component='Modal'\]\[data-instance='albaranes-options-modal'\] \[data-component='Button'\]\[data-layout='hug'\][\s\S]*?font-size:\s*12px/,
-            'Albaranes y Escanear usan el tipo del Button, no el 1.25 rem del fichaje'
-        );
-        assert.match(modal, /\/dashboard\/scanner\?start=1/, 'Escanear arranca el proceso, no deja un segundo botón');
-        const scannerPage = readFileSync(join(SRC_ROOT, 'app/dashboard/scanner/page.tsx'), 'utf8');
-        assert.match(scannerPage, /autoStart=\{start === '1'\}/);
+        assert.match(script, /'facturas@hielofenix\.cat'/);
     });
 
     it('el comunicado del aviso de la cámara abre un Modal de sistema, no una pestaña', () => {
