@@ -11,7 +11,7 @@ export type MovementExportRow = {
     balance: string;
 };
 
-const NAVY: [number, number, number] = [21, 52, 92]; // color.envolvente
+const NAVY: [number, number, number] = [43, 82, 124]; // azul marino suave, excepción local de cabecera impresa
 const WHITE: [number, number, number] = [255, 255, 255];
 const BORDER: [number, number, number] = [217, 226, 236]; // color.borde.impreso
 const TEXT: [number, number, number] = [24, 24, 27];
@@ -35,6 +35,7 @@ export async function downloadMovementsPdf(
     const logo = await loadBrandLogo();
     const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     const tableWidth = pageWidth - LEFT - RIGHT;
 
     const drawDocumentHeader = () => {
@@ -74,6 +75,7 @@ export async function downloadMovementsPdf(
             fontSize: 8,
             halign: 'center',
             minCellHeight: 28,
+            lineWidth: 0, // Cabecera continua, sin divisores entre columnas.
         },
         columnStyles: {
             0: { cellWidth: 87, halign: 'center' },
@@ -82,6 +84,11 @@ export async function downloadMovementsPdf(
             3: { cellWidth: 83, halign: 'right' },
         },
         didDrawCell: (data) => {
+            if (data.section === 'head' && data.column.index > 0) {
+                // Cubrir las uniones de celdas con el MISMO azul; sin separadores visibles.
+                doc.setFillColor(...NAVY);
+                doc.rect(data.cell.x - 0.4, data.cell.y + 0.2, 0.8, data.cell.height - 0.4, 'F');
+            }
             if (data.section === 'head' && (data.column.index === 0 || data.column.index === 3)) {
                 // Redondear solo las esquinas superiores sobre la cabecera azul.
                 // El fondo de cada celda lo pinta autoTable para evitar el bloque negro.
@@ -102,8 +109,15 @@ export async function downloadMovementsPdf(
                 doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
             }
         },
-        didDrawPage: () => {
+        didDrawPage: (data) => {
             drawDocumentHeader();
+            // Contorno de toda la tabla visible en cada página, sin marcos externos.
+            const bottom = Math.min(data.cursor?.y ?? TABLE_Y, pageHeight - 42);
+            if (bottom > TABLE_Y) {
+                doc.setDrawColor(...BORDER);
+                doc.setLineWidth(0.6);
+                doc.roundedRect(LEFT, TABLE_Y, tableWidth, bottom - TABLE_Y, 9, 9, 'S');
+            }
         },
     });
 
