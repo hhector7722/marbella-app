@@ -120,6 +120,12 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   }, []);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileContextRef = useRef('');
+  // URL temporal local: no se envía el binario de la miniatura al chat.
+  const imagePreviewUrlsRef = useRef<string[]>([]);
+  useEffect(() => () => {
+    for (const url of imagePreviewUrlsRef.current) URL.revokeObjectURL(url);
+    imagePreviewUrlsRef.current = [];
+  }, []);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [micStarting, setMicStarting] = useState(false);
   const micStartingRef = useRef(false);
@@ -251,6 +257,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     if ((!value && !selectedFile) || busy) return;
     let context = fileContextRef.current;
     let fileLabel = '';
+    let imagePreviewFile: File | null = null;
     if (selectedFile) {
       setUploadingFile(true);
       const toastId = toast.loading(`Analizando ${selectedFile.name}…`);
@@ -264,6 +271,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           // Las fotos del iPhone suelen pesar >4,5MB. Convertir/limitar a JPG.
           const upload=selectedFile.type.startsWith('image/')
             ? await prepareChatImage(selectedFile) : selectedFile;
+          if(upload.type.startsWith('image/')) imagePreviewFile=upload;
           const fd=new FormData();
           fd.append('file',upload);
           const response=await fetch('/api/copiloto/attachments',{
@@ -275,7 +283,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
         if(!data.content)throw new Error(data.error||'No se pudo interpretar el adjunto.');
         context = `Archivo temporal adjunto: ${data.name} (${data.kind}${data.pages?`, ${data.pages} páginas`:''}).\n${data.content}`;
         fileContextRef.current=context;
-        fileLabel=`📎 ${data.name}${data.truncated?' (texto abreviado)':''}`;
+        if(data.kind!=='image') fileLabel=`📎 ${data.name}${data.truncated?' (texto abreviado)':''}`;
         changeSelectedFile(null);
         toast.success('Archivo analizado y añadido a la consulta.',{id:toastId});
       } catch (cause) {
@@ -287,7 +295,12 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     }
     const visibleText=[value || (selectedFile?'Analiza el archivo adjunto.':''),fileLabel].filter(Boolean).join('\n');
     if(!visibleText)return;
-    void sendMessage({text:visibleText}, {body:{sessionId:getActiveSessionId(),attachmentContext:context}});
+    const previewUrl=imagePreviewFile ? URL.createObjectURL(imagePreviewFile) : null;
+    if(previewUrl) imagePreviewUrlsRef.current.push(previewUrl);
+    void sendMessage({
+      text:visibleText,
+      ...(previewUrl ? {metadata:{imagePreviewUrl:previewUrl}} : {}),
+    }, {body:{sessionId:getActiveSessionId(),attachmentContext:context}});
     setInput('');
   };
 
@@ -325,6 +338,17 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
                 : 'mr-auto rounded-tl-sm border-white/15 bg-[#192b52] text-slate-100'
             )}
           >
+            {m.role === 'user' && typeof (m.metadata as {imagePreviewUrl?:unknown}|undefined)?.imagePreviewUrl === 'string'
+              && (m.metadata as {imagePreviewUrl:string}).imagePreviewUrl.startsWith('blob:') && (
+                <Image
+                  unoptimized
+                  src={(m.metadata as {imagePreviewUrl:string}).imagePreviewUrl}
+                  alt="Imagen adjunta"
+                  width={112}
+                  height={112}
+                  className="mb-2 h-28 w-28 rounded-lg object-cover"
+                />
+              )}
             <div className="whitespace-pre-wrap break-words">{
               m.role === 'assistant'
                 ? messageCombinedText(m.parts).replace(/\*\*(.*?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1')

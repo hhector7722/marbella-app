@@ -133,7 +133,9 @@ export async function completeFreeChat(
         reasoning_effort: 'low',
         max_completion_tokens: 1400,
       } : {
-        max_tokens: 1400,
+        // Los modelos gratis Qwen pueden gastar parte del límite en razonamiento;
+        // 1400 provocaba respuestas truncadas que el validador descarta.
+        max_tokens: 2800,
       }),
       temperature: 0.2,
       ...(provider.name === 'openrouter' ? {
@@ -161,17 +163,30 @@ export async function completeFreeChat(
       });
       if (!response.ok) {
         if (response.status === 429) quotaBlocked = true;
-        // No imprimir response.text(): podría contener credenciales o datos de negocio.
+        // Solo proveedor y estado HTTP. Nunca registrar el cuerpo de respuesta.
+        console.warn('[copiloto-provider]', provider.name, 'http', response.status);
         continue;
       }
       const payload: unknown = await response.json();
       const parsed = parseCompletion(payload, tools, required);
       // Algunos endpoints gratis ignoran tool_choice. No aceptamos una
       // respuesta plana como éxito cuando el servidor exigió una herramienta.
-      if (!parsed) continue;
+      if (!parsed) {
+        // El motivo se limita a códigos fijos; nada de contenido ni argumentos.
+        const choice = (payload as { choices?: Array<{ finish_reason?: unknown }> })?.choices?.[0];
+        const finish = choice?.finish_reason;
+        const reason = finish === 'length' ? 'truncated'
+          : finish === 'content_filter' ? 'filtered'
+          : required ? 'missing_or_invalid_tool_call' : 'empty_or_invalid_completion';
+        console.warn('[copiloto-provider]', provider.name, reason);
+        continue;
+      }
       return { ...parsed, provider: provider.name };
-    } catch {
-      // Fallos de red, timeout o JSON inválido; intentar solo el siguiente proveedor.
+    } catch (error) {
+      // Fallos de red, timeout o JSON inválido; no imprimir el error/cuerpo.
+      console.warn('[copiloto-provider]', provider.name,
+        error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')
+          ? 'timeout' : 'transport_or_json_error');
       continue;
     }
   }
