@@ -56,7 +56,7 @@ describe('exportaciones Excel / PDF / impresión', () => {
         assert.match(print, /Período:/);
         assert.match(print, /font-size: 14px; font-weight: 400/);
         assert.match(print, /border-radius: 12px/);
-        assert.match(print, /background: #15345C/);
+        assert.match(print, /background: #2B527C/);
         assert.match(print, /tbody tr:nth-child\(even\) td\s*\{\s*background: white/);
     });
 

@@ -20,14 +20,17 @@ describe('exportación y filtro de Tesorería', () => {
         assert.match(page, /downloadMovementsPdf\(rows, period.label/);
     });
 
-    it('el PDF es nativo y no contiene marco exterior, bloque negro ni pie', () => {
+    it('el PDF es nativo, con borde de tabla, cabecera continua y sin pie', () => {
         assert.match(pdf, /fillColor: NAVY/);
         assert.doesNotMatch(pdf, /fillColor: false/);
-        assert.doesNotMatch(pdf, /roundedRect\(LEFT, TABLE_Y, tableWidth/);
+        assert.match(pdf, /roundedRect\(LEFT, TABLE_Y, tableWidth/);
+        assert.match(pdf, /lineWidth: 0, \/\/ Cabecera continua/);
+        assert.match(pdf, /const NAVY:.*\[43, 82, 124\]/);
         assert.doesNotMatch(pdf, /\.line\(LEFT, 111,/);
         assert.doesNotMatch(pdf, /pageNumber|pageCount|footer|printHtml/);
         assert.match(page, /@page \{ size: A4 portrait; margin: 0; \}/);
-        assert.match(page, /border: none; border-radius: 12px/);
+        assert.match(page, /border: 1px solid #D9E2EC; border-radius: 12px/);
+        assert.match(page, /border: 0 !important; outline: 0 !important; box-shadow: none !important/);
         assert.match(page, /#marbella-print-container \{ padding: 16mm 14mm !important; \}/);
     });
 

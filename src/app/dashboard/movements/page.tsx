@@ -769,11 +769,12 @@ export default function MovementsPage() {
                     }
                     .movements-print-table {
                         border-collapse: separate; border-spacing: 0;
-                        border: none; border-radius: 12px;
+                        border: 1px solid #D9E2EC; border-radius: 12px;
                         width: 100%; background: white;
                     }
                     .movements-print-table thead th {
-                        background: #15345C; color: white; text-align: center;
+                        background: #2B527C; color: white; text-align: center;
+                        border: 0 !important; outline: 0 !important; box-shadow: none !important;
                         -webkit-print-color-adjust: exact; print-color-adjust: exact;
                     }
                     .movements-print-table thead th:first-child { border-top-left-radius: 11px; }
