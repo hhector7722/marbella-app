@@ -8,10 +8,11 @@ export function sheetCostSource(input: {
   isSellable: boolean
   hasSubrecipes: boolean
   portion: 'full' | 'half'
+  supportsHalfSubrecipes?: boolean
 }): SheetCostSource {
   if (!input.isSellable) return 'recursive'
   if (!input.hasSubrecipes) return 'legacy'
-  if (input.portion === 'half') return 'unavailable'
+  if (input.portion === 'half' && !input.supportsHalfSubrecipes) return 'unavailable'
   return 'recursive'
 }
 

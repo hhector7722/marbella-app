@@ -111,3 +111,10 @@ test('23514 de ciclo y 23505 de duplicado tienen texto propio', () => {
   )
   assert.match(subrecipeWriteErrorMessage({ code: '42501', message: 'permission denied' }, 'save'), /permission denied/)
 })
+
+
+test('soporte de media ración con formato únicamente cuando la subreceta lo declara', () => {
+  assert.equal(sheetCostSource({ isSellable: true, hasSubrecipes: true, portion: 'half' }), 'unavailable')
+  assert.equal(sheetCostSource({ isSellable: true, hasSubrecipes: true, portion: 'half', supportsHalfSubrecipes: true }), 'recursive')
+  assert.equal(sheetCostSource({ isSellable: true, hasSubrecipes: true, portion: 'full' }), 'recursive')
+})
