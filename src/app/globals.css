@@ -11121,3 +11121,33 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   width: 100%;
   min-width: 0;
 }
+
+/* Asistencia móvil: el resumen semanal ocupa una sola línea, incluso con controles de manager. */
+@media (max-width: 1023px) {
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer] {
+    box-sizing: border-box;
+    flex: 0 0 24px;
+    height: 24px;
+    min-height: 24px;
+    max-height: 24px;
+    padding-block: 0;
+    align-items: center;
+  }
+
+  /* El sello conserva su propia columna, sin aumentar la altura del resumen. */
+  [data-component='PageScreen'].history-wide [data-week-summary] [data-week-footer] [data-week-paid] {
+    display: flex;
+    height: 100%;
+    max-height: 24px;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] [data-week-footer] [data-week-paid] img {
+    display: block;
+    width: 32px;
+    height: 18px;
+    max-height: 18px;
+    object-fit: contain;
+  }
+}
