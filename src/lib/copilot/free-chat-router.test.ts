@@ -23,7 +23,7 @@ test('no invoca un proveedor sin clave', async () => {
     keys: { openrouter: 'test' }, fetcher: (async (url: RequestInfo | URL, init?: RequestInit) => {
       calls++;
       assert.equal(String(url), 'https://openrouter.ai/api/v1/chat/completions');
-      assert.equal(JSON.parse(String(init?.body)).model, 'nvidia/nemotron-3.5-lightning:free');
+      assert.equal(JSON.parse(String(init?.body)).model, 'xingchen-agi/xing4.0-29b-a4b:free');
       return reply('OK');
     }) as typeof fetch,
   });
@@ -125,19 +125,43 @@ test('un error de red recurre al siguiente proveedor y no filtra datos', async (
 });
 
 
-test('el copiloto nunca envia datos a NVIDIA gratuito aunque exista clave', async () => {
+test('el copiloto mantiene OpenRouter con un modelo gratuito permitido y filtros ZDR obligatorios', async () => {
   const safeKeys = operationalFreeProviderKeys({ groq: 'g', xkiro: 'x', openrouter: 'r' });
-  assert.deepEqual(configuredFreeProviders(safeKeys), ['groq', 'xkiro']);
-  let calledOpenRouter = false;
-  const result = await completeFreeChat(messages, [], {
-    keys: safeKeys,
-    fetcher: (async (url: RequestInfo | URL) => {
-      if (String(url).includes('openrouter.ai')) calledOpenRouter = true;
-      return String(url).includes('groq.com')
-        ? new Response('{}', { status: 429 })
-        : reply('Respuesta del respaldo permitido');
+  assert.deepEqual(configuredFreeProviders(safeKeys), ['groq', 'xkiro', 'openrouter']);
+  const seen: string[] = [];
+  const result = await completeFreeChat(messages, [tool], {
+    keys: safeKeys, toolChoice: 'required',
+    fetcher: (async (url: RequestInfo | URL, init?: RequestInit) => {
+      const host = new URL(String(url)).hostname;
+      seen.push(host);
+      if (host !== 'openrouter.ai') return new Response('{}', { status: 429 });
+      const body = JSON.parse(String(init?.body));
+      assert.equal(body.model, 'xingchen-agi/xing4.0-29b-a4b:free');
+      assert.equal(body.tool_choice, 'required');
+      assert.deepEqual(body.provider, {
+        zdr: true, data_collection: 'deny', allow_fallbacks: false,
+        require_parameters: true, only: ['phala'],
+      });
+      assert.ok(!JSON.stringify(body).includes('nvidia/nemotron'));
+      assert.ok(!JSON.stringify(body).includes('openrouter/free'));
+      return toolReply();
     }) as typeof fetch,
   });
-  assert.equal(result.provider, 'xkiro');
-  assert.equal(calledOpenRouter, false);
+  assert.equal(result.provider, 'openrouter');
+  assert.deepEqual(seen, ['api.groq.com', 'api.xkiro.com', 'openrouter.ai']);
+});
+
+test('si el endpoint no acepta ZDR, nunca relaja la privacidad para conseguir una respuesta', async () => {
+  let seenBody: Record<string, unknown> | undefined;
+  await assert.rejects(completeFreeChat(messages, [tool], {
+    keys: operationalFreeProviderKeys({ openrouter: 'r' }), toolChoice: 'required',
+    fetcher: (async (_url: RequestInfo | URL, init?: RequestInit) => {
+      seenBody = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify({ error: { message: 'ZDR not available' } }), { status: 400 });
+    }) as typeof fetch,
+  }), (err: unknown) => err instanceof FreeChatError && err.code === 'providers_exhausted');
+  assert.deepEqual(seenBody?.provider, {
+    zdr: true, data_collection: 'deny', allow_fallbacks: false,
+    require_parameters: true, only: ['phala'],
+  });
 });
