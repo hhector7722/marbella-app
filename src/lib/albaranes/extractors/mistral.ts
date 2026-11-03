@@ -31,6 +31,7 @@ export async function extractWithMistral(params: {
   mimeType: string
   apiKey: string
   signal?: AbortSignal
+  pages?: number[]
 }): Promise<DocumentExtraction> {
   const { bytes, mimeType, apiKey } = params
   if (!apiKey) throw new Error('MISTRAL_API_KEY no configurada')
@@ -57,6 +58,7 @@ export async function extractWithMistral(params: {
     body: JSON.stringify({
       model: MISTRAL_OCR_MODEL,
       document,
+      ...(params.pages ? { pages: params.pages } : {}),
       table_format: 'markdown',
       include_blocks: true,
       confidence_scores_granularity: 'block',

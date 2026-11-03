@@ -2,8 +2,9 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { canonicalDocumentSchema, type CanonicalDocument } from '@/lib/albaranes/extractors/canonical'
-import { extractWithMistral, fileSha256, MISTRAL_EXTRACTOR_VERSION,
+import { fileSha256, MISTRAL_EXTRACTOR_VERSION,
   MISTRAL_OCR_MODEL } from '@/lib/albaranes/extractors/mistral'
+import { extractWithMistralPageBounded } from '@/lib/albaranes/extractors/mistral-pages'
 import { proposeMistralExtraction } from '@/lib/albaranes/pipeline/propose'
 import { documentedInvoiceDate, financialEvidence } from '@/lib/albaranes/email-financial'
 import { documentStockFullyRegistered } from '@/lib/albaranes/k5/fully-processed'
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
         metrics.shadow_reused = true
         metrics.usage_info = (shadow.metrics as Record<string, unknown>)?.usage_info ?? null
       } else {
-        const extracted = await extractWithMistral({ bytes, mimeType, apiKey: mistralKey,
+        const extracted = await extractWithMistralPageBounded({ bytes, mimeType, apiKey: mistralKey,
           signal: AbortSignal.timeout(90_000) })
         canonical = extracted.canonical
         response = extracted.rawResponse
