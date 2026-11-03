@@ -31,7 +31,7 @@ type ProviderConfig = {
 const FREE_PROVIDERS: readonly ProviderConfig[] = [
   { name: 'groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'openai/gpt-oss-120b' },
   { name: 'xkiro', endpoint: 'https://api.xkiro.com/v1/chat/completions', model: 'qwen/qwen3.8-max:free' },
-  { name: 'openrouter', endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'nvidia/nemotron-3.5-lightning:free' },
+  { name: 'openrouter', endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'xingchen-agi/xing4.0-29b-a4b:free' },
 ];
 
 export class FreeChatError extends Error {
@@ -46,13 +46,13 @@ export class FreeChatError extends Error {
 }
 
 /**
- * El copiloto puede manejar datos de personal y del negocio.
- * Nemotron gratuito de NVIDIA prohíbe enviar información confidencial o
- * personal: nunca se le facilita su clave desde la ruta operativa.
- * Se mantiene el soporte OpenRouter en el router para usos futuros seguros.
+ * Solo modelos gratuitos revisados de la lista FREE_PROVIDERS.
+ * OpenRouter se limita a Xing4.0 mediante Phala: ZDR y sin recolección.
+ * No se usan Nemotron, Liquid u otros modelos que admiten datos de entrenamiento,
+ * ni el router aleatorio openrouter/free.
  */
 export function operationalFreeProviderKeys(keys: FreeProviderKeys): FreeProviderKeys {
-  return { groq: keys.groq, xkiro: keys.xkiro };
+  return { groq: keys.groq, xkiro: keys.xkiro, openrouter: keys.openrouter };
 }
 
 export function configuredFreeProviders(keys: FreeProviderKeys): FreeProvider[] {
@@ -136,6 +136,16 @@ export async function completeFreeChat(
         max_tokens: 1400,
       }),
       temperature: 0.2,
+      ...(provider.name === 'openrouter' ? {
+        // Fail closed: sin endpoint con ZDR, no se envía la solicitud a otro.
+        provider: {
+          zdr: true,
+          data_collection: 'deny',
+          allow_fallbacks: false,
+          require_parameters: true,
+          only: ['phala'],
+        },
+      } : {}),
     };
     try {
       const response = await fetcher(provider.endpoint, {

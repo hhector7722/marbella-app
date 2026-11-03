@@ -126,8 +126,8 @@ export async function POST(req: Request) {
   const freeKeys: FreeProviderKeys = operationalFreeProviderKeys({
     groq: process.env.GROQ_API_KEY,
     xkiro: process.env.XKIRO_API_KEY,
-    // OpenRouter está configurado, pero el endpoint gratis de NVIDIA no
-    // admite datos personales/confidenciales. El copiloto nunca lo usa.
+    // OpenRouter: únicamente Xing4.0 gratis por endpoint Phala ZDR.
+    // El router bloquea el resto y prohíbe recolección de datos.
     openrouter: process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER,
   });
   if (configuredFreeProviders(freeKeys).length === 0) {
