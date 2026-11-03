@@ -165,7 +165,7 @@ export default function MovementsPage() {
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
     const [shareMenuOpen, setShareMenuOpen] = useState(false);
-    const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
+    const [shareBusy, setShareBusy] = useState<null | 'excel' | 'pdf' | 'print'>(null);
 
     // Datos
     const [movements, setMovements] = useState<Movement[]>([]);
@@ -638,6 +638,55 @@ export default function MovementsPage() {
         }
     };
 
+    const getExportPeriod = () => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const start = filterMode === 'single' ? selectedDate : (rangeStart && rangeEnd ? rangeStart : today);
+        const end = filterMode === 'single' ? selectedDate : (rangeStart && rangeEnd ? rangeEnd : today);
+        const labelStart = format(parseLocalSafe(start), 'dd/MM/yyyy');
+        const labelEnd = format(parseLocalSafe(end), 'dd/MM/yyyy');
+        return {
+            start,
+            end,
+            label: start === end ? labelStart : `Del ${labelStart} al ${labelEnd}`,
+        };
+    };
+
+    const exportFilteredTableToPdf = async () => {
+        if (shareBusy) return;
+        setShareBusy('pdf');
+        try {
+            const all = await fetchAllFilteredMovementsForExport();
+            if (all.length === 0) {
+                toast.error('No hay movimientos para exportar con el filtro actual.');
+                return;
+            }
+
+            const rows = all.map((mov) => {
+                const date = new Date(mov.created_at);
+                return {
+                    date: isNaN(date.getTime()) ? '' : format(date, 'dd/MM/yyyy'),
+                    concept: conceptOf(mov),
+                    amount: mov.type === 'income'
+                        ? `+${mov.amount.toFixed(2)}€`
+                        : mov.type === 'expense'
+                            ? `-${mov.amount.toFixed(2)}€`
+                            : `${mov.amount >= 0 ? '+' : ''}${mov.amount.toFixed(2)}€`,
+                    balance: `${(mov.running_balance ?? 0).toFixed(2)}€`,
+                };
+            });
+            const period = getExportPeriod();
+            const { downloadMovementsPdf } = await import('@/lib/export/movements-pdf');
+            await downloadMovementsPdf(rows, period.label, `movimientos_${period.start}_${period.end}.pdf`);
+            toast.success('PDF descargado.');
+        } catch (error) {
+            console.error(error);
+            toast.error('Error exportando a PDF.');
+        } finally {
+            setShareBusy(null);
+            setShareMenuOpen(false);
+        }
+    };
+
     const printFilteredTable = async () => {
         if (shareBusy) return;
         setShareBusy('print');
@@ -652,14 +701,7 @@ export default function MovementsPage() {
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
             }[char] ?? char));
 
-            const today = format(new Date(), 'yyyy-MM-dd');
-            const periodStart = filterMode === 'single' ? selectedDate : (rangeStart && rangeEnd ? rangeStart : today);
-            const periodEnd = filterMode === 'single' ? selectedDate : (rangeStart && rangeEnd ? rangeEnd : today);
-            const startLabel = format(parseLocalSafe(periodStart), 'dd/MM/yyyy');
-            const endLabel = format(parseLocalSafe(periodEnd), 'dd/MM/yyyy');
-            const periodLabel = periodStart === periodEnd
-                ? startLabel
-                : `Del ${startLabel} al ${endLabel}`;
+            const periodLabel = getExportPeriod().label;
 
             const rowsHtml = all.map((mov) => {
                 const d = new Date(mov.created_at);
@@ -709,11 +751,11 @@ export default function MovementsPage() {
 
             printHtml(html, {
                 extraCss: `
-                    @page { size: A4 portrait; margin: 16mm 14mm; }
+                    @page { size: A4 portrait; margin: 0; }
+                    #marbella-print-container { padding: 16mm 14mm !important; }
                     .movements-print-heading {
                         display: flex; align-items: center; gap: 16px;
                         margin-bottom: 24px; padding-bottom: 16px;
-                        border-bottom: 1px solid #D9E2EC;
                     }
                     .movements-print-heading img {
                         width: 88px; height: 90px; object-fit: contain; flex-shrink: 0;
@@ -727,7 +769,7 @@ export default function MovementsPage() {
                     }
                     .movements-print-table {
                         border-collapse: separate; border-spacing: 0;
-                        border: 1px solid #D9E2EC; border-radius: 12px;
+                        border: none; border-radius: 12px;
                         width: 100%; background: white;
                     }
                     .movements-print-table thead th {
@@ -1149,13 +1191,12 @@ export default function MovementsPage() {
                     title="Exportar"
                     variant="compact"
                 >
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col items-center gap-1">
                         <Button
                             type="button"
                             variant="secondary"
                             instance="movements-export-excel"
                             onClick={() => void exportFilteredTableToExcel()}
-                            layout="fill"
                             disabled={!!shareBusy}
                         >
                             Exportar Excel
@@ -1163,12 +1204,20 @@ export default function MovementsPage() {
                         <Button
                             type="button"
                             variant="primary"
-                            instance="movements-export-print"
-                            onClick={() => void printFilteredTable()}
-                            layout="fill"
+                            instance="movements-export-pdf"
+                            onClick={() => void exportFilteredTableToPdf()}
                             disabled={!!shareBusy}
                         >
-                            Imprimir / PDF
+                            Exportar PDF
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="movements-export-print"
+                            onClick={() => void printFilteredTable()}
+                            disabled={!!shareBusy}
+                        >
+                            Imprimir
                         </Button>
                     </div>
                 </Modal>

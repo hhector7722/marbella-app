@@ -30,10 +30,12 @@ export function monthCellDarkClassName(selected: boolean): string {
 }
 
 /** Pestaña activa del TimeFilterModal. */
-export function periodFilterTabClassName(selected: boolean): string {
+export function periodFilterTabClassName(selected: boolean, dark = false): string {
     return cn(
         'min-h-9 min-w-0 flex-1 px-1 text-[10px] font-medium transition-colors',
-        selected ? PERIOD_PICKER_ACCENT_BG : 'bg-transparent text-ds-texto hover:bg-[var(--color-superficie-inactiva)]'
+        dark
+            ? selected ? 'bg-[var(--color-envolvente-alto)] text-white' : 'bg-transparent text-white/65 hover:bg-white/10'
+            : selected ? PERIOD_PICKER_ACCENT_BG : 'bg-transparent text-ds-texto hover:bg-[var(--color-superficie-inactiva)]'
     );
 }
 
@@ -51,11 +53,13 @@ export function MonthPickerGrid({
     onYearChange,
     isSelected,
     onSelectMonth,
+    dark = false,
 }: {
     year: number;
     onYearChange: (year: number) => void;
     isSelected: (monthIndex: number) => boolean;
     onSelectMonth: (monthIndex: number) => void;
+    dark?: boolean;
 }) {
     return (
         <div className="space-y-3">
@@ -63,19 +67,19 @@ export function MonthPickerGrid({
                 <button
                     type="button"
                     onClick={() => onYearChange(year - 1)}
-                    className="flex min-h-12 min-w-12 items-center justify-center rounded-lg p-2 transition-colors hover:bg-zinc-50"
+                    className={cn('flex min-h-12 min-w-12 items-center justify-center rounded-lg p-2 transition-colors', dark ? 'hover:bg-white/10' : 'hover:bg-zinc-50')}
                     aria-label="Año anterior"
                 >
-                    <ChevronLeft size={20} className="text-zinc-400" />
+                    <ChevronLeft size={20} className={dark ? 'text-white/75' : 'text-zinc-400'} />
                 </button>
-                <div className={cn('text-xl font-black tracking-tighter', PERIOD_PICKER_ACCENT_TEXT)}>{year}</div>
+                <div className={cn('text-xl tracking-tighter', dark ? 'font-semibold text-white' : 'font-black', dark ? '' : PERIOD_PICKER_ACCENT_TEXT)}>{year}</div>
                 <button
                     type="button"
                     onClick={() => onYearChange(year + 1)}
-                    className="flex min-h-12 min-w-12 items-center justify-center rounded-lg p-2 transition-colors hover:bg-zinc-50"
+                    className={cn('flex min-h-12 min-w-12 items-center justify-center rounded-lg p-2 transition-colors', dark ? 'hover:bg-white/10' : 'hover:bg-zinc-50')}
                     aria-label="Año siguiente"
                 >
-                    <ChevronRight size={20} className="text-zinc-400" />
+                    <ChevronRight size={20} className={dark ? 'text-white/75' : 'text-zinc-400'} />
                 </button>
             </div>
 
@@ -87,7 +91,7 @@ export function MonthPickerGrid({
                             key={i}
                             type="button"
                             onClick={() => onSelectMonth(i)}
-                            className={monthCellClassName(isSelected(i))}
+                            className={dark ? cn(monthCellDarkClassName(isSelected(i)), 'min-h-12 text-[11px]') : monthCellClassName(isSelected(i))}
                         >
                             {format(date, 'MMM', { locale: es })}
                         </button>

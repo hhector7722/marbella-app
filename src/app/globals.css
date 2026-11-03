@@ -299,6 +299,28 @@
     0 1px 2px rgb(0 0 0 / 0.35);
 }
 
+/* Tesorería: exportaciones con ancho ajustado al texto y volumen premium
+   de Calculadora rápida, conservando el objetivo táctil de 48 px. */
+[data-component='Modal'][data-instance='movements-share-menu']
+[data-component='Button'][data-instance^='movements-export-']::before {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    0 0 0 1px rgb(24 24 27 / 0.35),
+    0 1px 2px rgb(0 0 0 / 0.35);
+}
+
+/* Filtro temporal: excepción local azul oscuro de navegación «Hoy». */
+[data-component='Modal'][data-instance='time-filter']
+[data-component='Button'][data-instance='time-filter-jump-today'] {
+  color: var(--color-texto-invertido);
+}
+[data-component='Modal'][data-instance='time-filter']
+[data-component='Button'][data-instance='time-filter-jump-today']::before {
+  background: var(--color-envolvente-alto);
+  border-color: rgb(255 255 255 / 0.25);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 3px rgb(0 0 0 / 0.25);
+}
+
 /* Compra: el botón Añadir caja mantiene el sistema Button con relleno blanco explícito. */
 [data-element='purchase-box-action'] [data-component='Button'][data-instance='purchase-add-box']::before {
   background-color: #ffffff;
