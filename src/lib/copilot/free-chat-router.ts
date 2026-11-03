@@ -45,6 +45,16 @@ export class FreeChatError extends Error {
   }
 }
 
+/**
+ * El copiloto puede manejar datos de personal y del negocio.
+ * Nemotron gratuito de NVIDIA prohíbe enviar información confidencial o
+ * personal: nunca se le facilita su clave desde la ruta operativa.
+ * Se mantiene el soporte OpenRouter en el router para usos futuros seguros.
+ */
+export function operationalFreeProviderKeys(keys: FreeProviderKeys): FreeProviderKeys {
+  return { groq: keys.groq, xkiro: keys.xkiro };
+}
+
 export function configuredFreeProviders(keys: FreeProviderKeys): FreeProvider[] {
   return FREE_PROVIDERS.filter(({ name }) => Boolean(keys[name]?.trim())).map(({ name }) => name);
 }

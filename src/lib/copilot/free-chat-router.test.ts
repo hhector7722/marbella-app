@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { completeFreeChat, configuredFreeProviders, FreeChatError } from './free-chat-router.ts';
+import { completeFreeChat, configuredFreeProviders, operationalFreeProviderKeys, FreeChatError } from './free-chat-router.ts';
 import type { GroqTool } from './groq-chat.ts';
 
 const tool: GroqTool = {
@@ -122,4 +122,22 @@ test('un error de red recurre al siguiente proveedor y no filtra datos', async (
   });
   assert.equal(result.provider, 'openrouter');
   assert.equal(attempts, 2);
+});
+
+
+test('el copiloto nunca envia datos a NVIDIA gratuito aunque exista clave', async () => {
+  const safeKeys = operationalFreeProviderKeys({ groq: 'g', xkiro: 'x', openrouter: 'r' });
+  assert.deepEqual(configuredFreeProviders(safeKeys), ['groq', 'xkiro']);
+  let calledOpenRouter = false;
+  const result = await completeFreeChat(messages, [], {
+    keys: safeKeys,
+    fetcher: (async (url: RequestInfo | URL) => {
+      if (String(url).includes('openrouter.ai')) calledOpenRouter = true;
+      return String(url).includes('groq.com')
+        ? new Response('{}', { status: 429 })
+        : reply('Respuesta del respaldo permitido');
+    }) as typeof fetch,
+  });
+  assert.equal(result.provider, 'xkiro');
+  assert.equal(calledOpenRouter, false);
 });

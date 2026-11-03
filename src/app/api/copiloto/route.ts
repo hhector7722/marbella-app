@@ -12,7 +12,7 @@ import {
   type CopilotSupabaseClient,
 } from "@/lib/copilot/tool-runtime";
 import { selectGroqTools, type GroqChatMessage, type GroqTool } from "@/lib/copilot/groq-chat";
-import { completeFreeChat, configuredFreeProviders, FreeChatError, type FreeProviderKeys, type FreeProvider } from "@/lib/copilot/free-chat-router";
+import { completeFreeChat, configuredFreeProviders, operationalFreeProviderKeys, FreeChatError, type FreeProviderKeys, type FreeProvider } from "@/lib/copilot/free-chat-router";
 import { resolveCopilotFollowup } from "@/lib/copilot/followup-context";
 import { appDataToolForRole, runAppDataTool } from "@/lib/copilot/app-data-catalog";
 import { WEEKEND_NOTE_TOOL, WEEKEND_NOTE_TOOL_NAME, canProposeWeekendNote, prepareWeekendNoteProposal, wantsToWriteWeekendNote } from "@/lib/copilot/weekend-note-proposal";
@@ -123,11 +123,13 @@ export async function POST(req: Request) {
   if (authError || !user) return Response.json({ error: "No autorizado" }, { status: 401 });
 
   // Solo claves del servidor. Los IDs de modelo del router son explícitamente gratuitos.
-  const freeKeys: FreeProviderKeys = {
+  const freeKeys: FreeProviderKeys = operationalFreeProviderKeys({
     groq: process.env.GROQ_API_KEY,
     xkiro: process.env.XKIRO_API_KEY,
+    // OpenRouter está configurado, pero el endpoint gratis de NVIDIA no
+    // admite datos personales/confidenciales. El copiloto nunca lo usa.
     openrouter: process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER,
-  };
+  });
   if (configuredFreeProviders(freeKeys).length === 0) {
     return Response.json(
       { error: "Falta configurar al menos una API gratuita para el copiloto." },
