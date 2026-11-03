@@ -12,6 +12,7 @@ import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useChatVisualViewport } from '@/hooks/useChatVisualViewport';
 import { useFreezeChatBackground } from '@/hooks/useFreezeChatBackground';
 import VoiceConversation from '@/components/chat/VoiceConversation';
+import WeekendNoteApproval, { weekendNoteFromToolPart } from '@/components/chat/WeekendNoteApproval';
 import { prepareChatImage, readLargeChatPdfInBrowser } from '@/lib/copilot/browser-attachment';
 
 // Helper para extraer texto del Vercel AI SDK
@@ -329,6 +330,10 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
                 ? messageCombinedText(m.parts).replace(/\*\*(.*?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1')
                 : messageCombinedText(m.parts)
             }</div>
+            {m.role === 'assistant' && (m.parts ?? []).map((part, index) => {
+              const proposal = weekendNoteFromToolPart(part);
+              return proposal ? <WeekendNoteApproval key={index} proposal={proposal} /> : null;
+            })}
           </div>
         ))}
 
