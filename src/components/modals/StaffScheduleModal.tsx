@@ -80,7 +80,7 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
     );
 };
 
-/* ─── Resumen del evento: 4 KPIs independientes, como los superiores de Ventas ─── */
+/* ─── Resumen del evento: cuatro KPIs compactos de dos líneas ─── */
 const SummaryCell = ({
     label,
     value,
@@ -89,28 +89,59 @@ const SummaryCell = ({
     label: string;
     value: string;
     valueClassName?: string;
-}) => (
-    <div
-        data-element="schedule-summary-card"
-        className="flex min-h-[58px] w-full min-w-0 flex-col items-start justify-center gap-0.5 rounded-lg border border-sky-400/35 bg-sky-500/10 px-1.5 py-1.5 text-left sm:px-2.5"
-    >
-        <span
-            data-element="summary-label"
-            className="block w-full min-w-0 text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]"
+}) => {
+    const cardRef = useRef<HTMLDivElement>(null);
+    const valueRef = useRef<HTMLSpanElement>(null);
+
+    // Ajustar al ancho real de la tarjeta sin crear una tercera línea.
+    useEffect(() => {
+        const card = cardRef.current;
+        const text = valueRef.current;
+        if (!card || !text) return;
+
+        const fitValue = () => {
+            const baseSize = window.matchMedia('(min-width: 640px)').matches ? 13 : 12;
+            text.style.fontSize = `${baseSize}px`;
+            const width = text.clientWidth;
+            const required = text.scrollWidth;
+            if (width > 0 && required > width) {
+                text.style.fontSize = `${Math.max(7, baseSize * width / required - 0.25)}px`;
+            }
+        };
+
+        fitValue();
+        const observer = new ResizeObserver(fitValue);
+        observer.observe(card);
+        document.fonts?.ready.then(fitValue);
+        return () => observer.disconnect();
+    }, [value]);
+
+    return (
+        <div
+            ref={cardRef}
+            data-element="schedule-summary-card"
+            className="flex h-[42px] min-h-[42px] max-h-[42px] w-full min-w-0 flex-col items-start justify-center gap-0.5 overflow-hidden rounded-lg border border-sky-400/35 bg-sky-500/10 px-1.5 py-1 text-left sm:px-2"
         >
-            {label}
-        </span>
-        <span
-            data-element="summary-value"
-            className={cn(
-                'block w-full min-w-0 break-words text-[12px] font-bold leading-tight text-white sm:text-[13px]',
-                valueClassName,
-            )}
-        >
-            {value}
-        </span>
-    </div>
-);
+            <span
+                data-element="summary-label"
+                className="block w-full min-w-0 truncate whitespace-nowrap text-[10px] font-medium leading-none text-white/75 sm:text-[11px]"
+            >
+                {label}
+            </span>
+            <span
+                ref={valueRef}
+                data-element="summary-value"
+                title={value.trim() || undefined}
+                className={cn(
+                    'block w-full min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[12px] font-bold leading-none text-white sm:text-[13px]',
+                    valueClassName,
+                )}
+            >
+                {value}
+            </span>
+        </div>
+    );
+};
 
 const SummaryGrid = ({
     activity,
