@@ -7,12 +7,11 @@ import {
   format,
   startOfWeek,
 } from "date-fns";
-import { cn } from "@/lib/utils";
 import type { TimeFilterKind, TimeFilterValue } from "@/components/time/time-filter-types";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { MiniMonthCalendar } from "@/components/time/MiniMonthCalendar";
-import { MonthPickerGrid, monthCellClassName, periodFilterTabClassName } from "@/components/time/MonthPickerGrid";
+import { MonthPickerGrid, monthCellDarkClassName, periodFilterTabClassName } from "@/components/time/MonthPickerGrid";
 import { trackUsageModalApply } from "@/lib/usage/client";
 import { timeFilterApplySummary } from "@/lib/usage/modal-apply";
 
@@ -194,12 +193,20 @@ export function TimeFilterModal({
 
   const showKindTabs = visibleKinds.length > 1;
 
+  const jumpToToday = () => {
+    const today = new Date();
+    setCalendarBaseDate(today);
+    setPickerYear(today.getFullYear());
+    onCalendarMonthChange?.(today);
+  };
+
   return (
     <Modal
       open={isOpen}
       onClose={onClose}
       title="Filtro"
       variant="compact"
+      scheme="dark"
       usageId="time-filter"
       usageLabel="Filtro horario"
     >
@@ -208,7 +215,7 @@ export function TimeFilterModal({
             <div
               role="tablist"
               aria-label="Tipo de periodo"
-              className="flex max-w-full overflow-hidden rounded-ds-control border border-ds-borde bg-ds-superficie shadow-ds-superficie"
+              className="flex max-w-full overflow-hidden rounded-ds-control border border-white/15 bg-white/5 shadow-sm"
             >
               {visibleKinds.map((kind) => {
                 const selected = activeKind === kind;
@@ -219,7 +226,7 @@ export function TimeFilterModal({
                     role="tab"
                     aria-selected={selected}
                     onClick={() => setActiveKind(kind)}
-                    className={periodFilterTabClassName(selected)}
+                    className={periodFilterTabClassName(selected, true)}
                   >
                     {KIND_LABEL[kind]}
                   </button>
@@ -232,7 +239,7 @@ export function TimeFilterModal({
             <div className="flex justify-end">
               <Button
                 type="button"
-                variant="tertiary"
+                variant="secondary"
                 instance="time-filter-quick-range"
                 onClick={() => applyAndClose(quickRangePreset.value)}
               >
@@ -244,22 +251,22 @@ export function TimeFilterModal({
           {activeKind === "hours" && allowedKinds.includes("hours") && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-zinc-50 rounded-lg border border-zinc-100 p-3">
-                  <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Desde</div>
+                <div className="rounded-lg border border-white/15 bg-white/5 p-3">
+                  <div className="text-[9px] font-semibold uppercase tracking-widest text-white/60">Desde</div>
                   <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="mt-2 w-full bg-transparent text-zinc-900 font-black outline-none text-sm min-h-[48px]"
+                    className="mt-2 w-full min-h-[48px] bg-transparent text-white font-semibold outline-none text-sm [color-scheme:dark]"
                   />
                 </div>
-                <div className="bg-zinc-50 rounded-lg border border-zinc-100 p-3">
-                  <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Hasta</div>
+                <div className="rounded-lg border border-white/15 bg-white/5 p-3">
+                  <div className="text-[9px] font-semibold uppercase tracking-widest text-white/60">Hasta</div>
                   <input
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="mt-2 w-full bg-transparent text-zinc-900 font-black outline-none text-sm min-h-[48px]"
+                    className="mt-2 w-full min-h-[48px] bg-transparent text-white font-semibold outline-none text-sm [color-scheme:dark]"
                   />
                 </div>
               </div>
@@ -277,10 +284,24 @@ export function TimeFilterModal({
             </div>
           )}
 
+          {(activeKind === "date" || activeKind === "range" || activeKind === "week" || activeKind === "month" || activeKind === "year") && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                instance="time-filter-jump-today"
+                onClick={jumpToToday}
+              >
+                Hoy
+              </Button>
+            </div>
+          )}
+
           {(activeKind === "date" || activeKind === "range" || activeKind === "week") && (
             <div className="space-y-3">
               <MiniMonthCalendar
                 month={calendarBaseDate}
+                dark
                 onMonthChange={next => { setCalendarBaseDate(next); onCalendarMonthChange?.(next); }}
                 dayAmounts={calendarDayAmounts}
                 onSelectDay={selectCalendarDay}
@@ -289,7 +310,7 @@ export function TimeFilterModal({
               />
 
               {activeKind === "range" && (
-                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center">
+                <div className="text-[10px] font-medium uppercase tracking-widest text-white/60 text-center">
                   {rangeStart && !rangeEnd ? "Elige fecha final" : " "}
                 </div>
               )}
@@ -299,6 +320,7 @@ export function TimeFilterModal({
           {activeKind === "month" && allowedKinds.includes("month") && (
             <MonthPickerGrid
               year={pickerYear}
+              dark
               onYearChange={setPickerYear}
               isSelected={(monthIndex) =>
                 initialValue?.kind === "month" &&
@@ -313,7 +335,7 @@ export function TimeFilterModal({
 
           {activeKind === "year" && allowedKinds.includes("year") && (
             <div className="space-y-3">
-              <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center">Selecciona año</div>
+              <div className="text-[10px] font-medium uppercase tracking-widest text-white/60 text-center">Selecciona año</div>
               <div className="grid grid-cols-3 gap-2">
                 {Array.from({ length: 6 }).map((_, i) => {
                   const y = pickerYear - 2 + i;
@@ -323,7 +345,7 @@ export function TimeFilterModal({
                       key={y}
                       type="button"
                       onClick={() => applyAndClose({ kind: "year", year: y })}
-                      className={monthCellClassName(isSelected)}
+                      className={`min-h-12 ${monthCellDarkClassName(isSelected)}`}
                     >
                       {y}
                     </button>
@@ -334,14 +356,14 @@ export function TimeFilterModal({
                 <button
                   type="button"
                   onClick={() => setPickerYear((y) => y - 6)}
-                  className="min-h-[48px] px-4 rounded-lg bg-zinc-50 text-zinc-500 font-black text-[10px] uppercase tracking-widest hover:bg-zinc-100 transition-colors"
+                  className="min-h-[48px] px-4 rounded-lg border border-white/15 bg-white/5 text-white/75 font-semibold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors"
                 >
                   -6
                 </button>
                 <button
                   type="button"
                   onClick={() => setPickerYear((y) => y + 6)}
-                  className="min-h-[48px] px-4 rounded-lg bg-zinc-50 text-zinc-500 font-black text-[10px] uppercase tracking-widest hover:bg-zinc-100 transition-colors"
+                  className="min-h-[48px] px-4 rounded-lg border border-white/15 bg-white/5 text-white/75 font-semibold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors"
                 >
                   +6
                 </button>
