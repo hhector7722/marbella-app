@@ -80,7 +80,7 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
     );
 };
 
-/* ─── Resumen del evento: valor encima del nombre, 4 columnas iguales ── */
+/* ─── Resumen del evento: 4 KPIs independientes, como los superiores de Ventas ─── */
 const SummaryCell = ({
     label,
     value,
@@ -90,20 +90,24 @@ const SummaryCell = ({
     value: string;
     valueClassName?: string;
 }) => (
-    <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-        <div className="flex min-h-[1rem] w-full flex-1 items-end justify-center">
-            <span
-                data-element="summary-value"
-                className={cn(
-                    'w-full min-w-0 text-center text-[10px] font-semibold leading-tight text-white sm:text-[11px]',
-                    valueClassName,
-                )}
-            >
-                {value}
-            </span>
-        </div>
-        <span data-element="summary-label" className="shrink-0 text-[8px] font-semibold tracking-widest leading-none text-white/60">
+    <div
+        data-element="schedule-summary-card"
+        className="flex min-h-[58px] w-full min-w-0 flex-col items-start justify-center gap-0.5 rounded-lg border border-sky-400/35 bg-sky-500/10 px-1.5 py-1.5 text-left sm:px-2.5"
+    >
+        <span
+            data-element="summary-label"
+            className="block w-full min-w-0 text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]"
+        >
             {label}
+        </span>
+        <span
+            data-element="summary-value"
+            className={cn(
+                'block w-full min-w-0 break-words text-[12px] font-bold leading-tight text-white sm:text-[13px]',
+                valueClassName,
+            )}
+        >
+            {value}
         </span>
     </div>
 );
@@ -119,9 +123,9 @@ const SummaryGrid = ({
     pax: string;
     categoria: string;
 }) => (
-    <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(4,minmax(0,1fr))]">
+    <div className="grid w-full min-w-0 grid-cols-4 items-stretch gap-1.5">
         <SummaryCell label="Evento" value={activity} />
-        <SummaryCell label="Horario" value={horario} valueClassName="text-white whitespace-nowrap tabular-nums" />
+        <SummaryCell label="Horario" value={horario} valueClassName="tabular-nums" />
         <SummaryCell label="Pax" value={pax} />
         <SummaryCell label="Categoria" value={categoria} />
     </div>
@@ -698,7 +702,7 @@ export const StaffScheduleModal = ({
                                             }
                                         }}
                                         className={cn(
-                                            'flex w-full max-w-2xl mx-auto flex-col gap-1 rounded-[var(--radio-control)] bg-white/10 p-1.5',
+                                            'flex w-full max-w-2xl mx-auto flex-col gap-1.5 rounded-[var(--radio-control)] bg-transparent p-1.5',
                                             (hasAct1 || hasAct2) && 'cursor-pointer transition-colors hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300',
                                         )}
                                     >
