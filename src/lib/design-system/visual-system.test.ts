@@ -457,7 +457,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
-            /\[data-instance='horarios'\] \[data-element='asset'\] img \{[\s\S]*?width:\s*126%/,
+            /\[data-instance='horarios'\][\s\S]*?\[data-instance='staff-calendario'\][\s\S]*?\[data-element='asset'\] img \{[\s\S]*?width:\s*130%/,
             'Horarios: mínimo para tocar el recorte'
         );
         assert.match(

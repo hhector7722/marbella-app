@@ -4245,11 +4245,17 @@ button[data-element='catalog-filter'] {
   left: -13.5%;
   top: -13.5%;
 }
-[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='horarios'] [data-element='asset'] img {
-  width: 126%;
-  height: 126%;
-  left: -13%;
-  top: -13%;
+/* El PNG de Calendario incluye ~11 % de margen transparente por lado.
+   Ampliarlo únicamente en los accesos que usan este icono, sin cambiar el resto. */
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed']:is(
+  [data-instance='horarios'],
+  [data-instance='calendario'],
+  [data-instance='staff-calendario']
+) [data-element='asset'] img {
+  width: 130%;
+  height: 130%;
+  left: -15%;
+  top: -15%;
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='reservas'] [data-element='asset'] img {
   width: 106%;

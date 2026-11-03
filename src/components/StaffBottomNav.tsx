@@ -178,7 +178,7 @@ export default function StaffBottomNav() {
             >
               <span data-element="icon" aria-hidden>
                 {item.iconSrc ? (
-                  <Image src={item.iconSrc} alt="" width={28} height={28} className="h-full w-full object-contain" />
+                  <Image src={item.iconSrc} alt="" width={28} height={28} className="h-full w-full scale-[1.30] object-contain" />
                 ) : (
                   <Icon strokeWidth={active ? 2 : 1.75} fill="none" />
                 )}
