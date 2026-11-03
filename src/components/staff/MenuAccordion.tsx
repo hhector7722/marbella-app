@@ -149,6 +149,12 @@ function subPickerButtonLabel(sub: GroupedSub, lang: CartaLang, parentTitleRaw: 
     return sub.title.trim() || uncategorized
 }
 
+const SPECIAL_SANDWICHES_FOOTER: Record<CartaLang, string> = {
+    es: 'compañados con patatas chips',
+    ca: 'Acompanyats amb patates xips',
+    en: 'With crisps as a side.',
+}
+
 type ReorderScope = 'parents' | 'subs' | 'products' | null
 
 function arrayMove<T>(arr: T[], from: number, to: number): T[] {
@@ -564,6 +570,18 @@ export function MenuAccordion({
         reorderScope !== 'subs'
     const openShowSubTabs =
         openHasMultipleSubs && (Boolean(openSelectedSubKey) || reorderScope === 'subs')
+    const isSpecialSandwichesModal = !openShowSubPicker &&
+        !reorderScope &&
+        !platoMarbellaDetailOpen &&
+        Boolean(
+            modalProductSub &&
+            (modalProductSub.rows.some((row) => row.category_child_slug === 'bocadillos-especiales') ||
+                menuCategories?.some(
+                    (category) =>
+                        category.id === modalProductSub.key &&
+                        category.slug === 'bocadillos-especiales'
+                ))
+        )
 
     const canModalEdit = Boolean(onEditProduct)
     const modalEditMode = editMode || modalEditActive || encargoEditActive
@@ -1817,6 +1835,11 @@ export function MenuAccordion({
                                 </div>
                             )}
                         </CartaCoversLoadingGate>
+                        {isSpecialSandwichesModal ? (
+                            <footer className="shrink-0 border-t border-zinc-100 bg-white px-3 py-2.5 text-center text-[11px] font-medium text-zinc-600 sm:text-xs">
+                                {SPECIAL_SANDWICHES_FOOTER[lang]}
+                            </footer>
+                        ) : null}
                         {/* Nota de horario movida al modal de "Platos". */}
                     </div>
                     )}
