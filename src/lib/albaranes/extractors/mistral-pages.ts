@@ -1,4 +1,3 @@
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import {
   canonicalDocumentSchema,
   type CanonicalDocument,
@@ -87,6 +86,28 @@ export function mergePageObservations(
 }
 
 /**
+ * Node (including Vercel functions) has no DOMMatrix global; PDF.js
+ * instantiates one at module evaluation. Supply its native implementation
+ * BEFORE importing the PDF.js module.
+ */
+export async function countSourcePdfPages(bytes: Uint8Array): Promise<number> {
+  const { DOMMatrix } = await import('@napi-rs/canvas')
+  if (!globalThis.DOMMatrix) Object.assign(globalThis, { DOMMatrix })
+  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  const loading = getDocument({
+    data: Uint8Array.from(bytes),
+    disableFontFace: true,
+    useSystemFonts: false,
+  })
+  try {
+    const pdf = await loading.promise
+    return pdf.numPages
+  } finally {
+    await loading.destroy()
+  }
+}
+
+/**
  * pdfjs checks the actual PDF page count, which the invoice's expected_pages
  * metadata may not represent. Never trust the latter to limit extraction.
  */
@@ -98,18 +119,7 @@ export async function extractWithMistralPageBounded(params: {
 }): Promise<DocumentExtraction> {
   if (params.mimeType !== 'application/pdf') return extractWithMistral(params)
   const sourceHash = fileSha256(params.bytes)
-  const loading = getDocument({
-    data: Uint8Array.from(params.bytes),
-    disableFontFace: true,
-    useSystemFonts: false,
-  })
-  let pageCount: number
-  try {
-    const pdf = await loading.promise
-    pageCount = pdf.numPages
-  } finally {
-    await loading.destroy()
-  }
+  const pageCount = await countSourcePdfPages(params.bytes)
   if (pageCount < 1 || pageCount > 50) throw new Error('invalid_pdf_page_count')
   if (pageCount === 1 || pageCount > MAX_PARALLEL_PAGES) {
     return extractWithMistral(params)

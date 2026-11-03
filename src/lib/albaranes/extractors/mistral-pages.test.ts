@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   mergePageObservations,
+  countSourcePdfPages,
 } from './mistral-pages.ts'
 import {
   MISTRAL_EXTRACTOR_VERSION,
@@ -88,6 +89,18 @@ test('stops on duplicated or missing source page responses', () => {
   assert.throws(() => mergePageObservations([page(0,'Aceite'),wrong],SHA),
     /mistral_page_identity_or_response_invalid/)
 })
+test('can read an actual three-page PDF in Node without a browser DOMMatrix global', async () => {
+  const { jsPDF } = await import('jspdf')
+  const pdf = new jsPDF()
+  pdf.text('Page one', 10, 10)
+  pdf.addPage()
+  pdf.text('Page two', 10, 10)
+  pdf.addPage()
+  pdf.text('Page three', 10, 10)
+  const data = new Uint8Array(pdf.output('arraybuffer'))
+  assert.equal(await countSourcePdfPages(data), 3)
+})
+
 test('prevents emission of empty economic evidence', () => {
   const empty = page(0,'Aceite')
   empty.canonical.lines = []
