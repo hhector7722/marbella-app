@@ -112,12 +112,9 @@ function BuilderOptionCard({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={cn(
-        'flex h-full w-full min-w-0 flex-col items-center gap-1.5 rounded-2xl border bg-white p-1.5 pb-2 touch-manipulation transition-colors active:bg-zinc-50',
-        selected ? 'border-[#36606F]/60 ring-1 ring-[#36606F]/20' : 'border-zinc-100'
-      )}
+      className="flex h-full w-full min-w-0 flex-col items-center gap-1.5 p-1.5 pb-2 touch-manipulation transition-opacity active:opacity-75"
     >
-      <span className="relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-xl bg-zinc-50">
+      <span className="relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-xl bg-transparent">
         {photoSrc ? (
           // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
           <img
@@ -296,6 +293,18 @@ export function PlatoMarbellaMenuView({
             onSelect={() => setPickerSlot('guarnicion')}
           />
         </PlateBuilder>
+        {PLATO_MARBELLA_SLOTS.some((slot) => selections[slot]) ? (
+          <div className="mx-auto mt-1.5 flex w-full max-w-[21rem] flex-col items-center gap-1 px-2 pb-2 sm:max-w-[23rem]">
+            {PLATO_MARBELLA_SLOTS.filter((slot) => selections[slot]).map((slot) => (
+              <p
+                key={slot}
+                className="w-full text-center text-xs font-semibold leading-snug text-zinc-700 sm:text-sm"
+              >
+                {getCartaDisplayName(selections[slot]!.row, lang)}
+              </p>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="min-h-0 flex-1" />
