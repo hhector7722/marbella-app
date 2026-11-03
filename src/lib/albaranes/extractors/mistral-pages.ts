@@ -86,25 +86,16 @@ export function mergePageObservations(
 }
 
 /**
- * Node (including Vercel functions) has no DOMMatrix global; PDF.js
- * instantiates one at module evaluation. Supply its native implementation
- * BEFORE importing the PDF.js module.
+ * Pure-JavaScript PDF parser: no DOMMatrix, browser canvas or native
+ * binaries are required in the Vercel Node.js runtime.
  */
 export async function countSourcePdfPages(bytes: Uint8Array): Promise<number> {
-  const { DOMMatrix } = await import('@napi-rs/canvas')
-  if (!globalThis.DOMMatrix) Object.assign(globalThis, { DOMMatrix })
-  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
-  const loading = getDocument({
-    data: Uint8Array.from(bytes),
-    disableFontFace: true,
-    useSystemFonts: false,
+  const { PDFDocument } = await import('pdf-lib')
+  const pdf = await PDFDocument.load(bytes, {
+    updateMetadata: false,
+    ignoreEncryption: false,
   })
-  try {
-    const pdf = await loading.promise
-    return pdf.numPages
-  } finally {
-    await loading.destroy()
-  }
+  return pdf.getPageCount()
 }
 
 /**
