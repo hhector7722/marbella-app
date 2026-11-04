@@ -10,6 +10,7 @@ import {
     deleteWeekendPublicScheduleNote,
 } from '@/app/actions/schedule-weekend-public-note';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
 type NoteReply = {
