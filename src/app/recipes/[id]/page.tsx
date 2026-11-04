@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef, useMemo, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Pencil, PlayCircle, AlertCircle } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Pencil, PlayCircle, AlertCircle, Check, Layers3, ChefHat } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -105,6 +105,7 @@ interface RecipeRow {
     elaboration: string | null;
     presentation: string | null;
     photo_url: string | null;
+    photo_detail_url: string | null;
     elaboration_video_url: string | null;
     servings: number | null;
     recipe_ingredients?: RecipeIngredientRow[] | null;
@@ -1037,7 +1038,7 @@ function RecipeDetailContent() {
             <Toaster position="top-right" />
             <ImageLightbox
                 open={isPhotoLightboxOpen}
-                src={recipe?.photo_url}
+                src={recipe?.photo_detail_url || recipe?.photo_url}
                 alt={recipe?.name}
                 onClose={() => setIsPhotoLightboxOpen(false)}
             />
@@ -1088,7 +1089,7 @@ function RecipeDetailContent() {
                         />
 
                         <div className="w-[min(34vw,9rem)] shrink-0">
-                            {recipe.photo_url ? (
+                            {(recipe.photo_detail_url || recipe.photo_url) ? (
                                 <button
                                     type="button"
                                     onClick={() => setIsPhotoLightboxOpen(true)}
@@ -1099,7 +1100,7 @@ function RecipeDetailContent() {
                                     aria-label="Ver foto ampliada"
                                 >
                                     <CatalogSquare
-                                        imageSrc={recipe.photo_url}
+                                        imageSrc={recipe.photo_detail_url || recipe.photo_url}
                                         imageAlt={recipe.name}
                                         price={internalRecipe ? null : recipe.sale_price}
                                         priceClassName={!isRestricted && !internalRecipe && priceCostKnown ? healthIndicator.color : undefined}
@@ -1849,7 +1850,7 @@ function RecipeDetailContent() {
             <Modal
                 open={showIngredientModal}
                 onClose={closeAddIngredientModal}
-                variant="compact"
+                variant="standard"
                 layer="base"
                 instance="recipe-add-ingredient"
                 usageId="recipe-add-ingredient"
@@ -1857,111 +1858,161 @@ function RecipeDetailContent() {
                 title="Añadir componente"
             >
                 <div className="flex flex-col gap-3">
-                    <PetroleumSegmented
-                        instance="recipe-add-component-kind"
-                        density="comfortable"
+                    <div
+                        role="tablist"
                         aria-label="Tipo de componente"
-                        value={componentKind}
-                        onChange={(kind) => {
-                            const next = kind as 'ingredient' | 'elaboration';
-                            setComponentKind(next);
-                            setSearchTerm('');
-                            if (next === 'elaboration') void loadRecipeCandidates();
-                        }}
-                        options={[
-                            { value: 'ingredient', label: 'Ingrediente' },
-                            { value: 'elaboration', label: 'Elaboración' },
-                        ]}
-                    />
-                    {componentKind === 'ingredient' ? (
-                    <>
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-bold text-gray-500 shrink-0">Forzar unidad:</span>
-                        <select
-                            value={addIngredientUnit}
-                            onChange={e => {
-                                setForceAddIngredientUnit(true);
-                                setAddIngredientUnit(e.target.value);
-                            }}
-                            className="flex-1 p-2 border rounded text-xs font-medium focus:border-[#36606F] outline-none min-h-12"
-                        >
-                            {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                        </select>
-                    </div>
-                    <p className="text-[10px] text-gray-400 mb-2 leading-snug">Por defecto se usa la unidad configurada en cada ingrediente. Puedes cambiarla después en la tabla.</p>
-                    <div className="mb-2">
-                    <SearchField
-                        instance="recipe-add-ingredient-search"
-                        placeholder="Buscar..."
-                        value={searchTerm}
-                        onChange={setSearchTerm}
-                        autoFocus
-                    />
-                    </div>
-                    <div className="max-h-[min(50vh,20rem)] overflow-y-auto space-y-1">
-                        {filteredIngredients.map(ing => {
-                            const purchaseUnit = ing.purchase_unit || 'ud';
-                            const effective = `${Number(ing.current_price || 0).toFixed(4)}€/${purchaseUnit}`;
-                            const configuredUnit = resolveIngredientRecipeUnit(ing.recipe_unit, purchaseUnit);
-                            const unitToAdd = forceAddIngredientUnit ? addIngredientUnit : configuredUnit;
-
+                        className="grid grid-cols-2 gap-1.5 rounded-2xl bg-zinc-100 p-1.5"
+                    >
+                        {([
+                            { value: 'ingredient', label: 'Ingredientes', Icon: ChefHat },
+                            { value: 'elaboration', label: 'Elaboraciones', Icon: Layers3 },
+                        ] as const).map(({ value, label, Icon }) => {
+                            const selected = componentKind === value;
                             return (
                                 <button
-                                    key={ing.id}
+                                    key={value}
                                     type="button"
-                                    onClick={() => handleAddIngredient(ing.id, unitToAdd, ing.name)}
-                                    className="w-full text-left p-2 hover:bg-gray-50 flex justify-between items-center gap-2 rounded text-xs min-h-12"
+                                    role="tab"
+                                    aria-selected={selected}
+                                    onClick={() => {
+                                        setComponentKind(value);
+                                        setSearchTerm('');
+                                        if (value === 'elaboration') void loadRecipeCandidates();
+                                    }}
+                                    className={cn(
+                                        'flex min-h-12 items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-sm font-bold transition',
+                                        selected
+                                            ? 'border-[#36606F] bg-[#36606F] text-white shadow-sm'
+                                            : 'border-transparent bg-transparent text-zinc-500 hover:bg-white hover:text-zinc-800',
+                                    )}
                                 >
-                                    <span className="font-bold min-w-0 truncate">{ing.name}</span>
-                                    <span className="shrink-0 font-mono text-[10px] text-gray-400">{configuredUnit}</span>
-                                    <span className="text-right">
-                                        <span className="font-bold text-gray-700">{effective}</span>
-                                    </span>
+                                    <Icon className="h-4 w-4 shrink-0" />
+                                    {label}
+                                    {selected ? <Check className="h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
                                 </button>
                             );
                         })}
                     </div>
-                    </>
-                    ) : (
-                    <>
-                    <SearchField
-                        instance="recipe-add-elaboration-search"
-                        placeholder="Buscar receta..."
-                        value={searchTerm}
-                        onChange={setSearchTerm}
-                        autoFocus
-                    />
-                    <div className="max-h-[min(50vh,20rem)] overflow-y-auto space-y-1">
-                        {recipeCandidates
-                            .filter((candidate) => candidate.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                            .map((candidate) => {
-                                const addable = canAddRecipeComponent({
-                                    yieldQuantity: candidate.yield_quantity,
-                                    yieldUnit: candidate.yield_unit,
-                                });
-                                const yieldText = candidate.yield_quantity != null && candidate.yield_unit
-                                    ? `${formatYieldQuantity(Number(candidate.yield_quantity))} ${candidate.yield_unit}`
-                                    : 'Sin rendimiento';
-                                return (
-                                    <button
-                                        key={candidate.id}
-                                        type="button"
-                                        disabled={!addable}
-                                        onClick={() => { void handleAddSubrecipe(candidate); }}
-                                        className="flex min-h-12 w-full items-center justify-between gap-2 rounded p-2 text-left text-xs hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                    >
-                                        <span className="min-w-0">
-                                            <span className="block truncate font-bold">{candidate.name}</span>
-                                            <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
-                                                {isInternalRecipe(candidate.is_sellable) ? 'Elaboración' : 'Vendible'}
+
+                    {componentKind === 'ingredient' ? (
+                        <div className="flex flex-col gap-3">
+                            <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3">
+                                <label className="flex min-h-8 cursor-pointer items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={forceAddIngredientUnit}
+                                        onChange={(event) => setForceAddIngredientUnit(event.target.checked)}
+                                        className="h-4 w-4 shrink-0 accent-[#36606F]"
+                                    />
+                                    <span className="text-xs font-bold text-zinc-700">Cambiar la unidad al añadir</span>
+                                </label>
+                                {forceAddIngredientUnit ? (
+                                    <div className="mt-2 flex items-center gap-3">
+                                        <label htmlFor="recipe-add-ingredient-unit" className="text-xs font-medium text-zinc-600">Unidad</label>
+                                        <select
+                                            id="recipe-add-ingredient-unit"
+                                            value={addIngredientUnit}
+                                            onChange={(event) => setAddIngredientUnit(event.target.value)}
+                                            className="min-h-11 min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-800 focus:border-[#36606F] focus:outline-none"
+                                        >
+                                            {RECIPE_UNIT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <p className="pl-7 text-[11px] leading-snug text-zinc-500">
+                                        Se utilizará la unidad habitual de cada ingrediente.
+                                    </p>
+                                )}
+                            </div>
+                            <SearchField
+                                instance="recipe-add-ingredient-search"
+                                placeholder="Buscar ingrediente por nombre..."
+                                value={searchTerm}
+                                onChange={setSearchTerm}
+                                autoFocus
+                            />
+                            <div className="max-h-[min(48vh,22rem)] space-y-1.5 overflow-y-auto pr-1">
+                                {filteredIngredients.map((ing) => {
+                                    const purchaseUnit = ing.purchase_unit || 'ud';
+                                    const configuredUnit = resolveIngredientRecipeUnit(ing.recipe_unit, purchaseUnit);
+                                    const unitToAdd = forceAddIngredientUnit ? addIngredientUnit : configuredUnit;
+                                    const effective = `${Number(ing.current_price || 0).toFixed(4)} €/${purchaseUnit}`;
+                                    return (
+                                        <button
+                                            key={ing.id}
+                                            type="button"
+                                            onClick={() => void handleAddIngredient(ing.id, unitToAdd, ing.name)}
+                                            className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left transition hover:border-[#36606F]/50 hover:bg-[#36606F]/5 active:bg-[#36606F]/10"
+                                        >
+                                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[#36606F]">
+                                                <Plus className="h-4 w-4" aria-hidden />
                                             </span>
-                                        </span>
-                                        <span className="shrink-0 font-mono text-[10px] text-gray-500">{addable ? yieldText : 'Sin rendimiento'}</span>
-                                    </button>
-                                );
-                            })}
-                    </div>
-                    </>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate text-sm font-semibold text-zinc-800">{ing.name}</span>
+                                                <span className="block text-[11px] text-zinc-500">{effective}</span>
+                                            </span>
+                                            <span className="shrink-0 rounded-lg bg-zinc-100 px-2 py-1 text-[11px] font-bold text-zinc-600">{unitToAdd}</span>
+                                        </button>
+                                    );
+                                })}
+                                {filteredIngredients.length === 0 ? (
+                                    <p className="rounded-xl border border-dashed border-zinc-200 px-3 py-6 text-center text-sm text-zinc-500">
+                                        No se encontraron ingredientes.
+                                    </p>
+                                ) : null}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-3">
+                            <p className="px-1 text-xs leading-snug text-zinc-500">
+                                Añade una elaboración existente como componente de esta receta.
+                            </p>
+                            <SearchField
+                                instance="recipe-add-elaboration-search"
+                                placeholder="Buscar elaboración por nombre..."
+                                value={searchTerm}
+                                onChange={setSearchTerm}
+                                autoFocus
+                            />
+                            <div className="max-h-[min(48vh,22rem)] space-y-1.5 overflow-y-auto pr-1">
+                                {recipeCandidates
+                                    .filter((candidate) => candidate.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                                    .map((candidate) => {
+                                        const addable = canAddRecipeComponent({
+                                            yieldQuantity: candidate.yield_quantity,
+                                            yieldUnit: candidate.yield_unit,
+                                        });
+                                        const yieldText = candidate.yield_quantity != null && candidate.yield_unit
+                                            ? `${formatYieldQuantity(Number(candidate.yield_quantity))} ${candidate.yield_unit}`
+                                            : 'Sin rendimiento configurado';
+                                        return (
+                                            <button
+                                                key={candidate.id}
+                                                type="button"
+                                                disabled={!addable}
+                                                onClick={() => void handleAddSubrecipe(candidate)}
+                                                className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left transition hover:border-[#36606F]/50 hover:bg-[#36606F]/5 active:bg-[#36606F]/10 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:opacity-60"
+                                            >
+                                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[#36606F]">
+                                                    <Plus className="h-4 w-4" aria-hidden />
+                                                </span>
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="block truncate text-sm font-semibold text-zinc-800">{candidate.name}</span>
+                                                    <span className="block text-[11px] text-zinc-500">
+                                                        {isInternalRecipe(candidate.is_sellable) ? 'Producción' : 'Receta vendible'}
+                                                    </span>
+                                                </span>
+                                                <span className="shrink-0 text-right text-[11px] font-semibold text-zinc-600">{yieldText}</span>
+                                            </button>
+                                        );
+                                    })}
+                                {!recipeCandidates.some((candidate) => candidate.name.toLowerCase().includes(searchTerm.toLowerCase())) ? (
+                                    <p className="rounded-xl border border-dashed border-zinc-200 px-3 py-6 text-center text-sm text-zinc-500">
+                                        No se encontraron elaboraciones.
+                                    </p>
+                                ) : null}
+                            </div>
+                        </div>
                     )}
                 </div>
             </Modal>
@@ -2005,6 +2056,7 @@ function RecipeDetailContent() {
                 recipeId={recipeId}
                 initialName={recipe.name}
                 initialPhotoUrl={recipe.photo_url ?? null}
+                initialDetailPhotoUrl={recipe.photo_detail_url ?? null}
                 initialIsSellable={recipe.is_sellable !== false}
                 initialYieldQuantity={recipe.yield_quantity == null ? null : Number(recipe.yield_quantity)}
                 initialYieldUnit={recipe.yield_unit}

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Camera } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
 import { RecipeCategorySelectOptions } from '@/components/recipes/RecipeCategorySelectOptions';
 import type { RecipeCategoryOption } from '@/lib/recipe-menu-categories';
@@ -18,6 +17,7 @@ import { uploadNormalizedRecipePhoto } from '@/app/dashboard/carta/photo-actions
 export type RecipeNamePhotoSaved = {
     name: string;
     photo_url: string | null;
+    photo_detail_url: string | null;
     is_sellable: boolean;
     yield_quantity: number | null;
     yield_unit: string | null;
@@ -31,6 +31,7 @@ type Props = {
     recipeId: string;
     initialName: string;
     initialPhotoUrl: string | null;
+    initialDetailPhotoUrl: string | null;
     initialIsSellable?: boolean;
     initialYieldQuantity?: number | null;
     initialYieldUnit?: string | null;
@@ -47,6 +48,7 @@ export function RecipeNamePhotoEditModal({
     recipeId,
     initialName,
     initialPhotoUrl,
+    initialDetailPhotoUrl,
     initialIsSellable = true,
     initialYieldQuantity = null,
     initialYieldUnit = null,
@@ -58,7 +60,9 @@ export function RecipeNamePhotoEditModal({
 }: Props) {
     const supabase = createClient();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const detailFileInputRef = useRef<HTMLInputElement | null>(null);
     const stagedBlobRef = useRef<string | null>(null);
+    const stagedDetailBlobRef = useRef<string | null>(null);
 
     const [nameDraft, setNameDraft] = useState('');
     const [kindDraft, setKindDraft] = useState<RecipeKind>('sellable');
@@ -71,8 +75,11 @@ export function RecipeNamePhotoEditModal({
     const [formatsLoaded, setFormatsLoaded] = useState(false);
     const isTortilla = initialName.trim().toLocaleLowerCase('es') === 'tortilla' && kindDraft === 'internal';
     const [baselinePhotoUrl, setBaselinePhotoUrl] = useState<string | null>(null);
+    const [baselineDetailPhotoUrl, setBaselineDetailPhotoUrl] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedDetailFile, setSelectedDetailFile] = useState<File | null>(null);
     const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+    const [previewDetailBlobUrl, setPreviewDetailBlobUrl] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
     const revokeStagedBlob = () => {
@@ -81,9 +88,15 @@ export function RecipeNamePhotoEditModal({
             stagedBlobRef.current = null;
         }
     };
+    const revokeStagedDetailBlob = () => {
+        if (stagedDetailBlobRef.current) {
+            URL.revokeObjectURL(stagedDetailBlobRef.current);
+            stagedDetailBlobRef.current = null;
+        }
+    };
 
     const photoSyncKey = open
-        ? `${initialName}\u0000${initialPhotoUrl ?? ''}\u0000${initialIsSellable}\u0000${initialYieldQuantity ?? ''}\u0000${initialYieldUnit ?? ''}`
+        ? `${initialName}\u0000${initialPhotoUrl ?? ''}\u0000${initialDetailPhotoUrl ?? ''}\u0000${initialIsSellable}\u0000${initialYieldQuantity ?? ''}\u0000${initialYieldUnit ?? ''}`
         + ':' + categoryId
         : null;
     const [syncedPhotoKey, setSyncedPhotoKey] = useState<string | null>(null);
@@ -93,22 +106,30 @@ export function RecipeNamePhotoEditModal({
         if (open) {
             setNameDraft(initialName);
             setBaselinePhotoUrl(initialPhotoUrl);
+            setBaselineDetailPhotoUrl(initialDetailPhotoUrl);
             setKindDraft(initialIsSellable === false ? 'internal' : 'sellable');
             setCategoryDraft(categoryId);
             setYieldQuantityDraft(initialYieldQuantity != null ? String(initialYieldQuantity) : '');
             setYieldUnitDraft(initialYieldUnit ?? '');
         }
         setSelectedFile(null);
+        setSelectedDetailFile(null);
         setPreviewBlobUrl(null);
+        setPreviewDetailBlobUrl(null);
     }
 
     useEffect(() => {
         revokeStagedBlob();
+        revokeStagedDetailBlob();
         if (open && fileInputRef.current) fileInputRef.current.value = '';
-    }, [open, initialName, initialPhotoUrl]);
+        if (open && detailFileInputRef.current) detailFileInputRef.current.value = '';
+    }, [open, initialName, initialPhotoUrl, initialDetailPhotoUrl]);
 
     useEffect(() => {
-        return () => revokeStagedBlob();
+        return () => {
+            revokeStagedBlob();
+            revokeStagedDetailBlob();
+        };
     }, []);
 
     // Permite escoger Producción incluso si el catálogo del detalle aún está cargando.
@@ -149,8 +170,9 @@ export function RecipeNamePhotoEditModal({
     }, [open, initialName, recipeId, supabase]);
 
     const displayPhotoSrc = previewBlobUrl ?? baselinePhotoUrl ?? null;
+    const displayDetailPhotoSrc = previewDetailBlobUrl ?? baselineDetailPhotoUrl ?? displayPhotoSrc;
 
-    const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>, target: 'thumbnail' | 'detail') => {
         const file = e.target.files?.[0] ?? null;
         e.target.value = '';
         if (!file) return;
@@ -160,11 +182,25 @@ export function RecipeNamePhotoEditModal({
             return;
         }
 
-        revokeStagedBlob();
         const url = URL.createObjectURL(file);
-        stagedBlobRef.current = url;
-        setPreviewBlobUrl(url);
-        setSelectedFile(file);
+        if (target === 'detail') {
+            revokeStagedDetailBlob();
+            stagedDetailBlobRef.current = url;
+            setPreviewDetailBlobUrl(url);
+            setSelectedDetailFile(file);
+        } else {
+            revokeStagedBlob();
+            stagedBlobRef.current = url;
+            setPreviewBlobUrl(url);
+            setSelectedFile(file);
+        }
+    };
+
+    const useThumbnailInDetail = () => {
+        revokeStagedDetailBlob();
+        setSelectedDetailFile(null);
+        setPreviewDetailBlobUrl(null);
+        setBaselineDetailPhotoUrl(null);
     };
 
     const handleSave = async () => {
@@ -213,6 +249,7 @@ export function RecipeNamePhotoEditModal({
         setSaving(true);
         try {
             let photo_url: string | null = baselinePhotoUrl;
+            let photo_detail_url: string | null = baselineDetailPhotoUrl;
 
             if (selectedFile) {
                 const fd = new FormData();
@@ -222,11 +259,24 @@ export function RecipeNamePhotoEditModal({
                 photo_url = up.publicUrl;
             }
 
+            if (selectedDetailFile) {
+                const fd = new FormData();
+                fd.append('file', selectedDetailFile);
+                const up = await uploadNormalizedRecipePhoto(fd);
+                if (!up.success) throw new Error(up.error);
+                photo_detail_url = up.publicUrl;
+            }
+            // Una única imagen sirve tanto para el listado como para el detalle.
+            if (!photo_url && photo_detail_url) {
+                photo_url = photo_detail_url;
+                photo_detail_url = null;
+            }
             const { error } = await supabase
                 .from('recipes')
                 .update({
                     name: trimmed,
                     photo_url,
+                    photo_detail_url,
                     is_sellable: !internal,
                     ...categoryUpdate,
                     yield_quantity: yieldSave.yield_quantity,
@@ -263,6 +313,7 @@ export function RecipeNamePhotoEditModal({
             onSaved({
                 name: trimmed,
                 photo_url,
+                photo_detail_url,
                 is_sellable: !internal,
                 ...categoryUpdate,
                 yield_quantity: yieldSave.yield_quantity,
@@ -285,7 +336,7 @@ export function RecipeNamePhotoEditModal({
             instance="recipe-name-photo"
             usageId="recipe-name-photo"
             usageLabel="Editar receta"
-            title="Nombre e imagen"
+            title="Editar receta"
             scrollContent
             footer={
                 <>
@@ -436,41 +487,75 @@ export function RecipeNamePhotoEditModal({
                     </Field>
                 ) : null}
 
-                <div className="flex flex-col gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Imagen</span>
-                    <div
-                        className={cn(
-                            'flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50',
-                            'shadow-inner',
-                        )}
-                    >
-                        {displayPhotoSrc ? (
-                            // eslint-disable-next-line @next/next/no-img-element -- URL externa Supabase / blob
-                            <img src={displayPhotoSrc} alt="" className="max-h-full max-w-full object-contain" />
+                <div className="grid gap-4 border-t border-zinc-100 pt-3 sm:grid-cols-2">
+                    <div className="flex min-w-0 flex-col gap-2">
+                        <span className="text-xs font-bold text-zinc-700">Miniatura</span>
+                        <p className="text-[11px] text-zinc-500">Aparece en el listado de recetas.</p>
+                        <div className="flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 shadow-inner">
+                            {displayPhotoSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element -- URL externa Supabase / blob
+                                <img src={displayPhotoSrc} alt="Miniatura" className="max-h-full max-w-full object-contain" />
+                            ) : (
+                                <Camera className="h-10 w-10 text-zinc-200" aria-hidden />
+                            )}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={saving}
+                            className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-center text-xs font-bold text-[#36606F] transition hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-50"
+                        >
+                            {baselinePhotoUrl || selectedFile ? 'Cambiar miniatura' : 'Añadir miniatura'}
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(event) => handlePickFile(event, 'thumbnail')}
+                        />
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-2">
+                        <span className="text-xs font-bold text-zinc-700">Imagen de detalle</span>
+                        <p className="text-[11px] text-zinc-500">Opcional. Aparece al abrir la receta.</p>
+                        <div className="flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 shadow-inner">
+                            {displayDetailPhotoSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element -- URL externa Supabase / blob
+                                <img src={displayDetailPhotoSrc} alt="Detalle" className="max-h-full max-w-full object-contain" />
+                            ) : (
+                                <Camera className="h-10 w-10 text-zinc-200" aria-hidden />
+                            )}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => detailFileInputRef.current?.click()}
+                            disabled={saving}
+                            className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-center text-xs font-bold text-[#36606F] transition hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-50"
+                        >
+                            {baselineDetailPhotoUrl || selectedDetailFile ? 'Cambiar imagen de detalle' : 'Añadir imagen de detalle'}
+                        </button>
+                        <input
+                            ref={detailFileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(event) => handlePickFile(event, 'detail')}
+                        />
+                        {baselineDetailPhotoUrl || selectedDetailFile ? (
+                            <button
+                                type="button"
+                                onClick={useThumbnailInDetail}
+                                disabled={saving}
+                                className="min-h-9 self-start rounded-lg px-2 text-xs font-semibold text-[#36606F] hover:bg-zinc-100 disabled:opacity-50"
+                            >
+                                Usar la miniatura también aquí
+                            </button>
                         ) : (
-                            <Camera className="h-10 w-10 text-zinc-200" aria-hidden />
+                            <p className="text-[11px] text-zinc-500">Se utiliza la miniatura automáticamente.</p>
                         )}
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={saving}
-                        className={cn(
-                            'min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-center text-xs font-bold text-[#36606F]',
-                            'transition hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-50',
-                        )}
-                    >
-                        {baselinePhotoUrl || selectedFile ? 'Cambiar imagen' : 'Añadir imagen'}
-                    </button>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                        onChange={handlePickFile}
-                    />
-                    <p className="text-[10px] font-semibold leading-snug text-zinc-500">
-                        Se recorta blanco de bordes y se guarda entero en 4:5. Vuelve a subir si ves recortes viejos.
+                    <p className="text-[10px] font-semibold leading-snug text-zinc-500 sm:col-span-2">
+                        Las imágenes se normalizan y se guardan en formato 4:5.
                     </p>
                 </div>
             </div>
