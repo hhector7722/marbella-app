@@ -15,6 +15,8 @@ export type IngredientCanonicalConfig = {
   baseUnit: string
   recipeUnit: string
   densityGPerMl: number | null
+  packUnitSizeQty: number | null
+  packUnitSizeUnit: string | null
 }
 
 export type ManualPriceUnitResult =
@@ -98,7 +100,7 @@ export async function getIngredientCanonicalConfigAction(
 
   const { data, error } = await gate.supabase
     .from('ingredients')
-    .select('current_price,purchase_unit,base_unit,recipe_unit,density_g_per_ml')
+    .select('current_price,purchase_unit,base_unit,recipe_unit,density_g_per_ml,pack_unit_size_qty,pack_unit_size_unit')
     .eq('id', id)
     .maybeSingle()
 
@@ -111,9 +113,48 @@ export async function getIngredientCanonicalConfigAction(
     baseUnit: String(data.base_unit ?? '').trim().toLowerCase(),
     recipeUnit: String(data.recipe_unit ?? data.purchase_unit ?? 'ud').trim().toLowerCase(),
     densityGPerMl: data.density_g_per_ml == null ? null : Number(data.density_g_per_ml),
+    packUnitSizeQty: data.pack_unit_size_qty == null ? null : Number(data.pack_unit_size_qty),
+    packUnitSizeUnit: data.pack_unit_size_unit == null ? null : String(data.pack_unit_size_unit),
   }
 }
 
+/**
+ * Conversión de contenido en el mismo ingrediente. La unidad de venta, compra
+ * e inventario continúa siendo 'ud'; sólo se define el tamaño físico del envase.
+ */
+export async function setIngredientContentPerUnitAction(
+  ingredientId: string,
+  contentQty: number,
+  contentUnit: 'ml' | 'g',
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!INGREDIENT_ID_RE.test(ingredientId)
+      || !Number.isFinite(contentQty) || contentQty <= 0 || contentQty > 100000
+      || !['ml', 'g'].includes(contentUnit)) {
+    return { ok: false, message: 'Indica un contenido por unidad válido (ml o g).' }
+  }
+
+  const gate = await requireIngredientManager()
+  if (!gate.ok) return { ok: false, message: gate.message }
+
+  const { data: current, error: readError } = await gate.supabase
+    .from('ingredients')
+    .select('purchase_unit,base_unit')
+    .eq('id', ingredientId)
+    .maybeSingle()
+  if (readError || !current || current.purchase_unit !== 'ud' || current.base_unit !== 'ud') {
+    return { ok: false, message: 'El contenido por unidad sólo se configura en ingredientes que se compran e inventarían por ud.' }
+  }
+
+  const { error } = await gate.supabase
+    .from('ingredients')
+    .update({ pack_unit_size_qty: contentQty, pack_unit_size_unit: contentUnit })
+    .eq('id', ingredientId)
+  if (error) return { ok: false, message: 'No se pudo guardar el contenido del envase.' }
+
+  revalidatePath('/ingredients')
+  revalidatePath('/recipes')
+  return { ok: true }
+}
 
 export type IngredientUnitTransitionResult =
   | { ok: true; transitionId: string; openingMeters: number }
