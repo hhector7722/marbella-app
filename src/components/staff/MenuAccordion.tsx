@@ -1496,7 +1496,7 @@ export function MenuAccordion({
                         )}
 
                         {isOpenPlatosParent && !openPlatoMarbella && !openShowSubPicker ? (
-                            <div className="shrink-0 bg-white px-3 pb-2 pt-0 text-center sm:px-3.5 sm:pb-2.5">
+                            <div className="carta-platos-schedule shrink-0 bg-white px-3 pb-2 pt-0 text-center sm:px-3.5 sm:pb-2.5">
                                 <p className="text-[10px] font-bold uppercase tracking-wide text-[#36606F]/70 sm:text-[11px]">
                                     {tPlatoMarbellaUi(lang).schedule}
                                 </p>

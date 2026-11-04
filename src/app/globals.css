@@ -11252,6 +11252,23 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   background-color: transparent;
 }
 
+/* El horario de Plats se integra en la cabecera: la cuadrícula empieza
+   exactamente en el mismo punto que las secciones sin horario. */
+.carta-browse-modal .carta-platos-schedule {
+  position: absolute;
+  top: 92px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 16px;
+  padding: 0;
+  background-color: transparent;
+  pointer-events: none;
+}
+.carta-browse-modal .carta-platos-schedule p {
+  color: rgb(255 255 255 / .8);
+}
+
 /* Las fichas del catálogo tienen ratio 1:1, con imagen, título y precio
    proporcionados. No se aplica a pedidos, encargos ni al editor de recetas. */
 .carta-browse-modal .carta-square-product-card {
