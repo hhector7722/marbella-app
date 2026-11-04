@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { isHalfPortionSandwichCategory, recipeVisibleInCatalog, type MenuCategoryRow } from './recipe-menu-categories.ts'
+import { isHalfPortionSandwichCategory, recipeVisibleInCatalog, labelMenuCategoryForRecipesEs, groupMenuCategoriesForRecipes, recipeMatchesMenuCategory, groupRecipeCategoryOptions, sortMenuCategoriesForRecipes, type MenuCategoryRow } from './recipe-menu-categories.ts'
 
 const rows: MenuCategoryRow[] = [
   { id: 'hot', name: 'Bocadillos - Calientes', slug: 'bocadillos-calientes', parent_id: 'sandwich', sort_order: 1 },
@@ -40,4 +40,35 @@ test('Producción separa elaboraciones internas de las recetas vendibles', () =>
   assert.equal(recipeVisibleInCatalog(sellable, 'produccion', 'prod'), false)
   assert.equal(recipeVisibleInCatalog(sellable, 'platos-marbella', 'prod'), true)
   assert.equal(recipeVisibleInCatalog({ is_sellable: null }, null, 'prod'), true)
+})
+
+
+test('categorías de recetas: nombres breves, minúsculas y sin rutas', () => {
+  const categories: MenuCategoryRow[] = [
+    { id: 'platos', name: 'Platos', slug: 'platos', parent_id: null, sort_order: 40 },
+    { id: 'platos-general', name: 'Platos - Platos', slug: 'platos-platos', parent_id: 'platos', sort_order: 31 },
+    { id: 'platos-marbella', name: 'Platos - Plato Marbella', slug: 'platos-marbella', parent_id: 'platos', sort_order: 32 },
+    { id: 'cafeteria', name: 'Cafetería', slug: 'cafeteria', parent_id: null, sort_order: 50 },
+    { id: 'bocadillos', name: 'Bocadillos', slug: 'bocadillos', parent_id: null, sort_order: 10 },
+    { id: 'calientes', name: 'Bocadillos - Calientes', slug: 'bocadillos-calientes', parent_id: 'bocadillos', sort_order: 21 },
+  ]
+  const overrides = new Map([['platos', 'PLATOS'], ['platos-general', 'PLATOS'], ['platos-marbella', 'PLATO MARBELLA'], ['calientes', 'CALIENTES'], ['cafeteria', 'CAFETERIA']])
+  const label = (id: string) => labelMenuCategoryForRecipesEs(categories.find((r) => r.id === id)!, categories, overrides)
+  assert.equal(label('platos'), 'platos')
+  assert.equal(label('platos-general'), 'platos generales')
+  assert.equal(label('platos-marbella'), 'plato marbella')
+  assert.equal(label('calientes'), 'calientes')
+  assert.equal(label('cafeteria'), 'cafetería')
+
+  const grouped = groupMenuCategoriesForRecipes(categories)
+  assert.deepEqual(grouped.map((section) => [section.parent.id, section.children.map((r) => r.id)]), [
+    ['bocadillos', ['calientes']], ['platos', ['platos-general', 'platos-marbella']], ['cafeteria', []],
+  ])
+  assert.equal(recipeMatchesMenuCategory({ menu_category_id: 'platos-marbella' }, categories[0], categories), true)
+  assert.equal(recipeMatchesMenuCategory({ menu_category_id: 'platos-general' }, categories[2], categories), false)
+  assert.equal(recipeMatchesMenuCategory({ menu_category_id: 'platos-marbella' }, categories[2], categories), true)
+  assert.equal(recipeMatchesMenuCategory({ menu_category_id: 'cafeteria' }, categories[0], categories), false)
+
+  const options = sortMenuCategoriesForRecipes(categories).map((row) => ({ id: row.id, parent_id: row.parent_id, label: label(row.id) }))
+  assert.deepEqual(groupRecipeCategoryOptions(options).map((section) => section.parent.label), ['bocadillos', 'platos', 'cafetería'])
 })

@@ -6,6 +6,8 @@ import { Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
+import { RecipeCategorySelectOptions } from '@/components/recipes/RecipeCategorySelectOptions';
+import type { RecipeCategoryOption } from '@/lib/recipe-menu-categories';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/Field';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
@@ -36,7 +38,7 @@ type Props = {
     onSaved: (payload: RecipeNamePhotoSaved) => void;
     onDelete?: () => void;
     categoryId?: string;
-    categories?: Array<{ id: string; label: string }>;
+    categories?: RecipeCategoryOption[];
     onCategoryChange?: (categoryId: string) => void;
 };
 
@@ -382,11 +384,7 @@ export function RecipeNamePhotoEditModal({
                             onChange={(e) => onCategoryChange(e.target.value)}
                         >
                             <option value="">Sin categoría</option>
-                            {categories.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.label}
-                                </option>
-                            ))}
+                            <RecipeCategorySelectOptions options={categories} />
                         </select>
                     </Field>
                 ) : null}
