@@ -79,6 +79,18 @@ Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepcion
 | `ventas.premium.kpi-alto` | 84 px | Altura mínima de Ventas y Venta neta en escritorio | adoptado (`--ventas-premium-kpi-height`) |
 | `ventas.premium.kpi-ancho` | 180 px | Ancho máximo igualado de ambas tarjetas en escritorio | adoptado (`--ventas-premium-kpi-max-width`) |
 
+### Excepción local: carta pública /carta
+
+La presentación comercial pública conserva el catálogo y las etiquetas de la aplicación, pero usa una superficie visual exclusiva y aprobada para /carta. No afecta a los editores ni a las cartas de encargos.
+
+| Token local | Valor | Uso |
+|---|---|---|
+| carta.publica.fondo | public/images/carta/geometrica-e.svg | Envolvente abstracta de planos azules, sin fotografía ni texto |
+| carta.publica.tarjeta | #FFF7ED | Tarjetas compactas y selector de bocadillos |
+| carta.publica.texto | #0B365E | Texto de tarjetas y precios, sin fuente monoespaciada |
+
+La carta conserva tarjetas cuadradas de tres columnas en el listado de productos, y su selector de subcategorías deja visible el mismo fondo alrededor de la superficie.
+
 ## 4. Texto
 
 | Token | Valor | Papel | Estado |

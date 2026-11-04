@@ -11173,3 +11173,316 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
     object-fit: contain;
   }
 }
+
+
+/* Carta pública /carta: variante geométrica E aprobada. No afecta al editor ni a encargos. */
+.carta-public-screen {
+  --carta-public-cream: #fff7ed;
+  --carta-public-ink: #0b365e;
+  color: #fff;
+  background: #064374 url('/images/carta/geometrica-e.svg') center center / cover no-repeat;
+}
+.carta-public-screen .carta-public-header,
+.carta-public-screen .carta-public-scroll {
+  background: transparent;
+}
+.carta-public-screen .carta-public-header a,
+.carta-public-screen .carta-public-header > div button:not([aria-pressed]) {
+  color: #fff;
+}
+.carta-public-screen .carta-public-language button {
+  color: rgb(255 255 255 / .68);
+  font-weight: 650;
+  letter-spacing: .055em;
+}
+.carta-public-screen .carta-public-language button[aria-pressed="true"] {
+  color: var(--carta-public-ink);
+  background: var(--carta-public-cream);
+  border-radius: 999px;
+  box-shadow: 0 3px 10px rgb(0 15 47 / .15);
+}
+.carta-public-screen [data-carta-category-grid] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-items: center;
+  gap: clamp(10px, 1.7svh, 18px) 14px;
+  padding: 12px 0;
+}
+.carta-public-screen [data-carta-category-card] {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.carta-public-screen [data-carta-category-card] > button {
+  width: min(100%, 166px);
+  aspect-ratio: 1.27;
+  min-height: 0;
+  padding: 9px 6px 8px;
+  border-radius: 21px;
+  color: var(--carta-public-ink);
+  background: linear-gradient(144deg, #fffcf6 0%, #f7efe3 100%);
+  box-shadow: 0 4px 14px rgb(0 20 49 / .17), inset 0 1px 0 rgb(255 255 255 / .85);
+}
+.carta-public-screen [data-carta-category-card] > button > span:first-child {
+  width: 85%;
+  max-width: 142px;
+  height: 78%;
+  aspect-ratio: auto;
+}
+.carta-public-screen [data-carta-category-card] > button > span:last-child {
+  margin-top: 0;
+  color: var(--carta-public-ink);
+  font-weight: 800;
+  font-size: clamp(10px, 2.6vw, 13px);
+  letter-spacing: .045em;
+}
+
+/* Los modales conservan el sistema de interacción; solo cambia su superficie visual. */
+.carta-public-modal {
+  --carta-public-cream: #fff7ed;
+  --carta-public-ink: #0b365e;
+  background: #064374 url('/images/carta/geometrica-e.svg') center center / cover no-repeat;
+}
+.carta-public-modal [data-modal-backdrop="base"] {
+  background: rgb(1 22 49 / .04);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.carta-public-modal [data-element="frame"] {
+  max-width: 640px;
+}
+.carta-public-modal [data-element="container"] {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+.carta-public-picker-modal [data-element="body"] {
+  overflow: visible;
+  align-items: center;
+}
+.carta-public-picker-shell {
+  width: min(calc(100vw - 48px), 430px);
+  max-width: none;
+  max-height: min(85svh, 720px);
+  border-radius: 30px;
+  padding: 12px 15px 18px;
+  background: linear-gradient(145deg, #fffaf2, #f8f0e4);
+  box-shadow: 0 20px 60px rgb(0 22 50 / .27);
+}
+.carta-public-picker-shell > div:first-child {
+  padding: 0 0 13px;
+  border: 0;
+}
+.carta-public-picker-shell h2 {
+  font-size: 20px;
+  font-weight: 850;
+  letter-spacing: .025em;
+  color: var(--carta-public-ink);
+}
+.carta-public-picker-shell > div:last-child {
+  background: transparent;
+  padding: 0;
+}
+.carta-public-picker-grid {
+  width: 100%;
+  max-width: 100%;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.carta-public-picker-button {
+  width: 100%;
+  max-width: none;
+  flex: none;
+}
+.carta-public-picker-button > button {
+  width: 100%;
+  min-height: 108px;
+  height: 116px;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 0 0 13px;
+  border-radius: 18px;
+  background: linear-gradient(100deg, #fff8ed, #f2e4d3);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .85), 0 3px 8px rgb(15 41 65 / .08);
+}
+.carta-public-picker-button > button > span:first-child {
+  width: 55%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+}
+.carta-public-picker-button > button > span:last-child {
+  flex: 1;
+  padding-left: 3px;
+  text-align: left;
+  font-size: clamp(15px, 4vw, 20px);
+  font-weight: 800;
+  letter-spacing: .015em;
+  color: var(--carta-public-ink);
+}
+
+/* Modal con productos: fondo visible, tarjetas cuadradas y tres columnas. */
+.carta-public-products-modal [data-element="frame"] {
+  width: 100%;
+  max-width: 660px;
+}
+.carta-public-products-modal [data-element="container"] {
+  height: 100%;
+  max-height: 100%;
+}
+.carta-public-products-modal [data-element="body"] {
+  overflow-y: auto;
+}
+.carta-public-products-shell {
+  width: 100%;
+  max-width: none;
+  max-height: 100%;
+  background: transparent;
+  border-radius: 0;
+}
+.carta-public-products-shell > div:first-child {
+  background: transparent;
+  padding: 3px 0 0;
+}
+.carta-public-products-shell > div:first-child button {
+  color: #fff;
+}
+.carta-public-products-shell > div:first-child > div:first-child > span {
+  color: #fff;
+}
+.carta-public-products-title {
+  flex: none;
+  padding: 5px 9px 14px;
+  color: #fff;
+  font-size: clamp(21px, 5vw, 27px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: .025em;
+  text-transform: uppercase;
+}
+.carta-public-products-shell .carta-public-products-content {
+  background: transparent;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 2px 14px;
+}
+.carta-public-products-content > div {
+  padding-bottom: 6px;
+}
+.carta-public-products-content section > div {
+  row-gap: clamp(12px, 2.2svh, 20px);
+}
+.carta-public-products-content section .grid {
+  gap: clamp(10px, 2.9vw, 16px);
+}
+.carta-public-products-content .carta-public-product-card {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  justify-content: space-between;
+  gap: 2px;
+  border-radius: clamp(13px, 4.5vw, 20px);
+  padding: 6px 4px 7px;
+  background: linear-gradient(145deg, #fffaf2, #f7ecdd);
+  box-shadow: 0 6px 17px rgb(1 21 48 / .23), inset 0 1px 0 rgb(255 255 255 / .85);
+}
+.carta-public-product-card .carta-public-photo-cell {
+  height: 49%;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+.carta-public-product-card .carta-public-photo-cell > div {
+  height: 100%;
+}
+.carta-public-product-card .carta-public-photo-frame {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  background: transparent;
+}
+.carta-public-product-card > div:last-of-type {
+  flex: 1;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 2px;
+}
+.carta-public-product-card p {
+  font-family: inherit;
+  font-size: clamp(8px, 2.2vw, 11px);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -.012em;
+  color: var(--carta-public-ink);
+}
+.carta-public-price-lines {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  color: var(--carta-public-ink);
+}
+.carta-public-price-line {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 3px;
+  white-space: nowrap;
+  font-family: inherit;
+  font-size: clamp(8px, 2.15vw, 10px);
+  line-height: 1.1;
+}
+.carta-public-price-line > span {
+  font-weight: 450;
+}
+.carta-public-price-line > strong {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 359px) {
+  .carta-public-products-content section .grid { gap: 7px; }
+  .carta-public-products-content .carta-public-product-card { padding: 5px 2px; }
+  .carta-public-price-line { font-size: 7.6px; gap: 2px; }
+  .carta-public-product-card p { font-size: 8px; }
+}
+@media (min-width: 600px) {
+  .carta-public-screen [data-carta-category-grid] { max-width: 450px; margin-inline: auto; }
+  .carta-public-products-content .carta-public-product-card { max-width: 174px; }
+}
+
+
+.carta-public-products-shell button[aria-pressed="true"] {
+  color: #0b365e;
+  background: #fff7ed;
+  border-radius: 999px;
+}
+.carta-public-products-shell button[aria-pressed="false"] {
+  color: rgb(255 255 255 / .82);
+}
+.carta-public-products-shell button[aria-pressed="true"] span,
+.carta-public-products-shell button[aria-pressed="false"] span {
+  color: inherit;
+}
+
+/* Ajustes de escala y contraste verificados en vista móvil. */
+.carta-public-picker-shell > div:last-child { width: 100%; }
+.carta-public-picker-shell .carta-public-picker-grid { width: 100%; justify-items: stretch; }
+.carta-public-picker-button > button > span:first-child > span { background: transparent; }
+.carta-public-picker-button img { mix-blend-mode: multiply; }
+.carta-public-products-modal .carta-public-products-shell button[aria-pressed="true"],
+.carta-public-products-modal .carta-public-products-shell button[aria-pressed="true"] span {
+  color: #0b365e;
+}
+.carta-public-product-card .carta-public-photo-frame img { mix-blend-mode: multiply; }
+.carta-public-screen [data-carta-category-card] > button > span:first-child {
+  width: 95%;
+  max-width: 153px;
+  height: 80%;
+}
+.carta-public-screen [data-carta-category-card] > button span.bg-white { background: transparent; }
+.carta-public-screen [data-carta-category-card] img { mix-blend-mode: multiply; }
+
+/* Las fotografías flotan sobre las tarjetas sin añadir contenido. */
+.carta-public-screen [data-carta-category-card] img { scale: 1.12; }

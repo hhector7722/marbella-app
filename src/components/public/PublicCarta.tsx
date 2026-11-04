@@ -119,6 +119,7 @@ export function PublicCarta({
   eventEncargoEdit,
   footer,
   hideEmptyMenuCategories = false,
+  premiumPublic = false,
 }: {
   items: PublicMenuRow[]
   menuCategories?: MenuCategoryCatalogEntry[]
@@ -136,15 +137,17 @@ export function PublicCarta({
   footer?: ReactNode
   /** Encargo: no mostrar subcategorías vacías del catálogo. */
   hideEmptyMenuCategories?: boolean
+  /** Estética pública de la carta online; no afecta a la gestión ni a encargos. */
+  premiumPublic?: boolean
 }) {
   const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const digitalItems = publicMenuRowsToDigitalMenu(items)
   const platoMarbellaCategoryId = resolvePlatoMarbellaCategoryId(menuCategories, items)
 
   return (
-    <main className="flex h-[100svh] max-h-[100svh] flex-col bg-white text-zinc-900">
+    <main className={cn("flex h-[100svh] max-h-[100svh] flex-col bg-white text-zinc-900", premiumPublic && "carta-public-screen")}>
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="shrink-0 bg-white pb-1 pt-1">
+        <header className={cn("shrink-0 bg-white pb-1 pt-1", premiumPublic && "carta-public-header")}>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-0.5">
             <div className="flex min-h-[52px] items-center justify-start">
               {backHref ? (
@@ -196,12 +199,12 @@ export function PublicCarta({
               ) : null}
             </div>
           </div>
-          <div className="mt-1 w-full translate-y-3 px-0 sm:mt-1.5 sm:translate-y-4">
-            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" compact />
+          <div className={cn("mt-1 w-full translate-y-3 px-0 sm:mt-1.5 sm:translate-y-4", premiumPublic && "carta-public-language")}>
+            <CartaLangPicker lang={lang} onChange={setLang} tone={premiumPublic ? "onBlue" : "default"} layout="spread" compact />
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end custom-scrollbar bg-white pb-2">
+        <div className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end custom-scrollbar bg-white pb-2", premiumPublic && "carta-public-scroll")}>
           <MenuAccordion
             items={digitalItems}
             lang={lang}
@@ -213,6 +216,7 @@ export function PublicCarta({
             platoMarbellaCategoryId={platoMarbellaCategoryId}
             showEmptyMenuChildCategories={!hideEmptyMenuCategories}
             homeCompact
+            premiumPublic={premiumPublic}
             eventOrder={eventOrder}
             eventEncargoEdit={eventEncargoEdit}
           />

@@ -34,7 +34,7 @@ export function CartaCategoryCard({
 }) {
   const coverScale = getCartaCoverPhotoScaleFactor(coverPhotoScale)
   return (
-    <div className={cn('relative min-w-0', className)}>
+    <div data-carta-category-card className={cn('relative min-w-0', className)}>
       {overlay}
       <button
         type="button"
@@ -99,6 +99,7 @@ export function CartaCategoryGrid({
 }) {
   return (
     <div
+      data-carta-category-grid
       className={cn(
         'grid pb-2',
         layoutClassName ?? 'grid-cols-2',

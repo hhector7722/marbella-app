@@ -14,6 +14,7 @@ export function CartaMenuProductPhoto({
   isDrink = false,
   articuloId,
   className,
+  premiumPublic = false,
 }: {
   src: string
   alt?: string
@@ -22,8 +23,10 @@ export function CartaMenuProductPhoto({
   /** Si hay override en `carta-product-photo`, prevalece sobre S/M/L. */
   articuloId?: number | null
   className?: string
+  premiumPublic?: boolean
 }) {
   const factor = getCartaProductPhotoScaleFactor(scale, isDrink, articuloId)
+  const displayedFactor = premiumPublic ? factor * 2.0 : factor
 
   return (
     // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
@@ -33,7 +36,7 @@ export function CartaMenuProductPhoto({
       loading="eager"
       decoding="async"
       className={cn(CARTA_PRODUCT_PHOTO_IMG_NEUTRAL_CLASS, className)}
-      style={{ transform: `scale(${factor})` }}
+      style={{ transform: `scale(${displayedFactor})` }}
     />
   )
 }
