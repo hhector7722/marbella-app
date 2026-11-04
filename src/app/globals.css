@@ -11331,21 +11331,27 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   background-color: transparent;
 }
 
-/* El horario de Plats se integra en la cabecera: la cuadrícula empieza
-   exactamente en el mismo punto que las secciones sin horario. */
+/* El horario de Plats queda DESPUÉS de la cuadrícula y del área de scroll,
+   sin superponerse a las fotografías. Se conserva el espacio útil de filas. */
 .carta-browse-modal .carta-platos-schedule {
-  position: absolute;
-  top: 92px;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  height: 16px;
-  padding: 0;
+  position: static;
+  height: auto;
+  flex: none;
+  margin-top: 7px;
+  padding: 3px 6px 9px;
   background-color: transparent;
   pointer-events: none;
 }
 .carta-browse-modal .carta-platos-schedule p {
   color: rgb(255 255 255 / .8);
+}
+
+/* Dimensiones estables desde el primer fotograma, aunque la imagen ampliada
+   aún no se haya descargado ni decodificado. Solo afecta al visor de fotos. */
+[data-instance='carta-image-lightbox'] [data-element='container'] {
+  height: min(82svh, 780px);
+  min-height: min(82svh, 780px);
+  max-height: 100%;
 }
 
 /* Carta navegable: cada producto es un cuadrado de imagen y un bloque de
@@ -11652,4 +11658,18 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   [data-component='Modal'][data-instance='recipe-add-ingredient'] [data-component='SearchField'] input {
     font-size: 16px; /* iOS: evita zoom y desplazamientos al enfocar */
   }
+}
+
+
+/* Pista discreta de desplazamiento: solo aparece si quedan productos abajo.
+   Se oculta al alcanzar el final y no intercepta los gestos táctiles. */
+@keyframes carta-scroll-hint-float {
+  0%, 100% { transform: translateY(-1px); opacity: .62; }
+  50% { transform: translateY(2px); opacity: .9; }
+}
+.carta-scroll-more-hint svg {
+  animation: carta-scroll-hint-float 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .carta-scroll-more-hint svg { animation: none; }
 }

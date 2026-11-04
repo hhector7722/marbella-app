@@ -1574,7 +1574,7 @@ export function MenuAccordion({
                             </p>
                         ) : null}
 
-                        {isOpenPlatosParent && !openPlatoMarbella && !openShowSubPicker ? (
+                        {!catalogDisplay && isOpenPlatosParent && !openPlatoMarbella && !openShowSubPicker ? (
                             <div className="carta-platos-schedule shrink-0 bg-white px-3 pb-2 pt-0 text-center sm:px-3.5 sm:pb-2.5">
                                 <p className="text-[10px] font-bold uppercase tracking-wide text-[#36606F]/70 sm:text-[11px]">
                                     {tPlatoMarbellaUi(lang).schedule}
@@ -1752,6 +1752,13 @@ export function MenuAccordion({
                                 <CartaWholeRowScroller
                                     enabled={Boolean(pageWholeProductRows && !openPlatoMarbella)}
                                     resetKey={[openGroup.key, openSelectedSubKey ?? "", lang].join(":")}
+                                    footer={catalogDisplay && isOpenPlatosParent && !openPlatoMarbella && !openShowSubPicker ? (
+                                        <div className="carta-platos-schedule shrink-0 text-center" role="note">
+                                            <p className="text-[10px] font-semibold tracking-wide sm:text-[11px]">
+                                                {tPlatoMarbellaUi(lang).schedule}
+                                            </p>
+                                        </div>
+                                    ) : null}
                                 >
                                 <div className="space-y-3 sm:space-y-4">
                                     {(openHasMultipleSubs
