@@ -342,8 +342,10 @@ export function HomeSalesMobileSummary({
                                     title={`${hour.hora}h - ${hour.hora + 1}h${hour.hora === currentHour ? ' (en curso)' : ''}: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
                                     <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]"
                                         style={hour.hora === currentHour ? { color: '#4ade80' } : undefined}>
-                                        <span className="lg:hidden">{hour.hora} - {hour.hora + 1}</span>
-                                        <span className="hidden lg:inline">{hour.hora}:00 - {hour.hora + 1}:00</span>
+                                        <span className="lg:hidden"
+                                            style={hour.hora === currentHour ? { color: '#4ade80' } : undefined}>{hour.hora} - {hour.hora + 1}</span>
+                                        <span className="hidden lg:inline"
+                                            style={hour.hora === currentHour ? { color: '#4ade80' } : undefined}>{hour.hora}:00 - {hour.hora + 1}:00</span>
                                     </span>
                                     <span data-element="mobile-sales-units" className="justify-self-center whitespace-nowrap text-center text-[7px]">
                                         {hourUnits[hour.hora] !== undefined ? `${hourUnits[hour.hora].toLocaleString('es-ES')} u` : ''}
