@@ -579,6 +579,9 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
         if (bv === null && av !== null) return -1;
         return (Number(bv ?? 0) - Number(av ?? 0)) || b.sales - a.sales;
     });
+    // La columna de posición tiene el mismo ancho en todas las filas.
+    // Alineación derecha: del 9. al 10. la miniatura no se desplaza.
+    const rankColumnWidth = `${Math.max(3, String(ranking.length).length + 1)}ch`;
     const maxValue = Math.max(1, ...ranking.map(row => Math.max(0,
         metric === 'importe' ? row.sales : metric === 'cantidad' ? row.units : row.margin ?? 0)));
     const totalSales = Number(productRankingReport?.summary?.totalSales ?? 0);
@@ -641,7 +644,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                                     selection?.scope === scope && selection?.kind === 'product' && selection.productId === product.articulo_id && 'bg-sky-200/15')}
                                 aria-label={product.nombre_articulo + ' · ' + display + ' · ' + label}>
                                 <span className={cn('flex min-w-0 items-center gap-1 text-white/85', mobileView === 'products' && 'min-w-0 overflow-hidden')}>
-                                    <span className="shrink-0 tabular-nums">{index + 1}.</span>
+                                    <span data-element="sales-product-rank" className="block shrink-0 whitespace-nowrap text-right tabular-nums" style={{ width: rankColumnWidth }}>{index + 1}.</span>
                                     <ProductRankingThumbnail key={productThumbnails[product.articulo_id ?? -1] ?? product.articulo_id ?? index}
                                         src={product.articulo_id != null ? productThumbnails[product.articulo_id] : undefined}
                                         name={product.nombre_articulo}/>
