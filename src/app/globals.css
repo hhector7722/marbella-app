@@ -11307,6 +11307,10 @@ body:has(.carta-shared-scene)
   }
 }
 @media (max-width: 359px) {
+  /* En los móviles estrechos priorizar legibilidad: no reducir tanto la foto. */
+  .carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row > div {
+    width: 94%;
+  }
   .carta-browse-modal.carta-browse-modal-compact .carta-square-product-card > div:nth-child(2) {
     min-height: 45px;
   }
