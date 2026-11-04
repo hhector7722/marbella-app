@@ -31,6 +31,26 @@ export function isValidComponentQuantity(value: number): boolean {
   return Number.isFinite(value) && value > 0
 }
 
+/**
+ * Mientras no se edite explícitamente el medio, su cantidad sugerida se mantiene
+ * en la mitad del entero. El override "0" es válido y nunca se confunde con vacío.
+ */
+export function pendingHalfQuantity(full: string, override?: string | null): string {
+  if (override !== null && override !== undefined) return override
+  const normalized = full.trim().replace(',', '.')
+  if (!normalized) return ''
+  const amount = Number(normalized)
+  return Number.isFinite(amount) && amount > 0 ? String(amount / 2) : ''
+}
+
+/** Medio bocadillo admite cero para ingredientes que no se incluyen. */
+export function isValidPendingHalfQuantity(value: string): boolean {
+  const raw = value.trim().replace(',', '.')
+  if (!raw) return false
+  const amount = Number(raw)
+  return Number.isFinite(amount) && amount >= 0
+}
+
 /** Unidades que convierten con el rendimiento de la hija. Vacío si el rendimiento no es canónico. */
 export function compatibleComponentUnits(yieldUnit: string | null | undefined): string[] {
   if (!yieldUnit || !isCanonicalYieldUnit(yieldUnit)) return []

@@ -65,6 +65,8 @@ import {
     directSubrecipeLineCost,
     ingredientRowCostSource,
     isValidComponentQuantity,
+    isValidPendingHalfQuantity,
+    pendingHalfQuantity,
     sheetCostSource,
     subrecipeWriteErrorMessage,
     tortillaFormatForParentRecipe,
@@ -134,6 +136,8 @@ type PendingComponent = {
     kind: 'ingredient' | 'elaboration';
     name: string;
     quantity: string;
+    /** null = mitad automática del entero; string = valor fijado por el usuario. */
+    quantityHalf?: string | null;
     unit: string;
 };
 
@@ -894,9 +898,11 @@ function RecipeDetailContent() {
         setPendingComponents((previous) => previous.some((row) => row.kind === 'ingredient' && row.id === ingredient.id)
             ? previous.filter((row) => !(row.kind === 'ingredient' && row.id === ingredient.id))
             : [...previous, {
-                kind: 'ingredient', id: ingredient.id, name: ingredient.name, quantity: '1',
+                kind: 'ingredient', id: ingredient.id, name: ingredient.name, quantity: '1', quantityHalf: null,
                 unit: resolveIngredientRecipeUnit(ingredient.recipe_unit, ingredient.purchase_unit || 'ud'),
             }]);
+        // Tras seleccionar, el buscador queda limpio; el ingrediente solo aparece en «Por añadir».
+        setSearchTerm('');
     };
 
     const togglePendingElaboration = (child: RecipeComponentChild) => {
@@ -905,17 +911,28 @@ function RecipeDetailContent() {
         setPendingComponents((previous) => previous.some((row) => row.kind === 'elaboration' && row.id === child.id)
             ? previous.filter((row) => !(row.kind === 'elaboration' && row.id === child.id))
             : [...previous, { kind: 'elaboration', id: child.id, name: child.name, quantity: '1', unit: child.yield_unit || 'ud' }]);
+        setSearchTerm('');
     };
 
-    const updatePendingComponent = (key: Pick<PendingComponent, 'kind' | 'id'>, changes: Partial<Pick<PendingComponent, 'quantity' | 'unit'>>) => {
+    const updatePendingComponent = (key: Pick<PendingComponent, 'kind' | 'id'>, changes: Partial<Pick<PendingComponent, 'quantity' | 'quantityHalf' | 'unit'>>) => {
         setPendingComponents((previous) => previous.map((row) => row.kind === key.kind && row.id === key.id ? { ...row, ...changes } : row));
     };
 
     const savePendingComponents = async () => {
         if (savingComponents || !pendingComponents.length) return;
-        const parsed = pendingComponents.map((row) => ({ ...row, amount: Number(row.quantity.trim().replace(',', '.')) }));
+        const parsed = pendingComponents.map((row) => ({
+            ...row,
+            amount: Number(row.quantity.trim().replace(',', '.')),
+            halfAmount: row.kind === 'ingredient'
+                ? pendingHalfQuantity(row.quantity, row.quantityHalf)
+                : null,
+        }));
         if (parsed.some((row) => !isValidComponentQuantity(row.amount))) {
             toast.error('La cantidad debe ser mayor que cero'); return;
+        }
+        if (canSelectHalf && parsed.some((row) => row.kind === 'ingredient'
+            && !isValidPendingHalfQuantity(row.halfAmount ?? ''))) {
+            toast.error('Revisa la cantidad del medio bocadillo'); return;
         }
         if (parsed.some((row) => row.kind === 'ingredient'
             ? !RECIPE_UNIT_OPTIONS.some((option) => option.value === row.unit)
@@ -959,7 +976,11 @@ function RecipeDetailContent() {
             const ingredientResult = ingredientRows.length
                 ? await supabase.from('recipe_ingredients').insert(ingredientRows.map((row) => ({
                     recipe_id: recipeId, ingredient_id: row.id,
-                    quantity_gross: row.amount, quantity_half: row.amount / 2, unit: row.unit,
+                    quantity_gross: row.amount,
+                    quantity_half: canSelectHalf && row.halfAmount !== null
+                        ? Number(row.halfAmount.replace(',', '.'))
+                        : row.amount / 2,
+                    unit: row.unit,
                 })))
                 : { error: null };
             const elaborationResult = insertElaborations.length
@@ -1078,10 +1099,12 @@ function RecipeDetailContent() {
     const componentQuery = searchTerm.trim().toLocaleLowerCase('es');
     const hasComponentQuery = componentQuery.length > 0;
     const filteredIngredients = hasComponentQuery
-        ? availableIngredients.filter((ing) => ing.name.toLocaleLowerCase('es').includes(componentQuery))
+        ? availableIngredients.filter((ing) => ing.name.toLocaleLowerCase('es').includes(componentQuery)
+            && !pendingComponents.some((pending) => pending.kind === 'ingredient' && pending.id === ing.id))
         : [];
     const filteredRecipeCandidates = hasComponentQuery
-        ? recipeCandidates.filter((candidate) => candidate.name.toLocaleLowerCase('es').includes(componentQuery))
+        ? recipeCandidates.filter((candidate) => candidate.name.toLocaleLowerCase('es').includes(componentQuery)
+            && !pendingComponents.some((pending) => pending.kind === 'elaboration' && pending.id === candidate.id))
         : [];
 
     const QuantityInput = ({ initialValue, onSave, positiveOnly = false, onReject }: { initialValue: number; onSave: (val: number) => void; positiveOnly?: boolean; onReject?: () => void }) => {
@@ -2062,11 +2085,11 @@ function RecipeDetailContent() {
                                     </p>
                                 ) : null}
                             </div>
-                            ) : (
+                            ) : pendingComponents.length === 0 ? (
                                 <p className="px-1 py-2 text-center text-xs text-zinc-500">
                                     Escribe el nombre del ingrediente para buscarlo.
                                 </p>
-                            )}
+                            ) : null}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-3">
@@ -2120,11 +2143,11 @@ function RecipeDetailContent() {
                                     </p>
                                 ) : null}
                             </div>
-                            ) : (
+                            ) : pendingComponents.length === 0 ? (
                                 <p className="px-1 py-2 text-center text-xs text-zinc-500">
                                     Escribe el nombre de la elaboración para buscarla.
                                 </p>
-                            )}
+                            ) : null}
                         </div>
                     )}
                     {pendingComponents.length > 0 ? (
@@ -2141,6 +2164,9 @@ function RecipeDetailContent() {
                                             .map((unit) => ({ value: unit, label: unit === 'l' ? 'L' : unit }));
                                     const valid = row.quantity.trim().length > 0
                                         && isValidComponentQuantity(Number(row.quantity.trim().replace(',', '.')));
+                                    const showsHalf = canSelectHalf && row.kind === 'ingredient';
+                                    const halfValue = showsHalf ? pendingHalfQuantity(row.quantity, row.quantityHalf) : '';
+                                    const validHalf = !showsHalf || isValidPendingHalfQuantity(halfValue);
                                     return (
                                         <div key={`${row.kind}-${row.id}`} className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5">
                                             <div className="mb-2 flex min-w-0 items-center gap-2">
@@ -2154,9 +2180,9 @@ function RecipeDetailContent() {
                                                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800"
                                                 ><X className="h-4 w-4" aria-hidden /></button>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2">
+                                            <div className={cn('grid gap-2', showsHalf ? 'grid-cols-3' : 'grid-cols-2')}>
                                                 <label className="min-w-0 text-[11px] font-medium text-zinc-600">
-                                                    Cantidad
+                                                    {showsHalf ? 'Entero' : 'Cantidad'}
                                                     <input
                                                         type="text"
                                                         inputMode="decimal"
@@ -2166,11 +2192,29 @@ function RecipeDetailContent() {
                                                         value={row.quantity}
                                                         onChange={(event) => updatePendingComponent(row, { quantity: event.target.value })}
                                                         className={cn(
-                                                            'mt-1 h-10 w-full rounded-lg border bg-white px-3 text-base font-semibold tabular-nums text-zinc-800 outline-none focus:border-[#36606F]',
+                                                            'mt-1 h-10 w-full rounded-lg border bg-white px-2 text-base font-semibold tabular-nums text-zinc-800 outline-none focus:border-[#36606F]',
                                                             valid ? 'border-zinc-300' : 'border-red-400',
                                                         )}
                                                     />
                                                 </label>
+                                                {showsHalf ? (
+                                                    <label className="min-w-0 text-[11px] font-medium text-zinc-600">
+                                                        Medio
+                                                        <input
+                                                            type="text"
+                                                            inputMode="decimal"
+                                                            aria-invalid={!validHalf}
+                                                            aria-label={`Cantidad medio de ${row.name}`}
+                                                            disabled={savingComponents}
+                                                            value={halfValue}
+                                                            onChange={(event) => updatePendingComponent(row, { quantityHalf: event.target.value })}
+                                                            className={cn(
+                                                                'mt-1 h-10 w-full rounded-lg border bg-white px-2 text-base font-semibold tabular-nums text-zinc-800 outline-none focus:border-[#36606F]',
+                                                                validHalf ? 'border-zinc-300' : 'border-red-400',
+                                                            )}
+                                                        />
+                                                    </label>
+                                                ) : null}
                                                 <label className="min-w-0 text-[11px] font-medium text-zinc-600">
                                                     Unidad
                                                     <select
@@ -2194,7 +2238,10 @@ function RecipeDetailContent() {
                         type="button"
                         onClick={() => void savePendingComponents()}
                         disabled={savingComponents || pendingComponents.length === 0 || pendingComponents.some((row) =>
-                            !row.quantity.trim() || !isValidComponentQuantity(Number(row.quantity.trim().replace(',', '.'))))}
+                            !row.quantity.trim()
+                            || !isValidComponentQuantity(Number(row.quantity.trim().replace(',', '.')))
+                            || (canSelectHalf && row.kind === 'ingredient'
+                                && !isValidPendingHalfQuantity(pendingHalfQuantity(row.quantity, row.quantityHalf))))}
                         className="min-h-12 w-full shrink-0 rounded-xl bg-[#36606F] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#2c5160] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500"
                     >
                         {savingComponents ? 'Añadiendo componentes…' : `Añadir ${pendingComponents.length} componente${pendingComponents.length === 1 ? '' : 's'}`}

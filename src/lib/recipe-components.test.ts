@@ -8,6 +8,8 @@ import {
   directSubrecipeLineCost,
   ingredientRowCostSource,
   isValidComponentQuantity,
+  isValidPendingHalfQuantity,
+  pendingHalfQuantity,
   sheetCostSource,
   subrecipeWriteErrorMessage,
   tortillaFormatForParentRecipe,
@@ -126,4 +128,18 @@ test('tortilla: bocadillo y pincho tienen formatos; los menús usan unidades com
   assert.equal(tortillaFormatForParentRecipe('Menú tortilla'), null)
   assert.equal(tortillaFormatForParentRecipe('Menú tortilla y embutido'), null)
   assert.equal(tortillaFormatForParentRecipe('Otra receta'), null)
+})
+
+test('medio bocadillo: propone la mitad del entero, sigue los cambios y permite una cantidad propia', () => {
+  assert.equal(pendingHalfQuantity('1', null), '0.5')
+  assert.equal(pendingHalfQuantity('0,75', null), '0.375')
+  assert.equal(pendingHalfQuantity('100', null), '50')
+  assert.equal(pendingHalfQuantity('100', '34'), '34')
+  assert.equal(pendingHalfQuantity('100', '0'), '0')
+  assert.equal(pendingHalfQuantity('', null), '')
+  assert.equal(isValidPendingHalfQuantity('0'), true)
+  assert.equal(isValidPendingHalfQuantity('0,75'), true)
+  assert.equal(isValidPendingHalfQuantity(''), false)
+  assert.equal(isValidPendingHalfQuantity('-1'), false)
+  assert.equal(isValidPendingHalfQuantity('abc'), false)
 })
