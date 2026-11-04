@@ -10,6 +10,7 @@ import {
   isValidComponentQuantity,
   sheetCostSource,
   subrecipeWriteErrorMessage,
+  tortillaFormatForParentRecipe,
 } from './recipe-components.ts'
 
 test('el rendimiento elige unidades compatibles', () => {
@@ -117,4 +118,12 @@ test('soporte de media ración con formato únicamente cuando la subreceta lo de
   assert.equal(sheetCostSource({ isSellable: true, hasSubrecipes: true, portion: 'half' }), 'unavailable')
   assert.equal(sheetCostSource({ isSellable: true, hasSubrecipes: true, portion: 'half', supportsHalfSubrecipes: true }), 'recursive')
   assert.equal(sheetCostSource({ isSellable: true, hasSubrecipes: true, portion: 'full' }), 'recursive')
+})
+
+test('tortilla: bocadillo y pincho tienen formatos; los menús usan unidades completas', () => {
+  assert.equal(tortillaFormatForParentRecipe('Tortilla patatas'), 'entero')
+  assert.equal(tortillaFormatForParentRecipe('Pincho tortilla'), 'pincho')
+  assert.equal(tortillaFormatForParentRecipe('Menú tortilla'), null)
+  assert.equal(tortillaFormatForParentRecipe('Menú tortilla y embutido'), null)
+  assert.equal(tortillaFormatForParentRecipe('Otra receta'), null)
 })

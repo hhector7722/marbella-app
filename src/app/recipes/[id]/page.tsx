@@ -65,6 +65,7 @@ import {
     isValidComponentQuantity,
     sheetCostSource,
     subrecipeWriteErrorMessage,
+    tortillaFormatForParentRecipe,
     type RecipeCostComponentNode,
 } from '@/lib/recipe-components';
 
@@ -793,13 +794,14 @@ function RecipeDetailContent() {
     const handleAddSubrecipe = async (child: RecipeComponentChild) => {
         if (!canAddRecipeComponent({ yieldQuantity: child.yield_quantity, yieldUnit: child.yield_unit }) || !child.yield_unit) return;
         const formats = consumptionFormats.filter((f) => f.recipe_id === child.id);
-        if (child.name === 'Tortilla' && formats.length === 0) {
+        // Sólo el bocadillo y el pincho utilizan formatos; los menús consumen 1 ud completa.
+        const preferred = child.name === 'Tortilla' ? tortillaFormatForParentRecipe(recipe?.name) : null;
+        const full = preferred ? formats.find((f) => f.code === preferred) : undefined;
+        const half = preferred === 'entero' ? formats.find((f) => f.code === 'medio') : undefined;
+        if (preferred && (!full || (preferred === 'entero' && !half))) {
             toast.error('No están disponibles los formatos de tortilla');
             return;
         }
-        const preferred = recipe?.name === 'Pincho tortilla' ? 'pincho' : 'entero';
-        const full = formats.find((f) => f.code === preferred);
-        const half = recipe?.name === 'Tortilla patatas' ? formats.find((f) => f.code === 'medio') : undefined;
         const { error } = await supabase.from('recipe_subrecipes').insert({
             parent_recipe_id: recipeId,
             child_recipe_id: child.id,
@@ -1487,12 +1489,15 @@ function RecipeDetailContent() {
                                     ) : null}
                                     {subrecipes.map((line) => {
                                         const fullPortion = internalRecipe || activePortion === 'full';
-                                        const lineCost = fullPortion && sheetCostMode === 'recursive'
+                                        // También se muestra el coste de la elaboración en la media ración.
+                                        const lineCost = sheetCostMode === 'recursive'
                                             ? directSubrecipeLineCost(elaborationCost?.components, line.id)
                                             : { status: '', costEur: null };
                                         const unitOptions = compatibleComponentUnits(line.child.yield_unit);
                                         const unitChoices = unitOptions.includes(line.unit) ? unitOptions : [line.unit, ...unitOptions];
-                                        const lineFormats = consumptionFormats.filter((format) => format.recipe_id === line.child_recipe_id);
+                                        const lineFormats = line.child.name === 'Tortilla' && tortillaFormatForParentRecipe(recipe?.name)
+                                            ? consumptionFormats.filter((format) => format.recipe_id === line.child_recipe_id)
+                                            : [];
                                         const selectedFormatId = activePortion === 'half' ? line.format_half_id : line.format_full_id;
                                         const yieldText = line.child.yield_quantity != null && line.child.yield_unit
                                             ? `${formatYieldQuantity(Number(line.child.yield_quantity))} ${line.child.yield_unit}`
