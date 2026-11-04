@@ -14,6 +14,12 @@ import { toast, Toaster } from 'sonner';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { getSupplierLogo } from '@/lib/supplier-logos';
 import { Truck } from 'lucide-react';
+import {
+    EMPTY_DISPATCHED_WEEK_ROW,
+    formatDispatchedWeekNotice,
+    readDispatchedWeekRow,
+    type DispatchedWeekRow,
+} from '@/lib/order-dispatched-week';
 
 interface Ingredient {
     id: string;
@@ -35,22 +41,6 @@ interface DraftItem {
 import { OrderSummaryModal } from "@/components/orders/OrderSummaryModal";
 import { OrderSuccessModal } from "@/components/orders/OrderSuccessModal";
 import { generateOrderPDF } from "@/utils/orders/pdf-generator";
-
-function readDispatchedTodayRow(data: unknown): { dispatched: boolean; firstName: string | null } {
-    const row = Array.isArray(data) ? data[0] : data;
-    if (!row || typeof row !== 'object') return { dispatched: false, firstName: null };
-    const rec = row as { dispatched?: unknown; first_name?: unknown };
-    const firstName = typeof rec.first_name === 'string' ? rec.first_name.trim() : '';
-    return {
-        dispatched: rec.dispatched === true,
-        firstName: firstName || null,
-    };
-}
-
-function formatDispatchedTodayNotice(firstName: string | null): string {
-    if (!firstName) return 'Hoy ya se ha tramitado un pedido para este proveedor.';
-    return `Hoy ya se ha tramitado un pedido para este proveedor (${firstName})`;
-}
 
 export default function NewOrderPage() {
     const supabase = createClient();
@@ -75,8 +65,7 @@ export default function NewOrderPage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [supplierPhoneForSuccess, setSupplierPhoneForSuccess] = useState<string | null>(null);
     const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
-    const [alreadyDispatchedToday, setAlreadyDispatchedToday] = useState(false);
-    const [dispatchedByFirstName, setDispatchedByFirstName] = useState<string | null>(null);
+    const [lastDispatchThisWeek, setLastDispatchThisWeek] = useState<DispatchedWeekRow & { supplierId: string | null }>({ ...EMPTY_DISPATCHED_WEEK_ROW, supplierId: null });
     const currentOrderIdRef = useRef<string | null>(null);
     const pendingDispatchRef = useRef(false);
 
@@ -148,25 +137,18 @@ export default function NewOrderPage() {
     }, [supplierId]);
 
     useEffect(() => {
-        if (!supplierId) {
-            setAlreadyDispatchedToday(false);
-            setDispatchedByFirstName(null);
-            return;
-        }
+        if (!supplierId) return;
+
         let cancelled = false;
         const load = async () => {
-            const { data, error } = await supabase.rpc('supplier_has_dispatched_order_today', {
+            const { data, error } = await supabase.rpc('supplier_last_dispatched_order_this_week', {
                 p_supplier_id: String(supplierId),
             });
             if (cancelled) return;
-            if (error) {
-                setAlreadyDispatchedToday(false);
-                setDispatchedByFirstName(null);
-                return;
-            }
-            const row = readDispatchedTodayRow(data);
-            setAlreadyDispatchedToday(row.dispatched);
-            setDispatchedByFirstName(row.firstName);
+            setLastDispatchThisWeek({
+                ...(error ? EMPTY_DISPATCHED_WEEK_ROW : readDispatchedWeekRow(data)),
+                supplierId,
+            });
         };
         void load();
         return () => {
@@ -238,20 +220,24 @@ export default function NewOrderPage() {
             toast.error('No se ha podido registrar el pedido como tramitado');
             return;
         }
+        const fallback: DispatchedWeekRow = {
+            dispatched: true,
+            firstName: null,
+            dispatchedAt: new Date().toISOString(),
+        };
         if (!supplierId) {
-            setAlreadyDispatchedToday(true);
+            setLastDispatchThisWeek({ ...fallback, supplierId });
             return;
         }
-        const { data: today, error: todayError } = await supabase.rpc('supplier_has_dispatched_order_today', {
+        const { data: weekly, error: weeklyError } = await supabase.rpc('supplier_last_dispatched_order_this_week', {
             p_supplier_id: String(supplierId),
         });
-        if (todayError) {
-            setAlreadyDispatchedToday(true);
+        if (weeklyError) {
+            setLastDispatchThisWeek({ ...fallback, supplierId });
             return;
         }
-        const row = readDispatchedTodayRow(today);
-        setAlreadyDispatchedToday(true);
-        setDispatchedByFirstName(row.firstName);
+        const row = readDispatchedWeekRow(weekly);
+        setLastDispatchThisWeek({ ...(row.dispatched ? row : fallback), supplierId });
     };
 
     const handleDispatched = () => {
@@ -376,10 +362,10 @@ export default function NewOrderPage() {
 
     const ordersToolbar = (
         <div className="flex min-w-0 flex-col gap-1">
-            {alreadyDispatchedToday ? (
+            {lastDispatchThisWeek.supplierId === supplierId && lastDispatchThisWeek.dispatched ? (
                 <div className="min-w-0 shrink-0">
-                    <Notice instance="orders-already-dispatched-today" variant="info">
-                        {formatDispatchedTodayNotice(dispatchedByFirstName)}
+                    <Notice instance="orders-already-dispatched-week" variant="info">
+                        {formatDispatchedWeekNotice(lastDispatchThisWeek)}
                     </Notice>
                 </div>
             ) : null}

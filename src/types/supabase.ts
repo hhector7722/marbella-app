@@ -7133,6 +7133,14 @@ export type Database = {
           first_name: string
         }[]
       }
+      supplier_last_dispatched_order_this_week: {
+        Args: { p_supplier_id: string }
+        Returns: {
+          dispatched: boolean
+          first_name: string | null
+          dispatched_at: string | null
+        }[]
+      }
       sync_purchase_invoice_status: {
         Args: { p_invoice_id: string }
         Returns: undefined

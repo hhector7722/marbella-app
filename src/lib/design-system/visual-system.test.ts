@@ -2122,13 +2122,15 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
     });
 
-    it('pedido avisa el ya tramitado hoy con Notice', () => {
+    it('pedido avisa el ya tramitado esta semana con Notice', () => {
         const orders = readFileSync(join(SRC_ROOT, 'app/orders/new/page.tsx'), 'utf8');
+        const helper = readFileSync(join(SRC_ROOT, 'lib/order-dispatched-week.ts'), 'utf8');
         const success = readFileSync(join(SRC_ROOT, 'components/orders/OrderSuccessModal.tsx'), 'utf8');
-        assert.match(orders, /<Notice instance="orders-already-dispatched-today"/);
-        assert.match(orders, /formatDispatchedTodayNotice\(dispatchedByFirstName\)/);
-        assert.match(orders, /Hoy ya se ha tramitado un pedido para este proveedor \(\$\{firstName\}\)/);
-        assert.match(orders, /supplier_has_dispatched_order_today/);
+        assert.match(orders, /<Notice instance="orders-already-dispatched-week"/);
+        assert.match(orders, /formatDispatchedWeekNotice\(lastDispatchThisWeek\)/);
+        assert.match(helper, /Hoy se ha tramitado un pedido/);
+        assert.match(helper, /se tramitó un pedido/);
+        assert.match(orders, /supplier_last_dispatched_order_this_week/);
         assert.match(orders, /onDispatched=\{handleDispatched\}/);
         assert.match(success, /onDispatched\?\.\(\)/);
     });
