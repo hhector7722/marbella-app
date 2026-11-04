@@ -44,6 +44,14 @@ const madridWeekday = new Intl.DateTimeFormat('es-ES', {
   weekday: 'long',
 });
 
+// Comparamos días civiles en Barcelona, no intervalos de 24 horas (horario de verano).
+function madridDayNumber(date: Date): number {
+  const parts = madridDate.formatToParts(date);
+  const number = (type: 'year' | 'month' | 'day') =>
+    Number(parts.find((part) => part.type === type)?.value);
+  return Date.UTC(number('year'), number('month') - 1, number('day')) / 86_400_000;
+}
+
 export function formatDispatchedWeekNotice(
   row: DispatchedWeekRow,
   now: Date = new Date(),
@@ -52,9 +60,12 @@ export function formatDispatchedWeekNotice(
   let message = 'Se ha tramitado un pedido';
 
   if (dispatchedDate) {
-    message = madridDate.format(dispatchedDate) === madridDate.format(now)
+    const daysAgo = madridDayNumber(now) - madridDayNumber(dispatchedDate);
+    message = daysAgo === 0
       ? 'Hoy se ha tramitado un pedido'
-      : `El ${madridWeekday.format(dispatchedDate)} se tramitó un pedido`;
+      : daysAgo === 1
+        ? 'Ayer se tramitó un pedido'
+        : `El ${madridWeekday.format(dispatchedDate)} se tramitó un pedido`;
   }
 
   return `${message}${row.firstName ? ` (${row.firstName})` : ''}.`;

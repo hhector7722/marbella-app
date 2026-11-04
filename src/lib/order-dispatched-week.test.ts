@@ -46,13 +46,42 @@ describe('aviso de pedido semanal por proveedor', () => {
     assert.equal(formatDispatchedWeekNotice(row, nowNextDay), 'Hoy se ha tramitado un pedido (Héctor).');
   });
 
-  it('sin autor conserva la fecha y no imprime paréntesis vacíos', () => {
+  it('si fue ayer indica Ayer y el nombre del usuario', () => {
+    const row = readDispatchedWeekRow([{
+      dispatched: true,
+      first_name: 'Alba',
+      dispatched_at: '2026-11-03T10:30:00.000Z',
+    }]);
+    assert.equal(formatDispatchedWeekNotice(row, now), 'Ayer se tramitó un pedido (Alba).');
+  });
+
+  it('sin autor indica Ayer y no imprime paréntesis vacíos', () => {
     const row = readDispatchedWeekRow([{
       dispatched: true,
       first_name: null,
       dispatched_at: '2026-11-03T10:30:00.000Z',
     }]);
-    assert.equal(formatDispatchedWeekNotice(row, now), 'El martes se tramitó un pedido.');
+    assert.equal(formatDispatchedWeekNotice(row, now), 'Ayer se tramitó un pedido.');
+  });
+
+  it('detecta ayer al cambiar de mes y cruzar la medianoche de Barcelona', () => {
+    const row = readDispatchedWeekRow([{
+      dispatched: true,
+      first_name: 'Pere',
+      dispatched_at: '2026-06-30T21:45:00.000Z', // 23:45 en Barcelona
+    }]);
+    const nextDay = new Date('2026-06-30T22:15:00.000Z'); // 00:15 del 1 de julio
+    assert.equal(formatDispatchedWeekNotice(row, nextDay), 'Ayer se tramitó un pedido (Pere).');
+  });
+
+  it('compara días civiles incluso en el cambio de horario de verano', () => {
+    const row = readDispatchedWeekRow([{
+      dispatched: true,
+      first_name: 'Juan',
+      dispatched_at: '2026-03-28T23:30:00.000Z', // domingo 00:30 en Barcelona
+    }]);
+    const nextDay = new Date('2026-03-29T22:30:00.000Z'); // lunes 00:30 en Barcelona
+    assert.equal(formatDispatchedWeekNotice(row, nextDay), 'Ayer se tramitó un pedido (Juan).');
   });
 
   it('resultado vacío no señala falsamente que haya pedido', () => {
