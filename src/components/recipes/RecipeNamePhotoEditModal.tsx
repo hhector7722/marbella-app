@@ -19,6 +19,8 @@ export type RecipeNamePhotoSaved = {
     is_sellable: boolean;
     yield_quantity: number | null;
     yield_unit: string | null;
+    category?: string | null;
+    menu_category_id?: string | null;
 };
 
 type Props = {
@@ -30,6 +32,7 @@ type Props = {
     initialIsSellable?: boolean;
     initialYieldQuantity?: number | null;
     initialYieldUnit?: string | null;
+    productionCategoryId?: string | null;
     onSaved: (payload: RecipeNamePhotoSaved) => void;
     onDelete?: () => void;
     categoryId?: string;
@@ -46,6 +49,7 @@ export function RecipeNamePhotoEditModal({
     initialIsSellable = true,
     initialYieldQuantity = null,
     initialYieldUnit = null,
+    productionCategoryId = null,
     onSaved,
     onDelete,
     categoryId = '',
@@ -149,6 +153,15 @@ export function RecipeNamePhotoEditModal({
             return;
         }
         const internal = kindDraft === 'internal';
+        if (internal && !productionCategoryId) {
+            toast.error('La categoría Producción no está disponible');
+            return;
+        }
+        const categoryUpdate = internal
+            ? { category: 'Producción', menu_category_id: productionCategoryId }
+            : initialIsSellable === false
+                ? { category: null, menu_category_id: null }
+                : {};
         const yieldSave = yieldFieldsForSave(yieldQuantityDraft, yieldUnitDraft, internal);
         if (!yieldSave.ok) {
             toast.error(yieldSave.message);
@@ -187,6 +200,7 @@ export function RecipeNamePhotoEditModal({
                     name: trimmed,
                     photo_url,
                     is_sellable: !internal,
+                    ...categoryUpdate,
                     yield_quantity: yieldSave.yield_quantity,
                     yield_unit: yieldSave.yield_unit,
                 })
@@ -222,6 +236,7 @@ export function RecipeNamePhotoEditModal({
                 name: trimmed,
                 photo_url,
                 is_sellable: !internal,
+                ...categoryUpdate,
                 yield_quantity: yieldSave.yield_quantity,
                 yield_unit: yieldSave.yield_unit,
             });

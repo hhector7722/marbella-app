@@ -22,6 +22,7 @@ import {
     menuCategoryFromUrlParam,
     menuCategoryToUrlParam,
     sortMenuCategoriesForRecipes,
+    recipeVisibleInCatalog,
 } from '@/lib/recipe-menu-categories';
 import { resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 import { isInternalRecipe, yieldFieldsForSave } from '@/lib/recipe-elaboration';
@@ -179,19 +180,12 @@ function RecipesContent() {
     const filteredRecipes = recipes.filter((recipe) => {
         const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
         if (!matchesSearch) return false;
-        if (isInternalRecipe(recipe.is_sellable)) {
-            if (foodCostFilter) return false;
-        } else if (foodCostFilter && getRecipeFoodCostStatus(recipe) !== foodCostFilter) {
-            return false;
-        }
+        if (!recipeVisibleInCatalog(recipe, categoryFromUrl, productionCategory?.id ?? null)) return false;
+        if (categoryFromUrl === 'produccion') return true;
+        if (foodCostFilter && getRecipeFoodCostStatus(recipe) !== foodCostFilter) return false;
         if (!categoryFromUrl) return true;
         if (categoryFromUrl === '__none__') {
             return !isInternalRecipe(recipe.is_sellable) && !recipe.menu_category_id;
-        }
-        if (categoryFromUrl === 'produccion') {
-            return isInternalRecipe(recipe.is_sellable)
-                && productionCategory !== null
-                && recipe.menu_category_id === productionCategory.id;
         }
         const row = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
         if (row) return recipe.menu_category_id === row.id;
@@ -257,7 +251,11 @@ function RecipesContent() {
         let categoryDb: string | null = null;
         let menuCategoryId: string | null = null;
         let salePrice: number | null = null;
-        if (internal && productionCategory && newRecipe.menu_category_id === productionCategory.id) {
+        if (internal) {
+            if (!productionCategory) {
+                toast.error('No se ha podido cargar la categoría Producción');
+                return;
+            }
             menuCategoryId = productionCategory.id;
             categoryDb = productionCategory.name;
         }
