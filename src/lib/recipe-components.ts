@@ -16,6 +16,16 @@ export function sheetCostSource(input: {
   return 'recursive'
 }
 
+/**
+ * Sólo estas dos recetas consumen Tortilla mediante sus formatos.
+ * El resto consume unidades físicas del lote (1 ud = 1 tortilla).
+ */
+export function tortillaFormatForParentRecipe(name: string | null | undefined): 'entero' | 'pincho' | null {
+  if (name === 'Tortilla patatas') return 'entero'
+  if (name === 'Pincho tortilla') return 'pincho'
+  return null
+}
+
 /** Cantidad de un componente: finita y mayor que cero. */
 export function isValidComponentQuantity(value: number): boolean {
   return Number.isFinite(value) && value > 0
