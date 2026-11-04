@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { isHalfPortionSandwichCategory, recipeVisibleInCatalog, labelMenuCategoryForRecipesEs, groupMenuCategoriesForRecipes, recipeMatchesMenuCategory, groupRecipeCategoryOptions, sortMenuCategoriesForRecipes, type MenuCategoryRow } from './recipe-menu-categories.ts'
+import { isHalfPortionSandwichCategory, recipeVisibleInCatalog, labelMenuCategoryForRecipesEs, capitalizeRecipeCategoryLabel, groupMenuCategoriesForRecipes, recipeMatchesMenuCategory, groupRecipeCategoryOptions, sortMenuCategoriesForRecipes, type MenuCategoryRow } from './recipe-menu-categories.ts'
 
 const rows: MenuCategoryRow[] = [
   { id: 'hot', name: 'Bocadillos - Calientes', slug: 'bocadillos-calientes', parent_id: 'sandwich', sort_order: 1 },
@@ -43,7 +43,7 @@ test('Producción separa elaboraciones internas de las recetas vendibles', () =>
 })
 
 
-test('categorías de recetas: nombres breves, minúsculas y sin rutas', () => {
+test('categorías de recetas: nombres breves, inicial mayúscula y sin rutas', () => {
   const categories: MenuCategoryRow[] = [
     { id: 'platos', name: 'Platos', slug: 'platos', parent_id: null, sort_order: 40 },
     { id: 'platos-general', name: 'Platos - Platos', slug: 'platos-platos', parent_id: 'platos', sort_order: 31 },
@@ -54,11 +54,11 @@ test('categorías de recetas: nombres breves, minúsculas y sin rutas', () => {
   ]
   const overrides = new Map([['platos', 'PLATOS'], ['platos-general', 'PLATOS'], ['platos-marbella', 'PLATO MARBELLA'], ['calientes', 'CALIENTES'], ['cafeteria', 'CAFETERIA']])
   const label = (id: string) => labelMenuCategoryForRecipesEs(categories.find((r) => r.id === id)!, categories, overrides)
-  assert.equal(label('platos'), 'platos')
-  assert.equal(label('platos-general'), 'platos generales')
-  assert.equal(label('platos-marbella'), 'plato marbella')
-  assert.equal(label('calientes'), 'calientes')
-  assert.equal(label('cafeteria'), 'cafetería')
+  assert.equal(label('platos'), 'Platos')
+  assert.equal(label('platos-general'), 'Platos generales')
+  assert.equal(label('platos-marbella'), 'Plato marbella')
+  assert.equal(label('calientes'), 'Calientes')
+  assert.equal(label('cafeteria'), 'Cafetería')
 
   const grouped = groupMenuCategoriesForRecipes(categories)
   assert.deepEqual(grouped.map((section) => [section.parent.id, section.children.map((r) => r.id)]), [
@@ -70,5 +70,12 @@ test('categorías de recetas: nombres breves, minúsculas y sin rutas', () => {
   assert.equal(recipeMatchesMenuCategory({ menu_category_id: 'cafeteria' }, categories[0], categories), false)
 
   const options = sortMenuCategoriesForRecipes(categories).map((row) => ({ id: row.id, parent_id: row.parent_id, label: label(row.id) }))
-  assert.deepEqual(groupRecipeCategoryOptions(options).map((section) => section.parent.label), ['bocadillos', 'platos', 'cafetería'])
+  assert.deepEqual(groupRecipeCategoryOptions(options).map((section) => section.parent.label), ['Bocadillos', 'Platos', 'Cafetería'])
+})
+
+test('etiquetas de categoría: solo inicial mayúscula, con acentos', () => {
+  assert.equal(capitalizeRecipeCategoryLabel('PRODUCCIÓN'), 'Producción')
+  assert.equal(capitalizeRecipeCategoryLabel('sin CATEGORÍA'), 'Sin categoría')
+  assert.equal(capitalizeRecipeCategoryLabel('  bocadillos ESPECIALES  '), 'Bocadillos especiales')
+  assert.equal(capitalizeRecipeCategoryLabel(''), '')
 })

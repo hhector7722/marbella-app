@@ -39,7 +39,6 @@ type Props = {
     onDelete?: () => void;
     categoryId?: string;
     categories?: RecipeCategoryOption[];
-    onCategoryChange?: (categoryId: string) => void;
 };
 
 export function RecipeNamePhotoEditModal({
@@ -56,7 +55,6 @@ export function RecipeNamePhotoEditModal({
     onDelete,
     categoryId = '',
     categories = [],
-    onCategoryChange,
 }: Props) {
     const supabase = createClient();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -64,6 +62,7 @@ export function RecipeNamePhotoEditModal({
 
     const [nameDraft, setNameDraft] = useState('');
     const [kindDraft, setKindDraft] = useState<RecipeKind>('sellable');
+    const [categoryDraft, setCategoryDraft] = useState('');
     const [yieldQuantityDraft, setYieldQuantityDraft] = useState('');
     const [yieldUnitDraft, setYieldUnitDraft] = useState('');
     const [tortillaFormats, setTortillaFormats] = useState<Record<string, string>>({ entero: '7', medio: '14', pincho: '6' });
@@ -83,6 +82,7 @@ export function RecipeNamePhotoEditModal({
 
     const photoSyncKey = open
         ? `${initialName}\u0000${initialPhotoUrl ?? ''}\u0000${initialIsSellable}\u0000${initialYieldQuantity ?? ''}\u0000${initialYieldUnit ?? ''}`
+        + ':' + categoryId
         : null;
     const [syncedPhotoKey, setSyncedPhotoKey] = useState<string | null>(null);
 
@@ -92,6 +92,7 @@ export function RecipeNamePhotoEditModal({
             setNameDraft(initialName);
             setBaselinePhotoUrl(initialPhotoUrl);
             setKindDraft(initialIsSellable === false ? 'internal' : 'sellable');
+            setCategoryDraft(categoryId);
             setYieldQuantityDraft(initialYieldQuantity != null ? String(initialYieldQuantity) : '');
             setYieldUnitDraft(initialYieldUnit ?? '');
         }
@@ -159,11 +160,18 @@ export function RecipeNamePhotoEditModal({
             toast.error('La categoría Producción no está disponible');
             return;
         }
+        // La categoría y el tipo se guardan juntos al pulsar Guardar.
+        const categoryOption = categories.find((option) => option.id === categoryDraft);
+        if (!internal && categoryDraft && (!categoryOption || categoryDraft === productionCategoryId)) {
+            toast.error('Selecciona una categoría de recetas válida');
+            return;
+        }
         const categoryUpdate = internal
             ? { category: 'Producción', menu_category_id: productionCategoryId }
-            : initialIsSellable === false
-                ? { category: null, menu_category_id: null }
-                : {};
+            : {
+                category: categoryOption?.dbName ?? categoryOption?.label ?? null,
+                menu_category_id: categoryOption?.id ?? null,
+            };
         const yieldSave = yieldFieldsForSave(yieldQuantityDraft, yieldUnitDraft, internal);
         if (!yieldSave.ok) {
             toast.error(yieldSave.message);
@@ -314,7 +322,12 @@ export function RecipeNamePhotoEditModal({
                     density="comfortable"
                     aria-label="Tipo de receta"
                     value={kindDraft}
-                    onChange={(kind) => setKindDraft(kind as RecipeKind)}
+                    onChange={(value) => {
+                        const kind = value as RecipeKind;
+                        setKindDraft(kind);
+                        if (kind === 'internal') setCategoryDraft(productionCategoryId ?? '');
+                        else if (categoryDraft === productionCategoryId) setCategoryDraft('');
+                    }}
                     options={RECIPE_KIND_OPTIONS}
                 />
 
@@ -376,16 +389,27 @@ export function RecipeNamePhotoEditModal({
                     </div>
                 ) : null}
 
-                {onCategoryChange && categories.length > 0 ? (
+                {categories.length > 0 ? (
                     <Field instance="recipe-edit-category" label="Categoría" htmlFor="recipe-edit-category">
                         <select
                             id="recipe-edit-category"
-                            value={categoryId}
-                            onChange={(e) => onCategoryChange(e.target.value)}
+                            value={categoryDraft}
+                            disabled={saving}
+                            onChange={(event) => {
+                                const id = event.target.value;
+                                setCategoryDraft(id);
+                                if (id === productionCategoryId) setKindDraft('internal');
+                                else if (id && kindDraft === 'internal') setKindDraft('sellable');
+                            }}
                         >
                             <option value="">Sin categoría</option>
-                            <RecipeCategorySelectOptions options={categories} />
+                            <RecipeCategorySelectOptions options={categories} selectedId={categoryDraft} />
                         </select>
+                        {categoryDraft === productionCategoryId && initialIsSellable !== false ? (
+                            <p className="mt-2 text-xs leading-relaxed text-amber-700">
+                                Producción convierte la receta en elaboración interna y deja de clasificarla como vendible.
+                            </p>
+                        ) : null}
                     </Field>
                 ) : null}
 

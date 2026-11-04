@@ -29,6 +29,11 @@ export function sortMenuCategoriesForRecipes(rows: MenuCategoryRow[]): MenuCateg
   })
 }
 
+export function capitalizeRecipeCategoryLabel(text: string): string {
+  const label = text.trim().toLocaleLowerCase('es')
+  return label ? label[0].toLocaleUpperCase('es') + label.slice(1) : ''
+}
+
 export function labelMenuCategoryForRecipesEs(
   row: MenuCategoryRow,
   allRows: MenuCategoryRow[],
@@ -45,8 +50,8 @@ export function labelMenuCategoryForRecipesEs(
     : canonical
   const name = override && normalize(override) !== normalize(canonicalShort) ? override : canonicalShort
   // Evitar "platos › platos": sólo cambia la etiqueta visual, nunca el ID.
-  if (row.slug === 'platos-platos') return 'platos generales'
-  return name.toLocaleLowerCase('es')
+  if (row.slug === 'platos-platos') return 'Platos generales'
+  return capitalizeRecipeCategoryLabel(name)
 }
 
 export type RecipeCategorySection = { parent: MenuCategoryRow; children: MenuCategoryRow[] }
@@ -79,7 +84,7 @@ export function recipeMatchesMenuCategory(
   return false
 }
 
-export type RecipeCategoryOption = { id: string; label: string; parent_id: string | null }
+export type RecipeCategoryOption = { id: string; label: string; parent_id: string | null; dbName?: string }
 export function groupRecipeCategoryOptions(options: readonly RecipeCategoryOption[]) {
   const ids = new Set(options.map((option) => option.id))
   return options
