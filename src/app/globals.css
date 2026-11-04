@@ -11259,27 +11259,59 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   min-height: 116px;
   flex-shrink: 0;
 }
-/* Vista normal: menos aire entre título, pestañas y cuadrícula.
-   Edición, encargos y modales de Plato Marbella mantienen sus dimensiones. */
+/* El encabezado debe medir su contenido real. La altura fija anterior
+   cortaba los botones cuando sobresalían del selector de subcategorías. */
 body:has(.carta-shared-scene)
   [data-instance='menu-accordion-section']
   .carta-browse-modal.carta-browse-modal-compact > div:first-child {
-  height: 102px;
-  min-height: 102px;
+  height: auto;
+  min-height: 0;
+  padding-block: 2px;
+  gap: 1px;
 }
-@media (min-width: 360px) and (max-width: 767px) {
-  /* Gana una fila más incluso al respetar la zona segura de los iPhone.
-     Los cuadrados de fotografías no cambian de tamaño. */
+.carta-browse-modal.carta-browse-modal-compact .carta-catalog-subtabs {
+  overflow: visible;
+  padding: 2px;
+}
+.carta-browse-modal.carta-browse-modal-compact .carta-catalog-subtabs button[aria-pressed] {
+  min-height: 40px;
+  padding: 2px;
+}
+.carta-browse-modal.carta-browse-modal-compact .carta-catalog-subtabs button[aria-pressed] span {
+  font-size: clamp(8px, 2.3vw, 10px);
+  line-height: 1.12;
+}
+
+/* Catálogo táctil: foto cuadrada completa, texto siempre debajo.
+   Mismo tamaño por sección y filas completas; nunca aplicar en edición. */
+.carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row {
+  gap: 6px;
+}
+.carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row > div {
+  width: 88%;
+  justify-self: center;
+}
+.carta-browse-modal.carta-browse-modal-compact .carta-square-product-card > div:nth-child(2) {
+  height: 42px;
+  padding-top: 3px;
+  gap: 1px;
+}
+.carta-browse-modal.carta-browse-modal-compact:has([data-carta-price-lines] > span:nth-child(2))
+  .carta-square-product-card > div:nth-child(2) {
+  height: clamp(50px, 14.5vw, 63px);
+}
+@media (max-height: 700px) {
+  /* En pantallas web bajas, un poco menos de imagen deja otra fila completa. */
+  .carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row > div {
+    width: 82%;
+  }
+}
+@media (max-width: 359px) {
   .carta-browse-modal.carta-browse-modal-compact .carta-square-product-card > div:nth-child(2) {
-    height: 46px;
-  }
-  /* Si un producto incluye dos precios, reservar espacio suficiente para
-     todas las fichas de la misma subcategoría, sin cortes ni desalineaciones. */
-  .carta-browse-modal.carta-browse-modal-compact:has([data-carta-price-lines] > span:nth-child(2))
-    .carta-square-product-card > div:nth-child(2) {
-    height: clamp(50px, 14.5vw, 63px);
+    min-height: 45px;
   }
 }
+
 body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal > div:first-child :is(h2, button, button span) {
   color: #fff;
 }
@@ -11557,11 +11589,26 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 }
 
 
-/* La portada de ambas cartas comparte selector de idioma: activo visible. */
+/* Idiomas: la pastilla seleccionada es visualmente pequeña (30px),
+   pero el área de pulsación conserva los 44px. */
+.carta-shared-scene .carta-home-language-picker button[aria-pressed] {
+  position: relative;
+  isolation: isolate;
+  font-size: 11px;
+  letter-spacing: .07em;
+}
 .carta-shared-scene .carta-home-language-picker button[aria-pressed='true'] {
   color: #173b63;
+  background: transparent;
+  box-shadow: none;
+}
+.carta-shared-scene .carta-home-language-picker button[aria-pressed='true']::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 7px 12px;
+  border-radius: 9px;
   background: rgb(255 255 255 / .96);
-  border-radius: 12px;
   box-shadow: 0 1px 5px rgb(0 16 39 / .08);
 }
 .carta-shared-scene .carta-home-language-picker button[aria-pressed='false'] {

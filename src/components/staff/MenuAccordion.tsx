@@ -1327,7 +1327,12 @@ export function MenuAccordion({
                                 </div>
                             ) : null}
                             {openShowSubTabs ? (
-                                <div className={cn('flex min-w-0 overflow-x-auto pb-0.5', catalogDisplay && !eventOrder && !eventEncargoEdit && 'carta-catalog-subtabs')} aria-label={catalogDisplay ? 'Cambiar subcategoría' : undefined}>
+                                <div className={cn(
+                                    'flex min-w-0',
+                                    catalogDisplay && !eventOrder && !eventEncargoEdit
+                                        ? 'carta-catalog-subtabs overflow-visible'
+                                        : 'overflow-x-auto pb-0.5'
+                                )} aria-label={catalogDisplay ? 'Cambiar subcategoría' : undefined}>
                                     <div className="flex w-full min-w-0 flex-nowrap gap-1 sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
                                             const isActive = openSelectedSubKey === sub.key
@@ -1849,7 +1854,10 @@ export function MenuAccordion({
                                                     })}
                                                 </div>
                                             ) : (
-                                                <div className="flex flex-col gap-y-2 sm:gap-y-2.5">
+                                                <div className={cn(
+                                                    'flex flex-col gap-y-2 sm:gap-y-2.5',
+                                                    pageWholeProductRows && 'gap-y-1.5 sm:gap-y-1.5'
+                                                )}>
                                                     {chunkCartaProductGridRows(
                                                         mergeEnteroMedioForCartaDisplay(sub.rows),
                                                         3
