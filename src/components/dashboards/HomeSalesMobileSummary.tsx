@@ -53,6 +53,7 @@ export function HomeSalesMobileSummary({
         if (selectedHour === null) return;
         const onPointer = (event: PointerEvent) => {
             if (event.target instanceof Node && chartRef.current?.contains(event.target)) return;
+            if (event.target instanceof Element && event.target.closest('[data-element="mobile-sales-snapshot"]')) return;
             setHourSelection(null);
         };
         const onKeyDown = (event: KeyboardEvent) => {

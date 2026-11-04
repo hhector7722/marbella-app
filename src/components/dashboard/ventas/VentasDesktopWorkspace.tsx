@@ -1413,13 +1413,13 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         if (!crossSelection) return;
         const onPointer = (event: PointerEvent) => {
             if (!(event.target instanceof Element)) return;
-            // En smartphone, pulsar fuera del punto/tramo seleccionado
-            // cancela el filtro, incluso dentro de Productos, Tickets o Live.
+            // En smartphone, el filtro horario se mantiene mientras se consulta
+            // el detalle: scroll, pestañas Productos/Tickets y tickets desplegados.
             const mobileHourSelected = crossSelection.kind === 'hour' &&
                 crossSelection.scope === 'period' &&
                 window.matchMedia('(max-width: 1023px)').matches;
             if (mobileHourSelected) {
-                if (event.target.closest('[data-mobile-hour-select]')) return;
+                if (event.target.closest('[data-mobile-hour-select], [data-element="mobile-sales-detail-card"]')) return;
             } else {
                 if (event.target.closest('[data-crossfilter-trigger]')) return;
                 if (event.target.closest('[data-component="HistoryMobileWorkspace"]')) return;
