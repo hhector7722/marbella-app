@@ -2127,6 +2127,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         const helper = readFileSync(join(SRC_ROOT, 'lib/order-dispatched-week.ts'), 'utf8');
         const success = readFileSync(join(SRC_ROOT, 'components/orders/OrderSuccessModal.tsx'), 'utf8');
         assert.match(orders, /<Notice instance="orders-already-dispatched-week"/);
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(css, /\[data-component='Notice'\]\[data-instance='orders-already-dispatched-week'\] \{\s*padding-block: 2px;/);
         assert.match(orders, /formatDispatchedWeekNotice\(lastDispatchThisWeek\)/);
         assert.match(helper, /Hoy se ha tramitado un pedido/);
         assert.match(helper, /se tramitó un pedido/);
