@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef, useMemo, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from "@/utils/supabase/client";
 import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Pencil, PlayCircle, AlertCircle, Check, Layers3, ChefHat } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -28,6 +29,7 @@ import { SearchField } from '@/components/ui/SearchField';
 import { Field } from '@/components/ui/Field';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { CatalogSquare } from '@/components/catalog/CatalogTile';
+import { productionLinksForRecipe } from '@/lib/recipe-production-links';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { groupRecipeIngredients, isNonCulinaryRecipeMaterial } from '@/lib/recipe-ingredient-grouping';
@@ -1051,6 +1053,7 @@ function RecipeDetailContent() {
     if (!recipe) return <div className="min-h-screen flex items-center justify-center text-white">No encontrada</div>;
 
     const internalRecipe = isInternalRecipe(recipe.is_sellable);
+    const productionLinks = productionLinksForRecipe(!internalRecipe, subrecipes);
     const yieldLabel =
         recipe.yield_quantity != null && recipe.yield_unit
             ? `${formatYieldQuantity(Number(recipe.yield_quantity))} ${recipe.yield_unit}`
@@ -1122,7 +1125,7 @@ function RecipeDetailContent() {
                             onClick={handlePreviousRecipe}
                         />
 
-                        <div className="w-[min(34vw,9rem)] shrink-0">
+                        <div className="flex w-[min(34vw,9rem)] shrink-0 flex-col items-center gap-2">
                             {(recipe.photo_detail_url || recipe.photo_url) ? (
                                 <button
                                     type="button"
@@ -1148,6 +1151,21 @@ function RecipeDetailContent() {
                                     priceClassName={!isRestricted && !internalRecipe && priceCostKnown ? healthIndicator.color : undefined}
                                 />
                             )}
+                            {productionLinks.length > 0 ? (
+                                <div className="flex w-full flex-col gap-1.5">
+                                    {productionLinks.map((production) => (
+                                        <Link
+                                            key={production.id}
+                                            href={`/recipes/${production.id}${isStaffView ? '?view=staff' : ''}`}
+                                            title={production.name}
+                                            className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-[#36606F]/30 bg-[#36606F]/5 px-1.5 py-1.5 text-center text-[11px] font-semibold text-[#36606F] transition-colors hover:bg-[#36606F]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/40"
+                                        >
+                                            <Layers3 size={14} className="shrink-0" aria-hidden="true" />
+                                            <span>{productionLinks.length === 1 ? 'Ver producción' : production.name}</span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : null}
                         </div>
 
                         <Button
