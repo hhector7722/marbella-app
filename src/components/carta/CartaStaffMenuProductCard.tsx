@@ -53,7 +53,6 @@ export function CartaStaffMenuProductCard({
   productToggleBusyId,
   onReorderTap,
   rowDensity = 'normal',
-  premiumPublic = false,
   photoFrameStyle,
   isPlatoMarbellaLauncher = false,
   onOpenPlatoMarbella,
@@ -71,7 +70,6 @@ export function CartaStaffMenuProductCard({
   productToggleBusyId?: number | null
   onReorderTap?: (articuloId: number) => void
   rowDensity?: CartaProductGridRowDensity
-  premiumPublic?: boolean
   photoFrameStyle?: { aspectRatio?: number; height?: string }
   isPlatoMarbellaLauncher?: boolean
   onOpenPlatoMarbella?: () => void
@@ -157,7 +155,6 @@ export function CartaStaffMenuProductCard({
     <div
       className={cn(
         'flex h-full min-w-0 flex-col items-center overflow-hidden rounded-2xl bg-white',
-        premiumPublic && 'carta-public-product-card',
         rowDensity === 'compact' && 'gap-0.5 sm:gap-0.5',
         rowDensity === 'cozy' && 'gap-0.5 sm:gap-1',
         rowDensity === 'normal' && 'gap-1 sm:gap-1.5',
@@ -168,7 +165,6 @@ export function CartaStaffMenuProductCard({
         <div
           className={cn(
             CARTA_PRODUCT_PHOTO_CELL_CLASS,
-            premiumPublic && 'carta-public-photo-cell',
             'shrink-0',
             rowDensity === 'compact' && 'pt-0.5',
             rowDensity === 'cozy' && 'pt-0.5',
@@ -181,7 +177,6 @@ export function CartaStaffMenuProductCard({
                 type="button"
                 className={cn(
                   CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS,
-                  premiumPublic && 'carta-public-photo-frame',
                   'touch-manipulation active:bg-zinc-50',
                   eventTapToAdd && 'cursor-pointer',
                   productReorderMode && onReorderTap
@@ -194,7 +189,7 @@ export function CartaStaffMenuProductCard({
                           ? 'cursor-pointer'
                           : 'cursor-zoom-in'
                 )}
-                style={premiumPublic ? undefined : frameStyle}
+                style={frameStyle}
                 aria-label={
                   eventTapToAdd
                     ? hasDualRacion
@@ -239,7 +234,6 @@ export function CartaStaffMenuProductCard({
                   scale={row.carta_photo_scale}
                   isDrink={isDrink}
                   articuloId={row.articulo_id}
-                  premiumPublic={premiumPublic}
                 />
               </button>
               {eventTapToAdd && eventQtyTotal > 0 ? (
@@ -282,8 +276,8 @@ export function CartaStaffMenuProductCard({
             </div>
           ) : (
             <div
-              className={cn(CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS, premiumPublic && 'carta-public-photo-frame')}
-              style={premiumPublic ? undefined : frameStyle}
+              className={CARTA_PRODUCT_PHOTO_PRODUCT_FRAME_SHELL_CLASS}
+              style={frameStyle}
               aria-hidden
             />
           )}
@@ -351,7 +345,7 @@ export function CartaStaffMenuProductCard({
             {...dualLabels}
             precio={row.precio}
             precioMedio={row.precio_medio_display}
-            variant={premiumPublic ? 'premium' : 'staff'}
+            variant="staff"
           />
         )}
         {eventStepper && eventOrder ? (

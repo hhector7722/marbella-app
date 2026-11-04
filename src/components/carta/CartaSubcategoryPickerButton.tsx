@@ -38,7 +38,6 @@ export function CartaSubcategoryPickerButton({
       <button
         type="button"
         onClick={onClick}
-        aria-pressed={variant === 'label' ? Boolean(isActive) : undefined}
         className={cn(
           'flex min-h-[48px] w-full min-w-0 flex-col items-center justify-center text-center',
           variant === 'grid'

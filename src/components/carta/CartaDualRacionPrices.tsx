@@ -8,7 +8,7 @@ type CartaDualRacionPricesProps = {
   racionMedio: string
   precio: number | string | null | undefined
   precioMedio?: number | string | null | undefined
-  variant?: 'public' | 'staff' | 'premium'
+  variant?: 'public' | 'staff'
 }
 
 function buildDualRacionAriaLabel(
@@ -33,31 +33,6 @@ export function CartaDualRacionPrices({
   const priceMedioStr = formatCartaPrice(precioMedio ?? null)
   const showPrice = priceStr.trim() !== ''
   const showMedio = priceMedioStr.trim() !== ''
-
-  // El formato compacto de la carta pública conserva etiquetas y valores sin
-  // la tipografía monoespaciada ni el separador del TPV.
-  if (variant === 'premium') {
-    return (
-      <div
-        className="carta-public-price-lines"
-        role={showPrice && showMedio ? 'group' : undefined}
-        aria-label={showPrice && showMedio ? buildDualRacionAriaLabel({ racionEntero, racionMedio }, precio, precioMedio) : undefined}
-      >
-        {showPrice ? (
-          <div className="carta-public-price-line">
-            {showMedio ? <span>{racionEntero}</span> : null}
-            <strong>{priceStr}</strong>
-          </div>
-        ) : null}
-        {showMedio ? (
-          <div className="carta-public-price-line">
-            {showPrice ? <span>{racionMedio}</span> : null}
-            <strong>{priceMedioStr}</strong>
-          </div>
-        ) : null}
-      </div>
-    )
-  }
 
   const enteroSizeClass =
     variant === 'staff'

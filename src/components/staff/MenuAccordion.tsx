@@ -314,7 +314,6 @@ export function MenuAccordion({
     categoryCoverById = {},
     categoryCoverScaleById = {},
     homeCompact = false,
-    premiumPublic = false,
     eventOrder,
     eventEncargoEdit,
 }: {
@@ -347,8 +346,6 @@ export function MenuAccordion({
     categoryCoverScaleById?: Record<string, CartaPhotoScale>
     /** Home staff/carta: grid más compacto sin scroll */
     homeCompact?: boolean
-    /** Tratamiento visual exclusivo de /carta. */
-    premiumPublic?: boolean
     /** Pedido por evento: misma carta con +/− por producto */
     eventOrder?: EventOrderCartaControl
     /** Configuración del encargo (productos/categorías/límites). */
@@ -1082,30 +1079,24 @@ export function MenuAccordion({
                 instance="menu-accordion-section"
                 hideHeader
                 scrollContent={false}
-                containerClassName={cn(
-                    openPlatoMarbella && 'p-2 sm:p-2.5',
-                    premiumPublic && !openPlatoMarbella && 'carta-public-modal',
-                    premiumPublic && !openPlatoMarbella && (openShowSubPicker ? 'carta-public-picker-modal' : 'carta-public-products-modal')
-                )}
+                containerClassName={openPlatoMarbella ? 'p-2 sm:p-2.5' : undefined}
                 ariaLabel={openGroup?.title ?? 'Sección carta'}
             >
                     {openGroup == null ? null : openShowSubPicker ? (
                         <CartaSubcategoryPickerModalShell
                             title={openGroup.title}
                             onClose={() => setOpenKey(null)}
-                            className={premiumPublic ? 'carta-public-picker-shell' : undefined}
                         >
                             <CartaCoversLoadingGate
                                 urls={openModalImageUrls}
-                                fitContent={!premiumPublic}
+                                fitContent
                                 className="bg-white px-2.5 py-2 sm:px-3 sm:py-2.5"
                             >
-                                <CartaSubcategoryPickerGrid count={openGroup._subList.length} className={premiumPublic ? "carta-public-picker-grid" : undefined}>
+                                <CartaSubcategoryPickerGrid count={openGroup._subList.length}>
                                     {openGroup._subList.map((sub) => (
                                         <CartaSubcategoryPickerButton
                                             key={sub.key}
                                             variant="grid"
-                                            className={premiumPublic ? "carta-public-picker-button" : undefined}
                                             label={subPickerButtonLabel(
                                                 sub,
                                                 lang,
@@ -1156,8 +1147,7 @@ export function MenuAccordion({
                             'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
                             showPlatoModalChrome
                                 ? 'carta-plato-modal-shell min-h-0'
-                                : 'carta-modal-shell-max min-h-0',
-                            premiumPublic && !openPlatoMarbella && 'carta-public-products-shell'
+                                : 'carta-modal-shell-max min-h-0'
                         )}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -1275,9 +1265,6 @@ export function MenuAccordion({
                                         </button>
                                     </div>
                                 </div>
-                            ) : null}
-                            {premiumPublic && openShowSubTabs ? (
-                                <h2 className="carta-public-products-title">{openGroup.title}</h2>
                             ) : null}
                             {openShowSubTabs ? (
                                 <div className="flex min-w-0 overflow-x-auto pb-0.5">
@@ -1629,7 +1616,6 @@ export function MenuAccordion({
                             urls={openModalImageUrls}
                             className={cn(
                                 'bg-white flex min-h-[min(50vh,320px)] flex-1 flex-col',
-                                premiumPublic && !openPlatoMarbella && 'carta-public-products-content',
                                 showPlatoModalChrome
                                     ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
                                     : 'overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
@@ -1749,7 +1735,6 @@ export function MenuAccordion({
                                                                     onReorderTap={handleProductReorderTap}
                                                                     rowDensity={rowDensity}
                                                                     photoFrameStyle={rowFrameStyle}
-                                                                    premiumPublic={premiumPublic && !openPlatoMarbella}
                                                                     isPlatoMarbellaLauncher={
                                                                         platoLauncherArticuloId != null &&
                                                                         row.articulo_id === platoLauncherArticuloId &&
@@ -1823,7 +1808,6 @@ export function MenuAccordion({
                                                                 }
                                                                 rowDensity={rowDensity}
                                                                 photoFrameStyle={rowFrameStyle}
-                                                                premiumPublic={premiumPublic && !openPlatoMarbella}
                                                                 isPlatoMarbellaLauncher={
                                                                     platoLauncherArticuloId != null &&
                                                                     row.articulo_id === platoLauncherArticuloId &&

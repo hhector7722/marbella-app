@@ -99,7 +99,6 @@ export function CartaCategoryGrid({
 }) {
   return (
     <div
-      data-carta-category-grid
       className={cn(
         'grid pb-2',
         layoutClassName ?? 'grid-cols-2',

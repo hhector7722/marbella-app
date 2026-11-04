@@ -79,17 +79,19 @@ Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepcion
 | `ventas.premium.kpi-alto` | 84 px | Altura mínima de Ventas y Venta neta en escritorio | adoptado (`--ventas-premium-kpi-height`) |
 | `ventas.premium.kpi-ancho` | 180 px | Ancho máximo igualado de ambas tarjetas en escritorio | adoptado (`--ventas-premium-kpi-max-width`) |
 
-### Excepción local: carta pública /carta
+### Fondo contextual compartido de la carta
 
-La presentación comercial pública conserva el catálogo y las etiquetas de la aplicación, pero usa una superficie visual exclusiva y aprobada para /carta. No afecta a los editores ni a las cartas de encargos.
+La carta pública (/carta) y la carta del personal (/staff/carta) usan el mismo
+fondo gráfico, sin modificar la densidad ni la anatomía de categorías, selector
+de subcategorías o fichas de producto.
 
-| Token local | Valor | Uso |
+| Token | Valor | Papel |
 |---|---|---|
-| carta.publica.fondo | public/images/carta/geometrica-e.svg | Envolvente abstracta de planos azules, sin fotografía ni texto |
-| carta.publica.tarjeta | #FFF7ED | Tarjetas compactas y selector de bocadillos |
-| carta.publica.texto | #0B365E | Texto de tarjetas y precios, sin fuente monoespaciada |
+| carta.fondo.geometrico | `public/images/carta/geometrica-e.svg` | Fondo azul abstracto común de ambas cartas |
+| carta.fondo.texto | `color.texto.invertido` | Contraste de etiquetas e iconos sobre el fondo |
 
-La carta conserva tarjetas cuadradas de tres columnas en el listado de productos, y su selector de subcategorías deja visible el mismo fondo alrededor de la superficie.
+El fondo de los modales de exploración del catálogo continúa la misma imagen;
+sus superficies de selección y tarjetas mantienen su aspecto preexistente.
 
 ## 4. Texto
 

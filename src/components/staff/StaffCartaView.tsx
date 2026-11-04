@@ -32,7 +32,7 @@ export function StaffCartaView({
   const [editing, setEditing] = useState(false)
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-zinc-900">
+    <div className="carta-shared-scene flex min-h-screen flex-col bg-white text-zinc-900">
       <div className="relative mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col px-5 pb-safe pt-safe md:px-8">
         <header className="shrink-0 bg-white pb-1 pt-1">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
@@ -87,7 +87,7 @@ export function StaffCartaView({
             </div>
           </div>
           <div className="mt-1 w-full translate-y-3 px-0 sm:mt-1.5 sm:translate-y-4">
-            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" compact />
+            <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" layout="spread" compact />
           </div>
         </header>
 
