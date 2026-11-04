@@ -201,7 +201,7 @@ export function PublicCarta({
               ) : null}
             </div>
           </div>
-          <div className="mt-1 w-full translate-y-3 px-0 sm:mt-1.5 sm:translate-y-4">
+          <div className="carta-home-language-picker mt-0.5 w-full px-0 sm:mt-1">
             <CartaLangPicker lang={lang} onChange={setLang} tone="onBlue" layout="spread" compact />
           </div>
         </header>

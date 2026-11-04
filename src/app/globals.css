@@ -11227,9 +11227,31 @@ body:has(.carta-shared-scene) [data-component='Modal'][data-instance='menu-accor
 
 /* Carta pública y staff: el listado arranca a la misma altura en cualquier categoría. */
 body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal {
-  height: min(84svh, 740px);
-  max-height: min(90svh, calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1rem));
+  /* El espacio real de la pantalla manda, no una altura fija del 84 %. */
+  height: calc(
+    100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 10px
+  );
+  max-height: 100%;
   background: transparent;
+}
+
+/* Solo el catálogo navegable: posicionarlo arriba y ocupar casi toda la
+   altura útil. No alterar la altura del configurador de Plato Marbella,
+   pedidos, encargos ni otros modales. */
+body:has(.carta-shared-scene)
+  [data-component='Modal'][data-instance='menu-accordion-section']:has(.carta-browse-modal) {
+  padding: max(4px, env(safe-area-inset-top, 0px)) 4px
+    max(4px, env(safe-area-inset-bottom, 0px)) !important;
+  --modal-max-height: calc(
+    100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 8px
+  );
+}
+body:has(.carta-shared-scene)
+  [data-component='Modal'][data-instance='menu-accordion-section']:has(.carta-browse-modal)
+  [data-element='body'] {
+  /* El cuerpo añadía otros 12px arriba además del padding del modal. */
+  padding-top: 0;
+  padding-bottom: 0;
 }
 body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal > div:first-child {
   background-color: transparent;
@@ -11511,4 +11533,21 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     min-height: 0;
     flex: 0 1 auto;
   }
+}
+
+
+/* La portada de ambas cartas comparte selector de idioma: activo visible. */
+.carta-shared-scene .carta-home-language-picker button[aria-pressed='true'] {
+  color: #173b63;
+  background: rgb(255 255 255 / .96);
+  border-radius: 12px;
+  box-shadow: 0 1px 5px rgb(0 16 39 / .08);
+}
+.carta-shared-scene .carta-home-language-picker button[aria-pressed='false'] {
+  color: rgb(255 255 255 / .75);
+  background: transparent;
+  border-radius: 12px;
+}
+.carta-shared-scene .carta-home-language-picker button[aria-pressed='false']:active {
+  background: rgb(255 255 255 / .08);
 }
