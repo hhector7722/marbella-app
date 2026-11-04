@@ -119,6 +119,7 @@ export function PublicCarta({
   eventEncargoEdit,
   footer,
   hideEmptyMenuCategories = false,
+  catalogDisplay = false,
 }: {
   items: PublicMenuRow[]
   menuCategories?: MenuCategoryCatalogEntry[]
@@ -136,6 +137,8 @@ export function PublicCarta({
   footer?: ReactNode
   /** Encargo: no mostrar subcategorías vacías del catálogo. */
   hideEmptyMenuCategories?: boolean
+  /** Vista de carta completa; no activar para encargos/eventos. */
+  catalogDisplay?: boolean
 }) {
   const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const digitalItems = publicMenuRowsToDigitalMenu(items)
@@ -213,6 +216,7 @@ export function PublicCarta({
             platoMarbellaCategoryId={platoMarbellaCategoryId}
             showEmptyMenuChildCategories={!hideEmptyMenuCategories}
             homeCompact
+            catalogDisplay={catalogDisplay}
             eventOrder={eventOrder}
             eventEncargoEdit={eventEncargoEdit}
           />

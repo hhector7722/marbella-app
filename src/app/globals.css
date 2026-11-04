@@ -11223,3 +11223,149 @@ body:has(.carta-shared-scene) [data-component='Modal'][data-instance='menu-accor
 body:has(.carta-shared-scene) [data-component='Modal'][data-instance='menu-accordion-section'] .carta-modal-shell-max > div:first-child button span {
   color: var(--color-texto-invertido);
 }
+
+
+/* Carta pública y staff: el listado arranca a la misma altura en cualquier categoría. */
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal {
+  height: min(84svh, 740px);
+  max-height: min(90svh, calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1rem));
+  background: transparent;
+}
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal > div:first-child {
+  background-color: transparent;
+  height: 116px;
+  min-height: 116px;
+  flex-shrink: 0;
+}
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal > div:first-child :is(h2, button, button span) {
+  color: #fff;
+}
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal > div:first-child button[aria-pressed='false'] {
+  color: rgb(255 255 255 / .66);
+}
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal > div:first-child button[aria-pressed='true'] {
+  color: #fff;
+}
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal .carta-browse-products-host {
+  min-height: 0;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+/* Las fichas del catálogo tienen ratio 1:1, con imagen, título y precio
+   proporcionados. No se aplica a pedidos, encargos ni al editor de recetas. */
+.carta-browse-modal .carta-square-product-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+  gap: 1px;
+  padding: 5px 3px 5px;
+  justify-content: space-between;
+  overflow: hidden;
+  border-radius: clamp(13px, 4vw, 19px);
+}
+.carta-browse-modal .carta-product-grid-row {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: stretch;
+  align-items: stretch;
+  gap: 10px;
+}
+.carta-browse-modal .carta-product-grid-row > div {
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+.carta-browse-modal .carta-square-product-card > div:first-child {
+  height: 44%;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  padding: 0;
+  flex: none;
+}
+.carta-browse-modal .carta-square-product-card > div:first-child > div {
+  width: 100%;
+  height: 100%;
+}
+.carta-browse-modal .carta-square-product-card > div:first-child button,
+.carta-browse-modal .carta-square-product-card > div:first-child [aria-hidden] {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  background-color: transparent;
+}
+.carta-browse-modal .carta-square-product-card > div:first-child img {
+  max-height: 100%;
+  max-width: 100%;
+}
+.carta-browse-modal .carta-square-product-card > div:nth-child(2) {
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 1px 0;
+}
+.carta-browse-modal .carta-square-product-card > div:nth-child(2) > p:first-child {
+  font-size: clamp(8px, 2.08vw, 10px);
+  line-height: 1.08;
+  letter-spacing: -.015em;
+  font-weight: 800;
+}
+.carta-browse-modal .carta-square-product-card [data-carta-price-lines] {
+  gap: 2px;
+  padding: 0;
+}
+.carta-browse-modal .carta-square-product-card [data-carta-price-lines] > span {
+  font-family: inherit;
+  font-size: clamp(8px, 1.98vw, 10px);
+  font-weight: 750;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+}
+.carta-browse-modal .carta-square-product-card [data-carta-price-lines] > span > span:first-child {
+  font-weight: 500;
+}
+/* El precio del lanzador Plato Marbella comparte la nueva tipografía. */
+.carta-browse-modal .carta-square-product-card > div:nth-child(2) > p:nth-child(2) {
+  font-family: inherit;
+  font-size: clamp(9px, 2.2vw, 12px);
+}
+
+/* No mostrar media fila en reposo: viewport calculado con filas completas.
+   El gesto sigue siendo scroll táctil nativo, con parada discreta por fila. */
+.carta-whole-row-scroll {
+  min-height: 0;
+  flex: none;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  scroll-padding: 0;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / .25) transparent;
+}
+.carta-whole-row-scroll .carta-product-grid-row {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.carta-whole-row-scroll::-webkit-scrollbar { width: 3px; }
+.carta-whole-row-scroll::-webkit-scrollbar-track { background: transparent; }
+.carta-whole-row-scroll::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / .25);
+  border-radius: 999px;
+}
+@media (max-width: 359px) {
+  .carta-browse-modal .carta-product-grid-row { gap: 7px; }
+  .carta-browse-modal .carta-square-product-card { padding: 4px 2px; }
+  .carta-browse-modal .carta-square-product-card [data-carta-price-lines] > span { font-size: 7.5px; }
+  .carta-browse-modal .carta-square-product-card > div:nth-child(2) > p:first-child { font-size: 7.8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .carta-whole-row-scroll { scroll-behavior: auto; }
+}

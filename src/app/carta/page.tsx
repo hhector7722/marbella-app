@@ -172,6 +172,7 @@ export default async function PublicCartaPage() {
       categoryCoverScaleById={categoryCoverScaleById}
       backHref={backHref}
       cartaEditHref={cartaEditHref}
+      catalogDisplay
     />
   )
 }

@@ -294,7 +294,7 @@ export function PlatoMarbellaMenuView({
           />
         </PlateBuilder>
         {PLATO_MARBELLA_SLOTS.some((slot) => selections[slot]) ? (
-          <div className="mx-auto mt-1.5 flex w-full max-w-[21rem] flex-col items-center gap-1 px-2 pb-2 sm:max-w-[23rem]">
+          <div className="mx-auto mt-2 flex w-full max-w-[21rem] flex-col items-center gap-2.5 px-2 pb-2 sm:max-w-[23rem] sm:gap-3">
             {PLATO_MARBELLA_SLOTS.filter((slot) => selections[slot]).map((slot) => (
               <p
                 key={slot}
