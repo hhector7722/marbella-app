@@ -165,10 +165,11 @@ const LAST_SALES_HOUR = 22;
 const SALES_HOUR_COUNT = LAST_SALES_HOUR - FIRST_SALES_HOUR + 1;
 type HourSlot = { hour: number; sales: number; tickets: number };
 
-function HourlySalesTimeline({ hours, onChooseHour, contextLabel }: {
+function HourlySalesTimeline({ hours, onChooseHour, contextLabel, liveHour }: {
     hours?: TicketReport['hours'];
     onChooseHour?: (hour: number) => void;
     contextLabel?: string | null;
+    liveHour?: number | null;
 }) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
     const byHour = new Map((hours ?? []).map(item => [Number(item.hour), item]));
@@ -192,10 +193,12 @@ function HourlySalesTimeline({ hours, onChooseHour, contextLabel }: {
     ).join(' ');
     const area = `${path} L ${points[points.length - 1].x} ${baseline} L ${points[0].x} ${baseline} Z`;
     const bestHours = slots.filter(slot => slot.tickets > 0).sort((a, b) => b.sales - a.sales || a.hour - b.hour).slice(0, 3);
-    // Tres filas constantes: máximos por defecto; al señalar, anterior / hora / siguiente.
+    const liveSlot = liveHour !== null && liveHour !== undefined ? slots[liveHour - FIRST_SALES_HOUR] : null;
+    const rankedHours = liveSlot ? [liveSlot, ...bestHours.filter(slot => slot.hour !== liveHour).slice(0, 2)] : bestHours;
+    // Tres filas constantes: hora real en curso y mejores tramos; al señalar, anterior / hora / siguiente.
     // La primera y la última hora no inventan vecinos.
     const displayHours: (HourSlot | null)[] = activeIndex === null
-        ? [bestHours[0] ?? null, bestHours[1] ?? null, bestHours[2] ?? null]
+        ? [rankedHours[0] ?? null, rankedHours[1] ?? null, rankedHours[2] ?? null]
         : [
             activeIndex > 0 ? slots[activeIndex - 1] : null,
             slots[activeIndex],
@@ -280,6 +283,7 @@ function HourlySalesTimeline({ hours, onChooseHour, contextLabel }: {
                         {displayHours.map((slot, position) => {
                             if (!slot) return <tr key={`empty-${position}`} aria-hidden="true"><td colSpan={4}/></tr>;
                             const isHighlighted = activeIndex !== null && position === 1;
+                            const isLiveHour = slot.hour === liveHour;
                             return (
                                 <tr key={slot.hour}
                                     className={cn(
@@ -288,10 +292,12 @@ function HourlySalesTimeline({ hours, onChooseHour, contextLabel }: {
                                         activeIndex !== null && !isHighlighted && 'text-white/75'
                                     )}
                                     title={`${slot.hour}:00 - ${slot.hour + 1}:00`}>
-                                    <th scope="row" className="whitespace-nowrap pr-1 text-left text-[clamp(11px,0.8vw,14px)] font-semibold">
+                                    <th scope="row" className="whitespace-nowrap pr-1 text-left text-[clamp(11px,0.8vw,14px)] font-semibold"
+                                        style={isLiveHour ? { color: '#4ade80' } : undefined}>
                                         {slot.hour}:00 - {slot.hour + 1}:00
                                     </th>
-                                    <td className="whitespace-nowrap pr-1 text-right font-semibold text-teal-200">
+                                    <td className="whitespace-nowrap pr-1 text-right font-semibold text-teal-200"
+                                        style={isLiveHour ? { color: '#4ade80' } : undefined}>
                                         {euro(slot.sales)}
                                     </td>
                                     <td className="whitespace-nowrap text-right text-[clamp(11px,0.82vw,14px)] text-white/85">
@@ -493,8 +499,9 @@ function RankingViewport({ children, mobile = false }: { children: ReactNode; mo
 
 // Shared product ranking and chronological hourly chart for monthly/period cards.
 
-function SalesBreakdown({ report, baseReport, scope, selection, onSelect, productThumbnails, rangeStart, rangeEnd, mobileView }: {
+function SalesBreakdown({ report, baseReport, scope, selection, onSelect, productThumbnails, rangeStart, rangeEnd, mobileView, liveHour }: {
     report: TicketReport | null; baseReport: TicketReport | null; scope: CrossScope;
+    liveHour?: number | null;
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
     productThumbnails: Record<number, string>;
     rangeStart: string; rangeEnd: string; mobileView?: 'products' | 'hours';
@@ -660,6 +667,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                 <HourlySalesTimeline
                     hours={selection?.scope === scope && selection.kind === 'hour' ? baseReport?.hours : report?.hours}
                     contextLabel={selection?.scope === scope && selection.kind !== 'hour' ? crossLabel(selection) : null}
+                    liveHour={liveHour}
                     onChooseHour={hour => onSelect({ kind: 'hour', hour, scope })}/>
             </section>
             )}
@@ -1511,6 +1519,17 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     }, [supabase, period.start, period.end, initializing, closingRefresh]);
 
     const selectedClosing = isSingleDay ? periodClosings.find(c => c.closing_date === period.start) : undefined;
+    const [salesClock, setSalesClock] = useState(() => new Date());
+    useEffect(() => {
+        const syncClock = () => setSalesClock(new Date());
+        const interval = window.setInterval(syncClock, 30_000);
+        window.addEventListener('focus', syncClock);
+        return () => { window.clearInterval(interval); window.removeEventListener('focus', syncClock); };
+    }, []);
+    const liveHour = previewMode !== 'month' && isSingleDay && !selectedClosing &&
+        period.start === format(salesClock, 'yyyy-MM-dd') &&
+        salesClock.getHours() >= FIRST_SALES_HOUR && salesClock.getHours() <= LAST_SALES_HOUR
+        ? salesClock.getHours() : null;
     useEffect(() => {
         let alive = true;
         setPhotos({ dataphoneUrl: null, bdpUrl: null });
@@ -1626,9 +1645,14 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const currentHour = mobileActiveSelection?.kind === 'hour' ? mobileActiveSelection.hour : null;
     const topMobileHours = mobileHours.filter(item => item.count > 0)
         .sort((a, b) => b.total - a.total || a.hour - b.hour).slice(0, 3);
+    const mobileLiveHour = mobileMonth ? null : liveHour;
+    const liveMobileSlot = mobileLiveHour !== null ? mobileHours[mobileLiveHour - FIRST_SALES_HOUR] : null;
+    const rankedMobileHours = liveMobileSlot
+        ? [liveMobileSlot, ...topMobileHours.filter(item => item.hour !== mobileLiveHour).slice(0, 2)]
+        : topMobileHours;
     const mobileVisibleHours = currentHour !== null
         ? [mobileHours[currentHour - 8] ?? null, mobileHours[currentHour - 7] ?? null, mobileHours[currentHour - 6] ?? null]
-        : [topMobileHours[0] ?? null, topMobileHours[1] ?? null, topMobileHours[2] ?? null];
+        : [rankedMobileHours[0] ?? null, rankedMobileHours[1] ?? null, rankedMobileHours[2] ?? null];
 
     const mobileTicketRows = mobileActiveSelection ? (crossResult?.tickets ?? []) :
         mobileMonth ? (mobileMonthTickets.key === monthTicketKey ? mobileMonthTickets.values : []) : tickets;
@@ -1815,12 +1839,14 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                     mobileActiveSelection?.kind === 'hour' && hour.hour !== mobileActiveSelection.hour && 'opacity-35',
                                     mobileActiveSelection?.kind === 'hour' && hour.hour === mobileActiveSelection.hour && 'font-bold text-white')}
                                 title={`${hour.hour}:00 - ${hour.hour + 1}:00 · ${hour.count} tickets · media ${hour.count ? euro(hour.total / hour.count) : '—'} · ${euro(hour.total)}`}>
-                                <span className="min-w-0 whitespace-nowrap font-medium">{hour.hour}:00 - {hour.hour + 1}:00</span>
+                                <span className="min-w-0 whitespace-nowrap font-medium"
+                                    style={hour.hour === mobileLiveHour ? { color: '#4ade80' } : undefined}>{hour.hour}:00 - {hour.hour + 1}:00</span>
                                 <span className="min-w-0 whitespace-nowrap text-center text-white/70">{hour.count}</span>
                                 <span className="min-w-0 whitespace-nowrap text-right text-white/70">
                                     {hour.count ? euro(hour.total / hour.count) : '—'}
                                 </span>
-                                <span className="min-w-0 whitespace-nowrap text-right font-semibold text-teal-200">{Math.round(hour.total).toLocaleString('es-ES')} €</span>
+                                <span className="min-w-0 whitespace-nowrap text-right font-semibold text-teal-200"
+                                    style={hour.hour === mobileLiveHour ? { color: '#4ade80' } : undefined}>{Math.round(hour.total).toLocaleString('es-ES')} €</span>
                             </button>
                         ) : <div key={index} className="h-[18px]"/>)}
                     </div>
@@ -1953,7 +1979,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         <div data-element="day-breakdown" className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
                             <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
                                 selection={paymentOnly ? null : crossSelection} onSelect={onChooseCross}
-                                productThumbnails={productThumbnails} rangeStart={period.start} rangeEnd={period.end}/>
+                                productThumbnails={productThumbnails} rangeStart={period.start} rangeEnd={period.end}
+                                liveHour={liveHour}/>
                         </div>
                     </section>
                 </div>

@@ -340,14 +340,16 @@ export function HomeSalesMobileSummary({
                                     data-current-hour={hour.hora === currentHour ? 'true' : undefined}
                                     className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
                                     title={`${hour.hora}h - ${hour.hora + 1}h${hour.hora === currentHour ? ' (en curso)' : ''}: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
-                                    <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]">
+                                    <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]"
+                                        style={hour.hora === currentHour ? { color: '#4ade80' } : undefined}>
                                         <span className="lg:hidden">{hour.hora} - {hour.hora + 1}</span>
                                         <span className="hidden lg:inline">{hour.hora}:00 - {hour.hora + 1}:00</span>
                                     </span>
                                     <span data-element="mobile-sales-units" className="justify-self-center whitespace-nowrap text-center text-[7px]">
                                         {hourUnits[hour.hora] !== undefined ? `${hourUnits[hour.hora].toLocaleString('es-ES')} u` : ''}
                                     </span>
-                                    <span data-element="mobile-sales-amount" className="justify-self-end whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">{Math.round(hour.total).toLocaleString('es-ES')}€</span>
+                                    <span data-element="mobile-sales-amount" className="justify-self-end whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]"
+                                        style={hour.hora === currentHour ? { color: '#4ade80' } : undefined}>{Math.round(hour.total).toLocaleString('es-ES')}€</span>
                                 </div>
                             ) : <div key={`empty-hour-${index}`} className="col-span-3" aria-hidden="true" />)}
                         </div>
