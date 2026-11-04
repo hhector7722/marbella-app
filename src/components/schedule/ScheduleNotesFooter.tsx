@@ -437,7 +437,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                             Añadir nota
                         </Button>
                         <p className="text-center text-[10px] leading-tight text-white/55">
-                            Solo tú y el administrador podéis ver esta nota.
+                            Solo tu y el administrador podéis ver las notas que añadas.
                         </p>
                     </>
                 ) : null}
