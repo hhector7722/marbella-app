@@ -120,10 +120,9 @@ const SummaryCell = ({
         <div
             ref={cardRef}
             data-element="schedule-summary-card"
-            className="flex h-[42px] min-h-[42px] max-h-[42px] w-full min-w-0 flex-col items-start justify-center gap-1.5 overflow-hidden rounded-lg border border-transparent px-1.5 py-1 text-left sm:px-2"
+            className="flex h-[42px] min-h-[42px] max-h-[42px] w-full min-w-0 flex-col items-start justify-center gap-1.5 overflow-hidden rounded-lg border border-white/25 bg-white/10 px-1.5 py-1 text-left sm:px-2"
             style={{
-                background: 'linear-gradient(rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.1)) padding-box, linear-gradient(145deg, rgb(255 255 255 / 0.78) 0%, rgb(255 255 255 / 0.28) 26%, rgb(255 255 255 / 0.06) 48%, rgb(0 0 0 / 0.08) 72%, rgb(0 0 0 / 0.28) 100%) border-box',
-                boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.22), 0 1px 2px rgb(0 0 0 / 0.22)',
+                boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.25), inset 0 -1px 0 rgb(0 0 0 / 0.12), 0 1px 2px rgb(0 0 0 / 0.16)',
             }}
         >
             <span
