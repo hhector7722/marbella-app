@@ -20,6 +20,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
+import { countWorkersByHour } from '@/lib/schedule/hourly-coverage';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { fetchBarActivitiesForRangeClient, type BarActivity } from '@/lib/pavilion/bar-activities-range';
 import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
@@ -467,13 +468,10 @@ export const StaffScheduleModal = ({
         .filter(s => s.date >= new Date(new Date().setHours(0, 0, 0, 0)) && isSameMonth(s.date, currentDate))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    // TOT row — same logic as editor
-    const totals = hoursHeader.map(hour =>
-        dayShifts.filter(s => {
-            const sh = parseInt(s.startTime.split(':')[0]);
-            const eh = parseInt(s.endTime.split(':')[0]);
-            return hour >= sh && hour < eh;
-        }).length
+    // Personal simultáneo en cada intervalo horario, incluyendo turnos a y media.
+    const totals = countWorkersByHour(
+        dayShifts.map((shift) => ({ start: shift.startTime, end: shift.endTime })),
+        hoursHeader,
     );
 
     const hasAct1 = dayActivity.trim().length > 0;
@@ -827,15 +825,22 @@ export const StaffScheduleModal = ({
                                         ))}
                                     </div>
 
-                                    {/* Footer Total — fondo blanco, texto gris claro descriptivo */}
-                                    <div data-element="schedule-hour-totals" className="flex w-full bg-white border-t border-gray-100 shrink-0 rounded-b-2xl">
-                                        <div className="w-24 md:w-28 h-9 md:h-10 font-semibold text-gray-400 text-[10px] md:text-xs flex items-center justify-start pl-3 uppercase tracking-widest shrink-0">
+                                    {/* Totales de personal por hora, siempre visibles debajo de los turnos. */}
+                                    <div data-element="schedule-hour-totals" className="relative z-[1] flex w-full shrink-0 border-t border-slate-300 bg-[#f1f5f9] shadow-[0_-2px_8px_rgba(10,29,47,0.08)] rounded-b-2xl">
+                                        <div className="w-24 md:w-28 h-9 md:h-10 shrink-0 flex items-center justify-start pl-3 text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-700">
                                             Total
                                         </div>
                                         <div className="flex-1 h-9 md:h-10 flex">
                                             {totals.map((count, i) => (
-                                                <div key={i} className={`flex-1 flex items-center justify-center font-semibold text-[10px] md:text-xs ${count > 0 ? 'text-gray-400' : 'text-gray-300'}`}>
-                                                    {count > 0 ? count : ''}
+                                                <div
+                                                    key={i}
+                                                    title={`${hoursHeader[i]}:00–${hoursHeader[i] + 1}:00 · ${count} trabajador${count === 1 ? '' : 'es'}`}
+                                                    className={cn(
+                                                        'flex min-w-0 flex-1 items-center justify-center text-[11px] font-bold tabular-nums md:text-xs',
+                                                        count > 0 ? 'text-slate-800' : 'text-slate-400',
+                                                    )}
+                                                >
+                                                    {count}
                                                 </div>
                                             ))}
                                         </div>

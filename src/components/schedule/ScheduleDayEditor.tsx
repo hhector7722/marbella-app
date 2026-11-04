@@ -38,6 +38,7 @@ import {
 } from '@/lib/staff/managed-extra-slots';
 import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
+import { countWorkersByHour } from '@/lib/schedule/hourly-coverage';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import {
     getCachedLaborRate,
@@ -1151,9 +1152,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     };
 
     const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);
-    const totals = hoursHeader.map(hour =>
-        shifts.filter(s => s.active && hour >= parseInt(s.start.split(':')[0]) && hour < parseInt(s.end.split(':')[0])).length
-    );
+    const totals = countWorkersByHour(shifts, hoursHeader);
 
     const laborCost = useMemo(
         () => computeScheduleDayLaborCost(
@@ -1552,15 +1551,22 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                         </button>
                     </div>
 
-                    {/* Footer Total — penúltima fila, fondo blanco, texto gris claro descriptivo */}
-                    <div data-element="schedule-hour-totals" className="flex w-full bg-white border-t border-gray-100 shrink-0">
-                        <div className="w-24 md:w-28 h-9 md:h-10 font-semibold text-gray-400 text-[10px] md:text-xs flex items-center justify-start pl-3 uppercase tracking-widest shrink-0">
+                    {/* Totales de personal por hora, siempre visibles debajo de los turnos. */}
+                    <div data-element="schedule-hour-totals" className="relative z-[1] flex w-full shrink-0 border-t border-slate-300 bg-[#f1f5f9] shadow-[0_-2px_8px_rgba(10,29,47,0.08)]">
+                        <div className="w-24 md:w-28 h-9 md:h-10 shrink-0 flex items-center justify-start pl-3 text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-700">
                             Total
                         </div>
                         <div className="flex-1 h-9 md:h-10 flex">
                             {totals.map((count, i) => (
-                                <div key={i} className={`flex-1 flex items-center justify-center font-semibold text-[10px] md:text-xs ${count > 0 ? 'text-gray-400' : 'text-gray-300'}`}>
-                                    {count > 0 ? count : ''}
+                                <div
+                                    key={i}
+                                    title={`${hoursHeader[i]}:00–${hoursHeader[i] + 1}:00 · ${count} trabajador${count === 1 ? '' : 'es'}`}
+                                    className={cn(
+                                        'flex min-w-0 flex-1 items-center justify-center text-[11px] font-bold tabular-nums md:text-xs',
+                                        count > 0 ? 'text-slate-800' : 'text-slate-400',
+                                    )}
+                                >
+                                    {count}
                                 </div>
                             ))}
                         </div>
