@@ -161,7 +161,7 @@ export default function CreateModal({
                     {(newRecipe.kind || 'sellable') === 'internal' && productionCategory ? (
                         <div className="col-span-2">
                             <label className="text-xs font-bold text-gray-500 uppercase">Categoría</label>
-                            <div className="w-full border-b-2 border-gray-200 py-2 font-medium text-gray-800">producción</div>
+                            <div className="w-full border-b-2 border-gray-200 py-2 font-medium text-gray-800">Producción</div>
                         </div>
                     ) : null}
                     <div className={(newRecipe.kind || 'sellable') === 'sellable' ? '' : 'col-span-2'}>

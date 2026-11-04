@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense, useMemo, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, Suspense, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ChefHat, Plus, ChevronDown } from 'lucide-react';
+import { ChefHat, Plus, ChevronDown, LoaderCircle } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
@@ -19,6 +19,7 @@ import {
     type MenuCategoryRow,
     denormalizedRecipeCategoryName,
     labelMenuCategoryForRecipesEs,
+    capitalizeRecipeCategoryLabel,
     groupMenuCategoriesForRecipes,
     recipeMatchesMenuCategory,
     menuCategoryFromUrlParam,
@@ -61,8 +62,11 @@ function RecipesContent() {
     const supabase = createClient();
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [loading, setLoading] = useState(true);
+    const [categoriesReady, setCategoriesReady] = useState(false);
+    const [positionReady, setPositionReady] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCategoryPopup, setShowCategoryPopup] = useState(false);
+    const [expandedRecipeCategoryId, setExpandedRecipeCategoryId] = useState<string | null>(null);
     const [showFoodCostSubfilter, setShowFoodCostSubfilter] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newRecipe, setNewRecipe] = useState<any>({
@@ -120,6 +124,7 @@ function RecipesContent() {
 
     useEffect(() => {
         void (async () => {
+          try {
             const [catRes, mcoRes, productionRes] = await Promise.all([
                 supabase
                     .from('categories')
@@ -141,6 +146,11 @@ function RecipesContent() {
                 m.set(row.category_id, row.override_name_es ?? null);
             }
             setMcoEsByCategoryId(m);
+          } catch (error) {
+            console.error('Error cargando categorías de recetas:', error);
+          } finally {
+            setCategoriesReady(true);
+          }
         })();
     }, [supabase]);
 
@@ -181,11 +191,11 @@ function RecipesContent() {
 
     const selectedCategoryFilterLabel = useMemo(() => {
         if (!categoryFromUrl) return '';
-        if (categoryFromUrl === '__none__') return 'sin categoría';
-        if (categoryFromUrl === 'produccion') return 'producción';
+        if (categoryFromUrl === '__none__') return 'Sin categoría';
+        if (categoryFromUrl === 'produccion') return 'Producción';
         const row = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
         if (row) return labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId);
-        return categoryFromUrl;
+        return capitalizeRecipeCategoryLabel(categoryFromUrl);
     }, [categoryFromUrl, menuCategoryRows, sortedMenuCategoryRows, mcoEsByCategoryId]);
 
     const selectedFoodCostFilterLabel = useMemo(() => {
@@ -208,22 +218,26 @@ function RecipesContent() {
         return (recipe.category || '') === categoryFromUrl;
     });
 
-    useEffect(() => {
-        if (loading) return;
+    // No pintar la cabecera ni el buscador antes de restaurar la tarjeta de origen.
+    // useLayoutEffect se ejecuta tras montar la rejilla y antes del primer repintado.
+    useLayoutEffect(() => {
+        if (loading || !categoriesReady || positionReady) return;
         let fallbackId: string | null = null;
-        try { fallbackId = window.sessionStorage.getItem(scrollReturnKey); } catch { /* Safari sin almacenamiento. */ }
+        try { fallbackId = window.sessionStorage.getItem(scrollReturnKey); } catch { /* Almacenamiento deshabilitado. */ }
         const id = focusRecipeId || fallbackId;
-        if (!id || restoredFocusRef.current === id) return;
-        if (!filteredRecipes.some((item) => item.id === id)) return;
-        const raf = requestAnimationFrame(() => {
+        if (id && filteredRecipes.some((item) => item.id === id)) {
             const target = document.getElementById('recipe-tile-' + id);
-            if (!target) return;
-            target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
-            restoredFocusRef.current = id;
-            try { window.sessionStorage.removeItem(scrollReturnKey); } catch { /* No disponible. */ }
-        });
-        return () => cancelAnimationFrame(raf);
-    }, [loading, focusRecipeId, filteredRecipes]);
+            if (target) {
+                target.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' });
+                restoredFocusRef.current = id;
+            }
+        }
+        try { window.sessionStorage.removeItem(scrollReturnKey); } catch { /* No disponible. */ }
+        // La lista ya está colocada; mostrarla sólo en el siguiente fotograma.
+        const frame = requestAnimationFrame(() => setPositionReady(true));
+        return () => cancelAnimationFrame(frame);
+    }, [loading, categoriesReady, positionReady, focusRecipeId, filteredRecipes]);
+
 
     useEffect(() => {
         fetchRecipes();
@@ -371,6 +385,7 @@ function RecipesContent() {
     const closeCategoryPopup = () => {
         setShowCategoryPopup(false);
         setShowFoodCostSubfilter(false);
+        setExpandedRecipeCategoryId(null);
     };
 
     const applyFoodCostFilter = (status: FoodCostStatus) => {
@@ -381,7 +396,17 @@ function RecipesContent() {
     return (
         <>
             <Toaster position="top-right" />
+            {!positionReady ? (
+                <div
+                    role="status"
+                    aria-label="Cargando recetas"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-white"
+                >
+                    <LoaderCircle className="h-7 w-7 animate-spin text-[#36606F]" aria-hidden="true" />
+                </div>
+            ) : null}
             <DashboardDetailLayout
+                className={!positionReady ? 'invisible' : undefined}
                 title="Recetas"
                 titleLeading={<KitchenSheetsAccess />}
                 titleFace="display"
@@ -513,86 +538,70 @@ function RecipesContent() {
                             ) : null}
                         </div>
                     ) : null}
-                    <div className="space-y-0.5 pb-1">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setCategoryAndUrl(null);
-                                closeCategoryPopup();
-                            }}
-                            className={cn(
-                                'w-full min-h-11 rounded-lg px-2 py-2.5 text-left text-sm font-medium normal-case transition-colors hover:bg-zinc-50',
-                                !categoryFromUrl ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-700',
-                            )}
-                        >
-                            todas
-                        </button>
-                        {showUncategorizedMenuFilter ? (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setCategoryAndUrl('__none__');
-                                    closeCategoryPopup();
-                                }}
-                                className={cn(
-                                    'w-full min-h-11 rounded-lg px-2 py-2.5 text-left text-sm font-medium normal-case transition-colors hover:bg-zinc-50',
-                                    categoryFromUrl === '__none__' ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-600',
-                                )}
-                            >
-                                sin categoría
-                            </button>
-                        ) : null}
-                        {productionCategory ? (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setCategoryAndUrl('produccion');
-                                    closeCategoryPopup();
-                                }}
-                                className={cn(
-                                    'w-full min-h-11 rounded-lg px-2 py-2.5 text-left text-sm font-medium normal-case transition-colors hover:bg-zinc-50',
-                                    categoryFromUrl === 'produccion' ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-700',
-                                )}
-                            >
-                                producción
-                            </button>
-                        ) : null}
-                    </div>
-                    <div className="border-t border-zinc-200 pt-2">
+                    <div className="divide-y divide-zinc-100">
                         {groupedMenuCategories.map(({ parent, children }) => {
                             const parentParam = menuCategoryToUrlParam(parent);
+                            const expanded = expandedRecipeCategoryId === parent.id;
+                            const hasChildren = children.length > 0;
                             return (
-                                <div key={parent.id} className="border-b border-zinc-100 py-1.5 last:border-b-0">
+                                <div key={parent.id} className="py-1">
                                     <button
                                         type="button"
+                                        aria-expanded={hasChildren ? expanded : undefined}
+                                        aria-controls={hasChildren ? 'recipe-category-children-' + parent.id : undefined}
                                         onClick={() => {
-                                            setCategoryAndUrl(parentParam);
-                                            closeCategoryPopup();
+                                            if (hasChildren) {
+                                                setExpandedRecipeCategoryId((current) => current === parent.id ? null : parent.id);
+                                            } else {
+                                                setCategoryAndUrl(parentParam);
+                                                closeCategoryPopup();
+                                            }
                                         }}
                                         className={cn(
-                                            'w-full min-h-11 rounded-lg px-2 py-2.5 text-left text-sm font-semibold normal-case transition-colors hover:bg-zinc-50',
+                                            'flex w-full min-h-12 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold normal-case transition-colors hover:bg-zinc-50',
                                             categoryFromUrl === parentParam ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-800',
+                                            expanded && 'bg-zinc-50',
                                         )}
                                     >
-                                        {labelMenuCategoryForRecipesEs(parent, menuCategoryRows, mcoEsByCategoryId)}
+                                        <span>{labelMenuCategoryForRecipesEs(parent, menuCategoryRows, mcoEsByCategoryId)}</span>
+                                        {hasChildren ? (
+                                            <ChevronDown
+                                                size={17}
+                                                aria-hidden="true"
+                                                className={cn(
+                                                    'shrink-0 text-zinc-400 transition-transform duration-200',
+                                                    expanded && 'rotate-180 text-[#36606F]',
+                                                )}
+                                            />
+                                        ) : null}
                                     </button>
-                                    {children.length > 0 ? (
-                                        <div className="ml-3 border-l border-zinc-200 pl-2">
+                                    {hasChildren && expanded ? (
+                                        <div
+                                            id={'recipe-category-children-' + parent.id}
+                                            className="mb-1 ml-5 mt-1 space-y-0.5 rounded-r-lg border-l-2 border-[#36606F]/25 bg-zinc-50/60 py-1 pl-2 pr-1"
+                                        >
                                             {children.map((child) => {
                                                 const param = menuCategoryToUrlParam(child);
                                                 return (
                                                     <button
-                                                        type="button"
                                                         key={child.id}
+                                                        type="button"
                                                         onClick={() => {
                                                             setCategoryAndUrl(param);
                                                             closeCategoryPopup();
                                                         }}
                                                         className={cn(
-                                                            'w-full min-h-10 rounded-lg px-3 py-2 text-left text-sm font-normal normal-case transition-colors hover:bg-zinc-50',
-                                                            categoryFromUrl === param ? 'bg-zinc-100 font-semibold text-ds-marca' : 'text-zinc-600',
+                                                            'flex w-full min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-left text-[13px] font-medium normal-case transition-colors hover:bg-white',
+                                                            categoryFromUrl === param ? 'bg-white font-semibold text-ds-marca' : 'text-zinc-600',
                                                         )}
                                                     >
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className={cn(
+                                                                'h-1.5 w-1.5 shrink-0 rounded-full bg-[#36606F]/40',
+                                                                categoryFromUrl === param && 'bg-[#36606F]',
+                                                            )}
+                                                        />
                                                         {labelMenuCategoryForRecipesEs(child, menuCategoryRows, mcoEsByCategoryId)}
                                                     </button>
                                                 );
@@ -602,6 +611,40 @@ function RecipesContent() {
                                 </div>
                             );
                         })}
+                        {productionCategory ? (
+                            <div className="pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setCategoryAndUrl('produccion');
+                                        closeCategoryPopup();
+                                    }}
+                                    className={cn(
+                                        'w-full min-h-12 rounded-lg px-3 py-2.5 text-left text-sm font-semibold normal-case transition-colors hover:bg-zinc-50',
+                                        categoryFromUrl === 'produccion' ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-800',
+                                    )}
+                                >
+                                    Producción
+                                </button>
+                            </div>
+                        ) : null}
+                        {showUncategorizedMenuFilter ? (
+                            <div className="py-1">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setCategoryAndUrl('__none__');
+                                        closeCategoryPopup();
+                                    }}
+                                    className={cn(
+                                        'w-full min-h-12 rounded-lg px-3 py-2.5 text-left text-sm font-semibold normal-case transition-colors hover:bg-zinc-50',
+                                        categoryFromUrl === '__none__' ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-800',
+                                    )}
+                                >
+                                    Sin categoría
+                                </button>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             </Modal>

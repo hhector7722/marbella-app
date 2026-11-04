@@ -235,7 +235,6 @@ function RecipeDetailContent() {
     const [productionCategoryRow, setProductionCategoryRow] = useState<MenuCategoryRow | null>(null);
     const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
 
-    const trackRecipeCategory = useTrackModalApply('recipe-category', 'Categoría receta');
     const trackRecipeAddIngredient = useTrackModalApply('recipe-add-ingredient', 'Añadir ingrediente receta');
     const trackRecipeIngredientCreate = useTrackModalApply('recipe-ingredient-create', 'Crear ingrediente receta');
 
@@ -715,21 +714,6 @@ function RecipeDetailContent() {
         void refreshSheetCost();
     };
 
-    const handleCategoryUpdate = async (menuCat: MenuCategoryRow) => {
-        const categoryDb = denormalizedRecipeCategoryName(menuCat);
-        const { error } = await supabase
-            .from('recipes')
-            .update({ menu_category_id: menuCat.id, category: categoryDb })
-            .eq('id', recipeId);
-        if (error) {
-            toast.error(`No se pudo guardar categoría: ${error.message}`);
-            throw error;
-        }
-        setRecipe(recipe ? { ...recipe, menu_category_id: menuCat.id, category: categoryDb } : recipe);
-        trackRecipeCategory(namedEntitySummary(labelMenuCategoryForRecipesEs(menuCat, sortedMenuCategoryRows, mcoEsByCategoryId)));
-        toast.success('Guardado');
-        void fetchAllRecipes();
-    };
 
     const applySimulatedPrice = async () => {
         setApplyingSimulation(true);
@@ -2026,19 +2010,17 @@ function RecipeDetailContent() {
                 initialYieldUnit={recipe.yield_unit}
                 productionCategoryId={productionCategoryRow?.id ?? null}
                 categoryId={recipe.menu_category_id ?? ''}
-                categories={recipe.is_sellable === false
-                    ? (productionCategoryRow ? [{ id: productionCategoryRow.id, parent_id: null, label: 'producción' }] : [])
-                    : sortedMenuCategoryRows.map((row) => ({
+                categories={[
+                    ...sortedMenuCategoryRows.map((row) => ({
                         id: row.id,
                         parent_id: row.parent_id,
                         label: labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId),
-                    }))}
-                onCategoryChange={(id) => {
-                    const row = productionCategoryRow?.id === id
-                        ? productionCategoryRow
-                        : sortedMenuCategoryRows.find((item) => item.id === id);
-                    if (row) void handleCategoryUpdate(row);
-                }}
+                        dbName: denormalizedRecipeCategoryName(row),
+                    })),
+                    ...(productionCategoryRow
+                        ? [{ id: productionCategoryRow.id, parent_id: null, label: 'Producción', dbName: 'Producción' }]
+                        : []),
+                ]}
                 onDelete={() => setDeleteRecipeOpen(true)}
                 onSaved={(payload) => {
                     setRecipe((r) => (r ? { ...r, ...payload } : r));
