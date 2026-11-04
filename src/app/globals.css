@@ -11481,9 +11481,15 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 .carta-catalog-modal-ready .carta-browse-modal {
   animation: none;
 }
-/* La última fila de un catálogo de tres columnas siempre empieza por la izquierda. */
-.carta-browse-modal .carta-product-grid-row > * {
-  grid-column-start: auto;
+/* Última fila: 1 producto al centro; 2 productos desde izquierda a centro. */
+.carta-browse-modal .carta-product-grid-row > :only-child {
+  grid-column-start: 2;
+}
+.carta-browse-modal .carta-product-grid-row > :first-child:nth-last-child(2) {
+  grid-column-start: 1;
+}
+.carta-browse-modal .carta-product-grid-row > :nth-child(2):last-child {
+  grid-column-start: 2;
 }
 /* Aviso de bocadillos especiales: sin línea ni franja blanca al pie. */
 .carta-special-sandwich-note {

@@ -21,6 +21,7 @@ export type MenuOverrideUpsertInput = {
   override_descripcion: string | null
   override_precio: number | null
   override_photo_url: string | null
+  lightbox_photo_url: string | null
   plato_marbella_slot: PlatoMarbellaSlotValue | null
   plato_marbella_is_menu_price: boolean
   plato_marbella_hide_name: boolean
@@ -70,6 +71,7 @@ type OverrideRow = {
   override_descripcion: string | null
   override_precio: number | null
   override_photo_url: string | null
+  lightbox_photo_url: string | null
   plato_marbella_slot: PlatoMarbellaSlotValue | null
   plato_marbella_is_menu_price: boolean
   plato_marbella_hide_name: boolean
@@ -154,6 +156,7 @@ export async function upsertMenuOverride(input: MenuOverrideUpsertInput) {
     override_descripcion: 'override_descripcion' in input ? input.override_descripcion! : (ex?.override_descripcion ?? null),
     override_precio: 'override_precio' in input ? input.override_precio! : (ex?.override_precio ?? null),
     override_photo_url: 'override_photo_url' in input ? input.override_photo_url! : (ex?.override_photo_url ?? null),
+    lightbox_photo_url: 'lightbox_photo_url' in input ? input.lightbox_photo_url! : (ex?.lightbox_photo_url ?? null),
     plato_marbella_slot: nextSlot,
     plato_marbella_is_menu_price: nextMenuPrice,
     plato_marbella_hide_name:

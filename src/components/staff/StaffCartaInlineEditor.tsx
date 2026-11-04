@@ -36,6 +36,7 @@ type OverrideRow = {
   override_descripcion: string | null
   override_precio: number | string | null
   override_photo_url: string | null
+  lightbox_photo_url?: string | null
   plato_marbella_slot?: string | null
   plato_marbella_is_menu_price?: boolean | null
   plato_marbella_hide_name?: boolean | null
@@ -380,6 +381,7 @@ export function StaffCartaInlineEditor({
           descripcion: buildDescripcion(o, r),
           precio: precioRaw != null ? Number(precioRaw) : null,
           photo_url,
+          lightbox_photo_url: o?.lightbox_photo_url ?? null,
           carta_photo_scale: normalizeCartaPhotoScale(o?.carta_photo_scale),
           sort_order: o?.sort_order ?? null,
           tpv_factor_porcion,
@@ -624,10 +626,10 @@ export function StaffCartaInlineEditor({
           setItemModalArticuloId(null)
           void load({ silent: true })
         }}
-        onSaved={({ articulo_id, carta_photo_scale }) => {
+        onSaved={({ articulo_id, carta_photo_scale, lightbox_photo_url }) => {
           setDigitalRows((prev) =>
             prev.map((r) =>
-              r.articulo_id === articulo_id ? { ...r, carta_photo_scale } : r
+              r.articulo_id === articulo_id ? { ...r, carta_photo_scale, lightbox_photo_url } : r
             )
           )
         }}

@@ -15,6 +15,7 @@ import {
   CARTA_PUBLIC_MENU_COLUMNS,
   CARTA_PUBLIC_MENU_COLUMNS_BASE,
   CARTA_PUBLIC_MENU_COLUMNS_WITH_SCALE,
+  CARTA_PUBLIC_MENU_COLUMNS_WITH_LIGHTBOX,
   isCartaPhotoScaleColumnError,
 } from '@/lib/carta-menu-select'
 
@@ -90,7 +91,10 @@ export default async function PublicCartaPage() {
       .order('sort_order', { ascending: true, nullsFirst: false })
       .order('carta_nombre', { ascending: true })
 
-  let { data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS_WITH_SCALE)
+  let { data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS_WITH_LIGHTBOX)
+  if (error && /lightbox_photo_url/i.test(error.message)) {
+    ;({ data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS_WITH_SCALE))
+  }
   if (error && isCartaPhotoScaleColumnError(error.message)) {
     ;({ data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS))
   }

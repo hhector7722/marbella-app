@@ -32,6 +32,7 @@ export type PublicMenuRow = {
   carta_racion_medio_ca?: string | null
   carta_racion_medio_en?: string | null
   photo_url: string | null
+  lightbox_photo_url?: string | null
   carta_photo_scale?: CartaPhotoScale | string | null
   sort_order: number | null
   category_parent_id: string | null
@@ -99,6 +100,7 @@ export function publicMenuRowsToDigitalMenu(items: PublicMenuRow[]): DigitalMenu
     carta_racion_medio_ca: row.carta_racion_medio_ca,
     carta_racion_medio_en: row.carta_racion_medio_en,
     photo_url: row.photo_url,
+    lightbox_photo_url: row.lightbox_photo_url,
     carta_photo_scale: row.carta_photo_scale,
     sort_order: row.sort_order,
     tpv_factor_porcion: row.tpv_factor_porcion,

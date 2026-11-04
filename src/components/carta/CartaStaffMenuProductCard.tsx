@@ -36,6 +36,7 @@ export type CartaStaffMenuProductRow = CartaNameRow &
     category_parent_name?: string | null
     carta_photo_scale?: CartaPhotoScale | string | null
     photo_url?: string | null
+    lightbox_photo_url?: string | null
     precio?: number | string | null
     precio_medio_display?: number | string | null
     medio_articulo_id?: number | null
@@ -390,7 +391,7 @@ export function CartaStaffMenuProductCard({
       </div>
 
       <CartaImageLightbox
-        src={row.photo_url ?? null}
+        src={row.lightbox_photo_url?.trim() || row.photo_url || null}
         alt={displayName}
         title={displayName}
         open={

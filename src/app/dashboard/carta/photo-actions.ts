@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { canEditCartaMenu } from '@/lib/carta-permissions'
 import { normalizeProductPhotoFile } from '@/lib/server/normalize-product-photo'
+import sharp from 'sharp'
 
 async function requirePhotoUploader() {
   const supabase = await createClient()
@@ -119,6 +120,53 @@ export async function uploadNormalizedCartaItemPhoto(
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'No se pudo procesar la imagen'
     return { success: false, error: msg }
+  }
+}
+
+/**
+ * Imagen alternativa para el visor ampliado: no se normaliza a 4:5, no
+ * se recortan bordes blancos y se preserva el formato de las infografías.
+ */
+export async function uploadCartaItemLightboxPhoto(
+  formData: FormData
+): Promise<{ success: true; publicUrl: string } | { success: false; error: string }> {
+  const auth = await requirePhotoUploader()
+  if (!auth.ok) return { success: false, error: auth.error }
+
+  const file = formData.get('file')
+  const articuloId = Number(formData.get('articulo_id'))
+  if (!(file instanceof File) || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    return { success: false, error: 'Selecciona una imagen JPG, PNG o WebP.' }
+  }
+  if (!Number.isInteger(articuloId) || articuloId <= 0) {
+    return { success: false, error: 'Artículo no válido.' }
+  }
+  if (file.size <= 0 || file.size > 10 * 1024 * 1024) {
+    return { success: false, error: 'La imagen debe ocupar menos de 10 MB.' }
+  }
+
+  try {
+    const image = await sharp(Buffer.from(await file.arrayBuffer()), {
+      failOn: 'none',
+      limitInputPixels: 40_000_000,
+    })
+      .rotate()
+      .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 90, effort: 4 })
+      .toBuffer()
+
+    const base = slugifyBase(file.name, 'ampliada')
+    const storagePath = `menu-items/${articuloId}/lightbox/${Date.now()}-${base}.webp`
+    const { error } = await auth.supabase.storage
+      .from('carta_items')
+      .upload(storagePath, image, { contentType: 'image/webp', upsert: false })
+    if (error) return { success: false, error: error.message }
+
+    const { data } = auth.supabase.storage.from('carta_items').getPublicUrl(storagePath)
+    if (!data?.publicUrl) return { success: false, error: 'No se pudo obtener la URL pública.' }
+    return { success: true, publicUrl: data.publicUrl }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'No se pudo procesar la imagen.' }
   }
 }
 

@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/Field'
 import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard/carta/actions'
-import { uploadNormalizedCartaItemPhoto } from '@/app/dashboard/carta/photo-actions'
+import { uploadNormalizedCartaItemPhoto, uploadCartaItemLightboxPhoto } from '@/app/dashboard/carta/photo-actions'
 import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
 import { isCartaDualRacionParentCategory } from '@/lib/carta-dual-racion'
 import { tPublicUi } from '@/lib/carta-menu-i18n'
@@ -34,7 +34,7 @@ type CategoryRow = {
 
 type RecipePhotoRel = { photo_url: string | null }
 type RecipePhotoEmbed = { recipes?: RecipePhotoRel | RecipePhotoRel[] }
-type OverridePhotoRow = { override_photo_url?: string | null }
+type OverridePhotoRow = { override_photo_url?: string | null; lightbox_photo_url?: string | null }
 
 export function MenuItemEditModal({
   open,
@@ -46,7 +46,7 @@ export function MenuItemEditModal({
   open: boolean
   onClose: () => void
   /** Actualiza la fila en el grid staff sin esperar recarga completa. */
-  onSaved?: (patch: { articulo_id: number; carta_photo_scale: CartaPhotoScale }) => void
+  onSaved?: (patch: { articulo_id: number; carta_photo_scale: CartaPhotoScale; lightbox_photo_url: string | null }) => void
   articuloId: number | null
   categories: CategoryRow[]
 }) {
@@ -64,6 +64,10 @@ export function MenuItemEditModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null)
   const [removeOverridePhoto, setRemoveOverridePhoto] = useState(false)
+  const [lightboxPhotoUrl, setLightboxPhotoUrl] = useState<string | null>(null)
+  const [lightboxFile, setLightboxFile] = useState<File | null>(null)
+  const [lightboxPreviewUrl, setLightboxPreviewUrl] = useState<string | null>(null)
+  const [removeLightboxPhoto, setRemoveLightboxPhoto] = useState(false)
   const [platoSlot, setPlatoSlot] = useState<'' | PlatoMarbellaSlotValue>('')
   const [platoMenuPrice, setPlatoMenuPrice] = useState(false)
   const [platoHideName, setPlatoHideName] = useState(false)
@@ -147,14 +151,14 @@ export function MenuItemEditModal({
           supabase
             .from('digital_menu_overrides')
             .select(
-              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, carta_photo_scale, plato_marbella_slot, plato_marbella_is_menu_price, override_precio, override_precio_medio, carta_dual_racion_enabled, carta_racion_entero_es, carta_racion_entero_ca, carta_racion_entero_en, carta_racion_medio_es, carta_racion_medio_ca, carta_racion_medio_en'
+              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, lightbox_photo_url, carta_photo_scale, plato_marbella_slot, plato_marbella_is_menu_price, override_precio, override_precio_medio, carta_dual_racion_enabled, carta_racion_entero_es, carta_racion_entero_ca, carta_racion_entero_en, carta_racion_medio_es, carta_racion_medio_ca, carta_racion_medio_en'
             )
             .eq('articulo_id', articuloId)
             .maybeSingle(),
           supabase
             .from('digital_menu_overrides')
             .select(
-              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, plato_marbella_slot, plato_marbella_is_menu_price, override_precio, override_precio_medio, carta_dual_racion_enabled, carta_racion_entero_es, carta_racion_entero_ca, carta_racion_entero_en, carta_racion_medio_es, carta_racion_medio_ca, carta_racion_medio_en'
+              'articulo_id, category_id, override_nombre_es, override_nombre_ca, override_nombre_en, override_photo_url, lightbox_photo_url, plato_marbella_slot, plato_marbella_is_menu_price, override_precio, override_precio_medio, carta_dual_racion_enabled, carta_racion_entero_es, carta_racion_entero_ca, carta_racion_entero_en, carta_racion_medio_es, carta_racion_medio_ca, carta_racion_medio_en'
             )
             .eq('articulo_id', articuloId)
             .maybeSingle(),
@@ -181,6 +185,10 @@ export function MenuItemEditModal({
         setOverridePhotoUrl(typeof ov === 'string' && ov.trim() ? ov.trim() : null)
         setSelectedFile(null)
         setRemoveOverridePhoto(false)
+        const lightboxUrl = (overrideRes.data as OverridePhotoRow | null)?.lightbox_photo_url
+        setLightboxPhotoUrl(typeof lightboxUrl === 'string' && lightboxUrl.trim() ? lightboxUrl.trim() : null)
+        setLightboxFile(null)
+        setRemoveLightboxPhoto(false)
         const slot = (overrideRes.data as { plato_marbella_slot?: string | null } | null)
           ?.plato_marbella_slot
         setPlatoSlot(
@@ -215,6 +223,10 @@ export function MenuItemEditModal({
           URL.revokeObjectURL(previewBlobUrl)
           setPreviewBlobUrl(null)
         }
+        if (lightboxPreviewUrl) {
+          URL.revokeObjectURL(lightboxPreviewUrl)
+          setLightboxPreviewUrl(null)
+        }
       } catch (e: unknown) {
         toast.error(e instanceof Error ? e.message : 'No se pudo cargar el producto')
       } finally {
@@ -229,6 +241,10 @@ export function MenuItemEditModal({
       if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
     }
   }, [previewBlobUrl])
+
+  useEffect(() => () => {
+    if (lightboxPreviewUrl) URL.revokeObjectURL(lightboxPreviewUrl)
+  }, [lightboxPreviewUrl])
 
   const previewParentName = useMemo(() => {
     if (!categoryId) return null
@@ -253,6 +269,8 @@ export function MenuItemEditModal({
   )
   const previewFrameStyle = getCartaProductPhotoFrameStyle(previewIsDrink, previewLayoutFactor)
   const hasPhoto = Boolean(displayPhotoSrc?.trim())
+  const chosenLightboxPreview = lightboxPreviewUrl ?? (removeLightboxPhoto ? null : lightboxPhotoUrl)
+  const lightboxDisplayPreview = chosenLightboxPreview ?? displayPhotoSrc
 
   return (
     <Modal
@@ -343,6 +361,71 @@ export function MenuItemEditModal({
                 <p className="mt-2 text-[11px] font-semibold text-zinc-500">
                   Si no subes imagen, se usa la foto de la receta. Al subir, el producto se guarda entero (sin
                   recortar). Vuelve a subir si una foto se ve cortada.
+                </p>
+              </div>
+
+              <div className="mt-4">
+                <p className="text-[11px] font-black uppercase tracking-widest text-zinc-600">
+                  Imagen al ampliar (opcional)
+                </p>
+                <p className="mt-1 text-[11px] font-semibold text-zinc-500">
+                  Puedes subir un desglose de ingredientes u otra imagen. Si no eliges ninguna, se ampliará la imagen normal del producto.
+                </p>
+                <div className="mt-2 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
+                  <div className="flex min-h-44 w-full items-center justify-center bg-white p-3">
+                    {lightboxDisplayPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- Vista de imagen subida o URL de Storage
+                      <img src={lightboxDisplayPreview} alt="Vista previa de la imagen ampliada" className="max-h-52 max-w-full object-contain" />
+                    ) : (
+                      <Camera className="h-10 w-10 text-zinc-200" aria-hidden />
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 border-t border-zinc-100 p-2">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      id="menu-item-lightbox-photo-upload"
+                      disabled={isPending}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null
+                        if (!file) return
+                        setLightboxFile(file)
+                        setLightboxPreviewUrl(URL.createObjectURL(file))
+                        setRemoveLightboxPhoto(false)
+                        e.target.value = ''
+                      }}
+                    />
+                    <label
+                      htmlFor="menu-item-lightbox-photo-upload"
+                      className={cn(
+                        'inline-flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-zinc-800 active:bg-zinc-50',
+                        isPending && 'cursor-not-allowed opacity-60'
+                      )}
+                    >
+                      <Upload className="h-4 w-4" strokeWidth={2.5} />
+                      {chosenLightboxPreview ? 'Cambiar imagen ampliada' : 'Añadir imagen ampliada'}
+                    </label>
+                    {chosenLightboxPreview ? (
+                      <button
+                        type="button"
+                        className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-zinc-800 active:bg-zinc-50"
+                        disabled={isPending}
+                        onClick={() => {
+                          setLightboxFile(null)
+                          setLightboxPreviewUrl(null)
+                          setLightboxPhotoUrl(null)
+                          setRemoveLightboxPhoto(true)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" strokeWidth={2.5} />
+                        Usar imagen normal
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <p className="mt-1 text-[11px] font-semibold text-zinc-500">
+                  La foto pequeña de la carta no cambia. La imagen ampliada conserva su formato completo.
                 </p>
               </div>
 
@@ -565,6 +648,7 @@ export function MenuItemEditModal({
                   onClick={() => {
                     startTransition(async () => {
                       let nextOverridePhotoUrl: string | null | undefined = undefined
+                      let nextLightboxPhotoUrl: string | null | undefined = undefined
 
                       try {
                         if (selectedFile) {
@@ -576,6 +660,16 @@ export function MenuItemEditModal({
                           nextOverridePhotoUrl = up.publicUrl
                         } else if (removeOverridePhoto) {
                           nextOverridePhotoUrl = null
+                        }
+                        if (lightboxFile) {
+                          const fd = new FormData()
+                          fd.append('file', lightboxFile)
+                          fd.append('articulo_id', String(articuloId))
+                          const up = await uploadCartaItemLightboxPhoto(fd)
+                          if (!up.success) throw new Error(up.error)
+                          nextLightboxPhotoUrl = up.publicUrl
+                        } else if (removeLightboxPhoto) {
+                          nextLightboxPhotoUrl = null
                         }
                       } catch (e: unknown) {
                         const msg = String(e instanceof Error ? e.message : '')
@@ -644,6 +738,7 @@ export function MenuItemEditModal({
                         category_id: categoryId.trim() ? categoryId.trim() : null,
                         carta_photo_scale: photoScale,
                         ...(nextOverridePhotoUrl !== undefined ? { override_photo_url: nextOverridePhotoUrl } : {}),
+                        ...(nextLightboxPhotoUrl !== undefined ? { lightbox_photo_url: nextLightboxPhotoUrl } : {}),
                         ...(isPlatoMarbellaCategory
                           ? {
                               plato_marbella_slot: platoMenuPrice ? null : platoSlot || null,
@@ -666,7 +761,7 @@ export function MenuItemEditModal({
                           'Guardado sin talla de foto: ejecuta la migración 20260515170000_carta_photo_scale en Supabase.'
                         )
                       }
-                      onSaved?.({ articulo_id: articuloId, carta_photo_scale: photoScale })
+                      onSaved?.({ articulo_id: articuloId, carta_photo_scale: photoScale, lightbox_photo_url: nextLightboxPhotoUrl !== undefined ? nextLightboxPhotoUrl : lightboxPhotoUrl })
                       toast.success('Producto guardado')
                       onClose()
                     })

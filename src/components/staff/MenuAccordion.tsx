@@ -112,6 +112,7 @@ export type DigitalMenuRow = {
     carta_racion_medio_ca?: string | null
     carta_racion_medio_en?: string | null
     photo_url: string | null
+    lightbox_photo_url?: string | null
     carta_photo_scale?: CartaPhotoScale | string | null
     /** `digital_menu_overrides.sort_order` (orden dentro de la subcategoría en carta). */
     sort_order?: number | null
@@ -1880,7 +1881,7 @@ export function MenuAccordion({
                                                                 getCartaProductGridRowCellClass(
                                                                     cellIndex,
                                                                     itemsInRow,
-                                                                    { gaplessRow: eventOrderGaplessGrid }
+                                                                    { gaplessRow: eventOrderGaplessGrid || (catalogDisplay && !eventOrder && !eventEncargoEdit) }
                                                                 ),
                                                                 'h-full'
                                                             )}
