@@ -162,16 +162,8 @@ export default function CreateModal({
                     ) : null}
                     {(newRecipe.kind || 'sellable') === 'internal' && productionCategory ? (
                         <div className="col-span-2">
-                            <label htmlFor="new-internal-recipe-category" className="text-xs font-bold text-gray-500 uppercase">Categoría</label>
-                            <select
-                                id="new-internal-recipe-category"
-                                value={newRecipe.menu_category_id || ''}
-                                onChange={(e) => setNewRecipe({ ...newRecipe, menu_category_id: e.target.value })}
-                                className="w-full border-b-2 border-gray-200 focus:border-[#36606F] outline-none py-2 font-medium bg-transparent"
-                            >
-                                <option value="">Sin categoría</option>
-                                <option value={productionCategory.id}>Producción</option>
-                            </select>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Categoría</label>
+                            <div className="w-full border-b-2 border-gray-200 py-2 font-medium text-gray-800">Producción</div>
                         </div>
                     ) : null}
                     <div className={(newRecipe.kind || 'sellable') === 'sellable' ? '' : 'col-span-2'}>

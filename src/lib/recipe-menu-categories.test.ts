@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { isHalfPortionSandwichCategory, type MenuCategoryRow } from './recipe-menu-categories.ts'
+import { isHalfPortionSandwichCategory, recipeVisibleInCatalog, type MenuCategoryRow } from './recipe-menu-categories.ts'
 
 const rows: MenuCategoryRow[] = [
   { id: 'hot', name: 'Bocadillos - Calientes', slug: 'bocadillos-calientes', parent_id: 'sandwich', sort_order: 1 },
@@ -26,4 +26,18 @@ test('reconoce etiqueta legacy mientras las categorías cargan', () => {
 
 test('cuando hay categoría por slug, no confunde etiquetas antiguas', () => {
   assert.equal(isHalfPortionSandwichCategory({ menu_category_id: 'special', category: 'Bocadillos - Fríos' }, rows), false)
+})
+
+test('Producción separa elaboraciones internas de las recetas vendibles', () => {
+  const production = { is_sellable: false, menu_category_id: 'prod' }
+  const legacyInternal = { is_sellable: false, menu_category_id: 'platos' }
+  const sellable = { is_sellable: true, menu_category_id: 'platos' }
+  assert.equal(recipeVisibleInCatalog(production, null, 'prod'), false)
+  assert.equal(recipeVisibleInCatalog(production, 'platos-marbella', 'prod'), false)
+  assert.equal(recipeVisibleInCatalog(production, 'produccion', 'prod'), true)
+  assert.equal(recipeVisibleInCatalog(legacyInternal, 'produccion', 'prod'), false)
+  assert.equal(recipeVisibleInCatalog(sellable, null, 'prod'), true)
+  assert.equal(recipeVisibleInCatalog(sellable, 'produccion', 'prod'), false)
+  assert.equal(recipeVisibleInCatalog(sellable, 'platos-marbella', 'prod'), true)
+  assert.equal(recipeVisibleInCatalog({ is_sellable: null }, null, 'prod'), true)
 })

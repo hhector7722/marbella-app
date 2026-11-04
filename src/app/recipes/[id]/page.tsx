@@ -2023,6 +2023,7 @@ function RecipeDetailContent() {
                 initialIsSellable={recipe.is_sellable !== false}
                 initialYieldQuantity={recipe.yield_quantity == null ? null : Number(recipe.yield_quantity)}
                 initialYieldUnit={recipe.yield_unit}
+                productionCategoryId={productionCategoryRow?.id ?? null}
                 categoryId={recipe.menu_category_id ?? ''}
                 categories={recipe.is_sellable === false
                     ? (productionCategoryRow ? [{ id: productionCategoryRow.id, label: 'Producción' }] : [])

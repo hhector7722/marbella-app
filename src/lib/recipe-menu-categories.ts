@@ -123,3 +123,15 @@ export function menuCategoryFromUrlParam(param: string | null, rows: MenuCategor
   const lower = param.trim().toLowerCase()
   return rows.find((r) => r.name.trim().toLowerCase() === lower) ?? null
 }
+
+/** Catálogo: las elaboraciones sólo se muestran en Producción, nunca entre recetas vendibles. */
+export function recipeVisibleInCatalog(
+  recipe: { is_sellable?: boolean | null; menu_category_id?: string | null },
+  categoryParam: string | null,
+  productionCategoryId: string | null,
+): boolean {
+  const isInternal = recipe.is_sellable === false
+  return categoryParam === 'produccion'
+    ? isInternal && productionCategoryId !== null && recipe.menu_category_id === productionCategoryId
+    : !isInternal
+}
