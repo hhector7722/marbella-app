@@ -82,15 +82,15 @@ Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepcion
 ### Fondo contextual compartido de la carta
 
 La carta pública (/carta) y la carta del personal (/staff/carta) usan el mismo
-fondo gráfico, sin modificar la densidad ni la anatomía de categorías, selector
+fondo de la aplicación, sin modificar la densidad ni la anatomía de categorías, selector
 de subcategorías o fichas de producto.
 
 | Token | Valor | Papel |
 |---|---|---|
-| carta.fondo.geometrico | `public/images/carta/geometrica-e.svg` | Fondo azul abstracto común de ambas cartas |
+| carta.fondo | --color-envolvente + --marbella-shell-image | Fondo original de Marbella App compartido por ambas cartas |
 | carta.fondo.texto | `color.texto.invertido` | Contraste de etiquetas e iconos sobre el fondo |
 
-El fondo de los modales de exploración del catálogo continúa la misma imagen;
+El fondo de los modales de exploración del catálogo continúa el mismo fondo de la aplicación;
 sus superficies de selección y tarjetas mantienen su aspecto preexistente.
 
 ## 4. Texto

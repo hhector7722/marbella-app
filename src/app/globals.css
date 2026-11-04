@@ -11177,7 +11177,8 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 
 /* Únicamente el fondo de la carta: misma escena para público y personal. */
 .carta-shared-scene {
-  background: #064374 url('/images/carta/geometrica-e.svg') center center / cover no-repeat;
+  background-color: var(--color-envolvente);
+  background-image: var(--marbella-shell-image);
 }
 .carta-shared-scene > div > header,
 .carta-shared-scene > div > div.bg-white {
@@ -11200,7 +11201,8 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
 
 /* Modal del catálogo: solo transparencia del fondo, sin rehacer las tarjetas. */
 body:has(.carta-shared-scene) [data-component='Modal'][data-instance='menu-accordion-section'] {
-  background: #064374 url('/images/carta/geometrica-e.svg') center center / cover no-repeat;
+  background-color: var(--color-envolvente);
+  background-image: var(--marbella-shell-image);
 }
 body:has(.carta-shared-scene) [data-component='Modal'][data-instance='menu-accordion-section'] [data-modal-backdrop='base'] {
   background: rgb(0 19 42 / .12);
