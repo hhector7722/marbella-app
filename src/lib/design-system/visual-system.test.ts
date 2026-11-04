@@ -2238,7 +2238,11 @@ describe('Respuestas privadas de Héctor a las notas del horario', () => {
         assert.match(notes, /const mayReply = authEmail\?\.trim\(\)\.toLowerCase\(\) === NOTIFICATION_HECTOR_EMAIL/);
         assert.match(notes, /&& !identity\?\.isViewingAs/);
         assert.match(notes, /note\.user_id !== authUserId && !note\.reply/);
-        assert.match(notes, /instance="schedule-note-reply-toggle"/);
+        assert.doesNotMatch(notes, /instance="schedule-note-reply-toggle"/, 'la acción de responder no necesita botón separado');
+        assert.match(notes, /role=\{canRespond && replyingToId !== note.id \? 'button' : undefined\}/);
+        assert.match(notes, /onClick=\{canRespond && replyingToId !== note.id \? openReply : undefined\}/);
+        assert.match(notes, /event.key === 'Enter' \|\| event.key === ' '\)/, 'la nota acepta teclado');
+        assert.match(notes, /setReplyingToId\(note.id\)/);
         assert.match(notes, /data-element="schedule-note-private-reply"/);
         assert.match(notes, /createPrivateScheduleNoteReply\(\{ noteId, content \}\)/);
         assert.match(notes, /\.from\('schedule_day_note_replies'\)[\s\S]*?\.in\('note_id', rows\.map\(\(row\) => row\.id\)\)/);
