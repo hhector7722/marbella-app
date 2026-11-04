@@ -62,6 +62,7 @@ export function CartaDualRacionPrices({
     return (
       <div
         role="group"
+        data-carta-price-lines
         className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-1 py-0"
         aria-label={ariaLabel || undefined}
       >
@@ -97,7 +98,8 @@ export function CartaDualRacionPrices({
 
   if (showPrice) {
     return (
-      <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-1 py-0">
+      <div data-carta-price-lines
+        className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-1 py-0">
         <span
           className={cn(
             'text-center font-black tabular-nums leading-tight text-[#36606F]',
@@ -112,7 +114,8 @@ export function CartaDualRacionPrices({
   }
 
   return (
-    <div className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-1 py-0">
+    <div data-carta-price-lines
+        className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-1 py-0">
       <span
         className={cn(
           'text-center font-black tabular-nums leading-tight text-[#36606F]/90',

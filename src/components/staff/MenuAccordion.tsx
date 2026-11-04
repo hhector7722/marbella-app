@@ -13,6 +13,7 @@ import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategor
 import { CartaSubcategoryPickerGrid } from '@/components/carta/CartaSubcategoryPickerGrid'
 import { CartaSubcategoryPickerModalShell } from '@/components/carta/CartaSubcategoryPickerModalShell'
 import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
+import { CartaWholeRowScroller } from '@/components/carta/CartaWholeRowScroller'
 import { StaffCartaModalEditToggle } from '@/components/carta/StaffCartaModalEditToggle'
 import { CartaActiveToggleButton } from '@/components/carta/CartaActiveToggleButton'
 import { subsWithVisibleProducts } from '@/lib/event-encargo-config'
@@ -314,6 +315,7 @@ export function MenuAccordion({
     categoryCoverById = {},
     categoryCoverScaleById = {},
     homeCompact = false,
+    catalogDisplay = false,
     eventOrder,
     eventEncargoEdit,
 }: {
@@ -346,6 +348,8 @@ export function MenuAccordion({
     categoryCoverScaleById?: Record<string, CartaPhotoScale>
     /** Home staff/carta: grid más compacto sin scroll */
     homeCompact?: boolean
+    /** Únicamente carta pública y carta staff. */
+    catalogDisplay?: boolean
     /** Pedido por evento: misma carta con +/− por producto */
     eventOrder?: EventOrderCartaControl
     /** Configuración del encargo (productos/categorías/límites). */
@@ -610,6 +614,7 @@ export function MenuAccordion({
     )
 
     const eventOrderGaplessGrid = Boolean(eventOrder?.tapToAdd && !encargoEditActive)
+    const pageWholeProductRows = catalogDisplay && !eventOrder && !eventEncargoEdit && !reorderScope
 
     const homeCategoryCoverUrls = useMemo(
         () => homeCategoryGroups.map((g) => g.coverPhotoUrl),
@@ -1147,7 +1152,8 @@ export function MenuAccordion({
                             'relative z-10 flex w-full max-w-lg flex-col overflow-hidden rounded-[22px] bg-white animate-in zoom-in-95 duration-200 sm:max-w-xl',
                             showPlatoModalChrome
                                 ? 'carta-plato-modal-shell min-h-0'
-                                : 'carta-modal-shell-max min-h-0'
+                                : 'carta-modal-shell-max min-h-0',
+                            catalogDisplay && !openPlatoMarbella && 'carta-browse-modal'
                         )}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -1616,9 +1622,12 @@ export function MenuAccordion({
                             urls={openModalImageUrls}
                             className={cn(
                                 'bg-white flex min-h-[min(50vh,320px)] flex-1 flex-col',
+                                pageWholeProductRows && !openPlatoMarbella && 'carta-browse-products-host',
                                 showPlatoModalChrome
                                     ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
-                                    : 'overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
+                                    : pageWholeProductRows
+                                      ? 'overflow-hidden px-2.5 pb-2 pt-2 sm:px-3 sm:pt-2.5'
+                                      : 'overflow-y-auto overscroll-contain px-2.5 pb-4 pt-2 custom-scrollbar sm:px-3 sm:pb-5 sm:pt-2.5'
                             )}
                         >
                             {openPlatoMarbella && platoBundleRows ? (
@@ -1659,6 +1668,10 @@ export function MenuAccordion({
                                     )}
                                 </div>
                             ) : (
+                                <CartaWholeRowScroller
+                                    enabled={Boolean(pageWholeProductRows && !openPlatoMarbella)}
+                                    resetKey={[openGroup.key, openSelectedSubKey ?? "", lang].join(":")}
+                                >
                                 <div className="space-y-3 sm:space-y-4">
                                     {(openHasMultipleSubs
                                         ? openGroup._subList.filter((s) => s.key === openSelectedSubKey)
@@ -1686,6 +1699,7 @@ export function MenuAccordion({
                                                                 className={cn(
                                                                     getCartaProductGridRowClass('stretch'),
                                                                     'gap-x-2 md:gap-x-3',
+                                                                    pageWholeProductRows && 'carta-product-grid-row',
                                                                     rowDensity === 'compact' && 'gap-y-0',
                                                                     rowDensity === 'cozy' && 'gap-y-1',
                                                                     rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
@@ -1734,6 +1748,7 @@ export function MenuAccordion({
                                                                     }
                                                                     onReorderTap={handleProductReorderTap}
                                                                     rowDensity={rowDensity}
+                                                                    squareLayout={catalogDisplay && !eventOrder && !eventEncargoEdit}
                                                                     photoFrameStyle={rowFrameStyle}
                                                                     isPlatoMarbellaLauncher={
                                                                         platoLauncherArticuloId != null &&
@@ -1778,6 +1793,7 @@ export function MenuAccordion({
                                                                 className={cn(
                                                                     getCartaProductGridRowClass('stretch'),
                                                                     'gap-x-2 md:gap-x-3',
+                                                                    pageWholeProductRows && 'carta-product-grid-row',
                                                                     rowDensity === 'compact' && 'gap-y-0',
                                                                     rowDensity === 'cozy' && 'gap-y-1',
                                                                     rowDensity === 'normal' && 'gap-y-2.5 md:gap-y-3'
@@ -1807,6 +1823,7 @@ export function MenuAccordion({
                                                                         : productToggleBusyId
                                                                 }
                                                                 rowDensity={rowDensity}
+                                                                squareLayout={catalogDisplay && !eventOrder && !eventEncargoEdit}
                                                                 photoFrameStyle={rowFrameStyle}
                                                                 isPlatoMarbellaLauncher={
                                                                     platoLauncherArticuloId != null &&
@@ -1833,6 +1850,7 @@ export function MenuAccordion({
                                         </section>
                                     ))}
                                 </div>
+                                </CartaWholeRowScroller>
                             )}
                         </CartaCoversLoadingGate>
                         {isSpecialSandwichesModal ? (

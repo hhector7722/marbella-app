@@ -87,6 +87,7 @@ export function StaffCartaInlineEditor({
   canEdit,
   globalEditMode = true,
   homeCompact = false,
+  catalogDisplay = false,
   lang = DEFAULT_CARTA_LANG,
   onLangChange,
 }: {
@@ -94,6 +95,7 @@ export function StaffCartaInlineEditor({
   /** Edición en portada (grid categorías). El modal puede editarse aparte. */
   globalEditMode?: boolean
   homeCompact?: boolean
+  catalogDisplay?: boolean
   lang?: CartaLang
   onLangChange?: (next: CartaLang) => void
 }) {
@@ -576,6 +578,7 @@ export function StaffCartaInlineEditor({
           {...(onLangChange ? { lang, onLangChange } : {})}
           hideLangPicker
           homeCompact={homeCompact}
+          catalogDisplay={catalogDisplay}
           editMode={globalEditMode}
           onEditParentCategory={(id) => setCategoryModalId(id)}
           onEditChildCategory={(id) => setCategoryModalId(id)}

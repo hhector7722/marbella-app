@@ -97,6 +97,7 @@ export function StaffCartaView({
               canEdit={canEditMenu}
               globalEditMode={editing}
               homeCompact={!editing}
+              catalogDisplay
               lang={lang}
               onLangChange={setLang}
             />
@@ -113,6 +114,7 @@ export function StaffCartaView({
                 platoMarbellaCategoryId={platoMarbellaCategoryId}
                 showEmptyMenuChildCategories
                 homeCompact
+                catalogDisplay
               />
             </div>
           )}
