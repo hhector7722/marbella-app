@@ -302,12 +302,16 @@ export function CartaStaffMenuProductCard({
             'cursor-pointer touch-manipulation active:bg-zinc-50'
         )}
         role={
-          editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher
+          (editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher) ||
+          (squareLayout && !!row.photo_url && !editMode && !eventTapToAdd && !isPlatoMarbellaLauncher)
             ? 'button'
             : undefined
         }
         tabIndex={
-          editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher ? 0 : undefined
+          (editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher) ||
+          (squareLayout && !!row.photo_url && !editMode && !eventTapToAdd && !isPlatoMarbellaLauncher)
+            ? 0
+            : undefined
         }
         onClick={
           eventTapToAdd
@@ -316,7 +320,9 @@ export function CartaStaffMenuProductCard({
               ? () => onOpenPlatoMarbella()
               : editMode && onEditProduct && !productReorderMode
                 ? () => onEditProduct(row.articulo_id)
-                : undefined
+                : squareLayout && row.photo_url
+                  ? () => setLightboxOpen(true)
+                  : undefined
         }
         onKeyDown={
           isPlatoMarbellaLauncher && onOpenPlatoMarbella
@@ -333,11 +339,21 @@ export function CartaStaffMenuProductCard({
                     onEditProduct(row.articulo_id)
                   }
                 }
-              : undefined
+              : squareLayout && row.photo_url
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setLightboxOpen(true)
+                    }
+                  }
+                : undefined
         }
       >
         <p
-          className="line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]"
+          className={cn(
+            'line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]',
+            squareLayout && displayName.length > 18 && 'carta-catalog-long-name'
+          )}
           title={displayName}
         >
           {displayName}
