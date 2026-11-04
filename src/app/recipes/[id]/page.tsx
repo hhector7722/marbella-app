@@ -129,6 +129,14 @@ type RecipeComponentChild = {
     yield_unit: string | null;
 };
 
+type PendingComponent = {
+    id: string;
+    kind: 'ingredient' | 'elaboration';
+    name: string;
+    quantity: string;
+    unit: string;
+};
+
 type RecipeConsumptionFormat = {
     id: string;
     recipe_id: string;
@@ -218,8 +226,8 @@ function RecipeDetailContent() {
     const [savingPresentation, setSavingPresentation] = useState(false);
 
     const [showIngredientModal, setShowIngredientModal] = useState(false);
-    const [addIngredientUnit, setAddIngredientUnit] = useState<string>('kg');
-    const [forceAddIngredientUnit, setForceAddIngredientUnit] = useState(false);
+    const [pendingComponents, setPendingComponents] = useState<PendingComponent[]>([]);
+    const [savingComponents, setSavingComponents] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -773,14 +781,14 @@ function RecipeDetailContent() {
     };
 
     const closeAddIngredientModal = () => {
+        if (savingComponents) return;
         setShowIngredientModal(false);
-        setForceAddIngredientUnit(false);
+        setPendingComponents([]);
         setSearchTerm('');
     };
 
     const openAddIngredientModal = () => {
-        setForceAddIngredientUnit(false);
-        setAddIngredientUnit('kg');
+        setPendingComponents([]);
         setComponentKind('ingredient');
         setSearchTerm('');
         setShowIngredientModal(true);
@@ -810,36 +818,6 @@ function RecipeDetailContent() {
             return;
         }
         setRecipeCandidates(data ?? []);
-    };
-
-    const handleAddSubrecipe = async (child: RecipeComponentChild) => {
-        if (!canAddRecipeComponent({ yieldQuantity: child.yield_quantity, yieldUnit: child.yield_unit }) || !child.yield_unit) return;
-        const formats = consumptionFormats.filter((f) => f.recipe_id === child.id);
-        // Sólo el bocadillo y el pincho utilizan formatos; los menús consumen 1 ud completa.
-        const preferred = child.name === 'Tortilla' ? tortillaFormatForParentRecipe(recipe?.name) : null;
-        const full = preferred ? formats.find((f) => f.code === preferred) : undefined;
-        const half = preferred === 'entero' ? formats.find((f) => f.code === 'medio') : undefined;
-        if (preferred && (!full || (preferred === 'entero' && !half))) {
-            toast.error('No están disponibles los formatos de tortilla');
-            return;
-        }
-        const { error } = await supabase.from('recipe_subrecipes').insert({
-            parent_recipe_id: recipeId,
-            child_recipe_id: child.id,
-            quantity: 1,
-            unit: child.yield_unit,
-            format_full_id: full?.id ?? null,
-            format_half_id: half?.id ?? null,
-        });
-        if (error) {
-            toast.error(subrecipeWriteErrorMessage(error, 'add'));
-            return;
-        }
-        toast.success('Elaboración añadida');
-        await fetchRecipeSubrecipes();
-        await refreshSheetCost();
-        closeAddIngredientModal();
-        setComponentKind('ingredient');
     };
 
     const handleSubrecipeQuantityChange = async (line: RecipeSubrecipeLine, quantity: number) => {
@@ -911,18 +889,110 @@ function RecipeDetailContent() {
         }
     };
 
-    const handleAddIngredient = async (ingredientId: string, unit: string, ingredientName?: string) => {
-        await supabase.from('recipe_ingredients').insert({
-            recipe_id: recipeId,
-            ingredient_id: ingredientId,
-            quantity_gross: 1,
-            quantity_half: 0.5,
-            unit: unit || 'kg'
-        });
-        trackRecipeAddIngredient(namedEntitySummary(ingredientName ?? ingredientId));
-        await fetchRecipe();
-        void refreshSheetCost();
-        closeAddIngredientModal();
+    const togglePendingIngredient = (ingredient: IngredientRow) => {
+        if (savingComponents || ingredients.some((row) => row.ingredient_id === ingredient.id)) return;
+        setPendingComponents((previous) => previous.some((row) => row.kind === 'ingredient' && row.id === ingredient.id)
+            ? previous.filter((row) => !(row.kind === 'ingredient' && row.id === ingredient.id))
+            : [...previous, {
+                kind: 'ingredient', id: ingredient.id, name: ingredient.name, quantity: '1',
+                unit: resolveIngredientRecipeUnit(ingredient.recipe_unit, ingredient.purchase_unit || 'ud'),
+            }]);
+    };
+
+    const togglePendingElaboration = (child: RecipeComponentChild) => {
+        if (savingComponents || subrecipes.some((row) => row.child_recipe_id === child.id)
+            || !canAddRecipeComponent({ yieldQuantity: child.yield_quantity, yieldUnit: child.yield_unit })) return;
+        setPendingComponents((previous) => previous.some((row) => row.kind === 'elaboration' && row.id === child.id)
+            ? previous.filter((row) => !(row.kind === 'elaboration' && row.id === child.id))
+            : [...previous, { kind: 'elaboration', id: child.id, name: child.name, quantity: '1', unit: child.yield_unit || 'ud' }]);
+    };
+
+    const updatePendingComponent = (key: Pick<PendingComponent, 'kind' | 'id'>, changes: Partial<Pick<PendingComponent, 'quantity' | 'unit'>>) => {
+        setPendingComponents((previous) => previous.map((row) => row.kind === key.kind && row.id === key.id ? { ...row, ...changes } : row));
+    };
+
+    const savePendingComponents = async () => {
+        if (savingComponents || !pendingComponents.length) return;
+        const parsed = pendingComponents.map((row) => ({ ...row, amount: Number(row.quantity.trim().replace(',', '.')) }));
+        if (parsed.some((row) => !isValidComponentQuantity(row.amount))) {
+            toast.error('La cantidad debe ser mayor que cero'); return;
+        }
+        if (parsed.some((row) => row.kind === 'ingredient'
+            ? !RECIPE_UNIT_OPTIONS.some((option) => option.value === row.unit)
+            : !compatibleComponentUnits(recipeCandidates.find((item) => item.id === row.id)?.yield_unit).includes(row.unit))) {
+            toast.error('Hay unidades no compatibles'); return;
+        }
+        if (parsed.some((row) => row.kind === 'ingredient'
+            ? ingredients.some((item) => item.ingredient_id === row.id)
+            : subrecipes.some((item) => item.child_recipe_id === row.id))) {
+            toast.error('Hay componentes que ya están añadidos'); return;
+        }
+
+        const ingredientRows = parsed.filter((row) => row.kind === 'ingredient');
+        const elaborationRows = parsed.filter((row) => row.kind === 'elaboration');
+        const insertElaborations: {
+            parent_recipe_id: string; child_recipe_id: string; quantity: number; unit: string;
+            format_full_id: string | null; format_half_id: string | null;
+        }[] = [];
+
+        for (const row of elaborationRows) {
+            const child = recipeCandidates.find((item) => item.id === row.id);
+            if (!child || !canAddRecipeComponent({ yieldQuantity: child.yield_quantity, yieldUnit: child.yield_unit })) {
+                toast.error(`La elaboración ${row.name} no tiene rendimiento válido`); return;
+            }
+            const formats = consumptionFormats.filter((item) => item.recipe_id === child.id);
+            const preferred = child.name === 'Tortilla' ? tortillaFormatForParentRecipe(recipe?.name) : null;
+            const full = preferred ? formats.find((item) => item.code === preferred) : undefined;
+            const half = preferred === 'entero' ? formats.find((item) => item.code === 'medio') : undefined;
+            if (preferred && (!full || (preferred === 'entero' && !half))) {
+                toast.error('No están disponibles los formatos de tortilla'); return;
+            }
+            insertElaborations.push({
+                parent_recipe_id: recipeId, child_recipe_id: row.id,
+                quantity: row.amount, unit: row.unit,
+                format_full_id: full?.id ?? null, format_half_id: half?.id ?? null,
+            });
+        }
+
+        setSavingComponents(true);
+        try {
+            const ingredientResult = ingredientRows.length
+                ? await supabase.from('recipe_ingredients').insert(ingredientRows.map((row) => ({
+                    recipe_id: recipeId, ingredient_id: row.id,
+                    quantity_gross: row.amount, quantity_half: row.amount / 2, unit: row.unit,
+                })))
+                : { error: null };
+            const elaborationResult = insertElaborations.length
+                ? await supabase.from('recipe_subrecipes').insert(insertElaborations)
+                : { error: null };
+
+            const savedIngredients = ingredientResult.error ? [] : ingredientRows;
+            const savedElaborations = elaborationResult.error ? [] : elaborationRows;
+            if (savedIngredients.length || savedElaborations.length) {
+                for (const row of savedIngredients) {
+                    trackRecipeAddIngredient(namedEntitySummary(row.name));
+                }
+                await Promise.all([fetchRecipe(), fetchRecipeSubrecipes()]);
+                await refreshSheetCost();
+            }
+            if (ingredientResult.error || elaborationResult.error) {
+                const details = [ingredientResult.error?.message, elaborationResult.error?.message].filter(Boolean).join(' · ');
+                toast.error(`No se guardaron todos los componentes: ${details}`);
+                // Mantener en la selección solo los que no se han guardado.
+                setPendingComponents((previous) => previous.filter((row) =>
+                    row.kind === 'ingredient' ? Boolean(ingredientResult.error) : Boolean(elaborationResult.error)));
+                return;
+            }
+            const count = savedIngredients.length + savedElaborations.length;
+            toast.success(`${count} componente${count === 1 ? '' : 's'} añadido${count === 1 ? '' : 's'}`);
+            setPendingComponents([]);
+            setSearchTerm('');
+            setShowIngredientModal(false);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'No se pudieron añadir los componentes');
+        } finally {
+            setSavingComponents(false);
+        }
     };
 
     const handleDeleteIngredient = async (id: string) => {
@@ -1948,40 +2018,6 @@ function RecipeDetailContent() {
 
                     {componentKind === 'ingredient' ? (
                         <div className="flex flex-col gap-3">
-                            <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 px-3 py-2.5">
-                                <label className="flex min-h-9 cursor-pointer items-center justify-between gap-3">
-                                    <span className="min-w-0">
-                                        <span className="block text-xs font-semibold text-zinc-800">Unidad de medida</span>
-                                        <span className="block text-[11px] leading-snug text-zinc-500">
-                                            {forceAddIngredientUnit ? 'Personalizada para este ingrediente' : 'Usar la unidad habitual'}
-                                        </span>
-                                    </span>
-                                    <span className="relative shrink-0">
-                                        <input
-                                            type="checkbox"
-                                            checked={forceAddIngredientUnit}
-                                            onChange={(event) => setForceAddIngredientUnit(event.target.checked)}
-                                            aria-label="Personalizar la unidad al añadir"
-                                            className="peer sr-only"
-                                        />
-                                        <span className="block h-6 w-11 rounded-full bg-zinc-300 transition-colors peer-checked:bg-[#36606F] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#36606F]" />
-                                        <span className="pointer-events-none absolute left-0.5 top-0.5 block h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
-                                    </span>
-                                </label>
-                                {forceAddIngredientUnit ? (
-                                    <div className="mt-2 flex items-center gap-3 border-t border-zinc-200 pt-2">
-                                        <label htmlFor="recipe-add-ingredient-unit" className="text-xs font-medium text-zinc-600">Elegir unidad</label>
-                                        <select
-                                            id="recipe-add-ingredient-unit"
-                                            value={addIngredientUnit}
-                                            onChange={(event) => setAddIngredientUnit(event.target.value)}
-                                            className="min-h-10 min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-800 focus:border-[#36606F] focus:outline-none"
-                                        >
-                                            {RECIPE_UNIT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                                        </select>
-                                    </div>
-                                ) : null}
-                            </div>
                             <SearchField
                                 instance="recipe-add-ingredient-search"
                                 placeholder="Buscar ingrediente por nombre..."
@@ -1989,27 +2025,34 @@ function RecipeDetailContent() {
                                 onChange={setSearchTerm}
                             />
                             {hasComponentQuery ? (
-                            <div className="max-h-[min(42dvh,19rem)] space-y-1 overflow-y-auto overscroll-contain pr-1">
+                            <div className={cn('space-y-1 overflow-y-auto overscroll-contain pr-1', pendingComponents.length ? 'max-h-[min(23dvh,11rem)]' : 'max-h-[min(42dvh,19rem)]')}>
                                 {filteredIngredients.map((ing) => {
                                     const purchaseUnit = ing.purchase_unit || 'ud';
                                     const configuredUnit = resolveIngredientRecipeUnit(ing.recipe_unit, purchaseUnit);
-                                    const unitToAdd = forceAddIngredientUnit ? addIngredientUnit : configuredUnit;
+                                    const isPending = pendingComponents.some((row) => row.kind === 'ingredient' && row.id === ing.id);
+                                    const alreadyAdded = ingredients.some((row) => row.ingredient_id === ing.id);
                                     const effective = `${Number(ing.current_price || 0).toFixed(4)} €/${purchaseUnit}`;
                                     return (
                                         <button
                                             key={ing.id}
                                             type="button"
-                                            onClick={() => void handleAddIngredient(ing.id, unitToAdd, ing.name)}
-                                            className="flex min-h-12 w-full items-center gap-2.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-left transition hover:border-[#36606F]/50 hover:bg-[#36606F]/5 active:bg-[#36606F]/10"
+                                            onClick={() => togglePendingIngredient(ing)}
+                                            disabled={alreadyAdded || savingComponents}
+                                            aria-pressed={isPending}
+                                            className={cn(
+                                                'flex min-h-12 w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-colors',
+                                                isPending ? 'border-[#36606F] bg-[#36606F]/10' : 'border-zinc-200 bg-white hover:border-[#36606F]/50 hover:bg-[#36606F]/5',
+                                                alreadyAdded && 'cursor-not-allowed opacity-50',
+                                            )}
                                         >
                                             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[#36606F]">
-                                                <Plus className="h-4 w-4" aria-hidden />
+                                                {isPending ? <Check className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
                                             </span>
                                             <span className="min-w-0 flex-1">
                                                 <span className="block truncate text-sm font-semibold text-zinc-800">{ing.name}</span>
                                                 <span className="block text-[11px] text-zinc-500">{effective}</span>
                                             </span>
-                                            <span className="shrink-0 rounded-lg bg-zinc-100 px-2 py-1 text-[11px] font-bold text-zinc-600">{unitToAdd}</span>
+                                            <span className="shrink-0 rounded-lg bg-zinc-100 px-2 py-1 text-[11px] font-bold text-zinc-600">{alreadyAdded ? 'Ya añadido' : isPending ? 'Seleccionado' : configuredUnit}</span>
                                         </button>
                                     );
                                 })}
@@ -2034,12 +2077,14 @@ function RecipeDetailContent() {
                                 onChange={setSearchTerm}
                             />
                             {hasComponentQuery ? (
-                            <div className="max-h-[min(42dvh,19rem)] space-y-1 overflow-y-auto overscroll-contain pr-1">
+                            <div className={cn('space-y-1 overflow-y-auto overscroll-contain pr-1', pendingComponents.length ? 'max-h-[min(23dvh,11rem)]' : 'max-h-[min(42dvh,19rem)]')}>
                                 {filteredRecipeCandidates.map((candidate) => {
                                         const addable = canAddRecipeComponent({
                                             yieldQuantity: candidate.yield_quantity,
                                             yieldUnit: candidate.yield_unit,
                                         });
+                                        const alreadyAdded = subrecipes.some((row) => row.child_recipe_id === candidate.id);
+                                        const isPending = pendingComponents.some((row) => row.kind === 'elaboration' && row.id === candidate.id);
                                         const yieldText = candidate.yield_quantity != null && candidate.yield_unit
                                             ? `${formatYieldQuantity(Number(candidate.yield_quantity))} ${candidate.yield_unit}`
                                             : 'Sin rendimiento configurado';
@@ -2047,12 +2092,17 @@ function RecipeDetailContent() {
                                             <button
                                                 key={candidate.id}
                                                 type="button"
-                                                disabled={!addable}
-                                                onClick={() => void handleAddSubrecipe(candidate)}
-                                                className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left transition hover:border-[#36606F]/50 hover:bg-[#36606F]/5 active:bg-[#36606F]/10 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:opacity-60"
+                                                disabled={!addable || alreadyAdded || savingComponents}
+                                                onClick={() => togglePendingElaboration(candidate)}
+                                                aria-pressed={isPending}
+                                                className={cn(
+                                                    'flex min-h-12 w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed',
+                                                    isPending ? 'border-[#36606F] bg-[#36606F]/10' : 'border-zinc-200 bg-white hover:border-[#36606F]/50 hover:bg-[#36606F]/5',
+                                                    (!addable || alreadyAdded) && 'opacity-50',
+                                                )}
                                             >
                                                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[#36606F]">
-                                                    <Plus className="h-4 w-4" aria-hidden />
+                                                    {isPending ? <Check className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
                                                 </span>
                                                 <span className="min-w-0 flex-1">
                                                     <span className="block truncate text-sm font-semibold text-zinc-800">{candidate.name}</span>
@@ -2060,7 +2110,7 @@ function RecipeDetailContent() {
                                                         {isInternalRecipe(candidate.is_sellable) ? 'Producción' : 'Receta vendible'}
                                                     </span>
                                                 </span>
-                                                <span className="shrink-0 text-right text-[11px] font-semibold text-zinc-600">{yieldText}</span>
+                                                <span className="shrink-0 text-right text-[11px] font-semibold text-zinc-600">{alreadyAdded ? 'Ya añadida' : isPending ? 'Seleccionada' : !addable ? 'Sin rendimiento' : yieldText}</span>
                                             </button>
                                         );
                                     })}
@@ -2077,6 +2127,78 @@ function RecipeDetailContent() {
                             )}
                         </div>
                     )}
+                    {pendingComponents.length > 0 ? (
+                        <div data-element="recipe-pending-components" className="flex min-h-0 flex-col gap-2 border-t border-zinc-200 pt-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-zinc-800">Por añadir ({pendingComponents.length})</span>
+                                <span className="text-[11px] text-zinc-500">Cantidad y unidad de cada uno</span>
+                            </div>
+                            <div className="max-h-[min(32dvh,16rem)] space-y-2 overflow-y-auto overscroll-contain pr-1">
+                                {pendingComponents.map((row) => {
+                                    const options = row.kind === 'ingredient'
+                                        ? RECIPE_UNIT_OPTIONS.map((option) => ({ value: option.value, label: option.label }))
+                                        : compatibleComponentUnits(recipeCandidates.find((candidate) => candidate.id === row.id)?.yield_unit)
+                                            .map((unit) => ({ value: unit, label: unit === 'l' ? 'L' : unit }));
+                                    const valid = row.quantity.trim().length > 0
+                                        && isValidComponentQuantity(Number(row.quantity.trim().replace(',', '.')));
+                                    return (
+                                        <div key={`${row.kind}-${row.id}`} className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5">
+                                            <div className="mb-2 flex min-w-0 items-center gap-2">
+                                                <span className="min-w-0 flex-1 truncate text-xs font-semibold text-zinc-800" title={row.name}>{row.name}</span>
+                                                <span className="shrink-0 text-[10px] text-zinc-500">{row.kind === 'ingredient' ? 'Ingrediente' : 'Elaboración'}</span>
+                                                <button
+                                                    type="button"
+                                                    disabled={savingComponents}
+                                                    aria-label={`Quitar ${row.name} de la selección`}
+                                                    onClick={() => setPendingComponents((previous) => previous.filter((item) => item.kind !== row.kind || item.id !== row.id))}
+                                                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800"
+                                                ><X className="h-4 w-4" aria-hidden /></button>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <label className="min-w-0 text-[11px] font-medium text-zinc-600">
+                                                    Cantidad
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        aria-invalid={!valid}
+                                                        aria-label={`Cantidad de ${row.name}`}
+                                                        disabled={savingComponents}
+                                                        value={row.quantity}
+                                                        onChange={(event) => updatePendingComponent(row, { quantity: event.target.value })}
+                                                        className={cn(
+                                                            'mt-1 h-10 w-full rounded-lg border bg-white px-3 text-base font-semibold tabular-nums text-zinc-800 outline-none focus:border-[#36606F]',
+                                                            valid ? 'border-zinc-300' : 'border-red-400',
+                                                        )}
+                                                    />
+                                                </label>
+                                                <label className="min-w-0 text-[11px] font-medium text-zinc-600">
+                                                    Unidad
+                                                    <select
+                                                        aria-label={`Unidad de ${row.name}`}
+                                                        disabled={savingComponents}
+                                                        value={row.unit}
+                                                        onChange={(event) => updatePendingComponent(row, { unit: event.target.value })}
+                                                        className="mt-1 h-10 w-full rounded-lg border border-zinc-300 bg-white px-2 text-base font-semibold text-zinc-800 outline-none focus:border-[#36606F]"
+                                                    >
+                                                        {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                                                    </select>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : null}
+                    <button
+                        type="button"
+                        onClick={() => void savePendingComponents()}
+                        disabled={savingComponents || pendingComponents.length === 0 || pendingComponents.some((row) =>
+                            !row.quantity.trim() || !isValidComponentQuantity(Number(row.quantity.trim().replace(',', '.'))))}
+                        className="min-h-12 w-full shrink-0 rounded-xl bg-[#36606F] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#2c5160] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500"
+                    >
+                        {savingComponents ? 'Añadiendo componentes…' : `Añadir ${pendingComponents.length} componente${pendingComponents.length === 1 ? '' : 's'}`}
+                    </button>
                 </div>
             </Modal>
             <Modal

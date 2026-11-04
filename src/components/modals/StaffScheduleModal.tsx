@@ -20,6 +20,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { countWorkersByHour } from '@/lib/schedule/hourly-coverage';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { fetchBarActivitiesForRangeClient, type BarActivity } from '@/lib/pavilion/bar-activities-range';
@@ -825,7 +826,8 @@ export const StaffScheduleModal = ({
                                         ))}
                                     </div>
 
-                                    {/* Totales de personal por hora, siempre visibles debajo de los turnos. */}
+                                    {/* Totales visibles solo para el usuario master. */}
+                                    {isMasterDashboardUser(userEmail) ? (
                                     <div data-element="schedule-hour-totals" className="relative z-[1] flex w-full shrink-0 border-t border-slate-300 bg-[#f1f5f9] shadow-[0_-2px_8px_rgba(10,29,47,0.08)] rounded-b-2xl">
                                         <div className="w-24 md:w-28 h-9 md:h-10 shrink-0 flex items-center justify-start pl-3 text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-700">
                                             Total
@@ -845,6 +847,7 @@ export const StaffScheduleModal = ({
                                             ))}
                                         </div>
                                     </div>
+                                    ) : null}
                                 </div>
                                 )}
                             </>
