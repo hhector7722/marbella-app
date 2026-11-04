@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useMemo } from 'react';
+import { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import { ChefHat, Plus, ChevronDown } from 'lucide-react';
@@ -87,14 +87,20 @@ function RecipesContent() {
     const isStaffView = searchParams.get('view') === 'staff';
     const categoryFromUrl = searchParams.get('cat');
     const foodCostFilter = parseFoodCostFilterParam(searchParams.get('fc'));
+    const focusRecipeId = searchParams.get('focus');
+    const restoredFocusRef = useRef<string | null>(null);
+    const scrollReturnKey = 'marbella:recipes:returnFocus';
 
     const buildRecipesHref = (id: string) => {
         const qs = new URLSearchParams(searchParams.toString());
+        qs.delete('focus');
         return qs.toString() ? `/recipes/${id}?${qs.toString()}` : `/recipes/${id}`;
     };
 
     const setCategoryAndUrl = (cat: string | null) => {
         const qs = new URLSearchParams(searchParams.toString());
+        qs.delete('focus');
+        try { window.sessionStorage.removeItem(scrollReturnKey); } catch { /* No disponible. */ }
         if (cat) qs.set('cat', cat);
         else qs.delete('cat');
         if (cat === 'produccion') qs.delete('fc');
@@ -104,6 +110,8 @@ function RecipesContent() {
 
     const setFoodCostAndUrl = (status: FoodCostStatus | null) => {
         const qs = new URLSearchParams(searchParams.toString());
+        qs.delete('focus');
+        try { window.sessionStorage.removeItem(scrollReturnKey); } catch { /* No disponible. */ }
         if (status) qs.set('fc', status);
         else qs.delete('fc');
         const next = qs.toString();
@@ -199,6 +207,23 @@ function RecipesContent() {
         if (row) return recipeMatchesMenuCategory(recipe, row, menuCategoryRows);
         return (recipe.category || '') === categoryFromUrl;
     });
+
+    useEffect(() => {
+        if (loading) return;
+        let fallbackId: string | null = null;
+        try { fallbackId = window.sessionStorage.getItem(scrollReturnKey); } catch { /* Safari sin almacenamiento. */ }
+        const id = focusRecipeId || fallbackId;
+        if (!id || restoredFocusRef.current === id) return;
+        if (!filteredRecipes.some((item) => item.id === id)) return;
+        const raf = requestAnimationFrame(() => {
+            const target = document.getElementById('recipe-tile-' + id);
+            if (!target) return;
+            target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+            restoredFocusRef.current = id;
+            try { window.sessionStorage.removeItem(scrollReturnKey); } catch { /* No disponible. */ }
+        });
+        return () => cancelAnimationFrame(raf);
+    }, [loading, focusRecipeId, filteredRecipes]);
 
     useEffect(() => {
         fetchRecipes();
@@ -417,17 +442,22 @@ function RecipesContent() {
                     <div className="pt-1">
                         <CatalogGrid columns={4} compactDesktop>
                             {filteredRecipes.map((recipe) => (
+                                <div key={recipe.id} id={'recipe-tile-' + recipe.id} className='min-w-0 scroll-mt-24'>
                                 <CatalogTileUnificado
                                     compactDesktop
-                                    key={recipe.id}
                                     title={recipe.name}
                                     imageSrc={recipe.photo_url}
                                     cornerBadge={isInternalRecipe(recipe.is_sellable) ? 'e' : undefined}
                                     fallback={<ChefHat className="h-8 w-8 md:h-10 md:w-10" />}
                                     price={isInternalRecipe(recipe.is_sellable) ? null : recipe.sale_price}
                                     priceClassName={!isRestricted ? getRecipeHealthColor(recipe) : undefined}
-                                    onClick={() => router.push(buildRecipesHref(recipe.id))}
+                                    onClick={() => {
+                                        restoredFocusRef.current = null;
+                                        try { window.sessionStorage.setItem(scrollReturnKey, recipe.id); } catch { /* Navegación sin almacenamiento. */ }
+                                        router.push(buildRecipesHref(recipe.id));
+                                    }}
                                 />
+                                </div>
                             ))}
                         </CatalogGrid>
                     </div>

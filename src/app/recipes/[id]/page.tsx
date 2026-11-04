@@ -252,9 +252,10 @@ function RecipeDetailContent() {
         if (cat) qs.set('cat', cat);
         if (fc) qs.set('fc', fc);
         if (searchParams.get('view') === 'staff') qs.set('view', 'staff');
+        qs.set('focus', recipeId);
         const s = qs.toString();
         return s ? `/recipes?${s}` : '/recipes';
-    }, [searchParams]);
+    }, [searchParams, recipeId]);
 
     const fullEditHref = useMemo(() => {
         const qs = new URLSearchParams(searchParams.toString());
