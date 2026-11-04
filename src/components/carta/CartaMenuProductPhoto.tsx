@@ -39,7 +39,7 @@ export function CartaMenuProductPhoto({
         className
       )}
       // Ajuste natural de la imagen completa: contain fija los límites del marco.
-      style={{ transform: squareLayout ? 'none' : `scale(${factor})` }}
+      style={{ transform: squareLayout && articuloId !== 61 ? 'none' : `scale(${factor})` }}
     />
   )
 }

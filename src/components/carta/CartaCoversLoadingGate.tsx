@@ -1,7 +1,6 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { uniqueCartaCoverUrls, useCartaImagesPreloaded } from '@/lib/carta-cover-preload'
@@ -13,18 +12,18 @@ export function CartaCoversLoadingGate({
   spinnerClassName,
   /** Modal compacto (selector subcategorías): altura según contenido, sin relleno. */
   fitContent = false,
+  preloaded = false,
 }: {
   urls: (string | null | undefined)[]
   children: ReactNode
   className?: string
   spinnerClassName?: string
   fitContent?: boolean
+  /** La pantalla exterior ya ha terminado de precargar este conjunto. */
+  preloaded?: boolean
 }) {
-  const expected = useMemo(
-    () => uniqueCartaCoverUrls(urls),
-    [urls.map((u) => u?.trim() ?? '').filter(Boolean).sort().join('|')]
-  )
-  const ready = useCartaImagesPreloaded(expected)
+  const expected = uniqueCartaCoverUrls(urls)
+  const ready = useCartaImagesPreloaded(preloaded ? [] : expected)
 
   if (!ready) {
     return (

@@ -11464,3 +11464,45 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
 @media (prefers-reduced-motion: reduce) {
   .carta-browse-modal .carta-catalog-subtabs button[aria-pressed] { transition: none; }
 }
+
+
+/* Aparición de la carta: una única superficie sin modal blanco ni placeholders. */
+.carta-loading-overlay {
+  background-color: var(--color-envolvente);
+  background-image: var(--marbella-shell-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.carta-catalog-modal-ready,
+body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-catalog-modal-ready {
+  animation: none;
+}
+.carta-catalog-modal-ready .carta-browse-modal {
+  animation: none;
+}
+/* La última fila de un catálogo de tres columnas siempre empieza por la izquierda. */
+.carta-browse-modal .carta-product-grid-row > * {
+  grid-column-start: auto;
+}
+/* Aviso de bocadillos especiales: sin línea ni franja blanca al pie. */
+.carta-special-sandwich-note {
+  flex: none;
+  padding: 2px 4px 9px;
+  color: #fff;
+  font-size: clamp(10px, 2.6vw, 12px);
+  font-weight: 550;
+  line-height: 1.25;
+  text-align: center;
+}
+/* El configurador de Plato Marbella no necesita un panel de 94svh. */
+@media (max-width: 767px) {
+  body:has(.carta-shared-scene) .carta-plato-modal-compact {
+    height: auto;
+    max-height: min(78svh, 660px);
+  }
+  body:has(.carta-shared-scene) .carta-plato-modal-compact .carta-plato-body-compact {
+    min-height: 0;
+    flex: 0 1 auto;
+  }
+}

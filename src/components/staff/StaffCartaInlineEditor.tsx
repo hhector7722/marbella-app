@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
+import { CartaLoadingOverlay } from '@/components/carta/CartaLoadingOverlay'
 import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
 import { setMenuCategorySortOrders, upsertMenuOverride } from '@/app/dashboard/carta/actions'
 import { PLATO_MARBELLA_CHILD_SLUG, type PlatoMarbellaSlot } from '@/lib/carta-plato-marbella'
@@ -563,6 +564,7 @@ export function StaffCartaInlineEditor({
   }
 
   if (loading) {
+    if (catalogDisplay) return <CartaLoadingOverlay />
     return (
       <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-zinc-100 bg-white">
         <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />

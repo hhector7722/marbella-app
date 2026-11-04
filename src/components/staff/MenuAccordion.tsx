@@ -3,11 +3,12 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaCoversLoadingGate } from '@/components/carta/CartaCoversLoadingGate'
+import { CartaLoadingOverlay } from '@/components/carta/CartaLoadingOverlay'
 import {
   collectCartaProductPhotoUrls,
   collectPlatoMarbellaPhotoUrls,
 } from '@/lib/carta-modal-images'
-import { uniqueCartaCoverUrls } from '@/lib/carta-cover-preload'
+import { uniqueCartaCoverUrls, useCartaImagesPreloaded } from '@/lib/carta-cover-preload'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategoryPickerButton'
 import { CartaSubcategoryPickerGrid } from '@/components/carta/CartaSubcategoryPickerGrid'
@@ -685,6 +686,31 @@ export function MenuAccordion({
         openSelectedSubKey,
     ])
 
+    // Imagen y geometría completas antes de revelar la carta: evita ver
+    // el contenedor blanco, el salto de tamaño y las filas reacomodándose.
+    const homeImagesReady = useCartaImagesPreloaded(
+        catalogDisplay ? uniqueCartaCoverUrls(homeCategoryCoverUrls) : []
+    )
+    const modalImagesReady = useCartaImagesPreloaded(
+        catalogDisplay && openGroup ? openModalImageUrls : []
+    )
+    const modalVisualKey = [openKey ?? '', openSelectedSubKey ?? '', openPlatoMarbella ? 'plato' : 'grid', lang].join(':')
+    const [preparedModal, setPreparedModal] = useState<string | null>(null)
+    useEffect(() => {
+        if (!catalogDisplay || !openGroup || !modalImagesReady) return
+        let frameTwo = 0
+        const frameOne = requestAnimationFrame(() => {
+            frameTwo = requestAnimationFrame(() => setPreparedModal(modalVisualKey))
+        })
+        return () => {
+            cancelAnimationFrame(frameOne)
+            cancelAnimationFrame(frameTwo)
+        }
+    }, [catalogDisplay, openGroup, modalImagesReady, modalVisualKey])
+    const modalReady = !catalogDisplay || (modalImagesReady && preparedModal === modalVisualKey)
+    const catalogShowingLoader =
+        catalogDisplay && (!homeImagesReady || (openGroup != null && !modalReady))
+
     const openPlatoMenuPrice = useMemo(() => {
         if (!openPlatoMarbella || !platoBundleRows) return null
         return groupPlatoMarbellaItems(platoBundleRows).menuPrice
@@ -922,6 +948,7 @@ export function MenuAccordion({
     const gridBlock = (
         <CartaCoversLoadingGate
             urls={homeCategoryCoverUrls}
+            preloaded={catalogDisplay && homeImagesReady}
             className={cn(
                 'w-full min-h-0 flex-1',
                 !hideLangPicker && 'mt-4 sm:mt-5'
@@ -1085,7 +1112,10 @@ export function MenuAccordion({
                 instance="menu-accordion-section"
                 hideHeader
                 scrollContent={false}
-                containerClassName={openPlatoMarbella ? 'p-2 sm:p-2.5' : undefined}
+                containerClassName={cn(
+                    openPlatoMarbella && 'p-2 sm:p-2.5',
+                    catalogDisplay && (modalReady ? 'carta-catalog-modal-ready' : 'carta-catalog-modal-preparing')
+                )}
                 ariaLabel={openGroup?.title ?? 'Sección carta'}
             >
                     {openGroup == null ? null : openShowSubPicker ? (
@@ -1095,6 +1125,7 @@ export function MenuAccordion({
                         >
                             <CartaCoversLoadingGate
                                 urls={openModalImageUrls}
+                                preloaded={catalogDisplay && modalImagesReady}
                                 fitContent
                                 className="bg-white px-2.5 py-2 sm:px-3 sm:py-2.5"
                             >
@@ -1154,7 +1185,8 @@ export function MenuAccordion({
                             showPlatoModalChrome
                                 ? 'carta-plato-modal-shell min-h-0'
                                 : 'carta-modal-shell-max min-h-0',
-                            catalogDisplay && !openPlatoMarbella && 'carta-browse-modal'
+                            catalogDisplay && !openPlatoMarbella && 'carta-browse-modal',
+                            catalogDisplay && openPlatoMarbella && 'carta-plato-modal-compact'
                         )}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -1529,6 +1561,12 @@ export function MenuAccordion({
                         </div>
                         )}
 
+                        {catalogDisplay && isSpecialSandwichesModal ? (
+                            <p className="carta-special-sandwich-note">
+                                {SPECIAL_SANDWICHES_FOOTER[lang]}
+                            </p>
+                        ) : null}
+
                         {isOpenPlatosParent && !openPlatoMarbella && !openShowSubPicker ? (
                             <div className="carta-platos-schedule shrink-0 bg-white px-3 pb-2 pt-0 text-center sm:px-3.5 sm:pb-2.5">
                                 <p className="text-[10px] font-bold uppercase tracking-wide text-[#36606F]/70 sm:text-[11px]">
@@ -1654,9 +1692,11 @@ export function MenuAccordion({
 
                         <CartaCoversLoadingGate
                             urls={openModalImageUrls}
+                            preloaded={catalogDisplay && modalImagesReady}
                             className={cn(
                                 'bg-white flex min-h-[min(50vh,320px)] flex-1 flex-col',
                                 pageWholeProductRows && !openPlatoMarbella && 'carta-browse-products-host',
+                                catalogDisplay && openPlatoMarbella && 'carta-plato-body-compact',
                                 showPlatoModalChrome
                                     ? 'overflow-hidden px-0 pb-0 pt-0 sm:px-0'
                                     : pageWholeProductRows
@@ -1887,7 +1927,7 @@ export function MenuAccordion({
                                 </CartaWholeRowScroller>
                             )}
                         </CartaCoversLoadingGate>
-                        {isSpecialSandwichesModal ? (
+                        {isSpecialSandwichesModal && !catalogDisplay ? (
                             <footer className="shrink-0 border-t border-zinc-100 bg-white px-3 py-2.5 text-center text-[11px] font-medium text-zinc-600 sm:text-xs">
                                 {SPECIAL_SANDWICHES_FOOTER[lang]}
                             </footer>
@@ -1896,6 +1936,7 @@ export function MenuAccordion({
                     </div>
                     )}
             </Modal>
+            {catalogShowingLoader ? <CartaLoadingOverlay /> : null}
         </div>
     )
 }
