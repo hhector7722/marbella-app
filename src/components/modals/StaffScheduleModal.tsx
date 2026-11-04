@@ -120,11 +120,11 @@ const SummaryCell = ({
         <div
             ref={cardRef}
             data-element="schedule-summary-card"
-            className="flex h-[42px] min-h-[42px] max-h-[42px] w-full min-w-0 flex-col items-start justify-center gap-0.5 overflow-hidden rounded-lg border border-sky-400/35 bg-sky-500/10 px-1.5 py-1 text-left sm:px-2"
+            className="flex h-[42px] min-h-[42px] max-h-[42px] w-full min-w-0 flex-col items-start justify-center gap-0.5 overflow-hidden rounded-lg border border-white/10 bg-white/10 px-1.5 py-1 text-left sm:px-2"
         >
             <span
                 data-element="summary-label"
-                className="block w-full min-w-0 truncate whitespace-nowrap text-[10px] font-medium leading-none text-white/75 sm:text-[11px]"
+                className="block w-full min-w-0 truncate whitespace-nowrap text-[8px] font-medium leading-none text-white/75 sm:text-[9px]"
             >
                 {label}
             </span>
