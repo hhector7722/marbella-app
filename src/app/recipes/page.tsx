@@ -19,6 +19,8 @@ import {
     type MenuCategoryRow,
     denormalizedRecipeCategoryName,
     labelMenuCategoryForRecipesEs,
+    groupMenuCategoriesForRecipes,
+    recipeMatchesMenuCategory,
     menuCategoryFromUrlParam,
     menuCategoryToUrlParam,
     sortMenuCategoriesForRecipes,
@@ -153,9 +155,15 @@ function RecipesContent() {
         () =>
             sortedMenuCategoryRows.map((r) => ({
                 id: r.id,
+                parent_id: r.parent_id,
                 label: labelMenuCategoryForRecipesEs(r, sortedMenuCategoryRows, mcoEsByCategoryId),
             })),
         [sortedMenuCategoryRows, mcoEsByCategoryId],
+    );
+
+    const groupedMenuCategories = useMemo(
+        () => groupMenuCategoriesForRecipes(menuCategoryRows),
+        [menuCategoryRows],
     );
 
     const showUncategorizedMenuFilter = useMemo(
@@ -165,8 +173,8 @@ function RecipesContent() {
 
     const selectedCategoryFilterLabel = useMemo(() => {
         if (!categoryFromUrl) return '';
-        if (categoryFromUrl === '__none__') return 'Sin categoría menú';
-        if (categoryFromUrl === 'produccion') return 'Producción';
+        if (categoryFromUrl === '__none__') return 'sin categoría';
+        if (categoryFromUrl === 'produccion') return 'producción';
         const row = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
         if (row) return labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId);
         return categoryFromUrl;
@@ -188,7 +196,7 @@ function RecipesContent() {
             return !isInternalRecipe(recipe.is_sellable) && !recipe.menu_category_id;
         }
         const row = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
-        if (row) return recipe.menu_category_id === row.id;
+        if (row) return recipeMatchesMenuCategory(recipe, row, menuCategoryRows);
         return (recipe.category || '') === categoryFromUrl;
     });
 
@@ -475,55 +483,96 @@ function RecipesContent() {
                             ) : null}
                         </div>
                     ) : null}
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setCategoryAndUrl(null);
-                            closeCategoryPopup();
-                        }}
-                        className="w-full min-h-12 py-2.5 text-left text-xs font-bold tracking-wider text-zinc-700 uppercase transition-colors hover:bg-zinc-50"
-                    >
-                        Todas
-                    </button>
-                    {showUncategorizedMenuFilter ? (
+                    <div className="space-y-0.5 pb-1">
                         <button
                             type="button"
                             onClick={() => {
-                                setCategoryAndUrl('__none__');
+                                setCategoryAndUrl(null);
                                 closeCategoryPopup();
                             }}
-                            className="w-full min-h-12 py-2.5 text-left text-xs font-bold tracking-wider text-amber-800 uppercase transition-colors hover:bg-zinc-50"
+                            className={cn(
+                                'w-full min-h-11 rounded-lg px-2 py-2.5 text-left text-sm font-medium normal-case transition-colors hover:bg-zinc-50',
+                                !categoryFromUrl ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-700',
+                            )}
                         >
-                            Sin categoría menú
+                            todas
                         </button>
-                    ) : null}
-                    {productionCategory ? (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setCategoryAndUrl('produccion');
-                                closeCategoryPopup();
-                            }}
-                            className="w-full min-h-12 py-2.5 text-left text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-50"
-                        >
-                            Producción
-                        </button>
-                    ) : null}
-                    {menuCategoryOptions.map((opt) => (
-                        <button
-                            type="button"
-                            key={opt.id}
-                            onClick={() => {
-                                const row = menuCategoryRows.find((r) => r.id === opt.id);
-                                const param = row ? menuCategoryToUrlParam(row) : opt.id;
-                                setCategoryAndUrl(param);
-                                closeCategoryPopup();
-                            }}
-                            className="w-full min-h-12 py-2.5 text-left text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-50"
-                        >
-                            {opt.label}
-                        </button>
-                    ))}
+                        {showUncategorizedMenuFilter ? (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCategoryAndUrl('__none__');
+                                    closeCategoryPopup();
+                                }}
+                                className={cn(
+                                    'w-full min-h-11 rounded-lg px-2 py-2.5 text-left text-sm font-medium normal-case transition-colors hover:bg-zinc-50',
+                                    categoryFromUrl === '__none__' ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-600',
+                                )}
+                            >
+                                sin categoría
+                            </button>
+                        ) : null}
+                        {productionCategory ? (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCategoryAndUrl('produccion');
+                                    closeCategoryPopup();
+                                }}
+                                className={cn(
+                                    'w-full min-h-11 rounded-lg px-2 py-2.5 text-left text-sm font-medium normal-case transition-colors hover:bg-zinc-50',
+                                    categoryFromUrl === 'produccion' ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-700',
+                                )}
+                            >
+                                producción
+                            </button>
+                        ) : null}
+                    </div>
+                    <div className="border-t border-zinc-200 pt-2">
+                        {groupedMenuCategories.map(({ parent, children }) => {
+                            const parentParam = menuCategoryToUrlParam(parent);
+                            return (
+                                <div key={parent.id} className="border-b border-zinc-100 py-1.5 last:border-b-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setCategoryAndUrl(parentParam);
+                                            closeCategoryPopup();
+                                        }}
+                                        className={cn(
+                                            'w-full min-h-11 rounded-lg px-2 py-2.5 text-left text-sm font-semibold normal-case transition-colors hover:bg-zinc-50',
+                                            categoryFromUrl === parentParam ? 'bg-zinc-100 text-ds-marca' : 'text-zinc-800',
+                                        )}
+                                    >
+                                        {labelMenuCategoryForRecipesEs(parent, menuCategoryRows, mcoEsByCategoryId)}
+                                    </button>
+                                    {children.length > 0 ? (
+                                        <div className="ml-3 border-l border-zinc-200 pl-2">
+                                            {children.map((child) => {
+                                                const param = menuCategoryToUrlParam(child);
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        key={child.id}
+                                                        onClick={() => {
+                                                            setCategoryAndUrl(param);
+                                                            closeCategoryPopup();
+                                                        }}
+                                                        className={cn(
+                                                            'w-full min-h-10 rounded-lg px-3 py-2 text-left text-sm font-normal normal-case transition-colors hover:bg-zinc-50',
+                                                            categoryFromUrl === param ? 'bg-zinc-100 font-semibold text-ds-marca' : 'text-zinc-600',
+                                                        )}
+                                                    >
+                                                        {labelMenuCategoryForRecipesEs(child, menuCategoryRows, mcoEsByCategoryId)}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : null}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </Modal>
 

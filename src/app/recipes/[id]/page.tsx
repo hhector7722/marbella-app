@@ -2026,9 +2026,10 @@ function RecipeDetailContent() {
                 productionCategoryId={productionCategoryRow?.id ?? null}
                 categoryId={recipe.menu_category_id ?? ''}
                 categories={recipe.is_sellable === false
-                    ? (productionCategoryRow ? [{ id: productionCategoryRow.id, label: 'Producción' }] : [])
+                    ? (productionCategoryRow ? [{ id: productionCategoryRow.id, parent_id: null, label: 'producción' }] : [])
                     : sortedMenuCategoryRows.map((row) => ({
                         id: row.id,
+                        parent_id: row.parent_id,
                         label: labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId),
                     }))}
                 onCategoryChange={(id) => {

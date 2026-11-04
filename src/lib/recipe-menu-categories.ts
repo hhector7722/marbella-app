@@ -29,20 +29,62 @@ export function sortMenuCategoriesForRecipes(rows: MenuCategoryRow[]): MenuCateg
   })
 }
 
-const byId = (rows: MenuCategoryRow[]) => new Map(rows.map((r) => [r.id, r]))
-
 export function labelMenuCategoryForRecipesEs(
   row: MenuCategoryRow,
   allRows: MenuCategoryRow[],
   mcoEsByCategoryId: Map<string, string | null>,
 ): string {
-  const map = byId(allRows)
-  const own = mcoEsByCategoryId.get(row.id)?.trim() || row.name.trim()
-  if (!row.parent_id) return own
-  const parent = map.get(row.parent_id)
-  const pLabel = parent ? (mcoEsByCategoryId.get(parent.id)?.trim() || parent.name.trim()) : ''
-  const short = own.includes(' - ') ? own.split(' - ').slice(1).join(' - ').trim() : own
-  return pLabel ? `${pLabel} › ${short}` : short
+  const parent = allRows.find((r) => r.id === row.parent_id)
+  const override = mcoEsByCategoryId.get(row.id)?.trim()
+  const canonical = row.name.trim()
+  // Los overrides pertenecen a la carta y pueden venir en MAYÚSCULAS.
+  // Preferir el nombre canónico si sólo cambia mayúsculas/acentos (cafetería).
+  const normalize = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('es')
+  const canonicalShort = parent && canonical.toLocaleLowerCase('es').startsWith((parent.name.trim() + ' - ').toLocaleLowerCase('es'))
+    ? canonical.slice(parent.name.trim().length + 3).trim()
+    : canonical
+  const name = override && normalize(override) !== normalize(canonicalShort) ? override : canonicalShort
+  // Evitar "platos › platos": sólo cambia la etiqueta visual, nunca el ID.
+  if (row.slug === 'platos-platos') return 'platos generales'
+  return name.toLocaleLowerCase('es')
+}
+
+export type RecipeCategorySection = { parent: MenuCategoryRow; children: MenuCategoryRow[] }
+
+/** Orden de lectura: sección y, debajo, sus subcategorías (sin rutas repetidas). */
+export function groupMenuCategoriesForRecipes(rows: readonly MenuCategoryRow[]): RecipeCategorySection[] {
+  const ordered = sortMenuCategoriesForRecipes([...rows])
+  const ids = new Set(ordered.map((row) => row.id))
+  return ordered
+    .filter((row) => !row.parent_id || !ids.has(row.parent_id))
+    .map((parent) => ({
+      parent,
+      children: ordered.filter((row) => row.parent_id === parent.id),
+    }))
+}
+
+/** Filtrar una sección incluye todas sus subcategorías, sin alterar las recetas. */
+export function recipeMatchesMenuCategory(
+  recipe: { menu_category_id?: string | null },
+  selected: MenuCategoryRow,
+  rows: readonly MenuCategoryRow[],
+): boolean {
+  let id = recipe.menu_category_id
+  const visited = new Set<string>()
+  while (id && !visited.has(id)) {
+    if (id === selected.id) return true
+    visited.add(id)
+    id = rows.find((row) => row.id === id)?.parent_id
+  }
+  return false
+}
+
+export type RecipeCategoryOption = { id: string; label: string; parent_id: string | null }
+export function groupRecipeCategoryOptions(options: readonly RecipeCategoryOption[]) {
+  const ids = new Set(options.map((option) => option.id))
+  return options
+    .filter((option) => !option.parent_id || !ids.has(option.parent_id))
+    .map((parent) => ({ parent, children: options.filter((option) => option.parent_id === parent.id) }))
 }
 
 /** Valores antiguos del selector fijo → slug menú (`categories.slug`). */

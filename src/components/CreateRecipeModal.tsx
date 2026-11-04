@@ -4,6 +4,8 @@ import { Trash2 } from 'lucide-react';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 import { RECIPE_KIND_OPTIONS, type RecipeKind } from '@/lib/recipe-elaboration';
 import { Modal } from '@/components/ui/modal';
+import { RecipeCategorySelectOptions } from '@/components/recipes/RecipeCategorySelectOptions';
+import type { RecipeCategoryOption } from '@/lib/recipe-menu-categories';
 import { Button } from '@/components/ui/button';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 
@@ -39,7 +41,7 @@ interface CreateModalProps {
     setNewRecipe: (val: RecipeDraft) => void;
     isCreating: boolean;
     /** Opciones desde `categories` (menú): value = id UUID */
-    menuCategoryOptions: { id: string; label: string }[];
+    menuCategoryOptions: RecipeCategoryOption[];
     productionCategory: { id: string; name: string } | null;
     allIngredients: RecipeCatalogIngredient[];
     handleCreateRecipe: () => void;
@@ -141,11 +143,7 @@ export default function CreateModal({
                             className="w-full border-b-2 border-gray-200 focus:border-[#36606F] outline-none py-2 font-medium bg-transparent"
                         >
                             <option value="">Seleccionar categoría…</option>
-                            {menuCategoryOptions.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.label}
-                                </option>
-                            ))}
+                            <RecipeCategorySelectOptions options={menuCategoryOptions} />
                         </select>
                     </div>
                     <div>
@@ -163,7 +161,7 @@ export default function CreateModal({
                     {(newRecipe.kind || 'sellable') === 'internal' && productionCategory ? (
                         <div className="col-span-2">
                             <label className="text-xs font-bold text-gray-500 uppercase">Categoría</label>
-                            <div className="w-full border-b-2 border-gray-200 py-2 font-medium text-gray-800">Producción</div>
+                            <div className="w-full border-b-2 border-gray-200 py-2 font-medium text-gray-800">producción</div>
                         </div>
                     ) : null}
                     <div className={(newRecipe.kind || 'sellable') === 'sellable' ? '' : 'col-span-2'}>
