@@ -496,10 +496,29 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                     {notes.map((note) => {
                         const isOwn = effectiveUserId === note.user_id;
                         const canRespond = mayReply && note.user_id !== authUserId && !note.reply;
+                        const openReply = () => {
+                            setReplyingToId(note.id);
+                            setReplyDraft('');
+                            setReplyError(null);
+                            setReplyInfo(null);
+                        };
                         return (
                             <div key={note.id} className="mx-auto flex w-full min-w-0 flex-col items-center gap-1">
                                 <div
-                                    className="mx-auto flex w-fit max-w-[85%] min-w-0 items-center gap-2 rounded-xl bg-white/10 px-3 py-1 text-left"
+                                    className={cn(
+                                        "mx-auto flex w-fit max-w-[85%] min-w-0 items-center gap-2 rounded-xl bg-white/10 px-3 py-1 text-left",
+                                        canRespond && replyingToId !== note.id && "cursor-pointer transition-colors hover:bg-white/15 active:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300",
+                                    )}
+                                    role={canRespond && replyingToId !== note.id ? 'button' : undefined}
+                                    tabIndex={canRespond && replyingToId !== note.id ? 0 : undefined}
+                                    aria-label={canRespond && replyingToId !== note.id ? `Responder a la nota de ${firstNameOnly(note.authorName)}` : undefined}
+                                    onClick={canRespond && replyingToId !== note.id ? openReply : undefined}
+                                    onKeyDown={canRespond && replyingToId !== note.id ? (event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
+                                            openReply();
+                                        }
+                                    } : undefined}
                                 >
                                     {isManager ? (
                                         <span className="shrink-0 text-[11px] font-normal leading-none text-white/70">
@@ -544,21 +563,6 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                                         </div>
                                         <span className="whitespace-pre-wrap break-words text-[12px] leading-snug">{note.reply.content}</span>
                                     </div>
-                                ) : null}
-                                {canRespond && replyingToId !== note.id ? (
-                                    <Button
-                                        type="button"
-                                        variant="tertiary"
-                                        instance="schedule-note-reply-toggle"
-                                        onClick={() => {
-                                            setReplyingToId(note.id);
-                                            setReplyDraft('');
-                                            setReplyError(null);
-                                            setReplyInfo(null);
-                                        }}
-                                    >
-                                        Responder
-                                    </Button>
                                 ) : null}
                                 {canRespond && replyingToId === note.id ? (
                                     <div className="flex w-full max-w-[85%] flex-col gap-2 py-2">
