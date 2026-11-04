@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { PLATO_MARBELLA_SLOTS, platoMarbellaSlotsForLang } from '@/lib/carta-plato-marbella'
+import { PlatoMarbellaOptionsEditor, type EditableMarbellaOption } from '@/components/recipes/PlatoMarbellaOptionsEditor'
 import { recipeCostV2StatusLabel } from '@/lib/recipe-elaboration'
 import {
   buildPlatoMarbellaEscandallo,
@@ -40,6 +41,8 @@ export function PlatoMarbellaEscandalloPanel({ recipeId, onResolved }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [report, setReport] = useState<MarbellaEscandallo | null>(null)
+  const [menuRows, setMenuRows] = useState<EditableMarbellaOption[]>([])
+  const [platoMarbellaCategoryId, setPlatoMarbellaCategoryId] = useState<string | null>(null)
   const [revision, setRevision] = useState(0)
 
   useEffect(() => {
@@ -71,13 +74,19 @@ export function PlatoMarbellaEscandalloPanel({ recipeId, onResolved }: Props) {
       try {
         const { data, error: menuError } = await supabase
           .from('v_digital_menu_items')
-          .select('articulo_id, carta_nombre, recipe_name, recipe_id, precio, plato_marbella_slot, plato_marbella_is_menu_price, tpv_factor_porcion, sort_order')
-          .or('plato_marbella_slot.not.is.null,plato_marbella_is_menu_price.eq.true')
+          .select('articulo_id, carta_nombre, recipe_name, recipe_id, precio, plato_marbella_slot, plato_marbella_is_menu_price, tpv_factor_porcion, sort_order, category_child_id, category_child_slug, category_parent_name')
           .limit(500)
         if (menuError) throw menuError
+        if (!active) return
 
-        // La vista ya excluye is_hidden=true: exactamente las opciones ofrecidas en carta.
-        const rows = (data ?? []) as PlatoMarbellaCostRow[]
+        // La misma vista que utiliza la carta, con posibles nuevas opciones vinculadas al TPV.
+        const available = (data ?? []) as EditableMarbellaOption[]
+        const launcher = available.find((row) => row.recipe_id === recipeId && row.plato_marbella_is_menu_price)
+        const rows: PlatoMarbellaCostRow[] = available.filter((row) =>
+          Boolean(row.plato_marbella_slot || row.plato_marbella_is_menu_price)
+        )
+        setMenuRows(available)
+        setPlatoMarbellaCategoryId(launcher?.category_child_id ?? null)
         const uniqueIds = [...new Set(rows.filter((row) =>
           !row.plato_marbella_is_menu_price && row.recipe_id && row.plato_marbella_slot
         ).map((row) => row.recipe_id as string))]
@@ -151,6 +160,16 @@ export function PlatoMarbellaEscandalloPanel({ recipeId, onResolved }: Props) {
             <span>Precio del plato: <strong className="text-gray-800">{money(report.menuPrice)}</strong></span>
           </div>
 
+          <PlatoMarbellaOptionsEditor
+            rows={menuRows}
+            categoryId={platoMarbellaCategoryId}
+            busy={loading}
+            onUpdated={() => setRevision((value) => value + 1)}
+          />
+
+          {loading ? (
+            <p className="text-xs text-zinc-500" role="status">Actualizando el escandallo…</p>
+          ) : null}
           <div className="grid grid-cols-3 gap-2 text-center">
             {([
               ['Mínimo', report.minimum],

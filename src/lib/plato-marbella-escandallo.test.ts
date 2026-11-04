@@ -111,3 +111,36 @@ test('si falta un tramo el máximo y la media no son válidos', () => {
   assert.equal(report.maximum, null)
   assert.equal(report.provisionalMaximum, null)
 })
+
+
+test('al cambiar y retirar las opciones cambian las combinaciones y el coste por tramo', () => {
+  const original = [
+    menuPrice, row(1, 'e1', 'entrante'), row(2, 'e2', 'entrante'),
+    row(3, 'p1', 'principal'), row(4, 'p2', 'principal'),
+    row(5, 'g1', 'guarnicion'),
+  ]
+  const costs = new Map([
+    ['e1', payload(1)], ['e2', payload(3)],
+    ['p1', payload(4)], ['p2', payload(6)], ['g1', payload(2)],
+  ])
+  const initial = buildPlatoMarbellaEscandallo(original, costs, payload(0))
+  assert.equal(initial.combinations, 4)
+  assert.equal(initial.maximum, 11)
+
+  const changed = original.map((option) =>
+    option.articulo_id === 2 ? { ...option, plato_marbella_slot: 'principal' } : option
+  )
+  const updated = buildPlatoMarbellaEscandallo(changed, costs, payload(0))
+  assert.equal(updated.combinations, 3)
+  assert.equal(updated.slots.entrante.options.length, 1)
+  assert.equal(updated.slots.principal.options.length, 3)
+  assert.equal(updated.maximum, 9)
+  assert.ok(Math.abs((updated.average ?? 0) - (1 + (3 + 4 + 6) / 3 + 2)) < 1e-9)
+
+  const removed = changed.map((option) =>
+    option.articulo_id === 4 ? { ...option, plato_marbella_slot: null } : option
+  )
+  const final = buildPlatoMarbellaEscandallo(removed, costs, payload(0))
+  assert.equal(final.combinations, 2)
+  assert.equal(final.maximum, 7)
+})
