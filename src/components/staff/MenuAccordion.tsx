@@ -1187,6 +1187,7 @@ export function MenuAccordion({
                                 ? 'carta-plato-modal-shell min-h-0'
                                 : 'carta-modal-shell-max min-h-0',
                             catalogDisplay && !openPlatoMarbella && 'carta-browse-modal',
+                            catalogDisplay && !openPlatoMarbella && !modalEditMode && 'carta-browse-modal-compact',
                             catalogDisplay && openPlatoMarbella && 'carta-plato-modal-compact'
                         )}
                         onClick={(e) => e.stopPropagation()}

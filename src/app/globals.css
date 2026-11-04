@@ -11259,6 +11259,27 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   min-height: 116px;
   flex-shrink: 0;
 }
+/* Vista normal: menos aire entre título, pestañas y cuadrícula.
+   Edición, encargos y modales de Plato Marbella mantienen sus dimensiones. */
+body:has(.carta-shared-scene)
+  [data-instance='menu-accordion-section']
+  .carta-browse-modal.carta-browse-modal-compact > div:first-child {
+  height: 102px;
+  min-height: 102px;
+}
+@media (min-width: 360px) and (max-width: 767px) {
+  /* Gana una fila más incluso al respetar la zona segura de los iPhone.
+     Los cuadrados de fotografías no cambian de tamaño. */
+  .carta-browse-modal.carta-browse-modal-compact .carta-square-product-card > div:nth-child(2) {
+    height: 46px;
+  }
+  /* Si un producto incluye dos precios, reservar espacio suficiente para
+     todas las fichas de la misma subcategoría, sin cortes ni desalineaciones. */
+  .carta-browse-modal.carta-browse-modal-compact:has([data-carta-price-lines] > span:nth-child(2))
+    .carta-square-product-card > div:nth-child(2) {
+    height: clamp(50px, 14.5vw, 63px);
+  }
+}
 body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal > div:first-child :is(h2, button, button span) {
   color: #fff;
 }
