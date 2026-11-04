@@ -29,6 +29,7 @@ export function CartaImageLightbox({
       headerTitleAlign="left"
       variant="work"
       layer={parentInstance ? 'derived' : 'base'}
+      dismissScope="self"
       {...(parentInstance ? { parentInstance } : {})}
       backdropClassName="bg-black/80"
       usageId="carta-image-lightbox"
