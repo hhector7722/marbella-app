@@ -40,6 +40,7 @@ interface CreateModalProps {
     isCreating: boolean;
     /** Opciones desde `categories` (menú): value = id UUID */
     menuCategoryOptions: { id: string; label: string }[];
+    productionCategory: { id: string; name: string } | null;
     allIngredients: RecipeCatalogIngredient[];
     handleCreateRecipe: () => void;
     addIngredientToRecipe: () => void;
@@ -54,6 +55,7 @@ export default function CreateModal({
     setNewRecipe,
     isCreating,
     menuCategoryOptions,
+    productionCategory,
     allIngredients,
     handleCreateRecipe,
     addIngredientToRecipe,
@@ -102,7 +104,11 @@ export default function CreateModal({
                     density="comfortable"
                     aria-label="Tipo de receta"
                     value={newRecipe.kind || 'sellable'}
-                    onChange={(kind) => setNewRecipe({ ...newRecipe, kind: kind as RecipeKind })}
+                    onChange={(kind) => setNewRecipe({
+                        ...newRecipe,
+                        kind: kind as RecipeKind,
+                        menu_category_id: kind === 'internal' ? (productionCategory?.id ?? '') : '',
+                    })}
                     options={RECIPE_KIND_OPTIONS}
                 />
                 <div className="grid grid-cols-2 gap-4">
@@ -153,6 +159,20 @@ export default function CreateModal({
                         />
                     </div>
                     </>
+                    ) : null}
+                    {(newRecipe.kind || 'sellable') === 'internal' && productionCategory ? (
+                        <div className="col-span-2">
+                            <label htmlFor="new-internal-recipe-category" className="text-xs font-bold text-gray-500 uppercase">Categoría</label>
+                            <select
+                                id="new-internal-recipe-category"
+                                value={newRecipe.menu_category_id || ''}
+                                onChange={(e) => setNewRecipe({ ...newRecipe, menu_category_id: e.target.value })}
+                                className="w-full border-b-2 border-gray-200 focus:border-[#36606F] outline-none py-2 font-medium bg-transparent"
+                            >
+                                <option value="">Sin categoría</option>
+                                <option value={productionCategory.id}>Producción</option>
+                            </select>
+                        </div>
                     ) : null}
                     <div className={(newRecipe.kind || 'sellable') === 'sellable' ? '' : 'col-span-2'}>
                         <label className="text-xs font-bold text-gray-500 uppercase">

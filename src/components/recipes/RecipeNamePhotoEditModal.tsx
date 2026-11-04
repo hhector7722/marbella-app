@@ -359,7 +359,7 @@ export function RecipeNamePhotoEditModal({
                     </div>
                 ) : null}
 
-                {kindDraft === 'sellable' && onCategoryChange && categories.length > 0 ? (
+                {onCategoryChange && categories.length > 0 ? (
                     <Field instance="recipe-edit-category" label="Categoría" htmlFor="recipe-edit-category">
                         <select
                             id="recipe-edit-category"

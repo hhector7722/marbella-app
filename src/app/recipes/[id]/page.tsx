@@ -232,6 +232,7 @@ function RecipeDetailContent() {
     const [deleteIngredientId, setDeleteIngredientId] = useState<string | null>(null);
     const [deletingIngredient, setDeletingIngredient] = useState(false);
     const [menuCategoryRows, setMenuCategoryRows] = useState<MenuCategoryRow[]>([]);
+    const [productionCategoryRow, setProductionCategoryRow] = useState<MenuCategoryRow | null>(null);
     const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
 
     const trackRecipeCategory = useTrackModalApply('recipe-category', 'Categoría receta');
@@ -264,7 +265,7 @@ function RecipeDetailContent() {
 
     useEffect(() => {
         void (async () => {
-            const [catRes, mcoRes] = await Promise.all([
+            const [catRes, mcoRes, productionRes] = await Promise.all([
                 supabase
                     .from('categories')
                     .select('id, name, slug, parent_id, sort_order')
@@ -272,8 +273,14 @@ function RecipeDetailContent() {
                     .order('sort_order', { ascending: true })
                     .limit(5000),
                 supabase.from('menu_category_overrides').select('category_id, override_name_es').limit(5000),
+                supabase.from('categories')
+                    .select('id, name, slug, parent_id, sort_order')
+                    .eq('scope', 'recipes')
+                    .eq('slug', 'produccion')
+                    .maybeSingle(),
             ]);
             if (!catRes.error && catRes.data) setMenuCategoryRows(catRes.data as MenuCategoryRow[]);
+            if (!productionRes.error && productionRes.data) setProductionCategoryRow(productionRes.data as MenuCategoryRow);
             const m = new Map<string, string | null>();
             for (const row of (mcoRes.data ?? []) as { category_id: string; override_name_es: string | null }[]) {
                 m.set(row.category_id, row.override_name_es ?? null);
@@ -2017,12 +2024,16 @@ function RecipeDetailContent() {
                 initialYieldQuantity={recipe.yield_quantity == null ? null : Number(recipe.yield_quantity)}
                 initialYieldUnit={recipe.yield_unit}
                 categoryId={recipe.menu_category_id ?? ''}
-                categories={sortedMenuCategoryRows.map((row) => ({
-                    id: row.id,
-                    label: labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId),
-                }))}
+                categories={recipe.is_sellable === false
+                    ? (productionCategoryRow ? [{ id: productionCategoryRow.id, label: 'Producción' }] : [])
+                    : sortedMenuCategoryRows.map((row) => ({
+                        id: row.id,
+                        label: labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId),
+                    }))}
                 onCategoryChange={(id) => {
-                    const row = sortedMenuCategoryRows.find((item) => item.id === id);
+                    const row = productionCategoryRow?.id === id
+                        ? productionCategoryRow
+                        : sortedMenuCategoryRows.find((item) => item.id === id);
                     if (row) void handleCategoryUpdate(row);
                 }}
                 onDelete={() => setDeleteRecipeOpen(true)}

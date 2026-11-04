@@ -76,6 +76,7 @@ function RecipesContent() {
     const [allIngredients, setAllIngredients] = useState<any[]>([]);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [menuCategoryRows, setMenuCategoryRows] = useState<MenuCategoryRow[]>([]);
+    const [productionCategory, setProductionCategory] = useState<{ id: string; name: string } | null>(null);
     const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
     const router = useRouter();
 
@@ -93,6 +94,7 @@ function RecipesContent() {
         const qs = new URLSearchParams(searchParams.toString());
         if (cat) qs.set('cat', cat);
         else qs.delete('cat');
+        if (cat === 'produccion') qs.delete('fc');
         const next = qs.toString();
         router.replace(next ? `/recipes?${next}` : '/recipes');
     };
@@ -107,7 +109,7 @@ function RecipesContent() {
 
     useEffect(() => {
         void (async () => {
-            const [catRes, mcoRes] = await Promise.all([
+            const [catRes, mcoRes, productionRes] = await Promise.all([
                 supabase
                     .from('categories')
                     .select('id, name, slug, parent_id, sort_order')
@@ -115,8 +117,14 @@ function RecipesContent() {
                     .order('sort_order', { ascending: true })
                     .limit(5000),
                 supabase.from('menu_category_overrides').select('category_id, override_name_es').limit(5000),
+                supabase.from('categories')
+                    .select('id, name')
+                    .eq('scope', 'recipes')
+                    .eq('slug', 'produccion')
+                    .maybeSingle(),
             ]);
             if (!catRes.error && catRes.data) setMenuCategoryRows(catRes.data as MenuCategoryRow[]);
+            if (!productionRes.error && productionRes.data) setProductionCategory(productionRes.data);
             const m = new Map<string, string | null>();
             for (const row of (mcoRes.data ?? []) as { category_id: string; override_name_es: string | null }[]) {
                 m.set(row.category_id, row.override_name_es ?? null);
@@ -157,6 +165,7 @@ function RecipesContent() {
     const selectedCategoryFilterLabel = useMemo(() => {
         if (!categoryFromUrl) return '';
         if (categoryFromUrl === '__none__') return 'Sin categoría menú';
+        if (categoryFromUrl === 'produccion') return 'Producción';
         const row = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
         if (row) return labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId);
         return categoryFromUrl;
@@ -178,6 +187,11 @@ function RecipesContent() {
         if (!categoryFromUrl) return true;
         if (categoryFromUrl === '__none__') {
             return !isInternalRecipe(recipe.is_sellable) && !recipe.menu_category_id;
+        }
+        if (categoryFromUrl === 'produccion') {
+            return isInternalRecipe(recipe.is_sellable)
+                && productionCategory !== null
+                && recipe.menu_category_id === productionCategory.id;
         }
         const row = menuCategoryFromUrlParam(categoryFromUrl, menuCategoryRows);
         if (row) return recipe.menu_category_id === row.id;
@@ -243,6 +257,10 @@ function RecipesContent() {
         let categoryDb: string | null = null;
         let menuCategoryId: string | null = null;
         let salePrice: number | null = null;
+        if (internal && productionCategory && newRecipe.menu_category_id === productionCategory.id) {
+            menuCategoryId = productionCategory.id;
+            categoryDb = productionCategory.name;
+        }
         if (!internal) {
             if (!newRecipe.menu_category_id) {
                 toast.error('Nombre y categoría de menú son obligatorios');
@@ -481,6 +499,18 @@ function RecipesContent() {
                             Sin categoría menú
                         </button>
                     ) : null}
+                    {productionCategory ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setCategoryAndUrl('produccion');
+                                closeCategoryPopup();
+                            }}
+                            className="w-full min-h-12 py-2.5 text-left text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-50"
+                        >
+                            Producción
+                        </button>
+                    ) : null}
                     {menuCategoryOptions.map((opt) => (
                         <button
                             type="button"
@@ -506,6 +536,7 @@ function RecipesContent() {
                 setNewRecipe={setNewRecipe}
                 isCreating={isCreating}
                 menuCategoryOptions={menuCategoryOptions}
+                productionCategory={productionCategory}
                 allIngredients={allIngredients}
                 handleCreateRecipe={handleCreateRecipe}
                 addIngredientToRecipe={() =>
