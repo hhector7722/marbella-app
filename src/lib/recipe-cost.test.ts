@@ -148,3 +148,24 @@ test('miel: 30 ml cuestan 0,44982 € a 10,71 €/kg con densidad 1,4 g/ml', () 
   assert.equal(v2.status, 'OK')
   assert.ok(v2.costEur != null && Math.abs(v2.costEur - 0.44982) < 1e-10)
 })
+
+
+test('Juver: el mismo ingrediente se vende por ud y se consume en ml (200 ml por ud)', () => {
+  const pack = { pack_unit_size_qty: 200, pack_unit_size_unit: 'ml' }
+  assert.deepEqual(getRecipeIngredientLineCostV2(1, 'ud', 'ud', 0.5, pack),
+    { costEur: 0.5, status: 'OK', issues: ['OK'] })
+  assert.deepEqual(getRecipeIngredientLineCostV2(150, 'ml', 'ud', 0.5, pack),
+    { costEur: 0.375, status: 'OK', issues: ['OK'] })
+  assert.deepEqual(getRecipeIngredientLineCostV2(200, 'ml', 'ud', 0.5, pack),
+    { costEur: 0.5, status: 'OK', issues: ['OK'] })
+  assert.deepEqual(getRecipeIngredientLineCostV2(150, 'ml', 'ud', 0.5),
+    { costEur: null, status: 'INCOMPATIBLE_UNITS', issues: ['INCOMPATIBLE_UNITS'] })
+})
+
+test('Sangría cava: fruta estimada por gramos en lugar de 5 unidades sin conversión', () => {
+  assert.ok(Math.abs(getRecipeIngredientLineCostV2(10, 'g', 'kg', 23.2).costEur! - 0.232) < 1e-10)
+  assert.ok(Math.abs(getRecipeIngredientLineCostV2(20, 'g', 'kg', 11.6).costEur! - 0.232) < 1e-10)
+  assert.ok(Math.abs(getRecipeIngredientLineCostV2(75, 'g', 'kg', 13).costEur! - 0.975) < 1e-10)
+  const total = 4.5 + 50 / 1000 * 16.65 + 0.232 + 0.232 + 0.975 + 0.375 + 0.5
+  assert.ok(Math.abs(total - 7.6465) < 1e-10)
+})

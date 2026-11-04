@@ -13,6 +13,7 @@ import {
   updateIngredientSuppliersAction,
   setIngredientArchivedAction,
   setIngredientPriceAndUnitAction,
+  setIngredientContentPerUnitAction,
   transitionIngredientToMetersAction,
   uploadIngredientPhotoAction,
 } from '@/app/ingredients/actions'
@@ -23,6 +24,8 @@ export interface Ingredient {
   purchase_unit: string
   base_unit?: string | null
   density_g_per_ml?: number | null
+  pack_unit_size_qty?: number | null
+  pack_unit_size_unit?: string | null
   price_locked?: boolean
   supplier?: string | null
   supplier_2?: string | null
@@ -84,6 +87,18 @@ export function IngredientCanonicalEditModal({
   const [newPrice, setNewPrice] = useState(() => priceInputValue(ingredient.current_price))
   const [newUnit, setNewUnit] = useState(() => ingredient.purchase_unit || 'ud')
   const [newRecipeUnit, setNewRecipeUnit] = useState(() => ingredient.recipe_unit || ingredient.purchase_unit || 'ud')
+  const [packContentInput, setPackContentInput] = useState(() =>
+    ingredient.pack_unit_size_qty != null ? String(ingredient.pack_unit_size_qty).replace('.', ',') : ''
+  )
+  const [packContentUnit, setPackContentUnit] = useState<'ml' | 'g'>(() =>
+    ingredient.pack_unit_size_unit === 'g' ? 'g' : 'ml'
+  )
+  const [baselinePackContent, setBaselinePackContent] = useState<number | null>(
+    () => ingredient.pack_unit_size_qty ?? null
+  )
+  const [baselinePackContentUnit, setBaselinePackContentUnit] = useState<string | null>(
+    () => ingredient.pack_unit_size_unit ?? null
+  )
   const [densityInput, setDensityInput] = useState(() =>
     ingredient.density_g_per_ml != null ? String(ingredient.density_g_per_ml).replace('.', ',') : ''
   )
@@ -122,6 +137,18 @@ export function IngredientCanonicalEditModal({
     baselineDensity == null || parsedDensity == null
       ? baselineDensity !== parsedDensity
       : Math.abs(baselineDensity - parsedDensity) >= 1e-9
+  const parsedPackContent = Number(packContentInput.trim().replace(',', '.'))
+  const packChanged = newUnit === 'ud' && (
+    (packContentInput.trim() !== '' || baselinePackContent !== null) &&
+    (baselinePackContent !== parsedPackContent
+      || (baselinePackContentUnit ?? 'ml') !== packContentUnit)
+  )
+  const validPackContent = !packChanged || (
+    packContentInput.trim() !== ''
+    && Number.isFinite(parsedPackContent)
+    && parsedPackContent > 0
+    && parsedPackContent <= 100000
+  )
   const imageChanged = selectedFile != null
   const suppliersChanged = supplier !== (ingredient.supplier ?? '') || supplier2 !== (ingredient.supplier_2 ?? '')
   const requiresUnitTransition = unitChanged && newUnit === 'm' && baselineBaseUnit !== 'm'
@@ -129,11 +156,11 @@ export function IngredientCanonicalEditModal({
   const validOpeningMeters = openingMetersInput.trim() !== ''
     && Number.isFinite(openingMeters) && openingMeters >= 0
   const canonicalChanged = priceChanged || unitChanged || recipeUnitChanged || densityChanged
-  const canSave =
-    (suppliersChanged && !canonicalChanged && !imageChanged) ||
-    (imageChanged && !canonicalChanged) ||
-    (canonicalChanged && validPrice && validDensity
-      && (!requiresUnitTransition || validOpeningMeters))
+  const canSave = (
+    suppliersChanged || imageChanged || canonicalChanged || packChanged
+  ) && (!canonicalChanged || (validPrice && validDensity
+      && (!requiresUnitTransition || validOpeningMeters)))
+    && validPackContent
   const unit = newUnit || 'ud'
   const isArchived = Boolean(ingredient.archived_at)
   const displayImageSrc = previewBlobUrl ?? baselineImageUrl
@@ -166,6 +193,10 @@ export function IngredientCanonicalEditModal({
       setBaselineRecipeUnit(result.recipeUnit)
       setDensityInput(result.densityGPerMl == null ? '' : String(result.densityGPerMl).replace('.', ','))
       setBaselineDensity(result.densityGPerMl)
+      setPackContentInput(result.packUnitSizeQty == null ? '' : String(result.packUnitSizeQty).replace('.', ','))
+      setPackContentUnit(result.packUnitSizeUnit === 'g' ? 'g' : 'ml')
+      setBaselinePackContent(result.packUnitSizeQty)
+      setBaselinePackContentUnit(result.packUnitSizeUnit)
       setConfigLoading(false)
     })
     return () => {
@@ -223,7 +254,11 @@ export function IngredientCanonicalEditModal({
       toast.error('La densidad debe ser mayor que cero o quedar vacía.')
       return
     }
-    if (!imageChanged && !canonicalChanged && !suppliersChanged) return
+    if (packChanged && !validPackContent) {
+      toast.error('Indica los mililitros o gramos que contiene cada unidad.')
+      return
+    }
+    if (!imageChanged && !canonicalChanged && !suppliersChanged && !packChanged) return
 
     setSaving(true)
     try {
@@ -247,7 +282,14 @@ export function IngredientCanonicalEditModal({
       }
 
       if (!canonicalChanged) {
-        toast.success(suppliersChanged ? 'Proveedor actualizado.' : 'Imagen actualizada.')
+        if (packChanged) {
+          const result = await setIngredientContentPerUnitAction(
+            ingredient.id, parsedPackContent, packContentUnit
+          )
+          if (!result.ok) { toast.error(result.message); return }
+        }
+        toast.success(packChanged ? 'Contenido por unidad actualizado.' :
+          suppliersChanged ? 'Proveedor actualizado.' : 'Imagen actualizada.')
         onSaved()
         onClose()
         return
@@ -270,8 +312,18 @@ export function IngredientCanonicalEditModal({
         return
       }
 
+      if (packChanged) {
+        const content = await setIngredientContentPerUnitAction(
+          ingredient.id, parsedPackContent, packContentUnit
+        )
+        if (!content.ok) {
+          onSaved()
+          toast.error('La configuración principal se guardó, pero el contenido no: ' + content.message)
+          return
+        }
+      }
       if (imagePersisted) toast.success('Imagen actualizada.')
-      if (result.priceChanged || result.unitChanged || result.recipeUnitChanged || result.densityChanged) {
+      if (result.priceChanged || result.unitChanged || result.recipeUnitChanged || result.densityChanged || packChanged) {
         toast.success('Ingrediente actualizado.')
       } else {
         toast.success('El ingrediente ya estaba actualizado.')
@@ -598,6 +650,41 @@ export function IngredientCanonicalEditModal({
                     <span className="shrink-0 text-sm font-bold text-zinc-500">g</span>
                   </div>
                 </Field>
+                {newUnit === 'ud' ? (
+                  <div className="sm:col-span-2 space-y-2 border-t border-zinc-100 pt-3">
+                    <label htmlFor="ingredient-pack-content" className="text-xs font-bold text-zinc-700">
+                      Contenido por unidad
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="ingredient-pack-content"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        value={packContentInput}
+                        disabled={configLoading}
+                        onChange={(event) => setPackContentInput(event.target.value)}
+                        placeholder="Ej.: 200"
+                        aria-invalid={!validPackContent || undefined}
+                        className="min-h-11 min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 font-mono tabular-nums"
+                      />
+                      <select
+                        value={packContentUnit}
+                        onChange={(event) => setPackContentUnit(event.target.value as 'ml' | 'g')}
+                        disabled={configLoading}
+                        aria-label="Unidad del contenido por envase"
+                        className="min-h-11 w-24 rounded-lg border border-zinc-200 bg-white px-3 font-semibold"
+                      >
+                        <option value="ml">ml</option>
+                        <option value="g">g</option>
+                      </select>
+                    </div>
+                    <p className="text-[11px] leading-snug text-zinc-500">
+                      El ingrediente se compra y se vende por unidad, pero puede utilizarse por ml o g en una receta.
+                      Por ejemplo, una botella de 200 ml permite consumir 150 ml como 0,75 ud de stock.
+                    </p>
+                  </div>
+                ) : null}
               </div>
             </section>
 
