@@ -11623,3 +11623,33 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 .carta-shared-scene .carta-home-language-picker button[aria-pressed='false']:active {
   background: rgb(255 255 255 / .08);
 }
+
+
+/* Añadir componente (recetas): el panel nunca toca la barra de estado en
+   iPhone/PWA, ni cuando Safari mueve el viewport al abrir el teclado. */
+@media (max-width: 767px) {
+  [data-component='Modal'][data-instance='recipe-add-ingredient'] {
+    top: var(--recipe-visible-top, 0px) !important;
+    left: var(--recipe-visible-left, 0px) !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: var(--recipe-visible-width, 100vw);
+    height: var(--recipe-visible-height, 100dvh);
+    padding-top: max(5rem, calc(env(safe-area-inset-top, 0px) + 1rem)) !important;
+  }
+
+  [data-component='Modal'][data-instance='recipe-add-ingredient'] [data-element='container'] {
+    max-height: min(100%, calc(100dvh - 6.5rem - env(safe-area-inset-bottom, 0px))) !important;
+  }
+
+  [data-component='Modal'][data-instance='recipe-add-ingredient'] [data-component='SearchField'],
+  [data-component='Modal'][data-instance='recipe-add-ingredient'] [data-component='SearchField'] input {
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+  }
+
+  [data-component='Modal'][data-instance='recipe-add-ingredient'] [data-component='SearchField'] input {
+    font-size: 16px; /* iOS: evita zoom y desplazamientos al enfocar */
+  }
+}

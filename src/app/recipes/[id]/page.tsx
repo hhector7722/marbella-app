@@ -220,6 +220,32 @@ function RecipeDetailContent() {
     const [forceAddIngredientUnit, setForceAddIngredientUnit] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // En iPhone el teclado puede mover el viewport visible sin mover el modal fixed.
+    // Alineamos solo este modal al área realmente visible, sin tocar los demás.
+    useEffect(() => {
+        if (!showIngredientModal || !window.visualViewport) return;
+        const viewport = window.visualViewport;
+        const panel = document.querySelector<HTMLElement>(
+            '[data-component="Modal"][data-instance="recipe-add-ingredient"]'
+        );
+        if (!panel) return;
+
+        const syncViewport = () => {
+            panel.style.setProperty('--recipe-visible-top', `${viewport.offsetTop}px`);
+            panel.style.setProperty('--recipe-visible-left', `${viewport.offsetLeft}px`);
+            panel.style.setProperty('--recipe-visible-height', `${viewport.height}px`);
+            panel.style.setProperty('--recipe-visible-width', `${viewport.width}px`);
+        };
+        syncViewport();
+        viewport.addEventListener('resize', syncViewport);
+        viewport.addEventListener('scroll', syncViewport);
+        return () => {
+            viewport.removeEventListener('resize', syncViewport);
+            viewport.removeEventListener('scroll', syncViewport);
+        };
+    }, [showIngredientModal]);
+
     const [userRole, setUserRole] = useState<string | null>(null);
     const [isEditingPrice, setIsEditingPrice] = useState(false);
     const [priceDraft, setPriceDraft] = useState('');
@@ -976,7 +1002,15 @@ function RecipeDetailContent() {
 
     const priceScopeLabel = `${view.location === 'pvp' ? 'PVP' : 'Pabellón'} · ${activePortion === 'full' ? 'Entero' : 'Medio'}`;
 
-    const filteredIngredients = availableIngredients.filter(ing => ing.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    // El selector empieza vacío: no ofrece sugerencias hasta escribir.
+    const componentQuery = searchTerm.trim().toLocaleLowerCase('es');
+    const hasComponentQuery = componentQuery.length > 0;
+    const filteredIngredients = hasComponentQuery
+        ? availableIngredients.filter((ing) => ing.name.toLocaleLowerCase('es').includes(componentQuery))
+        : [];
+    const filteredRecipeCandidates = hasComponentQuery
+        ? recipeCandidates.filter((candidate) => candidate.name.toLocaleLowerCase('es').includes(componentQuery))
+        : [];
 
     const QuantityInput = ({ initialValue, onSave, positiveOnly = false, onReject }: { initialValue: number; onSave: (val: number) => void; positiveOnly?: boolean; onReject?: () => void }) => {
         const [localValue, setLocalValue] = useState<string>(initialValue ? initialValue.toString() : '');
@@ -1857,11 +1891,11 @@ function RecipeDetailContent() {
                 usageLabel="Añadir componente receta"
                 title="Añadir componente"
             >
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 pb-1">
                     <div
                         role="tablist"
                         aria-label="Tipo de componente"
-                        className="grid grid-cols-2 gap-1.5 rounded-2xl bg-zinc-100 p-1.5"
+                        className="grid grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1"
                     >
                         {([
                             { value: 'ingredient', label: 'Ingredientes', Icon: ChefHat },
@@ -1880,7 +1914,7 @@ function RecipeDetailContent() {
                                         if (value === 'elaboration') void loadRecipeCandidates();
                                     }}
                                     className={cn(
-                                        'flex min-h-12 items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-sm font-bold transition',
+                                        'flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-1.5 py-2 text-[13px] font-semibold transition',
                                         selected
                                             ? 'border-[#36606F] bg-[#36606F] text-white shadow-sm'
                                             : 'border-transparent bg-transparent text-zinc-500 hover:bg-white hover:text-zinc-800',
@@ -1896,42 +1930,48 @@ function RecipeDetailContent() {
 
                     {componentKind === 'ingredient' ? (
                         <div className="flex flex-col gap-3">
-                            <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3">
-                                <label className="flex min-h-8 cursor-pointer items-center gap-3">
-                                    <input
-                                        type="checkbox"
-                                        checked={forceAddIngredientUnit}
-                                        onChange={(event) => setForceAddIngredientUnit(event.target.checked)}
-                                        className="h-4 w-4 shrink-0 accent-[#36606F]"
-                                    />
-                                    <span className="text-xs font-bold text-zinc-700">Cambiar la unidad al añadir</span>
+                            <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 px-3 py-2.5">
+                                <label className="flex min-h-9 cursor-pointer items-center justify-between gap-3">
+                                    <span className="min-w-0">
+                                        <span className="block text-xs font-semibold text-zinc-800">Unidad de medida</span>
+                                        <span className="block text-[11px] leading-snug text-zinc-500">
+                                            {forceAddIngredientUnit ? 'Personalizada para este ingrediente' : 'Usar la unidad habitual'}
+                                        </span>
+                                    </span>
+                                    <span className="relative shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={forceAddIngredientUnit}
+                                            onChange={(event) => setForceAddIngredientUnit(event.target.checked)}
+                                            aria-label="Personalizar la unidad al añadir"
+                                            className="peer sr-only"
+                                        />
+                                        <span className="block h-6 w-11 rounded-full bg-zinc-300 transition-colors peer-checked:bg-[#36606F] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#36606F]" />
+                                        <span className="pointer-events-none absolute left-0.5 top-0.5 block h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
+                                    </span>
                                 </label>
                                 {forceAddIngredientUnit ? (
-                                    <div className="mt-2 flex items-center gap-3">
-                                        <label htmlFor="recipe-add-ingredient-unit" className="text-xs font-medium text-zinc-600">Unidad</label>
+                                    <div className="mt-2 flex items-center gap-3 border-t border-zinc-200 pt-2">
+                                        <label htmlFor="recipe-add-ingredient-unit" className="text-xs font-medium text-zinc-600">Elegir unidad</label>
                                         <select
                                             id="recipe-add-ingredient-unit"
                                             value={addIngredientUnit}
                                             onChange={(event) => setAddIngredientUnit(event.target.value)}
-                                            className="min-h-11 min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-800 focus:border-[#36606F] focus:outline-none"
+                                            className="min-h-10 min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-800 focus:border-[#36606F] focus:outline-none"
                                         >
                                             {RECIPE_UNIT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                                         </select>
                                     </div>
-                                ) : (
-                                    <p className="pl-7 text-[11px] leading-snug text-zinc-500">
-                                        Se utilizará la unidad habitual de cada ingrediente.
-                                    </p>
-                                )}
+                                ) : null}
                             </div>
                             <SearchField
                                 instance="recipe-add-ingredient-search"
                                 placeholder="Buscar ingrediente por nombre..."
                                 value={searchTerm}
                                 onChange={setSearchTerm}
-                                autoFocus
                             />
-                            <div className="max-h-[min(48vh,22rem)] space-y-1.5 overflow-y-auto pr-1">
+                            {hasComponentQuery ? (
+                            <div className="max-h-[min(42dvh,19rem)] space-y-1 overflow-y-auto overscroll-contain pr-1">
                                 {filteredIngredients.map((ing) => {
                                     const purchaseUnit = ing.purchase_unit || 'ud';
                                     const configuredUnit = resolveIngredientRecipeUnit(ing.recipe_unit, purchaseUnit);
@@ -1942,9 +1982,9 @@ function RecipeDetailContent() {
                                             key={ing.id}
                                             type="button"
                                             onClick={() => void handleAddIngredient(ing.id, unitToAdd, ing.name)}
-                                            className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left transition hover:border-[#36606F]/50 hover:bg-[#36606F]/5 active:bg-[#36606F]/10"
+                                            className="flex min-h-12 w-full items-center gap-2.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-left transition hover:border-[#36606F]/50 hover:bg-[#36606F]/5 active:bg-[#36606F]/10"
                                         >
-                                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[#36606F]">
+                                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[#36606F]">
                                                 <Plus className="h-4 w-4" aria-hidden />
                                             </span>
                                             <span className="min-w-0 flex-1">
@@ -1961,23 +2001,23 @@ function RecipeDetailContent() {
                                     </p>
                                 ) : null}
                             </div>
+                            ) : (
+                                <p className="px-1 py-2 text-center text-xs text-zinc-500">
+                                    Escribe el nombre del ingrediente para buscarlo.
+                                </p>
+                            )}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-3">
-                            <p className="px-1 text-xs leading-snug text-zinc-500">
-                                Añade una elaboración existente como componente de esta receta.
-                            </p>
                             <SearchField
                                 instance="recipe-add-elaboration-search"
                                 placeholder="Buscar elaboración por nombre..."
                                 value={searchTerm}
                                 onChange={setSearchTerm}
-                                autoFocus
                             />
-                            <div className="max-h-[min(48vh,22rem)] space-y-1.5 overflow-y-auto pr-1">
-                                {recipeCandidates
-                                    .filter((candidate) => candidate.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                                    .map((candidate) => {
+                            {hasComponentQuery ? (
+                            <div className="max-h-[min(42dvh,19rem)] space-y-1 overflow-y-auto overscroll-contain pr-1">
+                                {filteredRecipeCandidates.map((candidate) => {
                                         const addable = canAddRecipeComponent({
                                             yieldQuantity: candidate.yield_quantity,
                                             yieldUnit: candidate.yield_unit,
@@ -1993,7 +2033,7 @@ function RecipeDetailContent() {
                                                 onClick={() => void handleAddSubrecipe(candidate)}
                                                 className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left transition hover:border-[#36606F]/50 hover:bg-[#36606F]/5 active:bg-[#36606F]/10 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:opacity-60"
                                             >
-                                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[#36606F]">
+                                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[#36606F]">
                                                     <Plus className="h-4 w-4" aria-hidden />
                                                 </span>
                                                 <span className="min-w-0 flex-1">
@@ -2006,12 +2046,17 @@ function RecipeDetailContent() {
                                             </button>
                                         );
                                     })}
-                                {!recipeCandidates.some((candidate) => candidate.name.toLowerCase().includes(searchTerm.toLowerCase())) ? (
+                                {filteredRecipeCandidates.length === 0 ? (
                                     <p className="rounded-xl border border-dashed border-zinc-200 px-3 py-6 text-center text-sm text-zinc-500">
                                         No se encontraron elaboraciones.
                                     </p>
                                 ) : null}
                             </div>
+                            ) : (
+                                <p className="px-1 py-2 text-center text-xs text-zinc-500">
+                                    Escribe el nombre de la elaboración para buscarla.
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>
