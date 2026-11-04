@@ -871,7 +871,8 @@ export function MenuAccordion({
             const group = groupedRef.current.find((g) => g.key === groupKey)
             if (group && group._subList.length > 1) {
                 const visible = subsWithVisibleProducts(group._subList)
-                if (visible.length === 1) {
+                if (visible.length === 1 || (catalogDisplay && !eventOrder && !eventEncargoEdit && visible.length > 1)) {
+                    // La carta navegable entra directamente en la primera subcategoría.
                     setSelectedSubKeyByGroup((p) => ({ ...p, [groupKey]: visible[0].key }))
                 } else {
                     setSelectedSubKeyByGroup((p) => {
@@ -1183,14 +1184,16 @@ export function MenuAccordion({
 
                                 <div className="flex shrink-0 items-center gap-0.5">
                                     {modalEditToggle}
-                                    <button
-                                        type="button"
-                                        className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                        aria-label="Cerrar"
-                                        onClick={() => setOpenKey(null)}
-                                    >
-                                        <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                                    </button>
+                                    {catalogDisplay && !eventOrder && !eventEncargoEdit ? null : (
+                                        <button
+                                            type="button"
+                                            className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                            aria-label="Cerrar"
+                                            onClick={() => setOpenKey(null)}
+                                        >
+                                            <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ) : (
@@ -1204,7 +1207,24 @@ export function MenuAccordion({
                                       : 'items-center gap-1.5 py-2 sm:gap-2 sm:py-2.5'
                             )}
                         >
-                            {openShowSubTabs ? (
+                            {openShowSubTabs && catalogDisplay && !eventOrder && !eventEncargoEdit && !reorderScope ? (
+                                <div className="flex min-w-0 items-center justify-between gap-1.5">
+                                    <div className="flex min-w-0 flex-1 items-center gap-1">
+                                        <button
+                                            type="button"
+                                            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white active:bg-white/10"
+                                            aria-label="Volver a las categorías"
+                                            onClick={() => setOpenKey(null)}
+                                        >
+                                            <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+                                        </button>
+                                        <h2 className="truncate text-sm font-black uppercase tracking-wide text-white">
+                                            {openGroup.title}
+                                        </h2>
+                                    </div>
+                                    {modalEditToggle}
+                                </div>
+                            ) : openShowSubTabs ? (
                                 <div className="flex min-w-0 items-center justify-between gap-1.5">
                                     {modalEditMode &&
                                     !reorderScope &&
@@ -1273,7 +1293,7 @@ export function MenuAccordion({
                                 </div>
                             ) : null}
                             {openShowSubTabs ? (
-                                <div className="flex min-w-0 overflow-x-auto pb-0.5">
+                                <div className={cn('flex min-w-0 overflow-x-auto pb-0.5', catalogDisplay && !eventOrder && !eventEncargoEdit && 'carta-catalog-subtabs')} aria-label={catalogDisplay ? 'Cambiar subcategoría' : undefined}>
                                     <div className="flex w-full min-w-0 flex-nowrap gap-1 sm:gap-1.5">
                                         {openGroup._subList.map((sub) => {
                                             const isActive = openSelectedSubKey === sub.key
@@ -1386,12 +1406,24 @@ export function MenuAccordion({
                             ) : openPlatoMarbella ? (
                                 <span className="min-w-0 flex-1" aria-hidden />
                             ) : (
+                                <>
+                                {catalogDisplay && !eventOrder && !eventEncargoEdit ? (
+                                    <button
+                                        type="button"
+                                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white active:bg-white/10"
+                                        aria-label="Volver a las categorías"
+                                        onClick={() => setOpenKey(null)}
+                                    >
+                                        <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+                                    </button>
+                                ) : null}
                                 <h2
                                     id="staff-carta-section-modal-title"
                                     className="min-w-0 flex-1 truncate text-left text-xs font-black uppercase leading-tight tracking-wide text-[#36606F] sm:text-sm"
                                 >
                                     {openGroup.title}
                                 </h2>
+                                </>
                             )}
                             {!openShowSubTabs &&
                             encargoEditActive &&
@@ -1482,14 +1514,16 @@ export function MenuAccordion({
                             {!openShowSubTabs ? (
                                 <div className="flex shrink-0 items-center gap-0.5">
                                     {modalEditToggle}
-                                    <button
-                                        type="button"
-                                        className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
-                                        aria-label="Cerrar"
-                                        onClick={() => setOpenKey(null)}
-                                    >
-                                        <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
-                                    </button>
+                                    {catalogDisplay && !eventOrder && !eventEncargoEdit ? null : (
+                                        <button
+                                            type="button"
+                                            className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
+                                            aria-label="Cerrar"
+                                            onClick={() => setOpenKey(null)}
+                                        >
+                                            <X className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
+                                        </button>
+                                    )}
                                 </div>
                             ) : null}
                         </div>

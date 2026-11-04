@@ -26,11 +26,6 @@ export function CartaMenuProductPhoto({
   squareLayout?: boolean
 }) {
   const factor = getCartaProductPhotoScaleFactor(scale, isDrink, articuloId)
-  // El marco cuadrado es menos alto que el original: compensar el margen blanco.
-  const displayedFactor = squareLayout
-    ? isDrink ? Math.min(1.48, factor * 1.88) : Math.min(1.85, factor * 2.15)
-    : factor
-
   return (
     // eslint-disable-next-line @next/next/no-img-element -- URL Storage/receta
     <img
@@ -38,8 +33,13 @@ export function CartaMenuProductPhoto({
       alt={alt}
       loading="eager"
       decoding="async"
-      className={cn(CARTA_PRODUCT_PHOTO_IMG_NEUTRAL_CLASS, className)}
-      style={{ transform: `scale(${displayedFactor})` }}
+      className={cn(
+        CARTA_PRODUCT_PHOTO_IMG_NEUTRAL_CLASS,
+        squareLayout && 'h-full w-full object-contain object-center',
+        className
+      )}
+      // Ajuste natural de la imagen completa: contain fija los límites del marco.
+      style={{ transform: squareLayout ? 'none' : `scale(${factor})` }}
     />
   )
 }

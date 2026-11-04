@@ -11318,8 +11318,13 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   background-color: transparent;
 }
 .carta-browse-modal .carta-square-product-card > div:first-child img {
+  display: block;
+  width: 100%;
+  height: 100%;
   max-height: 100%;
   max-width: 100%;
+  object-fit: contain;
+  object-position: center;
 }
 .carta-browse-modal .carta-square-product-card > div:nth-child(2) {
   flex: 1 1 auto;
@@ -11385,4 +11390,33 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
 }
 @media (prefers-reduced-motion: reduce) {
   .carta-whole-row-scroll { scroll-behavior: auto; }
+}
+
+
+/* Selector de subcategorías: reconoce la opción seleccionada sin introducir
+   un modal intermedio. El estilo se limita a las cartas navegables. */
+.carta-browse-modal .carta-catalog-subtabs {
+  border-radius: 15px;
+  padding: 3px;
+  background: rgb(255 255 255 / .1);
+  border: 1px solid rgb(255 255 255 / .16);
+}
+.carta-browse-modal .carta-catalog-subtabs > div { gap: 3px; }
+.carta-browse-modal .carta-catalog-subtabs button[aria-pressed] {
+  min-height: 43px;
+  border-radius: 12px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal .carta-catalog-subtabs button[aria-pressed='true'],
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal .carta-catalog-subtabs button[aria-pressed='true'] span {
+  background: #fff;
+  color: #173b63 !important;
+}
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal .carta-catalog-subtabs button[aria-pressed='false'],
+body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal .carta-catalog-subtabs button[aria-pressed='false'] span {
+  background: transparent;
+  color: rgb(255 255 255 / .75);
+}
+@media (prefers-reduced-motion: reduce) {
+  .carta-browse-modal .carta-catalog-subtabs button[aria-pressed] { transition: none; }
 }
