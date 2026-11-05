@@ -509,8 +509,12 @@ export const StaffScheduleModal = ({
                 <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/65 backdrop-blur-xl p-8" onClick={() => setExpandedAvatar(null)} role="presentation">
                     <button type="button" className="absolute right-5 top-5 rounded-full bg-white/15 px-4 py-2 text-white" onClick={() => setExpandedAvatar(null)} aria-label="Cerrar avatar">Cerrar</button>
                     <div className="flex flex-col items-center gap-4" onClick={(event) => event.stopPropagation()}>
-                        <div className="h-64 w-64 max-w-[75vw] max-h-[75vw] overflow-hidden rounded-full bg-white shadow-2xl">
-                            {expandedAvatar.avatar_url ? <img src={expandedAvatar.avatar_url} alt={expandedAvatar.name} className="h-full w-full object-cover" /> : <Avatar src={null} alt={expandedAvatar.name} size="xl" className="!h-full !w-full" />}
+                        <div className="flex h-[min(72vh,560px)] w-[min(90vw,560px)] items-center justify-center">
+                            {expandedAvatar.avatar_url ? (
+                                <img src={expandedAvatar.avatar_url} alt={expandedAvatar.name} className="block max-h-full max-w-full object-contain drop-shadow-2xl" />
+                            ) : (
+                                <Avatar src={null} alt={expandedAvatar.name} size="xl" />
+                            )}
                         </div>
                         <span className="text-lg font-semibold text-white">{expandedAvatar.name}</span>
                     </div>
