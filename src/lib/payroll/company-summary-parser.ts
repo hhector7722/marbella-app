@@ -465,6 +465,7 @@ async function loadPdfJsAsPdf2jsonData(pdfBuffer: Buffer): Promise<unknown> {
   }
   // Precargar explícitamente el worker: Next/Vercel no puede trazar el import
   // dinámico interno de pdfjs-dist y el fallback de Node quedaría incompleto.
+  // @ts-expect-error pdfjs-dist no publica tipos para la entrada del worker.
   await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
   const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const doc = await getDocument({
