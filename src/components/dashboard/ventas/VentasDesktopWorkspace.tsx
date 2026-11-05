@@ -1948,7 +1948,19 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
                         <header className="flex min-h-[36px] shrink-0 items-center justify-between gap-2 border-b border-white/15 px-3">
                             <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                                <strong className="min-w-0 truncate text-[11px] font-bold uppercase" title={periodTitle}>{periodTitle}</strong>
+                                <nav className="inline-flex min-w-0 items-center gap-0.5" aria-label="Navegar por fechas de ventas">
+                                    <button type="button" onClick={() => {
+                                        const day = parseISO(period.start);
+                                        selectDate(format(addDays(day, -1), 'yyyy-MM-dd'));
+                                    }} aria-label="Fecha anterior" className="shrink-0 rounded p-1 text-white/75 hover:bg-white/10"><ChevronLeft size={16}/></button>
+                                    <strong className="min-w-0 truncate whitespace-nowrap text-[11px] font-semibold capitalize" title={periodTitle}>
+                                        {isSingleDay ? format(parseISO(period.start), 'EEE d MMM yy', { locale: es }).replace('.', '') : periodTitle}
+                                    </strong>
+                                    <button type="button" onClick={() => {
+                                        const day = parseISO(period.end);
+                                        selectDate(format(addDays(day, 1), 'yyyy-MM-dd'));
+                                    }} aria-label="Fecha siguiente" className="shrink-0 rounded p-1 text-white/75 hover:bg-white/10"><ChevronRight size={16}/></button>
+                                </nav>
                                 {isSingleDay && selectedClosing && canEditClosings && (
                                     <button type="button"
                                         aria-label={`Editar cierre del ${periodTitle}`}
