@@ -15,6 +15,7 @@ import { timeFilterBounds, type TimeFilterValue } from '@/components/time/time-f
 import { cn } from '@/lib/utils';
 import { randomId } from '@/lib/random-id';
 import { displayedNetSales } from '@/lib/live-sales-net';
+import { formatNumberSpanish } from '@/lib/cash-closing-metrics';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
@@ -60,7 +61,7 @@ type CloseRow = {
     dataphone_totals_photo_path?: string | null; bdp_closing_ticket_photo_path?: string | null;
     weather?: string | null; breakdown?: Record<string, number> | null;
 };
-const euro = (v: unknown) => (Number(v ?? 0)).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+const euro = (v: unknown) => formatNumberSpanish(Number(v ?? 0), 2) + ' €';
 const compactDoc = (id: string) => id.replace(/^0+/, '').replace(/(B)0+(?=\d)/i, '$1');
 const EMPTY_ITEMS: Item[] = [];
 const PAGE_SIZE = 7;
@@ -310,7 +311,7 @@ function HourlySalesTimeline({ hours, onChooseHour, contextLabel, liveHour }: {
                                         {euro(slot.sales)}
                                     </td>
                                     <td className="whitespace-nowrap text-right text-[clamp(11px,0.82vw,14px)] text-white/85">
-                                        {slot.tickets.toLocaleString('es-ES')} tick
+                                        {slot.tickets.toLocaleString('es-ES', { useGrouping: 'always' })} tick
                                     </td>
                                     <td className="whitespace-nowrap text-right text-[clamp(11px,0.82vw,14px)] text-white/75">
                                         {euro(slot.tickets > 0 ? slot.sales / slot.tickets : 0)} med
@@ -430,7 +431,7 @@ function MobileSalesTicket({ ticket, cachedItems }: { ticket: Ticket; cachedItem
         return () => { active = false; };
     }, [expanded, cachedItems, loaded?.key, ticket.numero_documento, supabase]);
     const inlineProducts = items.map(item => item.qty !== 1
-        ? item.qty.toLocaleString('es-ES', { maximumFractionDigits: 2 }) + '× ' + item.name
+        ? item.qty.toLocaleString('es-ES', { useGrouping: 'always', maximumFractionDigits: 2 }) + '× ' + item.name
         : item.name).join(' · ');
     return (
         <div className="min-w-0 overflow-hidden rounded-lg border border-white/15 bg-white/[0.06]">
@@ -468,7 +469,7 @@ function MobileSalesTicket({ ticket, cachedItems }: { ticket: Ticket; cachedItem
                 <div className="space-y-1.5 border-t border-white/10 bg-white/[0.035] px-3 py-3 text-xs text-white/85">
                     {loading ? 'Cargando productos…' : items.length ? items.map((item, i) => (
                         <div key={i} className="flex justify-between gap-3">
-                            <span className="min-w-0 break-words">{item.qty.toLocaleString('es-ES')} × {item.name}</span>
+                            <span className="min-w-0 break-words">{item.qty.toLocaleString('es-ES', { useGrouping: 'always' })} × {item.name}</span>
                             <span className="shrink-0 tabular-nums">{euro(item.total)}</span>
                         </div>
                     )) : <span className="text-white/55">Sin líneas disponibles</span>}
@@ -635,7 +636,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                         const label = metric === 'importe' ? shareLabel(sales, totalSales)
                             : metric === 'cantidad' ? shareLabel(units, totalUnits)
                             : margin === null ? 'Coste de receta no disponible' : 'Margen bruto estimado; excluye gastos de personal y otros costes';
-                        const display = metric === 'cantidad' ? units.toLocaleString('es-ES', { maximumFractionDigits: 3 }) + ' u'
+                        const display = metric === 'cantidad' ? units.toLocaleString('es-ES', { useGrouping: 'always', maximumFractionDigits: 3 }) + ' u'
                             : value === null ? (!selectedCosts ? 'Cargando…' : costData?.failed ? 'No disponible' : 'Sin coste') : euro(value);
                         return (
                             <button key={product.articulo_id ?? index} type="button" data-crossfilter-trigger
@@ -660,7 +661,7 @@ function SalesBreakdown({ report, baseReport, scope, selection, onSelect, produc
                                     <span className={cn('min-w-0', mobileView === 'products' ? 'truncate whitespace-nowrap' : 'truncate')}>{product.nombre_articulo}</span>
                                 </span>
                                 <span className="shrink-0 whitespace-nowrap text-[10px] tabular-nums text-white/60">
-                                    {metric === 'cantidad' ? euro(sales) : units.toLocaleString('es-ES', { maximumFractionDigits: 3 }) + ' u'}
+                                    {metric === 'cantidad' ? euro(sales) : units.toLocaleString('es-ES', { useGrouping: 'always', maximumFractionDigits: 3 }) + ' u'}
                                 </span>
                                 <div role="img" aria-label={label} className="h-[10px] min-w-0 overflow-hidden rounded-sm bg-white/10">
                                     <div className="h-full rounded-sm bg-[#64a4ff]" style={{ width: value === null ? '0%' : barWidth(Math.max(0, value)) }}/>
@@ -716,7 +717,7 @@ function TicketHeaderStats({ report }: { report: TicketReport | null }) {
         <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 whitespace-nowrap text-[10px] text-white/70">
             {report && (
                 <>
-                    <span className="tabular-nums"><strong className="font-semibold text-white">{Number(report.summary.count).toLocaleString('es-ES')}</strong> tickets</span>
+                    <span className="tabular-nums"><strong className="font-semibold text-white">{Number(report.summary.count).toLocaleString('es-ES', { useGrouping: 'always' })}</strong> tickets</span>
                     <span className="tabular-nums"><strong className="font-semibold text-white">{euro(report.summary.avgTicket)}</strong> medio</span>
                 </>
             )}
@@ -1884,7 +1885,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                     {hour.count ? euro(hour.total / hour.count) : '—'}
                                 </span>
                                 <span className="min-w-0 whitespace-nowrap text-right font-semibold text-teal-200"
-                                    style={hour.hour === mobileLiveHour ? { color: '#4ade80' } : undefined}>{Math.round(hour.total).toLocaleString('es-ES')} €</span>
+                                    style={hour.hour === mobileLiveHour ? { color: '#4ade80' } : undefined}>{Math.round(hour.total).toLocaleString('es-ES', { useGrouping: 'always' })} €</span>
                             </button>
                         ) : <div key={index} className="h-[18px]"/>)}
                     </div>
@@ -2090,17 +2091,17 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                             selected ? 'text-zinc-700' : 'text-slate-400')}>{format(day, 'd')}</span>
                                                         {net !== null && Number.isFinite(net) && (
                                                             <div className="flex min-h-0 w-full flex-1 items-center justify-center px-0.5 pt-2 text-center">
-                                                                <span title={(isLiveToday ? 'Ventas de hoy (en curso): ' : '') + euro(net) + performanceDescription} className={cn('inline-flex max-w-full items-center justify-center gap-0.5 rounded-md border px-1 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums', calendarSalesTone(net))}>
-                                                                    {isLiveToday ? <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600" /> : null}
+                                                                <span title={(isLiveToday ? 'Ventas de hoy (en curso): ' : '') + euro(net) + performanceDescription} className={cn('inline-flex w-max max-w-none items-center justify-center whitespace-nowrap rounded-md border px-0.5 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums', calendarSalesTone(net))}>
+                                                                    {isLiveToday ? <span aria-hidden="true" className="absolute left-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-600" /> : null}
                                                                     {(calendarImproved || calendarDeclined) && (
                                                                         <span aria-hidden="true" className={cn(
-                                                                            'inline-block h-0 w-0 shrink-0 border-x-[3px] border-x-transparent',
+                                                                            'absolute left-1 top-1 inline-block h-0 w-0 border-x-[3px] border-x-transparent',
                                                                             calendarImproved
                                                                                 ? 'border-b-[5px] border-b-emerald-600'
                                                                                 : 'border-t-[5px] border-t-rose-600'
                                                                         )}/>
                                                                     )}
-                                                                    <span className="min-w-0 truncate">{Math.round(net).toLocaleString('es-ES')}€</span>
+                                                                    <span className="shrink-0 whitespace-nowrap">{formatNumberSpanish(Math.round(net))}€</span>
                                                                 </span>
                                                             </div>
                                                         )}
@@ -2132,9 +2133,9 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 {invoiceLive ? 'Facturas' : 'Live'}
                             </button>
                             {!invoiceLive && <span className="shrink-0 text-[10px] text-white/60">
-                                {visibleTickets.length.toLocaleString('es-ES')} de {crossSelection
-                                    ? (crossResult?.summary.count ?? 0).toLocaleString('es-ES')
-                                    : (dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES')}
+                                {visibleTickets.length.toLocaleString('es-ES', { useGrouping: 'always' })} de {crossSelection
+                                    ? (crossResult?.summary.count ?? 0).toLocaleString('es-ES', { useGrouping: 'always' })
+                                    : (dailyReport?.summary.count ?? tickets.length).toLocaleString('es-ES', { useGrouping: 'always' })}
                             </span>}
                         </div>
                         {invoiceLive ? (

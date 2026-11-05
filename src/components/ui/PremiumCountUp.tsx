@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useRef, memo } from 'react';
+import { formatNumberSpanish } from '@/lib/cash-closing-metrics';
 
 interface PremiumCountUpProps {
     value: number;
     suffix?: string;
     prefix?: string;
     decimals?: number;
+    /** Mantiene los millares con punto (incluido 1.000) cuando se usa en Ventas. */
+    groupThousands?: boolean;
     className?: string;
     duration?: number;
 }
@@ -24,6 +27,7 @@ const PremiumCountUp = memo(function PremiumCountUp({
     suffix = '',
     prefix = '',
     decimals = 0,
+    groupThousands = false,
     className = '',
     duration = 350,
 }: PremiumCountUpProps) {
@@ -43,7 +47,7 @@ const PremiumCountUp = memo(function PremiumCountUp({
     const formatValue = (val: number): string => {
         if (Math.abs(val) < 0.01 && decimals > 0) return ' ';
         if (Math.abs(val) < 0.1 && decimals === 0) return ' ';
-        return `${prefix}${val.toFixed(decimals)}${suffix}`;
+        return `${prefix}${groupThousands ? formatNumberSpanish(val, decimals) : val.toFixed(decimals)}${suffix}`;
     };
 
     useEffect(() => {
@@ -101,7 +105,7 @@ const PremiumCountUp = memo(function PremiumCountUp({
                 cancelAnimationFrame(animationRef.current);
             }
         };
-    }, [value, duration, decimals, suffix, prefix]);
+    }, [value, duration, decimals, suffix, prefix, groupThousands]);
 
     return (
         <span

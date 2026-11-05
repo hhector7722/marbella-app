@@ -27,7 +27,7 @@ function computed(input: Closing): Closing {
     };
 }
 function euros(v: number) {
-    return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+    return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', useGrouping: 'always' });
 }
 
 export default function VentasClosingEditor({ closingId, onClose, onSaved }: {

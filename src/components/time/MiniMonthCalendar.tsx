@@ -93,7 +93,7 @@ export function MiniMonthCalendar({
                                 if (!disabled) onSelectDay(day);
                             }}
                             disabled={disabled}
-                            aria-label={format(day, 'yyyy-MM-dd') + (today ? ', hoy' : '') + (amount == null ? '' : ', venta neta ' + amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }))}
+                            aria-label={format(day, 'yyyy-MM-dd') + (today ? ', hoy' : '') + (amount == null ? '' : ', venta neta ' + amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', useGrouping: 'always' }))}
                             aria-current={today ? 'date' : undefined}
                             className={cn(
                                 'flex items-center justify-center rounded-lg text-[11px] font-black transition-all',
@@ -126,7 +126,7 @@ export function MiniMonthCalendar({
                             ) : (
                                 <span>{format(day, 'd')}</span>
                             )}
-                            {dayAmounts && amount != null && <span className={cn('max-w-full whitespace-nowrap text-[8px] font-semibold tracking-tight', selected ? '' : dark ? 'text-emerald-200' : 'text-emerald-700')}>{Math.round(amount).toLocaleString('es-ES')}€</span>}
+                            {dayAmounts && amount != null && <span className={cn('max-w-full whitespace-nowrap text-[8px] font-semibold tracking-tight', selected ? '' : dark ? 'text-emerald-200' : 'text-emerald-700')}>{Math.round(amount).toLocaleString('es-ES', { useGrouping: 'always' })}€</span>}
                         </button>
                     );
                 })}

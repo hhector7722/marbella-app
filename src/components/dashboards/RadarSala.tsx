@@ -361,7 +361,7 @@ function RadarSalaActive({ variant }: { variant: 'default' | 'ventas' }) {
                   </span>
                   <span className="shrink-0 text-[10px] tabular-nums text-white/60">{status.hora}</span>
                   <strong className="shrink-0 whitespace-nowrap text-xs tabular-nums">
-                    {total.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                    {total.toLocaleString('es-ES', { useGrouping: 'always', minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                   </strong>
                 </div>
                 <ul className="space-y-1 px-3 py-2 text-[11px]">
@@ -373,7 +373,7 @@ function RadarSalaActive({ variant }: { variant: 'default' | 'ventas' }) {
                       </span>
                       {Number(p.precio) > 0 && (
                         <span className="shrink-0 tabular-nums text-white/65">
-                          {(Number(p.precio) * Number(p.unidades)).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                          {(Number(p.precio) * Number(p.unidades)).toLocaleString('es-ES', { useGrouping: 'always', minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                         </span>
                       )}
                     </li>

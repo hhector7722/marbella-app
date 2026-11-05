@@ -674,17 +674,17 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                             instance="dashboard-ventas-total"
                             label="Ventas"
                         >
-                            <PremiumCountUp value={displaySummary.total} suffix="€" decimals={2} />
+                            <PremiumCountUp value={displaySummary.total} suffix="€" decimals={2} groupThousands />
                         </KpiStat>
                     </div>
                     <div className="flex flex-col items-center justify-center text-center">
                         <KpiStat instance="dashboard-ventas-neta" label="Venta Neta" tone="positive">
-                        <PremiumCountUp value={liveNetSales(displaySummary.total)} suffix="€" decimals={2} />
+                        <PremiumCountUp value={liveNetSales(displaySummary.total)} suffix="€" decimals={2} groupThousands />
                         </KpiStat>
                     </div>
                     <div className="flex flex-col items-center justify-center text-center">
                         <KpiStat instance="dashboard-ventas-ticket" label="Ticket Medio" tone="info">
-                        <PremiumCountUp value={displaySummary.count > 0 ? displaySummary.total / displaySummary.count : 0} suffix="€" decimals={2} />
+                        <PremiumCountUp value={displaySummary.count > 0 ? displaySummary.total / displaySummary.count : 0} suffix="€" decimals={2} groupThousands />
                         </KpiStat>
                     </div>
                     </>

@@ -324,7 +324,7 @@ export function HomeSalesMobileSummary({
                                             onClick={() => setHourSelection(current => current?.date === date && current.hour === hour
                                                 ? null : { date, hour })}
                                             aria-pressed={selectedHour === hour}
-                                            aria-label={`${hour}h a ${hour + 1}h: ${value.toLocaleString('es-ES', { maximumFractionDigits: 2 })}€; pulsar para ${selectedHour === hour ? 'quitar' : 'filtrar'}`} />
+                                            aria-label={`${hour}h a ${hour + 1}h: ${value.toLocaleString('es-ES', { useGrouping: 'always', maximumFractionDigits: 2 })}€; pulsar para ${selectedHour === hour ? 'quitar' : 'filtrar'}`} />
                                     );
                                 })}
                             </>
@@ -340,7 +340,7 @@ export function HomeSalesMobileSummary({
                                 <div key={hour.hora} data-muted-hour={selectedHour !== null && selectedHour !== hour.hora ? 'true' : undefined}
                                     data-current-hour={hour.hora === currentHour ? 'true' : undefined}
                                     className="col-span-3 grid min-w-0 grid-cols-subgrid items-baseline text-[8px] leading-[1.15]"
-                                    title={`${hour.hora}h - ${hour.hora + 1}h${hour.hora === currentHour ? ' (en curso)' : ''}: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
+                                    title={`${hour.hora}h - ${hour.hora + 1}h${hour.hora === currentHour ? ' (en curso)' : ''}: ${hourUnits[hour.hora] ?? '—'} unidades · ${hour.total.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', useGrouping: 'always' })}`}>
                                     <span className="min-w-0 truncate text-left text-[var(--home-widget-ink)]"
                                         style={hour.hora === currentHour ? { color: '#4ade80' } : undefined}>
                                         <span className="lg:hidden"
@@ -349,10 +349,10 @@ export function HomeSalesMobileSummary({
                                             style={hour.hora === currentHour ? { color: '#4ade80' } : undefined}>{hour.hora}:00 - {hour.hora + 1}:00</span>
                                     </span>
                                     <span data-element="mobile-sales-units" className="justify-self-center whitespace-nowrap text-center text-[7px]">
-                                        {hourUnits[hour.hora] !== undefined ? `${hourUnits[hour.hora].toLocaleString('es-ES')} u` : ''}
+                                        {hourUnits[hour.hora] !== undefined ? `${hourUnits[hour.hora].toLocaleString('es-ES', { useGrouping: 'always' })} u` : ''}
                                     </span>
                                     <span data-element="mobile-sales-amount" className="justify-self-end whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]"
-                                        style={hour.hora === currentHour ? { color: '#4ade80' } : undefined}>{Math.round(hour.total).toLocaleString('es-ES')}€</span>
+                                        style={hour.hora === currentHour ? { color: '#4ade80' } : undefined}>{Math.round(hour.total).toLocaleString('es-ES', { useGrouping: 'always' })}€</span>
                                 </div>
                             ) : <div key={`empty-hour-${index}`} className="col-span-3" aria-hidden="true" />)}
                         </div>
@@ -360,7 +360,7 @@ export function HomeSalesMobileSummary({
                             {displayProducts.map((product, index) => (
                                 <div key={`${product.name}-${index}`}
                                     className="col-span-4 grid min-w-0 grid-cols-subgrid items-center text-[8px] leading-[1.15]"
-                                    title={`${product.name}: ${product.quantity} unidades · ${product.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`}>
+                                    title={`${product.name}: ${product.quantity} unidades · ${product.revenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', useGrouping: 'always' })}`}>
                                     <span data-element="mobile-sales-product-label" className="flex min-w-0 items-center gap-1 text-left text-[var(--home-widget-ink)]">
                                         <span className="shrink-0 lg:hidden">{index + 1}.</span>
                                         <span className="hidden h-[22px] w-[22px] shrink-0 items-center justify-center lg:inline-flex">
@@ -375,8 +375,8 @@ export function HomeSalesMobileSummary({
                                         <span className="block h-full rounded-full bg-[#70b5ff]"
                                             style={{ width: `${topProductRevenue > 0 ? Math.min(100, Math.max(0, Number(product.revenue) / topProductRevenue * 100)) : 0}%` }} />
                                     </span>
-                                    <span data-element="mobile-sales-units" className="justify-self-end whitespace-nowrap text-right text-[7px]">{product.quantity.toLocaleString('es-ES')}</span>
-                                    <span data-element="mobile-sales-amount" className="justify-self-end whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">{product.revenue.toLocaleString('es-ES', { maximumFractionDigits: 2 })}€</span>
+                                    <span data-element="mobile-sales-units" className="justify-self-end whitespace-nowrap text-right text-[7px]">{product.quantity.toLocaleString('es-ES', { useGrouping: 'always' })}</span>
+                                    <span data-element="mobile-sales-amount" className="justify-self-end whitespace-nowrap text-right text-[var(--home-widget-ink-secondary)]">{product.revenue.toLocaleString('es-ES', { useGrouping: 'always', maximumFractionDigits: 2 })}€</span>
                                 </div>
                             ))}
                             {selectedHour !== null && displayProducts.length === 0 && (

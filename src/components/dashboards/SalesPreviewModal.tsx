@@ -83,11 +83,11 @@ export function SalesPreviewModal({ preview, onClose, source = 'sales' }: { prev
                     )}
                     <span className="shrink-0 whitespace-nowrap">
                         <strong className="text-white">{currentFacts?.tickets == null ? '—' :
-                            currentFacts.tickets.toLocaleString('es-ES')}</strong> tickets
+                            currentFacts.tickets.toLocaleString('es-ES', { useGrouping: 'always' })}</strong> tickets
                     </span>
                     <span className="shrink-0 whitespace-nowrap">
                         <strong className="text-white">{currentFacts?.avgTicket == null ? '—' :
-                            currentFacts.avgTicket.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</strong> medio
+                            currentFacts.avgTicket.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', useGrouping: 'always' })}</strong> medio
                     </span>
                 </div>
             }>
