@@ -10081,10 +10081,21 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   [data-instance='home-sales-preview'],
   [data-instance='master-last-closing-sales-summary'],
   [data-instance='ventas-mobile-kpi-details']
-) [data-element='container'] {
+) [data-element='container'],
+[data-element='ventas-desktop-kpi-tooltip'] [data-element='container'] {
   background: var(--ventas-premium-main);
   outline: 1px solid var(--ventas-premium-edge);
   box-shadow: var(--ventas-premium-shadow-main), var(--elevacion-modal);
+}
+/* El hover de escritorio reutiliza las medidas de cabecera y cuerpo del
+   modal táctil; solo cambia el mecanismo de apertura. */
+[data-element='ventas-desktop-kpi-tooltip'] [data-element='header'] {
+  padding-inline: var(--modal-header-inset);
+}
+[data-element='ventas-desktop-kpi-tooltip'] [data-element='body'] {
+  padding-top: var(--modal-body-start-gap);
+  padding-inline-start: var(--modal-content-inset-start);
+  padding-inline-end: var(--modal-content-inset-end);
 }
 /* En el detalle, las dos tarjetas comparten una única superficie. El ranking
    de productos no añade un segundo fondo dentro de su tarjeta. */

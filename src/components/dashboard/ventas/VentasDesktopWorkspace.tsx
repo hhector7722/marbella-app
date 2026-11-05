@@ -870,19 +870,29 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                 })}
             </div>
             {hover && showHelp && typeof document !== 'undefined' && createPortal(
-                <div role="tooltip" aria-label={`Información de ${hover.label}`}
-                    className="pointer-events-none fixed z-[9999] w-[360px] max-w-[calc(100vw-16px)] overflow-y-auto rounded-ds-superficie bg-[var(--color-envolvente-bajo)] text-ds-texto-invertido shadow-ds-modal"
+                <div data-element="ventas-desktop-kpi-tooltip" role="tooltip"
+                    aria-label={`Información de ${hover.label}`}
+                    className="pointer-events-none fixed z-[9999] w-[360px] max-w-[calc(100vw-16px)]"
                     style={{ left: tooltipX, top: tooltipY, maxHeight: 'min(70vh, 440px)' }}>
-                    <div className="flex h-ds-modal-header items-center border-b border-white/15 px-4">
-                        <h2 className="text-[12px] font-medium uppercase tracking-wide text-white">
-                            {hovered.payment === 'cash' ? 'Billetes y monedas' : 'Cómo se calcula'}
-                        </h2>
+                    <div data-element="container"
+                        className="flex max-h-[min(70vh,440px)] min-h-0 w-full flex-col overflow-hidden rounded-ds-superficie text-ds-texto-invertido">
+                        <div data-element="header"
+                            className="relative flex h-ds-modal-header min-h-ds-modal-header shrink-0 items-center overflow-hidden border-b border-white/15 text-ds-texto-invertido">
+                            <div data-element="heading"
+                                className="flex min-h-0 min-w-0 flex-1 items-center gap-ds-2 overflow-hidden">
+                                <h2 className="min-w-0 flex-1 truncate text-[clamp(0.5625rem,2.4vw,0.75rem)] font-medium uppercase tracking-wide text-ds-texto-invertido">
+                                    {hovered.payment === 'cash' ? 'Billetes y monedas' : 'Cómo se calcula'}
+                                </h2>
+                            </div>
+                        </div>
+                        <div data-element="body" className="custom-scrollbar min-h-0 overflow-y-auto">
+                            <FinancialInfoBody
+                                kind={hovered.payment === 'cash' ? 'cash' : 'performance'}
+                                tooltip={hovered.tooltip ?? ''}
+                                cashBreakdown={cashBreakdown}
+                            />
+                        </div>
                     </div>
-                    <FinancialInfoBody
-                        kind={hovered.payment === 'cash' ? 'cash' : 'performance'}
-                        tooltip={hovered.tooltip ?? ''}
-                        cashBreakdown={cashBreakdown}
-                    />
                 </div>, document.body
             )}
         </div>
