@@ -106,7 +106,7 @@ export function MiniMonthCalendar({
                                 disabled && (dark ? 'cursor-not-allowed text-white/25' : 'cursor-not-allowed text-zinc-300'),
                                 dark
                                     ? selected
-                                        ? 'bg-[var(--color-envolvente-alto)] text-white'
+                                        ? amount != null ? 'border text-zinc-900 ring-2 ring-white ' + salesCalendarTone(amount, sortedSales) : 'bg-[var(--color-envolvente-alto)] text-white'
                                         : inRange
                                           ? 'bg-white/15 text-white'
                                           : amount != null && !disabled
