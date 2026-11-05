@@ -103,3 +103,17 @@ export function MonthPickerGrid({
         </div>
     );
 }
+
+/** Misma clasificación por percentil de ventas que el calendario de escritorio. */
+export function salesCalendarTone(value: number, sortedPositiveValues: number[]): string {
+    if (sortedPositiveValues.length < 2 || sortedPositiveValues[0] === sortedPositiveValues[sortedPositiveValues.length - 1]) {
+        return 'border-emerald-300 bg-emerald-100/95';
+    }
+    const index = sortedPositiveValues.findIndex(net => net >= value);
+    const position = (index < 0 ? sortedPositiveValues.length - 1 : index) / (sortedPositiveValues.length - 1);
+    if (position < 0.05) return 'border-orange-300 bg-orange-100/95';
+    if (position < 0.12) return 'border-yellow-300 bg-yellow-100/95';
+    if (position < 0.25) return 'border-lime-300 bg-lime-100/95';
+    if (position < 0.65) return 'border-emerald-200 bg-emerald-50/95';
+    return 'border-emerald-400 bg-emerald-100/95';
+}
