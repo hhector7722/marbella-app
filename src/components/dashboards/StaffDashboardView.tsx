@@ -163,13 +163,13 @@ function StaffFichajeShortcutShell({
             className={onClick ? 'touch-manipulation transition-all active:scale-95 disabled:opacity-70' : undefined}
             style={shortcutFill ? { ['--shortcut-fill' as string]: shortcutFill } : undefined}
         >
-            <div data-element="iconWrap">
+            <div data-element="iconWrap" data-elapsed="finished">
                 <div data-element="iconBox">
                     <div data-element="asset" className="flex h-full w-full items-center justify-center">
                         {children}
                     </div>
+                    <span data-element="rim" aria-hidden />
                 </div>
-                <span data-element="rim" aria-hidden />
             </div>
             <span data-element="text" className={hideLabel ? 'invisible' : undefined} aria-hidden={hideLabel}>
                 {label}
@@ -192,7 +192,7 @@ function StaffFichajeWorkingControl({
     return (
         <div data-component="StaffFichajeControl" data-layout="dual-stack" data-plate="fill">
             <div data-element="iconStack">
-                <div data-element="iconWrap">
+                <div data-element="iconWrap" data-elapsed="working">
                     <div
                         data-element="iconBox"
                         aria-live="polite"
@@ -204,8 +204,8 @@ function StaffFichajeWorkingControl({
                         >
                             <WorkTimer clockIn={clockIn || null} compact mini inverted />
                         </div>
+                        <span data-element="rim" aria-hidden />
                     </div>
-                    <span data-element="rim" aria-hidden />
                 </div>
                 <div data-element="iconWrap">
                     <button
