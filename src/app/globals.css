@@ -11811,24 +11811,20 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 }
 
 
-/* Ventas y Venta neta en todas las vistas: satinado opaco, sin contorno
-   visible ni sombras exteriores. Conservar el borde transparente evita
-   cualquier variación de dimensiones respecto al resto de indicadores. */
+/* Ventas y Venta neta en todas las vistas: superficies opacas, prácticamente
+   sólidas, con un degradado muy suave y sin sombras ni contornos visibles.
+   El borde transparente conserva exactamente las dimensiones existentes. */
 .ventas-kpi-primary[data-kpi-tone='sales'] {
-  background-color: #28618F;
-  background-image: linear-gradient(180deg, #30709F 0%, #28618F 35%, #1B4C79 100%);
+  background-color: #286B9D;
+  background-image: linear-gradient(180deg, #286B9D 0%, #24618F 100%);
   border-color: transparent;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.12),
-    inset 0 -2px 3px rgb(19 61 94 / 0.11);
+  box-shadow: none;
 }
 .ventas-kpi-primary[data-kpi-tone='net'] {
-  background-color: #247B66;
-  background-image: linear-gradient(180deg, #2D9179 0%, #247B66 35%, #17614F 100%);
+  background-color: #218C70;
+  background-image: linear-gradient(180deg, #218C70 0%, #1D7E65 100%);
   border-color: transparent;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.12),
-    inset 0 -2px 3px rgb(14 76 59 / 0.11);
+  box-shadow: none;
 }
 .ventas-kpi-primary[data-kpi-tone] :is(span, strong) {
   color: #fff !important;
