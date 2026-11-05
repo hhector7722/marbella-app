@@ -11,6 +11,7 @@ import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import { salesCalendarTone } from '@/components/time/MonthPickerGrid';
 import { timeFilterBounds, type TimeFilterValue } from '@/components/time/time-filter-types';
 import { cn } from '@/lib/utils';
 import { randomId } from '@/lib/random-id';
@@ -1082,19 +1083,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     // Predominan los verdes; amarillo y naranja quedan para los días más flojos.
     // Los triángulos de rendimiento histórico se calculan por separado.
     const monthNetSorted = [...monthNetValues].sort((a, b) => a - b);
-    const calendarSalesTone = (value: number) => {
-        if (monthNetSorted.length < 2 || monthNetSorted[0] === monthNetSorted[monthNetSorted.length - 1]) {
-            return 'border-emerald-300 bg-emerald-100/95';
-        }
-        const firstGreaterOrEqual = monthNetSorted.findIndex(net => net >= value);
-        const position = (firstGreaterOrEqual < 0 ? monthNetSorted.length - 1 : firstGreaterOrEqual) /
-            (monthNetSorted.length - 1);
-        if (position < 0.05) return 'border-orange-300 bg-orange-100/95';
-        if (position < 0.12) return 'border-yellow-300 bg-yellow-100/95';
-        if (position < 0.25) return 'border-lime-300 bg-lime-100/95';
-        if (position < 0.65) return 'border-emerald-200 bg-emerald-50/95';
-        return 'border-emerald-400 bg-emerald-100/95';
-    };
+    const calendarSalesTone = (value: number) => salesCalendarTone(value, monthNetSorted);
 
     const changePeriod = (next: Period, keepReturn = false) => {
         setCrossSelection(null);
