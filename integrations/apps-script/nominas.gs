@@ -1,199 +1,205 @@
 /**
- * GOOGLE APPS SCRIPT — TRANSPORTADOR E2E (EXTRACCIÓN EN ORIGEN)
- * Extrae texto vía Drive OCR para evitar Timeouts en Vercel.
+ * BAR LA MARBELLA — IMPORTACIÓN DE NÓMINAS DESDE GMAIL
+ * Cuenta del activador: marbellaremote@gmail.com
+ * Requiere el servicio avanzado Drive API v3 y WEBHOOK_SECRET en Propiedades del script.
+ *
+ * Solo procesa nóminas salariales y resúmenes de costes. No utiliza el estado
+ * leído/no leído para decidir si hay archivos pendientes.
  */
-
 var CONFIG = {
-  SENDER_EMAIL: 'gpierola@sevenlawfirm.com', 
+  SENDER_EMAIL: 'gpierola@sevenlawfirm.com',
   PERSONAL_EMAIL: 'hhector7722@gmail.com',
-  NEXT_API_URL: 'https://marbella-app.vercel.app/api/webhooks/nominas', 
+  REMOTE_EMAIL: 'marbellaremote@gmail.com',
+  NEXT_API_URL: 'https://marbella-app.vercel.app/api/webhooks/nominas',
   NEXT_API_URL_SUMMARY: 'https://marbella-app.vercel.app/api/webhooks/nominas-summary',
   ADMIN_EMAIL: 'hhector7722@gmail.com',
   LABEL_PROCESADO: 'nominas/procesada',
   LABEL_ERROR: 'nominas/error',
-  // Excluir "Registro de jornada..." (varía por mes / separadores / mayúsculas)
-  // Se evalúan contra el nombre normalizado (minúsculas, sin tildes, solo a-z0-9 y espacios).
-  // Regla base: si contiene "registro" (o "reg") y "jornada" en cualquier orden/posición → excluir.
-  EXCLUDED_FILENAME_REGEXES: [
-    /\breg(?:istro)?\b[\s\S]*\bjornada\b/i,
-    /\bjornada\b[\s\S]*\breg(?:istro)?\b/i
-  ],
-  SUMMARY_PATTERNS: ['Costes de empres', 'Costes de empresa', 'Resumen de Nómina']
+  SEARCH_DAYS: 90,
+  PAGE_SIZE: 25,
+  MAX_THREADS: 250
 };
 
-function _normalizeFilenameForMatch(name) {
-  if (!name) return '';
-  // Quita tildes/diacríticos y normaliza separadores para hacer match estable.
-  return name
-    .toString()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    // Convierte cualquier separador/puntuación a espacio (guiones, puntos, underscores, paréntesis, etc.)
-    .replace(/[^a-z0-9]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+function _normalizarNombre(name) {
+  return String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-function _shouldExcludeAttachmentByFilename(filename) {
-  var normalized = _normalizeFilenameForMatch(filename);
-
-  return (CONFIG.EXCLUDED_FILENAME_REGEXES || []).some(function (re) {
-    try {
-      return re.test(normalized);
-    } catch (e) {
-      return false;
-    }
-  });
-}
-
-function isValidDNI(dni) {
-  var validChars = 'TRWAGMYFPDXBNJZSQVHLCKE';
-  var regex = /^[XYZ]?\d{7,8}[A-Z]$/i;
-  if (!regex.test(dni)) return false;
-  var str = dni.toUpperCase();
-  var letter = str.slice(-1);
-  var numberStr = str.slice(0, -1);
-  numberStr = numberStr.replace('X', '0').replace('Y', '1').replace('Z', '2');
-  var number = parseInt(numberStr, 10);
-  var calculatedLetter = validChars.charAt(number % 23);
-  return letter === calculatedLetter;
-}
-
-function extractDNIFromText(text) {
-  var dniRegex = /(?:[XYZ][- \.]?[0-9]{7,8}[- \.]?[A-Z]|[0-9]{7,8}[- \.]?[A-Z])/gi;
-  var matches = text.match(dniRegex) || [];
-  
-  for (var i = 0; i < matches.length; i++) {
-    var cleanMatch = matches[i].replace(/[- \.]/g, '').toUpperCase();
-    if (/^[XYZ]0\d{7}[A-Z]$/.test(cleanMatch)) {
-      cleanMatch = cleanMatch.charAt(0) + cleanMatch.substring(2);
-    }
-    if (/^\d{7}[A-Z]$/.test(cleanMatch)) {
-      cleanMatch = '0' + cleanMatch;
-    }
-    if (isValidDNI(cleanMatch)) return cleanMatch;
+/** Devuelve individual, summary o null. Nunca infiere el tipo a partir de un DNI. */
+function _tipoNominaPorNombre(filename) {
+  if (!/\.pdf$/i.test(String(filename || ''))) return null;
+  var name = _normalizarNombre(filename);
+  // Un contrato, un alta o una baja NO son nóminas, aunque contengan un DNI.
+  if (/\b(registro|reg)\b.*\bjornada\b|\bjornada\b.*\b(registro|reg)\b/.test(name) ||
+      /\b(contrato|baja|alta|finiquito|solicitud|liquidacion|certificado)\b/.test(name)) {
+    return null;
+  }
+  if (/^(costes? de empres(?:a)?|costes? de emrpesa|resumen de nomina)\b/.test(name)) {
+    return 'summary';
+  }
+  if (/^nominas?\b/.test(name) || /^recibos? de salario\b/.test(name)) {
+    return 'individual';
   }
   return null;
 }
 
-function procesarNominasEntrantes() {
-  var props = PropertiesService.getScriptProperties();
-  var secret = props.getProperty('WEBHOOK_SECRET');
-  if (!secret) return;
-
-  // 🧠 Motor de Búsqueda: Incluye Gestoría, Personal y Remote
-  var query = '(from:' + CONFIG.SENDER_EMAIL + ' OR from:' + CONFIG.PERSONAL_EMAIL + ' OR from:marbellaremote@gmail.com)' + 
-              ' is:unread has:attachment filename:pdf' + 
-              ' -label:' + CONFIG.LABEL_PROCESADO.replace('/', '-') + 
-              ' -label:' + CONFIG.LABEL_ERROR.replace('/', '-');
-
-  var threads = GmailApp.search(query);
-  if (threads.length === 0) return;
-
-  var labelOk = _getOrCreateLabel(CONFIG.LABEL_PROCESADO);
-  var labelError = _getOrCreateLabel(CONFIG.LABEL_ERROR);
-
-  threads.forEach(function (thread) {
-    var messages = thread.getMessages();
-    var lastMessage = messages[messages.length - 1];
-    if (!lastMessage.isUnread()) return;
-
-    var emailDate = lastMessage.getDate();
-    var attachments = lastMessage.getAttachments({ includeInlineImages: false });
-    var errorEnHilos = false;
-
-    attachments.forEach(function (att) {
-      if (att.getContentType() !== 'application/pdf' && !att.getName().toLowerCase().endsWith('.pdf')) return;
-      var filename = att.getName();
-
-      if (_shouldExcludeAttachmentByFilename(filename)) {
-        Logger.log('⏭️ Archivo omitido por regla de exclusión: ' + filename);
-        return; 
-      }
-
-      var isSummary = CONFIG.SUMMARY_PATTERNS.some(function(pattern) {
-        return filename.toLowerCase().indexOf(pattern.toLowerCase()) !== -1;
-      });
-
-      
-      try {
-        var blob = att.copyBlob();
-        var fileId = Drive.Files.insert({title: filename, mimeType: 'application/pdf'}, blob, {ocr: true}).id;
-        var textDoc = DocumentApp.openById(fileId);
-        var textContent = textDoc.getBody().getText();
-        Drive.Files.remove(fileId);
-        
-        var b64 = Utilities.base64Encode(att.getBytes());
-        var payload;
-        var targetUrl;
-
-        if (isSummary) {
-          // PDF resumen de nóminas (coste total empresa): no requiere DNI.
-          payload = {
-            fileBase64: b64,
-            filename: filename, 
-            emailDate: emailDate.toISOString()
-          };
-          targetUrl = CONFIG.NEXT_API_URL_SUMMARY;
-        } else {
-          // Nómina individual: requiere DNI.
-          var extractedDni = extractDNIFromText(textContent);
-          if (!extractedDni) {
-            errorEnHilos = true;
-            _reportarError(lastMessage, 'DNI NO ENCONTRADO', 'No se detectó un DNI/NIE válido en el texto del PDF.', filename);
-            return;
-          }
-          payload = {
-            fileBase64: b64,
-            filename: filename, 
-            emailDate: emailDate.toISOString(),
-            extractedDni: extractedDni
-          };
-          targetUrl = CONFIG.NEXT_API_URL;
-        }
-
-        var options = {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + secret },
-          contentType: 'application/json',
-          payload: JSON.stringify(payload),
-          muteHttpExceptions: true
-        };
-
-        var response = UrlFetchApp.fetch(targetUrl, options);
-        var code = response.getResponseCode();
-        
-        if (code >= 200 && code < 300) {
-          Logger.log('✅ Subida a Supabase OK: ' + filename);
-        } else {
-          errorEnHilos = true;
-          _reportarError(lastMessage, 'HTTP ' + code, response.getContentText(), filename);
-        }
-      } catch (e) {
-        errorEnHilos = true;
-        _reportarError(lastMessage, 'FALLO SCRIPT', e.toString(), filename);
-      }
+function _esRemitenteAutorizado(from) {
+  var normalized = String(from || '').toLowerCase();
+  return [CONFIG.SENDER_EMAIL, CONFIG.PERSONAL_EMAIL, CONFIG.REMOTE_EMAIL]
+    .some(function(email) {
+      return normalized.indexOf('<' + email + '>') !== -1 ||
+             normalized.trim() === email ||
+             normalized.endsWith(' ' + email);
     });
-
-    if (!errorEnHilos) {
-      thread.addLabel(labelOk);
-      lastMessage.markRead();
-    } else {
-      thread.addLabel(labelError);
-    }
-  });
 }
 
-function _reportarError(message, tipo, detalle, fileName) {
-  var asunto = '[🚨 ERROR NÓMINA] ' + fileName;
-  var cuerpo = 'Error: ' + fileName + '\nTipo: ' + tipo + '\nDetalle: ' + detalle;
-  GmailApp.sendEmail(CONFIG.ADMIN_EMAIL, asunto, cuerpo);
-  Logger.log(asunto + ' - ' + detalle);
+function _dniValido(dni) {
+  var value = String(dni || '').replace(/[- .]/g, '').toUpperCase();
+  if (!/^(?:[0-9]{8}|[XYZ][0-9]{7})[A-Z]$/.test(value)) return false;
+  var digits = value.slice(0, -1).replace(/^X/, '0').replace(/^Y/, '1').replace(/^Z/, '2');
+  return value.slice(-1) === 'TRWAGMYFPDXBNJZSQVHLCKE'.charAt(parseInt(digits, 10) % 23);
+}
+
+function _extraerDNI(textContent) {
+  var matches = String(textContent || '').match(/(?:[XYZ][- .]?[0-9]{7}[- .]?[A-Z]|[0-9]{8}[- .]?[A-Z])/gi) || [];
+  for (var i = 0; i < matches.length; i++) {
+    var candidate = matches[i].replace(/[- .]/g, '').toUpperCase();
+    if (_dniValido(candidate)) return candidate;
+  }
+  return null;
+}
+
+/** Extrae DNI mediante Drive API v3. Limpia siempre el documento OCR temporal. */
+function _dniPorOCR(attachment) {
+  var fileId = null;
+  try {
+    var blob = attachment.copyBlob();
+    var converted = Drive.Files.create({
+      name: attachment.getName(),
+      mimeType: 'application/vnd.google-apps.document'
+    }, blob, { fields: 'id' });
+    fileId = converted.id;
+    if (!fileId) throw new Error('Drive OCR no devolvió ID');
+    var content = DocumentApp.openById(fileId).getBody().getText();
+    return _extraerDNI(content);
+  } finally {
+    if (fileId) {
+      try { Drive.Files.remove(fileId); }
+      catch (cleanError) { Logger.log('WARN limpieza OCR: ' + cleanError); }
+    }
+  }
+}
+
+/** Un webhook 2xx solo cuenta como éxito si confirma success:true. */
+function _subirAdjunto(attachment, type, emailDate, secret) {
+  var filename = attachment.getName();
+  var payload = {
+    filename: filename,
+    emailDate: emailDate.toISOString(),
+    fileBase64: Utilities.base64Encode(attachment.getBytes())
+  };
+  if (type === 'individual') {
+    try {
+      var dni = _dniPorOCR(attachment);
+      if (dni) payload.extractedDni = dni;
+      else Logger.log('WARN sin DNI OCR, se prueba parser del servidor: ' + filename);
+    } catch (ocrError) {
+      // El webhook individual también sabe leer el PDF mediante pdf2json.
+      Logger.log('WARN OCR, se prueba parser del servidor: ' + filename + ' · ' + ocrError);
+    }
+  }
+  var url = type === 'summary' ? CONFIG.NEXT_API_URL_SUMMARY : CONFIG.NEXT_API_URL;
+  var response = UrlFetchApp.fetch(url, {
+    method: 'POST',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + secret },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  var status = response.getResponseCode();
+  var body = response.getContentText() || '';
+  var parsed = null;
+  try { parsed = JSON.parse(body); } catch (_) {}
+  if (status < 200 || status >= 300 || !parsed || parsed.success !== true) {
+    throw new Error('Webhook ' + status + ': ' + body.slice(0, 400));
+  }
+  Logger.log('OK ' + type + ': ' + filename + (parsed.skipped ? ' (duplicado)' : ''));
+}
+
+/**
+ * No modifica etiquetas de un hilo hasta que TODOS sus PDF pertinentes hayan
+ * recibido confirmación. Mantiene la etiqueta de error para inspección manual.
+ */
+function procesarNominasEntrantes() {
+  var secret = PropertiesService.getScriptProperties().getProperty('WEBHOOK_SECRET');
+  if (!secret) throw new Error('Falta WEBHOOK_SECRET en Propiedades del script');
+
+  var query = '(from:' + CONFIG.SENDER_EMAIL + ' OR from:' + CONFIG.PERSONAL_EMAIL +
+    ' OR from:' + CONFIG.REMOTE_EMAIL + ') has:attachment filename:pdf' +
+    ' newer_than:' + CONFIG.SEARCH_DAYS + 'd';
+  var okLabel = _getOrCreateLabel(CONFIG.LABEL_PROCESADO);
+  var errorLabel = _getOrCreateLabel(CONFIG.LABEL_ERROR);
+  var checked = 0, done = 0, imported = 0, errors = 0;
+
+  for (var offset = 0; offset < CONFIG.MAX_THREADS; offset += CONFIG.PAGE_SIZE) {
+    var threads = GmailApp.search(query, offset, CONFIG.PAGE_SIZE);
+    if (!threads.length) break;
+    for (var t = 0; t < threads.length; t++) {
+      var thread = threads[t];
+      var labels = thread.getLabels().map(function(l) { return l.getName(); });
+      if (labels.indexOf(CONFIG.LABEL_PROCESADO) !== -1 ||
+          labels.indexOf(CONFIG.LABEL_ERROR) !== -1) continue;
+      checked++;
+      var relevant = 0, failed = false;
+      var messages = thread.getMessages();
+      for (var m = 0; m < messages.length; m++) {
+        var message = messages[m];
+        if (!_esRemitenteAutorizado(message.getFrom())) continue;
+        var attachments = message.getAttachments({ includeInlineImages: false });
+        for (var a = 0; a < attachments.length; a++) {
+          var attachment = attachments[a];
+          var type = _tipoNominaPorNombre(attachment.getName());
+          if (!type) {
+            Logger.log('OMITIDO documento no salarial: ' + attachment.getName());
+            continue;
+          }
+          relevant++;
+          try {
+            _subirAdjunto(attachment, type, message.getDate(), secret);
+            imported++;
+          } catch (error) {
+            failed = true;
+            errors++;
+            Logger.log('ERROR ' + attachment.getName() + ': ' + error);
+            _reportarError(message, 'IMPORTACIÓN', String(error), attachment.getName());
+          }
+        }
+      }
+      if (relevant > 0 && !failed) {
+        thread.addLabel(okLabel);
+        thread.markRead();
+        done++;
+      } else if (failed) {
+        thread.addLabel(errorLabel);
+      }
+    }
+    if (threads.length < CONFIG.PAGE_SIZE) break;
+  }
+  Logger.log('Nóminas: hilos revisados=' + checked + ', hilos completados=' + done +
+    ', archivos OK=' + imported + ', fallos=' + errors);
+  if (errors) throw new Error('Importación incompleta: ' + errors + ' PDF con error (ver etiqueta nominas/error)');
+}
+
+function _reportarError(message, type, detail, filename) {
+  try {
+    GmailApp.sendEmail(CONFIG.ADMIN_EMAIL, '[ERROR NÓMINA] ' + filename,
+      'Archivo: ' + filename + '\nTipo: ' + type + '\nDetalle: ' + detail +
+      '\nCorreo: ' + message.getSubject());
+  } catch (emailError) {
+    Logger.log('No se pudo enviar alerta: ' + emailError);
+  }
 }
 
 function _getOrCreateLabel(name) {
-  var label = GmailApp.getUserLabelByName(name);
-  if (!label) label = GmailApp.createLabel(name);
-  return label;
+  return GmailApp.getUserLabelByName(name) || GmailApp.createLabel(name);
 }
