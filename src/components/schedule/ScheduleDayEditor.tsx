@@ -1040,33 +1040,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         return enqueuePersist(false, true);
     }, [enqueuePersist]);
 
-    useEffect(() => {
-        if (!loading && hasUnsavedChanges) {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-            saveTimeoutRef.current = setTimeout(() => {
-                // El autoguardado NUNCA debe publicar, siempre guarda como borrador (false)
-                void enqueuePersist(false);
-            }, 1000);
-        }
-        return () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        };
-    }, [
-        activity,
-        activity2,
-        categoria,
-        categoria2,
-        defaultEnd,
-        defaultEnd2,
-        defaultStart,
-        defaultStart2,
-        hasUnsavedChanges,
-        loading,
-        participantsCount,
-        participantsCount2,
-        shifts,
-        enqueuePersist,
-    ]);
+    // No iniciar escrituras automáticas mientras se edita: podían dejar una
+    // cola de operaciones en curso y bloquear el botón de guardado explícito.
+    // Los cambios pendientes siguen guardándose al navegar mediante flushPendingChanges.
+
 
     useImperativeHandle(ref, () => ({
         openAddEmployee: () => setShowAddEmployeeModal(true),
