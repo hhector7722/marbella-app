@@ -550,6 +550,25 @@ html[data-quick-fab='open'] main {
 [data-component='Modal'] [data-element='footer']:has(> [data-element='footer-actions'] [data-schedule-notes-footer]) {
   padding-inline: 0;
 }
+/*
+ * Cabecera del horario: la fecha y sus dos flechas forman una unidad de
+ * anchura intrínseca. Evita el recorte de descendentes (g, p, j, q, y)
+ * provocado por text-box-trim: trim-both del título genérico de Modal.
+ */
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='heading'] h2 {
+  overflow: visible;
+  line-height: 1.4;
+  text-box-trim: none;
+  text-box-edge: auto;
+}
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-date-navigation'] {
+  max-width: 100%;
+}
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-date-label'] {
+  line-height: 1.45;
+  padding-block: 0.25rem;
+}
+
 /* Sin línea horizontal sobre el pie de notas. */
 [data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] {
   border-top: 0;
