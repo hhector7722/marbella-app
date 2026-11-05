@@ -3329,6 +3329,34 @@ button[data-element='catalog-filter'] {
   border: 0;
   padding: 0;
 }
+
+/*
+ * Registro: al iniciar o terminar el turno, la pastilla del tiempo trabajado
+ * se ajusta a la altura de los dígitos. El hueco de icono no cambia: así
+ * conservamos la posición del contador, de «Salida» y de la etiqueta.
+ */
+[data-component='StaffFichajeControl'] [data-element='iconWrap'][data-elapsed] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+[data-component='StaffFichajeControl'] [data-element='iconWrap'][data-elapsed='finished'] {
+  height: var(--home-icon-size);
+  flex: 0 0 var(--home-icon-size);
+}
+[data-component='StaffFichajeControl'] [data-element='iconWrap'][data-elapsed] [data-element='iconBox'] {
+  aspect-ratio: auto;
+  height: auto;
+  min-height: 0;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.22);
+}
+[data-component='StaffFichajeControl'] [data-element='iconWrap'][data-elapsed] [data-element='asset'],
+[data-component='StaffFichajeControl'][data-layout='dual-stack'] [data-element='iconWrap'][data-elapsed] [data-element='iconBox'] [data-element='asset'] {
+  height: auto;
+  min-height: 0;
+  padding: 0.5rem 0;
+}
 /*
  * Caja inicial y Cajas cambio del Master — dos en uno. Mismo lenguaje que el
  * fichaje en turno, pero repartiendo solo el hueco del icono: el nombre vive
