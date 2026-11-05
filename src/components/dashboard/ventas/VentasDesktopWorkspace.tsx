@@ -2170,12 +2170,14 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                             'month-cal-cell relative z-[1] flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-transparent p-0.5 last:border-r-0 transition-colors hover:bg-sky-50/40',
                                                             !isSameMonth(day, month) && !selected && 'opacity-35'
                                                         )}>
-                                                        <span data-element="sales-calendar-day-number" className={cn(
-                                                            'absolute right-1 top-0.5 text-[9px] font-medium tabular-nums',
-                                                            selected ? 'rounded-[5px] bg-[#345e91] px-1.5 py-0.5 font-bold text-white' : 'text-slate-400'
-                                                        )}>{format(day, 'd')}</span>
+                                                        <span data-element="sales-calendar-day-heading" className="flex h-[17px] w-full shrink-0 items-start justify-end pr-0.5">
+                                                            <span data-element="sales-calendar-day-number" className={cn(
+                                                                'inline-block min-w-[12px] text-center text-[10px] font-medium leading-[14px] tabular-nums',
+                                                                selected ? 'border-b-2 border-[#3976ae] font-bold text-[#225787]' : 'text-slate-400'
+                                                            )}>{format(day, 'd')}</span>
+                                                        </span>
                                                         {net !== null && Number.isFinite(net) && (
-                                                            <div className="flex min-h-0 w-full flex-1 items-center justify-center px-0.5 pt-2 text-center">
+                                                            <div data-element="sales-calendar-amount-slot" className="flex min-h-0 w-full flex-1 items-center justify-center px-0.5 text-center">
                                                                 <span title={(isLiveToday ? 'Ventas de hoy (en curso): ' : '') + euro(net) + performanceDescription} className={cn(
                                                                     'inline-flex w-max max-w-none items-center justify-center gap-1 whitespace-nowrap rounded-md border px-1 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums',
                                                                     calendarSalesTone(net)
