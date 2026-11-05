@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ReactNode, type MouseEvent, type FocusEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type MouseEvent, type FocusEvent } from 'react';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
@@ -64,6 +64,15 @@ const euro = (v: unknown) => (Number(v ?? 0)).toLocaleString('es-ES', { minimumF
 const compactDoc = (id: string) => id.replace(/^0+/, '').replace(/(B)0+(?=\d)/i, '$1');
 const EMPTY_ITEMS: Item[] = [];
 const PAGE_SIZE = 7;
+// El calendario con importes está en la versión de escritorio.
+const DESKTOP_SALES_CALENDAR_QUERY = '(min-width: 1024px)';
+const subscribeDesktopSalesCalendar = (onChange: () => void) => {
+    const media = window.matchMedia(DESKTOP_SALES_CALENDAR_QUERY);
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+};
+const getDesktopSalesCalendarSnapshot = () => window.matchMedia(DESKTOP_SALES_CALENDAR_QUERY).matches;
+const getServerSalesCalendarSnapshot = () => false;
 type Period = { start: string; end: string; kind: 'day' | 'week' | 'month' | 'range' };
 const todayPeriod = (): Period => {
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -937,6 +946,13 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
     const [liveDaySales, setLiveDaySales] = useState<{ date: string; total: number } | null>(null);
+    const [salesClock, setSalesClock] = useState(() => new Date());
+    const desktopSalesCalendar = useSyncExternalStore(
+        subscribeDesktopSalesCalendar,
+        getDesktopSalesCalendarSnapshot,
+        getServerSalesCalendarSnapshot,
+    );
+    const currentSalesDate = format(salesClock, 'yyyy-MM-dd');
     const [monthReport, setMonthReport] = useState<TicketReport | null>(null);
     const [loadedMonthKey, setLoadedMonthKey] = useState<string | null>(null);
     const [monthClosings, setMonthClosings] = useState<CloseRow[]>([]);
@@ -958,6 +974,13 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const [crossPage, setCrossPage] = useState(0);
     const [crossLoading, setCrossLoading] = useState(false);
     const [crossError, setCrossError] = useState(false);
+    useEffect(() => {
+        const syncClock = () => setSalesClock(new Date());
+        const interval = window.setInterval(syncClock, 30_000);
+        window.addEventListener('focus', syncClock);
+        return () => { window.clearInterval(interval); window.removeEventListener('focus', syncClock); };
+    }, []);
+
     const periodKey = period.start + ':' + period.end;
     const periodTitle = periodLabel(period);
     // El resumen mensual y el calendario tienen navegación independiente.
@@ -1031,11 +1054,17 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         format(calendarWeeks[calendarWeeks.length - 1][6], 'yyyy-MM-dd');
     const calendarHistoricalNet = calendarHistory?.key === calendarHistoryKey ? calendarHistory.netByDate : null;
     const byDate = useMemo(() => new Map(calendarClosings.map(c => [c.closing_date, c])), [calendarClosings]);
+    // El día abierto utiliza ventas en vivo; los días cerrados mantienen el neto de caja.
+    const calendarLiveToday = desktopSalesCalendar && isSameMonth(month, salesClock)
+        && liveDaySales?.date === currentSalesDate && Number.isFinite(liveDaySales.total)
+        ? liveDaySales.total : null;
     const calendarWeekSeries = useMemo(() => calendarWeeks.map(week => week.map(day => {
-        const closing = byDate.get(format(day, 'yyyy-MM-dd'));
+        const iso = format(day, 'yyyy-MM-dd');
+        if (iso === currentSalesDate && calendarLiveToday !== null) return calendarLiveToday;
+        const closing = byDate.get(iso);
         const value = closing?.net_sales == null ? null : Number(closing.net_sales);
         return value !== null && Number.isFinite(value) ? value : null;
-    })), [calendarWeeks, byDate]);
+    })), [calendarWeeks, byDate, currentSalesDate, calendarLiveToday]);
     // Escala común mensual basada en mínimo y máximo reales, con margen visual.
     const calendarNetValues = calendarWeekSeries.flat().filter((value): value is number => value !== null);
     const calendarMinNet = calendarNetValues.length ? Math.min(...calendarNetValues) : 0;
@@ -1283,22 +1312,32 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         return () => { active = false; };
     }, [supabase, period.start, period.end, initializing]);
 
-    // Mantener sincronizadas las ventas, los tickets y los tramos horarios del
-    // día abierto: el informe inicial queda obsoleto cuando llegan tickets.
+    // El día abierto se actualiza aunque el usuario seleccione otro día en el
+    // calendario de escritorio. En móvil se conserva el refresco existente
+    // únicamente cuando está seleccionado hoy.
     useEffect(() => {
-        if (initializing || period.start !== period.end || period.start !== format(new Date(), 'yyyy-MM-dd')) return;
-        const date = period.start;
+        if (initializing) return;
+        const date = currentSalesDate;
+        const todaySelected = period.start === date && period.end === date;
+        const todayVisibleInDesktopCalendar = desktopSalesCalendar && isSameMonth(month, salesClock);
+        if (!todaySelected && !todayVisibleInDesktopCalendar) return;
+
         let active = true;
         let latestRequest = 0;
         const refresh = async () => {
             const request = ++latestRequest;
             const [sales, report] = await Promise.all([
                 supabase.rpc('get_daily_sales_stats', { target_date: date }),
-                supabase.rpc('get_ventas_crossfilter', { p_start_date: date, p_end_date: date, p_limit: 1 }),
+                todaySelected
+                    ? supabase.rpc('get_ventas_crossfilter', { p_start_date: date, p_end_date: date, p_limit: 1 })
+                    : Promise.resolve(null),
             ]);
             if (!active || request !== latestRequest) return;
-            if (!sales.error) setLiveDaySales({ date, total: Number(sales.data?.total_ventas ?? 0) });
-            if (!report.error && report.data) setDailyReport(report.data as TicketReport);
+            if (!sales.error) {
+                const total = Number(sales.data?.total_ventas ?? 0);
+                if (Number.isFinite(total)) setLiveDaySales({ date, total });
+            }
+            if (report && !report.error && report.data) setDailyReport(report.data as TicketReport);
         };
         void refresh();
         const channel = supabase.channel(`realtime_ventas_detail:${randomId()}`)
@@ -1306,12 +1345,15 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 if (String(payload.new?.fecha ?? '').split('T')[0] === date) void refresh();
             }).subscribe();
         const interval = setInterval(() => { void refresh(); }, 60000);
+        const onFocus = () => { void refresh(); };
+        window.addEventListener('focus', onFocus);
         return () => {
             active = false;
             clearInterval(interval);
+            window.removeEventListener('focus', onFocus);
             void supabase.removeChannel(channel);
         };
-    }, [supabase, period.start, period.end, initializing]);
+    }, [supabase, period.start, period.end, initializing, desktopSalesCalendar, currentSalesDate, month]);
 
     useEffect(() => {
         if (initializing) return;
@@ -1522,13 +1564,6 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     }, [supabase, period.start, period.end, initializing, closingRefresh]);
 
     const selectedClosing = isSingleDay ? periodClosings.find(c => c.closing_date === period.start) : undefined;
-    const [salesClock, setSalesClock] = useState(() => new Date());
-    useEffect(() => {
-        const syncClock = () => setSalesClock(new Date());
-        const interval = window.setInterval(syncClock, 30_000);
-        window.addEventListener('focus', syncClock);
-        return () => { window.clearInterval(interval); window.removeEventListener('focus', syncClock); };
-    }, []);
     const liveHour = previewMode !== 'month' && isSingleDay && !selectedClosing &&
         period.start === format(salesClock, 'yyyy-MM-dd') &&
         salesClock.getHours() >= FIRST_SALES_HOUR && salesClock.getHours() <= LAST_SALES_HOUR
@@ -2030,8 +2065,10 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                             {week.map(day => {
                                                 const iso = format(day, 'yyyy-MM-dd');
                                                 const closing = byDate.get(iso);
-                                                const net = closing?.net_sales == null ? null : Number(closing.net_sales);
-                                                const expectedNet = calendarHistoricalNet && net !== null && Number.isFinite(net)
+                                                const isLiveToday = iso === currentSalesDate && calendarLiveToday !== null;
+                                                const net = isLiveToday ? calendarLiveToday
+                                                    : closing?.net_sales == null ? null : Number(closing.net_sales);
+                                                const expectedNet = !isLiveToday && calendarHistoricalNet && net !== null && Number.isFinite(net)
                                                     ? historicalExpectedNet(iso, calendarHistoricalNet) : null;
                                                 const calendarImproved = expectedNet !== null && net !== null && net > expectedNet + 0.005;
                                                 const calendarDeclined = expectedNet !== null && net !== null && net < expectedNet - 0.005;
@@ -2042,7 +2079,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                 return (
                                                     <button key={iso} type="button" onClick={() => selectDate(iso)}
                                                         aria-pressed={selected}
-                                                        aria-label={'Seleccionar ' + iso + (net !== null && Number.isFinite(net) ? ', venta neta ' + euro(net) : '') + performanceDescription}
+                                                        aria-label={'Seleccionar ' + iso + (net !== null && Number.isFinite(net) ? (isLiveToday ? ', ventas de hoy en curso ' : ', venta neta ') + euro(net) : '') + performanceDescription}
                                                         className={cn(
                                                             'month-cal-cell relative z-[1] flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-transparent p-0.5 last:border-r-0 transition-colors hover:bg-zinc-50/40',
                                                             !isSameMonth(day, month) && 'opacity-35',
@@ -2053,7 +2090,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                             selected ? 'text-zinc-700' : 'text-slate-400')}>{format(day, 'd')}</span>
                                                         {net !== null && Number.isFinite(net) && (
                                                             <div className="flex min-h-0 w-full flex-1 items-center justify-center px-0.5 pt-2 text-center">
-                                                                <span title={euro(net) + performanceDescription} className={cn('inline-flex max-w-full items-center justify-center gap-0.5 rounded-md border px-1 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums', calendarSalesTone(net))}>
+                                                                <span title={(isLiveToday ? 'Ventas de hoy (en curso): ' : '') + euro(net) + performanceDescription} className={cn('inline-flex max-w-full items-center justify-center gap-0.5 rounded-md border px-1 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums', calendarSalesTone(net))}>
+                                                                    {isLiveToday ? <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600" /> : null}
                                                                     {(calendarImproved || calendarDeclined) && (
                                                                         <span aria-hidden="true" className={cn(
                                                                             'inline-block h-0 w-0 shrink-0 border-x-[3px] border-x-transparent',
