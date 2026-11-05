@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { MiniMonthCalendar } from "@/components/time/MiniMonthCalendar";
 import { MonthPickerGrid, monthCellDarkClassName, periodFilterTabClassName } from "@/components/time/MonthPickerGrid";
 import { trackUsageModalApply } from "@/lib/usage/client";
+import { cn } from "@/lib/utils";
 import { timeFilterApplySummary } from "@/lib/usage/modal-apply";
 
 function parseYmdLocal(dateStr: string): Date {
@@ -48,6 +49,7 @@ export function TimeFilterModal({
   quickRangePreset,
   calendarDayAmounts,
   onCalendarMonthChange,
+  salesDesktop = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -59,6 +61,8 @@ export function TimeFilterModal({
   quickRangePreset?: { label: string; value: Extract<TimeFilterValue, { kind: "range" }> };
   calendarDayAmounts?: Record<string, number>;
   onCalendarMonthChange?: (next: Date) => void;
+  /** Diseño ampliado y leyenda de colores solo en Ventas escritorio. */
+  salesDesktop?: boolean;
 }) {
   const pathname = usePathname();
   const initialKind = useMemo<TimeFilterKind>(() => {
@@ -207,18 +211,19 @@ export function TimeFilterModal({
     <Modal
       open={isOpen}
       onClose={onClose}
-      title="Filtro"
-      variant="compact"
+      title={salesDesktop ? "Filtrar ventas" : "Filtro"}
+      variant={salesDesktop ? "standard" : "compact"}
+      instance={salesDesktop ? "ventas-desktop-time-filter" : undefined}
       scheme="dark"
       usageId="time-filter"
       usageLabel="Filtro horario"
     >
-        <div className="space-y-3">
+        <div className={cn("space-y-3", salesDesktop && "space-y-4")}>
           {showKindTabs ? (
             <div
               role="tablist"
               aria-label="Tipo de periodo"
-              className="flex max-w-full overflow-hidden rounded-ds-control border border-white/15 bg-white/5 shadow-sm"
+              className={cn("flex max-w-full overflow-hidden rounded-ds-control border border-white/15 bg-white/5 shadow-sm", salesDesktop && "gap-1 rounded-xl border-white/10 bg-black/20 p-1")}
             >
               {visibleKinds.map((kind) => {
                 const selected = activeKind === kind;
@@ -229,7 +234,13 @@ export function TimeFilterModal({
                     role="tab"
                     aria-selected={selected}
                     onClick={() => setActiveKind(kind)}
-                    className={periodFilterTabClassName(selected, true)}
+                    className={cn(
+                      periodFilterTabClassName(selected, true),
+                      salesDesktop && "rounded-lg py-1 text-[11px] font-semibold",
+                      salesDesktop && (selected
+                        ? "!bg-white !text-[#23375a] shadow-sm"
+                        : "!bg-transparent !text-white/65 hover:!bg-white/10 hover:!text-white")
+                    )}
                   >
                     {KIND_LABEL[kind]}
                   </button>
@@ -237,6 +248,17 @@ export function TimeFilterModal({
               })}
             </div>
           ) : null}
+
+          {salesDesktop && (
+            <p className="px-1 text-[11px] leading-relaxed text-white/70">
+              {activeKind === "date" ? "Elige un día para consultar sus ventas."
+                : activeKind === "range" ? "Selecciona el primer día y después el último del periodo."
+                : activeKind === "week" ? "Selecciona un día para consultar su semana completa."
+                : activeKind === "month" ? "Selecciona el mes cuyas ventas quieres consultar."
+                : activeKind === "year" ? "Selecciona el año cuyas ventas quieres consultar."
+                : "Selecciona el horario que quieres consultar."}
+            </p>
+          )}
 
           {quickRangePreset && allowedKinds.includes("range") ? (
             <div className="flex justify-end">
@@ -306,7 +328,10 @@ export function TimeFilterModal({
                   }}><ChevronRight size={19}/></button>
                 </div>
               </div>
-              <button type="button" onClick={jumpToToday} className="shrink-0 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-100">Hoy</button>
+              <button type="button" onClick={jumpToToday} className={cn(
+                "shrink-0 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-100",
+                salesDesktop && "border border-white/20 !bg-white/10 !text-white hover:!bg-white/20"
+              )}>Hoy</button>
             </div>
           )}
 
@@ -316,12 +341,26 @@ export function TimeFilterModal({
                 month={calendarBaseDate}
                 monthInHeader
                 dark
+                salesDesktop={salesDesktop}
                 onMonthChange={next => { setCalendarBaseDate(next); onCalendarMonthChange?.(next); }}
                 dayAmounts={calendarDayAmounts}
                 onSelectDay={selectCalendarDay}
                 isSelected={calendarSelected}
                 isInRange={calendarInRange}
               />
+
+              {salesDesktop && (
+                <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/85">Colores de venta neta</p>
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[10px] text-white/85">
+                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-orange-300 bg-orange-200" />Muy bajas</span>
+                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-yellow-300 bg-yellow-200" />Bajas</span>
+                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-lime-300 bg-lime-200" />Medias</span>
+                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-emerald-400 bg-emerald-200" />Altas</span>
+                  </div>
+                  <p className="text-[10px] leading-snug text-white/55">Comparación relativa entre los días con ventas del mes. Un día sin importe no tiene datos.</p>
+                </div>
+              )}
 
               {activeKind === "range" && (
                 <div className="text-[10px] font-medium uppercase tracking-widest text-white/60 text-center">

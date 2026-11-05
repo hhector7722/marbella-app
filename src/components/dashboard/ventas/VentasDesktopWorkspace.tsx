@@ -2167,11 +2167,13 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                         data-sales-range={rangePosition}
                                                         aria-label={'Seleccionar ' + iso + (net !== null && Number.isFinite(net) ? (isLiveToday ? ', ventas de hoy en curso ' : ', venta neta ') + euro(net) : '') + performanceDescription}
                                                         className={cn(
-                                                            'month-cal-cell relative z-[1] flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-transparent p-0.5 last:border-r-0 transition-colors hover:bg-zinc-50/40',
+                                                            'month-cal-cell relative z-[1] flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-transparent p-0.5 last:border-r-0 transition-colors hover:bg-sky-50/40',
                                                             !isSameMonth(day, month) && !selected && 'opacity-35'
                                                         )}>
-                                                        <span className={cn('absolute right-1 top-0.5 text-[9px] font-medium tabular-nums',
-                                                            selected ? 'text-zinc-700' : 'text-slate-400')}>{format(day, 'd')}</span>
+                                                        <span data-element="sales-calendar-day-number" className={cn(
+                                                            'absolute right-1 top-0.5 text-[9px] font-medium tabular-nums',
+                                                            selected ? 'rounded-[5px] bg-[#345e91] px-1.5 py-0.5 font-bold text-white' : 'text-slate-400'
+                                                        )}>{format(day, 'd')}</span>
                                                         {net !== null && Number.isFinite(net) && (
                                                             <div className="flex min-h-0 w-full flex-1 items-center justify-center px-0.5 pt-2 text-center">
                                                                 <span title={(isLiveToday ? 'Ventas de hoy (en curso): ' : '') + euro(net) + performanceDescription} className={cn(
@@ -2285,6 +2287,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 allowedKinds={['date', 'range', 'week', 'month', 'year']}
                 initialValue={initialTimeFilter}
                 defaultKind={activeFilter?.kind ?? 'date'}
+                salesDesktop={desktopSalesCalendar}
                 calendarDayAmounts={Object.fromEntries(calendarClosings
                     .filter(row => row.net_sales != null)
                     .map(row => [row.closing_date, Number(row.net_sales)]) )}

@@ -28,6 +28,7 @@ export function MiniMonthCalendar({
     monthInHeader = false,
     dark = false,
     dayAmounts,
+    salesDesktop = false,
 }: {
     month: Date;
     onMonthChange: (next: Date) => void;
@@ -41,6 +42,8 @@ export function MiniMonthCalendar({
     dark?: boolean;
     /** Importes diarios del cierre: activa el calendario de ventas en el filtro. */
     dayAmounts?: Record<string, number>;
+    /** Presentación de colores y selección clara solo en el filtro de Ventas escritorio. */
+    salesDesktop?: boolean;
 }) {
     const startVisible = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
     const endVisible = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
@@ -76,7 +79,7 @@ export function MiniMonthCalendar({
                 </div>
             ) : null}
 
-            <div className="grid grid-cols-7 gap-1">
+            <div className={cn("grid grid-cols-7 gap-1", salesDesktop && "rounded-xl border border-white/10 bg-white/[0.045] p-2")}>
                 {WEEKDAYS.map((d) => (
                     <div key={d} className={cn('py-2 text-center text-[9px]', dark ? 'font-semibold text-white/45' : 'font-black text-zinc-300')}>
                         {d}
@@ -101,10 +104,24 @@ export function MiniMonthCalendar({
                             aria-current={today ? 'date' : undefined}
                             className={cn(
                                 'flex items-center justify-center rounded-lg text-[11px] font-black transition-all',
-                                dayAmounts ? 'aspect-auto min-h-[47px] flex-col gap-1 px-0.5 py-1' : 'aspect-square',
-                                muted && (!dark || !today) ? 'opacity-20' : 'opacity-100',
+                                dayAmounts ? cn('aspect-auto min-h-[47px] flex-col gap-1 px-0.5 py-1', salesDesktop && 'min-h-[55px] gap-0.5 py-1.5') : 'aspect-square',
+                                salesDesktop ? (muted && !selected ? 'opacity-35' : 'opacity-100') : muted && (!dark || !today) ? 'opacity-20' : 'opacity-100',
                                 disabled && (dark ? 'cursor-not-allowed text-white/25' : 'cursor-not-allowed text-zinc-300'),
-                                dark
+                                salesDesktop
+                                    ? cn(
+                                        'border text-slate-900 hover:brightness-[0.98]',
+                                        amount != null && !disabled
+                                            ? salesCalendarTone(amount, sortedSales)
+                                            : 'border-white/10 bg-white/[0.06] text-white/85',
+                                        selected
+                                            ? 'relative z-[1] ring-2 ring-sky-300 ring-offset-2 ring-offset-[#192642]'
+                                            : inRange
+                                                ? 'ring-1 ring-inset ring-sky-300'
+                                                : 'hover:border-white/40',
+                                        muted && !selected && 'opacity-35',
+                                        disabled && 'cursor-not-allowed opacity-40'
+                                    )
+                                    : dark
                                     ? selected
                                         ? amount != null ? 'border text-zinc-900 ring-2 ring-white ' + salesCalendarTone(amount, sortedSales) : 'bg-[var(--color-envolvente-alto)] text-white'
                                         : inRange
@@ -126,11 +143,19 @@ export function MiniMonthCalendar({
                             )}
                         >
                             {dark ? (
-                                <span className={cn('inline-flex h-8 w-8 items-center justify-center rounded-full', today && 'border-2 border-white text-white')}>{format(day, 'd')}</span>
+                                <span className={cn(
+                                    'inline-flex h-8 w-8 items-center justify-center rounded-full',
+                                    salesDesktop
+                                        ? cn('text-[13px] font-bold', today && (amount != null ? 'border-2 border-sky-700 text-sky-900' : 'border-2 border-white text-white'))
+                                        : today && 'border-2 border-white text-white'
+                                )}>{format(day, 'd')}</span>
                             ) : (
                                 <span>{format(day, 'd')}</span>
                             )}
-                            {dayAmounts && amount != null && <span className={cn('max-w-full whitespace-nowrap text-[8px] font-semibold tracking-tight', amount != null ? 'text-zinc-900' : '')}>{Math.round(amount).toLocaleString('es-ES', { useGrouping: 'always' })}€</span>}
+                            {dayAmounts && amount != null && <span className={cn(
+                                'max-w-full whitespace-nowrap font-semibold tracking-tight text-zinc-900',
+                                salesDesktop ? 'text-[10px] tabular-nums' : 'text-[8px]'
+                            )}>{Math.round(amount).toLocaleString('es-ES', { useGrouping: 'always' })}€</span>}
                         </button>
                     );
                 })}
