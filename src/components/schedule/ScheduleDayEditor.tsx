@@ -1499,7 +1499,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                         {shifts.map((shift, idx) => {
                             const isEditing = editingIndex === idx;
                             return (
-                                <div key={shift.employeeId} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
+                                <div key={shift.employeeId} className="flex w-full h-9 md:h-10 shrink-0 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
                                     <div className="w-24 md:w-28 px-2 flex items-center gap-1 shrink-0 overflow-hidden">
                                         {isEditing && (
                                             <button

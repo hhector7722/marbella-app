@@ -857,7 +857,7 @@ export const StaffScheduleModal = ({
                                     {/* Filas de empleados — altura igual en escritorio */}
                                     <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto min-h-0 day-modal-shift-rows">
                                         {dayShifts.map((shift, idx) => (
-                                            <div key={idx} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
+                                            <div key={idx} className="flex w-full h-9 md:h-10 shrink-0 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
                                                 <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
                                                     <button type="button" onClick={() => openEmployeeAvatar(shift)} className="flex min-w-0 items-center gap-2 text-left" aria-label={`Ampliar avatar de ${shift.name}`}>
                                                         <Avatar src={shift.avatar_url ?? undefined} alt={shift.name} size="sm" className="shrink-0" />
