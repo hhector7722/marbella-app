@@ -241,7 +241,8 @@ export function parseCompanySummaryPdfData(
             return parseEuroNumber(colTokens.join(''));
           };
 
-          const totalGross = extractCol(15.0, 18.0);
+          const firstLineGrossCandidate = extractCol(15.0, 18.0);
+          let totalGross = firstLineGrossCandidate;
           const totalBaseCC = extractCol(20.0, 23.5);
           const totalSSEmployee = extractCol(25.0, 28.5);
           const totalTC1 = extractCol(30.0, 33.5);
@@ -262,6 +263,15 @@ export function parseCompanySummaryPdfData(
                 return parseEuroNumber(colTokens.join(''));
               };
               totalBaseIRPF = extractSubCol(12.5, 15.5);
+              // En algunos resúmenes de gestoría las dos filas de totales
+              // intercambian BRUT y BASE IRPF. Elegir el importe que realmente
+              // reconcilia con el bruto de las liquidaciones, sin inventarlo.
+              const grossSum = Math.round(settlements.reduce((sum, s) => sum + s.grossSalary, 0) * 100) / 100;
+              if (Math.abs(totalGross - grossSum) > 0.01 &&
+                  Math.abs(totalBaseIRPF - grossSum) <= 0.01) {
+                totalGross = totalBaseIRPF;
+                totalBaseIRPF = firstLineGrossCandidate;
+              }
               totalWithholdingIRPF = extractSubCol(17.0, 20.5);
               totalBaseAT = extractSubCol(22.0, 25.5);
               totalSSEmployer = extractSubCol(27.5, 31.0);
