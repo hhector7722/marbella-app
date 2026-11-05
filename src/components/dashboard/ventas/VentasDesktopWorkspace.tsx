@@ -1033,17 +1033,6 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         () => activeFilter ?? { kind: 'date', date: period.start },
         [activeFilter, period.start]
     );
-    const lastThreeMonthsPreset = useMemo(() => {
-        const lastComplete = subMonths(startOfMonth(new Date()), 1);
-        return {
-            label: 'Últimos 3 meses',
-            value: {
-                kind: 'range' as const,
-                startDate: format(subMonths(startOfMonth(lastComplete), 2), 'yyyy-MM-dd'),
-                endDate: format(endOfMonth(lastComplete), 'yyyy-MM-dd')
-            }
-        };
-    }, []);
     const calendarWeeks = useMemo(() => {
         const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
         const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
@@ -2208,7 +2197,6 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 allowedKinds={['date', 'range', 'week', 'month', 'year']}
                 initialValue={initialTimeFilter}
                 defaultKind={activeFilter?.kind ?? 'date'}
-                quickRangePreset={lastThreeMonthsPreset}
                 calendarDayAmounts={Object.fromEntries(calendarClosings
                     .filter(row => row.net_sales != null)
                     .map(row => [row.closing_date, Number(row.net_sales)]) )}
