@@ -299,7 +299,7 @@ function StaffFichajeIcon({
             {actionLoading || clockLoading ? (
                 <LoadingSpinner size="sm" className="text-white" />
             ) : (
-                <span className="text-[10px] font-black uppercase leading-none tracking-wide text-white">Entrada</span>
+                <span className="text-[10px] font-black uppercase leading-[13px] tracking-wide text-white">Entrada</span>
             )}
         </StaffFichajeShortcutShell>
     );
