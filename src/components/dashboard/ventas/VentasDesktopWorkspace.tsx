@@ -2066,7 +2066,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                 const performanceDescription = calendarImproved
                                                     ? ', por encima de la media de días equivalentes'
                                                     : calendarDeclined ? ', por debajo de la media de días equivalentes' : '';
-                                                const selected = isSingleDay && iso === period.start;
+                                                const selected = iso >= period.start && iso <= period.end;
                                                 return (
                                                     <button key={iso} type="button" onClick={() => selectDate(iso)}
                                                         aria-pressed={selected}
@@ -2074,14 +2074,16 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                         className={cn(
                                                             'month-cal-cell relative z-[1] flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-transparent p-0.5 last:border-r-0 transition-colors hover:bg-zinc-50/40',
                                                             !isSameMonth(day, month) && 'opacity-35',
-                                                            !selected && iso >= period.start && iso <= period.end && 'ring-1 ring-inset ring-zinc-300',
-                                                            selected && 'ring-2 ring-inset ring-zinc-900'
+                                                            selected && 'bg-white/30'
                                                         )}>
                                                         <span className={cn('absolute right-1 top-0.5 text-[9px] font-medium tabular-nums',
                                                             selected ? 'text-zinc-700' : 'text-slate-400')}>{format(day, 'd')}</span>
                                                         {net !== null && Number.isFinite(net) && (
                                                             <div className="flex min-h-0 w-full flex-1 items-center justify-center px-0.5 pt-2 text-center">
-                                                                <span title={(isLiveToday ? 'Ventas de hoy (en curso): ' : '') + euro(net) + performanceDescription} className={cn('inline-flex w-max max-w-none items-center justify-center whitespace-nowrap rounded-md border px-0.5 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums', calendarSalesTone(net))}>
+                                                                <span title={(isLiveToday ? 'Ventas de hoy (en curso): ' : '') + euro(net) + performanceDescription} className={cn('relative inline-flex w-max max-w-none items-center justify-center whitespace-nowrap rounded-[9px] border px-1 py-1.5 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums transition-[transform,box-shadow] duration-200',
+                                                                    calendarSalesTone(net),
+                                                                    'shadow-[inset_0_1px_0_rgba(255,255,255,0.95),inset_0_-1px_2px_rgba(0,0,0,0.07),0_2px_4px_rgba(15,23,42,0.12)]',
+                                                                    selected && 'z-10 -translate-y-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,1),inset_0_-2px_3px_rgba(0,0,0,0.09),0_5px_10px_rgba(15,23,42,0.22),0_1px_2px_rgba(15,23,42,0.12)]')}>
                                                                     {isLiveToday ? <span aria-hidden="true" className="absolute left-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-600" /> : null}
                                                                     {(calendarImproved || calendarDeclined) && (
                                                                         <span aria-hidden="true" className={cn(
