@@ -726,12 +726,59 @@ function TicketHeaderStats({ report }: { report: TicketReport | null }) {
     );
 }
 
+// Mismo contenido y tipografía para el detalle táctil y los paneles hover de escritorio.
+function FinancialInfoBody({ kind, tooltip, cashBreakdown }: {
+    kind: 'performance' | 'cash';
+    tooltip: string;
+    cashBreakdown?: Record<string, number> | null;
+}) {
+    const denominations = DENOMINATIONS.flatMap(denom => {
+        const qty = Number(cashBreakdown?.[String(denom)] ?? 0);
+        return qty > 0 ? [{ denom, qty, total: denom * qty }] : [];
+    });
+    return (
+        <div className="px-3 py-4 text-white">
+            {kind === 'performance' ? (
+                <p className="text-sm leading-relaxed text-white/85">{tooltip}</p>
+            ) : (
+                <>
+                    {denominations.length ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            {denominations.map(({ denom, qty, total }) => (
+                                <div key={denom} className="flex min-w-0 items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] p-1.5">
+                                    <Image src={CURRENCY_IMAGES[denom]} alt="" width={35} height={27}
+                                        sizes="35px" className="max-h-7 w-[35px] shrink-0 object-contain"/>
+                                    <div className="min-w-0">
+                                        <span className="block text-[10px] text-white/70">
+                                            {denom < 1 ? Math.round(denom * 100) + ' c' : denom + ' €'} × {qty}
+                                        </span>
+                                        <strong className="block whitespace-nowrap text-xs tabular-nums">{euro(total)}</strong>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm leading-relaxed text-white/75">Este periodo no tiene un desglose de denominaciones registrado.</p>
+                    )}
+                    <div className="mt-3 flex justify-between gap-2 border-t border-white/15 pt-3 text-xs">
+                        <span>Total desglosado</span>
+                        <strong className="whitespace-nowrap text-teal-200 tabular-nums">
+                            {euro(denominations.reduce((sum, entry) => sum + entry.total, 0))}
+                        </strong>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
 // Paneles flotantes con el mismo lenguaje visual que las cards, fuera de sus zonas recortadas.
-function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cashBreakdown }: {
+function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cashBreakdown, loading = false }: {
     sales: string; net: string; items: SummaryKpiItem[];
     scope: CrossScope; selection: CrossSelection | null;
     onSelect: (value: CrossSelection) => void;
     cashBreakdown?: Record<string, number> | null;
+    loading?: boolean;
 }) {
     const [hover, setHover] = useState<{ label: string; x: number; top: number; bottom: number } | null>(null);
     const reveal = (label: string, element: HTMLElement) => {
@@ -739,29 +786,26 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
         setHover({ label, x: rect.left, top: rect.top, bottom: rect.bottom });
     };
     const hovered = items.find(item => item.label === hover?.label);
-    const denominations = DENOMINATIONS.flatMap(denom => {
-        const qty = Number(cashBreakdown?.[String(denom)] ?? 0);
-        return qty > 0 ? [{ denom, qty, total: denom * qty }] : [];
-    });
-    const cashTotal = denominations.reduce((sum, entry) => sum + entry.total, 0);
     const showHelp = hovered && (hovered.tooltip || (hovered.payment === 'cash' && cashBreakdown));
+    const tooltipWidth = 360;
+    const tooltipHeight = hover?.label === 'Efectivo' ? 348 : 136;
     const tooltipX = hover && typeof window !== 'undefined'
-        ? Math.max(8, Math.min(hover.x, window.innerWidth - (hover.label === 'Efectivo' ? 328 : 272))) : 8;
+        ? Math.max(8, Math.min(hover.x, window.innerWidth - tooltipWidth - 8)) : 8;
     const tooltipY = hover && typeof window !== 'undefined'
-        ? (window.innerHeight - hover.bottom >= (hover.label === 'Efectivo' ? 310 : 180)
-            ? hover.bottom + 7 : Math.max(8, hover.top - (hover.label === 'Efectivo' ? 318 : 170))) : 8;
+        ? (window.innerHeight - hover.bottom >= tooltipHeight + 12
+            ? hover.bottom + 8 : Math.max(8, hover.top - tooltipHeight - 8)) : 8;
     return (
         <div className="flex w-full min-w-0 shrink-0 items-stretch gap-3">
-            <div className="flex max-w-[52%] shrink-0 flex-col items-start gap-1.5">
+            <div className="flex w-[48%] min-w-0 shrink-0 flex-col items-stretch gap-1.5">
                 {([
                     { label: 'Ventas', value: sales, tone: 'border-sky-400/35 bg-sky-500/10' },
                     { label: 'Venta neta', value: net, tone: 'border-emerald-400/30 bg-emerald-500/10' }
                 ] as const).map(item => (
                     <div key={item.label}
-                        className={cn('flex min-h-[57px] w-fit max-w-full flex-1 flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
+                        className={cn('flex min-h-[57px] w-full min-w-0 flex-1 flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
                         <span className="text-[11px] font-medium leading-tight text-white/80">{item.label}</span>
-                        <strong className="block max-w-full whitespace-nowrap text-[clamp(16px,1.75vw,25px)] font-bold leading-tight tabular-nums text-white">
-                            {item.value}
+                        <strong className="flex min-h-[30px] max-w-full items-center overflow-hidden whitespace-nowrap text-[clamp(16px,1.75vw,25px)] font-bold leading-tight tabular-nums text-white">
+                            {loading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value}
                         </strong>
                     </div>
                 ))}
@@ -788,8 +832,8 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                                     </span>
                                 )}
                             </span>
-                            <strong className="block w-full min-w-0 truncate whitespace-nowrap text-left text-[clamp(13px,1vw,16px)] font-bold leading-tight tabular-nums text-white">
-                                {item.value}
+                            <strong className="flex h-[20px] w-full min-w-0 items-center overflow-hidden whitespace-nowrap text-left text-[clamp(13px,1vw,16px)] font-bold leading-tight tabular-nums text-white">
+                                {loading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value}
                             </strong>
                         </>
                     );
@@ -813,45 +857,25 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
             </div>
             {hover && showHelp && typeof document !== 'undefined' && createPortal(
                 <div role="tooltip" aria-label={`Información de ${hover.label}`}
-                    className={cn('pointer-events-none fixed z-[9999] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl border border-sky-200/25 bg-[#142447] p-3 text-white shadow-[0_14px_40px_rgba(8,18,39,0.36)]',
-                        hovered.payment === 'cash' ? 'w-[320px]' : 'w-[260px]')}
-                    style={{ left: tooltipX, top: tooltipY, maxHeight: 'min(65vh, 360px)' }}>
-                    <div className="mb-1.5 text-[11px] font-bold text-white">{hover.label === 'Rendimiento' ? 'Cómo se calcula' : hover.label === 'Efectivo' ? 'Billetes y monedas' : hover.label}</div>
-                    {hovered.payment === 'cash' ? (
-                        denominations.length ? (
-                            <>
-                                <div className="grid grid-cols-2 gap-1.5 border-t border-white/15 pt-2">
-                                    {denominations.map(({ denom, qty, total }) => (
-                                        <div key={denom} className="flex min-w-0 items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.045] px-1 py-0.5">
-                                            <span className="flex h-[27px] w-[35px] shrink-0 items-center justify-center">
-                                                <Image src={CURRENCY_IMAGES[denom]} alt="" width={35} height={27}
-                                                    sizes="35px" className="pointer-events-none block max-h-full max-w-full object-contain drop-shadow-sm"/>
-                                            </span>
-                                            <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-                                                <span className="truncate text-[9px] leading-none text-white/70 tabular-nums">
-                                                    {(denom < 1 ? String(Math.round(denom * 100)) + ' c' : String(denom) + ' €') + ' × ' + qty}
-                                                </span>
-                                                <strong className="truncate text-[10px] leading-none font-semibold tabular-nums text-white">{euro(total)}</strong>
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="mt-2 flex items-baseline justify-between gap-2 border-t border-white/20 pt-2 text-[11px]">
-                                    <span className="text-white/70">Total desglosado</span>
-                                    <strong className="tabular-nums text-teal-200">{euro(cashTotal)}</strong>
-                                </div>
-                            </>
-                        ) : <p className="text-[11px] leading-relaxed text-white/75">Este periodo no tiene un desglose de denominaciones registrado.</p>
-                    ) : (
-                        <p className="text-[11px] leading-relaxed text-white/80">{hovered.tooltip}</p>
-                    )}
+                    className="pointer-events-none fixed z-[9999] w-[360px] max-w-[calc(100vw-16px)] overflow-y-auto rounded-ds-superficie bg-[var(--color-envolvente-bajo)] text-ds-texto-invertido shadow-ds-modal"
+                    style={{ left: tooltipX, top: tooltipY, maxHeight: 'min(70vh, 440px)' }}>
+                    <div className="flex h-ds-modal-header items-center border-b border-white/15 px-4">
+                        <h2 className="text-[12px] font-medium uppercase tracking-wide text-white">
+                            {hovered.payment === 'cash' ? 'Billetes y monedas' : 'Cómo se calcula'}
+                        </h2>
+                    </div>
+                    <FinancialInfoBody
+                        kind={hovered.payment === 'cash' ? 'cash' : 'performance'}
+                        tooltip={hovered.tooltip ?? ''}
+                        cashBreakdown={cashBreakdown}
+                    />
                 </div>, document.body
             )}
         </div>
     );
 }
 
-function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPercents, onNavigateMonth, breakdownReport, scope, selection, onSelect, productThumbnails, cashBreakdown, rangeStart, rangeEnd }: {
+function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPercents, onNavigateMonth, breakdownReport, scope, selection, onSelect, productThumbnails, cashBreakdown, rangeStart, rangeEnd, loading = false }: {
     title: string; dateText: string; report: TicketReport | null;
     extras?: FinancialExtras; dailyAverage: number | null; ticketPercents: { cash: number | null; card: number | null };
     onNavigateMonth: (delta: number) => void;
@@ -859,7 +883,7 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
     selection: CrossSelection | null; onSelect: (value: CrossSelection) => void;
     productThumbnails: Record<number, string>;
     cashBreakdown?: Record<string, number> | null;
-    rangeStart: string; rangeEnd: string;
+    rangeStart: string; rangeEnd: string; loading?: boolean;
 }) {
     const sales = report ? Number(report.summary.totalSales) : null;
     const monthlyItems = financialSummaryItems(extras, null, ticketPercents).map(item => item.label === 'Rendimiento'
@@ -887,10 +911,19 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
             <FinancialKpiHeader
                 sales={sales !== null ? euro(sales) : ''}
                 net={extras ? euro(extras.net) : ''}
-                items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect} cashBreakdown={cashBreakdown}/>
-            <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope}
-                selection={selection?.kind === 'payment' && (selection.payment === 'cash' || selection.payment === 'card') ? null : selection}
-                onSelect={onSelect} productThumbnails={productThumbnails} rangeStart={rangeStart} rangeEnd={rangeEnd}/>
+                items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect} cashBreakdown={cashBreakdown}
+                loading={loading}/>
+            <div className="relative flex min-h-0 flex-1 flex-col">
+                <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope}
+                    selection={selection?.kind === 'payment' && (selection.payment === 'cash' || selection.payment === 'card') ? null : selection}
+                    onSelect={onSelect} productThumbnails={productThumbnails} rangeStart={rangeStart} rangeEnd={rangeEnd}/>
+                {loading && (
+                    <div role="status" aria-label="Actualizando resumen mensual"
+                        className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--color-envolvente-bajo)]/90">
+                        <LoadingSpinner size="lg" className="text-sky-200"/>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -947,6 +980,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
     const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
+    const [loadedReportKey, setLoadedReportKey] = useState<string | null>(null);
+    const [loadedClosingsKey, setLoadedClosingsKey] = useState<string | null>(null);
     const [liveDaySales, setLiveDaySales] = useState<{ date: string; total: number } | null>(null);
     const [salesClock, setSalesClock] = useState(() => new Date());
     const desktopSalesCalendar = useSyncExternalStore(
@@ -1089,6 +1124,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         setPeriodClosings([]);
         setHistoricalNetByDate(new Map());
         setDailyReport(null);
+        setLoadedReportKey(null);
+        setLoadedClosingsKey(null);
         setLoadedPeriod(null);
         setLinesByTicket({});
         setExpandedTicket(null);
@@ -1287,9 +1324,13 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         let active = true;
         setDailyReport(null);
         void supabase.rpc('get_ventas_crossfilter', { p_start_date: period.start, p_end_date: period.end, p_limit: 1 })
-            .then(({ data, error }) => { if (active) setDailyReport(error ? null : data as unknown as TicketReport); });
+            .then(({ data, error }) => {
+                if (!active) return;
+                setDailyReport(error ? null : data as unknown as TicketReport);
+                setLoadedReportKey(periodKey);
+            });
         return () => { active = false; };
-    }, [supabase, period.start, period.end, initializing]);
+    }, [supabase, period.start, period.end, periodKey, initializing]);
 
     // El día abierto se actualiza aunque el usuario seleccione otro día en el
     // calendario de escritorio. En móvil se conserva el refresco existente
@@ -1538,9 +1579,10 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 const rows = distinctCashClosings(error ? [] : (data ?? []) as CloseRow[]);
                 setHistoricalNetByDate(new Map(rows.map(row => [row.closing_date, Number(row.net_sales ?? 0)])));
                 setPeriodClosings(rows.filter(row => row.closing_date >= period.start));
+                setLoadedClosingsKey(periodKey);
             });
         return () => { active = false; };
-    }, [supabase, period.start, period.end, initializing, closingRefresh]);
+    }, [supabase, period.start, period.end, periodKey, initializing, closingRefresh]);
 
     const selectedClosing = isSingleDay ? periodClosings.find(c => c.closing_date === period.start) : undefined;
     const liveHour = previewMode !== 'month' && isSingleDay && !selectedClosing &&
@@ -1593,6 +1635,9 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         pending: a.pending + Number(c.sales_pending ?? 0), recovered: a.recovered + Number(c.debt_recovered ?? 0),
         net: a.net + Number(c.net_sales ?? 0), difference: a.difference + Number(c.difference ?? 0)
     }), { cash: 0, card: 0, pending: 0, recovered: 0, net: 0, difference: 0 }), [visibleMonthClosings]);
+    const monthKpisLoading = !initializing && !currentMonthLoaded;
+    const periodKpisLoading = !initializing &&
+        (loadedReportKey !== periodKey || loadedClosingsKey !== periodKey);
     const hasClosingData = periodClosings.length > 0;
     const periodTotals = useMemo(() => ({
         sales: closingSum(periodClosings, 'tpv_sales'),
@@ -1635,6 +1680,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         ? 'Comparación con la venta media de los últimos 8 ' + weekdayNamesPlural[parseISO(period.start).getDay()] + '.'
         : 'Comparación con las ventas medias de días equivalentes de las últimas 8 semanas.';
     const mobileMonth = mobileScope === 'month';
+    const mobileKpisLoading = mobileMonth ? monthKpisLoading : periodKpisLoading;
     const mobileReport = mobileMonth ? visibleMonthReport : dailyReport;
     const mobileBreakdown = mobileMonth ? monthBreakdown : periodBreakdown;
     const mobileExtras = mobileMonth ? (visibleMonthClosings.length ? monthTotals : null) : (hasClosingData ? periodTotals : null);
@@ -1766,9 +1812,11 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                               : displayedDayNet !== null ? euro(displayedDayNet) : '',
                           tone: 'border-emerald-400/30 bg-emerald-500/10' },
                     ].map(item => (
-                        <div key={item.label} className={cn('min-w-0 rounded-lg border px-2.5 py-1.5', item.tone)}>
+                        <div key={item.label} className={cn('flex min-h-[61px] min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
                             <span className="block text-[11px] font-medium text-white/75">{item.label}</span>
-                            <strong className="mt-0.5 block break-words text-[clamp(13px,4vw,20px)] font-bold leading-tight tabular-nums">{item.value || ' '}</strong>
+                            <strong className="mt-0.5 flex min-h-[24px] min-w-0 items-center whitespace-nowrap text-[clamp(12px,3.7vw,20px)] font-bold leading-tight tabular-nums">
+                                {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
+                            </strong>
                         </div>
                     ))}
                 </div>
@@ -1777,7 +1825,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         const actionable = item.payment === 'card' || item.payment === 'pending';
                         const detail = item.label === 'Rendimiento' ? 'performance' : item.label === 'Efectivo' ? 'cash' : null;
                         const selected = mobileActiveSelection?.kind === 'payment' && mobileActiveSelection.payment === item.payment;
-                        const tone = cn('min-w-0 rounded-md border px-1.5 py-1 text-left',
+                        const tone = cn('flex min-h-[46px] min-w-0 flex-col justify-center rounded-md border px-1.5 py-1 text-left',
                             item.tone ?? 'border-white/15 bg-white/[0.04]',
                             selected && 'ring-1 ring-sky-300');
                         const body = <>
@@ -1789,7 +1837,9 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                     </span>
                                 )}
                             </span>
-                            <strong className="mt-0.5 block break-words text-[12px] font-semibold leading-tight tabular-nums">{item.value || ' '}</strong>
+                            <strong className="mt-0.5 flex min-h-[16px] items-center break-words text-[12px] font-semibold leading-tight tabular-nums">
+                                {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
+                            </strong>
                         </>;
                         return actionable || detail ? (
                             <button key={item.label} type="button" data-crossfilter-trigger={actionable}
@@ -1869,7 +1919,10 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     </div>
                 </section>
             </div>
-            <section data-element="mobile-sales-detail-card" className="relative min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2">
+            <section data-element="mobile-sales-detail-card" className={cn(
+                'relative min-w-0 rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 pb-3 pt-2',
+                !previewMode && mobileView !== 'live' && 'min-h-[410px]'
+            )}>
                 <nav className="mb-2 grid grid-cols-3 gap-1 border-b border-white/15 pb-2" aria-label="Detalle de ventas">
                     {(previewMode && !embeddedShowLive
                     ? ([{ id: 'products', label: 'Productos' }, { id: 'tickets', label: 'Tickets' }] as const)
@@ -1917,7 +1970,9 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         )}
                     </div>
                 )}
-                {previewMode && (crossLoading || dayLoading) && mobileView !== 'live' && (
+                {mobileView !== 'live' && (
+                    (mobileMonth ? monthKpisLoading : periodKpisLoading || dayLoading) || crossLoading
+                ) && (
                     <div data-element="mobile-sales-loading" role="status" aria-label="Cargando detalle de ventas"
                          className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-[var(--color-envolvente-bajo)]/90">
                         <LoadingSpinner size="lg" className="text-sky-200"/>
@@ -1942,7 +1997,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         dailyAverage={monthDailyAverage} ticketPercents={monthTicketPercentages}
                         onNavigateMonth={navigateSummaryMonth}
                         scope="month" selection={crossSelection} onSelect={onChooseCross}
-                        productThumbnails={productThumbnails} cashBreakdown={monthCashBreakdown} rangeStart={monthStart} rangeEnd={monthEnd}/>
+                        productThumbnails={productThumbnails} cashBreakdown={monthCashBreakdown} rangeStart={monthStart} rangeEnd={monthEnd}
+                        loading={monthKpisLoading}/>
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
@@ -1991,7 +2047,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 sales={displayedDaySales !== null ? euro(displayedDaySales) : ''}
                                 net={displayedDayNet !== null ? euro(displayedDayNet) : ''}
                                 items={financialSummaryItems(hasClosingData ? periodTotals : undefined, periodPerformance, periodTicketPercentages, performanceTooltip)}
-                                scope="period" selection={crossSelection} onSelect={onChooseCross} cashBreakdown={periodCashBreakdown}/>
+                                scope="period" selection={crossSelection} onSelect={onChooseCross} cashBreakdown={periodCashBreakdown}
+                                loading={periodKpisLoading}/>
                         </div>
                         {isSingleDay && selectedClosing && (
                             <div className="flex shrink-0 items-center justify-center gap-2 border-b border-white/10 px-3 py-2">
@@ -2005,11 +2062,17 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 </button>
                             </div>
                         )}
-                        <div data-element="day-breakdown" className="min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
+                        <div data-element="day-breakdown" className="relative min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
                             <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
                                 selection={paymentOnly ? null : crossSelection} onSelect={onChooseCross}
                                 productThumbnails={productThumbnails} rangeStart={period.start} rangeEnd={period.end}
                                 liveHour={liveHour}/>
+                            {(periodKpisLoading || (crossLoading && crossSelection?.scope === 'period')) && (
+                                <div role="status" aria-label="Actualizando detalle de ventas"
+                                    className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--color-envolvente-bajo)]/90">
+                                    <LoadingSpinner size="lg" className="text-sky-200"/>
+                                </div>
+                            )}
                         </div>
                     </section>
                 </div>
@@ -2183,31 +2246,11 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         <Modal open={mobileInfo !== null} onClose={() => setMobileInfo(null)}
             scheme="dark" variant="compact" title={mobileInfo === 'cash' ? 'Billetes y monedas' : 'Cómo se calcula'}
             instance="ventas-mobile-kpi-details">
-            <div className="px-3 py-4 text-white">
-                {mobileInfo === 'performance' ? (
-                    <p className="text-sm leading-relaxed text-white/85">{performanceTooltip}</p>
-                ) : mobileInfo === 'cash' ? (
-                    <>
-                        <div className="grid grid-cols-2 gap-2">
-                            {DENOMINATIONS.flatMap(denom => {
-                                const qty = Number(periodCashBreakdown[String(denom)] ?? 0);
-                                if (qty <= 0) return [];
-                                return [<div key={denom} className="flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] p-1.5">
-                                    <Image src={CURRENCY_IMAGES[denom]} alt="" width={35} height={27} className="max-h-7 w-[35px] object-contain"/>
-                                    <div className="min-w-0">
-                                        <span className="block text-[10px] text-white/70">{denom < 1 ? Math.round(denom * 100) + ' c' : denom + ' €'} × {qty}</span>
-                                        <strong className="block whitespace-nowrap text-xs">{euro(qty * denom)}</strong>
-                                    </div>
-                                </div>];
-                            })}
-                        </div>
-                        <div className="mt-3 flex justify-between border-t border-white/15 pt-3 text-xs">
-                            <span>Total desglosado</span>
-                            <strong className="text-teal-200">{euro(DENOMINATIONS.reduce((sum, den) => sum + den * Number(periodCashBreakdown[String(den)] ?? 0), 0))}</strong>
-                        </div>
-                    </>
-                ) : null}
-            </div>
+            {mobileInfo && <FinancialInfoBody
+                kind={mobileInfo}
+                tooltip={performanceTooltip}
+                cashBreakdown={periodCashBreakdown}
+            />}
         </Modal>
         <VentasClosingEditor closingId={editingClosingId} onClose={() => setEditingClosingId(null)}
             onSaved={() => setClosingRefresh(value => value + 1)}/>
