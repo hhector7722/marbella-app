@@ -121,7 +121,7 @@ export default function MovementsPage() {
     };
 
     // 1. Estados de Filtro y UI
-    const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
+    const [filterMode, setFilterMode] = useState<'single' | 'range'>('single');
     const [selectedDate, setSelectedDate] = useState<string>(() => {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
