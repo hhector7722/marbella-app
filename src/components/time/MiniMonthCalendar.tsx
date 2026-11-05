@@ -14,7 +14,7 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { PERIOD_PICKER_ACCENT_BG, PERIOD_PICKER_ACCENT_TEXT } from '@/components/time/MonthPickerGrid';
+import { PERIOD_PICKER_ACCENT_BG, PERIOD_PICKER_ACCENT_TEXT, salesCalendarTone } from '@/components/time/MonthPickerGrid';
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 
@@ -45,6 +45,10 @@ export function MiniMonthCalendar({
     const startVisible = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
     const endVisible = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
     const days = eachDayOfInterval({ start: startVisible, end: endVisible });
+    const sortedSales = Object.entries(dayAmounts ?? {})
+        .filter(([date, amount]) => date.startsWith(format(month, 'yyyy-MM')) && Number.isFinite(amount) && amount > 0)
+        .map(([, amount]) => amount)
+        .sort((a, b) => a - b);
 
     return (
         <div className="space-y-3">
@@ -106,7 +110,7 @@ export function MiniMonthCalendar({
                                         : inRange
                                           ? 'bg-white/15 text-white'
                                           : amount != null && !disabled
-                                            ? 'border border-emerald-300/35 bg-emerald-300/10 text-white'
+                                            ? 'border text-zinc-900 ' + salesCalendarTone(amount, sortedSales)
                                             : disabled
                                               ? 'text-white/25'
                                               : 'text-white/85 hover:bg-white/10'
@@ -115,7 +119,7 @@ export function MiniMonthCalendar({
                                         : inRange
                                           ? 'bg-zinc-100 text-[var(--color-envolvente)]'
                                           : amount != null && !disabled
-                                            ? 'border border-emerald-200 bg-emerald-50 text-zinc-700'
+                                            ? 'border text-zinc-900 ' + salesCalendarTone(amount, sortedSales)
                                             : disabled
                                               ? 'text-zinc-300'
                                               : 'text-zinc-600',
@@ -126,7 +130,7 @@ export function MiniMonthCalendar({
                             ) : (
                                 <span>{format(day, 'd')}</span>
                             )}
-                            {dayAmounts && amount != null && <span className={cn('max-w-full whitespace-nowrap text-[8px] font-semibold tracking-tight', selected ? '' : dark ? 'text-emerald-200' : 'text-emerald-700')}>{Math.round(amount).toLocaleString('es-ES', { useGrouping: 'always' })}€</span>}
+                            {dayAmounts && amount != null && <span className={cn('max-w-full whitespace-nowrap text-[8px] font-semibold tracking-tight', amount != null ? 'text-zinc-900' : '')}>{Math.round(amount).toLocaleString('es-ES', { useGrouping: 'always' })}€</span>}
                         </button>
                     );
                 })}
