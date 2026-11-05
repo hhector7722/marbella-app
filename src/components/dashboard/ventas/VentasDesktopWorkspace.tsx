@@ -63,6 +63,9 @@ type CloseRow = {
     weather?: string | null; breakdown?: Record<string, number> | null;
 };
 const euro = (v: unknown) => formatNumberSpanish(Number(v ?? 0), 2) + ' €';
+// Omitir solo el importe cero de Ventas, Venta neta, Pendiente y Cobros.
+const euroNonZero = (value: unknown) =>
+    value == null || Number(value) === 0 ? '' : euro(value);
 const compactDoc = (id: string) => id.replace(/^0+/, '').replace(/(B)0+(?=\d)/i, '$1');
 const EMPTY_ITEMS: Item[] = [];
 const PAGE_SIZE = 7;
@@ -706,8 +709,8 @@ function financialSummaryItems(extras?: FinancialExtras, performance: number | n
         },
         { label: 'Tarjeta', value: extras ? euro(extras.card) : '', payment: 'card', ticketPercent: ticketPercents?.card, tone: 'border-sky-400/50 bg-sky-500/10' },
         { label: 'Efectivo', value: extras ? euro(extras.cash) : '', payment: 'cash', ticketPercent: ticketPercents?.cash, tone: 'border-emerald-400/50 bg-emerald-500/10' },
-        { label: 'Pendiente', value: extras ? euro(extras.pending) : '', payment: 'pending', tone: 'border-amber-400/55 bg-amber-500/10' },
-        { label: 'Cobros', value: extras ? euro(extras.recovered) : '', payment: 'collections', tone: 'border-violet-400/55 bg-violet-500/10' },
+        { label: 'Pendiente', value: extras ? euroNonZero(extras.pending) : '', payment: 'pending', tone: 'border-amber-400/55 bg-amber-500/10' },
+        { label: 'Cobros', value: extras ? euroNonZero(extras.recovered) : '', payment: 'collections', tone: 'border-violet-400/55 bg-violet-500/10' },
         { label: 'Diferencia', value: extras ? euro(extras.difference) : '', tone: 'border-teal-400/50 bg-teal-500/10' }
     ];
     return items;
@@ -920,8 +923,8 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
                 <TicketHeaderStats report={report}/>
             </div>
             <FinancialKpiHeader
-                sales={sales !== null ? euro(sales) : ''}
-                net={extras ? euro(extras.net) : ''}
+                sales={euroNonZero(sales)}
+                net={extras ? euroNonZero(extras.net) : ''}
                 items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect} cashBreakdown={cashBreakdown}
                 loading={loading}/>
             <div className="relative flex min-h-0 flex-1 flex-col">
@@ -1188,7 +1191,9 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         setFilterOpen(false);
         changePeriod({ start: lastClosingDate, end: lastClosingDate, kind: 'day' });
     };
-    // Open at the most recent closed day, not at today's still-open trading day.
+    // Mostrar hoy al entrar si ya hay ventas reales; si todavía no las hay,
+    // elegir el último día con tickets positivos (también sin cierre de caja).
+    // Las selecciones y filtros posteriores no quedan sujetos a esta regla.
     useEffect(() => {
         let active = true;
         void (async () => {
@@ -1204,23 +1209,31 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     }
                     return;
                 }
-                const { data: { user } } = await supabase.auth.getUser();
+
+                const today = format(new Date(), 'yyyy-MM-dd');
+                const { data: stats, error: statsError } = await supabase.rpc(
+                    'get_daily_sales_stats', { target_date: today }
+                );
                 if (!active) return;
-                if (user?.email?.trim().toLowerCase() === 'hhector7722@gmail.com') {
-                    const today = format(new Date(), 'yyyy-MM-dd');
-                    setLastClosingDate(today);
-                    changePeriod({ start: today, end: today, kind: 'day' });
-                    return;
+
+                let initialDate = today;
+                if (!statsError && Number(stats?.total_ventas ?? 0) <= 0) {
+                    const { data: previous, error } = await supabase
+                        .from('tickets_marbella')
+                        .select('fecha')
+                        .lt('fecha', today)
+                        .gt('total_documento', 0)
+                        .order('fecha', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    if (!active) return;
+                    if (!error && previous?.fecha) {
+                        const lastDate = String(previous.fecha).slice(0, 10);
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(lastDate) && lastDate < today) initialDate = lastDate;
+                    }
                 }
-                const { data } = await supabase.from('cash_closings')
-                    .select('closing_date')
-                    .order('closing_date', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
-                if (!active) return;
-                const lastDate = data?.closing_date ?? format(new Date(), 'yyyy-MM-dd');
-                setLastClosingDate(lastDate);
-                changePeriod({ start: lastDate, end: lastDate, kind: 'day' });
+                setLastClosingDate(initialDate);
+                changePeriod({ start: initialDate, end: initialDate, kind: 'day' });
             } finally {
                 if (active) setInitializing(false);
             }
@@ -1815,12 +1828,12 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
                     {[
                         { label: 'Ventas', value: mobileMonth
-                            ? mobileReport ? euro(mobileReport.summary.totalSales) : ''
-                            : displayedDaySales !== null ? euro(displayedDaySales) : '', tone: 'sales' as const },
+                            ? mobileReport ? euroNonZero(mobileReport.summary.totalSales) : ''
+                            : euroNonZero(displayedDaySales), tone: 'sales' as const },
                         { label: 'Venta neta',
                           value: mobileMonth
-                              ? mobileExtras ? euro(mobileExtras.net) : ''
-                              : displayedDayNet !== null ? euro(displayedDayNet) : '',
+                              ? mobileExtras ? euroNonZero(mobileExtras.net) : ''
+                              : euroNonZero(displayedDayNet),
                           tone: 'net' as const },
                     ].map(item => (
                         <div key={item.label} data-kpi-tone={item.tone}
@@ -2069,8 +2082,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         </header>
                         <div data-element="day-financials" className="shrink-0 border-b border-white/10 px-3 py-3">
                             <FinancialKpiHeader
-                                sales={displayedDaySales !== null ? euro(displayedDaySales) : ''}
-                                net={displayedDayNet !== null ? euro(displayedDayNet) : ''}
+                                sales={euroNonZero(displayedDaySales)}
+                                net={euroNonZero(displayedDayNet)}
                                 items={financialSummaryItems(hasClosingData ? periodTotals : undefined, periodPerformance, periodTicketPercentages, performanceTooltip)}
                                 scope="period" selection={crossSelection} onSelect={onChooseCross} cashBreakdown={periodCashBreakdown}
                                 loading={periodKpisLoading}/>
