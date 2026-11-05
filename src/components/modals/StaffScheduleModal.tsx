@@ -580,32 +580,55 @@ export const StaffScheduleModal = ({
                 open={isOpen}
                 onClose={handleClose}
                 title={
-                    selectedDate ? (
-                        <span className="normal-case">
-                            {formatDateTitle(selectedDate, "EEEE d 'de' MMMM")}
+                    <span data-element="schedule-date-navigation" className="mx-auto inline-flex max-w-full min-w-0 items-center justify-center gap-0.5 normal-case">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (editModeForDate) {
+                                    void exitEditModeAndRefresh();
+                                } else if (selectedDate) {
+                                    handleBack();
+                                } else {
+                                    navigateMonth(-1);
+                                }
+                            }}
+                            aria-label={editModeForDate ? 'Salir de edición' : selectedDate ? 'Volver al calendario' : 'Mes anterior'}
+                            className="relative flex h-8 w-7 shrink-0 items-center justify-center bg-transparent text-zinc-400 transition-colors hover:text-white active:opacity-70"
+                        >
+                            <ChevronLeft size={18} strokeWidth={2.5} />
+                        </button>
+                        <span data-element="schedule-date-label" className="min-w-0 truncate whitespace-nowrap py-1 leading-[1.45]">
+                            {selectedDate
+                                ? formatDateTitle(selectedDate, "EEEE d 'de' MMMM")
+                                : formatDateTitle(currentDate, 'MMMM yyyy')}
                         </span>
-                    ) : (
-                        <span className="normal-case">
-                            {formatDateTitle(currentDate, 'MMMM yyyy')}
-                        </span>
-                    )
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (editModeForDate) {
+                                    void navigateEditingDay(1);
+                                } else if (selectedDate) {
+                                    const nextDay = new Date(selectedDate);
+                                    nextDay.setDate(nextDay.getDate() + 1);
+                                    void handleDayClick(nextDay);
+                                } else {
+                                    navigateMonth(1);
+                                }
+                            }}
+                            aria-label={selectedDate ? 'Día siguiente' : 'Mes siguiente'}
+                            className="relative flex h-8 w-7 shrink-0 items-center justify-center bg-transparent text-zinc-400 transition-colors hover:text-white active:opacity-70"
+                        >
+                            <ChevronRight size={18} strokeWidth={2.5} />
+                        </button>
+                    </span>
                 }
                 instance="staff-schedule"
                 variant="day"
                 layer="base"
                 scheme="dark"
-                onBack={editModeForDate ? exitEditModeAndRefresh : selectedDate ? handleBack : undefined}
                 headerTrailing={
                     editModeForDate ? (
                         <>
-                            <button
-                                type="button"
-                                onClick={() => navigateEditingDay(1)}
-                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                                aria-label="Día siguiente"
-                            >
-                                <ChevronRight size={18} strokeWidth={2.5} />
-                            </button>
                             <button
                                 type="button"
                                 onClick={() => scheduleEditorRef.current?.openAddEmployee()}
@@ -624,42 +647,16 @@ export const StaffScheduleModal = ({
                             </button>
                         </>
                     ) : (
-                        <>
-                            {selectedDate ? (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const nextDay = new Date(selectedDate);
-                                        nextDay.setDate(nextDay.getDate() + 1);
-                                        void handleDayClick(nextDay);
-                                    }}
-                                    className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                                    aria-label="Día siguiente"
-                                >
-                                    <ChevronRight size={18} strokeWidth={2.5} />
-                                </button>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={() => navigateMonth(1)}
-                                    className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                                    aria-label="Mes siguiente"
-                                >
-                                    <ChevronRight size={20} strokeWidth={2.5} />
-                                </button>
-                            )}
-
-                            {selectedDate && userEmail === 'hhector7722@gmail.com' ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setEditModeForDate(format(selectedDate, 'yyyy-MM-dd'))}
-                                    className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                                    aria-label="Editar este día"
-                                >
-                                    <Edit2 size={18} strokeWidth={2.5} />
-                                </button>
-                            ) : null}
-                        </>
+                        selectedDate && userEmail === 'hhector7722@gmail.com' ? (
+                            <button
+                                type="button"
+                                onClick={() => setEditModeForDate(format(selectedDate, 'yyyy-MM-dd'))}
+                                className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                aria-label="Editar este día"
+                            >
+                                <Edit2 size={18} strokeWidth={2.5} />
+                            </button>
+                        ) : null
                     )
                 }
                 footer={
