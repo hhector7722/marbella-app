@@ -541,3 +541,32 @@ export async function updateIngredientSuppliersAction(
   revalidatePath('/dashboard/inventory')
   return { ok: true }
 }
+
+/** Renombra un ingrediente sin cambiar su identidad ni sus relaciones históricas. */
+export async function updateIngredientNameAction(
+  ingredientId: string,
+  name: string,
+): Promise<{ ok: true; name: string } | { ok: false; message: string }> {
+  const id = String(ingredientId ?? '').trim()
+  const nextName = String(name ?? '').trim().replace(/\s+/g, ' ')
+  if (!INGREDIENT_ID_RE.test(id)) return { ok: false, message: 'Ingrediente no válido.' }
+  if (!nextName || nextName.length > 200) {
+    return { ok: false, message: 'El nombre debe tener entre 1 y 200 caracteres.' }
+  }
+  const gate = await requireIngredientManager()
+  if (!gate.ok) return { ok: false, message: gate.message }
+  const { data, error } = await gate.supabase
+    .from('ingredients')
+    .update({ name: nextName })
+    .eq('id', id)
+    .select('name')
+    .single()
+  if (error || !data) {
+    return { ok: false, message: error?.code === '23505'
+      ? 'Ya existe otro ingrediente con ese nombre.'
+      : 'No se ha podido actualizar el nombre.' }
+  }
+  revalidatePath('/ingredients')
+  revalidatePath(`/ingredients/${id}`)
+  return { ok: true, name: data.name }
+}
