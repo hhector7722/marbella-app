@@ -11731,44 +11731,40 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 
 
 /*
- * Ventas escritorio: selección sobria. Nunca se cubre la curva SVG:
- * fondo transparente y contorno interior, con el número de día en azul.
- * También sirve para rangos de fechas continuos.
+ * Ventas escritorio: la selección pertenece solo al número del día.
+ * Nada opaco ni elevado tapa la línea azul; el número y el importe
+ * ocupan filas independientes incluso con seis semanas visibles.
  */
 @media (min-width: 1024px) {
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
   [data-element='calendar'] .month-cal-cell[data-sales-range] {
-    z-index: 2;
+    z-index: 1;
     background: transparent !important;
-    border-top: 1px solid rgb(68 111 164 / 0.62);
-    border-bottom: 1px solid rgb(68 111 164 / 0.62);
-    border-right-color: transparent;
-    box-shadow: inset 0 0 0 1px rgb(96 144 195 / 0.12);
-    transition: border-color 180ms ease, box-shadow 180ms ease;
-  }
-
-  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
-  [data-element='calendar'] .month-cal-cell[data-sales-range='start'],
-  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
-  [data-element='calendar'] .month-cal-cell[data-sales-range='single'] {
-    border-left: 1px solid rgb(68 111 164 / 0.62);
-    border-top-left-radius: 7px;
-    border-bottom-left-radius: 7px;
-  }
-
-  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
-  [data-element='calendar'] .month-cal-cell[data-sales-range='end'],
-  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
-  [data-element='calendar'] .month-cal-cell[data-sales-range='single'] {
-    border-right: 1px solid rgb(68 111 164 / 0.62);
-    border-top-right-radius: 7px;
-    border-bottom-right-radius: 7px;
+    box-shadow: none;
+    border-top: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-right-color: rgb(243 244 246);
   }
 
   [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
   [data-element='calendar'] .month-cal-cell[data-sales-range]:focus-visible {
     outline: 2px solid #3568ab;
     outline-offset: -3px;
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+  [data-element='calendar'] [data-element='sales-calendar-day-heading'] {
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+  [data-element='calendar'] [data-element='sales-calendar-amount-slot'] {
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
   }
 }
 
