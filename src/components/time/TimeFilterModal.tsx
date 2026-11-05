@@ -367,7 +367,6 @@ export function TimeFilterModal({
                   );
                 })}
               </div>
->
             </div>
           )}
         </div>
