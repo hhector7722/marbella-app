@@ -1010,6 +1010,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             : 'Horario guardado correctamente',
                     );
                 }
+            }).catch((error) => {
+                console.error('Error al completar el guardado de horario', error);
             });
         }
         return settled;
@@ -1035,6 +1037,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             clearTimeout(saveTimeoutRef.current);
             saveTimeoutRef.current = null;
         }
+        // Si ya se guardó correctamente, no crear otra escritura al salir.
+        if (!hasUnsavedChangesRef.current) return true;
         await persistTailRef.current.catch(() => undefined);
         if (!hasUnsavedChangesRef.current) return true;
         return enqueuePersist(false, true);
@@ -1699,8 +1703,9 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                 const ok = await enqueuePersist(true, true);
                                 if (!ok) return;
                                 setShowShareModal(false);
-                                onSuccess?.();
-                                onClose();
+                                // Un único callback: el padre ya cierra el modo edición.
+                                if (onSuccess) onSuccess();
+                                else onClose();
                             }}
                         >
                             {saving ? 'Guardando…' : !isDayPublished ? 'Guardar' : 'Sobreescribir'}
