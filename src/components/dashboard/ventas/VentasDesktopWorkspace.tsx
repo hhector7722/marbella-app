@@ -1100,10 +1100,11 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         ? liveDaySales.total : null;
     const calendarWeekSeries = useMemo(() => calendarWeeks.map(week => week.map(day => {
         const iso = format(day, 'yyyy-MM-dd');
-        if (iso === currentSalesDate && calendarLiveToday !== null) return calendarLiveToday;
+        if (iso === currentSalesDate && calendarLiveToday !== null) return calendarLiveToday === 0 ? null : calendarLiveToday;
         const closing = byDate.get(iso);
         const value = closing?.net_sales == null ? null : Number(closing.net_sales);
-        return value !== null && Number.isFinite(value) ? value : null;
+        // Un cierre con importe cero no dibuja cifra ni punto en la gráfica del calendario.
+        return value !== null && Number.isFinite(value) && value !== 0 ? value : null;
     })), [calendarWeeks, byDate, currentSalesDate, calendarLiveToday]);
     // Escala común mensual basada en mínimo y máximo reales, con margen visual.
     const calendarNetValues = calendarWeekSeries.flat().filter((value): value is number => value !== null);
@@ -2160,7 +2161,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                 const isLiveToday = iso === currentSalesDate && calendarLiveToday !== null;
                                                 const net = isLiveToday ? calendarLiveToday
                                                     : closing?.net_sales == null ? null : Number(closing.net_sales);
-                                                const expectedNet = !isLiveToday && calendarHistoricalNet && net !== null && Number.isFinite(net)
+                                                const visibleNet = net !== null && Number.isFinite(net) && net !== 0;
+                                                const expectedNet = visibleNet && !isLiveToday && calendarHistoricalNet
                                                     ? historicalExpectedNet(iso, calendarHistoricalNet) : null;
                                                 const calendarImproved = expectedNet !== null && net !== null && net > expectedNet + 0.005;
                                                 const calendarDeclined = expectedNet !== null && net !== null && net < expectedNet - 0.005;
@@ -2178,7 +2180,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                     <button key={iso} type="button" onClick={() => selectDate(iso)}
                                                         aria-pressed={selected}
                                                         data-sales-range={rangePosition}
-                                                        aria-label={'Seleccionar ' + iso + (net !== null && Number.isFinite(net) ? (isLiveToday ? ', ventas de hoy en curso ' : ', venta neta ') + euro(net) : '') + performanceDescription}
+                                                        aria-label={'Seleccionar ' + iso + (visibleNet ? (isLiveToday ? ', ventas de hoy en curso ' : ', venta neta ') + euro(net) : '') + performanceDescription}
                                                         className={cn(
                                                             'month-cal-cell relative z-[1] flex min-h-0 min-w-0 flex-col border-r border-gray-100 bg-transparent p-0.5 last:border-r-0 transition-colors hover:bg-sky-50/40',
                                                             !isSameMonth(day, month) && !selected && 'opacity-35'
@@ -2189,7 +2191,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                                                 selected ? 'border-b-2 border-[#3976ae] font-bold text-[#225787]' : 'text-slate-400'
                                                             )}>{format(day, 'd')}</span>
                                                         </span>
-                                                        {net !== null && Number.isFinite(net) && (
+                                                        {visibleNet && (
                                                             <div data-element="sales-calendar-amount-slot" className="flex min-h-0 w-full flex-1 items-center justify-center px-0.5 text-center">
                                                                 <span title={(isLiveToday ? 'Ventas de hoy (en curso): ' : '') + euro(net) + performanceDescription} className={cn(
                                                                     'inline-flex w-max max-w-none items-center justify-center gap-1 whitespace-nowrap rounded-md border px-1 py-1 text-[clamp(9px,0.78vw,12px)] font-semibold leading-none tracking-[-0.025em] text-zinc-900 tabular-nums',
