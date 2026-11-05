@@ -463,6 +463,9 @@ async function loadPdfJsAsPdf2jsonData(pdfBuffer: Buffer): Promise<unknown> {
   if (typeof globalThis.DOMMatrix === 'undefined') {
     globalThis.DOMMatrix = DOMMatrix as typeof globalThis.DOMMatrix;
   }
+  // Precargar explícitamente el worker: Next/Vercel no puede trazar el import
+  // dinámico interno de pdfjs-dist y el fallback de Node quedaría incompleto.
+  await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
   const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const doc = await getDocument({
     data: Uint8Array.from(pdfBuffer),
