@@ -789,9 +789,9 @@ export function StaffWeekScheduleWidget({
                                                         'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
                                                     !today &&
                                                         hasNote &&
-                                                        'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full border border-[var(--color-aviso)] bg-transparent font-semibold',
-                                                    !today && hasNote && !inMonth && 'text-white/45',
-                                                    !today && hasNote && inMonth && 'text-white/90',
+                                                        'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-[var(--color-aviso)] font-semibold text-white',
+                                                    !today && hasNote && !inMonth && 'opacity-60',
+                                                    !today && hasNote && inMonth && 'text-white',
                                                     !today && !hasNote && !inMonth && 'font-medium text-white/45',
                                                     !today && !hasNote && inMonth && 'font-semibold text-white/90',
                                                 )}
