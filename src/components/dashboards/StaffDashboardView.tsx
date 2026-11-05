@@ -290,32 +290,18 @@ function StaffFichajeIcon({
     }
 
     return (
-        <div data-component="StaffFichajeControl" data-plate="fill">
-            <div data-element="iconWrap">
-                <button
-                    type="button"
-                    data-element="iconBox"
-                    onClick={onClockIn}
-                    disabled={actionLoading || clockLoading}
-                    aria-label="Entrada"
-                    className={cn(
-                        'relative touch-manipulation text-white transition-[filter] active:brightness-[0.99] disabled:opacity-70',
-                        'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
-                    )}
-                    style={{ ['--shortcut-fill' as string]: '#0eab78' }}
-                >
-                    <div data-element="asset" className="flex h-full w-full items-center justify-center bg-gradient-to-b from-emerald-500 to-[#0eab78]">
-                        {actionLoading || clockLoading ? (
-                            <LoadingSpinner size="sm" className="text-white" />
-                        ) : (
-                            <span className="text-[10px] font-black uppercase leading-none tracking-wide">Entrada</span>
-                        )}
-                    </div>
-                </button>
-                <span data-element="rim" aria-hidden />
-            </div>
-            <span data-element="text">{FICHAJE_LABEL}</span>
-        </div>
+        <StaffFichajeShortcutShell
+            label={FICHAJE_LABEL}
+            onClick={onClockIn}
+            disabled={actionLoading || clockLoading}
+            shortcutFill="var(--color-positivo)"
+        >
+            {actionLoading || clockLoading ? (
+                <LoadingSpinner size="sm" className="text-white" />
+            ) : (
+                <span className="text-[10px] font-black uppercase leading-[13px] tracking-wide text-white">Entrada</span>
+            )}
+        </StaffFichajeShortcutShell>
     );
 }
 
