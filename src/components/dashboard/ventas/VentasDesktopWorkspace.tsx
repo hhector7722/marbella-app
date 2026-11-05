@@ -795,14 +795,14 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
         ? (window.innerHeight - hover.bottom >= tooltipHeight + 12
             ? hover.bottom + 8 : Math.max(8, hover.top - tooltipHeight - 8)) : 8;
     return (
-        <div className="flex w-full min-w-0 shrink-0 items-stretch gap-3">
-            <div className="flex w-[48%] min-w-0 shrink-0 flex-col items-stretch gap-1.5">
+        <div className="flex w-full min-w-0 shrink-0 flex-col gap-1.5">
+            <div className="grid w-full min-w-0 grid-cols-2 gap-2">
                 {([
                     { label: 'Ventas', value: sales, tone: 'border-sky-400/35 bg-sky-500/10' },
                     { label: 'Venta neta', value: net, tone: 'border-emerald-400/30 bg-emerald-500/10' }
                 ] as const).map(item => (
-                    <div key={item.label}
-                        className={cn('flex min-h-[57px] w-full min-w-0 flex-1 flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
+                    <div key={item.label} data-kpi-tone={item.label === 'Ventas' ? 'sales' : 'net'}
+                        className="ventas-kpi-primary flex min-h-[57px] w-full min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5">
                         <span className="text-[11px] font-medium leading-tight text-white/80">{item.label}</span>
                         <strong className="flex min-h-[30px] max-w-full items-center overflow-hidden whitespace-nowrap text-[clamp(16px,1.75vw,25px)] font-bold leading-tight tabular-nums text-white">
                             {loading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value}
@@ -810,8 +810,9 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                     </div>
                 ))}
             </div>
-            <div className="grid min-w-0 flex-1 grid-flow-col grid-cols-2 grid-rows-3 gap-x-3 gap-y-1">
-                {items.map(item => {
+            <div data-element="financial-kpi-grid" className="grid w-full min-w-0 grid-cols-3 grid-rows-[minmax(42px,auto)_minmax(26px,auto)] gap-x-2 gap-y-1">
+                {items.map((item, index) => {
+                    const floating = index >= 3;
                     const actionable = Boolean(item.payment && item.payment !== 'collections');
                     const selected = actionable && selection?.scope === scope && selection.kind === 'payment' && selection.payment === item.payment;
                     const hasHover = Boolean(item.tooltip || (item.payment === 'cash' && cashBreakdown));
@@ -821,7 +822,14 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                         onFocus: (event: FocusEvent<HTMLElement>) => reveal(item.label, event.currentTarget),
                         onBlur: () => setHover(null)
                     } : {};
-                    const content = (
+                    const content = floating ? (
+                        <span className="flex w-full min-w-0 items-baseline gap-1 overflow-hidden whitespace-nowrap text-[clamp(9px,0.82vw,12px)] leading-tight">
+                            <span className="shrink-0 font-medium text-white/75">{item.label}:</span>
+                            <strong className="min-w-0 truncate font-bold tabular-nums text-white">
+                                {loading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value}
+                            </strong>
+                        </span>
+                    ) : (
                         <>
                             <span className="flex w-full min-w-0 items-center justify-between gap-1">
                                 <span className="min-w-0 truncate text-[11px] font-medium leading-tight text-white/80">{item.label}</span>
@@ -838,10 +846,13 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                         </>
                     );
                     const rowClass = cn(
-                        'relative flex min-h-[42px] w-full min-w-0 flex-col items-start justify-center gap-0.5 rounded-md border px-2 py-1 text-left',
-                        item.tone ?? 'border-white/15 bg-white/[0.035]',
+                        'relative flex w-full min-w-0 items-start justify-center rounded-md border px-2 text-left',
+                        floating
+                            ? 'ventas-kpi-floating min-h-[26px] flex-row items-center py-0.5'
+                            : 'min-h-[42px] flex-col gap-0.5 py-1',
+                        !floating && (item.tone ?? 'border-white/15 bg-white/[0.035]'),
                         actionable && 'cursor-pointer transition-colors hover:brightness-125',
-                        selected && 'ring-1 ring-inset ring-white/75'
+                        selected && !floating && 'ring-1 ring-inset ring-white/75'
                     );
                     return actionable ? (
                         <button key={item.label} type="button" data-crossfilter-trigger
@@ -1805,14 +1816,15 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     {[
                         { label: 'Ventas', value: mobileMonth
                             ? mobileReport ? euro(mobileReport.summary.totalSales) : ''
-                            : displayedDaySales !== null ? euro(displayedDaySales) : '', tone: 'border-sky-400/35 bg-sky-500/10' },
+                            : displayedDaySales !== null ? euro(displayedDaySales) : '', tone: 'sales' as const },
                         { label: 'Venta neta',
                           value: mobileMonth
                               ? mobileExtras ? euro(mobileExtras.net) : ''
                               : displayedDayNet !== null ? euro(displayedDayNet) : '',
-                          tone: 'border-emerald-400/30 bg-emerald-500/10' },
+                          tone: 'net' as const },
                     ].map(item => (
-                        <div key={item.label} className={cn('flex min-h-[61px] min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
+                        <div key={item.label} data-kpi-tone={item.tone}
+                            className="ventas-kpi-primary flex min-h-[61px] min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5">
                             <span className="block text-[11px] font-medium text-white/75">{item.label}</span>
                             <strong className="mt-0.5 flex min-h-[24px] min-w-0 items-center whitespace-nowrap text-[clamp(12px,3.7vw,20px)] font-bold leading-tight tabular-nums">
                                 {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
@@ -1820,15 +1832,28 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         </div>
                     ))}
                 </div>
-                {!previewMode && <div className="mt-1.5 grid grid-cols-3 gap-1.5">
-                    {mobileFinancialItems.map(item => {
+                {!previewMode && <div data-element="financial-kpi-grid" className="mt-1.5 grid grid-cols-3 gap-1.5">
+                    {mobileFinancialItems.map((item, index) => {
+                        const floating = index >= 3;
                         const actionable = item.payment === 'card' || item.payment === 'pending';
                         const detail = item.label === 'Rendimiento' ? 'performance' : item.label === 'Efectivo' ? 'cash' : null;
                         const selected = mobileActiveSelection?.kind === 'payment' && mobileActiveSelection.payment === item.payment;
-                        const tone = cn('flex min-h-[46px] min-w-0 flex-col justify-center rounded-md border px-1.5 py-1 text-left',
-                            item.tone ?? 'border-white/15 bg-white/[0.04]',
-                            selected && 'ring-1 ring-sky-300');
-                        const body = <>
+                        const tone = cn(
+                            'flex min-w-0 justify-center rounded-md border px-1.5 text-left',
+                            floating
+                                ? 'ventas-kpi-floating min-h-[26px] flex-row items-center py-0.5'
+                                : 'min-h-[46px] flex-col py-1',
+                            !floating && (item.tone ?? 'border-white/15 bg-white/[0.04]'),
+                            selected && !floating && 'ring-1 ring-sky-300'
+                        );
+                        const body = floating ? (
+                            <span className="flex w-full min-w-0 items-baseline gap-1 overflow-hidden whitespace-nowrap text-[clamp(9px,2.4vw,12px)] leading-tight">
+                                <span className="shrink-0 font-medium text-white/75">{item.label}:</span>
+                                <strong className="min-w-0 truncate font-bold tabular-nums text-white">
+                                    {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
+                                </strong>
+                            </span>
+                        ) : <>
                             <span className="flex min-w-0 items-center justify-between gap-0.5">
                                 <span className="min-w-0 truncate text-[10px] text-white/70">{item.label}</span>
                                 {(item.payment === 'cash' || item.payment === 'card') && item.ticketPercent != null && (

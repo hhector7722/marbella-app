@@ -31,10 +31,12 @@ function MonthlyMetric({ label, value, tone, title, trend }: {
     trend?: number | null;
 }) {
     return (
-        <div data-metric={tone ?? 'plain'} title={title}
-            className={'flex h-fit w-fit max-w-full min-w-0 flex-col items-start justify-center rounded-md text-left ' + (tone ? 'min-w-[74px] px-2 py-0.5 ' : 'px-1 py-0.5 ') + (
-                tone === 'sales' ? 'border border-sky-400/25 bg-sky-500/10'
-                    : tone === 'net' ? 'border border-emerald-400/25 bg-emerald-500/10'
+        <div data-metric={tone ?? 'plain'} data-kpi-tone={tone === 'sales' || tone === 'net' ? tone : undefined} title={title}
+            className={'flex h-fit w-fit max-w-full min-w-0 flex-col items-start justify-center rounded-md text-left ' +
+                (tone === 'sales' || tone === 'net' ? 'ventas-kpi-primary ' : '') +
+                (tone ? 'min-w-[74px] px-2 py-0.5 ' : 'px-1 py-0.5 ') + (
+                tone === 'sales' ? 'border'
+                    : tone === 'net' ? 'border'
                     : tone === 'trend' ? (trend == null
                         ? 'border border-white/20 bg-white/[0.035]'
                         : trend >= 0 ? 'border border-emerald-400/50 bg-emerald-500/10'

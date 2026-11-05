@@ -261,12 +261,12 @@ export function HomeSalesMobileSummary({
             {hasSales && (
                 <>
                     <div data-element="mobile-sales-kpis" className="flex min-w-0 flex-nowrap items-center justify-start gap-1 tabular-nums">
-                        <div className="inline-flex w-max max-w-full min-w-0 shrink-0 items-center gap-[3px] rounded-md border border-sky-400/35 bg-sky-500/10 px-1 py-0.5">
+                        <div data-kpi-tone="sales" className="ventas-kpi-primary inline-flex w-max max-w-full min-w-0 shrink-0 items-center gap-[3px] rounded-md border px-1 py-0.5">
                             <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]">Ventas</span>
                             <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
                                 title={sales}>{sales}</strong>
                         </div>
-                        <div data-element="mobile-sales-net-kpi" className="inline-flex w-max max-w-full min-w-0 shrink-0 cursor-default items-center gap-[3px] rounded-md border border-emerald-400/30 bg-emerald-500/10 px-1 py-0.5">
+                        <div data-element="mobile-sales-net-kpi" data-kpi-tone="net" className="ventas-kpi-primary inline-flex w-max max-w-full min-w-0 shrink-0 cursor-default items-center gap-[3px] rounded-md border px-1 py-0.5">
                             <span className="shrink-0 text-[9px] font-medium leading-none text-[var(--home-widget-ink-secondary)]">Venta neta</span>
                             <strong className="min-w-0 truncate text-right text-[10px] font-bold leading-none text-[var(--home-widget-ink)]"
                                 title={net}>{net}</strong>

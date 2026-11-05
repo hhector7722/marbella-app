@@ -333,14 +333,14 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                 <button type="button" onClick={() => {
                                     setPreview({ mode: 'day', date: String(closing.closing_date).split('T')[0] });
                                 }} title="Ver detalles de las ventas del cierre"
-                                    className="flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border border-sky-400/25 bg-sky-500/10 px-1 py-0.5 text-left">
+                                    data-kpi-tone="sales" className="ventas-kpi-primary flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border px-1 py-0.5 text-left">
                                     <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Ventas</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.tpvSales)}>
                                         {formatCurrencySpanish(metrics.tpvSales)}
                                     </strong></div>
                                 </button>
-                                <div className="flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border border-emerald-400/25 bg-emerald-500/10 px-1 py-0.5">
+                                <div data-kpi-tone="net" className="ventas-kpi-primary flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border px-1 py-0.5">
                                     <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Venta neta</span>
                                     <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
                                         title={formatCurrencySpanish(metrics.netSales)}>
