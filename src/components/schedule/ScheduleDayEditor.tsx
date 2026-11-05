@@ -478,6 +478,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const persistTailRef = useRef<Promise<unknown>>(Promise.resolve());
     const persistImplRef = useRef<(publish: boolean) => Promise<boolean>>(() => Promise.resolve(false));
     const manualSavesPendingRef = useRef(0);
+    const autoSaveQueuedRef = useRef(false);
+    const editRevisionRef = useRef(0);
     const hasUnsavedChangesRef = useRef(false);
     const [saving, setSaving] = useState(false);
     const [persistError, setPersistError] = useState('');
@@ -918,30 +920,39 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         }
         try {
             const { rows, startOfRange, endOfRange } = buildPersistPayload();
-            const res = await Promise.race([
-                saveScheduleDayAction({
-                    ymd: date,
-                    startISO: startOfRange,
-                    endISO: endOfRange,
-                    publish,
-                    rows,
-                    managedUserIds: managedIdsRef.current,
-                }),
-                new Promise<never>((_, reject) =>
-                    setTimeout(
-                        () => reject(new Error('El servidor no responde (timeout 20s)')),
-                        20_000,
-                    ),
-                ),
-            ]);
+            const revisionAtStart = editRevisionRef.current;
+            let timeoutId: ReturnType<typeof setTimeout> | undefined;
+            let res: DaySaveActionResult;
+            try {
+                res = await Promise.race([
+                    saveScheduleDayAction({
+                        ymd: date,
+                        startISO: startOfRange,
+                        endISO: endOfRange,
+                        publish,
+                        rows,
+                        managedUserIds: managedIdsRef.current,
+                    }),
+                    new Promise<never>((_, reject) => {
+                        timeoutId = setTimeout(
+                            () => reject(new Error('El servidor no responde (timeout 20s)')),
+                            20_000,
+                        );
+                    }),
+                ]);
+            } finally {
+                if (timeoutId) clearTimeout(timeoutId);
+            }
             if (!res.ok) {
                 setPersistError(resolveSaveError(res));
                 toast.error(resolveSaveError(res));
                 return false;
             }
             setPersistError('');
-            hasUnsavedChangesRef.current = false;
-            setHasUnsavedChanges(false);
+            if (revisionAtStart === editRevisionRef.current) {
+                hasUnsavedChangesRef.current = false;
+                setHasUnsavedChanges(false);
+            }
             setIsDayPublished(res.published);
             managedIdsRef.current = rows.map((r) => r.employeeId);
             return true;
@@ -967,6 +978,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
      * `announce` marca los guardados manuales (reflejan `saving` y avisan).
      */
     const enqueuePersist = useCallback((publish: boolean, announce = false): Promise<boolean> => {
+        // Un único autoguardado pendiente: las ediciones intermedias se agrupan.
+        if (!announce) {
+            if (autoSaveQueuedRef.current) return persistTailRef.current.then(() => true);
+            autoSaveQueuedRef.current = true;
+        }
         if (announce) {
             manualSavesPendingRef.current += 1;
             setSaving(true);
@@ -979,6 +995,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             () => undefined,
         );
         const settled = run.finally(() => {
+            if (!announce) autoSaveQueuedRef.current = false;
             if (announce) {
                 manualSavesPendingRef.current = Math.max(0, manualSavesPendingRef.current - 1);
                 if (manualSavesPendingRef.current === 0) setSaving(false);
@@ -1001,6 +1018,12 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     useEffect(() => {
         hasUnsavedChangesRef.current = hasUnsavedChanges;
     }, [hasUnsavedChanges]);
+
+    // Identifica cambios producidos mientras una petición anterior sigue en vuelo.
+    useEffect(() => {
+        if (hasUnsavedChanges) editRevisionRef.current += 1;
+    }, [activity, activity2, categoria, categoria2, defaultEnd, defaultEnd2,
+        defaultStart, defaultStart2, participantsCount, participantsCount2, shifts]);
 
     /**
      * Fuerza el guardado pendiente antes de salir/navegar: cancela el
