@@ -784,7 +784,7 @@ function ProfileContent() {
                 onSaved={() => void fetchInitialData()}
             />
             <NominasMenuModal isOpen={nominasMenuOpen} onClose={() => setNominasMenuOpen(false)} onSelect={handleNominasMenuSelect} />
-            <NominasModal isOpen={nominasListOpen} onClose={() => setNominasListOpen(false)} targetUserId={viewingOtherProfile ? profile.id : undefined} isManager={isManager} />
+            <NominasModal isOpen={nominasListOpen} onClose={() => setNominasListOpen(false)} targetUserId={(identity?.isViewingAs || viewingOtherProfile) ? profile.id : undefined} isManager={isManager} />
             <ComunicadosModal isOpen={comunicadosOpen} onClose={() => setComunicadosOpen(false)} userId={profile.id} isManager={isManager} />
             <ContratoModal isOpen={contratoOpen} onClose={() => setContratoOpen(false)} userId={profile.id} isManager={isManager} />
             <CompanyPdfDocumentModal
