@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { addMonths, subMonths } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   addDays,
   format,
@@ -284,16 +287,26 @@ export function TimeFilterModal({
             </div>
           )}
 
-          {(activeKind === "date" || activeKind === "range" || activeKind === "week" || activeKind === "month" || activeKind === "year") && (
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                variant="secondary"
-                instance="time-filter-jump-today"
-                onClick={jumpToToday}
-              >
-                Hoy
-              </Button>
+          {activeKind !== "hours" && (
+            <div className="flex min-w-0 items-center justify-between gap-2">
+              <div className="min-w-0 flex-1 flex justify-center">
+                <div className="inline-flex max-w-full items-center gap-0.5 text-white">
+                  <button type="button" aria-label="Anterior" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg hover:bg-white/10" onClick={() => {
+                    if (activeKind === "month") setPickerYear(y => y - 1);
+                    else if (activeKind === "year") setPickerYear(y => y - 6);
+                    else { const next = subMonths(calendarBaseDate, 1); setCalendarBaseDate(next); onCalendarMonthChange?.(next); }
+                  }}><ChevronLeft size={19}/></button>
+                  <span className="whitespace-nowrap text-center text-xs font-semibold uppercase tracking-tight">
+                    {activeKind === "month" ? pickerYear : activeKind === "year" ? `${pickerYear - 2}–${pickerYear + 3}` : format(calendarBaseDate, "MMMM yyyy", { locale: es })}
+                  </span>
+                  <button type="button" aria-label="Siguiente" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg hover:bg-white/10" onClick={() => {
+                    if (activeKind === "month") setPickerYear(y => y + 1);
+                    else if (activeKind === "year") setPickerYear(y => y + 6);
+                    else { const next = addMonths(calendarBaseDate, 1); setCalendarBaseDate(next); onCalendarMonthChange?.(next); }
+                  }}><ChevronRight size={19}/></button>
+                </div>
+              </div>
+              <button type="button" onClick={jumpToToday} className="shrink-0 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-100">Hoy</button>
             </div>
           )}
 
@@ -301,6 +314,7 @@ export function TimeFilterModal({
             <div className="space-y-3">
               <MiniMonthCalendar
                 month={calendarBaseDate}
+                monthInHeader
                 dark
                 onMonthChange={next => { setCalendarBaseDate(next); onCalendarMonthChange?.(next); }}
                 dayAmounts={calendarDayAmounts}
@@ -320,6 +334,7 @@ export function TimeFilterModal({
           {activeKind === "month" && allowedKinds.includes("month") && (
             <MonthPickerGrid
               year={pickerYear}
+              hideNavigation
               dark
               onYearChange={setPickerYear}
               isSelected={(monthIndex) =>
@@ -351,22 +366,6 @@ export function TimeFilterModal({
                     </button>
                   );
                 })}
-              </div>
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setPickerYear((y) => y - 6)}
-                  className="min-h-[48px] px-4 rounded-lg border border-white/15 bg-white/5 text-white/75 font-semibold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors"
-                >
-                  -6
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPickerYear((y) => y + 6)}
-                  className="min-h-[48px] px-4 rounded-lg border border-white/15 bg-white/5 text-white/75 font-semibold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors"
-                >
-                  +6
-                </button>
               </div>
             </div>
           )}

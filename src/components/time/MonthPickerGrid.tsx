@@ -54,16 +54,18 @@ export function MonthPickerGrid({
     isSelected,
     onSelectMonth,
     dark = false,
+    hideNavigation = false,
 }: {
     year: number;
     onYearChange: (year: number) => void;
     isSelected: (monthIndex: number) => boolean;
     onSelectMonth: (monthIndex: number) => void;
     dark?: boolean;
+    hideNavigation?: boolean;
 }) {
     return (
         <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
+            {!hideNavigation && <div className="flex items-center justify-center px-1">
                 <button
                     type="button"
                     onClick={() => onYearChange(year - 1)}
@@ -81,7 +83,7 @@ export function MonthPickerGrid({
                 >
                     <ChevronRight size={20} className={dark ? 'text-white/75' : 'text-zinc-400'} />
                 </button>
-            </div>
+            </div>}
 
             <div className="grid grid-cols-3 gap-2">
                 {Array.from({ length: 12 }).map((_, i) => {
