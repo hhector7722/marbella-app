@@ -169,7 +169,7 @@ const SummaryGrid = ({
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface ShiftMock { date: Date; startTime: string; endTime: string; activity?: string; }
-interface DayShiftRow { name: string; avatar_url?: string | null; startTime: string; endTime: string; activity?: string; isDraft?: boolean; }
+interface DayShiftRow { userId: string; name: string; avatar_url?: string | null; startTime: string; endTime: string; activity?: string; isDraft?: boolean; }
 interface Props {
     isOpen: boolean;
     onClose: () => void;
@@ -213,6 +213,7 @@ export const StaffScheduleModal = ({
     const scheduleEditorRef = useRef<ScheduleDayEditorHandle>(null);
     const [editModeForDate, setEditModeForDate] = useState<string | null>(null);
     const [dayShifts, setDayShifts] = useState<DayShiftRow[]>([]);
+    const [expandedAvatar, setExpandedAvatar] = useState<DayShiftRow | null>(null);
     const [dayActivity, setDayActivity] = useState('');
     const [dayCategory, setDayCategory] = useState('');
     const [eventStart, setEventStart] = useState('');
@@ -338,6 +339,7 @@ export const StaffScheduleModal = ({
 
                 setDayShifts(
                     displayShifts.map((s: any) => ({
+                        userId: s.user_id,
                         name: nameMap[s.user_id] || '?',
                         avatar_url: avatarMap[s.user_id] ?? null,
                         startTime: new Date(s.draft_start_time || s.start_time).toLocaleTimeString('es-ES', {
@@ -417,11 +419,28 @@ export const StaffScheduleModal = ({
         return () => window.clearTimeout(timeout);
     }, [navigatingToActividades]);
 
+    const openEmployeeAvatar = (shift: DayShiftRow) => {
+        setExpandedAvatar(shift);
+        void (async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            const { error } = await supabase.from('app_usage_events').insert({
+                profile_id: user.id,
+                event_type: 'action',
+                path: pathname,
+                label: `Avatar de ${shift.name}`,
+                metadata: { action: 'schedule_avatar_open', target_profile_id: shift.userId, target_name: shift.name },
+            });
+            if (error) console.error('[schedule-avatar] usage tracking failed', error);
+        })();
+    };
+
     const handleBack = () => { setActivityDetailDate(null); dayRequestRef.current += 1; setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); setDayShellReady(false); };
     const handleClose = async () => {
         // Coordina con la persistencia en curso; si falla, el editor ya avisa,
         // pero el cierre no queda atrapado.
         await scheduleEditorRef.current?.flushSave();
+        setExpandedAvatar(null);
         setActivityDetailDate(null);
         dayRequestRef.current += 1;
         setSelectedDate(null);
@@ -486,6 +505,17 @@ export const StaffScheduleModal = ({
     return (
         <>
             {navigationOverlay}
+            {expandedAvatar && typeof document !== 'undefined' && createPortal(
+                <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/65 backdrop-blur-xl p-8" onClick={() => setExpandedAvatar(null)} role="presentation">
+                    <button type="button" className="absolute right-5 top-5 rounded-full bg-white/15 px-4 py-2 text-white" onClick={() => setExpandedAvatar(null)} aria-label="Cerrar avatar">Cerrar</button>
+                    <div className="flex flex-col items-center gap-4" onClick={(event) => event.stopPropagation()}>
+                        <div className="h-64 w-64 max-w-[75vw] max-h-[75vw] overflow-hidden rounded-full bg-white shadow-2xl">
+                            {expandedAvatar.avatar_url ? <img src={expandedAvatar.avatar_url} alt={expandedAvatar.name} className="h-full w-full object-cover" /> : <Avatar src={null} alt={expandedAvatar.name} size="xl" className="!h-full !w-full" />}
+                        </div>
+                        <span className="text-lg font-semibold text-white">{expandedAvatar.name}</span>
+                    </div>
+                </div>, document.body
+            )}
             <Modal
                 open={isOpen}
                 onClose={handleClose}
@@ -508,14 +538,6 @@ export const StaffScheduleModal = ({
                 headerTrailing={
                     editModeForDate ? (
                         <>
-                            <button
-                                type="button"
-                                onClick={() => navigateEditingDay(-1)}
-                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                                aria-label="Día anterior"
-                            >
-                                <ChevronLeft size={18} strokeWidth={2.5} />
-                            </button>
                             <button
                                 type="button"
                                 onClick={() => navigateEditingDay(1)}
@@ -543,30 +565,6 @@ export const StaffScheduleModal = ({
                         </>
                     ) : (
                         <>
-                            {selectedDate ? (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const prevDay = new Date(selectedDate);
-                                        prevDay.setDate(prevDay.getDate() - 1);
-                                        void handleDayClick(prevDay);
-                                    }}
-                                    className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                                    aria-label="Día anterior"
-                                >
-                                    <ChevronLeft size={18} strokeWidth={2.5} />
-                                </button>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={() => navigateMonth(-1)}
-                                    className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                                    aria-label="Mes anterior"
-                                >
-                                    <ChevronLeft size={20} strokeWidth={2.5} />
-                                </button>
-                            )}
-
                             {selectedDate ? (
                                 <button
                                     type="button"
@@ -801,10 +799,10 @@ export const StaffScheduleModal = ({
                                         {dayShifts.map((shift, idx) => (
                                             <div key={idx} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
                                                 <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
-                                                    <Avatar src={shift.avatar_url ?? undefined} alt={shift.name} size="sm" className="shrink-0" />
-                                                    <span data-element="employee-name" className="min-w-0 truncate text-[11px] font-medium leading-none text-zinc-800 select-none">
-                                                        {shift.name}
-                                                    </span>
+                                                    <button type="button" onClick={() => openEmployeeAvatar(shift)} className="flex min-w-0 items-center gap-2 text-left" aria-label={`Ampliar avatar de ${shift.name}`}>
+                                                        <Avatar src={shift.avatar_url ?? undefined} alt={shift.name} size="sm" className="shrink-0" />
+                                                        <span data-element="employee-name" className="min-w-0 truncate text-[11px] font-medium leading-none text-zinc-800 select-none">{shift.name}</span>
+                                                    </button>
                                                     {shift.isDraft ? (
                                                         <span
                                                             title="Borrador: aún no publicado"

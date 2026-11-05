@@ -240,7 +240,7 @@ const ShiftBar = ({
         <div
             ref={barRef}
             data-element="shift-bar"
-            className={cn('absolute top-2 bottom-2 flex items-center justify-between rounded-full z-10 touch-none overflow-hidden px-1.5', barClass, allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}
+            className={cn('absolute top-2.5 bottom-2.5 flex items-center justify-between rounded-full z-10 touch-none overflow-hidden px-1.5', barClass, allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}
             style={{
                 left: `${leftPos}%`,
                 width: `${width}%`,
