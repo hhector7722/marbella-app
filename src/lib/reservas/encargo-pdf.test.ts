@@ -132,3 +132,22 @@ test('Factura sin notas de productos, presupuesto conservando sus notas', async 
   assert.match(quoteText, /SIN CEBOLLA/)
   assert.match(invoiceText, /21[.]00/)
 })
+
+
+test('El IBAN de la empresa aparece en todos los PDF de presupuesto y factura', async () => {
+  for (const kind of ['quote', 'invoice'] as const) {
+    const result = await generateEncargoPdf(kind, baseline, items)
+    const doc = await getDocument({
+      data: new Uint8Array(await result.blob.arrayBuffer()), useSystemFonts: true,
+    }).promise
+    try {
+      const page = await doc.getPage(1)
+      const content = await page.getTextContent()
+      const text = content.items.map((item) => ('str' in item ? item.str : '')).join(' ')
+      assert.match(text, /ES5901827280710201626770/, kind)
+      assert.match(text, /IBAN/, kind)
+    } finally {
+      await doc.destroy()
+    }
+  }
+})

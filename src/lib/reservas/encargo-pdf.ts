@@ -269,11 +269,11 @@ function drawCompanyHeader(doc: PdfDoc, logoDataUrl: string | null, kind: Encarg
   doc.text(`${COMPANY.legalName} · CIF ${COMPANY.cif}`, textX, detailY)
   doc.text(COMPANY.address, textX, detailY + step)
   doc.text(`Tel. ${COMPANY.phone} · ${COMPANY.email}`, textX, detailY + step * 2)
-  if (kind === 'invoice') doc.text(COMPANY.iban, textX, detailY + step * 3)
+  doc.text(`IBAN: ${COMPANY.iban}`, textX, detailY + step * 3)
 
   doc.setDrawColor(...LINE)
   doc.setLineWidth(0.2)
-  const headerBottom = top + logoSize + (kind === 'invoice' ? 9 : 5)
+  const headerBottom = top + logoSize + 9
   doc.line(left, headerBottom, 196, headerBottom)
 }
 
@@ -723,12 +723,12 @@ export async function generateEncargoPdf(
   }
 
   drawCompanyHeader(doc, logoDataUrl, kind)
-  drawTitle(doc, kind, meta, 39)
+  drawTitle(doc, kind, meta, kind === 'quote' ? 45 : 39)
   const hasInvoiceCustomer = kind === 'invoice' && Boolean(meta.invoiceCustomer)
-  if (!hasInvoiceCustomer) drawMeta(doc, meta, 49)
+  if (!hasInvoiceCustomer) drawMeta(doc, meta, kind === 'quote' ? 55 : 49)
   const tableStartY = hasInvoiceCustomer
     ? Math.max(62, drawInvoiceCustomerMeta(doc, meta, 46) + 3.5)
-    : 67
+    : kind === 'quote' ? 73 : 67
 
   let totalGross = 0
   const body = items.map((item) => {

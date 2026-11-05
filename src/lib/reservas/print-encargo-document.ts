@@ -191,6 +191,7 @@ const INVOICE_COMPANY = {
   address: 'Av. Litoral 86, 08005 Barcelona',
   phone: '647 229 309',
   email: 'fogotorrat@gmail.com',
+  iban: 'ES5901827280710201626770',
 } as const
 
 function formatEuro(amount: number): string {
@@ -556,6 +557,7 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
           <p class="brand-line">${escapeHtml(INVOICE_COMPANY.legalName)} · CIF ${escapeHtml(INVOICE_COMPANY.cif)}</p>
           <p class="brand-line">${escapeHtml(INVOICE_COMPANY.address)}</p>
           <p class="brand-line">Tel. ${escapeHtml(INVOICE_COMPANY.phone)} · ${escapeHtml(INVOICE_COMPANY.email)}</p>
+          <p class="brand-line">IBAN: ${escapeHtml(INVOICE_COMPANY.iban)}</p>
         </div>
       </div>
     </header>
