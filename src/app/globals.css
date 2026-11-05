@@ -10054,6 +10054,14 @@ body:has([data-component='Modal'][data-instance='albaran-invoice-image'])
   border-color: var(--ventas-premium-edge-soft);
   box-shadow: var(--ventas-premium-shadow-secondary);
 }
+/* Solo el resumen mensual de Ventas en escritorio: violeta pizarra opaco.
+   Mantener el borde y la sombra existentes, sin tocar el detalle diario. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary {
+    background: #292F50;
+  }
+}
 [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] .history-desktop-day {
   background: var(--ventas-home-main);
   border-color: var(--ventas-premium-edge);
