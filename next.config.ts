@@ -53,10 +53,6 @@ const nextConfig: NextConfig = {
     "/api/propuestas/vales-bebida": [
       "./assets/propuestas/vales-bebida-cena-monitores.pdf",
     ],
-    "/api/webhooks/nominas-summary": [
-      "./node_modules/.pnpm/pdfjs-dist@*/node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
-      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
-    ],
   },
   // 🧠 AISLAMIENTO ESTRICTO: Evita que Webpack/Turbopack minifique y rompa la librería
   serverExternalPackages: ["pdf-parse", "sharp", "pdf2json", "pdfjs-dist", "@napi-rs/canvas"],
