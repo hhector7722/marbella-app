@@ -9,6 +9,7 @@ import { Field } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/modal'
 import {
   getIngredientCanonicalConfigAction,
+  updateIngredientNameAction,
   listIngredientSuppliersAction,
   updateIngredientSuppliersAction,
   setIngredientArchivedAction,
@@ -84,6 +85,7 @@ export function IngredientCanonicalEditModal({
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const stagedBlobRef = useRef<string | null>(null)
+  const [newName, setNewName] = useState(ingredient.name)
   const [newPrice, setNewPrice] = useState(() => priceInputValue(ingredient.current_price))
   const [newUnit, setNewUnit] = useState(() => ingredient.purchase_unit || 'ud')
   const [newRecipeUnit, setNewRecipeUnit] = useState(() => ingredient.recipe_unit || ingredient.purchase_unit || 'ud')
@@ -149,6 +151,8 @@ export function IngredientCanonicalEditModal({
     && parsedPackContent > 0
     && parsedPackContent <= 100000
   )
+  const nameChanged = newName.trim() !== ingredient.name.trim()
+  const validName = newName.trim().length > 0 && newName.trim().length <= 200
   const imageChanged = selectedFile != null
   const suppliersChanged = supplier !== (ingredient.supplier ?? '') || supplier2 !== (ingredient.supplier_2 ?? '')
   const requiresUnitTransition = unitChanged && newUnit === 'm' && baselineBaseUnit !== 'm'
@@ -157,10 +161,10 @@ export function IngredientCanonicalEditModal({
     && Number.isFinite(openingMeters) && openingMeters >= 0
   const canonicalChanged = priceChanged || unitChanged || recipeUnitChanged || densityChanged
   const canSave = (
-    suppliersChanged || imageChanged || canonicalChanged || packChanged
+    nameChanged || suppliersChanged || imageChanged || canonicalChanged || packChanged
   ) && (!canonicalChanged || (validPrice && validDensity
       && (!requiresUnitTransition || validOpeningMeters)))
-    && validPackContent
+    && validPackContent && validName
   const unit = newUnit || 'ud'
   const isArchived = Boolean(ingredient.archived_at)
   const displayImageSrc = previewBlobUrl ?? baselineImageUrl
@@ -258,11 +262,15 @@ export function IngredientCanonicalEditModal({
       toast.error('Indica los mililitros o gramos que contiene cada unidad.')
       return
     }
-    if (!imageChanged && !canonicalChanged && !suppliersChanged && !packChanged) return
+    if (!nameChanged && !imageChanged && !canonicalChanged && !suppliersChanged && !packChanged) return
 
     setSaving(true)
     try {
       let imagePersisted = false
+      if (nameChanged) {
+        const renamed = await updateIngredientNameAction(ingredient.id, newName)
+        if (!renamed.ok) { toast.error(renamed.message); return }
+      }
       if (suppliersChanged) {
         const suppliersResult = await updateIngredientSuppliersAction(ingredient.id, supplier || null, supplier2 || null)
         if (!suppliersResult.ok) { toast.error(suppliersResult.message); return }
@@ -289,7 +297,7 @@ export function IngredientCanonicalEditModal({
           if (!result.ok) { toast.error(result.message); return }
         }
         toast.success(packChanged ? 'Contenido por unidad actualizado.' :
-          suppliersChanged ? 'Proveedor actualizado.' : 'Imagen actualizada.')
+          nameChanged ? 'Nombre actualizado.' : suppliersChanged ? 'Proveedor actualizado.' : 'Imagen actualizada.')
         onSaved()
         onClose()
         return
@@ -357,6 +365,10 @@ export function IngredientCanonicalEditModal({
       if (!result.ok) {
         toast.error(result.message)
         return
+      }
+      if (nameChanged) {
+        const renamed = await updateIngredientNameAction(ingredient.id, newName)
+        if (!renamed.ok) toast.warning(renamed.message)
       }
       if (suppliersChanged) {
         const suppliersResult = await updateIngredientSuppliersAction(ingredient.id, supplier || null, supplier2 || null)
@@ -484,6 +496,11 @@ export function IngredientCanonicalEditModal({
           </aside>
 
           <div className="space-y-4">
+            <Field instance="ingredient-edit-name" label="Nombre del ingrediente" htmlFor="ingredient-edit-name"
+              error={!validName ? 'Introduce un nombre de entre 1 y 200 caracteres.' : undefined}>
+              <input id="ingredient-edit-name" value={newName} maxLength={200}
+                disabled={saving} onChange={(event) => setNewName(event.target.value)} />
+            </Field>
             <section className="overflow-hidden rounded-ds-superficie border border-ds-borde bg-ds-superficie">
               <div className="border-b border-ds-borde bg-zinc-50/80 px-4 py-3">
                 <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-zinc-700">
