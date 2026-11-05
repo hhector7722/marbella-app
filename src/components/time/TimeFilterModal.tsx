@@ -353,9 +353,10 @@ export function TimeFilterModal({
                 <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-white/85">Colores de venta neta</p>
                   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[10px] text-white/85">
-                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-orange-300 bg-orange-200" />Más bajas</span>
-                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-yellow-300 bg-yellow-200" />Intermedias</span>
-                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-emerald-400 bg-emerald-200" />Más altas</span>
+                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-orange-300 bg-orange-200" />Muy bajas</span>
+                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-yellow-300 bg-yellow-200" />Bajas</span>
+                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-lime-300 bg-lime-200" />Medias</span>
+                    <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-3 w-3 rounded border border-emerald-400 bg-emerald-200" />Altas</span>
                   </div>
                   <p className="text-[10px] leading-snug text-white/55">Comparación relativa entre los días con ventas del mes. Un día sin importe no tiene datos.</p>
                 </div>
