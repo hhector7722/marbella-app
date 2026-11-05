@@ -214,6 +214,7 @@ export const StaffScheduleModal = ({
     const [editModeForDate, setEditModeForDate] = useState<string | null>(null);
     const [dayShifts, setDayShifts] = useState<DayShiftRow[]>([]);
     const [expandedAvatar, setExpandedAvatar] = useState<DayShiftRow | null>(null);
+    const [closingAvatar, setClosingAvatar] = useState(false);
     const [dayActivity, setDayActivity] = useState('');
     const [dayCategory, setDayCategory] = useState('');
     const [eventStart, setEventStart] = useState('');
@@ -420,6 +421,7 @@ export const StaffScheduleModal = ({
     }, [navigatingToActividades]);
 
     const openEmployeeAvatar = (shift: DayShiftRow) => {
+        setClosingAvatar(false);
         setExpandedAvatar(shift);
         void (async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -435,12 +437,40 @@ export const StaffScheduleModal = ({
         })();
     };
 
+    const closeEmployeeAvatar = () => {
+        if (!closingAvatar) setClosingAvatar(true);
+    };
+
+    // Dejar completar la salida, en lugar de desmontar la imagen bruscamente.
+    useEffect(() => {
+        if (!closingAvatar) return;
+        const timeout = window.setTimeout(() => {
+            setExpandedAvatar(null);
+            setClosingAvatar(false);
+        }, 200);
+        return () => window.clearTimeout(timeout);
+    }, [closingAvatar]);
+
+    // Escape solo cierra la imagen; no el modal de horarios que está detrás.
+    useEffect(() => {
+        if (!expandedAvatar) return;
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            setClosingAvatar(true);
+        };
+        document.addEventListener('keydown', onKeyDown, true);
+        return () => document.removeEventListener('keydown', onKeyDown, true);
+    }, [expandedAvatar]);
+
     const handleBack = () => { setActivityDetailDate(null); dayRequestRef.current += 1; setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); setDayShellReady(false); };
     const handleClose = async () => {
         // Coordina con la persistencia en curso; si falla, el editor ya avisa,
         // pero el cierre no queda atrapado.
         await scheduleEditorRef.current?.flushSave();
         setExpandedAvatar(null);
+        setClosingAvatar(false);
         setActivityDetailDate(null);
         dayRequestRef.current += 1;
         setSelectedDate(null);
@@ -506,18 +536,44 @@ export const StaffScheduleModal = ({
         <>
             {navigationOverlay}
             {expandedAvatar && typeof document !== 'undefined' && createPortal(
-                <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/65 backdrop-blur-xl p-8" onClick={() => setExpandedAvatar(null)} role="presentation">
-                    <button type="button" className="absolute right-5 top-5 rounded-full bg-white/15 px-4 py-2 text-white" onClick={() => setExpandedAvatar(null)} aria-label="Cerrar avatar">Cerrar</button>
-                    <div className="flex flex-col items-center gap-4" onClick={(event) => event.stopPropagation()}>
-                        <div className="flex h-[min(72vh,560px)] w-[min(90vw,560px)] items-center justify-center">
-                            {expandedAvatar.avatar_url ? (
-                                <img src={expandedAvatar.avatar_url} alt={expandedAvatar.name} className="block max-h-full max-w-full object-contain drop-shadow-2xl" />
-                            ) : (
-                                <Avatar src={null} alt={expandedAvatar.name} size="xl" />
-                            )}
-                        </div>
-                        <span className="text-lg font-semibold text-white">{expandedAvatar.name}</span>
-                    </div>
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={`Imagen ampliada de ${expandedAvatar.name}`}
+                    data-element="schedule-avatar-overlay"
+                    data-closing={closingAvatar ? 'true' : undefined}
+                    className="fixed inset-0 z-[11000]"
+                >
+                    <button
+                        type="button"
+                        onClick={(event) => { event.stopPropagation(); closeEmployeeAvatar(); }}
+                        aria-label={`Cerrar imagen de ${expandedAvatar.name}`}
+                        className="flex h-full w-full cursor-zoom-out flex-col items-center justify-center bg-black/70 px-4 py-6 text-white backdrop-blur-lg"
+                    >
+                        <span data-element="schedule-avatar-content" className="flex max-h-full max-w-full flex-col items-center justify-center gap-2">
+                            <span
+                                data-element="schedule-avatar-portrait"
+                                className={cn(
+                                    'block aspect-square w-[min(84vw,46dvh,420px)] shrink-0 overflow-hidden rounded-full',
+                                    expandedAvatar.avatar_url ? 'bg-transparent' : 'bg-white'
+                                )}
+                            >
+                                {/* eslint-disable-next-line @next/next/no-img-element -- avatares de Storage con o sin transparencia */}
+                                <img
+                                    src={expandedAvatar.avatar_url || '/icons/profile.png'}
+                                    alt={expandedAvatar.name}
+                                    draggable={false}
+                                    className={cn(
+                                        'block h-full w-full rounded-full',
+                                        expandedAvatar.avatar_url ? 'object-cover' : 'object-contain opacity-70'
+                                    )}
+                                />
+                            </span>
+                            <span data-element="schedule-avatar-name" className="block max-w-[90vw] text-center text-lg font-semibold leading-tight text-white">
+                                {expandedAvatar.name}
+                            </span>
+                        </span>
+                    </button>
                 </div>, document.body
             )}
             <Modal
