@@ -871,12 +871,12 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
         <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-4 pt-2 text-white">
             <div className="relative mb-3 flex min-h-[36px] min-w-0 shrink-0 items-center justify-between gap-2 border-b border-white/15">
                 <strong className="shrink-0 text-sm font-bold">{title}</strong>
-                <nav className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1" aria-label="Navegar por meses del resumen mensual">
+                <nav className="absolute left-1/2 flex max-w-[55%] -translate-x-1/2 items-center gap-0.5" aria-label="Navegar por meses del resumen mensual">
                     <button type="button" onClick={() => onNavigateMonth(-1)} aria-label="Mes anterior del resumen"
                         className="inline-flex h-7 w-6 shrink-0 items-center justify-center rounded hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300">
                         <ChevronLeft size={16} aria-hidden="true"/>
                     </button>
-                    <span className="min-w-[94px] max-w-[116px] truncate text-center text-[12px] font-semibold capitalize text-white" title={dateText}>{dateText}</span>
+                    <span className="min-w-0 truncate whitespace-nowrap text-center text-[12px] font-semibold capitalize text-white" title={dateText}>{dateText}</span>
                     <button type="button" onClick={() => onNavigateMonth(1)} aria-label="Mes siguiente del resumen"
                         className="inline-flex h-7 w-6 shrink-0 items-center justify-center rounded hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300">
                         <ChevronRight size={16} aria-hidden="true"/>
@@ -2002,9 +2002,9 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     </section>
                 </div>
                 <div data-element="calendar-column" className="flex min-h-0 min-w-0 flex-col">
-                    <nav data-element="calendar-navigation" className="relative flex shrink-0 items-center justify-center gap-2 text-white" aria-label="Cambiar mes de ventas">
+                    <nav data-element="calendar-navigation" className="relative flex shrink-0 items-center justify-center gap-0.5 text-white" aria-label="Cambiar mes de ventas">
                         <button type="button" onClick={() => navigateMonth(-1)} aria-label="Mes anterior" className="rounded p-1.5 hover:bg-white/10"><ChevronLeft size={19}/></button>
-                        <strong className="min-w-[128px] text-center text-sm font-semibold capitalize">{calendarMonthLabel}</strong>
+                        <strong className="whitespace-nowrap text-center text-sm font-semibold capitalize">{calendarMonthLabel}</strong>
                         <button type="button" onClick={() => navigateMonth(1)} aria-label="Mes siguiente" className="rounded p-1.5 hover:bg-white/10"><ChevronRight size={19}/></button>
                         <div className="absolute right-0 top-0 inline-flex pr-2 pt-1">
                             <button type="button" onClick={() => setFilterOpen(true)}
