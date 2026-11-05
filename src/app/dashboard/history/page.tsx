@@ -438,7 +438,7 @@ export default function HistoryPage() {
     const router = useRouter();
     const trackHistoryExportMonths = useTrackModalApply('history-export-month-picker', 'Exportar meses historial');
 
-    const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
+    const [filterMode, setFilterMode] = useState<'single' | 'range'>('single');
     const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
     const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
     const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
