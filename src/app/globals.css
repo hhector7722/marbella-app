@@ -11812,26 +11812,24 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 }
 
 
-/* Ventas y widgets de ambos dashboards: KPIs primarios premium.
-   Superficies totalmente opacas; degradados internos del mismo color y relieve
-   sutil sin manchas ni sombras negras. La geometría la controla cada widget. */
+/* Ventas y Venta neta en todas las vistas: satinado opaco, sin contorno
+   visible ni sombras exteriores. Conservar el borde transparente evita
+   cualquier variación de dimensiones respecto al resto de indicadores. */
 .ventas-kpi-primary[data-kpi-tone='sales'] {
-  background-color: #006de5;
-  background-image: linear-gradient(180deg, #1189ff 0%, #0067e0 48%, #0246a5 100%);
-  border-color: #43b3ff;
+  background-color: #28618F;
+  background-image: linear-gradient(180deg, #30709F 0%, #28618F 35%, #1B4C79 100%);
+  border-color: transparent;
   box-shadow:
-    inset 0 1px 0 rgb(245 252 255 / .63),
-    inset 0 -1px 0 rgb(8 56 150 / .30),
-    0 2px 5px rgb(17 95 192 / .21);
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    inset 0 -2px 3px rgb(19 61 94 / 0.11);
 }
 .ventas-kpi-primary[data-kpi-tone='net'] {
-  background-color: #01a957;
-  background-image: linear-gradient(180deg, #02d27d 0%, #01a957 50%, #01802b 100%);
-  border-color: #25df9a;
+  background-color: #247B66;
+  background-image: linear-gradient(180deg, #2D9179 0%, #247B66 35%, #17614F 100%);
+  border-color: transparent;
   box-shadow:
-    inset 0 1px 0 rgb(242 255 250 / .55),
-    inset 0 -1px 0 rgb(0 91 55 / .29),
-    0 2px 5px rgb(4 124 72 / .20);
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    inset 0 -2px 3px rgb(14 76 59 / 0.11);
 }
 .ventas-kpi-primary[data-kpi-tone] :is(span, strong) {
   color: #fff !important;
