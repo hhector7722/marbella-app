@@ -12296,3 +12296,22 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     height: 100%;
   }
 }
+
+
+/* Ventas y cierres — mensual escritorio: un único violeta pizarra uniforme.
+   Neutraliza la antigua cabecera azul grisácea y los distintos tonos de
+   sección. Sin alterar el grid, los huecos, el contorno ni los indicadores. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary,
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='sales-desktop-header'],
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='month-financials'],
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='products-section'],
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='hours-section'] {
+    background: #383653;
+  }
+}
