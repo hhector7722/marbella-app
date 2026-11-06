@@ -12165,3 +12165,24 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     background: var(--ventas-zona-inferior);
   }
 }
+
+/* Ventas, escritorio: el importe de Venta neta se muestra completo.
+   La cifra ya llega sin abreviar y con sus decimales y €; el truncado
+   del KPI la recortaba. Darle un poco más de la fila disponible. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] {
+    grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+  }
+
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] > [data-element='mobile-sales-net-kpi'] > strong {
+    flex: 0 0 auto;
+    min-width: max-content;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+}
