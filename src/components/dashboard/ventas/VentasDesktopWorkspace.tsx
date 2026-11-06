@@ -2093,7 +2093,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 </strong>
                                 {isSingleDay && selectedClosing?.weather && (
                                     <span title={selectedClosing.weather} aria-label={'Clima: ' + selectedClosing.weather}
-                                        className="inline-flex shrink-0 items-center text-white/70">
+                                        className="ml-1.5 inline-flex shrink-0 items-center text-white/70">
                                         <CloudSun size={13}/>
                                     </span>
                                 )}
@@ -2103,6 +2103,10 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 }} aria-label="Fecha siguiente" className="shrink-0 rounded p-1 text-white/75 hover:bg-white/10">
                                     <ChevronRight size={16}/>
                                 </button>
+
+                            </nav>
+                            <div data-element="sales-desktop-header-right" className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1.5">
+                                <TicketHeaderStats report={dailyReport}/>
                                 {isSingleDay && selectedClosing && canEditClosings && (
                                     <button type="button"
                                         aria-label={'Editar cierre del ' + periodTitle} title="Editar cierre"
@@ -2111,9 +2115,6 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                         <Pencil size={13} strokeWidth={1.6} aria-hidden="true"/>
                                     </button>
                                 )}
-                            </nav>
-                            <div data-element="sales-desktop-header-right" className="ml-auto flex min-w-0 shrink-0 justify-end">
-                                <TicketHeaderStats report={dailyReport}/>
                             </div>
                         </header>
                         <div data-element="day-financials" className="shrink-0 border-b border-white/10 px-3 py-3">

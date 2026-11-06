@@ -11936,3 +11936,197 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     display: none;
   }
 }
+
+
+/* Ventas y cierres / escritorio: las dos cards comparten tracks reales.
+   Ninguna altura depende del número de productos o de los datos del periodo.
+   El ranking conserva su scroll existente cuando excede el espacio útil. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] {
+    --ventas-card-header-height: 36px;
+    --ventas-card-hours-height: 230px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day) {
+    display: grid;
+    grid-template-rows: var(--ventas-card-header-height) max-content minmax(0, 1fr);
+    min-height: 0;
+    align-content: stretch;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='month-financials'], [data-element='day-financials']) {
+    min-height: 0;
+    padding-block: 12px;
+    background: rgb(255 255 255 / 0.018);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='month-breakdown'], [data-element='day-breakdown']) {
+    min-height: 0;
+    padding-top: 8px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='month-breakdown'] {
+    padding-bottom: 0;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='day-breakdown'] {
+    padding-bottom: 16px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-breakdown'] {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) var(--ventas-card-hours-height);
+    gap: 4px;
+    padding-top: 8px;
+    min-height: 0;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='products-section'] {
+    min-height: 0;
+    overflow: hidden;
+    background: rgb(255 255 255 / 0.01);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='hours-section'] {
+    height: 100%;
+    min-height: 0;
+    background: rgb(0 0 0 / 0.018);
+  }
+}
+
+/* Altura limitada: ambas gráficas y ambas tablas horarias usan el MISMO
+   track compacto, sin las anteriores alturas distintas de mes y día. */
+@media screen and (min-width: 1024px) and (max-width: 1699px) and (max-height: 820px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'] {
+    --ventas-card-hours-height: 178px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='month-financials'], [data-element='day-financials']) {
+    padding-block: 8px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='month-breakdown'], [data-element='day-breakdown']) {
+    padding-top: 4px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-breakdown'] {
+    padding-top: 4px;
+    gap: 4px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='day-breakdown'] {
+    padding-bottom: 16px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='hours-header'] {
+    margin-bottom: 4px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='hours-plot'] {
+    height: 38px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='hours-axis'] {
+    height: 16px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='hours-details'] {
+    margin-top: 4px;
+    height: 90px;
+    padding-block: 3px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='products-section'] {
+    padding-bottom: 0;
+  }
+}
+
+
+/* Prioridad frente a las antiguas variantes compactas diferentes de mes/día:
+   los dos tramos horarios y su contenido mantienen dimensiones idénticas. */
+@media screen and (min-width: 1024px) and (max-width: 1699px) and (max-height: 820px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='summary-stack'], [data-element='selected-day']) [data-element='hours-section'] {
+    height: var(--ventas-card-hours-height);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='summary-stack'], [data-element='selected-day']) [data-element='hours-header'] {
+    margin-bottom: 4px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='summary-stack'], [data-element='selected-day']) [data-element='hours-plot'] {
+    height: 38px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='summary-stack'], [data-element='selected-day']) [data-element='hours-axis'] {
+    height: 16px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='summary-stack'], [data-element='selected-day']) [data-element='hours-details'] {
+    height: 90px;
+    margin-top: 4px;
+    padding-block: 3px;
+  }
+}
+
+/* En la vista compacta, la antigua regla del día recortaba 8 px menos que
+   la mensual. Igualar también el cierre inferior del grid de tres zonas. */
+@media screen and (min-width: 1024px) and (max-width: 1699px) and (max-height: 820px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='day-breakdown'] {
+    padding-bottom: 16px;
+  }
+}
+
+/* A 1024 px mantener la fecha y el lápiz simultáneamente, sin alterar
+   sus tamaños de letra ni mover la navegación fuera del centro. */
+@media (min-width: 1024px) and (max-width: 1099px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-center'] {
+    gap: 0;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-center'] > button {
+    width: 11px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-center'] > button svg {
+    width: 11px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-right'] {
+    gap: 2px;
+  }
+}
+
+/* Los días de dos dígitos ocupan más anchura; conservar fecha completa,
+   clima separado y lápiz sin solaparse a 1024 px. */
+@media (min-width: 1024px) and (max-width: 1099px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-center'] > button {
+    width: 9px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-center'] > button svg {
+    width: 9px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-center'] > span {
+    margin-left: 4px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-right'] {
+    gap: 1px;
+  }
+}
+
+@media (min-width: 1100px) and (max-width: 1199px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-center'] > button {
+    width: 14px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='selected-day'] [data-element='sales-desktop-header-center'] > span {
+    margin-left: 4px;
+  }
+}
