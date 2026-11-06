@@ -12186,3 +12186,113 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     overflow-wrap: normal;
   }
 }
+
+
+/* Ventas y cierres · escritorio: tres superficies contenidas y separadas.
+   Las cards mensual y diaria conservan el mismo grid de tres tracks y
+   su contenido original; solo se estilizan los contenedores existentes. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary {
+    background: #383653;
+    border-color: rgb(255 255 255 / 0.075);
+    box-shadow: none;
+    --ventas-superficie-resumen: #44415F;
+    --ventas-superficie-productos: #44415F;
+    --ventas-superficie-horas: #3F3C59;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-day {
+    --ventas-superficie-resumen: #254363;
+    --ventas-superficie-productos: #203B5C;
+    --ventas-superficie-horas: #1B3554;
+  }
+
+  /* Tres huecos reales de 12 px: cabecera/resumen,
+     resumen/productos y productos/horas. */
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day) {
+    row-gap: 12px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='month-breakdown'], [data-element='day-breakdown']) {
+    padding-top: 0;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-breakdown'] {
+    gap: 12px;
+    padding-top: 0;
+    grid-template-rows: minmax(0, 1fr) calc(var(--ventas-card-hours-height) + 8px);
+  }
+
+  /* Igualar los bordes interiores sin mover el texto original:
+     el fondo sobresale seis píxeles y el padding recupera esa distancia.
+     En el detalle diario se respeta el inset original de 12 px. */
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='month-financials'] {
+    margin-inline: -6px;
+    padding-inline: 6px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='day-financials'] {
+    margin-inline: 6px;
+    padding-inline: 6px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='month-financials'], [data-element='day-financials'],
+        [data-element='products-section'], [data-element='hours-section']) {
+    border-radius: var(--radio-control);
+    border-bottom-color: transparent;
+    box-shadow: 0 5px 16px rgb(8 13 27 / 0.10);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    :is([data-element='month-financials'], [data-element='day-financials']) {
+    background: var(--ventas-superficie-resumen);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    [data-element='products-section'] {
+    margin-inline: -6px;
+    padding-inline: 6px;
+    padding-top: 8px;
+    background: var(--ventas-superficie-productos);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    [data-element='hours-section'] {
+    margin-inline: -6px;
+    padding-inline: 6px;
+    padding-top: 8px;
+    height: 100%;
+    background: var(--ventas-superficie-horas);
+  }
+
+  /* Recuperar el espacio de las tres separaciones y de los insets
+     interiores, en ambas columnas y sin tocar calendario/facturas. */
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='summary-stack'], [data-element='selected-day']) {
+    height: clamp(608px, calc(100dvh - 77px), 738px);
+  }
+}
+
+/* Prioridad sobre las reglas compactas antiguas: las dos columnas
+   mantienen idéntico padding y altura de las zonas en ventanas bajas. */
+@media screen and (min-width: 1024px) and (max-width: 1699px) and (max-height: 820px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='summary-stack'], [data-element='selected-day'])
+    :is([data-element='month-breakdown'], [data-element='day-breakdown']) {
+    padding-top: 0;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='summary-stack'], [data-element='selected-day'])
+    [data-element='sales-breakdown'] {
+    padding-top: 0;
+    gap: 12px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is([data-element='summary-stack'], [data-element='selected-day'])
+    [data-element='hours-section'] {
+    height: 100%;
+  }
+}
