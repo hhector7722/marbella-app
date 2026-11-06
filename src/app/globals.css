@@ -12130,3 +12130,38 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     margin-left: 4px;
   }
 }
+
+
+/* Ventas y cierres · solo escritorio. Mantener los tres tracks simétricos:
+   únicamente cambia el fondo de las zonas existentes, sin añadir superficies
+   independientes, separadores, contornos ni sombras. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary {
+    --ventas-zona-superior: #334755;
+    --ventas-zona-inferior: #243746;
+    background: #263B4A;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-day {
+    --ventas-zona-superior: rgb(255 255 255 / 0.06);
+    --ventas-zona-inferior: rgb(0 0 0 / 0.06);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    :is([data-element='sales-desktop-header'],
+        [data-element='month-financials'],
+        [data-element='day-financials']) {
+    background: var(--ventas-zona-superior);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    [data-element='products-section'] {
+    background: transparent;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    [data-element='hours-section'] {
+    background: var(--ventas-zona-inferior);
+  }
+}
