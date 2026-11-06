@@ -12170,7 +12170,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
    La cifra ya llega sin abreviar y con sus decimales y €; el truncado
    del KPI la recortaba. Darle un poco más de la fila disponible. */
 @media (min-width: 1024px) {
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen'][data-layout] [data-instance='dashboard-ventas']
     [data-element='mobile-sales-kpis'] {
     grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
   }
