@@ -11845,3 +11845,94 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 .ventas-kpi-floating:hover {
   background: transparent;
 }
+
+/* Cabeceras de Ventas escritorio: tres zonas con navegación centrada
+   respecto a la ficha completa. Compactar solo en columnas estrechas para
+   que el botón Informes y ambos indicadores no se pisen. */
+@media (min-width: 1024px) and (max-width: 1499px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header']
+    [data-element='sales-desktop-header-right'] > div {
+    gap: 4px;
+    font-size: 9px;
+    letter-spacing: -0.015em;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-center'] > strong,
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-center'] > span {
+    font-size: 10px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-center'] > button {
+    width: 19px;
+    padding-inline: 1px;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header']
+    [data-element='sales-desktop-header-right'] > div {
+    gap: 2px;
+    font-size: 8px;
+    letter-spacing: -0.035em;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-center'] > strong,
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-center'] > span {
+    font-size: 9px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-center'] {
+    gap: 1px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-center'] > button {
+    width: 16px;
+    padding: 0;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-center'] > button svg {
+    width: 13px;
+    height: 13px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-center'] > span svg {
+    width: 11px;
+    height: 11px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-header-left'] > button {
+    padding-inline: 4px;
+    font-size: 9px;
+  }
+}
+
+/* Al activar la compactación por poca altura, igualar los insets de
+   mensual con los del detalle diario: productos y horas arrancan
+   en la misma coordenada, sin compensaciones vacías. */
+@media screen and (min-width: 1024px) and (max-width: 1699px) and (max-height: 820px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='month-financials'] {
+    padding-block: 8px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='month-breakdown'] {
+    padding-top: 4px;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='summary-stack'] [data-element='sales-breakdown'] {
+    padding-top: 4px;
+  }
+}
+
+
+/* El retorno al filtro conserva la acción y la etiqueta accesible;
+   en cabeceras estrechas queda solo la flecha, para no pisar la fecha. */
+@media (min-width: 1024px) and (max-width: 1699px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    [data-element='sales-desktop-return-label'] {
+    display: none;
+  }
+}

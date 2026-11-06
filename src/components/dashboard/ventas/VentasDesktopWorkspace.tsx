@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { addDays, addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, Pencil, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, FileText, CreditCard, CloudSun, Pencil, Plus, Minus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
@@ -19,6 +19,7 @@ import { displayedNetSales } from '@/lib/live-sales-net';
 import { formatNumberSpanish } from '@/lib/cash-closing-metrics';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport';
 import { getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { getProductMarginRanking } from '@/app/dashboard/insights/actions';
 import { ProductRankingThumbnail } from './ProductRankingThumbnail';
@@ -916,10 +917,10 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
             tone: 'border-cyan-400/40 bg-cyan-500/10' }
         : item);
     return (
-        <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-4 pt-2 text-white">
-            <div className="relative mb-3 flex min-h-[36px] min-w-0 shrink-0 items-center justify-between gap-2 border-b border-white/15">
-                <strong className="shrink-0 text-sm font-bold">{title}</strong>
-                <nav className="absolute left-1/2 flex max-w-[55%] -translate-x-1/2 items-center gap-0.5" aria-label="Navegar por meses del resumen mensual">
+        <div className="history-desktop-summary flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/25 bg-white/10 px-3 pb-4 text-white">
+            <div data-element="sales-desktop-header" className="relative flex h-[36px] min-h-[36px] min-w-0 shrink-0 items-center justify-between gap-2 border-b border-white/15">
+                <strong data-element="sales-desktop-header-left" className="shrink-0 text-sm font-bold">{title}</strong>
+                <nav data-element="sales-desktop-header-center" className="absolute left-1/2 flex max-w-[55%] -translate-x-1/2 items-center gap-0.5" aria-label="Navegar por meses del resumen mensual">
                     <button type="button" onClick={() => onNavigateMonth(-1)} aria-label="Mes anterior del resumen"
                         className="inline-flex h-7 w-6 shrink-0 items-center justify-center rounded hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300">
                         <ChevronLeft size={16} aria-hidden="true"/>
@@ -930,14 +931,18 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
                         <ChevronRight size={16} aria-hidden="true"/>
                     </button>
                 </nav>
-                <TicketHeaderStats report={report}/>
+                <div data-element="sales-desktop-header-right" className="ml-auto flex min-w-0 shrink-0 justify-end">
+                    <TicketHeaderStats report={report}/>
+                </div>
             </div>
-            <FinancialKpiHeader
-                sales={euroNonZero(sales)}
-                net={extras ? euroNonZero(extras.net) : ''}
-                items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect} cashBreakdown={cashBreakdown}
-                loading={loading}/>
-            <div className="relative flex min-h-0 flex-1 flex-col">
+            <div data-element="month-financials" className="shrink-0 border-b border-white/10 py-3">
+                <FinancialKpiHeader
+                    sales={euroNonZero(sales)}
+                    net={extras ? euroNonZero(extras.net) : ''}
+                    items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect}
+                    cashBreakdown={cashBreakdown} loading={loading}/>
+            </div>
+            <div data-element="month-breakdown" className="relative flex min-h-0 flex-1 flex-col pt-2">
                 <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope}
                     selection={selection?.kind === 'payment' && (selection.payment === 'cash' || selection.payment === 'card') ? null : selection}
                     onSelect={onSelect} productThumbnails={productThumbnails} rangeStart={rangeStart} rangeEnd={rangeEnd}/>
@@ -1002,6 +1007,8 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const [periodClosings, setPeriodClosings] = useState<CloseRow[]>([]);
     const [historicalNetByDate, setHistoricalNetByDate] = useState<Map<string, number>>(() => new Map());
     const [openPhoto, setOpenPhoto] = useState<{ src: string; alt: string } | null>(null);
+    const [reportsOpen, setReportsOpen] = useState(false);
+    const [reportZoom, setReportZoom] = useState({ tpv: 0, dataphones: 0 });
     const [photos, setPhotos] = useState<{ dataphoneUrl: string | null; bdpUrl: string | null }>({ dataphoneUrl: null, bdpUrl: null });
     const [dailyReport, setDailyReport] = useState<TicketReport | null>(null);
     const [loadedReportKey, setLoadedReportKey] = useState<string | null>(null);
@@ -2051,43 +2058,61 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 </div>
                 <div data-element="selected-day" className="min-h-0 min-w-0">
                     <section className="history-desktop-day flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--radio-control)] border border-white/40 bg-[var(--color-envolvente-bajo)] text-white">
-                        <header className="flex min-h-[36px] shrink-0 items-center justify-between gap-2 border-b border-white/15 px-3">
-                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                                <nav className="inline-flex min-w-0 items-center gap-0.5" aria-label="Navegar por fechas de ventas">
-                                    <button type="button" onClick={() => {
-                                        const day = parseISO(period.start);
-                                        selectDate(format(addDays(day, -1), 'yyyy-MM-dd'));
-                                    }} aria-label="Fecha anterior" className="shrink-0 rounded p-1 text-white/75 hover:bg-white/10"><ChevronLeft size={16}/></button>
-                                    <strong className="min-w-0 truncate whitespace-nowrap text-[11px] font-semibold capitalize" title={periodTitle}>
-                                        {isSingleDay ? format(parseISO(period.start), 'EEE d MMM yy', { locale: es }).replace('.', '') : periodTitle}
-                                    </strong>
-                                    <button type="button" onClick={() => {
-                                        const day = parseISO(period.end);
-                                        selectDate(format(addDays(day, 1), 'yyyy-MM-dd'));
-                                    }} aria-label="Fecha siguiente" className="shrink-0 rounded p-1 text-white/75 hover:bg-white/10"><ChevronRight size={16}/></button>
-                                </nav>
-                                {isSingleDay && selectedClosing && canEditClosings && (
-                                    <button type="button"
-                                        aria-label={`Editar cierre del ${periodTitle}`}
-                                        title="Editar cierre"
-                                        onClick={() => router.push(`/dashboard/history?closingId=${encodeURIComponent(selectedClosing.id)}&edit=1`)}
-                                        className="inline-flex h-6 w-5 shrink-0 items-center justify-center border-0 bg-transparent p-0 font-normal text-white/65 shadow-none hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70">
-                                        <Pencil size={14} strokeWidth={1.6} aria-hidden="true"/>
+                        <header data-element="sales-desktop-header"
+                            className="relative flex h-[36px] min-h-[36px] shrink-0 items-center justify-between gap-2 border-b border-white/15 px-3">
+                            <div data-element="sales-desktop-header-left" className="flex min-w-0 shrink-0 items-center gap-1">
+                                {isSingleDay && selectedClosing && (
+                                    <button type="button" disabled={!photos.bdpUrl && !photos.dataphoneUrl}
+                                        onClick={() => { setReportZoom({ tpv: 0, dataphones: 0 }); setReportsOpen(true); }}
+                                        className="shrink-0 rounded border border-white/25 px-2 py-1 text-[10px] font-medium text-white/85 enabled:hover:bg-white/10 disabled:opacity-40">
+                                        Informes
+                                    </button>
+                                )}
+                                {returnPeriod && (
+                                    <button type="button" onClick={restorePeriod}
+                                        aria-label={'Volver al periodo ' + periodLabel(returnPeriod)}
+                                        className="inline-flex max-w-[140px] shrink-0 items-center gap-0.5 rounded border border-sky-400/35 px-1.5 py-1 text-[10px] text-sky-200 hover:bg-white/10"
+                                        title={'Volver a ' + periodLabel(returnPeriod)}>
+                                        <ArrowLeft size={12} className="shrink-0"/>
+                                        <span data-element="sales-desktop-return-label" className="truncate">Volver al periodo</span>
                                     </button>
                                 )}
                             </div>
-                            {returnPeriod && (
-                                <button type="button" onClick={restorePeriod} className="inline-flex max-w-[25%] shrink-0 items-center gap-1 truncate rounded border border-sky-400/35 px-2 py-1 text-[10px] text-sky-200 hover:bg-white/10" title={'Volver a ' + periodLabel(returnPeriod)}>
-                                    <ArrowLeft size={13} className="shrink-0"/>
-                                    <span className="truncate">Volver al periodo</span>
+                            <nav data-element="sales-desktop-header-center"
+                                className="absolute left-1/2 flex max-w-[54%] -translate-x-1/2 items-center gap-0.5"
+                                aria-label="Navegar por fechas de ventas">
+                                <button type="button" onClick={() => {
+                                    const day = parseISO(period.start);
+                                    selectDate(format(addDays(day, -1), 'yyyy-MM-dd'));
+                                }} aria-label="Fecha anterior" className="shrink-0 rounded p-1 text-white/75 hover:bg-white/10">
+                                    <ChevronLeft size={16}/>
                                 </button>
-                            )}
-                            <div className="flex min-w-0 shrink-0 items-center justify-end gap-2">
-                                {isSingleDay && selectedClosing?.weather ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] text-white/70" title="Clima del cierre">
-                                        <CloudSun size={12}/> <span className="max-w-[80px] truncate">{selectedClosing.weather}</span>
+                                <strong className="min-w-0 truncate whitespace-nowrap text-[11px] font-semibold capitalize"
+                                    title={periodTitle}>
+                                    {isSingleDay ? format(parseISO(period.start), 'EEE d MMM yy', { locale: es }).replace('.', '') : periodTitle}
+                                </strong>
+                                {isSingleDay && selectedClosing?.weather && (
+                                    <span title={selectedClosing.weather} aria-label={'Clima: ' + selectedClosing.weather}
+                                        className="inline-flex shrink-0 items-center text-white/70">
+                                        <CloudSun size={13}/>
                                     </span>
-                                ) : null}
+                                )}
+                                <button type="button" onClick={() => {
+                                    const day = parseISO(period.end);
+                                    selectDate(format(addDays(day, 1), 'yyyy-MM-dd'));
+                                }} aria-label="Fecha siguiente" className="shrink-0 rounded p-1 text-white/75 hover:bg-white/10">
+                                    <ChevronRight size={16}/>
+                                </button>
+                                {isSingleDay && selectedClosing && canEditClosings && (
+                                    <button type="button"
+                                        aria-label={'Editar cierre del ' + periodTitle} title="Editar cierre"
+                                        onClick={() => router.push(`/dashboard/history?closingId=${encodeURIComponent(selectedClosing.id)}&edit=1`)}
+                                        className="inline-flex h-6 w-4 shrink-0 items-center justify-center border-0 bg-transparent p-0 font-normal text-white/65 shadow-none hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70">
+                                        <Pencil size={13} strokeWidth={1.6} aria-hidden="true"/>
+                                    </button>
+                                )}
+                            </nav>
+                            <div data-element="sales-desktop-header-right" className="ml-auto flex min-w-0 shrink-0 justify-end">
                                 <TicketHeaderStats report={dailyReport}/>
                             </div>
                         </header>
@@ -2099,18 +2124,6 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 scope="period" selection={crossSelection} onSelect={onChooseCross} cashBreakdown={periodCashBreakdown}
                                 loading={periodKpisLoading}/>
                         </div>
-                        {isSingleDay && selectedClosing && (
-                            <div className="flex shrink-0 items-center justify-center gap-2 border-b border-white/10 px-3 py-2">
-                                <button type="button" disabled={!photos.bdpUrl} onClick={() => photos.bdpUrl && setOpenPhoto({ src: photos.bdpUrl, alt: 'Informe TPV' })}
-                                    className="inline-flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-[10px] text-white/80 enabled:hover:bg-white/10 disabled:opacity-40">
-                                    <FileText size={14}/> Ver informe TPV
-                                </button>
-                                <button type="button" disabled={!photos.dataphoneUrl} onClick={() => photos.dataphoneUrl && setOpenPhoto({ src: photos.dataphoneUrl, alt: 'Totales datáfonos' })}
-                                    className="inline-flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-[10px] text-white/80 enabled:hover:bg-white/10 disabled:opacity-40">
-                                    <CreditCard size={14}/> Ver totales datáfonos
-                                </button>
-                            </div>
-                        )}
                         <div data-element="day-breakdown" className="relative min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
                             <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
                                 selection={paymentOnly ? null : crossSelection} onSelect={onChooseCross}
@@ -2305,6 +2318,48 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 tooltip={performanceTooltip}
                 cashBreakdown={periodCashBreakdown}
             />}
+        </Modal>
+        <Modal open={reportsOpen} onClose={() => setReportsOpen(false)}
+            instance="ventas-desktop-reports" title="Informes" scheme="dark" variant="work"
+            scrollContent={false}>
+            <div data-element="sales-dual-reports"
+                className="grid h-[min(70dvh,660px)] min-h-[300px] min-w-0 grid-cols-2 gap-3 pb-3">
+                {([
+                    { key: 'tpv' as const, label: 'Informe TPV', src: photos.bdpUrl },
+                    { key: 'dataphones' as const, label: 'Totales datáfonos', src: photos.dataphoneUrl }
+                ]).map(item => (
+                    <section key={item.key} className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-white/20">
+                        <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-white/15 px-2.5">
+                            <strong className="min-w-0 truncate text-[12px] font-semibold text-white">{item.label}</strong>
+                            {item.src && <div className="inline-flex shrink-0 gap-1">
+                                <button type="button" aria-label={'Alejar ' + item.label}
+                                    className="rounded-md p-1.5 text-white/85 hover:bg-white/10"
+                                    onClick={() => setReportZoom(old => ({ ...old, [item.key]: -(Math.abs(old[item.key]) + 1) }))}>
+                                    <Minus size={16}/>
+                                </button>
+                                <button type="button" aria-label={'Ampliar ' + item.label}
+                                    className="rounded-md p-1.5 text-white/85 hover:bg-white/10"
+                                    onClick={() => setReportZoom(old => ({ ...old, [item.key]: Math.abs(old[item.key]) + 1 }))}>
+                                    <Plus size={16}/>
+                                </button>
+                            </div>}
+                        </div>
+                        {item.src ? (
+                            <PinchZoomViewport resetKey={item.src} minScale={0.5} maxScale={8}
+                                captureGestures trackpadGestures zoomStep={reportZoom[item.key]}
+                                className="min-h-0 min-w-0 flex-1 bg-black/15">
+                                {/* eslint-disable-next-line @next/next/no-img-element -- URLs firmadas de Storage */}
+                                <img src={item.src} alt={item.label} draggable={false}
+                                    className="block h-[min(61dvh,580px)] w-full object-contain"/>
+                            </PinchZoomViewport>
+                        ) : (
+                            <div className="flex min-h-0 flex-1 items-center justify-center px-2 text-center text-xs text-white/55">
+                                Informe no disponible
+                            </div>
+                        )}
+                    </section>
+                ))}
+            </div>
         </Modal>
         <VentasClosingEditor closingId={editingClosingId} onClose={() => setEditingClosingId(null)}
             onSaved={() => setClosingRefresh(value => value + 1)}/>
