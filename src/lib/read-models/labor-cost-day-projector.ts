@@ -5,12 +5,13 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PayrollAllocationService } from '../payroll/payroll-allocation-service.ts';
-import type { ContractTermsService } from '../payroll/contract-terms-service.ts';
+import { ContractTermsService } from '../payroll/contract-terms-service.ts';
 import type { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
 import { Money, Percentage } from '../payroll/value-objects.ts';
 import type { LaborCostDayDTO, WorkerLaborCostDTO } from './labor-cost-dtos.ts';
 import { filterVisiblePlantillaEmployees, PLANTILLA_EMPLOYEE_SELECT } from '../staff/plantilla-employees.ts';
 import { loadOperationalMonth } from './labor-operational-cost.ts';
+import { resolveLaborPayrollSource } from './labor-payroll-source.ts';
 
 const LABOR_PROFILE_SELECT = `${PLANTILLA_EMPLOYEE_SELECT}, staffing_mode` as const;
 
@@ -27,31 +28,29 @@ export class LaborCostDayReadModelProjector {
 
   async projectDayDetail(
     dateYmd: string,
-    options?: { includeAllContracted?: boolean; userId?: string | null },
+    options?: { includeAllContracted?: boolean; userId?: string | null; todayYmd?: string },
   ): Promise<LaborCostDayDTO> {
     const day = dateYmd.slice(0, 10);
     const periodYm = day.slice(0, 7);
     const includeAll = options?.includeAllContracted ?? false;
     const workerFilter = options?.userId ?? null;
-    const [activeFacts, summaryResult, salesResult, profilesResult] = await Promise.all([
-      this.payrollRepo.getActiveFactsForPeriod(periodYm),
-      this.supabase.from('payroll_monthly_totals')
-        .select('period_start,period_end,total_company_cost')
-        .eq('period_ym', periodYm).maybeSingle(),
+    const [payroll, salesResult, profilesResult] = await Promise.all([
+      resolveLaborPayrollSource(this.supabase, this.payrollRepo, periodYm, options?.todayYmd),
       this.supabase.from('cash_closings')
         .select('net_sales').eq('closing_date', day),
       this.supabase.from('profiles').select(LABOR_PROFILE_SELECT),
     ]);
-    if (summaryResult.error) throw new Error('payroll_monthly_totals: ' + summaryResult.error.message);
     if (salesResult.error) throw new Error('cash_closings: ' + salesResult.error.message);
     if (profilesResult.error) throw new Error('profiles: ' + profilesResult.error.message);
 
-    const summary = summaryResult.data;
-    const isPayrollPending = !summary || summary.total_company_cost == null;
+    const summary = payroll.officialSummary;
+    const isPayrollPending = payroll.isPayrollPending;
+    const activeFacts = payroll.calculationFacts;
+    const monthDays = ContractTermsService.listMonthDays(periodYm);
     const operational = await loadOperationalMonth(
       this.supabase, periodYm, activeFacts,
-      String(summary?.period_start ?? periodYm + '-01').slice(0, 10),
-      String(summary?.period_end ?? day).slice(0, 10),
+      String(summary?.period_start ?? monthDays[0]).slice(0, 10),
+      String(summary?.period_end ?? monthDays[monthDays.length - 1]).slice(0, 10),
       isPayrollPending, workerFilter,
     );
     const current = operational[day]!;
@@ -106,6 +105,7 @@ export class LaborCostDayReadModelProjector {
       laborPctOfSales: pctStatus === 'complete'
         ? Percentage.fromValues(Money.from(current.total), netSales).value : null,
       isPayrollPending,
+      isPayrollEstimated: payroll.isPayrollEstimated,
       pctStatus,
       operationalIncomplete: current.incomplete,
       operationalMissingWorkers: current.missingWorkers,

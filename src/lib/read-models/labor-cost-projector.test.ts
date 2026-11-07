@@ -38,6 +38,29 @@ describe('Coste laboral operativo diario sobre nómina oficial', () => {
     assert.equal(off.operationalIncomplete, true);
   });
 
+  it('valora el día de noviembre con la nómina de octubre sin presentarla como oficial', async () => {
+    const seed={
+      ...payrollFixture,
+      employee_payroll_facts:[
+        {id:'oct',user_id:'usr_active',period_ym:'2026-10',status:'active',total_company_cost:3100},
+        {id:'nov_partial',user_id:'usr_active',period_ym:'2026-11',status:'active',total_company_cost:300},
+      ],
+      payroll_monthly_totals:[
+        {period_ym:'2026-10',period_start:'2026-10-01',period_end:'2026-10-31',total_company_cost:4100},
+      ],
+      cash_closings:[{closing_date:'2026-11-07',net_sales:1500}],
+      time_logs:[{user_id:'usr_active',clock_in:'2026-11-07T09:00:00Z',clock_out:'2026-11-07T17:00:00Z',total_hours:8}],
+    };
+    const dto=await projector(seed).projectDayDetail('2026-11-07',{
+      todayYmd:'2026-11-08',includeAllContracted:false,
+    });
+    assert.equal(dto.isPayrollPending,true);
+    assert.equal(dto.isPayrollEstimated,true);
+    assert.equal(dto.pctStatus,'complete');
+    assert.ok(dto.totalFixed>100);
+    assert.ok(dto.laborPctOfSales!==null);
+  });
+
   it('señala nómina pendiente cuando no hay ninguna tarifa positiva', async () => {
     const seed = { ...payrollFixture, payroll_monthly_totals: [], employee_payroll_facts: [] };
     const dto = await projector(seed).projectDayDetail('2026-07-15');

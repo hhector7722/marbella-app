@@ -62,6 +62,7 @@ type MonthSummaryPayload = {
     totalCost: number;
     byDate: Record<string, DayCell>;
     missingPayrollMonths: string[];
+    estimatedPayrollMonths: string[];
     reconciliation?: {
         status: 'NO_SUMMARY' | 'WAITING_PAYROLLS' | 'RECONCILED' | 'PENDING_RECONCILIATION';
         totalSummary: number;
@@ -242,6 +243,7 @@ export default function LaborHistoryPage() {
         dayNetSales: number;
         laborPctOfSales: number | null;
         payrollPending: boolean;
+        payrollEstimated: boolean;
         operationalIncomplete: boolean;
         operationalMissingWorkers: number;
         workers: WorkerRow[];
@@ -256,17 +258,22 @@ export default function LaborHistoryPage() {
 
     const todayStr = formatYmdInMadrid(new Date());
     const missingPayrollMonths = summary?.missingPayrollMonths;
-    const ordinaryUnknown = (missingPayrollMonths?.length ?? 0) > 0;
+    const estimatedPayrollMonths = summary?.estimatedPayrollMonths;
+    const ordinaryUnknown = (missingPayrollMonths ?? [])
+        .some(ym => !(estimatedPayrollMonths ?? []).includes(ym));
     const missingPayrollMonthSet = useMemo(
         () => new Set(missingPayrollMonths ?? []),
         [missingPayrollMonths],
     );
     const payrollNotice = useMemo(
-        () => payrollAbsenceNotice(missingPayrollMonths ?? [], todayStr),
-        [missingPayrollMonths, todayStr],
+        () => payrollAbsenceNotice(missingPayrollMonths ?? [], todayStr, estimatedPayrollMonths ?? []),
+        [missingPayrollMonths, estimatedPayrollMonths, todayStr],
     );
     const dayPayrollNotice = dayDetail?.payrollPending
-        ? payrollAbsenceNotice([dayDetail.date.slice(0, 7)], todayStr)
+        ? payrollAbsenceNotice(
+            [dayDetail.date.slice(0, 7)], todayStr,
+            dayDetail.payrollEstimated ? [dayDetail.date.slice(0, 7)] : [],
+          )
         : null;
 
     const laborPctOfPeriod = useMemo(() => {
@@ -337,6 +344,7 @@ export default function LaborHistoryPage() {
                 totalCost: period.totalCost,
                 byDate,
                 missingPayrollMonths: period.missingPayrollMonths,
+                estimatedPayrollMonths: period.estimatedPayrollMonths,
                 reconciliation: period.reconciliation,
             });
 
@@ -466,6 +474,7 @@ export default function LaborHistoryPage() {
                     dayNetSales: labor.netSales,
                     laborPctOfSales: labor.laborPctOfSales,
                     payrollPending: labor.isPayrollPending,
+                    payrollEstimated: labor.isPayrollEstimated,
                     operationalIncomplete: labor.operationalIncomplete,
                     operationalMissingWorkers: labor.operationalMissingWorkers,
                     workers,
@@ -615,7 +624,10 @@ export default function LaborHistoryPage() {
                                                         (cell?.operationalIncomplete ? 'coste operativo incompleto' :
                                                             ratio === null ? 'porcentaje no disponible' : 'coste operativo sobre ventas ' + formatLaborPercent(ratio)) +
                                                         ', coste ' + (cell?.operationalIncomplete ? 'pendiente' : formatLaborEuro(cell?.total ?? 0)) +
-                                                        (dayOrdinaryUnknown ? ', nómina oficial pendiente' : '')
+                                                        (dayOrdinaryUnknown ? ', ' + (
+                                                            summary?.estimatedPayrollMonths.includes(key.slice(0, 7))
+                                                                ? 'nómina pendiente, costes aproximados'
+                                                                : 'nómina oficial pendiente') : '')
                                                     : format(day, 'd MMMM yyyy', { locale: es })}
                                                 className={cn(
                                                     'group relative flex flex-col text-left transition-colors p-0.5 sm:p-1 month-cal-cell',
@@ -654,7 +666,11 @@ export default function LaborHistoryPage() {
                                                                     ? 'Coste operativo incompleto: falta alguna de las dos tarifas positivas para un trabajador, o no hay fichajes válidos'
                                                                     : (ratio === null ? 'Sin venta neta positiva' : 'Coste operativo / ventas: ' + formatLaborPercent(ratio)) +
                                                                         ' · Coste del personal fichado: ' + formatLaborEuro(cell?.total ?? 0) +
-                                                                        (dayOrdinaryUnknown ? ' · Nómina oficial pendiente' : '') +
+                                                                        (dayOrdinaryUnknown
+                                                                            ? (summary?.estimatedPayrollMonths.includes(key.slice(0, 7))
+                                                                                ? ' · Nómina pendiente, costes aproximados'
+                                                                                : ' · Nómina oficial pendiente')
+                                                                            : '') +
                                                                         ((cell?.operationalMissingWorkers ?? 0) > 0
                                                                             ? ' · ' + cell!.operationalMissingWorkers + ' trabajador(es) con alguna tarifa sin verificar: parte valorada a 0 €'
                                                                             : '')}
@@ -697,6 +713,7 @@ export default function LaborHistoryPage() {
                         </div>
                     ) : dayDetail ? (() => {
                         const pending = dayDetail.payrollPending;
+                        const estimated = dayDetail.payrollEstimated;
                         const incomplete = dayDetail.operationalIncomplete;
                         const ratio = incomplete || dayDetail.dayNetSales <= 0 ? null : dayDetail.laborPctOfSales;
                         const tone = ratioStyles[laborRatioBand(ratio)];
@@ -722,7 +739,7 @@ export default function LaborHistoryPage() {
                                     <div className="flex items-center justify-between gap-3">
                                         <span className="text-[10px] font-semibold uppercase tracking-[0.09em] text-white/65">Coste laboral / ventas netas</span>
                                         <span className={cn('inline-flex shrink-0 rounded-md border px-2 py-1 text-[10px] font-semibold', tone.chip)}>
-                                            {incomplete ? 'Datos incompletos' : ratio === null ? 'Sin ventas' : pending ? 'Nómina pendiente' :
+                                            {incomplete ? 'Datos incompletos' : ratio === null ? 'Sin ventas' : estimated ? 'Costes aproximados' : pending ? 'Nómina pendiente' :
                                                 laborRatioBand(ratio) === 'good' ? '≤55%' :
                                                 laborRatioBand(ratio) === 'attention' ? '55–70%' :
                                                 laborRatioBand(ratio) === 'high' ? '70–90%' : '>90%'}
@@ -733,6 +750,7 @@ export default function LaborHistoryPage() {
                                     </strong>
                                     <p className="mt-2 text-[11px] leading-relaxed text-white/60">
                                         {incomplete ? 'Hay trabajadores sin ninguna de las dos tarifas positivas, o faltan fichajes válidos.' :
+                                            estimated ? 'Nómina pendiente, costes aproximados: coste ordinario estimado con las nóminas individuales del mes anterior y jornada contractual actual. Las extras conservan su importe calculado.' :
                                             pending ? 'Nómina oficial mensual pendiente. El coste operativo del día se calcula con las tarifas disponibles; cualquier parte sin tarifa ordinaria se contabiliza a 0 €.' :
                                             ratio === null ? 'No hay venta neta positiva con la que comparar este día.' :
                                             'Coste de quienes ficharon ese día, valorado según nómina oficial, jornada contratada y extras proyectadas. Sin tarifa verificable, esa parte se computa a 0 €.'}

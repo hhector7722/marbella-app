@@ -30,6 +30,7 @@ export type LaborCostDayDTO = {
   totalCost: number;
   laborPctOfSales: number | null;
   isPayrollPending: boolean;
+  isPayrollEstimated: boolean;
   pctStatus: 'complete' | 'incomplete_payroll_pending' | 'no_sales' | 'incomplete_operational';
   operationalIncomplete: boolean;
   operationalMissingWorkers: number;
@@ -60,6 +61,7 @@ export type LaborCostMonthSummaryDTO = {
   totalOvertime: number;
   totalCost: number;
   isPayrollPending: boolean;
+  isPayrollEstimated: boolean;
   missingPayrollMonths: string[];
   reconciliation: PayrollReconciliationSummaryDTO;
 };

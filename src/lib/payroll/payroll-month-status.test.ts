@@ -48,8 +48,20 @@ describe('payrollAbsenceNotice', () => {
     const notice = payrollAbsenceNotice(['2026-09'], '2026-09-18');
     assert.equal(notice?.variant, 'info');
     assert.equal(notice?.title, 'Nómina pendiente');
-    assert.match(notice?.body ?? '', /solo se cuentan las extras/);
+    assert.match(notice?.body ?? '', /no está disponible/);
     assert.doesNotMatch(notice?.body ?? '', /payroll_/);
+  });
+
+  it('el mes corriente estimado muestra exactamente el aviso de costes aproximados',()=>{
+    const notice=payrollAbsenceNotice(['2026-11'],'2026-11-08',['2026-11']);
+    assert.equal(notice?.variant,'info');
+    assert.equal(notice?.title,'Nómina pendiente, costes aproximados');
+    assert.match(notice?.body??'',/mes anterior/);
+  });
+
+  it('un mes futuro no se marca como estimado aunque esté en el tercer argumento',()=>{
+    const notice=payrollAbsenceNotice(['2026-12'],'2026-11-08',['2026-12']);
+    assert.notEqual(notice?.title,'Nómina pendiente, costes aproximados');
   });
 
   it('un mes cerrado grita que falta el resumen', () => {

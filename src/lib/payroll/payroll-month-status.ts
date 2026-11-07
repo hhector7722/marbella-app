@@ -50,6 +50,7 @@ function joinMonthNames(months: string[]): string {
 export function payrollAbsenceNotice(
   missingMonths: string[],
   todayYmd: string,
+  estimatedMonths: string[] = [],
 ): PayrollAbsenceNotice | null {
   const { expectedPending, unexpectedMissing } = partitionMissingPayrollMonths(
     missingMonths,
@@ -77,10 +78,15 @@ export function payrollAbsenceNotice(
   const pending = joinMonthNames(expectedPending);
   const isCurrentOnly =
     expectedPending.length === 1 && expectedPending[0] === todayYmd.slice(0, 7);
+  const currentMonthEstimated = isCurrentOnly && estimatedMonths.includes(todayYmd.slice(0, 7));
 
   return {
     variant: 'info',
-    title: isCurrentOnly ? 'Nómina pendiente' : `Nómina de ${pending} pendiente`,
-    body: 'El resumen de gestoría llega a final de mes. Hasta entonces el fijo es desconocido y solo se cuentan las extras.',
+    title: currentMonthEstimated
+      ? 'Nómina pendiente, costes aproximados'
+      : isCurrentOnly ? 'Nómina pendiente' : `Nómina de ${pending} pendiente`,
+    body: currentMonthEstimated
+      ? 'Estimación con el coste empresarial y las nóminas individuales del mes anterior, aplicada a las jornadas del mes actual. Se reemplazará al recibir la nómina oficial.'
+      : 'El resumen de gestoría aún no está disponible. Los costes ordinarios sin nómina verificable no pueden considerarse oficiales.',
   };
 }
