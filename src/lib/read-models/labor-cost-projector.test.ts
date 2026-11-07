@@ -38,11 +38,44 @@ describe('Coste laboral operativo diario sobre nómina oficial', () => {
     assert.equal(off.operationalIncomplete, true);
   });
 
-  it('señala nómina pendiente cuando falta el resumen oficial', async () => {
+  it('señala nómina pendiente cuando no hay ninguna tarifa positiva', async () => {
     const seed = { ...payrollFixture, payroll_monthly_totals: [], employee_payroll_facts: [] };
     const dto = await projector(seed).projectDayDetail('2026-07-15');
     assert.equal(dto.isPayrollPending, true);
     assert.equal(dto.pctStatus, 'incomplete_payroll_pending');
     assert.equal(dto.totalFixed, 0);
+    assert.equal(dto.operationalIncomplete, true);
+  });
+
+  it('con extras a 10 €/h y sin nómina individual calcula el día, ordinarias a 0 €', async () => {
+    const seed = {
+      ...payrollFixture,
+      employee_payroll_facts: [],
+      hours_contract_terms: payrollFixture.hours_contract_terms.map(t =>
+        t.user_id === 'usr_active' ? { ...t, overtime_rate_per_hour: 10 } : t),
+    };
+    const dto = await projector(seed).projectDayDetail('2026-07-15');
+    assert.equal(dto.isPayrollPending, false);
+    assert.equal(dto.pctStatus, 'complete');
+    assert.equal(dto.operationalIncomplete, false);
+    assert.equal(dto.totalCost, 0);
+    assert.equal(dto.laborPctOfSales, 0);
+    assert.equal(dto.operationalMissingWorkers, 1);
+  });
+
+  it('con nómina oficial pendiente mantiene el aviso, pero calcula el día si hay extras positivas', async () => {
+    const seed = {
+      ...payrollFixture,
+      payroll_monthly_totals: [],
+      employee_payroll_facts: [],
+      hours_contract_terms: payrollFixture.hours_contract_terms.map(t =>
+        t.user_id === 'usr_active' ? { ...t, overtime_rate_per_hour: 10 } : t),
+    };
+    const dto = await projector(seed).projectDayDetail('2026-07-15');
+    assert.equal(dto.isPayrollPending, true);
+    assert.equal(dto.pctStatus, 'complete');
+    assert.equal(dto.operationalIncomplete, false);
+    assert.equal(dto.totalCost, 0);
+    assert.equal(dto.laborPctOfSales, 0);
   });
 });

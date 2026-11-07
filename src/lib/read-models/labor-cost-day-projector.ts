@@ -85,7 +85,7 @@ export class LaborCostDayReadModelProjector {
         fixed: fixed.amount,
         overtime: overtime.amount,
         total: total.amount,
-        laborPctOfSales: known && netSales.amount > 0
+        laborPctOfSales: hasActivity && !current.incomplete && netSales.amount > 0
           ? Percentage.fromValues(total, netSales).value : null,
         hasActivity,
         hasActiveContract: activeContract,
@@ -94,9 +94,9 @@ export class LaborCostDayReadModelProjector {
         costKnown: hasActivity ? known : true,
       }];
     });
-    const pctStatus = isPayrollPending ? 'incomplete_payroll_pending' :
-      current.incomplete ? 'incomplete_operational' :
-      netSales.amount <= 0 ? 'no_sales' : 'complete';
+    const pctStatus = current.incomplete
+      ? (isPayrollPending ? 'incomplete_payroll_pending' : 'incomplete_operational')
+      : netSales.amount <= 0 ? 'no_sales' : 'complete';
     return {
       dateYmd: day,
       netSales: netSales.amount,
