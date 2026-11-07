@@ -45,6 +45,57 @@ describe('Coste laboral mensual — SSOT gestoría', () => {
       summary.byDate['2026-07-15']!.fixed + summary.byDate['2026-07-15']!.overtime);
   });
 
+
+  it('mes en curso sin nómina: acumula coste de octubre como provisional sin sumar hechos parciales de noviembre', async () => {
+    const seed = {
+      ...payrollFixture,
+      employee_payroll_facts: [
+        { id: 'oct_a',user_id:'usr_active',period_ym:'2026-10',status:'active',total_company_cost:3100 },
+        { id: 'oct_b',user_id:'usr_hidden',period_ym:'2026-10',status:'active',total_company_cost:1000 },
+        { id: 'nov_partial',user_id:'usr_active',period_ym:'2026-11',status:'active',total_company_cost:700 },
+      ],
+      payroll_monthly_totals: [
+        { period_ym:'2026-10',period_start:'2026-10-01',period_end:'2026-10-31',total_company_cost:4100 },
+      ],
+      time_logs: [
+        { user_id:'usr_active',clock_in:'2026-11-07T09:00:00Z',clock_out:'2026-11-07T17:00:00Z',total_hours:8 },
+      ],
+      cash_closings: [{closing_date:'2026-11-07',net_sales:1500}],
+    };
+    const useCase=new GetMonthlyLaborCostSummaryUseCase(laborSupabaseFixture(seed));
+    const dto=await useCase.execute({
+      startDate:'2026-11-01',endDate:'2026-11-30',todayYmd:'2026-11-08',
+    });
+    assert.equal(dto.totalFixed,4100);
+    assert.equal(dto.totalCost,4100);
+    assert.equal(dto.isPayrollPending,true);
+    assert.deepEqual(dto.missingPayrollMonths,['2026-11']);
+    assert.deepEqual(dto.estimatedPayrollMonths,['2026-11']);
+    assert.ok((dto.byDate['2026-11-07']?.fixed ?? 0)>0);
+    assert.ok((dto.byDate['2026-11-07']?.laborPctOfSales ?? 0)>0);
+    assert.equal(dto.byDate['2026-11-08']?.hasActivity,false);
+    const filtered=await useCase.execute({
+      startDate:'2026-11-01',endDate:'2026-11-30',userId:'usr_active',todayYmd:'2026-11-08',
+    });
+    assert.equal(filtered.totalFixed,3100);
+    assert.equal(filtered.totalCost,3100);
+  });
+
+  it('en el mes corriente, cuando llega la nómina oficial sustituye los costes aproximados',async()=>{
+    const seed={
+      ...payrollFixture,
+      employee_payroll_facts:[{id:'nov',user_id:'usr_active',period_ym:'2026-11',status:'active',total_company_cost:5100}],
+      payroll_monthly_totals:[{period_ym:'2026-11',period_start:'2026-11-01',period_end:'2026-11-30',total_company_cost:5100}],
+      time_logs:[{user_id:'usr_active',clock_in:'2026-11-07T09:00:00Z',clock_out:'2026-11-07T17:00:00Z',total_hours:8}],
+    };
+    const dto=await new GetMonthlyLaborCostSummaryUseCase(laborSupabaseFixture(seed))
+      .execute({startDate:'2026-11-01',endDate:'2026-11-30',todayYmd:'2026-11-08'});
+    assert.equal(dto.totalFixed,5100);
+    assert.equal(dto.totalCost,5100);
+    assert.deepEqual(dto.estimatedPayrollMonths,[]);
+    assert.deepEqual(dto.missingPayrollMonths,[]);
+  });
+
   it('no inventa costes fijos en meses sin resumen oficial', async () => {
     const seed = { ...payrollFixture, payroll_monthly_totals: [] };
     const useCase = new GetMonthlyLaborCostSummaryUseCase(laborSupabaseFixture(seed));

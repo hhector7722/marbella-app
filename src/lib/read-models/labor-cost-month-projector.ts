@@ -15,6 +15,7 @@ import { filterVisiblePlantillaEmployees, PLANTILLA_EMPLOYEE_SELECT } from '../s
 import { allocatePayrollToNaturalDays } from '../hours-engine/payroll-ordinary-daily.ts';
 import { computePeriodReconciliation } from '../payroll/payroll-reconciliation-service.ts';
 import { loadOperationalMonth } from './labor-operational-cost.ts';
+import { resolveLaborPayrollSource } from './labor-payroll-source.ts';
 
 export class LaborCostMonthReadModelProjector {
   constructor(
@@ -26,38 +27,39 @@ export class LaborCostMonthReadModelProjector {
 
   async projectMonthSummary(
     periodYm: string,
-    options?: { includeAllContracted?: boolean; userId?: string | null },
+    options?: { includeAllContracted?: boolean; userId?: string | null; todayYmd?: string },
   ): Promise<LaborCostMonthSummaryDTO> {
     const monthDays = ContractTermsService.listMonthDays(periodYm);
     const startDate = monthDays[0]!;
     const endDate = monthDays[monthDays.length - 1]!;
     const workerFilter = options?.userId ?? null;
 
-    const activeFacts = await this.payrollRepo.getActiveFactsForPeriod(periodYm);
-    const { data: summaryRow, error: summaryError } = await this.supabase
-      .from('payroll_monthly_totals')
-      .select('period_ym, period_start, period_end, total_company_cost')
-      .eq('period_ym', periodYm)
-      .maybeSingle();
-    if (summaryError) throw new Error(`payroll_monthly_totals: ${summaryError.message}`);
-
+    const payroll = await resolveLaborPayrollSource(
+      this.supabase, this.payrollRepo, periodYm, options?.todayYmd,
+    );
+    const activeFacts = payroll.officialFacts;
+    const calculationFacts = payroll.calculationFacts;
+    const summaryRow = payroll.officialSummary;
     const officialCost = summaryRow?.total_company_cost == null
       ? null : Number(summaryRow.total_company_cost);
-    const isPayrollPending = officialCost === null;
+    const isPayrollPending = payroll.isPayrollPending;
+    const isPayrollEstimated = payroll.isPayrollEstimated;
+    // La conciliación siempre usa exclusivamente nóminas y resumen oficiales.
     const reconciliation = computePeriodReconciliation({ summaryCost: officialCost, activeFacts });
 
-    // Sin filtro: TOTAL oficial de empresa, incluidos empleados no visibles en plantilla.
-    // Con filtro: sólo hechos contables activos del trabajador elegido.
-    const fixedPeriodCost = isPayrollPending ? 0 : workerFilter
-      ? activeFacts.filter((fact) => fact.user_id === workerFilter)
+    // Mes corriente pendiente: el importe provisional es el total oficial del
+    // mes anterior; por trabajador se usan únicamente sus nóminas anteriores.
+    // Nunca se mezclan hechos parciales del mes en curso con esa proyección.
+    const fixedPeriodCost = isPayrollPending && !isPayrollEstimated ? 0 : workerFilter
+      ? calculationFacts.filter((fact) => fact.user_id === workerFilter)
           .reduce((sum, fact) => sum + Number(fact.total_company_cost), 0)
-      : officialCost;
+      : isPayrollEstimated ? payroll.estimatedCompanyCost! : officialCost!;
 
-    const fixedByDate = !isPayrollPending && summaryRow
+    const fixedByDate = !isPayrollPending || isPayrollEstimated
       ? allocatePayrollToNaturalDays(
           fixedPeriodCost,
-          String(summaryRow.period_start).slice(0, 10),
-          String(summaryRow.period_end).slice(0, 10),
+          String(summaryRow?.period_start ?? startDate).slice(0, 10),
+          String(summaryRow?.period_end ?? endDate).slice(0, 10),
         )
       : {};
 
@@ -88,7 +90,7 @@ export class LaborCostMonthReadModelProjector {
     );
 
     const operational = await loadOperationalMonth(
-      this.supabase, periodYm, activeFacts,
+      this.supabase, periodYm, calculationFacts,
       String(summaryRow?.period_start ?? startDate).slice(0, 10),
       String(summaryRow?.period_end ?? endDate).slice(0, 10),
       isPayrollPending, workerFilter,
@@ -131,8 +133,9 @@ export class LaborCostMonthReadModelProjector {
       totalFixed: totalFixed.amount,
       totalOvertime: totalOvertime.amount,
       // La nómina oficial YA puede incorporar las extras; no sumarlas dos veces.
-      totalCost: isPayrollPending ? 0 : totalFixed.amount,
+      totalCost: isPayrollPending && !isPayrollEstimated ? 0 : totalFixed.amount,
       isPayrollPending,
+      isPayrollEstimated,
       missingPayrollMonths: isPayrollPending ? [periodYm] : [],
       reconciliation,
     };

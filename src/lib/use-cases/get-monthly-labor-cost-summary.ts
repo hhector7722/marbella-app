@@ -37,6 +37,7 @@ export interface MonthlyLaborCostSummaryDTO {
   totalCost: number;
   isPayrollPending: boolean;
   missingPayrollMonths: string[];
+  estimatedPayrollMonths: string[];
   reconciliation: PayrollReconciliationSummaryDTO;
 }
 
@@ -59,6 +60,8 @@ export class GetMonthlyLaborCostSummaryUseCase {
     startDate: string;
     endDate: string;
     userId?: string | null;
+    /** Fecha inyectable en pruebas; normalmente se usa el reloj de Madrid. */
+    todayYmd?: string;
   }): Promise<MonthlyLaborCostSummaryDTO> {
     const startDate = input.startDate.slice(0, 10);
     const endDate = input.endDate.slice(0, 10);
@@ -66,6 +69,7 @@ export class GetMonthlyLaborCostSummaryUseCase {
 
     const byDate: MonthlyLaborCostSummaryDTO['byDate'] = {};
     const missingMonths = new Set<string>();
+    const estimatedMonths = new Set<string>();
     let totalFixed = Money.zero();
     let totalOvertime = Money.zero();
     let reconciliation: PayrollReconciliationSummaryDTO | null = null;
@@ -77,6 +81,7 @@ export class GetMonthlyLaborCostSummaryUseCase {
       const ym = `${year}-${String(month).padStart(2, '0')}`;
       const monthDto = await this.monthProjector.projectMonthSummary(ym, {
         userId: input.userId ?? null,
+        todayYmd: input.todayYmd,
       });
       if (!reconciliation) reconciliation = monthDto.reconciliation;
       for (const [date, cell] of Object.entries(monthDto.byDate)) {
@@ -97,6 +102,7 @@ export class GetMonthlyLaborCostSummaryUseCase {
         totalOvertime = totalOvertime.add(Money.from(cell.accountingOvertime ?? 0));
       }
       for (const missing of monthDto.missingPayrollMonths) missingMonths.add(missing);
+      if (monthDto.isPayrollEstimated) estimatedMonths.add(ym);
       if (++month === 13) { year++; month = 1; }
     }
 
@@ -107,10 +113,14 @@ export class GetMonthlyLaborCostSummaryUseCase {
       byDate,
       totalFixed: totalFixed.amount,
       totalOvertime: totalOvertime.amount,
-      // El coste del informe mensual es la nómina oficial, sin sumar otra vez extras.
-      totalCost: missingMonths.size > 0 ? 0 : totalFixed.amount,
+      // Contabilidad oficial separada de la estimación: sin resumen del mes
+      // corriente se usa el total del mes anterior; no duplicar extras.
+      // Un mes sin datos ni estimación sigue haciendo desconocido el total.
+      totalCost: Array.from(missingMonths).some(ym => !estimatedMonths.has(ym))
+        ? 0 : totalFixed.amount,
       isPayrollPending: missingMonths.size > 0,
       missingPayrollMonths: Array.from(missingMonths),
+      estimatedPayrollMonths: Array.from(estimatedMonths),
       reconciliation,
     };
   }
