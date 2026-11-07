@@ -652,7 +652,7 @@ export default function LaborHistoryPage() {
                                                             )}
                                                             title={dayOrdinaryUnknown ? 'Nómina pendiente' :
                                                                 cell?.operationalIncomplete
-                                                                    ? 'Coste operativo incompleto: ' + cell.operationalMissingWorkers + ' trabajador(es) sin tarifa verificable o sin fichajes'
+                                                                    ? 'Coste operativo incompleto: ' + cell.operationalMissingWorkers + ' trabajador(es) sin coste empresarial verificable, o sin fichajes válidos'
                                                                     : (ratio === null ? 'Sin venta neta positiva' : 'Coste operativo / ventas: ' + formatLaborPercent(ratio)) +
                                                                         ' · Coste del personal fichado: ' + formatLaborEuro(cell?.total ?? 0)}
                                                         >
@@ -710,7 +710,7 @@ export default function LaborHistoryPage() {
                                 {!pending && incomplete && (
                                     <p role="status" className="rounded-lg border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
                                         Coste operativo incompleto: {dayDetail.operationalMissingWorkers > 0
-                                            ? dayDetail.operationalMissingWorkers + ' trabajador(es) ficharon sin una tarifa empresarial verificable.'
+                                            ? dayDetail.operationalMissingWorkers + ' trabajador(es) tienen alguna parte de su coste sin verificar (nómina individual o proyección de horas extras).'
                                             : 'no hay horas de trabajo válidas registradas para ese día.'}
                                         {' '}No se muestra un porcentaje que pueda inducir a error.
                                     </p>
