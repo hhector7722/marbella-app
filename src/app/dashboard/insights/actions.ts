@@ -3,7 +3,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
 import { GetMonthlyLaborCostSummaryUseCase } from '@/lib/use-cases/get-monthly-labor-cost-summary'
-import { getBusinessHourFromTicket } from '@/lib/utils'
 import {
   hourlyProfitabilityRowSchema,
   weekdayAnalysisRowSchema,
@@ -180,23 +179,23 @@ export async function getHourlySalesVsLabor(
 
   const { dateFrom: from, dateTo: to } = parsed.data
 
-  // Ventas por ticket (hora Madrid) + coste laboral HE (SSOT) prorrateado por € de venta.
-  // No usa get_hourly_sales_vs_labor / fn_labor_* / fn_worker_hourly_rate.
-  const [ticketsRes, labor] = await Promise.all([
-    gate.supabase
-      .from('tickets_marbella')
-      .select('total_documento, fecha, hora_cierre, fecha_real')
-      .gte('fecha', from)
-      .lte('fecha', to),
+  // Ventas netas agregadas en PostgreSQL: incluye todos los tickets del periodo
+  // sin el límite de filas de PostgREST. Misma regla de IVA que el PyG.
+  // Coste laboral oficial SSOT, prorrateado por peso de ventas (no por fichajes).
+  const [salesRes, labor] = await Promise.all([
+    gate.supabase.rpc('get_insights_hourly_ticket_sales', {
+      p_date_from: from,
+      p_date_to: to,
+    }),
     new GetMonthlyLaborCostSummaryUseCase(gate.supabase).execute({
       startDate: from,
       endDate: to,
     }),
   ])
 
-  if (ticketsRes.error) {
-    console.error('[insights] tickets_marbella error:', ticketsRes.error.message)
-    return { success: false, error: ticketsRes.error.message }
+  if (salesRes.error) {
+    console.error('[insights] get_insights_hourly_ticket_sales error:', salesRes.error.message)
+    return { success: false, error: salesRes.error.message }
   }
 
   const byHour = Array.from({ length: 24 }, (_, hour) => ({
@@ -205,14 +204,11 @@ export async function getHourlySalesVsLabor(
     ticket_count: 0,
   }))
 
-  for (const t of ticketsRes.data ?? []) {
-    const h = getBusinessHourFromTicket({
-      fecha: t.fecha != null ? String(t.fecha) : undefined,
-      hora_cierre: t.hora_cierre ?? undefined,
-    })
-    if (!Number.isFinite(h) || h < 0 || h > 23) continue
-    byHour[h]!.total_revenue += Number(t.total_documento) || 0
-    byHour[h]!.ticket_count += 1
+  for (const sale of salesRes.data ?? []) {
+    const hour = Number(sale.hour)
+    if (!Number.isInteger(hour) || hour < 0 || hour > 23) continue
+    byHour[hour]!.total_revenue = Number(sale.total_revenue) || 0
+    byHour[hour]!.ticket_count = Number(sale.ticket_count) || 0
   }
 
   const totalRevenue = byHour.reduce((s, r) => s + r.total_revenue, 0)
