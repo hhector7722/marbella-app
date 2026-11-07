@@ -50,7 +50,7 @@ test('horas ordinarias de nómina y extras de proyección se valoran sin doble c
   assert.equal(today.incomplete,false);
 });
 
-test('un trabajador sin nómina o jornada verificable impide mostrar porcentaje incompleto',()=>{
+test('sin ninguna tarifa positiva el día permanece incompleto',()=>{
   const projected=allocateOperationalMonth({
     days,periodStart:days[0]!,periodEnd:days[2]!,facts,terms,
     logs:[log('a',days[0]!,5),log('no_payroll',days[0]!,4)],
@@ -113,9 +113,10 @@ test('tarifa contractual 0 no invalida un día 100% extra con importe persistido
   assert.equal(result[days[0]!]!.incomplete,false);
 });
 
-test('extras con importe cero validado son legítimas, sin inventar un gasto',()=>{
+test('extras con coste cero son válidas cuando la tarifa contractual de extras es positiva',()=>{
   const result=allocateOperationalMonth({
-    days,periodStart:days[0]!,periodEnd:days[2]!,facts:[],terms:[],
+    days,periodStart:days[0]!,periodEnd:days[2]!,facts:[],
+    terms:[{user_id:'stock',effective_from:days[0]!,effective_to:null,weekly_hours:0,overtime_rate_per_hour:10}],
     logs:[log('stock',days[0]!,8)],
     extraHours:[{user_id:'stock',day:days[0]!,week_start:'2026-08-31',overtime_hours:8,overtime_cost:0}],
     payrollPending:false,
@@ -124,7 +125,7 @@ test('extras con importe cero validado son legítimas, sin inventar un gasto',()
   assert.equal(result[days[0]!]!.incomplete,false);
 });
 
-test('sin nómina para horas ordinarias se mantiene incompleto aunque las extras estén verificadas',()=>{
+test('sin nómina ordinaria, las extras verificadas bastan y el resto vale 0 €',()=>{
   const result=allocateOperationalMonth({
     days,periodStart:days[0]!,periodEnd:days[2]!,facts:[],terms:[],
     logs:[log('mixed',days[0]!,8)],
@@ -134,7 +135,7 @@ test('sin nómina para horas ordinarias se mantiene incompleto aunque las extras
   assert.equal(result[days[0]!]!.overtime,30);
   assert.equal(result[days[0]!]!.fixed,0);
   assert.equal(result[days[0]!]!.missingWorkers,1);
-  assert.equal(result[days[0]!]!.incomplete,true);
+  assert.equal(result[days[0]!]!.incomplete,false);
 });
 
 test('una proyección sin coste o con tarifa semanal pendiente no hace pasar el día como completo',()=>{
@@ -154,13 +155,87 @@ test('una proyección sin coste o con tarifa semanal pendiente no hace pasar el 
   assert.equal(flagged[days[0]!]!.overtime,0);
 });
 
-test('una nómina mensual pendiente sigue bloqueando el porcentaje incluso con extras proyectadas',()=>{
+test('una nómina mensual pendiente no impide el cálculo operativo si las extras están valoradas',()=>{
   const result=allocateOperationalMonth({
     days,periodStart:days[0]!,periodEnd:days[2]!,facts:[],terms:[],
     logs:[log('extra',days[0]!,8)],
     extraHours:[{user_id:'extra',day:days[0]!,week_start:'2026-08-31',overtime_hours:8,overtime_cost:80}],
     payrollPending:true,
   });
+  assert.equal(result[days[0]!]!.total,80);
+  assert.equal(result[days[0]!]!.incomplete,false);
+});
+
+test('tarifa ordinaria ausente + tarifa de extras positiva permite calcular el día a 0 €',()=>{
+  const result=allocateOperationalMonth({
+    days,periodStart:days[0]!,periodEnd:days[2]!,
+    facts:[],
+    terms:[{user_id:'e',effective_from:days[0]!,effective_to:null,weekly_hours:0,overtime_rate_per_hour:10}],
+    logs:[log('e',days[0]!,8)],extraHours:[],payrollPending:false,
+  });
+  assert.equal(result[days[0]!]!.fixed,0);
+  assert.equal(result[days[0]!]!.overtime,0);
+  assert.equal(result[days[0]!]!.total,0);
+  assert.equal(result[days[0]!]!.incomplete,false);
+  assert.equal(result[days[0]!]!.missingWorkers,1);
+  assert.equal(result[days[0]!]!.workers[0]!.costKnown,false);
+});
+
+test('ninguna de las dos tarifas positiva: no se admite el día como completo',()=>{
+  const result=allocateOperationalMonth({
+    days,periodStart:days[0]!,periodEnd:days[2]!,
+    facts:[{user_id:'e',total_company_cost:0} as any],
+    terms:[{user_id:'e',effective_from:days[0]!,effective_to:null,weekly_hours:35,overtime_rate_per_hour:0}],
+    logs:[log('e',days[0]!,8)],extraHours:[],payrollPending:false,
+  });
   assert.equal(result[days[0]!]!.total,0);
   assert.equal(result[days[0]!]!.incomplete,true);
+  assert.equal(result[days[0]!]!.missingWorkers,1);
+});
+
+test('tarifa semanal positiva autoriza el día aunque no haya horas extras',()=>{
+  const result=allocateOperationalMonth({
+    days,periodStart:days[0]!,periodEnd:days[2]!,
+    facts:[],terms:[],logs:[log('e',days[0]!,8)],
+    weeklyRates:[{user_id:'e',week_start:'2026-08-31',overtime_rate_effective:14}],
+    extraHours:[],payrollPending:false,
+  });
+  assert.equal(result[days[0]!]!.total,0);
+  assert.equal(result[days[0]!]!.incomplete,false);
+});
+
+test('override semanal explícito a 0 invalida tarifa contractual de extras',()=>{
+  const result=allocateOperationalMonth({
+    days,periodStart:days[0]!,periodEnd:days[2]!,
+    facts:[],logs:[log('e',days[0]!,8)],
+    terms:[{user_id:'e',effective_from:days[0]!,effective_to:null,weekly_hours:0,overtime_rate_per_hour:10}],
+    weeklyRates:[{user_id:'e',week_start:'2026-08-31',overtime_price_snapshot:0,overtime_rate_effective:0}],
+    extraHours:[],payrollPending:false,
+  });
+  assert.equal(result[days[0]!]!.incomplete,true);
+});
+
+test('tarifa ordinaria positiva permite contar extras sin proyección a 0 €',()=>{
+  const result=allocateOperationalMonth({
+    days,periodStart:days[0]!,periodEnd:days[2]!,
+    facts:[{user_id:'a',total_company_cost:300} as any],
+    terms:terms.filter(t=>t.user_id==='a'),
+    logs:[log('a',days[0]!,5)],
+    extraHours:[{user_id:'a',day:days[0]!,week_start:'2026-08-31',overtime_hours:2,overtime_cost:null}],
+    payrollPending:false,
+  });
+  assert.equal(result[days[0]!]!.fixed,60);
+  assert.equal(result[days[0]!]!.overtime,0);
+  assert.equal(result[days[0]!]!.incomplete,false);
+  assert.equal(result[days[0]!]!.missingWorkers,1);
+});
+
+test('mes pendiente mantiene nómina oficial separada sin bloquear un día con tarifa válida',()=>{
+  const result=allocateOperationalMonth({
+    days,periodStart:days[0]!,periodEnd:days[2]!,
+    facts:[],terms:[{user_id:'e',effective_from:days[0]!,effective_to:null,weekly_hours:0,overtime_rate_per_hour:8}],
+    logs:[log('e',days[0]!,8)],extraHours:[],payrollPending:true,
+  });
+  assert.equal(result[days[0]!]!.total,0);
+  assert.equal(result[days[0]!]!.incomplete,false);
 });

@@ -5,16 +5,25 @@
  * entre las horas contractuales del periodo. Las horas extra usan exclusivamente
  * el importe diario ya persistido por el Writer en weekly_snapshot_days.
  *
- * Solo falta un coste si hay horas ordinarias sin nómina/términos positivos,
- * o extras sin proyección verificable. Sin resumen mensual oficial el periodo
- * permanece pendiente. Nunca se inventa una tarifa ni se rehacen las extras.
+ * Si falta tarifa ordinaria o proyección válida de extras, esa parte se valora
+ * a 0 € y no bloquea el cálculo diario; se conserva el indicador del trabajador
+ * sin tarifa para mostrarlo al usuario. Sin resumen mensual oficial, el periodo
+ * sigue pendiente. Nunca se inventa una tarifa ni se rehacen las extras.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ContractTermsService } from '../payroll/contract-terms-service.ts';
+import { mondayOnOrBefore } from '../hours-engine/week-dates.ts';
+import type { CivilDate } from '../hours-engine/types.ts';
 import { formatYmdInMadrid, madridRangeUtcIso } from '../madrid-date-bounds.ts';
 import type { EmployeePayrollFactRow } from '../../types/payroll-facts.ts';
 
-type Term = { user_id: string; effective_from: string; effective_to: string | null; weekly_hours: number | string | null };
+type Term = {
+  user_id: string;
+  effective_from: string;
+  effective_to: string | null;
+  weekly_hours: number | string | null;
+  overtime_rate_per_hour?: number | string | null;
+};
 type Log = { user_id: string; clock_in: string; clock_out: string | null; total_hours: number | string | null };
 type ExtraHours = {
   user_id: string;
@@ -22,6 +31,12 @@ type ExtraHours = {
   week_start?: string;
   overtime_hours: number | string | null;
   overtime_cost?: number | string | null;
+};
+type WeekRate = {
+  user_id: string;
+  week_start: string;
+  overtime_price_snapshot?: number | string | null;
+  overtime_rate_effective?: number | string | null;
 };
 export type OperationalWorkerDay = {
   userId: string;
@@ -73,6 +88,7 @@ export function allocateOperationalMonth(input: {
   terms: readonly Term[];
   logs: readonly Log[];
   extraHours: readonly ExtraHours[];
+  weeklyRates?: readonly WeekRate[];
   missingRateWeeks?: ReadonlySet<string>;
   payrollPending: boolean;
   workerFilter?: string | null;
@@ -118,10 +134,24 @@ export function allocateOperationalMonth(input: {
     });
   }
 
+  const weeklyRateByKey = new Map((input.weeklyRates ?? []).map(w => [`${w.user_id}:${w.week_start}`, w]));
+  const overtimeRateForDay = (userId: string, day: string) => {
+    const weekStart = mondayOnOrBefore(day as CivilDate);
+    const week = weeklyRateByKey.get(`${userId}:${weekStart}`);
+    const term = input.terms.filter(t =>
+      t.user_id === userId && String(t.effective_from).slice(0, 10) <= day &&
+      String(t.effective_to ?? '9999-12-31').slice(0, 10) >= day
+    ).sort((a, b) => String(b.effective_from).localeCompare(String(a.effective_from)))[0];
+    // El override semanal (incluso 0) tiene prioridad sobre la tarifa de contrato.
+    const raw = week?.overtime_price_snapshot ?? week?.overtime_rate_effective ?? term?.overtime_rate_per_hour;
+    const rate = raw == null ? 0 : Number(raw);
+    return Number.isFinite(rate) && rate > 0 ? rate : 0;
+  };
+
   const result: OperationalMonth = {};
   for (const day of input.days) {
     const workers: OperationalWorkerDay[] = [];
-    let fixed = 0, overtime = 0, missingWorkers = 0;
+    let fixed = 0, overtime = 0, missingWorkers = 0, withoutPositiveRate = false;
     for (const [userId, hours] of hoursByDay.get(day) ?? []) {
       const hourly = hourlyCost.get(userId);
       const extra = overtimeByDay.get(day)?.get(userId);
@@ -129,12 +159,15 @@ export function allocateOperationalMonth(input: {
       const ordinaryH = Math.max(0, hours - extraH);
       const ordinaryKnown = ordinaryH < 0.001 || hourly !== undefined;
       const overtimeKnown = extraH < 0.001 || extra?.known === true;
-      const costKnown = !input.payrollPending && ordinaryKnown && overtimeKnown;
-      const ordinaryCost = !input.payrollPending && ordinaryKnown && hourly !== undefined
-        ? cents(ordinaryH * hourly) : 0;
-      const overtimeCost = !input.payrollPending && overtimeKnown
-        ? cents(extra?.cost ?? 0) : 0;
+      // Es suficiente UNA tarifa positiva: nómina ordinaria o extras vigente.
+      // Un componente no valorable se imputa a 0 €, sin anular el resto del día.
+      const hasPositiveRate = (hourly ?? 0) > 0 || overtimeRateForDay(userId, day) > 0 ||
+        (extra?.known === true && extra.cost > 0);
+      const costKnown = ordinaryKnown && overtimeKnown && hasPositiveRate;
+      const ordinaryCost = ordinaryKnown && hourly !== undefined ? cents(ordinaryH * hourly) : 0;
+      const overtimeCost = overtimeKnown ? cents(extra?.cost ?? 0) : 0;
       if (!costKnown) missingWorkers++;
+      if (!hasPositiveRate) withoutPositiveRate = true;
       fixed += ordinaryCost;
       overtime += overtimeCost;
       workers.push({ userId, hours: cents(hours), ordinaryCost, overtimeCost, costKnown });
@@ -144,7 +177,7 @@ export function allocateOperationalMonth(input: {
       overtime: cents(overtime),
       total: cents(fixed + overtime),
       hasWorked: workers.length > 0,
-      incomplete: input.payrollPending || missingWorkers > 0 || workers.length === 0,
+      incomplete: withoutPositiveRate || workers.length === 0,
       missingWorkers,
       workers,
     };
@@ -168,7 +201,7 @@ export async function loadOperationalMonth(
   const bounds = madridRangeUtcIso(first, last);
   const [termsRes, logsRes, overtimeRes, weeklyRes] = await Promise.all([
     supabase.from('hours_contract_terms')
-      .select('user_id,effective_from,effective_to,weekly_hours')
+      .select('user_id,effective_from,effective_to,weekly_hours,overtime_rate_per_hour')
       .lte('effective_from', last),
     supabase.from('time_logs')
       .select('user_id,clock_in,clock_out,total_hours')
@@ -178,7 +211,7 @@ export async function loadOperationalMonth(
       .select('user_id,day,week_start,overtime_hours,overtime_cost')
       .gte('day', first).lte('day', last),
     supabase.from('weekly_snapshots')
-      .select('user_id,week_start,has_missing_rate')
+      .select('user_id,week_start,has_missing_rate,overtime_price_snapshot,overtime_rate_effective')
       .lte('week_start', last).gte('week_end', first),
   ]);
   if (termsRes.error) throw new Error('hours_contract_terms: ' + termsRes.error.message);
@@ -198,6 +231,7 @@ export async function loadOperationalMonth(
     terms: (termsRes.data ?? []) as Term[],
     logs: (logsRes.data ?? []) as Log[],
     extraHours: (overtimeRes.data ?? []) as ExtraHours[],
+    weeklyRates: (weeklyRes.data ?? []) as WeekRate[],
     missingRateWeeks,
     payrollPending,
     workerFilter,
