@@ -12448,8 +12448,8 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
   :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
   gap: 4px;
   width: 100%;
   height: 100%;
@@ -12467,7 +12467,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   min-width: 0;
   height: 100%;
   min-height: 0;
-  padding: 1px 7px 2px;
+  padding: 2px 4px;
   overflow: hidden;
 }
 [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
@@ -12493,22 +12493,21 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   text-overflow: clip;
 }
 
-/* Inicio — Ventas: una fila de cifras y otra de gráfica.
-   La suma de alturas queda limitada al espacio real del widget, sin scroll
-   ni recorte por tarjetas con un mínimo mayor que su propio contenedor. */
+/* Inicio — Ventas: solo las dos cifras, sin gráfica horaria.
+   Los importes ocupan el centro útil, dejando márgenes interiores visibles. */
 [data-component='HomeScreen'] [data-instance='dashboard-ventas']
   [data-element='mobile-sales-snapshot'][data-cards-chart-only='true'] {
   box-sizing: border-box;
   display: grid;
-  grid-template-areas: 'financial' 'chart';
+  grid-template-areas: 'financial';
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 64px) minmax(0, 1fr);
-  align-content: stretch;
-  gap: 5px;
+  grid-template-rows: minmax(0, 1fr);
+  align-content: center;
+  gap: 0;
   width: 100%;
   height: 100%;
   min-height: 0;
-  padding: 5px 10px 8px;
+  padding: 6px 14px 10px;
   overflow: hidden;
 }
 [data-component='HomeScreen'] [data-instance='dashboard-ventas']
@@ -12518,13 +12517,13 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: minmax(0, 1fr);
-  align-self: stretch;
+  align-self: center;
   align-items: stretch;
   justify-items: stretch;
   width: 100%;
-  height: 100%;
+  height: clamp(40px, 100%, 78px);
   min-height: 0;
-  gap: 8px;
+  gap: 10px;
   padding: 0;
 }
 [data-component='HomeScreen'] [data-instance='dashboard-ventas']
@@ -12564,24 +12563,8 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   overflow: visible;
   text-overflow: clip;
 }
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
-  [data-cards-chart-only='true'] [data-element='mobile-sales-hour-chart'] {
-  grid-area: chart;
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-}
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
-  [data-cards-chart-only='true'] [data-element='mobile-sales-hour-chart'] > svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-}
 @media (max-width: 1023px) {
-  /* Cabecera compacta: libera espacio real para la curva sin mover el slot. */
+  /* Cabecera compacta, con acceso de Ventas interior y separado del borde. */
   [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='header'] {
     height: 28px;
     min-height: 28px;
@@ -12589,27 +12572,58 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='header'] > a[data-style='calculator-primary'] {
-    height: 28px;
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    left: auto;
+    inset-inline-end: 12px;
+    inset-inline-start: auto;
+    transform: translateY(-50%);
+    box-sizing: border-box;
+    height: 22px;
     min-height: 0;
+    margin: 0;
+    padding: 3px 10px;
+    font-size: 10px;
+    line-height: 1;
+    border-radius: 999px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='header'] > a[data-style='calculator-primary']::before {
+    inset: 0;
+    top: 0;
+    height: 100%;
+    transform: none;
+    border-radius: inherit;
   }
   [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > strong {
-    font-size: clamp(13px, 3.7vw, 15px);
+    font-size: clamp(11px, 2.75vw, 12px);
   }
   [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > span {
     font-size: 9px;
   }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) {
+    padding-inline: 4px;
+    gap: 3px;
+  }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='mobile-sales-snapshot'][data-cards-chart-only='true'] {
-    grid-template-rows: minmax(0, 33px) minmax(0, 1fr);
-    gap: 3px;
-    padding: 2px 8px 3px;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    padding: 5px 12px 8px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] {
+    height: min(100%, 54px);
+    gap: 8px;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div {
-    padding: 2px 8px;
-    gap: 1px;
+    padding: 5px 10px;
+    gap: 2px;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > span {
@@ -12618,6 +12632,16 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > strong {
     font-size: clamp(15px, 4vw, 17px);
+  }
+}
+
+/* En escritorio tampoco se permite pegar el botón al borde del widget. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-element='header'] > a[data-style='calculator-primary'] {
+    margin-right: 11px;
+    padding-inline: 10px;
+    font-size: 11px;
   }
 }
 
