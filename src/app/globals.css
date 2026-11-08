@@ -12461,13 +12461,13 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
-  gap: 0;
+  justify-content: flex-start;
+  gap: 6px;
   width: 100%;
   min-width: 0;
   height: 100%;
   min-height: 0;
-  padding: 2px 4px;
+  padding: 8px 4px 2px;
   overflow: hidden;
 }
 [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
@@ -12484,7 +12484,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
-  font-size: clamp(15px, 1.5vw, 23px);
+  font-size: clamp(16px, 1.7vw, 24px);
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -.025em;
@@ -12598,7 +12598,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
   [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > strong {
-    font-size: clamp(11px, 2.75vw, 12px);
+    font-size: clamp(12px, 3.55vw, 14px);
   }
   [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > span {
@@ -12606,8 +12606,8 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
   [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) {
-    padding-inline: 4px;
-    gap: 3px;
+    padding: 7px 4px 2px;
+    gap: 5px;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='mobile-sales-snapshot'][data-cards-chart-only='true'] {
@@ -12631,7 +12631,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > strong {
-    font-size: clamp(15px, 4vw, 17px);
+    font-size: clamp(18px, 5.3vw, 22px);
   }
 }
 

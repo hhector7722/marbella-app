@@ -817,7 +817,7 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                     <div key={item.label} data-kpi-tone={item.label === 'Ventas' ? 'sales' : 'net'}
                         className="ventas-kpi-primary flex min-h-[57px] w-full min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5">
                         <span className="text-[11px] font-medium leading-tight text-white/80">{item.label}</span>
-                        <strong className="flex min-h-[30px] max-w-full items-center overflow-hidden whitespace-nowrap text-[clamp(16px,1.75vw,25px)] font-bold leading-tight tabular-nums text-white">
+                        <strong className="flex min-h-[30px] max-w-full items-center overflow-hidden whitespace-nowrap text-[clamp(20px,2.1vw,30px)] font-bold leading-tight tabular-nums text-white">
                             {loading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value}
                         </strong>
                     </div>
@@ -1909,7 +1909,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         <div key={item.label} data-kpi-tone={item.tone}
                             className="ventas-kpi-primary flex min-h-[61px] min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5">
                             <span className="block text-[11px] font-medium text-white/75">{item.label}</span>
-                            <strong className="mt-0.5 flex min-h-[24px] min-w-0 items-center whitespace-nowrap text-[clamp(12px,3.7vw,20px)] font-bold leading-tight tabular-nums">
+                            <strong className="mt-0.5 flex min-h-[24px] min-w-0 items-center whitespace-nowrap text-[clamp(16px,4.8vw,23px)] font-bold leading-tight tabular-nums">
                                 {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
                             </strong>
                         </div>
