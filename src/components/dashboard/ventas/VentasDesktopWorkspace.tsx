@@ -16,6 +16,7 @@ import { timeFilterBounds, type TimeFilterValue } from '@/components/time/time-f
 import { cn } from '@/lib/utils';
 import { randomId } from '@/lib/random-id';
 import { displayedNetSales } from '@/lib/live-sales-net';
+import { salesLandingDate, salesLandingPolicy } from '@/lib/sales-landing-date';
 import { formatNumberSpanish } from '@/lib/cash-closing-metrics';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
@@ -1223,9 +1224,9 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         setFilterOpen(false);
         changePeriod({ start: lastClosingDate, end: lastClosingDate, kind: 'day' });
     };
-    // Mostrar hoy al entrar si ya hay ventas reales; si todavía no las hay,
-    // elegir el último día con tickets positivos (también sin cierre de caja).
-    // Las selecciones y filtros posteriores no quedan sujetos a esta regla.
+    // Solo el acceso normal a Ventas aplica la preferencia de cada cuenta.
+    // Las vistas incrustadas mantienen su fecha explícita, y los cambios
+    // manuales de periodo siguen siendo independientes de esta elección inicial.
     useEffect(() => {
         let active = true;
         void (async () => {
@@ -1243,25 +1244,55 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 }
 
                 const today = format(new Date(), 'yyyy-MM-dd');
-                const { data: stats, error: statsError } = await supabase.rpc(
-                    'get_daily_sales_stats', { target_date: today }
-                );
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
                 if (!active) return;
+                if (userError) console.warn('No se pudo identificar el usuario al entrar en Ventas', userError);
+                const policy = salesLandingPolicy(user?.email);
 
                 let initialDate = today;
-                if (!statsError && Number(stats?.total_ventas ?? 0) <= 0) {
-                    const { data: previous, error } = await supabase
-                        .from('tickets_marbella')
-                        .select('fecha')
-                        .lt('fecha', today)
-                        .gt('total_documento', 0)
-                        .order('fecha', { ascending: false })
+                if (policy === 'last-closing') {
+                    const { data: latestClosing, error: closingError } = await supabase
+                        .from('cash_closings')
+                        .select('closing_date')
+                        .order('closing_date', { ascending: false })
                         .limit(1)
                         .maybeSingle();
                     if (!active) return;
-                    if (!error && previous?.fecha) {
-                        const lastDate = String(previous.fecha).slice(0, 10);
-                        if (/^\d{4}-\d{2}-\d{2}$/.test(lastDate) && lastDate < today) initialDate = lastDate;
+                    if (closingError) console.warn('No se pudo consultar el último cierre', closingError);
+                    initialDate = salesLandingDate(policy, today, latestClosing?.closing_date ?? null, false);
+                } else {
+                    const { data: stats, error: statsError } = await supabase.rpc(
+                        'get_daily_sales_stats', { target_date: today }
+                    );
+                    if (!active) return;
+                    const hasSalesToday = !statsError && Number(stats?.total_ventas ?? 0) > 0;
+                    if (policy === 'today-if-sales') {
+                        if (!hasSalesToday) {
+                            const { data: latestClosing, error: closingError } = await supabase
+                                .from('cash_closings')
+                                .select('closing_date')
+                                .order('closing_date', { ascending: false })
+                                .limit(1)
+                                .maybeSingle();
+                            if (!active) return;
+                            if (closingError) console.warn('No se pudo consultar el último cierre', closingError);
+                            initialDate = salesLandingDate(policy, today, latestClosing?.closing_date ?? null, false);
+                        }
+                    } else if (!statsError && !hasSalesToday) {
+                        // Las demás cuentas conservan la búsqueda histórica por último ticket.
+                        const { data: previous, error } = await supabase
+                            .from('tickets_marbella')
+                            .select('fecha')
+                            .lt('fecha', today)
+                            .gt('total_documento', 0)
+                            .order('fecha', { ascending: false })
+                            .limit(1)
+                            .maybeSingle();
+                        if (!active) return;
+                        if (!error && previous?.fecha) {
+                            const lastDate = String(previous.fecha).slice(0, 10);
+                            if (/^\d{4}-\d{2}-\d{2}$/.test(lastDate) && lastDate < today) initialDate = lastDate;
+                        }
                     }
                 }
                 setLastClosingDate(initialDate);
