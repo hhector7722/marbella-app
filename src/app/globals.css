@@ -12422,3 +12422,142 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     border-color: rgb(243 214 252 / 0.33);
   }
 }
+
+/* Inicio — dos importes a gran tamaño y solo la curva horaria.
+   El dato monetario nunca se abrevia ni se trunca, también en pantallas pequeñas. */
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='mobile-sales-snapshot'][data-cards-chart-only='true'] {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1dvh, 12px);
+  padding: clamp(5px, .7dvh, 9px) clamp(8px, 1vw, 14px) 9px;
+  overflow: hidden;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+  justify-items: stretch;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  gap: clamp(6px, .8vw, 12px);
+  padding: 0;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  justify-self: stretch;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: 100%;
+  min-height: clamp(54px, 8dvh, 86px);
+  gap: clamp(4px, .6dvh, 8px);
+  padding: clamp(8px, .9vw, 15px);
+  overflow: visible;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > span {
+  font-size: clamp(11px, .95vw, 15px);
+  line-height: 1.12;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > strong {
+  flex: none;
+  width: max-content;
+  max-width: none;
+  min-width: 0;
+  font-size: clamp(15px, 1.65vw, 29px);
+  line-height: 1.1;
+  letter-spacing: -.025em;
+  font-weight: 750;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: normal;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-cards-chart-only='true'] [data-element='mobile-sales-hour-chart'] {
+  flex: 1 1 auto;
+  align-items: stretch;
+  height: auto;
+  min-height: 32px;
+  width: 100%;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-cards-chart-only='true'] [data-element='mobile-sales-hour-chart'] > svg {
+  height: 100%;
+  min-height: 32px;
+}
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div {
+    min-height: 58px;
+    padding: 7px 8px;
+    gap: 4px;
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > span {
+    font-size: clamp(10px, 2.7vw, 13px);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > strong {
+    font-size: clamp(14px, 3.7vw, 20px);
+  }
+}
+
+/* Último cierre y Ventas mensuales — el área antes destinada a indicadores
+   secundarios queda reservada íntegramente para las dos cifras principales. */
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: clamp(4px, .5dvh, 8px);
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: clamp(6px, .75vw, 12px);
+  gap: clamp(3px, .4dvh, 6px);
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > span {
+  font-size: clamp(10px, .9vw, 14px);
+}
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > strong {
+  font-size: clamp(16px, 1.5vw, 26px);
+  line-height: 1.12;
+  letter-spacing: -.025em;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Acceso al informe: verde sólido, sin el fondo neutro heredado de la cabecera. */
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='header'] a[data-style='calculator-primary'] {
+  background: var(--color-positivo);
+  border-color: color-mix(in srgb, var(--color-positivo) 75%, white);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .25), 0 2px 6px rgb(0 0 0 / .22);
+  color: white;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-element='header'] a[data-style='calculator-primary']:hover {
+  background: color-mix(in srgb, var(--color-positivo) 87%, white);
+}
