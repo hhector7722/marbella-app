@@ -17,6 +17,7 @@ import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMo
 import { HomeHourlySalesChart, HomeTopProducts } from './HomeSalesWidgetDetails';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { getBusinessHourFromTicket, cn } from '@/lib/utils';
+import { formatRoundedCurrencySpanish } from '@/lib/rounded-currency';
 import {
     buildLastClosingMetrics,
     formatClosingValue,
@@ -286,14 +287,14 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                     title="Ver detalles de las ventas del cierre">
                                     <span className="text-xs font-medium leading-tight text-white/75">Ventas</span>
                                     <strong className="max-w-full whitespace-nowrap text-[clamp(14px,1.35vw,24px)] font-bold leading-tight tracking-tight tabular-nums text-white"
-                                        title={formatCurrencySpanish(metrics.tpvSales)}>{formatCurrencySpanish(metrics.tpvSales)}</strong>
+                                        title={formatCurrencySpanish(metrics.tpvSales)}>{formatRoundedCurrencySpanish(metrics.tpvSales)}</strong>
                                 </button>
                                 <button type="button" data-kpi-tone="net" className="ventas-kpi-primary flex h-full min-w-0 flex-col items-start justify-center rounded-lg border px-3 py-2 text-left"
                                     onClick={() => setPreview({ mode: 'day', date: String(closing.closing_date).split('T')[0] })}
                                     title="Ver detalles de la venta neta del cierre">
                                     <span className="text-xs font-medium leading-tight text-white/75">Venta neta</span>
                                     <strong className="max-w-full whitespace-nowrap text-[clamp(14px,1.35vw,24px)] font-bold leading-tight tracking-tight tabular-nums text-white"
-                                        title={formatCurrencySpanish(metrics.netSales)}>{formatCurrencySpanish(metrics.netSales)}</strong>
+                                        title={formatCurrencySpanish(metrics.netSales)}>{formatRoundedCurrencySpanish(metrics.netSales)}</strong>
                                 </button>
                             </div>
                         </div>

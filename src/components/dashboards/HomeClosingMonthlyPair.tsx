@@ -5,7 +5,7 @@ import { addDays, addMonths, endOfMonth, format, isAfter, startOfMonth, subMonth
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
+import { formatRoundedCurrencySpanish } from '@/lib/rounded-currency';
 import { MasterLastClosingWidget } from './MasterLastClosingWidget';
 import { SalesPreviewModal, type SalesPreview } from './SalesPreviewModal';
 
@@ -187,8 +187,8 @@ function HomeMonthlySalesWidget() {
             ) : visible ? (
                 <div className="flex min-h-0 flex-1 items-center justify-center">
                     <div data-element="monthly-primary-cards" className="grid h-full w-full min-w-0 grid-cols-1 items-stretch gap-1.5">
-                        <MonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/>
-                        <MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
+                        <MonthlyMetric label="Ventas" value={formatRoundedCurrencySpanish(visible.sales)} tone="sales"/>
+                        <MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatRoundedCurrencySpanish(visible.net)}
                             tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
                     </div>
                 </div>
