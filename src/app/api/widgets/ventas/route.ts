@@ -107,10 +107,11 @@ export async function GET(request: NextRequest) {
 
   try {
     let date = requested ?? today;
-    let { data: stats, error: statsError } = await supabase.rpc('get_daily_sales_stats', {
+    const { data: initialStats, error: statsError } = await supabase.rpc('get_daily_sales_stats', {
       target_date: date,
     });
     if (statsError) throw statsError;
+    let stats = initialStats;
 
     // Igual que el widget de inicio: si no se elige fecha y hoy no hay ventas,
     // mostrar la última jornada con ventas (sin etiquetarla como "hoy").
@@ -133,9 +134,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const historicalSummaryOnly = Boolean(stats?.historicalSummaryOnly);
     const [hourlyResult, rankingResult, closingResult] = await Promise.all([
-      supabase.rpc('get_hourly_sales', { p_start_date: date, p_end_date: date }),
-      supabase.rpc('get_product_sales_ranking', {
+      historicalSummaryOnly
+        ? Promise.resolve({ data: [] as HourlySale[], error: null })
+        : supabase.rpc('get_hourly_sales', { p_start_date: date, p_end_date: date }),
+      historicalSummaryOnly
+        ? Promise.resolve({ data: [] as RankingProduct[], error: null })
+        : supabase.rpc('get_product_sales_ranking', {
         p_start_date: date,
         p_end_date: date,
         p_start_time: null,
@@ -189,6 +195,7 @@ export async function GET(request: NextRequest) {
       updatedAt: new Date().toISOString(),
       isToday: date === today,
       isDayClosed: Boolean(closingResult.data),
+      historicalSummaryOnly,
       summary: {
         sales,
         netSales: liveNetSales(sales),

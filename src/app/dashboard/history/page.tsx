@@ -78,6 +78,10 @@ type FullPeriodTicketSalesDetail = {
     summary: { totalSales: number; count: number; avgTicket: number };
     hours: { hour: number; count: number; total: number }[];
     products: ProductSalesRanking[];
+    historicalCoverage?: {
+        days: number; grossSales: number; tickets: number;
+        productAndHourDetailAvailable: boolean;
+    };
 };
 
 interface RendimientoScale {
@@ -160,7 +164,8 @@ function buildClosingExportRows(closings: CashClosing[]): ClosingExportRow[] {
                 neta: fmtCur(c.net_sales || 0),
                 ticks: (c.tickets_count || 0).toLocaleString('es-ES'),
                 tm: avgTicket === 0 ? '' : formatCurrencySpanish(avgTicket),
-                cash: fmtCur(c.cash_counted || 0),
+                cash: fmtCur(c.tpv_terminal === 'HIST_BDP_PDF'
+                    ? Number(c.cash_expected ?? 0) : (c.cash_counted || 0)),
                 card: fmtCur(c.sales_card || 0),
                 pend: fmtCur(c.sales_pending || 0),
                 recup: fmtCur(c.debt_recovered || 0),
@@ -481,6 +486,7 @@ export default function HistoryPage() {
     const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>([]);
     const [topHours, setTopHours] = useState<HourAggregate[]>([]);
     const [salesSummary, setSalesSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
+    const [salesHistoryDetailNotice, setSalesHistoryDetailNotice] = useState<string | null>(null);
     const salesProductsScrollRef = useRef<HTMLDivElement>(null);
     const salesHoursScrollRef = useRef<HTMLDivElement>(null);
     useAutoHideScrollbar(salesProductsScrollRef);
@@ -624,7 +630,25 @@ export default function HistoryPage() {
     const fetchSalesData = async (rawClosingDate: string) => {
         const closingDate = rawClosingDate.split('T')[0];
         setSalesModalLoading(true);
+        setSalesHistoryDetailNotice(null);
         try {
+            const { data: historicalClosing, error: historicalError } = await supabase
+                .from('cash_closings')
+                .select('tpv_terminal,tpv_sales,tickets_count')
+                .eq('closing_date', closingDate).maybeSingle();
+            if (historicalError) throw historicalError;
+            if (historicalClosing?.tpv_terminal === 'HIST_BDP_PDF') {
+                const gross = Number(historicalClosing.tpv_sales ?? 0);
+                const count = Number(historicalClosing.tickets_count ?? 0);
+                setSalesSummary({ totalSales: gross, count, avgTicket: count > 0 ? gross / count : 0 });
+                setSalesProducts([]);
+                setSalesChartData([]);
+                setTopHours([]);
+                setSalesHistoryDetailNotice(
+                    'Resumen financiero BDP recuperado. El PDF no incluye horas, productos ni tickets individuales completos.'
+                );
+                return;
+            }
             const { data: productsData, error: productsError } = await supabase.rpc('get_product_sales_ranking', {
                 p_start_date: closingDate,
                 p_end_date: closingDate,
@@ -666,6 +690,7 @@ export default function HistoryPage() {
     // y horas de un mes, incluido el día actual aunque la caja no se haya cerrado.
     const fetchMonthlySalesData = async (startDate: string, endDate: string) => {
         setSalesModalLoading(true);
+        setSalesHistoryDetailNotice(null);
         try {
             const { data, error } = await supabase.rpc('get_full_period_ticket_sales_detail', {
                 p_start_date: startDate,
@@ -676,6 +701,11 @@ export default function HistoryPage() {
                 throw new Error('El informe mensual no devolvió datos válidos.');
             }
             const report = data as unknown as FullPeriodTicketSalesDetail;
+            if (report.historicalCoverage) {
+                setSalesHistoryDetailNotice(
+                    `${report.historicalCoverage.days} jornadas históricas BDP incluidas. El desglose de productos, horas y tickets solo está disponible para los días posteriores a la recuperación.`
+                );
+            }
             if (!report.summary || !Array.isArray(report.hours) || !Array.isArray(report.products)) {
                 throw new Error('El informe mensual está incompleto.');
             }
@@ -957,7 +987,7 @@ export default function HistoryPage() {
     // Editing is activated only after the manager role and exact closing ID
     // have both been verified; no new write path or permission bypass.
     useEffect(() => {
-        if (searchParams.get('edit') !== '1' || !isManager || !selectedClosing) return;
+        if (searchParams.get('edit') !== '1' || !isManager || !selectedClosing || selectedClosing.tpv_terminal === 'HIST_BDP_PDF') return;
         const requestedId = searchParams.get('closingId')?.trim();
         if (!requestedId || requestedId !== selectedClosing.id || autoEditDeepLinkConsumed.current === requestedId) return;
         autoEditDeepLinkConsumed.current = requestedId;
@@ -1818,7 +1848,7 @@ export default function HistoryPage() {
                                                                         {avgTicket === 0 ? ' ' : formatCurrencySpanish(avgTicket)}
                                                                     </td>
                                                                     <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
-                                                                        {formatCompact(c.cash_counted)}
+                                                                        {formatCompact(c.tpv_terminal === 'HIST_BDP_PDF' ? Number(c.cash_expected ?? 0) : c.cash_counted)}
                                                                     </td>
                                                                     <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
                                                                         {formatCompact(c.sales_card)}
@@ -1937,7 +1967,7 @@ export default function HistoryPage() {
                     subtitle="Detalle de cierre"
                     scheme="dark"
                     headerTrailing={
-                        isManager ? (
+                        isManager && selectedClosing.tpv_terminal !== 'HIST_BDP_PDF' ? (
                             <>
                                 {isEditing ? (
                                     <button
@@ -2454,6 +2484,11 @@ export default function HistoryPage() {
             >
                 <div className="text-white flex flex-col min-h-full select-none">
                     <div className="p-4 flex flex-col flex-1">
+                        {salesHistoryDetailNotice && (
+                            <p role="status" className="mb-3 rounded-lg border border-amber-300/25 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
+                                {salesHistoryDetailNotice}
+                            </p>
+                        )}
                         {salesModalLoading ? (
                             <div className="flex justify-center items-center py-16 flex-1">
                                 <LoadingSpinner size="lg" className="text-white" />
@@ -2527,7 +2562,7 @@ export default function HistoryPage() {
                             <div className="flex flex-col gap-4 mt-3">
                                 <div ref={salesProductsScrollRef} className="custom-scrollbar min-h-0 max-h-[min(32vh,14rem)] overflow-x-hidden overflow-y-auto overscroll-contain">
                                     {salesProducts.length === 0 ? (
-                                        <p className="text-[10px] text-white/40 font-medium italic">No hay productos registrados.</p>
+                                        <p className="text-[10px] text-white/40 font-medium italic">{salesHistoryDetailNotice ? 'Desglose de productos no disponible en el informe BDP.' : 'No hay productos registrados.'}</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
                                             <thead className="sticky top-0 z-[1] bg-[var(--color-envolvente-bajo)]">
@@ -2563,7 +2598,7 @@ export default function HistoryPage() {
 
                                 <div ref={salesHoursScrollRef} className="custom-scrollbar min-h-0 max-h-[min(28vh,10rem)] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-white/10 pt-3">
                                     {topHours.length === 0 ? (
-                                        <p className="text-[10px] text-white/40 font-medium italic">No hay registros horarios.</p>
+                                        <p className="text-[10px] text-white/40 font-medium italic">{salesHistoryDetailNotice ? 'Desglose por horas no disponible en el informe BDP.' : 'No hay registros horarios.'}</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
                                             <thead className="sticky top-0 z-[1] bg-[var(--color-envolvente-bajo)]">
