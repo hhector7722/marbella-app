@@ -552,6 +552,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     productsLoading={productRequest?.date === salesViewDate && productRequest.loading && mobileTopProducts.length === 0}
                     productsError={productRequest?.date === salesViewDate && productRequest.error && mobileTopProducts.length === 0}
                     hasSales={displaySummary.total > 0}
+                    cardsAndChartOnly
                     isDayClosed={salesClosure?.date === salesViewDate && salesClosure.closed}
                 />
                 </div>

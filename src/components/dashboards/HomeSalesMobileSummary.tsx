@@ -12,7 +12,7 @@ type HourProductResponse = { products?: { nombre_articulo: string | null; cantid
 
 export function HomeSalesMobileSummary({
     sales, net, date, hours, products, hasSales, isDayClosed = false,
-    productsLoading = false, productsError = false,
+    productsLoading = false, productsError = false, cardsAndChartOnly = false,
 }: {
     sales: string;
     net: string;
@@ -23,6 +23,7 @@ export function HomeSalesMobileSummary({
     isDayClosed?: boolean;
     productsLoading?: boolean;
     productsError?: boolean;
+    cardsAndChartOnly?: boolean;
 }) {
     const supabase = useMemo(() => createClient(), []);
     const chartRef = useRef<HTMLDivElement>(null);
@@ -256,7 +257,7 @@ export function HomeSalesMobileSummary({
     } : null;
 
     return (
-        <div data-element="mobile-sales-snapshot"
+        <div data-element="mobile-sales-snapshot" data-cards-chart-only={cardsAndChartOnly ? "true" : undefined}
             className="grid min-h-0 w-full flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] grid-rows-[16px_minmax(0,1fr)] gap-x-5 gap-y-px overflow-hidden px-2 pb-0.5 pt-0 lg:grid">
             {hasSales && (
                 <>
@@ -334,7 +335,7 @@ export function HomeSalesMobileSummary({
                             </span>
                         )}
                     </div>
-                    <div data-element="mobile-sales-rankings" className="contents tabular-nums">
+                    {!cardsAndChartOnly && <div data-element="mobile-sales-rankings" className="contents tabular-nums">
                         <div data-element="mobile-sales-hours" className="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)_max-content] content-start gap-x-1 gap-y-0.5 pr-1.5 text-left">
                             {displayHours.map((hour, index) => hour ? (
                                 <div key={hour.hora} data-muted-hour={selectedHour !== null && selectedHour !== hour.hora ? 'true' : undefined}
@@ -391,7 +392,7 @@ export function HomeSalesMobileSummary({
                                 </span>
                             )}
                         </div>
-                    </div>
+                    </div>}
                 </>
             )}
         </div>

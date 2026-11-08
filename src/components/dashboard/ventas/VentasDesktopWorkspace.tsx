@@ -1745,7 +1745,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const mobileFinancialItems = financialSummaryItems(mobileExtras ?? undefined,
         mobileMonth ? null : periodPerformance,
         mobileMonth ? monthTicketPercentages : periodTicketPercentages, performanceTooltip)
-        .map(item => mobileMonth && item.label === 'Rendimiento'
+        .map(item => mobileMonth && !previewMode && item.label === 'Rendimiento'
             ? { ...item, label: 'Media', value: monthDailyAverage === null ? '' : euro(monthDailyAverage),
                 tooltip: 'Media de ventas por día con cierre y ventas positivas.' } : item);
     const mobileActiveSelection = crossSelection?.scope === mobileScope ? crossSelection : null;
@@ -1884,7 +1884,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         </div>
                     ))}
                 </div>
-                {!previewMode && <div data-element="financial-kpi-grid" className="mt-1.5 grid grid-cols-3 gap-1.5">
+                {(!previewMode || Boolean(embeddedMode)) && <div data-element="financial-kpi-grid" className="mt-1.5 grid grid-cols-3 gap-1.5">
                     {mobileFinancialItems.map((item, index) => {
                         const floating = index >= 3;
                         const actionable = item.payment === 'card' || item.payment === 'pending';
