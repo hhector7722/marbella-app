@@ -12315,3 +12315,110 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     background: #383653;
   }
 }
+
+
+/* Ventas y cierres · SOLO escritorio: acabado de las dos columnas
+   de la referencia, mensual malva rosado y diaria marino.
+   Se estilizan contenedores ya existentes: se preservan las tres filas del
+   grid, los huecos de 12 px y todos los KPIs, datos y controles. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary {
+    background: linear-gradient(180deg, #A176AC 0%, #80578F 41%, #634172 100%);
+    border-color: rgb(242 198 247 / 0.64);
+    box-shadow:
+      inset 0 1px 0 rgb(255 236 255 / 0.28),
+      0 9px 22px rgb(30 11 49 / 0.19);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-day {
+    background: linear-gradient(180deg, #113E78 0%, #07285A 52%, #061B43 100%);
+    border-color: rgb(110 181 255 / 0.68);
+    box-shadow:
+      inset 0 1px 0 rgb(215 238 255 / 0.22),
+      0 9px 22px rgb(1 17 44 / 0.22);
+  }
+
+  /* Cabeceras sin una banda de otro color: se ve la misma superficie
+     continua del contenedor principal bajo sus controles existentes. */
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    [data-element='sales-desktop-header'] {
+    background: transparent;
+  }
+
+  /* Tarjetas interiores: relieve suave, borde muy fino y sin halos.
+     Outline y sombras no alteran la geometría ni la simetría. */
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    :is([data-element='month-financials'], [data-element='day-financials'],
+        [data-element='products-section'], [data-element='hours-section']) {
+    border-bottom-color: transparent;
+    outline: 1px solid var(--ventas-inner-outline);
+    box-shadow:
+      inset 0 1px 0 var(--ventas-inner-top-light),
+      0 5px 14px var(--ventas-inner-shadow);
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary {
+    --ventas-inner-outline: rgb(246 202 251 / 0.48);
+    --ventas-inner-top-light: rgb(255 234 255 / 0.27);
+    --ventas-inner-shadow: rgb(33 12 44 / 0.13);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-day {
+    --ventas-inner-outline: rgb(124 186 255 / 0.53);
+    --ventas-inner-top-light: rgb(219 241 255 / 0.23);
+    --ventas-inner-shadow: rgb(1 16 40 / 0.17);
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='month-financials'] {
+    background: linear-gradient(180deg, #986BA7 0%, #80558F 100%);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='products-section'] {
+    background: linear-gradient(180deg, #8E609E 0%, #754A84 100%);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='hours-section'] {
+    background: linear-gradient(180deg, #8A5D9B 0%, #724680 100%);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-day [data-element='day-financials'] {
+    background: linear-gradient(180deg, #18518B 0%, #113C77 100%);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-day [data-element='products-section'] {
+    background: linear-gradient(180deg, #164A82 0%, #0B326B 100%);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-day [data-element='hours-section'] {
+    background: linear-gradient(180deg, #15487F 0%, #0A3066 100%);
+  }
+
+  /* Los dos importes protagonistas recuperan el azul y verde vivos de la
+     referencia, únicamente dentro de estas dos tarjetas de escritorio. */
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    .ventas-kpi-primary[data-kpi-tone='sales'] {
+    background-color: #087FD7;
+    background-image: linear-gradient(180deg, #0997EF 0%, #0871CD 100%);
+    border-color: rgb(100 207 255 / 0.35);
+    box-shadow: inset 0 1px 0 rgb(228 247 255 / 0.21);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    :is(.history-desktop-summary, .history-desktop-day)
+    .ventas-kpi-primary[data-kpi-tone='net'] {
+    background-color: #05B777;
+    background-image: linear-gradient(180deg, #07CD85 0%, #05A868 100%);
+    border-color: rgb(112 242 181 / 0.32);
+    box-shadow: inset 0 1px 0 rgb(232 255 247 / 0.19);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='financial-kpi-grid'] > :nth-child(-n+3) {
+    background: linear-gradient(180deg, rgb(217 176 243 / 0.20), rgb(179 128 211 / 0.15));
+    border-color: rgb(243 214 252 / 0.33);
+  }
+}
