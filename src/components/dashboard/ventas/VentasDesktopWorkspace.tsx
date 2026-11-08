@@ -39,6 +39,10 @@ type TicketReport = {
     summary: { totalSales: number; count: number; avgTicket: number };
     products: { articulo_id?: number; nombre_articulo: string; cantidad_total: number; total_ingresos: number }[];
     hours: { hour: number; count: number; total: number }[];
+    historicalCoverage?: {
+        source: string; days: number; grossSales: number; tickets: number;
+        productAndHourDetailAvailable: boolean;
+    };
 };
 type CrossScope = 'month' | 'period';
 type CrossSelection =
@@ -59,6 +63,7 @@ type CloseRow = {
     id: string; closing_date: string; closed_at?: string | null; tickets_count?: number | null;
     tpv_sales: number | null; net_sales: number | null;
     sales_card: number | null; cash_counted: number | null;
+    cash_expected?: number | null; tpv_terminal?: string | null;
     sales_pending: number | null; debt_recovered: number | null; difference: number | null;
     dataphone_totals_photo_path?: string | null; bdp_closing_ticket_photo_path?: string | null;
     weather?: string | null; breakdown?: Record<string, number> | null;
@@ -94,6 +99,9 @@ const periodLabel = (p: Period) => {
 };
 const closingSum = (rows: CloseRow[], key: keyof CloseRow) =>
     rows.reduce((sum, row) => sum + Number(row[key] ?? 0), 0);
+const reportedCash = (row: CloseRow) => Number(
+    row.tpv_terminal === 'HIST_BDP_PDF' ? row.cash_expected ?? 0 : row.cash_counted ?? 0
+);
 
 /** Dos filas de cierre con la misma fecha, hora de cierre y todas las cifras
  * idénticas representan el mismo cierre registrado dos veces. No tocamos los
@@ -104,7 +112,7 @@ function distinctCashClosings(rows: CloseRow[]): CloseRow[] {
     return rows.filter(row => {
         const signature = JSON.stringify([
             row.closing_date, row.closed_at, row.tpv_sales, row.net_sales,
-            row.sales_card, row.cash_counted, row.sales_pending,
+            row.sales_card, row.cash_counted, row.cash_expected, row.tpv_terminal, row.sales_pending,
             row.debt_recovered, row.difference, row.tickets_count
         ]);
         if (seen.has(signature)) return false;
@@ -942,6 +950,12 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
                     items={monthlyItems} scope={scope} selection={selection} onSelect={onSelect}
                     cashBreakdown={cashBreakdown} loading={loading}/>
             </div>
+            {report?.historicalCoverage && (
+                <p role="status" className="shrink-0 border-b border-amber-300/20 py-1 text-[10px] leading-snug text-amber-100/85">
+                    {report.historicalCoverage.days} jornadas BDP recuperadas: totales y tickets fiables;
+                    el detalle por producto, hora y cobro individual no está disponible en el PDF.
+                </p>
+            )}
             <div data-element="month-breakdown" className="relative flex min-h-0 flex-1 flex-col pt-2">
                 <SalesBreakdown report={breakdownReport} baseReport={report} scope={scope}
                     selection={selection?.kind === 'payment' && (selection.payment === 'cash' || selection.payment === 'card') ? null : selection}
@@ -1614,7 +1628,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         // preceding 16 same-weekday comparisons used by /dashboard/history.
         const comparisonStart = format(subWeeks(parseISO(period.start), 16), 'yyyy-MM-dd');
         void supabase.from('cash_closings')
-            .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,sales_pending,debt_recovered,difference,breakdown,weather,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
+            .select('id,closing_date,closed_at,tickets_count,tpv_sales,net_sales,sales_card,cash_counted,cash_expected,tpv_terminal,sales_pending,debt_recovered,difference,breakdown,weather,dataphone_totals_photo_path,bdp_closing_ticket_photo_path')
             .gte('closing_date', comparisonStart).lte('closing_date', period.end).limit(4000)
             .then(({ data, error }) => {
                 if (!active) return;
@@ -1647,11 +1661,13 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const asPercentages = (counts: { cash: number; card: number } | null, total: number | undefined) =>
         !counts || !total || total <= 0 ? { cash: null, card: null }
             : { cash: counts.cash / total * 100, card: counts.card / total * 100 };
-    const monthTicketPercentages = asPercentages(
+    const monthTicketPercentages = visibleMonthReport?.historicalCoverage
+        ? { cash: null, card: null } : asPercentages(
         monthPaymentCounts?.key === `${monthStart}:${monthEnd}` ? monthPaymentCounts : null,
         visibleMonthReport?.summary.count
     );
-    const periodTicketPercentages = asPercentages(
+    const periodTicketPercentages = dailyReport?.historicalCoverage
+        ? { cash: null, card: null } : asPercentages(
         periodPaymentCounts?.key === `${period.start}:${period.end}` ? periodPaymentCounts : null,
         dailyReport?.summary.count
     );
@@ -1673,7 +1689,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const monthDailyAverage = monthActiveDays > 0 && visibleMonthReport
         ? Number(visibleMonthReport.summary.totalSales) / monthActiveDays : null;
     const monthTotals = useMemo(() => visibleMonthClosings.reduce((a, c) => ({
-        cash: a.cash + Number(c.cash_counted ?? 0), card: a.card + Number(c.sales_card ?? 0),
+        cash: a.cash + reportedCash(c), card: a.card + Number(c.sales_card ?? 0),
         pending: a.pending + Number(c.sales_pending ?? 0), recovered: a.recovered + Number(c.debt_recovered ?? 0),
         net: a.net + Number(c.net_sales ?? 0), difference: a.difference + Number(c.difference ?? 0)
     }), { cash: 0, card: 0, pending: 0, recovered: 0, net: 0, difference: 0 }), [visibleMonthClosings]);
@@ -1684,7 +1700,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const periodTotals = useMemo(() => ({
         sales: closingSum(periodClosings, 'tpv_sales'),
         net: closingSum(periodClosings, 'net_sales'),
-        cash: closingSum(periodClosings, 'cash_counted'),
+        cash: periodClosings.reduce((sum, closing) => sum + reportedCash(closing), 0),
         card: closingSum(periodClosings, 'sales_card'),
         pending: closingSum(periodClosings, 'sales_pending'),
         recovered: closingSum(periodClosings, 'debt_recovered'),
@@ -1834,7 +1850,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     </div>
                     <div className="flex min-w-0 shrink-0 items-center gap-1.5">
                         {!previewMode && <TicketHeaderStats report={mobileMonth ? visibleMonthReport : dailyReport}/>} 
-                        {!previewMode && isSingleDay && selectedClosing && canEditClosings && (
+                        {!previewMode && isSingleDay && selectedClosing && selectedClosing.tpv_terminal !== 'HIST_BDP_PDF' && canEditClosings && (
                             <button type="button" aria-label="Editar cierre" title="Editar cierre"
                                 onClick={() => setEditingClosingId(selectedClosing.id)}
                                 className="ml-0.5 shrink-0 rounded p-1 text-white/75">
@@ -1843,6 +1859,11 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         )}
                     </div>
                 </div>
+                {mobileReport?.historicalCoverage && (
+                    <p role="status" className="mt-1.5 text-[10px] leading-snug text-amber-100/85">
+                        Ventas históricas BDP recuperadas: sin desglose completo por productos u horas.
+                    </p>
+                )}
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
                     {[
                         { label: 'Ventas', value: mobileMonth
@@ -2107,7 +2128,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                             </nav>
                             <div data-element="sales-desktop-header-right" className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1.5">
                                 <TicketHeaderStats report={dailyReport}/>
-                                {isSingleDay && selectedClosing && canEditClosings && (
+                                {isSingleDay && selectedClosing && selectedClosing.tpv_terminal !== 'HIST_BDP_PDF' && canEditClosings && (
                                     <button type="button"
                                         aria-label={'Editar cierre del ' + periodTitle} title="Editar cierre"
                                         onClick={() => router.push(`/dashboard/history?closingId=${encodeURIComponent(selectedClosing.id)}&edit=1`)}
@@ -2125,6 +2146,12 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 scope="period" selection={crossSelection} onSelect={onChooseCross} cashBreakdown={periodCashBreakdown}
                                 loading={periodKpisLoading}/>
                         </div>
+                        {dailyReport?.historicalCoverage && (
+                            <p role="status" className="border-b border-amber-300/20 px-3 py-1.5 text-[10px] text-amber-100/85">
+                                {dailyReport.historicalCoverage.days} jornadas históricas BDP: ventas y número de documentos recuperados.
+                                No consta el detalle completo de productos, horas o tickets.
+                            </p>
+                        )}
                         <div data-element="day-breakdown" className="relative min-h-0 flex-1 overflow-hidden px-3 pb-4 pt-2">
                             <SalesBreakdown report={periodBreakdown} baseReport={dailyReport} scope="period"
                                 selection={paymentOnly ? null : crossSelection} onSelect={onChooseCross}
