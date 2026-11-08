@@ -12,6 +12,10 @@ import { PayrollAllocationService } from '../payroll/payroll-allocation-service.
 import { ContractTermsService } from '../payroll/contract-terms-service.ts';
 import { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
 import { Money } from '../payroll/value-objects.ts';
+import { getISOWeek, getISOWeekYear } from 'date-fns';
+import { mondayOnOrBefore } from '../hours-engine/week-dates.ts';
+import type { CivilDate } from '../hours-engine/types.ts';
+import type { LaborCostWorkerAmount, LaborCostOvertimeWeek } from '../read-models/labor-cost-dtos.ts';
 import type { PayrollReconciliationSummaryDTO } from '../../types/payroll-import.ts';
 
 export interface MonthlyLaborCostSummaryDTO {
@@ -35,6 +39,9 @@ export interface MonthlyLaborCostSummaryDTO {
   totalFixed: number;
   totalOvertime: number;
   totalCost: number;
+  payrollBreakdown: LaborCostWorkerAmount[];
+  overtimeWeeks: LaborCostOvertimeWeek[];
+  hectorMonthlyExtra: number;
   isPayrollPending: boolean;
   missingPayrollMonths: string[];
   estimatedPayrollMonths: string[];
@@ -70,6 +77,20 @@ export class GetMonthlyLaborCostSummaryUseCase {
     const byDate: MonthlyLaborCostSummaryDTO['byDate'] = {};
     const missingMonths = new Set<string>();
     const estimatedMonths = new Set<string>();
+    const payrollWorkers = new Map<string, LaborCostWorkerAmount>();
+    const overtimeWeeks = new Map<string, {
+      employees: Map<string, LaborCostWorkerAmount>;
+      amount: number;
+    }>();
+    let hectorMonthlyExtra = Money.zero();
+    const addWorker = (target: Map<string, LaborCostWorkerAmount>, row: LaborCostWorkerAmount) => {
+      const previous = target.get(row.userId);
+      target.set(row.userId, {
+        userId: row.userId,
+        name: row.name,
+        amount: Money.from(previous?.amount ?? 0).add(Money.from(row.amount)).amount,
+      });
+    };
     let totalFixed = Money.zero();
     let totalOvertime = Money.zero();
     let reconciliation: PayrollReconciliationSummaryDTO | null = null;
@@ -100,6 +121,22 @@ export class GetMonthlyLaborCostSummaryUseCase {
         };
         totalFixed = totalFixed.add(Money.from(cell.accountingFixed ?? 0));
         totalOvertime = totalOvertime.add(Money.from(cell.accountingOvertime ?? 0));
+        for (const row of monthDto.payrollWorkersByDate[date] ?? []) {
+          addWorker(payrollWorkers, row);
+        }
+        for (const row of monthDto.overtimeWorkersByDate[date] ?? []) {
+          const weekStart = mondayOnOrBefore(date as CivilDate);
+          let week = overtimeWeeks.get(weekStart);
+          if (!week) {
+            week = { employees: new Map(), amount: 0 };
+            overtimeWeeks.set(weekStart, week);
+          }
+          addWorker(week.employees, row);
+          week.amount = Money.from(week.amount).add(Money.from(row.amount)).amount;
+        }
+        hectorMonthlyExtra = hectorMonthlyExtra.add(
+          Money.from(monthDto.hectorExtraByDate[date] ?? 0),
+        );
       }
       for (const missing of monthDto.missingPayrollMonths) missingMonths.add(missing);
       if (monthDto.isPayrollEstimated) estimatedMonths.add(ym);
@@ -107,17 +144,32 @@ export class GetMonthlyLaborCostSummaryUseCase {
     }
 
     if (!reconciliation) throw new Error('No se pudo calcular la conciliación de nóminas');
+    const payrollBreakdown = Array.from(payrollWorkers.values())
+      .filter(row => row.amount !== 0)
+      .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name, 'es'));
+    const overtimeBreakdown = Array.from(overtimeWeeks, ([weekStart, week]) => {
+      const date = new Date(weekStart + 'T12:00:00');
+      return {
+        weekStart,
+        weekNumber: getISOWeek(date),
+        weekYear: getISOWeekYear(date),
+        amount: week.amount,
+        employees: Array.from(week.employees.values())
+          .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name, 'es')),
+      };
+    }).sort((a, b) => a.weekStart.localeCompare(b.weekStart));
     return {
       startDate,
       endDate,
       byDate,
       totalFixed: totalFixed.amount,
       totalOvertime: totalOvertime.amount,
-      // Contabilidad oficial separada de la estimación: sin resumen del mes
-      // corriente se usa el total del mes anterior; no duplicar extras.
-      // Un mes sin datos ni estimación sigue haciendo desconocido el total.
-      totalCost: Array.from(missingMonths).some(ym => !estimatedMonths.has(ym))
-        ? 0 : totalFixed.amount,
+      // El resumen solicitado suma nóminas y extras, incluido Héctor.
+      // Los meses pendientes sin referencia siguen siendo desconocidos en UI.
+      totalCost: totalFixed.add(totalOvertime).amount,
+      payrollBreakdown,
+      overtimeWeeks: overtimeBreakdown,
+      hectorMonthlyExtra: hectorMonthlyExtra.amount,
       isPayrollPending: missingMonths.size > 0,
       missingPayrollMonths: Array.from(missingMonths),
       estimatedPayrollMonths: Array.from(estimatedMonths),

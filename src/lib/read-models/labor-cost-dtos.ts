@@ -38,6 +38,20 @@ export type LaborCostDayDTO = {
   reconciliation: PayrollReconciliationReportDTO | null;
 };
 
+export type LaborCostWorkerAmount = {
+  userId: string;
+  name: string;
+  amount: number;
+};
+
+export type LaborCostOvertimeWeek = {
+  weekStart: string;
+  weekNumber: number;
+  weekYear: number;
+  amount: number;
+  employees: LaborCostWorkerAmount[];
+};
+
 export type LaborCostMonthSummaryDTO = {
   periodYm: string;
   byDate: Record<
@@ -60,6 +74,10 @@ export type LaborCostMonthSummaryDTO = {
   totalFixed: number;
   totalOvertime: number;
   totalCost: number;
+  /** Desgloses contables por día para conservar filtros y prorrateos. */
+  payrollWorkersByDate: Record<string, LaborCostWorkerAmount[]>;
+  overtimeWorkersByDate: Record<string, LaborCostWorkerAmount[]>;
+  hectorExtraByDate: Record<string, number>;
   isPayrollPending: boolean;
   isPayrollEstimated: boolean;
   missingPayrollMonths: string[];

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { ChevronDown, User } from 'lucide-react';
 import {
+    addDays,
     addMonths,
     eachDayOfInterval,
     endOfMonth,
@@ -60,6 +61,15 @@ type MonthSummaryPayload = {
     totalFixed: number;
     totalOvertime: number;
     totalCost: number;
+    payrollBreakdown: { userId: string; name: string; amount: number }[];
+    overtimeWeeks: {
+        weekStart: string;
+        weekNumber: number;
+        weekYear: number;
+        amount: number;
+        employees: { userId: string; name: string; amount: number }[];
+    }[];
+    hectorMonthlyExtra: number;
     byDate: Record<string, DayCell>;
     missingPayrollMonths: string[];
     estimatedPayrollMonths: string[];
@@ -229,6 +239,7 @@ export default function LaborHistoryPage() {
     /** null = todos los trabajadores */
     const [workerFilterId, setWorkerFilterId] = useState<string | null>(null);
     const [isWorkerModalOpen, setIsWorkerModalOpen] = useState(false);
+    const [summaryDetail, setSummaryDetail] = useState<'payroll' | 'overtime' | null>(null);
     const [employees, setEmployees] = useState<ProfileOption[]>([]);
 
     const [detailOpen, setDetailOpen] = useState(false);
@@ -302,6 +313,7 @@ export default function LaborHistoryPage() {
 
     const fetchPeriodSummary = useCallback(async () => {
         setLoading(true);
+        setSummaryDetail(null);
         setPeriodNetSales(null);
         try {
             const start = parseLocalSafe(periodStart);
@@ -342,6 +354,9 @@ export default function LaborHistoryPage() {
                 totalFixed: period.totalFixed,
                 totalOvertime: period.totalOvertime,
                 totalCost: period.totalCost,
+                payrollBreakdown: period.payrollBreakdown,
+                overtimeWeeks: period.overtimeWeeks,
+                hectorMonthlyExtra: period.hectorMonthlyExtra,
                 byDate,
                 missingPayrollMonths: period.missingPayrollMonths,
                 estimatedPayrollMonths: period.estimatedPayrollMonths,
@@ -573,14 +588,39 @@ export default function LaborHistoryPage() {
                                     value: laborPctOfPeriod === null ? '—' : formatLaborPercent(laborPctOfPeriod),
                                     tone: 'border-violet-400/35 bg-violet-500/10',
                                 },
-                            ] as const).map(item => (
-                                <div key={item.label} className={cn('flex min-w-0 flex-col justify-center rounded-md border px-2 py-2', item.tone)}>
-                                    <span className="block truncate text-[10px] font-medium leading-tight text-white/70">{item.label}</span>
-                                    <strong className="mt-0.5 block truncate text-[clamp(12px,1.45vw,17px)] font-bold leading-tight tabular-nums text-white" title={item.value}>
-                                        {item.value}
-                                    </strong>
-                                </div>
-                            ))}
+                            ] as const).map(item => {
+                                const breakdown = item.label === 'Nóminas' ? 'payroll'
+                                    : item.label === 'Extras' ? 'overtime' : null;
+                                const content = (
+                                    <>
+                                        <span className="block truncate text-[10px] font-medium leading-tight text-white/70">{item.label}</span>
+                                        <strong className="mt-0.5 block truncate text-[clamp(12px,1.45vw,17px)] font-bold leading-tight tabular-nums text-white" title={item.value}>
+                                            {item.value}
+                                        </strong>
+                                    </>
+                                );
+                                const cardClass = cn(
+                                    'flex min-w-0 flex-col justify-center rounded-md border px-2 py-2',
+                                    item.tone,
+                                );
+                                return breakdown ? (
+                                    <button
+                                        key={item.label}
+                                        type="button"
+                                        onClick={() => setSummaryDetail(breakdown)}
+                                        disabled={!summary || loading}
+                                        aria-label={`Desglosar ${item.label.toLowerCase()}`}
+                                        className={cn(
+                                            cardClass,
+                                            'cursor-pointer text-left transition-colors hover:bg-white/[0.12] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70',
+                                        )}
+                                    >
+                                        {content}
+                                    </button>
+                                ) : (
+                                    <div key={item.label} className={cardClass}>{content}</div>
+                                );
+                            })}
                         </div>
                     </div>
                     <CompactLaborNotice payrollNotice={payrollNotice} reconciliation={summary?.reconciliation} />
@@ -836,6 +876,90 @@ export default function LaborHistoryPage() {
                     })() : (
                         <p className="py-8 text-center text-sm text-white/65">No se pudo mostrar el detalle del día.</p>
                     )}
+                </div>
+            </Modal>
+
+            <Modal
+                open={summaryDetail !== null}
+                onClose={() => setSummaryDetail(null)}
+                variant="standard"
+                scheme="dark"
+                layer="base"
+                instance="labor-summary-breakdown"
+                usageId="labor-summary-breakdown"
+                usageLabel="Desglose del resumen laboral"
+                title={summaryDetail === 'payroll' ? 'Desglose de nóminas' : 'Desglose de extras'}
+            >
+                <div className="flex min-w-0 flex-col gap-3 px-3 py-4 text-white sm:px-5 sm:py-5">
+                    {summaryDetail === 'payroll' ? (
+                        <>
+                            {(summary?.payrollBreakdown ?? []).length > 0 ? (
+                                <div className="overflow-hidden rounded-xl border border-white/15 bg-white/[0.035]">
+                                    {summary?.payrollBreakdown.map(worker => (
+                                        <div key={worker.userId} className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-3 last:border-b-0">
+                                            <span className="min-w-0 truncate text-[12px] text-white/85">{worker.name}</span>
+                                            <span className="shrink-0 text-[12px] font-semibold tabular-nums">{formatLaborEuro(worker.amount)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="py-4 text-center text-[12px] text-white/60">No hay costes individuales de nómina para este periodo.</p>
+                            )}
+                            {(summary?.estimatedPayrollMonths.length ?? 0) > 0 && (
+                                <p className="text-[11px] text-amber-100/80">Costes aproximados: se utilizan las nóminas individuales del mes anterior.</p>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            {(summary?.overtimeWeeks ?? []).length > 0 ? (
+                                <div className="overflow-hidden rounded-xl border border-white/15 bg-white/[0.035]">
+                                    {summary?.overtimeWeeks.map(week => (
+                                        <details key={week.weekStart} className="group border-b border-white/10 last:border-b-0">
+                                            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-3 hover:bg-white/[0.06] [&::-webkit-details-marker]:hidden">
+                                                <div className="flex min-w-0 items-center gap-2">
+                                                    <ChevronDown aria-hidden="true" size={15} className="shrink-0 text-white/50 transition-transform group-open:rotate-180" />
+                                                    <div className="min-w-0">
+                                                        <span className="block text-[12px] font-semibold">Semana {week.weekNumber} · {week.weekYear}</span>
+                                                        <span className="block text-[10px] text-white/50">
+                                                            {format(parseLocalSafe(week.weekStart), 'd MMM', { locale: es })}
+                                                            {' – '}
+                                                            {format(addDays(parseLocalSafe(week.weekStart), 6), 'd MMM', { locale: es })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <span className="shrink-0 text-[12px] font-semibold tabular-nums">{formatLaborEuro(week.amount)}</span>
+                                            </summary>
+                                            <div className="border-t border-white/10 bg-black/10 px-3 py-1">
+                                                {week.employees.map(worker => (
+                                                    <div key={worker.userId} className="flex items-center justify-between gap-3 py-2 pl-5 text-[11px]">
+                                                        <span className="min-w-0 truncate text-white/75">{worker.name}</span>
+                                                        <span className="shrink-0 tabular-nums text-white/90">{formatLaborEuro(worker.amount)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </details>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="py-3 text-center text-[12px] text-white/60">Sin horas extras semanales en este periodo.</p>
+                            )}
+                            {(summary?.hectorMonthlyExtra ?? 0) > 0 && (
+                                <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-400/25 bg-amber-500/[0.07] px-3 py-3">
+                                    <div className="min-w-0">
+                                        <span className="block text-[12px] font-semibold">Héctor · extra mensual</span>
+                                        <span className="block text-[10px] text-white/60">Coste adicional independiente de las semanas</span>
+                                    </div>
+                                    <span className="shrink-0 text-[12px] font-semibold tabular-nums">{formatLaborEuro(summary?.hectorMonthlyExtra ?? 0)}</span>
+                                </div>
+                            )}
+                        </>
+                    )}
+                    <div className="flex items-center justify-between gap-3 border-t border-white/20 px-1 pt-3">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">Total</span>
+                        <strong className="text-[18px] font-bold tabular-nums">
+                            {formatLaborEuro(summaryDetail === 'payroll' ? (summary?.totalFixed ?? 0) : (summary?.totalOvertime ?? 0))}
+                        </strong>
+                    </div>
                 </div>
             </Modal>
 
