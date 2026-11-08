@@ -8,14 +8,18 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ContractTermsService } from '../payroll/contract-terms-service.ts';
 import type { LaborCostDayReadModelProjector } from './labor-cost-day-projector.ts';
 import type { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
-import type { LaborCostMonthSummaryDTO } from './labor-cost-dtos.ts';
+import type { LaborCostMonthSummaryDTO, LaborCostWorkerAmount } from './labor-cost-dtos.ts';
 import { Money, Percentage } from '../payroll/value-objects.ts';
 import { loadOvertimeCostByDay } from './overtime-cost-from-projection.ts';
-import { filterVisiblePlantillaEmployees, PLANTILLA_EMPLOYEE_SELECT } from '../staff/plantilla-employees.ts';
+import { PLANTILLA_EMPLOYEE_SELECT } from '../staff/plantilla-employees.ts';
 import { allocatePayrollToNaturalDays } from '../hours-engine/payroll-ordinary-daily.ts';
 import { computePeriodReconciliation } from '../payroll/payroll-reconciliation-service.ts';
 import { loadOperationalMonth } from './labor-operational-cost.ts';
 import { resolveLaborPayrollSource } from './labor-payroll-source.ts';
+
+const cents = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+const HECTOR_EMAIL = 'hhector7722@gmail.com';
+const HECTOR_MONTHLY_EXTRA_EUR = 1000;
 
 export class LaborCostMonthReadModelProjector {
   constructor(
@@ -82,7 +86,39 @@ export class LaborCostMonthReadModelProjector {
       .from('profiles')
       .select(PLANTILLA_EMPLOYEE_SELECT);
     if (profileError) throw new Error(`profiles: ${profileError.message}`);
-    const workerIds = filterVisiblePlantillaEmployees(profileRows ?? [])
+    const profileById = new Map((profileRows ?? []).map(p => [
+      p.id,
+      [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || 'Trabajador sin nombre',
+    ]));
+    const workerName = (id: string) => profileById.get(id) ?? 'Trabajador sin ficha';
+    const hector = (profileRows ?? []).find(p =>
+      String(p.email ?? '').trim().toLowerCase() === HECTOR_EMAIL,
+    );
+    const includeHectorExtra = Boolean(hector && (!workerFilter || workerFilter === hector.id));
+    const hectorByDate = includeHectorExtra
+      ? allocatePayrollToNaturalDays(HECTOR_MONTHLY_EXTRA_EUR, startDate, endDate)
+      : {};
+
+    // Misma fuente y periodo que Nóminas: reparto individual por día.
+    // El posible resto del resumen oficial (trabajadores aún sin ficha)
+    // queda como "Costes sin asignar" en lugar de desaparecer.
+    const payrollByUser = new Map<string, number>();
+    if (!isPayrollPending || isPayrollEstimated) {
+      for (const fact of calculationFacts) {
+        if (workerFilter && fact.user_id !== workerFilter) continue;
+        payrollByUser.set(fact.user_id,
+          (payrollByUser.get(fact.user_id) ?? 0) + Number(fact.total_company_cost));
+      }
+    }
+    const payrollDailyByUser = Array.from(payrollByUser, ([userId, cost]) => ({
+      userId,
+      name: workerName(userId),
+      daily: allocatePayrollToNaturalDays(cost, startDate, endDate),
+    }));
+
+    // Los costes históricos incluyen también exempleados que ya no aparecen
+    // en la plantilla visible. Excluirlos infravaloraba las horas extras.
+    const workerIds = (profileRows ?? [])
       .map((p) => p.id)
       .filter((id) => !workerFilter || id === workerFilter);
     const overtimeByUser = await loadOvertimeCostByDay(
@@ -96,15 +132,45 @@ export class LaborCostMonthReadModelProjector {
       isPayrollPending, workerFilter,
     );
     const byDate: LaborCostMonthSummaryDTO['byDate'] = {};
+    const payrollWorkersByDate: Record<string, LaborCostWorkerAmount[]> = {};
+    const overtimeWorkersByDate: Record<string, LaborCostWorkerAmount[]> = {};
+    const hectorExtraByDate: Record<string, number> = {};
     let totalFixed = Money.zero();
     let totalOvertime = Money.zero();
 
     for (const day of monthDays) {
       const fixed = Money.from(fixedByDate[day] ?? 0);
-      let overtime = Money.zero();
-      for (const userDays of overtimeByUser.values()) {
-        overtime = overtime.add(Money.from(userDays.get(day)?.overtimeCost ?? 0));
+      const payrollWorkers: LaborCostWorkerAmount[] = payrollDailyByUser
+        .map(entry => ({
+          userId: entry.userId,
+          name: entry.name,
+          amount: Number(entry.daily[day] ?? 0),
+        }))
+        .filter(entry => entry.amount !== 0);
+      const payrollRemainder = cents(fixed.amount -
+        payrollWorkers.reduce((sum, row) => sum + row.amount, 0));
+      if (payrollRemainder !== 0) {
+        payrollWorkers.push({
+          userId: 'unassigned',
+          name: 'Costes sin asignar',
+          amount: payrollRemainder,
+        });
       }
+      payrollWorkersByDate[day] = payrollWorkers;
+
+      let overtime = Money.zero();
+      const overtimeWorkers: LaborCostWorkerAmount[] = [];
+      for (const [userId, userDays] of overtimeByUser) {
+        const cost = Number(userDays.get(day)?.overtimeCost ?? 0);
+        overtime = overtime.add(Money.from(cost));
+        if (cost !== 0) {
+          overtimeWorkers.push({ userId, name: workerName(userId), amount: cost });
+        }
+      }
+      overtimeWorkersByDate[day] = overtimeWorkers;
+      const hectorExtra = Money.from(hectorByDate[day] ?? 0);
+      hectorExtraByDate[day] = hectorExtra.amount;
+      const accountingExtras = overtime.add(hectorExtra);
       const dayOperational = operational[day]!;
       const netSales = Money.from(salesByDate.get(day) ?? 0);
       byDate[day] = {
@@ -116,7 +182,7 @@ export class LaborCostMonthReadModelProjector {
         overtime: dayOperational.overtime,
         // Independiente de las horas efectivas: usado SOLO por el resumen mensual.
         accountingFixed: fixed.amount,
-        accountingOvertime: overtime.amount,
+        accountingOvertime: accountingExtras.amount,
         operationalIncomplete: dayOperational.incomplete,
         operationalMissingWorkers: dayOperational.missingWorkers,
         hasActivity: dayOperational.hasWorked,
@@ -124,7 +190,7 @@ export class LaborCostMonthReadModelProjector {
           ? null : Percentage.fromValues(Money.from(dayOperational.total), netSales).value,
       };
       totalFixed = totalFixed.add(fixed);
-      totalOvertime = totalOvertime.add(overtime);
+      totalOvertime = totalOvertime.add(accountingExtras);
     }
 
     return {
@@ -132,8 +198,12 @@ export class LaborCostMonthReadModelProjector {
       byDate,
       totalFixed: totalFixed.amount,
       totalOvertime: totalOvertime.amount,
-      // La nómina oficial YA puede incorporar las extras; no sumarlas dos veces.
-      totalCost: isPayrollPending && !isPayrollEstimated ? 0 : totalFixed.amount,
+      // Regla del resumen superior: coste laboral = nóminas + extras,
+      // incluyendo el concepto fijo mensual de Héctor.
+      totalCost: cents(totalFixed.amount + totalOvertime.amount),
+      payrollWorkersByDate,
+      overtimeWorkersByDate,
+      hectorExtraByDate,
       isPayrollPending,
       isPayrollEstimated,
       missingPayrollMonths: isPayrollPending ? [periodYm] : [],
