@@ -1821,7 +1821,9 @@ export default function HistoryPage() {
                                                     {[...closings]
                                                         .sort((a, b) => new Date(b.closed_at).getTime() - new Date(a.closed_at).getTime())
                                                         .map((c) => {
-                                                            const d = new Date(c.closed_at);
+                                                            const d = c.tpv_terminal === 'HIST_BDP_PDF'
+                                                                ? parseLocalSafe(c.closing_date)
+                                                                : new Date(c.closed_at);
                                                             const avgTicket = (c.tickets_count || 0) > 0 ? (c.tpv_sales || 0) / c.tickets_count : 0;
                                                             const diff = c.difference ?? 0;
                                                             const formatCompact = (val: number) => formatCurrencySpanish(val || 0);
@@ -1961,7 +1963,9 @@ export default function HistoryPage() {
                     layer="base"
                     instance="history-closing-detail"
                     title={(() => {
-                        const d = parseLocalSafe(selectedClosing.closed_at || selectedClosing.closing_date);
+                        const d = parseLocalSafe(selectedClosing.tpv_terminal === 'HIST_BDP_PDF'
+                            ? selectedClosing.closing_date
+                            : selectedClosing.closed_at || selectedClosing.closing_date);
                         return isNaN(d.getTime()) ? 'Fecha inválida' : format(d, 'eeee d MMMM', { locale: es });
                     })()}
                     subtitle="Detalle de cierre"
