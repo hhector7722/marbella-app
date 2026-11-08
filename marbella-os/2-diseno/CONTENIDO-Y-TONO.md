@@ -86,6 +86,7 @@ Distinción crítica: **«vacío» significa cero, nunca «no lo sé»**. Un dat
 - Los importes negativos llevan signo y color negativo, además del signo.
 - En columnas comparables, los importes alinean a la derecha con dígitos tabulares.
 - Un importe nunca se abrevia con «k» o «M». Se muestra completo o no se muestra.
+- **Excepción de presentación en Inicio**: las tarjetas compactas «Ventas» y «Venta neta» de los widgets «Último cierre» y «Ventas mensuales» muestran euros enteros redondeados al más cercano, sin decimales. El redondeo no modifica los importes calculados o almacenados; las páginas y los detalles conservan la precisión original.
 
 ### Porcentajes
 
