@@ -12,7 +12,7 @@ type HourProductResponse = { products?: { nombre_articulo: string | null; cantid
 
 export function HomeSalesMobileSummary({
     sales, net, date, hours, products, hasSales, isDayClosed = false,
-    productsLoading = false, productsError = false, cardsAndChartOnly = false,
+    productsLoading = false, productsError = false, cardsAndChartOnly = false, hideHourChart = false,
 }: {
     sales: string;
     net: string;
@@ -24,6 +24,7 @@ export function HomeSalesMobileSummary({
     productsLoading?: boolean;
     productsError?: boolean;
     cardsAndChartOnly?: boolean;
+    hideHourChart?: boolean;
 }) {
     const supabase = useMemo(() => createClient(), []);
     const chartRef = useRef<HTMLDivElement>(null);
@@ -258,6 +259,7 @@ export function HomeSalesMobileSummary({
 
     return (
         <div data-element="mobile-sales-snapshot" data-cards-chart-only={cardsAndChartOnly ? "true" : undefined}
+            data-hide-hour-chart={hideHourChart ? "true" : undefined}
             className="grid min-h-0 w-full flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] grid-rows-[16px_minmax(0,1fr)] gap-x-5 gap-y-px overflow-hidden px-2 pb-0.5 pt-0 lg:grid">
             {hasSales && (
                 <>
@@ -273,7 +275,7 @@ export function HomeSalesMobileSummary({
                                 title={net}>{net}</strong>
                         </div>
                     </div>
-                    <div ref={chartRef} data-element="mobile-sales-hour-chart"
+                    {!hideHourChart && <div ref={chartRef} data-element="mobile-sales-hour-chart"
                         className="relative flex h-[26px] w-full shrink-0 items-start">
                         {chartData ? (
                             <>
@@ -334,7 +336,7 @@ export function HomeSalesMobileSummary({
                                 Sin desglose horario disponible
                             </span>
                         )}
-                    </div>
+                    </div>}
                     {!cardsAndChartOnly && <div data-element="mobile-sales-rankings" className="contents tabular-nums">
                         <div data-element="mobile-sales-hours" className="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)_max-content] content-start gap-x-1 gap-y-0.5 pr-1.5 text-left">
                             {displayHours.map((hour, index) => hour ? (
