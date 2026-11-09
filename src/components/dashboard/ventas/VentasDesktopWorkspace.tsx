@@ -1916,7 +1916,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     ))}
                 </div>
                 {(!previewMode || Boolean(embeddedMode)) && <div data-element="financial-kpi-grid" className="mt-1.5 grid grid-cols-3 gap-1.5">
-                    {mobileFinancialItems.map((item, index) => {
+                    {mobileFinancialItems.slice(0, embeddedMode ? 3 : undefined).map((item, index) => {
                         const floating = index >= 3;
                         const actionable = item.payment === 'card' || item.payment === 'pending';
                         const detail = item.label === 'Rendimiento' ? 'performance' : item.label === 'Efectivo' ? 'cash' : null;
@@ -1957,6 +1957,34 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 className={tone}>{body}</button>
                         ) : <div key={item.label} className={tone}>{body}</div>;
                     })}
+                    {embeddedMode && (
+                        <div data-element="financial-settlement-card"
+                            className="col-span-3 grid min-w-0 gap-2 rounded-lg border border-white/20 bg-transparent px-2.5 py-2">
+                            {mobileFinancialItems.slice(3).map(item => {
+                                const pending = item.payment === 'pending';
+                                const selected = pending && mobileActiveSelection?.kind === 'payment' &&
+                                    mobileActiveSelection.payment === 'pending';
+                                const content = (
+                                    <>
+                                        <span className="block text-[11px] font-medium leading-tight text-white/75">{item.label}</span>
+                                        <strong className="block min-w-0 whitespace-normal text-[13px] font-bold leading-snug tabular-nums text-white [overflow-wrap:anywhere]">
+                                            {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
+                                        </strong>
+                                    </>
+                                );
+                                return pending ? (
+                                    <button key={item.label} type="button" data-crossfilter-trigger
+                                        aria-pressed={selected}
+                                        onClick={() => onChooseCross({ kind: 'payment', payment: 'pending', scope: 'period' })}
+                                        className={cn('flex min-h-12 min-w-0 flex-col justify-center rounded-md px-1 py-1 text-left', selected && 'ring-1 ring-inset ring-white/75')}>
+                                        {content}
+                                    </button>
+                                ) : (
+                                    <div key={item.label} className="min-w-0 px-1 py-1">{content}</div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
                 }
             </section>

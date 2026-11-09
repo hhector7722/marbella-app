@@ -12998,3 +12998,42 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     grid-template-rows: minmax(min-content, 62%);
   }
 }
+
+
+/* Detalle común abierto desde Ventas, Último cierre y Ventas mensuales.
+   Pendiente, Cobros y Diferencia comparten una superficie sin relleno cromático
+   adicional: el fondo visible es exactamente el del bloque que los contiene.
+   La distribución se adapta al ancho sin recortar ni abreviar importes. */
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='financial-settlement-card'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: transparent;
+}
+@media (max-width: 640px) {
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 319px) {
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='financial-settlement-card'] strong {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='financial-kpi-grid'] > :is(button, div):not([data-element='financial-settlement-card']) strong,
+[data-component='Modal'][data-instance='home-sales-preview']
+  .ventas-kpi-primary strong {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
