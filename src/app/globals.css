@@ -12901,3 +12901,90 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     font-size: clamp(15px, 1.15vw, 19px);
   }
 }
+
+/* Inicio: cards de Ventas / Venta neta más bajas en los tres widgets.
+   Se reduce solo el relleno vertical de las superficies; conceptos, importes
+   y altura exterior de cada widget permanecen intactos. */
+[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) {
+  grid-template-rows: minmax(min-content, 78%);
+  align-content: center;
+}
+[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] {
+  height: min(100%, 60px);
+}
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) {
+    grid-template-rows: minmax(min-content, 86%);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] {
+    height: min(100%, 46px);
+  }
+  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+    [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div {
+    padding-block: 3px;
+  }
+}
+
+/* Horarios de Inicio, solo escritorio: distancia clara entre cabecera de días
+   y fechas, indicadores de hoy/actividad mayores y ejes de columnas idénticos. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout] > [data-element='slot'][data-slot='panel']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-component='StaffWeekSchedule'] {
+    --staff-week-day-size: clamp(31px, 3.7dvh, 36px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-scroll'] {
+    gap: clamp(14px, 1.9dvh, 20px);
+  }
+  /* Las semanas desplazables reservaban 10 px para un scrollbar oculto,
+     descentrando los títulos respecto a los días de la misma columna. */
+  [data-component='HomeScreen'][data-layout] > [data-element='slot'][data-slot='panel']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-weeks'] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  [data-component='HomeScreen'][data-layout] > [data-element='slot'][data-slot='panel']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-weeks']::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-scroll'] > .grid {
+    width: 100%;
+    justify-items: stretch;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) :is([data-element='month-scroll'] > .grid.grid-cols-7,
+       [data-week-row]:not([data-master-row='true'])) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) :is([data-element='month-scroll'] > .grid.grid-cols-8,
+       [data-week-row][data-master-row='true']) {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-scroll'] > .grid > div {
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    text-align: center;
+  }
+}
