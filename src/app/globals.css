@@ -12462,19 +12462,19 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   min-width: 0;
   height: 100%;
   min-height: 0;
-  padding: 8px 4px 2px;
+  padding: 6px 4px 2px;
   overflow: hidden;
 }
 [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
   :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > span {
   display: block;
   flex: 0 0 auto;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1;
 }
@@ -12484,7 +12484,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
-  font-size: clamp(16px, 1.7vw, 24px);
+  font-size: clamp(19px, 2.1vw, 28px);
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -.025em;
@@ -12598,16 +12598,16 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
   [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > strong {
-    font-size: clamp(12px, 3.55vw, 14px);
+    font-size: clamp(14px, 4.6vw, 19px);
   }
   [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > span {
-    font-size: 9px;
+    font-size: 10px;
   }
   [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) {
-    padding: 7px 4px 2px;
-    gap: 5px;
+    padding: 5px 4px 2px;
+    gap: 4px;
   }
   [data-component='HomeScreen'] [data-instance='dashboard-ventas']
     [data-element='mobile-sales-snapshot'][data-cards-chart-only='true'] {
