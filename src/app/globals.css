@@ -12821,3 +12821,83 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     text-align: right;
   }
 }
+
+/* Horarios · desktop: semana expandida menos alta y semanas más legibles.
+   Se usa el mismo calendario en Admin, Master y Staff; no toca móvil. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-component='StaffWeekSchedule'] {
+    --staff-week-day-size: clamp(25px, 3.1dvh, 31px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-heading'] {
+    margin-bottom: clamp(2px, .5dvh, 5px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-heading'] > span {
+    font-size: clamp(17px, 1.35vw, 20px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-scroll'] > .grid span {
+    font-size: clamp(12px, .95vw, 15px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-weeks'] {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: clamp(7px, 1.05dvh, 11px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-weeks'] > [data-element='week-block']:not([data-expanded='true']) {
+    flex: 0 0 auto;
+    padding-block: 0;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='month-weeks'] > [data-element='week-block'][data-expanded='true'] {
+    flex: 0 0 clamp(126px, 17.9dvh, 156px);
+    height: clamp(126px, 17.9dvh, 156px);
+    min-height: 0;
+    overflow: hidden;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='week-expansion'] {
+    padding-block: 2px;
+    min-height: 0;
+  }
+  /* Tarjetas menos altas sin sacrificar datos: se aprovecha mejor el
+     relleno interior y se conservan las fuentes del fin de semana. */
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-card'] {
+    padding: clamp(5px, .48vw, 8px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-title'] {
+    margin-bottom: 2px;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) :is([data-element='weekend-content'], [data-element='weekend-evento-row']) {
+    gap: 4px;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-week-row] button > span {
+    font-size: clamp(18px, 1.3vw, 21px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-ext-value'] {
+    font-size: clamp(15px, 1.15vw, 19px);
+  }
+}
