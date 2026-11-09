@@ -12657,3 +12657,167 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   [data-element='header'] a[data-style='calculator-primary']:hover {
   background: color-mix(in srgb, var(--color-positivo) 87%, white);
 }
+
+/* Inicio de escritorio (8 x 5): posiciones cerradas de la retícula Admin.
+   El acceso Web permanece disponible en el modal Otros, no se duplica aquí. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout='ops-admin'] {
+    grid-template-areas:
+      'cierre cierre ventas ventas cinicial plant mobra stock'
+      'cierre cierre ventas ventas recetas albaranes asis cajascambio'
+      'horarios horarios horarios horarios ingredientes acarta apedidos aconsumo'
+      'horarios horarios horarios horarios acambio acierre areservas apropinas'
+      'horarios horarios horarios horarios arent ainfo acompra mas';
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    > [data-element='slot'][data-instance='admin-extra-web'] {
+    display: none;
+  }
+
+  /* La doble tarjeta de tesorería ocupa exactamente la pista del icono:
+     mismo tamaño, eje central y rótulo que los demás accesos de su fila. */
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+    > [data-element='slot'][data-slot='icon']:is([data-instance='caja-inicial'], [data-instance='cajas-cambio']) {
+    --home-icon-center-offset: max(0px, calc((100cqb - var(--home-icon-size) - 18px) / 2));
+    align-items: flex-start;
+    justify-content: center;
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+    > [data-element='slot'][data-slot='icon']:is([data-instance='caja-inicial'], [data-instance='cajas-cambio'])
+    > [data-element='name'] {
+    top: calc(var(--home-icon-size) + var(--home-icon-center-offset));
+  }
+  [data-component='HomeScreen']:is([data-layout='ops-admin'], [data-layout='master'])
+    > [data-element='slot'][data-slot='icon']:is([data-instance='caja-inicial'], [data-instance='cajas-cambio'])
+    > :is([data-component='CajaInicialControl'], [data-component='MasterCajasCambioControl']) {
+    box-sizing: border-box;
+    flex: 0 0 var(--home-icon-size);
+    width: var(--home-icon-size);
+    min-height: 0;
+    height: var(--home-icon-size);
+    max-height: var(--home-icon-size);
+    margin: var(--home-icon-center-offset) auto 0;
+    gap: 0;
+  }
+
+  /* Registros (Master) es una pista de icono, no un widget que llena
+     la celda. La misma fórmula/cap de tamaño que todos los iconos. */
+  [data-component='HomeScreen'][data-layout='master']
+    > [data-element='slot'][data-instance='master-asistencia'] {
+    --home-icon-size: min(
+      88px, 6vw, 100cqi,
+      max(0px, calc(100cqb - var(--home-shortcut-label-band)))
+    );
+    --home-icon-center-offset: max(0px, calc((100cqb - var(--home-icon-size) - 18px) / 2));
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    > [data-element='slot'][data-instance='master-asistencia']
+    > [data-element='body'],
+  [data-component='HomeScreen'][data-layout='master']
+    > [data-element='slot'][data-instance='master-asistencia'][data-named='true']
+    > [data-element='body'] {
+    top: var(--home-icon-center-offset);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    > [data-element='slot'][data-instance='master-asistencia']::before {
+    top: var(--home-icon-center-offset);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    > [data-element='slot'][data-instance='master-asistencia'] > [data-element='name'][data-display='desktop'] {
+    top: calc(var(--home-icon-size) + var(--home-icon-center-offset));
+  }
+
+  /* Horarios: las tarjetas de sábado y domingo aprovechan su ancho y alto
+     reales en Admin, Master y Staff. En móvil, la composición no cambia. */
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-component='StaffWeekSchedule'] {
+    --staff-calendar-gap: clamp(4px, .65dvh, 9px);
+    --staff-week-day-size: clamp(21px, 2.7dvh, 30px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-card'] {
+    padding: clamp(7px, .75vw, 13px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-title'] {
+    font-size: clamp(13px, 1.05vw, 17px);
+    line-height: 1.15;
+    margin-bottom: clamp(5px, .75dvh, 10px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-details'] {
+    justify-content: space-evenly;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-content'] {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    justify-content: space-evenly;
+    gap: clamp(7px, .9dvh, 13px);
+    margin-block: 0;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-evento-row'] {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-evenly;
+    gap: clamp(6px, .7dvh, 11px);
+    width: 100%;
+    overflow-x: auto;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-evento-detail'] {
+    width: 100%;
+    flex: 0 0 auto;
+    padding-inline: 0;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-evento-detail-row'] {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: clamp(7px, .8vw, 15px);
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-evento-separator'] {
+    display: none;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) :is([data-element='weekend-turno-value'], [data-element='weekend-turno-label'],
+        [data-element='weekend-evento-value'], [data-element='weekend-evento-label'],
+        [data-element='weekend-evento-detail-value']) {
+    font-size: clamp(11px, .95vw, 15px);
+    line-height: 1.3;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-evento-detail-value'] {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-evento-detail-value'][data-segment-kind='hours'] {
+    text-align: left;
+  }
+  [data-component='HomeScreen'] > [data-element='slot']:is(
+    [data-instance='master-horarios'], [data-instance='staff-horarios']
+  ) [data-element='weekend-evento-detail-value'][data-segment-kind='categories'] {
+    text-align: right;
+  }
+}
