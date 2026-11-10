@@ -1975,11 +1975,11 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                     mobileActiveSelection.payment === 'pending';
                                 const content = (
                                     <>
-                                        <span className="block text-[11px] font-medium leading-tight text-white/75">
+                                        <span className="shrink-0 whitespace-nowrap text-[11px] font-medium leading-tight text-white/75">
                                             <span className="lg:hidden">{item.label === 'Pendiente' ? 'Pend' : item.label === 'Diferencia' ? 'Dif' : item.label}</span>
                                             <span className="hidden lg:inline">{item.label}</span>
                                         </span>
-                                        <strong className="block min-w-0 whitespace-normal text-[13px] font-bold leading-snug tabular-nums text-white [overflow-wrap:anywhere]">
+                                        <strong className="shrink-0 whitespace-nowrap text-[13px] font-bold leading-snug tabular-nums text-white">
                                             {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
                                         </strong>
                                     </>
@@ -1988,11 +1988,11 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                     <button key={item.label} type="button" data-crossfilter-trigger
                                         aria-pressed={selected}
                                         onClick={() => onChooseCross({ kind: 'payment', payment: 'pending', scope: 'period' })}
-                                        className={cn('flex min-w-0 flex-col justify-start rounded-md px-1 py-0 text-left', selected && 'ring-1 ring-inset ring-white/75')}>
+                                        className={cn('inline-flex min-w-0 items-baseline justify-start gap-1 whitespace-nowrap rounded-md px-1 py-0 text-left', selected && 'ring-1 ring-inset ring-white/75')}>
                                         {content}
                                     </button>
                                 ) : (
-                                    <div key={item.label} className="min-w-0 px-1 py-0">{content}</div>
+                                    <div key={item.label} className="inline-flex min-w-0 items-baseline justify-start gap-1 whitespace-nowrap px-1 py-0">{content}</div>
                                 );
                             })}
                         </div>

@@ -13090,6 +13090,61 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
 }
 
+/* Liquidación en los tres modales: un único renglón con tres parejas
+   «concepto importe». Ninguna cifra se trunca ni salta de línea; si una cifra
+   excepcional supera el ancho, solo esta tarjeta admite scroll horizontal. */
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='financial-settlement-card'] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(3, max-content);
+  grid-template-rows: max-content;
+  justify-content: space-between;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  column-gap: 8px;
+  scrollbar-width: thin;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='financial-settlement-card'] > :is(button, div) {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='financial-settlement-card'] > :is(button, div) > :is(span, strong) {
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+@media (max-width: 1023px) {
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] {
+    grid-template-columns: repeat(3, max-content);
+    column-gap: 4px;
+    padding-inline: 4px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] > :is(button, div) {
+    gap: 2px;
+    padding-inline: 1px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] > :is(button, div) > span {
+    font-size: clamp(8px, 2.3vw, 10px);
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] > :is(button, div) > strong {
+    font-size: clamp(9px, 2.5vw, 11px);
+    line-height: 1.22;
+  }
+}
+
 /* Detalle de Ventas, Último cierre y Mensual: en escritorio el panel utiliza
    todo el alto útil disponible del viewport, no un máximo fijo de 710px. */
 @media (min-width: 1024px) {
