@@ -500,7 +500,7 @@ export default function CameraLive({
               <video
                 ref={videoRef}
                 key={streamVersion}
-                className="absolute inset-0 h-full w-full rounded-[inherit] object-cover [:fullscreen]:rounded-none"
+                className="absolute inset-0 h-full w-full rounded-[inherit] object-cover [:fullscreen_&]:object-contain"
                 src={streamUrl}
                 autoPlay
                 muted
