@@ -101,6 +101,8 @@ Sobre los secretos:
 
 Las rutas que sirven documentos sensibles —nóminas, documento de identidad— usan la clave de servicio, pero **después de comprobar la identidad en el propio manejador**. Es el patrón correcto: el archivo no es accesible directamente y la aplicación media cada descarga.
 
+En Storage, las políticas **RESTRICTIVE** de `albaranes` solo se aplican a ese bucket; no deben bloquear `nominas` ni `employee-documents`. La subida manual de nóminas a `employee-documents` mediante `upsert` permite INSERT/UPDATE exclusivamente a `manager` y `admin` según `profiles.role`. La lectura permanece limitada a administración o al propietario del documento. Los buckets privados `nominas` y `employee-documents` tienen además políticas restrictivas propias para evitar que una futura política permisiva global exponga nóminas. Se aplica en las migraciones `20261110134356_fix_employee_documents_storage_restrictive_rls.sql` y `20261110134654_enforce_private_payroll_storage_role_boundaries.sql`.
+
 ---
 
 ## 6. Políticas de acceso en la base de datos
