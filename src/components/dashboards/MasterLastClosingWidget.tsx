@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, subWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CloudSun } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
@@ -71,7 +71,7 @@ const pillClassName =
  * Tarjeta + Efectivo + Diferencia). El cero se muestra como espacio en blanco
  * (CONTENIDO-Y-TONO §3).
  */
-export function MasterLastClosingWidget({ compact = false }: { compact?: boolean } = {}) {
+export function MasterLastClosingWidget({ compact = false, fullWidget = false }: { compact?: boolean; fullWidget?: boolean } = {}) {
     const supabase = useMemo(() => createClient(), []);
     const [closing, setClosing] = useState<Record<string, unknown> | null>(null);
     const [loading, setLoading] = useState(true);
@@ -86,6 +86,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
     const [topHours, setTopHours] = useState<any[]>([]);
     const [salesSummary, setSalesSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
     const [mobileClosingSnapshot, setMobileClosingSnapshot] = useState<{ date: string; hours: { hora: number; total: number }[]; products: HomeWidgetTopProduct[] } | null>(null);
+    const [compactPerformance, setCompactPerformance] = useState<{ date: string; percent: number | null } | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -127,6 +128,54 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
     }, [supabase]);
 
     const metrics = useMemo(() => buildLastClosingMetrics(closing), [closing]);
+
+    // Mismo cálculo de Rendimiento que Ventas: venta neta frente a cierres
+    // previos del mismo día de la semana (hasta 8, excluyendo agosto).
+    useEffect(() => {
+        if (!compact || !fullWidget || !closing?.closing_date) return;
+        const date = String(closing.closing_date).split('T')[0];
+        const currentDate = parseLocalSafe(date);
+        const dates = Array.from({ length: 16 }, (_, i) => subWeeks(currentDate, i + 1))
+            .filter(day => day.getMonth() !== 7)
+            .map(day => format(day, 'yyyy-MM-dd'));
+        let active = true;
+        void supabase.from('cash_closings')
+            .select('closing_date,net_sales,closed_at')
+            .in('closing_date', dates)
+            .order('closed_at', { ascending: true })
+            .then(({ data, error }) => {
+                if (!active) return;
+                if (error) {
+                    console.warn('No se pudo obtener el rendimiento histórico del cierre', error);
+                    setCompactPerformance({ date, percent: null });
+                    return;
+                }
+                const netByDate = new Map((data ?? []).map(row =>
+                    [String(row.closing_date), Number(row.net_sales ?? 0)] as const));
+                let total = 0;
+                let seen = 0;
+                let missing = 0;
+                for (let weeks = 1; weeks <= 16 && seen + missing < 8; weeks++) {
+                    const previous = subWeeks(currentDate, weeks);
+                    if (previous.getMonth() === 7) continue;
+                    const net = netByDate.get(format(previous, 'yyyy-MM-dd'));
+                    if (net !== undefined && net > 0) {
+                        total += net;
+                        seen++;
+                    } else {
+                        missing++;
+                    }
+                }
+                const expected = seen > 0 ? total / seen : null;
+                setCompactPerformance({
+                    date,
+                    percent: expected && expected > 0
+                        ? (Number(closing.net_sales ?? 0) - expected) / expected * 100
+                        : null,
+                });
+            });
+        return () => { active = false; };
+    }, [supabase, compact, fullWidget, closing?.closing_date, closing?.net_sales]);
 
     const dateLabel = useMemo(() => {
         if (!closing) return '';
@@ -281,6 +330,63 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                         <div className="flex min-h-0 flex-1 items-center justify-center text-[10px] text-white/65">Sin cierres registrados</div>
                     ) : (
                         <div className="flex min-h-0 flex-1 items-center justify-center">
+                            {fullWidget ? (
+                            <div className="grid w-full min-w-0 grid-cols-3 items-stretch gap-x-0.5 gap-y-1">
+                                <button type="button" onClick={() => {
+                                    setPreview({ mode: 'day', date: String(closing.closing_date).split('T')[0] });
+                                }} title="Ver detalles de las ventas del cierre"
+                                    data-kpi-tone="sales" className="ventas-kpi-primary flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border px-1 py-0.5 text-left">
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Ventas</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
+                                        title={formatCurrencySpanish(metrics.tpvSales)}>
+                                        {formatCurrencySpanish(metrics.tpvSales)}
+                                    </strong></div>
+                                </button>
+                                <div data-kpi-tone="net" className="ventas-kpi-primary flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border px-1 py-0.5">
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Venta neta</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white"
+                                        title={formatCurrencySpanish(metrics.netSales)}>
+                                        {formatCurrencySpanish(metrics.netSales)}
+                                    </strong></div>
+                                </div>
+                                <div className={cn(
+                                    'flex h-full w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-md border px-1 py-0.5',
+                                    compactPerformance?.date !== String(closing.closing_date).split('T')[0] || compactPerformance.percent === null
+                                        ? 'border-white/15 bg-white/[0.035]'
+                                        : compactPerformance.percent >= 0
+                                            ? 'border-emerald-400/50 bg-emerald-500/10'
+                                            : 'border-rose-400/55 bg-rose-500/15'
+                                )} title="Comparación con la venta neta media de hasta 8 cierres previos del mismo día de la semana">
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/70">Rendimiento</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.2vw,11px)] font-bold leading-tight tracking-tight text-white">
+                                        {compactPerformance?.date === String(closing.closing_date).split('T')[0] && compactPerformance.percent !== null
+                                            ? `${compactPerformance.percent >= 0 ? '▲' : '▼'} ${formatNumberSpanish(Math.abs(compactPerformance.percent), 1)}%`
+                                            : '—'}
+                                    </strong></div>
+                                </div>
+
+                                <button type="button" onClick={() => setIsCashModalOpen(true)}
+                                    className="flex min-w-0 flex-col items-center justify-center rounded-md px-0.5 py-0.5 text-left hover:bg-white/10"
+                                    title="Ver desglose del efectivo">
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Efectivo</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.5vw,10px)] font-semibold leading-tight text-white"
+                                        title={formatCurrencySpanish(metrics.cashCounted)}>{formatCurrencySpanish(metrics.cashCounted)}</strong></div>
+                                </button>
+                                <div className="flex min-w-0 flex-col items-center justify-center rounded-md px-0.5 py-0.5">
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Tarjeta</span>
+                                    <strong className="block whitespace-nowrap text-[clamp(8px,1.5vw,10px)] font-semibold leading-tight text-white"
+                                        title={formatCurrencySpanish(metrics.salesCard)}>{formatCurrencySpanish(metrics.salesCard)}</strong></div>
+                                </div>
+                                <div className="flex min-w-0 flex-col items-center justify-center rounded-md px-0.5 py-0.5"
+                                    title="Diferencia del arqueo de caja">
+                                    <div className="flex w-fit max-w-full min-w-0 flex-col items-start text-left"><span className="block whitespace-nowrap text-[7px] leading-tight text-white/65">Diferencia</span>
+                                    <strong className={cn('block whitespace-nowrap text-[clamp(8px,1.5vw,10px)] font-semibold leading-tight',
+                                        Math.abs(metrics.difference) < 0.005 ? 'text-emerald-200' : 'text-amber-200')}>
+                                        {formatClosingDifference(metrics.difference)}
+                                    </strong></div>
+                                </div>
+                            </div>
+                            ) : (
                             <div data-element="closing-primary-cards" className="grid h-full w-full min-w-0 grid-cols-1 items-stretch gap-1.5">
                                 <button type="button" data-kpi-tone="sales" className="ventas-kpi-primary flex h-full min-w-0 flex-col items-start justify-center rounded-lg border px-3 py-2 text-left"
                                     onClick={() => setPreview({ mode: 'day', date: String(closing.closing_date).split('T')[0] })}
@@ -297,6 +403,7 @@ export function MasterLastClosingWidget({ compact = false }: { compact?: boolean
                                         title={formatCurrencySpanish(metrics.netSales)}>{formatRoundedCurrencySpanish(metrics.netSales)}</strong>
                                 </button>
                             </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -13059,3 +13059,74 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     line-height: 1.05;
   }
 }
+
+
+/* Master exclusivamente: recupera los widgets completos también en móvil.
+   Reservar alto real para curva, rankings y seis indicadores sin recortes. */
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'][data-layout='master'] {
+    grid-template-rows: minmax(140px, max-content) minmax(162px, max-content) repeat(4, var(--home-row-track));
+  }
+  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
+    grid-template-rows: minmax(140px, max-content) minmax(162px, max-content) repeat(5, var(--home-row-track));
+  }
+  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-snapshot']:not([data-cards-chart-only]) {
+    grid-template-rows: max-content minmax(24px, .35fr) minmax(76px, 1.35fr);
+    overflow-x: hidden;
+    overflow-y: auto;
+    row-gap: 4px;
+    padding-block: 2px 6px;
+  }
+  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas']
+    [data-element='mobile-sales-kpis'] {
+    align-self: center;
+  }
+}
+
+/* Los tres modales de detalle comparten una única fila de liquidación.
+   En móvil se acortan solo las etiquetas, nunca las cantidades. */
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-element='financial-settlement-card'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: max-content;
+  align-items: start;
+  align-content: start;
+  height: fit-content;
+}
+@media (max-width: 1023px) {
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: max-content;
+    gap: 4px;
+    padding-inline: 4px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] > :is(button, div) {
+    padding-inline: 1px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] strong {
+    font-size: clamp(10px, 2.8vw, 12px);
+    line-height: 1.22;
+  }
+}
+
+/* Detalle de Ventas, Último cierre y Mensual: en escritorio el panel utiliza
+   todo el alto útil disponible del viewport, no un máximo fijo de 710px. */
+@media (min-width: 1024px) {
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='frame'] > [role='dialog'] {
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    flex: 1 1 auto;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='sales-preview-viewport'] {
+    height: 100%;
+    max-height: 100%;
+    flex: 1 1 0;
+  }
+}

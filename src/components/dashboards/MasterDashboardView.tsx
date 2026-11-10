@@ -537,6 +537,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             <HomeScreen layout="master" className={attendanceExpanded ? 'asis-expanded' : undefined}>
                 <HomeScreenSlot size="wide" instance="dashboard-ventas">
                     <DashboardVentasSection
+                        fullWidget
                         initialData={{
                             liveTickets: initialData?.liveTickets,
                             salesChartData: initialData?.salesChartData,
@@ -544,7 +545,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     />
                 </HomeScreenSlot>
                 <HomeScreenSlot size="wide" instance="master-ultimo-cierre">
-                    <HomeClosingMonthlyPair />
+                    <HomeClosingMonthlyPair fullWidget />
                 </HomeScreenSlot>
                 <HomeScreenSlot
                     size={attendanceExpanded ? 'tall' : 'tile'}

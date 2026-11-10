@@ -43,9 +43,10 @@ export type DashboardVentasInitialData = {
 
 type DashboardVentasSectionProps = {
     initialData?: DashboardVentasInitialData;
+    fullWidget?: boolean;
 };
 
-export default function DashboardVentasSection({ initialData }: DashboardVentasSectionProps) {
+export default function DashboardVentasSection({ initialData, fullWidget = false }: DashboardVentasSectionProps) {
     const [salesPreview, setSalesPreview] = useState<SalesPreview | null>(null);
     const supabase = useMemo(() => createClient(), []);
 
@@ -552,8 +553,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     productsLoading={productRequest?.date === salesViewDate && productRequest.loading && mobileTopProducts.length === 0}
                     productsError={productRequest?.date === salesViewDate && productRequest.error && mobileTopProducts.length === 0}
                     hasSales={displaySummary.total > 0}
-                    cardsAndChartOnly
-                    hideHourChart
+                    cardsAndChartOnly={!fullWidget}
+                    hideHourChart={!fullWidget}
                     isDayClosed={salesClosure?.date === salesViewDate && salesClosure.closed}
                 />
                 </div>

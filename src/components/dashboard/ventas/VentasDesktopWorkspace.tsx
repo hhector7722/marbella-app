@@ -1975,7 +1975,10 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                     mobileActiveSelection.payment === 'pending';
                                 const content = (
                                     <>
-                                        <span className="block text-[11px] font-medium leading-tight text-white/75">{item.label}</span>
+                                        <span className="block text-[11px] font-medium leading-tight text-white/75">
+                                            <span className="lg:hidden">{item.label === 'Pendiente' ? 'Pend' : item.label === 'Diferencia' ? 'Dif' : item.label}</span>
+                                            <span className="hidden lg:inline">{item.label}</span>
+                                        </span>
                                         <strong className="block min-w-0 whitespace-normal text-[13px] font-bold leading-snug tabular-nums text-white [overflow-wrap:anywhere]">
                                             {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
                                         </strong>

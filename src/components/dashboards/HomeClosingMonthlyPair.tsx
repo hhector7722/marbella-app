@@ -6,6 +6,7 @@ import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatRoundedCurrencySpanish } from '@/lib/rounded-currency';
+import { formatCurrencySpanish, formatNumberSpanish } from '@/lib/cash-closing-metrics';
 import { MasterLastClosingWidget } from './MasterLastClosingWidget';
 import { SalesPreviewModal, type SalesPreview } from './SalesPreviewModal';
 
@@ -40,7 +41,37 @@ function MonthlyMetric({ label, value, tone, title }: {
     );
 }
 
-function HomeMonthlySalesWidget() {
+function MasterFullMonthlyMetric({ label, value, tone, title, trend }: {
+    label: string;
+    value: string;
+    tone?: 'sales' | 'net' | 'trend';
+    title?: string;
+    trend?: number | null;
+}) {
+    return (
+        <div data-metric={tone ?? 'plain'} data-kpi-tone={tone === 'sales' || tone === 'net' ? tone : undefined} title={title}
+            className={'flex h-fit w-fit max-w-full min-w-0 flex-col items-start justify-center rounded-md text-left ' +
+                (tone === 'sales' || tone === 'net' ? 'ventas-kpi-primary ' : '') +
+                (tone ? 'min-w-[74px] px-2 py-0.5 ' : 'px-1 py-0.5 ') + (
+                tone === 'sales' ? 'border'
+                    : tone === 'net' ? 'border'
+                    : tone === 'trend' ? (trend == null
+                        ? 'border border-white/20 bg-white/[0.035]'
+                        : trend >= 0 ? 'border border-emerald-400/50 bg-emerald-500/10'
+                            : 'border border-rose-400/55 bg-rose-500/15') : '')}>
+            <div data-element="monthly-metric-content" className="flex w-fit max-w-full min-w-0 flex-col items-start justify-center text-left">
+                <span className={'block whitespace-nowrap leading-tight text-white/65 ' + 'text-[7px]'}>{label}</span>
+                <strong className={'block whitespace-nowrap leading-tight tracking-tight ' +
+                    (trend == null ? 'text-white ' : trend >= 0 ? 'text-emerald-200 ' : 'text-rose-200 ') +
+                    (tone ? 'text-[clamp(8px,1.2vw,10px)] font-bold' : 'text-[clamp(8px,1.4vw,10px)] font-semibold')}
+                    title={value}>{value}</strong>
+            </div>
+        </div>
+    );
+}
+
+
+function HomeMonthlySalesWidget({ fullWidget = false }: { fullWidget?: boolean }) {
     const [preview, setPreview] = useState<SalesPreview | null>(null);
     const supabase = useMemo(() => createClient(), []);
     const [month, setMonth] = useState(() => startOfMonth(new Date()));
@@ -186,11 +217,43 @@ function HomeMonthlySalesWidget() {
                 </div>
             ) : visible ? (
                 <div className="flex min-h-0 flex-1 items-center justify-center">
+                    {fullWidget ? (
+                    <div className="grid w-full min-w-0 grid-cols-6 items-center gap-x-1 gap-y-1.5 text-left">
+                        <div className="col-span-3 flex min-w-0 justify-center">
+                            <MasterFullMonthlyMetric label="Ventas" value={formatCurrencySpanish(visible.sales)} tone="sales"/>
+                        </div>
+                        <div className="col-span-3 flex min-w-0 justify-center">
+                            <MasterFullMonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatCurrencySpanish(visible.net)}
+                                tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
+                        </div>
+                        <div data-element="monthly-comparison" className="hidden min-w-0 justify-center lg:flex"
+                            title={visible.previousSales === null
+                                ? 'Sin datos del mes de referencia'
+                                : `Del día 1 al ${visible.comparisonDays}: ${visible.previousMonthLabel} (${formatCurrencySpanish(visible.previousSales)}) frente al mismo periodo del mes seleccionado`}>
+                            <MasterFullMonthlyMetric label="Mes anterior"
+                                value={visible.monthChange === null ? '—'
+                                    : `${visible.monthChange >= 0 ? '▲' : '▼'} ${formatNumberSpanish(Math.abs(visible.monthChange), 1)}%`}
+                                title={`Comparación del día 1 al ${visible.comparisonDays} con ${visible.previousMonthLabel}`}
+                                tone="trend" trend={visible.monthChange}/>
+                        </div>
+                        <div className="col-span-2 flex min-w-0 justify-center">
+                            <MasterFullMonthlyMetric label="Media" value={visible.daily === null ? '—' : formatCurrencySpanish(visible.daily)}
+                                title={`Media de ventas entre los ${visible.closingDays} días con cierre y ventas positivas`}/>
+                        </div>
+                        <div className="col-span-2 flex min-w-0 justify-center">
+                            <MasterFullMonthlyMetric label="Tickets" value={formatNumberSpanish(visible.tickets)}/>
+                        </div>
+                        <div className="col-span-2 flex min-w-0 justify-center">
+                            <MasterFullMonthlyMetric label="T. medio" value={visible.tickets ? formatCurrencySpanish(visible.average) : '—'}/>
+                        </div>
+                    </div>
+                    ) : (
                     <div data-element="monthly-primary-cards" className="grid h-full w-full min-w-0 grid-cols-1 items-stretch gap-1.5">
                         <MonthlyMetric label="Ventas" value={formatRoundedCurrencySpanish(visible.sales)} tone="sales"/>
                         <MonthlyMetric label="Venta neta" value={visible.net === null ? '—' : formatRoundedCurrencySpanish(visible.net)}
                             tone="net" title="Ventas netas de los cierres registrados. El día abierto puede estar pendiente de cierre."/>
                     </div>
+                    )}
                 </div>
             ) : null}
         </section>
@@ -200,14 +263,14 @@ function HomeMonthlySalesWidget() {
 }
 
 /** Un solo hueco de HomeScreen, dividido en dos tarjetas iguales: no desplaza horarios ni accesos. */
-export function HomeClosingMonthlyPair() {
+export function HomeClosingMonthlyPair({ fullWidget = false }: { fullWidget?: boolean }) {
     return (
-        <div data-element="home-closing-monthly-pair" className="grid h-full min-h-0 w-full grid-cols-2 gap-2">
+        <div data-element="home-closing-monthly-pair" data-master-full={fullWidget ? 'true' : undefined} className="grid h-full min-h-0 w-full grid-cols-2 gap-2">
             <section data-element="closing-half" className="min-h-0 min-w-0 overflow-hidden">
-                <MasterLastClosingWidget compact/>
+                <MasterLastClosingWidget compact fullWidget={fullWidget}/>
             </section>
             <div data-element="monthly-container" className="min-h-0 min-w-0 overflow-hidden">
-                <HomeMonthlySalesWidget/>
+                <HomeMonthlySalesWidget fullWidget={fullWidget}/>
             </div>
         </div>
     );
