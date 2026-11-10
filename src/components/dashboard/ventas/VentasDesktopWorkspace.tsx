@@ -1785,7 +1785,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const mobileFinancialItems = financialSummaryItems(mobileExtras ?? undefined,
         mobileMonth ? null : periodPerformance,
         mobileMonth ? monthTicketPercentages : periodTicketPercentages, performanceTooltip)
-        .map(item => mobileMonth && item.label === 'Rendimiento'
+        .map(item => (mobileMonth || previewMode === 'month') && item.label === 'Rendimiento'
             ? { ...item, label: 'Media', value: monthDailyAverage === null ? '' : euro(monthDailyAverage),
                 tooltip: 'Facturación mensual dividida entre los días con ventas positivas. El día abierto cuenta si ya registra ventas.' } : item);
     const mobileActiveSelection = crossSelection?.scope === mobileScope ? crossSelection : null;
