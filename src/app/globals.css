@@ -13007,6 +13007,11 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 [data-component='Modal'][data-instance='home-sales-preview']
   [data-element='financial-settlement-card'] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
+  align-items: start;
+  align-self: start;
+  height: fit-content;
   background: transparent;
 }
 @media (max-width: 640px) {
@@ -13036,4 +13041,21 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   text-overflow: clip;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+/* Inicio · escritorio: etiquetas de Último cierre y Ventas mensuales más
+   legibles y próximas a su importe, sin variar la cifra ni el alto de la card. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) {
+    justify-content: center;
+    gap: 3px;
+    padding-block: 2px;
+  }
+  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > span {
+    font-size: clamp(14px, 1.1vw, 15px);
+    font-weight: 600;
+    line-height: 1.05;
+  }
 }

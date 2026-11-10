@@ -1959,7 +1959,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     })}
                     {embeddedMode && (
                         <div data-element="financial-settlement-card"
-                            className="col-span-3 grid min-w-0 gap-2 rounded-lg border border-white/20 bg-transparent px-2.5 py-2">
+                            className="col-span-3 grid h-fit min-w-0 self-start gap-x-2 gap-y-1 rounded-lg border border-white/20 bg-transparent px-2 py-0.5">
                             {mobileFinancialItems.slice(3).map(item => {
                                 const pending = item.payment === 'pending';
                                 const selected = pending && mobileActiveSelection?.kind === 'payment' &&
@@ -1976,11 +1976,11 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                     <button key={item.label} type="button" data-crossfilter-trigger
                                         aria-pressed={selected}
                                         onClick={() => onChooseCross({ kind: 'payment', payment: 'pending', scope: 'period' })}
-                                        className={cn('flex min-h-12 min-w-0 flex-col justify-center rounded-md px-1 py-1 text-left', selected && 'ring-1 ring-inset ring-white/75')}>
+                                        className={cn('flex min-w-0 flex-col justify-start rounded-md px-1 py-0 text-left', selected && 'ring-1 ring-inset ring-white/75')}>
                                         {content}
                                     </button>
                                 ) : (
-                                    <div key={item.label} className="min-w-0 px-1 py-1">{content}</div>
+                                    <div key={item.label} className="min-w-0 px-1 py-0">{content}</div>
                                 );
                             })}
                         </div>
