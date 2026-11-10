@@ -13259,3 +13259,41 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     --preview-product-row-height: 40px;
   }
 }
+
+
+/* Inicio Admin, acceso «Ventas»: copiar exclusivamente la geometría del
+   acceso equivalente en Master; conservar el verde de Admin, su destino,
+   estados e interacciones. No alterar Master ni el resto del widget. */
+[data-component='HomeScreen'][data-layout='ops-admin']
+  [data-instance='dashboard-ventas'] [data-element='header'] > a[data-style='calculator-primary'] {
+  border-radius: 7px;
+  background: var(--color-positivo);
+  border-color: color-mix(in srgb, var(--color-positivo) 75%, white);
+  box-shadow: none;
+}
+@media (max-width: 1023px) {
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-element='header'] > a[data-style='calculator-primary'] {
+    inset-inline-end: 18px;
+    right: 18px;
+    height: auto;
+    min-height: 0;
+    padding: 2px 5px;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1;
+  }
+}
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-element='header'] > a[data-style='calculator-primary'] {
+    right: 12px;
+    margin-right: 0;
+    height: auto;
+    min-height: 0;
+    padding: 3px 4px;
+    font-size: clamp(10px, 0.85vw, 12px);
+    font-weight: 600;
+    line-height: 1.15;
+  }
+}
