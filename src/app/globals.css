@@ -12170,12 +12170,12 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
    La cifra ya llega sin abreviar y con sus decimales y €; el truncado
    del KPI la recortaba. Darle un poco más de la fila disponible. */
 @media (min-width: 1024px) {
-  [data-component='HomeScreen'][data-layout] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where([data-layout='ops-admin']) [data-instance='dashboard-ventas']
     [data-element='mobile-sales-kpis'] {
     grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
   }
 
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where([data-layout='ops-admin']) [data-instance='dashboard-ventas']
     [data-element='mobile-sales-kpis'] > [data-element='mobile-sales-net-kpi'] > strong {
     flex: 0 0 auto;
     min-width: max-content;
@@ -12425,7 +12425,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 
 /* Inicio — geometría de los tres resúmenes compactos.
    Dos importes legibles DENTRO de sus tarjetas, sin forzar la altura del widget. */
-[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
   :is([data-element='closing-compact'], [data-element='monthly-half']) {
   box-sizing: border-box;
   justify-content: flex-start;
@@ -12433,19 +12433,19 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   padding: 4px 5px;
   overflow: hidden;
 }
-[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
   :is([data-element='closing-compact'], [data-element='monthly-half']) > div:first-child {
   flex: 0 0 15px;
   min-height: 15px;
   max-height: 15px;
 }
-[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
   :is([data-element='closing-compact'], [data-element='monthly-half']) > div:nth-child(2) {
   flex: 1 1 0%;
   min-height: 0;
   align-items: stretch;
 }
-[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
   :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -12455,7 +12455,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   height: 100%;
   min-height: 0;
 }
-[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
   :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) {
   box-sizing: border-box;
   display: flex;
@@ -12470,7 +12470,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   padding: 6px 4px;
   overflow: hidden;
 }
-[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
   :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > span {
   display: block;
   flex: 0 0 auto;
@@ -12478,7 +12478,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   font-weight: 500;
   line-height: 1;
 }
-[data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
   :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > strong {
   display: block;
   flex: 0 0 auto;
@@ -12495,7 +12495,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 
 /* Inicio — Ventas: solo las dos cifras, sin gráfica horaria.
    Los importes ocupan el centro útil, dejando márgenes interiores visibles. */
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
   [data-element='mobile-sales-snapshot'][data-cards-chart-only='true'] {
   box-sizing: border-box;
   display: grid;
@@ -12510,7 +12510,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   padding: 6px 14px 10px;
   overflow: hidden;
 }
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
   [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] {
   grid-area: financial;
   box-sizing: border-box;
@@ -12526,7 +12526,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   gap: 10px;
   padding: 0;
 }
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
   [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div {
   box-sizing: border-box;
   display: flex;
@@ -12543,13 +12543,13 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   padding: 4px 10px;
   overflow: hidden;
 }
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
   [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > span {
   flex: 0 0 auto;
   font-size: 12px;
   line-height: 1;
 }
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
   [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > strong {
   flex: 0 0 auto;
   width: auto;
@@ -12565,12 +12565,12 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 }
 @media (max-width: 1023px) {
   /* Cabecera compacta, con acceso de Ventas interior y separado del borde. */
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas'] [data-element='header'] {
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas'] [data-element='header'] {
     height: 28px;
     min-height: 28px;
     flex: 0 0 28px;
   }
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
     [data-element='header'] > a[data-style='calculator-primary'] {
     position: absolute;
     top: 50%;
@@ -12588,7 +12588,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     line-height: 1;
     border-radius: 999px;
   }
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
     [data-element='header'] > a[data-style='calculator-primary']::before {
     inset: 0;
     top: 0;
@@ -12596,40 +12596,40 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     transform: none;
     border-radius: inherit;
   }
-  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > strong {
     font-size: clamp(14px, 4.6vw, 19px);
   }
-  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) > span {
     font-size: 10px;
   }
-  [data-component='HomeScreen'] [data-element='home-closing-monthly-pair']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-element='home-closing-monthly-pair']
     :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) {
     padding: 5px 4px;
     gap: 0;
   }
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
     [data-element='mobile-sales-snapshot'][data-cards-chart-only='true'] {
     grid-template-rows: minmax(0, 1fr);
     gap: 0;
     padding: 5px 12px 8px;
   }
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
     [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] {
     height: min(100%, 54px);
     gap: 8px;
   }
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
     [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div {
     padding: 5px 10px;
     gap: 2px;
   }
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
     [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > span {
     font-size: 10px;
   }
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
     [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > strong {
     font-size: clamp(18px, 5.3vw, 22px);
   }
@@ -12637,7 +12637,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 
 /* En escritorio tampoco se permite pegar el botón al borde del widget. */
 @media (min-width: 1024px) {
-  [data-component='HomeScreen'] [data-instance='dashboard-ventas']
+  [data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
     [data-element='header'] > a[data-style='calculator-primary'] {
     margin-right: 11px;
     padding-inline: 10px;
@@ -12646,14 +12646,14 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 }
 
 /* Acceso al informe: verde sólido, sin el fondo neutro heredado de la cabecera. */
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
   [data-element='header'] a[data-style='calculator-primary'] {
   background: var(--color-positivo);
   border-color: color-mix(in srgb, var(--color-positivo) 75%, white);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / .25), 0 2px 6px rgb(0 0 0 / .22);
   color: white;
 }
-[data-component='HomeScreen'] [data-instance='dashboard-ventas']
+[data-component='HomeScreen']:where(:not([data-layout='master'])) [data-instance='dashboard-ventas']
   [data-element='header'] a[data-style='calculator-primary']:hover {
   background: color-mix(in srgb, var(--color-positivo) 87%, white);
 }
@@ -13060,29 +13060,6 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
 }
 
-
-/* Master exclusivamente: recupera los widgets completos también en móvil.
-   Reservar alto real para curva, rankings y seis indicadores sin recortes. */
-@media (max-width: 1023px) {
-  [data-component='HomeScreen'][data-layout='master'] {
-    grid-template-rows: minmax(140px, max-content) minmax(162px, max-content) repeat(4, var(--home-row-track));
-  }
-  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
-    grid-template-rows: minmax(140px, max-content) minmax(162px, max-content) repeat(5, var(--home-row-track));
-  }
-  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas']
-    [data-element='mobile-sales-snapshot']:not([data-cards-chart-only]) {
-    grid-template-rows: max-content minmax(24px, .35fr) minmax(76px, 1.35fr);
-    overflow-x: hidden;
-    overflow-y: auto;
-    row-gap: 4px;
-    padding-block: 2px 6px;
-  }
-  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas']
-    [data-element='mobile-sales-kpis'] {
-    align-self: center;
-  }
-}
 
 /* Los tres modales de detalle comparten una única fila de liquidación.
    En móvil se acortan solo las etiquetas, nunca las cantidades. */
