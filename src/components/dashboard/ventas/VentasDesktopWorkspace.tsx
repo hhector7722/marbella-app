@@ -2086,14 +2086,14 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 </nav>
                 {mobileView === 'live' ? <div data-element="mobile-ventas-live"><RadarSala variant="ventas"/></div>
                   : mobileView === 'products' ? (
-                    <div className="h-[350px] min-w-0">
+                    <div data-element="preview-products-viewport" className="h-[350px] min-w-0">
                         <SalesBreakdown report={previewMode === 'month' ? monthBreakdown : periodBreakdown} baseReport={previewMode === 'month' ? visibleMonthReport : dailyReport} scope={previewMode === 'month' ? 'month' : 'period'}
                             selection={paymentOnly ? null : mobileActiveSelection}
                             onSelect={onChooseCross} productThumbnails={productThumbnails}
                             rangeStart={previewMode === 'month' ? monthStart : period.start} rangeEnd={previewMode === 'month' ? monthEnd : period.end} mobileView="products"/>
                     </div>
                   ) : (
-                    <div className="space-y-1">
+                    <div data-element="preview-tickets-viewport" className="space-y-1">
                         <div className="custom-scrollbar max-h-[390px] space-y-1 overflow-y-auto">
                             {(previewMode ? mobileTicketRows : visibleTickets).map((ticket, index) => (
                                 <MobileSalesTicket key={ticket.numero_documento || index} ticket={ticket}

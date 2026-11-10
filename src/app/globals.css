@@ -13130,3 +13130,155 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     flex: 1 1 0;
   }
 }
+
+
+/* Modales de detalle en escritorio: utilizar el alto extra para hacer
+   mayores los textos, cifras, fotos y filas, NO para ver más registros.
+   Productos conserva un máximo de siete filas visibles; Tickets mantiene
+   su ventana propia y se desplaza en el interior. Ambos escalan con el alto
+   real del dispositivo, sin modificar datos, paginación ni smartphone. */
+@media (min-width: 1024px) {
+  [data-component='Modal'][data-instance='home-sales-preview'] {
+    --preview-product-row-height: clamp(42px, 4.9dvh, 56px);
+    --preview-ticket-row-height: clamp(34px, 3.8dvh, 44px);
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='mobile-sales-detail-card'] > [data-element='preview-products-viewport'][data-element='preview-products-viewport'] {
+    box-sizing: border-box;
+    flex: 0 1 calc(var(--preview-product-row-height) * 7 + 28px);
+    height: calc(var(--preview-product-row-height) * 7 + 28px);
+    max-height: calc(var(--preview-product-row-height) * 7 + 28px);
+    min-height: 0;
+    overflow: hidden;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='products-section'] button[data-crossfilter-trigger] {
+    height: var(--preview-product-row-height);
+    font-size: clamp(14px, 1.6dvh, 18px);
+    column-gap: 10px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='products-section'] button[data-crossfilter-trigger] :is(span, strong) {
+    font-size: clamp(13px, 1.5dvh, 17px);
+    line-height: 1.25;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='products-section'] button[data-crossfilter-trigger] > strong {
+    font-size: clamp(15px, 1.7dvh, 19px);
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='products-section'] button[data-crossfilter-trigger] > span:first-child > span:nth-child(2) {
+    width: clamp(27px, 3dvh, 34px);
+    height: clamp(27px, 3dvh, 34px);
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='products-section'] button[data-crossfilter-trigger] > span:first-child img {
+    width: clamp(22px, 2.4dvh, 28px);
+    height: clamp(22px, 2.4dvh, 28px);
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='products-section'] [role='img'] {
+    height: 13px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='products-section'] > div:first-child button {
+    font-size: 15px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='mobile-sales-detail-card'] > [data-element='preview-tickets-viewport'][data-element='preview-tickets-viewport'] {
+    box-sizing: border-box;
+    flex: 0 1 calc((var(--preview-ticket-row-height) + 4px) * 10);
+    height: calc((var(--preview-ticket-row-height) + 4px) * 10);
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='preview-tickets-viewport'] > .custom-scrollbar {
+    height: 100%;
+    max-height: 100%;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='preview-tickets-viewport'] .ventas-ticket-strip {
+    height: var(--preview-ticket-row-height);
+    font-size: clamp(13px, 1.5dvh, 17px);
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='preview-tickets-viewport'] .ventas-ticket-strip :is(span, strong) {
+    font-size: clamp(12px, 1.4dvh, 16px);
+  }
+
+  /* Resumen superior, tabla de horas y navegación: escala coherente con las
+     filas, sin cambiar los datos, pestañas ni los componentes externos. */
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='header'] {
+    font-size: 15px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='header'] h2 {
+    font-size: 15px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-component='HistoryMobileWorkspace'] > section:first-child > div:first-child strong {
+    font-size: 14px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    .ventas-kpi-primary > span {
+    font-size: clamp(14px, 1.5dvh, 18px);
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    .ventas-kpi-primary > strong {
+    font-size: clamp(24px, 2.7dvh, 32px);
+    line-height: 1.17;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-kpi-grid'] > :is(button, div):not([data-element='financial-settlement-card']) span {
+    font-size: 13px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-kpi-grid'] > :is(button, div):not([data-element='financial-settlement-card']) strong {
+    font-size: 16px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] > :is(button, div) > span {
+    font-size: 13px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='financial-settlement-card'] > :is(button, div) > strong {
+    font-size: 16px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='mobile-sales-detail-card'] > nav button {
+    font-size: 15px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-element='mobile-sales-detail-card'] > nav {
+    margin-bottom: 10px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-component='HistoryMobileWorkspace'] > div > section > div:first-child h2 {
+    font-size: 14px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-mobile-hour-select] {
+    font-size: 12px;
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-mobile-hour-select].grid {
+    height: clamp(22px, 2.5dvh, 29px);
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-mobile-hour-select].grid > span {
+    font-size: clamp(12px, 1.45dvh, 17px);
+  }
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-component='HistoryMobileWorkspace'] > div > section:has([data-element='mobile-sales-hour-axis']) {
+    height: clamp(158px, 18dvh, 212px);
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 960px) {
+  [data-component='Modal'][data-instance='home-sales-preview'] {
+    --preview-product-row-height: 40px;
+  }
+}
