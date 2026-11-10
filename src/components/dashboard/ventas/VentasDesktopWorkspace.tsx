@@ -1427,7 +1427,9 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         const date = currentSalesDate;
         const todaySelected = period.start === date && period.end === date;
         const todayVisibleInDesktopCalendar = desktopSalesCalendar && isSameMonth(month, salesClock);
-        if (!todaySelected && !todayVisibleInDesktopCalendar) return;
+        // La media del modal mensual también cuenta el día abierto si ya hay ventas.
+        const todayVisibleInMonthlyPreview = previewMode === 'month' && date >= monthStart && date <= monthEnd;
+        if (!todaySelected && !todayVisibleInDesktopCalendar && !todayVisibleInMonthlyPreview) return;
 
         let active = true;
         let latestRequest = 0;
@@ -1460,7 +1462,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
             window.removeEventListener('focus', onFocus);
             void supabase.removeChannel(channel);
         };
-    }, [supabase, period.start, period.end, initializing, desktopSalesCalendar, currentSalesDate, month]);
+    }, [supabase, period.start, period.end, initializing, desktopSalesCalendar, currentSalesDate, month, previewMode, monthStart, monthEnd]);
 
     useEffect(() => {
         if (initializing) return;
@@ -1714,9 +1716,16 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     };
     const monthCashBreakdown = aggregateBreakdown(visibleMonthClosings);
     const periodCashBreakdown = aggregateBreakdown(periodClosings);
-    const monthActiveDays = new Set(
+    const monthDatesWithSales = new Set(
         visibleMonthClosings.filter(c => Number(c.tpv_sales ?? 0) > 0).map(c => c.closing_date)
-    ).size;
+    );
+    // Si el mes está abierto, la facturación del TPV puede incluir hoy antes del cierre.
+    // Contarlo exactamente una vez evita inflar la media al dividir solo entre cierres.
+    if (previewMode === 'month' && liveDaySales && liveDaySales.total > 0 &&
+        liveDaySales.date >= monthStart && liveDaySales.date <= monthEnd) {
+        monthDatesWithSales.add(liveDaySales.date);
+    }
+    const monthActiveDays = monthDatesWithSales.size;
     const monthDailyAverage = monthActiveDays > 0 && visibleMonthReport
         ? Number(visibleMonthReport.summary.totalSales) / monthActiveDays : null;
     const monthTotals = useMemo(() => visibleMonthClosings.reduce((a, c) => ({
@@ -1776,9 +1785,9 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     const mobileFinancialItems = financialSummaryItems(mobileExtras ?? undefined,
         mobileMonth ? null : periodPerformance,
         mobileMonth ? monthTicketPercentages : periodTicketPercentages, performanceTooltip)
-        .map(item => mobileMonth && !previewMode && item.label === 'Rendimiento'
+        .map(item => mobileMonth && item.label === 'Rendimiento'
             ? { ...item, label: 'Media', value: monthDailyAverage === null ? '' : euro(monthDailyAverage),
-                tooltip: 'Media de ventas por día con cierre y ventas positivas.' } : item);
+                tooltip: 'Facturación mensual dividida entre los días con ventas positivas. El día abierto cuenta si ya registra ventas.' } : item);
     const mobileActiveSelection = crossSelection?.scope === mobileScope ? crossSelection : null;
     // Si se filtra una hora, conservar los datos originales de las horas vecinas
     // para que sigan visibles y atenuadas, como en los widgets del inicio.
