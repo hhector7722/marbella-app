@@ -429,7 +429,7 @@ La calculadora usa la lógica de la calculadora básica de iOS. Mientras se escr
 
 ## 3. Componentes de dominio
 
-Cada capacidad tiene sus piezas propias: cierre de caja, albaranes, carta, cocina, propinas, recetas, reservas, pabellón, horarios, consumo, tesorería, encargos, analítica.
+Cada capacidad tiene sus piezas propias: cierre de caja, albaranes, carta, cocina, propinas, recetas, reservas, pabellón, horarios, consumo, tesorería, encargos, analítica. En el detalle de recetas, el enlace «Ver producción» (o el nombre de la elaboración cuando hay varias) situado bajo la fotografía usa excepcionalmente contorno y texto blancos sobre el fondo oscuro, para garantizar su lectura; el icono hereda el mismo blanco. No altera otros botones del detalle.
 
 **Frontera**: una pieza de dominio puede usar componentes base y de sistema; **nunca al revés**. Un componente de sistema que conozca una regla de negocio está mal ubicado.
 

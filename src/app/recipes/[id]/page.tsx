@@ -1251,7 +1251,8 @@ function RecipeDetailContent() {
                                             key={production.id}
                                             href={`/recipes/${production.id}${isStaffView ? '?view=staff' : ''}`}
                                             title={production.name}
-                                            className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-[#36606F]/30 bg-[#36606F]/5 px-1.5 py-1.5 text-center text-[11px] font-semibold text-[#36606F] transition-colors hover:bg-[#36606F]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/40"
+                                            data-design-exception="recipe-production-link:white-border-and-text-on-dark-background"
+                                            className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-white bg-[#36606F]/5 px-1.5 py-1.5 text-center text-[11px] font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                                         >
                                             <Layers3 size={14} className="shrink-0" aria-hidden="true" />
                                             <span>{productionLinks.length === 1 ? 'Ver producción' : production.name}</span>
