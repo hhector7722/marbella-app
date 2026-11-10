@@ -13352,3 +13352,78 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     line-height: 1.15;
   }
 }
+
+/* Master Dashboard · escritorio: legibilidad de los tres resúmenes de ventas.
+   Exclusivamente tipografía; no cambiar datos, cuadrículas, cards ni móvil. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    [data-element='closing-compact'] > div:first-child button {
+    font-size: 12px;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    [data-element='closing-compact'] > div:first-child > span {
+    font-size: 10px;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    [data-element='monthly-half'] > div:first-child > span {
+    font-size: 13px;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3 > :is(button, div) > div,
+        [data-element='monthly-half'] .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content']) > span {
+    font-size: clamp(10px, .84vw, 12px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3 > :is(button, div) > div,
+        [data-element='monthly-half'] .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content']) > strong {
+    font-size: clamp(12px, calc(.7vw + 4.8px), 16px);
+  }
+  /* La cifra mensual más larga requiere una escala algo más moderada
+     para conservar los decimales dentro de cada columna del resumen 3×2. */
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    [data-element='monthly-half'] .grid.grid-cols-6 > div > [data-metric]
+    > [data-element='monthly-metric-content'] > strong {
+    font-size: clamp(12px, calc(.55vw + 5.9px), 15px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='header']
+    [data-element='centered-date-controls'] button {
+    font-size: clamp(12px, 1vw, 15px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-kpis'] > div > span {
+    font-size: clamp(12px, .94vw, 15px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-kpis'] > div > strong {
+    font-size: clamp(17px, 1.5vw, 27px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
+    > div > :is(span:first-child, [data-element='mobile-sales-product-label']) {
+    font-size: clamp(13px, 1.07vw, 18px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
+    > div > [data-element='mobile-sales-units'] {
+    font-size: clamp(12px, .98vw, 17px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
+    > div > [data-element='mobile-sales-amount'] {
+    font-size: clamp(15px, 1.24vw, 20px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-hour-axis'] {
+    font-size: 12px;
+  }
+}
