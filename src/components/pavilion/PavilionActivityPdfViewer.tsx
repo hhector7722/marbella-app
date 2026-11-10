@@ -7,12 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import {
-  getDocument,
-  GlobalWorkerOptions,
-  version as pdfjsVersion,
-  type PDFDocumentProxy,
-} from 'pdfjs-dist/legacy/build/pdf.mjs';
+import type { PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport';
@@ -25,11 +20,6 @@ import {
   detectCropBoundsThroughP4,
   type PavilionCropBounds,
 } from '@/lib/pdf/pavilion-crop';
-
-if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
-  GlobalWorkerOptions.workerSrc =
-    `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/legacy/build/pdf.worker.min.mjs`;
-}
 
 /** Raster extra para pellizco nítido hasta ~4× sobre el zoom base */
 const ZOOM_HEADROOM = 4;
@@ -134,6 +124,14 @@ export function PavilionActivityPdfViewer({ url, className }: PavilionActivityPd
         const res = await fetch(url);
         if (!res.ok) throw new Error('No se pudo descargar el PDF');
         const buffer = await res.arrayBuffer();
+        // pdfjs-dist needs DOMMatrix at module initialization. Import it only
+        // inside the browser effect so SSR of dashboard routes cannot crash.
+        const { getDocument, GlobalWorkerOptions, version } =
+          await import('pdfjs-dist/legacy/build/pdf.mjs');
+        if (!GlobalWorkerOptions.workerSrc) {
+          GlobalWorkerOptions.workerSrc =
+            `https://unpkg.com/pdfjs-dist@${version}/legacy/build/pdf.worker.min.mjs`;
+        }
         const pdfDoc = await getDocument({ data: new Uint8Array(buffer) }).promise;
         if (cancelled) {
           if (typeof pdfDoc.destroy === 'function') pdfDoc.destroy();
