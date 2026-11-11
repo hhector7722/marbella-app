@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { deriveUsageLabel } from '@/lib/usage/labels';
+import { usageDeviceFromUserAgent } from '@/lib/usage/device';
 import { recordAppUsageEventWithClient } from '@/lib/usage/record';
 import type { AppUsageEventType, UsageClientEventPayload } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
@@ -60,6 +61,10 @@ export async function POST(request: Request) {
 
   const path = sanitizePath(body.path);
   const metadata = sanitizeMetadata(body.metadata);
+  // El dispositivo se obtiene de la solicitud, no de datos enviados por el cliente.
+  delete metadata.deviceType;
+  const deviceType = usageDeviceFromUserAgent(request.headers.get('user-agent'));
+  if (deviceType) metadata.deviceType = deviceType;
 
   await recordAppUsageEventWithClient(supabase, user.id, {
     eventType: body.eventType,
