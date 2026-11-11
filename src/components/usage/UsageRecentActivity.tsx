@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { firstNameOnly } from '@/lib/usage/display-name';
+import { UsageDeviceIcon } from '@/components/usage/UsageDeviceIcon';
 import { serializeProfileIdsForUrl, USAGE_RECENT_PAGE_SIZE } from '@/lib/usage/filters';
 import type { UsageDashboardFilters, UsageRecentEvent } from '@/lib/usage/queries';
 
@@ -64,7 +65,7 @@ export function UsageRecentActivity({
         <div>
           {events.map((event, index) => {
             const prev = index > 0 ? events[index - 1] : null;
-            const showUserHeader = !prev || prev.profileId !== event.profileId;
+            const showUserHeader = !prev || prev.profileId !== event.profileId || prev.deviceType !== event.deviceType;
 
             return (
               <div key={event.id}>
@@ -75,9 +76,12 @@ export function UsageRecentActivity({
                       index > 0 && 'mt-1 border-t'
                     )}
                   >
-                    <p className="truncate text-xs font-bold uppercase tracking-wide text-[#36606F]">
-                      {firstNameOnly(event.displayName)}
-                    </p>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <p className="truncate text-xs font-bold uppercase tracking-wide text-[#36606F]">
+                        {firstNameOnly(event.displayName)}
+                      </p>
+                      <UsageDeviceIcon deviceType={event.deviceType} />
+                    </div>
                   </div>
                 ) : null}
                 <div className="flex min-h-10 items-center gap-2 border-b border-zinc-50 py-1.5 pl-3 pr-1 text-xs">
