@@ -188,30 +188,74 @@ export async function runKnowledgeTool(
   if (name === "consultar_receta_detallada") {
     const requested = filterName(String(args.nombre??""));
     if (requested.length < 2) return {error:"Indica el nombre de la receta"};
-    const {data:recipes,error} = await ctx.supabase.from("recipes")
-      .select("id,name,elaboration,presentation,yield_quantity,yield_unit,sale_price")
-      .ilike("name", `%${requested}%`).limit(8);
-    if (error) return {error:"No se pudo consultar el catálogo de recetas"};
-    const exact = recipes?.find(r=>normalize(r.name)===requested);
-    if (!exact && (recipes?.length??0)>1) return {error:"Varias recetas coinciden. Concreta cuál.", coincidencias: recipes?.map(r=>r.name)};
-    const recipe=exact||recipes?.[0];
-    if (!recipe) return {error:"Receta no encontrada"};
-    const {data:parts,error:pe} = await ctx.supabase.from("recipe_ingredients")
-      .select("ingredient_id,quantity_gross,quantity_net,unit").eq("recipe_id",recipe.id).limit(80);
-    if (pe) return {error:"No se pudo consultar la composición de esta receta"};
-    const ids = [...new Set((parts??[]).map(p=>p.ingredient_id).filter((id):id is string=>typeof id==="string"))];
-    const {data:ingredients,error:ie} = ids.length
-      ? await ctx.supabase.from("ingredients").select("id,name,unit").in("id",ids)
-      : {data:[],error:null};
-    if (ie) return {error:"No se pudo consultar el nombre de los ingredientes"};
-    const names=new Map((ingredients??[]).map(i=>[i.id,i.name]));
+    // First try the complete requested name; then search meaningful words
+    // (e.g. "racimo de entraña" -> "entraña"). Preserve RLS via the user client.
+    const searchTerms = [requested, ...requested.split(/\\s+/).filter(word =>
+      word.length >= 4 && !/^(receta|plato|lleva|gramos|gramo|cantidad|racimo|cuanto|cuantos|preparacion|ingredientes)$/.test(word)
+    )].filter((term, index, all) => all.indexOf(term) === index);
+    let recipes: Array<{id:string;name:string;elaboration:string|null;presentation:string|null;yield_quantity:number|null;yield_unit:string|null;sale_price:number|null}> = [];
+    for (const term of searchTerms) {
+      const {data,error} = await ctx.supabase.from("recipes")
+        .select("id,name,elaboration,presentation,yield_quantity,yield_unit,sale_price")
+        .ilike("name", `%${term}%`).limit(30);
+      if (error) return {error:"No se pudo consultar el catálogo de recetas"};
+      if (data?.length) { recipes = data; break; }
+    }
+    const exact = recipes.find(r=>normalize(r.name)===requested);
+    if (!exact && recipes.length>1) return {error:"Varias recetas coinciden. Concreta cuál.",coincidencias:recipes.map(r=>r.name)};
+    const recipe=exact||recipes[0];
+    if (!recipe) return {error:"Receta no encontrada tras consultar el catálogo",nombre_buscado:requested};
+
+    // Expand nested preparations without inventing unit conversions.
+    // Guard against cycles and excessive depth; report incomplete data explicitly.
+    const seen = new Set<string>();
+    async function loadComponents(recipeId:string, depth:number):Promise<Record<string,unknown>> {
+      if (depth>6 || seen.has(recipeId)) return {error:"Subreceta cíclica o profundidad excedida",recipe_id:recipeId};
+      seen.add(recipeId);
+      const {data:parts,error:pe} = await ctx.supabase.from("recipe_ingredients")
+        .select("ingredient_id,quantity_gross,quantity_net,quantity_half,unit")
+        .eq("recipe_id",recipeId).limit(500);
+      if (pe) {seen.delete(recipeId);return {error:"No se pudo consultar la composición de esta receta"};}
+      const ids = [...new Set((parts??[]).map(p=>p.ingredient_id).filter((id):id is string=>typeof id==="string"))];
+      const {data:ingredients,error:ie} = ids.length
+        ? await ctx.supabase.from("ingredients").select("id,name,unit").in("id",ids)
+        : {data:[],error:null};
+      if (ie) {seen.delete(recipeId);return {error:"No se pudo consultar el nombre de los ingredientes"};}
+      const names=new Map((ingredients??[]).map(i=>[i.id,i.name]));
+      const {data:links,error:le}=await ctx.supabase.from("recipe_subrecipes")
+        .select("child_recipe_id,quantity,unit").eq("parent_recipe_id",recipeId).limit(100);
+      if (le) {seen.delete(recipeId);return {error:"No se pudieron consultar las subrecetas"};}
+      const childIds=[...new Set((links??[]).map(link=>link.child_recipe_id))];
+      const {data:children,error:ce}=childIds.length
+        ? await ctx.supabase.from("recipes").select("id,name").in("id",childIds)
+        : {data:[],error:null};
+      if (ce) {seen.delete(recipeId);return {error:"No se pudieron identificar las subrecetas"};}
+      const childNames=new Map((children??[]).map(child=>[child.id,child.name]));
+      const subrecetas=[];
+      for(const link of links??[]){
+        subrecetas.push({
+          nombre:childNames.get(link.child_recipe_id)??"Subreceta sin referencia",
+          cantidad:link.quantity,unidad:link.unit,
+          componentes:await loadComponents(link.child_recipe_id,depth+1),
+        });
+      }
+      seen.delete(recipeId);
+      return {
+        ingredientes:(parts??[]).map(p=>({
+          nombre:names.get(p.ingredient_id)||"Ingrediente sin referencia",
+          cantidad_bruta:p.quantity_gross,cantidad_neta:p.quantity_net,
+          cantidad_media_racion:p.quantity_half,unidad:p.unit,
+        })),
+        subrecetas,
+        posible_truncamiento:(parts?.length??0)===500||(links?.length??0)===100,
+      };
+    }
+    const components=await loadComponents(recipe.id,0);
     return {
       nombre:recipe.name,elaboracion:recipe.elaboration,presentacion:recipe.presentation,
       rendimiento:recipe.yield_quantity,unidad_rendimiento:recipe.yield_unit,
-      precio_venta:recipe.sale_price,
-      ingredientes:(parts??[]).map(p=>({nombre:names.get(p.ingredient_id)||"Ingrediente sin referencia",
-        cantidad_bruta:p.quantity_gross,cantidad_neta:p.quantity_net,unidad:p.unit})),
-      observacion: "Ingredientes leídos directamente de recipe_ingredients. No inventes cantidades ni omitas ingredientes desconocidos.",
+      precio_venta:recipe.sale_price,...components,
+      observacion:"Datos consultados en Supabase. Las cantidades de subrecetas son cantidades de incorporación, no sumas convertidas; no inventes conversiones ni ocultes errores.",
     };
   }
 
