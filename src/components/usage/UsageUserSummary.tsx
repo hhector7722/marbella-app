@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { firstNameOnly } from '@/lib/usage/display-name';
+import { UsageDeviceIcon } from '@/components/usage/UsageDeviceIcon';
 import type { UsageUserSummary as UsageUserSummaryType } from '@/lib/usage/queries';
 
 function formatDateTimeMadrid(iso: string | null): string {
@@ -60,9 +61,12 @@ export function UsageUserSummary({ summaries }: UsageUserSummaryProps) {
                   key={user.profileId}
                   className="flex min-h-12 items-center gap-2 py-2 text-xs"
                 >
-                  <p className="min-w-0 flex-1 truncate font-semibold text-zinc-800">
-                    {firstNameOnly(user.displayName)}
-                  </p>
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <p className="min-w-0 truncate font-semibold text-zinc-800">
+                      {firstNameOnly(user.displayName)}
+                    </p>
+                    <UsageDeviceIcon deviceType={user.deviceType} />
+                  </div>
                   <p className="shrink-0 text-zinc-500">{user.pageViewCount} pag</p>
                   <p className="shrink-0 text-zinc-500">{user.actionCount} acc</p>
                   <p className="shrink-0 tabular-nums text-zinc-500">
