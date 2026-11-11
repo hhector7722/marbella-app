@@ -1,5 +1,6 @@
 import { fromZonedTime } from 'date-fns-tz';
 import { usageDisplayName } from '@/lib/usage/display-name';
+import { usageDeviceFromMetadata, type UsageDeviceType } from '@/lib/usage/device';
 import {
   defaultUsageProfileIds,
   parseProfileIdsParam,
@@ -37,6 +38,7 @@ export type UsageUserSummary = {
   profileId: string;
   email: string;
   displayName: string;
+  deviceType: UsageDeviceType | null;
   loginCount: number;
   sessionCount: number;
   pageViewCount: number;
@@ -51,6 +53,7 @@ export type UsageRecentEvent = {
   profileId: string;
   email: string;
   displayName: string;
+  deviceType: UsageDeviceType | null;
   title: string;
   createdAt: string;
   timeLabel: string;
@@ -279,6 +282,7 @@ function mapRecentFeedToEvents(
       profileId: row?.profile_id ?? '',
       email,
       displayName: profileDisplayName(profile, email),
+      deviceType: usageDeviceFromMetadata(row?.metadata),
       title: item.title,
       createdAt: item.createdAt,
       timeLabel: formatDateTimeMadrid(item.createdAt),
@@ -313,6 +317,16 @@ export async function getUsageDashboardData(
     fetchUsageEventRows(filters.day, resolvedIds),
   ]);
 
+  // Los eventos más recientes identificados permiten mostrar el último dispositivo
+  // conocido sin cargar el JSON de todos los eventos históricos del resumen.
+  const latestDeviceByProfile = new Map<string, UsageDeviceType>();
+  for (const event of recentRows) {
+    const deviceType = usageDeviceFromMetadata(event.metadata);
+    if (deviceType && !latestDeviceByProfile.has(event.profile_id)) {
+      latestDeviceByProfile.set(event.profile_id, deviceType);
+    }
+  }
+
   const summaryMap = new Map<string, UsageUserSummary>();
 
   let eventsCount = 0;
@@ -331,6 +345,7 @@ export async function getUsageDashboardData(
         profileId: row.profile_id,
         email,
         displayName,
+        deviceType: latestDeviceByProfile.get(row.profile_id) ?? null,
         loginCount: row.event_type === 'login' ? 1 : 0,
         sessionCount: row.event_type === 'session' ? 1 : 0,
         pageViewCount: row.event_type === 'page_view' ? 1 : 0,
