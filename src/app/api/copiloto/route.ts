@@ -285,7 +285,7 @@ ${body.attachmentContext}`;
           writer.write({ type: "text-end", id: "answer" });
           return;
         }
-        const dataQuestion = tools.some(tool => tool.function.name === WEEKEND_NOTE_TOOL_NAME) || Boolean(resolved) || /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|manual|importe|ingreso|coste|precio|informe|report|cobr|pag|nomina|salario|sueldo/i.test(userText);
+        const dataQuestion = tools.some(tool => tool.function.name === WEEKEND_NOTE_TOOL_NAME) || Boolean(resolved) || /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|gramos?|kilos?|cantidad|cu[aá]nto|qu[eé] lleva|prepar|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|manual|importe|ingreso|coste|precio|informe|report|cobr|pag|nomina|salario|sueldo/i.test(userText);
         const started = Date.now();
         const deadlineMs = started + 47500;
         let preferredProvider: FreeProvider | undefined;
