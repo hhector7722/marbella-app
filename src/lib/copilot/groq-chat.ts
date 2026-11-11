@@ -57,7 +57,7 @@ export function selectGroqTools(
   if (/inventario|stock|existencia|caduc|faltan|reponer/.test(q)) {
     include("consultar_inventario", "gestionar_ingredientes");
   }
-  if (/receta|elaborac|carta|plato|sangria|ingrediente|escandallo/.test(q)) {
+  if (/receta|elaborac|carta|plato|sangria|ingrediente|escandallo|gramos?|kilos?|cantidad|cuanto lleva|que lleva|preparar/.test(q)) {
     include("consultar_receta_detallada", "gestionar_recetas", "gestionar_ingredientes");
   }
   if (/emplead|personal|usuario|turno|horario|fichaj|asistencia|horas?|trabaj|nomina|extra/.test(q)) {
@@ -82,7 +82,7 @@ export function selectGroqTools(
       && /vend|venta|cuant|unidades|factur/.test(q)) {
     return exact("consultar_ventas_productos");
   }
-  if (/(que lleva|ingredientes de|como se prepara|receta de)/.test(q)) {
+  if (/(que lleva|ingredientes de|como se prepara|receta de|cuanto(?:s|as)? (?:gramos?|kilos?|lleva)|cantidad de|composicion|escandallo)/.test(q)) {
     const recipe = exact("consultar_receta_detallada");
     if (recipe.length) return recipe;
   }
