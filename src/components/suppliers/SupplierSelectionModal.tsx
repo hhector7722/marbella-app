@@ -163,6 +163,22 @@ export function SupplierSelectionModal({
                     />
                 </div>
 
+                {!onSelect && (
+                    <div className="mb-3 shrink-0">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="supplier-picker-orders-history"
+                            onClick={() => {
+                                onClose();
+                                router.push('/orders/history');
+                            }}
+                        >
+                            Historial de pedidos
+                        </Button>
+                    </div>
+                )}
+
                 <div className="overflow-y-auto no-scrollbar">
                     {loading ? (
                         <div className="flex justify-center py-10">
