@@ -414,6 +414,17 @@ export default function NewOrderPage() {
         </div>
     );
 
+    const ordersHistoryAction = (
+        <Button
+            type="button"
+            variant="secondary"
+            instance="orders-history-open"
+            onClick={() => window.location.assign('/orders/history')}
+        >
+            Historial
+        </Button>
+    );
+
     const ordersCatalog = (
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end-cards">
             <div
@@ -487,6 +498,7 @@ export default function NewOrderPage() {
                 fillViewport
                 className="page-orders-new"
                 toolbarSlot={ordersToolbar}
+                rightSlot={ordersHistoryAction}
             >
                 <div className="flex flex-1 items-center justify-center py-20">
                     <LoadingSpinner size="xl" className="text-ds-marca" />
@@ -505,6 +517,7 @@ export default function NewOrderPage() {
             className="page-orders-new"
             contentClassName="p-4 md:p-6 lg:px-4 lg:py-3 flex flex-col min-h-0"
             toolbarSlot={ordersToolbar}
+            rightSlot={ordersHistoryAction}
         >
             <Toaster position="top-right" />
 
