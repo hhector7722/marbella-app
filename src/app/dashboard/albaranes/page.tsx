@@ -5,70 +5,37 @@ import AlbaranesHistoricoClient from './AlbaranesHistoricoClient'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * Aplica un timeout a una promesa SSR. Si la promesa no resuelve en `ms`
- * milisegundos, resolvemos con `fallback` en lugar de dejar la página
- * cargando "para siempre". Es la última red de seguridad ante hangs
- * intermitentes de la edge (Auth / PostgREST). Anti-silent-failures:
- * el error queda visible en la UI como banner rojo, no se silencia.
- */
-async function ssrWithTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null
-  try {
-    return await Promise.race([
-      p,
-      new Promise<T>((resolve) => {
-        timeoutId = setTimeout(() => resolve(fallback), ms)
-      }),
-    ])
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId)
-  }
-}
-
 export default async function AlbaranesHistoricoPage() {
   const supabase = await createClient()
-  // Misma decisión que `proxy.ts` y `gateAuthenticated`: `getSession()`
-  // desde cookies — no bloquea el SSR en un `getUser()` colgado contra GoTrue.
+  // Misma decisión que proxy.ts y gateAuthenticated: consultar la sesión
+  // desde cookies sin bloquear SSR con un getUser() remoto.
   const {
     data: { session },
   } = await supabase.auth.getSession()
   const user = session?.user
   if (!user) redirect('/login')
 
-  // Defensa contra hangs: si profile/lista tardan >8s nos rendimos y
-  // renderizamos el cliente con error visible, en lugar de colgar el SSR.
-  // El builder de Supabase es `PromiseLike`, lo envolvemos en Promise para
-  // habilitar `.catch()` y poder componer con `Promise.race`.
-  const profilePromise: Promise<string | null> = (async () => {
-    try {
-      const r = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-      return (r.data?.role as string | null) ?? null
-    } catch {
-      return null
-    }
-  })()
-
-  const role = await ssrWithTimeout<string | null>(profilePromise, 6000, null)
+  // Esperar a la consulta sin cortar artificialmente el SSR.
+  // Un error real se sigue mostrando en la interfaz.
+  let role: string | null = null
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+    role = (data?.role as string | null) ?? null
+  } catch {
+    role = null
+  }
   const isManager = role === 'manager' || role === 'admin'
 
-  const listFallback = {
+  const res = await listPurchaseInvoicesDefaultWeekAction().catch((error: unknown) => ({
     success: false as const,
-    message: 'Tiempo de espera agotado al cargar los albaranes. Recarga la página.',
-  }
-  const listGuarded: Promise<Awaited<ReturnType<typeof listPurchaseInvoicesDefaultWeekAction>>> = (async () => {
-    try {
-      return await listPurchaseInvoicesDefaultWeekAction()
-    } catch (e: unknown) {
-      return {
-        success: false as const,
-        message: e instanceof Error ? e.message : 'Error inesperado al listar albaranes',
-      }
-    }
-  })()
-  const res = await ssrWithTimeout(listGuarded, 8000, listFallback)
+    message: error instanceof Error ? error.message : 'Error inesperado al listar albaranes',
+  }))
 
-  // El layout (cabecera "Albaranes" + slot derecho) se monta dentro del cliente
+  // El layout (cabecera "Albaranes" y slot derecho) se monta dentro del cliente
   // para poder pasar como rightSlot filtro / Refresh.
   return (
     <AlbaranesHistoricoClient
