@@ -46,7 +46,7 @@ function attachUsageTracking(
   const flags = getUsageTrackingFlags(request, pathname);
   applyUsageTrackingCookies(response, pathname, request.nextUrl.search, flags);
   if (flags.session) {
-    enqueueUsageSessionRecord(supabase, profileId, pathname, request.nextUrl.search);
+    enqueueUsageSessionRecord(supabase, profileId, pathname, request.nextUrl.search, request.headers.get('user-agent'));
   }
 }
 
