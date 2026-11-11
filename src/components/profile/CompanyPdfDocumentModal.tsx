@@ -2,6 +2,8 @@
 
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 export type CompanyPdfDocumentKind = 'convenio' | 'conducta';
 
@@ -27,10 +29,48 @@ interface CompanyPdfDocumentModalProps {
 }
 
 export default function CompanyPdfDocumentModal({ isOpen, onClose, documentKind }: CompanyPdfDocumentModalProps) {
+    const [sharing, setSharing] = useState(false);
     if (!documentKind) return null;
 
     const doc = DOCUMENTS[documentKind];
     const instance = `company-pdf-${documentKind}`;
+    const handleShare = async () => {
+        if (sharing) return;
+        const url = new URL(doc.path, window.location.origin).href;
+
+        setSharing(true);
+        try {
+            if (!navigator.share) {
+                await navigator.clipboard.writeText(url);
+                toast.success('Enlace al PDF copiado');
+                return;
+            }
+
+            toast.loading('Preparando archivo...', { id: 'share-company-pdf' });
+            const response = await fetch(doc.path);
+            if (!response.ok) throw new Error('No se pudo cargar el PDF');
+
+            const blob = await response.blob();
+            const filename = doc.path.split('/').pop() || 'documento.pdf';
+            const file = new File([blob], filename, { type: 'application/pdf' });
+            toast.dismiss('share-company-pdf');
+
+            if (navigator.canShare?.({ files: [file] })) {
+                await navigator.share({ files: [file], title: doc.title });
+            } else {
+                // El PDF es público: el enlace puede abrirse sin iniciar sesión.
+                await navigator.share({ title: doc.title, url });
+            }
+        } catch (error: unknown) {
+            toast.dismiss('share-company-pdf');
+            if (!(error instanceof Error && error.name === 'AbortError')) {
+                toast.error('No se pudo compartir el PDF');
+                console.error('Error al compartir documento de empresa:', error);
+            }
+        } finally {
+            setSharing(false);
+        }
+    };
 
     return (
         <Modal
@@ -65,6 +105,17 @@ export default function CompanyPdfDocumentModal({ isOpen, onClose, documentKind 
                     onClick={() => window.open(doc.path, '_blank', 'noopener,noreferrer')}
                 >
                     Abrir documento
+                </Button>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    layout="hug"
+                    instance={`${instance}-share`}
+                    loading={sharing}
+                    loadingLabel="Preparando PDF"
+                    onClick={() => void handleShare()}
+                >
+                    Compartir PDF
                 </Button>
                 <a
                     href={doc.path}
