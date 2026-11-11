@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { deriveUsageLabel } from '@/lib/usage/labels';
+import { usageDeviceFromUserAgent } from '@/lib/usage/device';
 
 import { recordAppUsageEventWithClient } from '@/lib/usage/record';
 
@@ -116,9 +117,13 @@ export function enqueueUsageSessionRecord(
 
   pathname: string,
 
-  search: string
+  search: string,
+
+  userAgent: string | null = null
 
 ): void {
+
+  const deviceType = usageDeviceFromUserAgent(userAgent);
 
   void recordAppUsageEventWithClient(supabase, profileId, {
 
@@ -130,7 +135,7 @@ export function enqueueUsageSessionRecord(
 
     label: deriveUsageLabel(pathname),
 
-    metadata: { source: 'middleware' },
+    metadata: { source: 'middleware', ...(deviceType ? { deviceType } : {}) },
 
   });
 
@@ -156,7 +161,7 @@ export async function trackAppUsageInMiddleware(
 
   if (flags.session) {
 
-    enqueueUsageSessionRecord(supabase, profileId, pathname, request.nextUrl.search);
+    enqueueUsageSessionRecord(supabase, profileId, pathname, request.nextUrl.search, request.headers.get('user-agent'));
 
   }
 
