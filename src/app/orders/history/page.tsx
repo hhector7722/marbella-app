@@ -224,6 +224,11 @@ export default function OrdersHistoryPage() {
         setSelected(order);
     };
 
+    const handleSearchChange = (value: string) => {
+        setSearch(value);
+        setExpandedMonths({});
+    };
+
     const toggleMonth = (key: string) => {
         setExpandedMonths(previous => ({
             ...previous,
