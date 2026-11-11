@@ -36,30 +36,38 @@ export default function CompanyPdfDocumentModal({ isOpen, onClose, documentKind 
     const instance = `company-pdf-${documentKind}`;
     const handleShare = async () => {
         if (sharing) return;
-        const url = new URL(doc.path, window.location.origin).href;
+        const filename = doc.path.split('/').pop() || 'documento.pdf';
+        const downloadFallback = () => {
+            const link = document.createElement('a');
+            link.href = doc.path;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.info('El navegador no permite compartir PDF; se ha descargado el archivo');
+        };
 
         setSharing(true);
         try {
             if (!navigator.share) {
-                await navigator.clipboard.writeText(url);
-                toast.success('Enlace al PDF copiado');
+                downloadFallback();
                 return;
             }
 
             toast.loading('Preparando archivo...', { id: 'share-company-pdf' });
             const response = await fetch(doc.path);
-            if (!response.ok) throw new Error('No se pudo cargar el PDF');
+            if (!response.ok || !response.headers.get('content-type')?.toLowerCase().includes('application/pdf')) {
+                throw new Error('No se pudo cargar un PDF válido');
+            }
 
             const blob = await response.blob();
-            const filename = doc.path.split('/').pop() || 'documento.pdf';
             const file = new File([blob], filename, { type: 'application/pdf' });
             toast.dismiss('share-company-pdf');
 
             if (navigator.canShare?.({ files: [file] })) {
                 await navigator.share({ files: [file], title: doc.title });
             } else {
-                // El PDF es público: el enlace puede abrirse sin iniciar sesión.
-                await navigator.share({ title: doc.title, url });
+                downloadFallback();
             }
         } catch (error: unknown) {
             toast.dismiss('share-company-pdf');
