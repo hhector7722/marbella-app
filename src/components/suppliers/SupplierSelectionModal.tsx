@@ -140,17 +140,30 @@ export function SupplierSelectionModal({
             usageLabel={usageLabel}
             scrollContent={false}
             headerTrailing={!onSelect ? (
-                <Button
-                    type="button"
-                    variant="primary"
-                    instance="supplier-picker-albaranes"
-                    onClick={() => {
-                        onClose();
-                        router.push('/dashboard/albaranes');
-                    }}
-                >
-                    Albaranes
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        instance="supplier-picker-orders-history"
+                        onClick={() => {
+                            onClose();
+                            router.push('/orders/history');
+                        }}
+                    >
+                        Pedidos
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        instance="supplier-picker-albaranes"
+                        onClick={() => {
+                            onClose();
+                            router.push('/dashboard/albaranes');
+                        }}
+                    >
+                        Albaranes
+                    </Button>
+                </div>
             ) : undefined}
         >
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2.5 sm:p-3">
@@ -162,22 +175,6 @@ export function SupplierSelectionModal({
                         onChange={setSearchQuery}
                     />
                 </div>
-
-                {!onSelect && (
-                    <div className="mb-3 shrink-0">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            instance="supplier-picker-orders-history"
-                            onClick={() => {
-                                onClose();
-                                router.push('/orders/history');
-                            }}
-                        >
-                            Historial de pedidos
-                        </Button>
-                    </div>
-                )}
 
                 <div className="overflow-y-auto no-scrollbar">
                     {loading ? (
