@@ -13427,3 +13427,40 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     font-size: 12px;
   }
 }
+
+
+/* Ventas (página y modales): liquidación con tres columnas exactamente
+   superpuestas a Rendimiento/Media, Tarjeta y Efectivo. */
+:is(
+  [data-component='Modal'][data-instance='home-sales-preview'],
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'],
+  [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+) [data-element='financial-settlement-card'] {
+  grid-template-columns: subgrid;
+  grid-template-rows: auto;
+  justify-content: stretch;
+  align-items: center;
+  column-gap: inherit;
+  padding-inline: 0;
+  overflow: visible;
+}
+:is(
+  [data-component='Modal'][data-instance='home-sales-preview'],
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'],
+  [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+) [data-element='financial-settlement-card'] > :is(button, div) {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+:is(
+  [data-component='Modal'][data-instance='home-sales-preview'],
+  [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+) [data-element='financial-settlement-card'] > :is(button, div) {
+  padding-inline: 6px;
+}

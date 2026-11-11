@@ -824,8 +824,7 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                 ))}
             </div>
             <div data-element="financial-kpi-grid" className="grid w-full min-w-0 grid-cols-3 grid-rows-[minmax(42px,auto)_minmax(26px,auto)] gap-x-2 gap-y-1">
-                {items.map((item, index) => {
-                    const floating = index >= 3;
+                {items.slice(0, 3).map((item) => {
                     const actionable = Boolean(item.payment && item.payment !== 'collections');
                     const selected = actionable && selection?.scope === scope && selection.kind === 'payment' && selection.payment === item.payment;
                     const hasHover = Boolean(item.tooltip || (item.payment === 'cash' && cashBreakdown));
@@ -835,14 +834,7 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                         onFocus: (event: FocusEvent<HTMLElement>) => reveal(item.label, event.currentTarget),
                         onBlur: () => setHover(null)
                     } : {};
-                    const content = floating ? (
-                        <span className="flex w-full min-w-0 items-baseline gap-1 overflow-hidden whitespace-nowrap text-[clamp(9px,0.82vw,12px)] leading-tight">
-                            <span className="shrink-0 font-medium text-white/75">{item.label}:</span>
-                            <strong className="min-w-0 truncate font-bold tabular-nums text-white">
-                                {loading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value}
-                            </strong>
-                        </span>
-                    ) : (
+                    const content = (
                         <>
                             <span className="flex w-full min-w-0 items-center justify-between gap-1">
                                 <span className="min-w-0 truncate text-[11px] font-medium leading-tight text-white/80">{item.label}</span>
@@ -860,12 +852,10 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                     );
                     const rowClass = cn(
                         'relative flex w-full min-w-0 items-start justify-center rounded-md border px-2 text-left',
-                        floating
-                            ? 'ventas-kpi-floating min-h-[26px] flex-row items-center py-0.5'
-                            : 'min-h-[42px] flex-col gap-0.5 py-1',
-                        !floating && (item.tone ?? 'border-white/15 bg-white/[0.035]'),
+                        'min-h-[42px] flex-col gap-0.5 py-1',
+                        item.tone ?? 'border-white/15 bg-white/[0.035]',
                         actionable && 'cursor-pointer transition-colors hover:brightness-125',
-                        selected && !floating && 'ring-1 ring-inset ring-white/75'
+                        selected && 'ring-1 ring-inset ring-white/75'
                     );
                     return actionable ? (
                         <button key={item.label} type="button" data-crossfilter-trigger
@@ -878,6 +868,33 @@ function FinancialKpiHeader({ sales, net, items, scope, selection, onSelect, cas
                             tabIndex={hasHover ? 0 : undefined} {...hoverEvents}>{content}</div>
                     );
                 })}
+                <div data-element="financial-settlement-card"
+                    className="col-span-3 grid min-w-0 grid-cols-subgrid items-center rounded-lg border border-white/20 bg-transparent py-0.5">
+                    {items.slice(3).map((item) => {
+                        const pending = item.payment === 'pending';
+                        const selected = pending && selection?.scope === scope &&
+                            selection.kind === 'payment' && selection.payment === 'pending';
+                        const content = <>
+                            <span className="shrink-0 whitespace-nowrap text-[clamp(9px,0.82vw,12px)] font-medium leading-tight text-white/75">
+                                {item.label}
+                            </span>
+                            <strong className="ml-auto min-w-0 whitespace-nowrap text-right text-[clamp(9px,0.82vw,12px)] font-bold leading-tight tabular-nums text-white">
+                                {loading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
+                            </strong>
+                        </>;
+                        const cellClass = 'flex w-full min-w-0 items-baseline justify-between gap-1 px-2 py-0.5 text-left';
+                        return pending ? (
+                            <button key={item.label} type="button" data-crossfilter-trigger
+                                aria-pressed={selected}
+                                onClick={() => onSelect({ kind: 'payment', payment: 'pending', scope })}
+                                className={cn(cellClass, 'rounded-md', selected && 'ring-1 ring-inset ring-white/75')}>
+                                {content}
+                            </button>
+                        ) : (
+                            <div key={item.label} className={cellClass}>{content}</div>
+                        );
+                    })}
+                </div>
             </div>
             {hover && showHelp && typeof document !== 'undefined' && createPortal(
                 <div data-element="ventas-desktop-kpi-tooltip" role="tooltip"
@@ -1925,27 +1942,17 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                     ))}
                 </div>
                 {(!previewMode || Boolean(embeddedMode)) && <div data-element="financial-kpi-grid" className="mt-1.5 grid grid-cols-3 gap-1.5">
-                    {mobileFinancialItems.slice(0, embeddedMode ? 3 : undefined).map((item, index) => {
-                        const floating = index >= 3;
-                        const actionable = item.payment === 'card' || item.payment === 'pending';
+                    {mobileFinancialItems.slice(0, 3).map((item) => {
+                        const actionable = item.payment === 'card';
                         const detail = item.label === 'Rendimiento' ? 'performance' : item.label === 'Efectivo' ? 'cash' : null;
                         const selected = mobileActiveSelection?.kind === 'payment' && mobileActiveSelection.payment === item.payment;
                         const tone = cn(
                             'flex min-w-0 justify-center rounded-md border px-1.5 text-left',
-                            floating
-                                ? 'ventas-kpi-floating min-h-[26px] flex-row items-center py-0.5'
-                                : 'min-h-[46px] flex-col py-1',
-                            !floating && (item.tone ?? 'border-white/15 bg-white/[0.04]'),
-                            selected && !floating && 'ring-1 ring-sky-300'
+                            'min-h-[46px] flex-col py-1',
+                            item.tone ?? 'border-white/15 bg-white/[0.04]',
+                            selected && 'ring-1 ring-sky-300'
                         );
-                        const body = floating ? (
-                            <span className="flex w-full min-w-0 items-baseline gap-1 overflow-hidden whitespace-nowrap text-[clamp(9px,2.4vw,12px)] leading-tight">
-                                <span className="shrink-0 font-medium text-white/75">{item.label}:</span>
-                                <strong className="min-w-0 truncate font-bold tabular-nums text-white">
-                                    {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
-                                </strong>
-                            </span>
-                        ) : <>
+                        const body = <>
                             <span className="flex min-w-0 items-center justify-between gap-0.5">
                                 <span className="min-w-0 truncate text-[10px] text-white/70">{item.label}</span>
                                 {(item.payment === 'cash' || item.payment === 'card') && item.ticketPercent != null && (
@@ -1966,37 +1973,33 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                                 className={tone}>{body}</button>
                         ) : <div key={item.label} className={tone}>{body}</div>;
                     })}
-                    {embeddedMode && (
-                        <div data-element="financial-settlement-card"
-                            className="col-span-3 grid h-fit min-w-0 self-start gap-x-2 gap-y-1 rounded-lg border border-white/20 bg-transparent px-2 py-0.5">
-                            {mobileFinancialItems.slice(3).map(item => {
-                                const pending = item.payment === 'pending';
-                                const selected = pending && mobileActiveSelection?.kind === 'payment' &&
-                                    mobileActiveSelection.payment === 'pending';
-                                const content = (
-                                    <>
-                                        <span className="shrink-0 whitespace-nowrap text-[11px] font-medium leading-tight text-white/75">
-                                            <span className="lg:hidden">{item.label === 'Pendiente' ? 'Pend' : item.label === 'Diferencia' ? 'Dif' : item.label}</span>
-                                            <span className="hidden lg:inline">{item.label}</span>
-                                        </span>
-                                        <strong className="shrink-0 whitespace-nowrap text-[13px] font-bold leading-snug tabular-nums text-white">
-                                            {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
-                                        </strong>
-                                    </>
-                                );
-                                return pending ? (
-                                    <button key={item.label} type="button" data-crossfilter-trigger
-                                        aria-pressed={selected}
-                                        onClick={() => onChooseCross({ kind: 'payment', payment: 'pending', scope: 'period' })}
-                                        className={cn('inline-flex min-w-0 items-baseline justify-start gap-1 whitespace-nowrap rounded-md px-1 py-0 text-left', selected && 'ring-1 ring-inset ring-white/75')}>
-                                        {content}
-                                    </button>
-                                ) : (
-                                    <div key={item.label} className="inline-flex min-w-0 items-baseline justify-start gap-1 whitespace-nowrap px-1 py-0">{content}</div>
-                                );
-                            })}
-                        </div>
-                    )}
+                    <div data-element="financial-settlement-card"
+                        className="col-span-3 grid h-fit min-w-0 grid-cols-subgrid items-center rounded-lg border border-white/20 bg-transparent py-0.5">
+                        {mobileFinancialItems.slice(3).map(item => {
+                            const pending = item.payment === 'pending';
+                            const selected = pending && mobileActiveSelection?.kind === 'payment' &&
+                                mobileActiveSelection.payment === 'pending';
+                            const content = <>
+                                <span className="shrink-0 whitespace-nowrap text-[clamp(9px,2.3vw,11px)] font-medium leading-tight text-white/75">
+                                    {item.label}
+                                </span>
+                                <strong className="ml-auto min-w-0 whitespace-nowrap text-right text-[clamp(9px,2.65vw,13px)] font-bold leading-tight tabular-nums text-white">
+                                    {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : item.value || ' '}
+                                </strong>
+                            </>;
+                            const cellClass = 'flex w-full min-w-0 items-baseline justify-between gap-1 px-1.5 py-0.5 text-left';
+                            return pending ? (
+                                <button key={item.label} type="button" data-crossfilter-trigger
+                                    aria-pressed={selected}
+                                    onClick={() => onChooseCross({ kind: 'payment', payment: 'pending', scope: 'period' })}
+                                    className={cn(cellClass, 'rounded-md', selected && 'ring-1 ring-inset ring-white/75')}>
+                                    {content}
+                                </button>
+                            ) : (
+                                <div key={item.label} className={cellClass}>{content}</div>
+                            );
+                        })}
+                    </div>
                 </div>
                 }
             </section>
