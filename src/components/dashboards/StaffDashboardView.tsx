@@ -1559,7 +1559,7 @@ export default function StaffDashboardView({
             >
                 <div className="space-y-5">
                     <p className="text-base leading-relaxed">{scheduleAnnouncement}</p>
-                    <Button className="w-full" disabled={scheduleAnnouncementSaving} onClick={() => void acknowledgeScheduleAnnouncement()}>
+                    <Button variant="primary" instance="staff-schedule-announcement-ack" className="w-full" disabled={scheduleAnnouncementSaving} onClick={() => void acknowledgeScheduleAnnouncement()}>
                         Entendido
                     </Button>
                 </div>
