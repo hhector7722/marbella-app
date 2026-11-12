@@ -16,6 +16,7 @@ import { completeFreeChat, configuredFreeProviders, operationalFreeProviderKeys,
 import { resolveCopilotFollowup } from "@/lib/copilot/followup-context";
 import { tryDirectRecipeAnswer } from "@/lib/copilot/direct-recipes";
 import { tryDirectSalesAnswer } from "@/lib/copilot/direct-sales";
+import { tryDirectInventoryAnswer } from "@/lib/copilot/direct-inventory";
 import { appDataToolForRole, runAppDataTool } from "@/lib/copilot/app-data-catalog";
 import { WEEKEND_NOTE_TOOL, WEEKEND_NOTE_TOOL_NAME, canProposeWeekendNote, prepareWeekendNoteProposal, wantsToWriteWeekendNote } from "@/lib/copilot/weekend-note-proposal";
 import {
@@ -291,6 +292,11 @@ ${body.attachmentContext}`;
           answer = await tryDirectSalesAnswer(userText, { supabase, role, today }) ?? "";
         } catch {
           console.warn("[copiloto] direct_sales_unavailable");
+        }
+        try {
+          if (!answer) answer = await tryDirectInventoryAnswer(userText, { supabase, role }) ?? "";
+        } catch {
+          console.warn("[copiloto] direct_inventory_unavailable");
         }
         try {
           if (!answer) answer = await tryDirectRecipeAnswer(userText, { supabase, role, userId: user.id, today }) ?? "";
