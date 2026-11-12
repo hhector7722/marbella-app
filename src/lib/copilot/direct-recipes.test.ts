@@ -7,11 +7,11 @@ import type { createClient } from "@/utils/supabase/server";
 type Client = Awaited<ReturnType<typeof createClient>>;
 const uid="11111111-1111-4111-8111-111111111111";
 
-function fixture(recipeName: string, ingredient: string, amount: number, unit="g") {
+function fixture(recipeName: string, ingredient: string, amount: number, unit="g", servingsOnly=false) {
   const calls: string[]=[];
   let directSearch="";
   const recipes=[{id:"r1",name:recipeName,elaboration:"Mezclar y servir",presentation:"Vaso",
-    yield_quantity:1,yield_unit:"ración",sale_price:10}];
+    yield_quantity:servingsOnly?null:1,servings:1,yield_unit:servingsOnly?null:"ración",sale_price:10}];
   const supabase={
     from:(table:string)=>{
       calls.push(table);
@@ -48,7 +48,7 @@ test("Búsqueda sin ñ recupera Entraña mediante fallback normalizado",async()=
 });
 
 test("Sangría multiplica cantidades verificadas sin inventar el rendimiento",async()=>{
- const f=fixture("Sangria cava","Juver naranja",150,"ml");
+ const f=fixture("Sangria cava","Juver naranja",150,"ml",true);
  const answer=await tryDirectRecipeAnswer("¿Qué cantidades necesito para preparar 15 sangrías?",
    {supabase:f.supabase,role:"chef",userId:uid,today:"2026-11-12"});
  assert.match(answer??"",/Juver naranja — 2\.250 ml/);

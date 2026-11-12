@@ -202,17 +202,17 @@ export async function runKnowledgeTool(
     const searchTerms = [requested, ...requested.split(/\\s+/).filter(word =>
       word.length >= 4 && !/^(receta|plato|lleva|gramos|gramo|cantidad|racimo|cuanto|cuantos|preparacion|ingredientes)$/.test(word)
     )].filter((term, index, all) => all.indexOf(term) === index);
-    let recipes: Array<{id:string;name:string;elaboration:string|null;presentation:string|null;yield_quantity:number|null;yield_unit:string|null;sale_price:number|null}> = [];
+    let recipes: Array<{id:string;name:string;elaboration:string|null;presentation:string|null;yield_quantity:number|null;servings:number|null;yield_unit:string|null;sale_price:number|null}> = [];
     for (const term of searchTerms) {
       const {data,error} = await ctx.supabase.from("recipes")
-        .select("id,name,elaboration,presentation,yield_quantity,yield_unit,sale_price")
+        .select("id,name,elaboration,presentation,yield_quantity,servings,yield_unit,sale_price")
         .ilike("name", `%${term}%`).limit(30);
       if (error) return {error:"No se pudo consultar el catálogo de recetas"};
       if (data?.length) { recipes = data; break; }
     }
     if (!recipes.length) {
       const {data:all,error:fallbackError} = await ctx.supabase.from("recipes")
-        .select("id,name,elaboration,presentation,yield_quantity,yield_unit,sale_price")
+        .select("id,name,elaboration,presentation,yield_quantity,servings,yield_unit,sale_price")
         .order("name").limit(1000);
       if (fallbackError) return {error:"No se pudo consultar el catálogo de recetas"};
       const normalizedRequest=normalize(requested);
@@ -271,9 +271,15 @@ export async function runKnowledgeTool(
       };
     }
     const components=await loadComponents(recipe.id,0);
+    const reportedYield=Number(recipe.yield_quantity);
+    const legacyServings=Number(recipe.servings);
+    const yieldVerified=Number.isFinite(reportedYield) && reportedYield>0
+      ? reportedYield
+      : Number.isFinite(legacyServings) && legacyServings>0
+        ? legacyServings : null;
     return {
       nombre:recipe.name,elaboracion:recipe.elaboration,presentacion:recipe.presentation,
-      rendimiento:recipe.yield_quantity,unidad_rendimiento:recipe.yield_unit,
+      rendimiento:yieldVerified,unidad_rendimiento:recipe.yield_unit ?? (yieldVerified===legacyServings?"ración":null),
       precio_venta:recipe.sale_price,...components,
       observacion:"Datos consultados en Supabase. Las cantidades de subrecetas son cantidades de incorporación, no sumas convertidas; no inventes conversiones ni ocultes errores.",
     };
