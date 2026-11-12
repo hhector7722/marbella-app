@@ -192,6 +192,8 @@ export async function listK5InvoiceCandidatesAction(): Promise<
     .select('id,supplier_id,invoice_number,invoice_date,status,created_at')
     .not('supplier_id', 'is', null)
     .neq('status', 'discarded')
+    // Owner-retired scanner captures remain readable for historical audits.
+    .filter('operational_hidden_at', 'is', 'null')
     .order('created_at', { ascending: false })
     .limit(120)
 
