@@ -88,12 +88,13 @@ test("receta: recupera ingredientes verdaderos de las tablas, no una expansión 
       if(table==="recipes") return {select:()=>({ilike:()=>({limit:async()=>({data:[{id:"r1",name:"Sangria cava",elaboration:"Servir con hielo",presentation:"Jarra"}],error:null})})})};
       if(table==="recipe_ingredients") return {select:()=>({eq:()=>({limit:async()=>({data:[{ingredient_id:"i1",quantity_gross:100,quantity_net:95,unit:"ml"}],error:null})})})};
       if(table==="ingredients") return {select:()=>({in:async()=>({data:[{id:"i1",name:"Cava",unit:"ml"}],error:null})})};
+      if(table==="recipe_subrecipes") return {select:()=>({eq:()=>({limit:async()=>({data:[],error:null})})})};
       throw new Error("Tabla no esperada "+table);
     },
   } as unknown as Client;
   const response=await runKnowledgeTool("consultar_receta_detallada",
     {nombre:"Sangria cava"},{supabase:fake,role:"staff",userId,today}) as {ingredientes:Array<{nombre:string,cantidad_bruta:number}>};
-  assert.deepEqual(calls,["recipes","recipe_ingredients","ingredients"]);
+  assert.deepEqual(calls,["recipes","recipe_ingredients","ingredients","recipe_subrecipes"]);
   assert.equal(response.ingredientes[0].nombre,"Cava");
   assert.equal(response.ingredientes[0].cantidad_bruta,100);
 });
