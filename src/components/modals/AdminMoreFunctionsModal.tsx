@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { BotMessageSquare, Loader2, type LucideIcon } from 'lucide-react';
+import { useAIStore } from '@/store/aiStore';
 import { Modal } from '@/components/ui/modal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { AccessShortcutGrid } from '@/components/dashboards/AccessShortcutGrid';
@@ -23,13 +24,15 @@ interface AdminMoreFunctionsModalProps {
 type MoreFunctionsItem = {
     label: string;
     instance: string;
-    img: string;
+    img?: string;
+    icon?: LucideIcon;
 } & (
     | { href: string }
-    | { action: 'pedidos' | 'cambio' | 'cierre' | 'info' | 'compra' | 'web' }
+    | { action: 'pedidos' | 'cambio' | 'cierre' | 'info' | 'compra' | 'web' | 'asistente' }
 );
 
 export const ADMIN_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
+    { label: 'Agente IA', instance: 'asistente', action: 'asistente', icon: BotMessageSquare },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
     { label: 'Pedidos', instance: 'staff-pedidos', action: 'pedidos', img: '/icons/shipment.png' },
     { label: 'Consumo', instance: 'consumo', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },
@@ -54,6 +57,7 @@ export function AdminMoreFunctionsModal({
     onOpenCompra,
 }: AdminMoreFunctionsModalProps) {
     const router = useRouter();
+    const openChat = useAIStore((state) => state.openChat);
     const [isNavigating, setIsNavigating] = useState(false);
     const trackOtros = useTrackModalApply('admin-otros', 'Otros (admin)');
 
@@ -69,9 +73,10 @@ export function AdminMoreFunctionsModal({
     };
 
     const actionHandlers: Record<
-        'pedidos' | 'cambio' | 'cierre' | 'info' | 'compra' | 'web',
+        'pedidos' | 'cambio' | 'cierre' | 'info' | 'compra' | 'web' | 'asistente',
         () => void
     > = {
+        asistente: openChat,
         pedidos: onOpenPedidos,
         cambio: onOpenCambio,
         cierre: onOpenCierre,
@@ -101,6 +106,7 @@ export function AdminMoreFunctionsModal({
                                     instance={item.instance}
                                     label={item.label}
                                     img={item.img}
+                                    icon={item.icon}
                                     onClick={() => {
                                         trackOtros(item.label);
                                         setIsNavigating(true);
