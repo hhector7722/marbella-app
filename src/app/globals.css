@@ -6321,6 +6321,25 @@ html:has(.dashboard-mosaic-switcher) {
   width: var(--buscador-global-ancho);
   max-width: calc(100vw - (var(--espacio-2) * 2));
 }
+/* Con cámara + IA + campana, el buscador participa del flex móvil para que
+   nunca se superponga ni oculte el icono de cámara. */
+@media (max-width: 639px) {
+  .marbella-fixed-topbar[data-camera-visible='true'] [data-element='global-search-host'] {
+    position: relative;
+    left: auto;
+    top: auto;
+    z-index: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+  .marbella-fixed-topbar[data-camera-visible='true'] [data-element='global-search-host'] > div {
+    min-width: 0;
+    width: 100%;
+  }
+}
 .marbella-fixed-topbar [data-component='GlobalSearchTrigger'] [data-element='pill'] {
   height: var(--espacio-8);
   border-color: color-mix(in srgb, var(--color-texto-invertido) 16%, transparent);
@@ -6435,14 +6454,14 @@ html:has(.dashboard-mosaic-switcher) {
   }
 }
 
-html[data-modal-open="true"] .marbella-fixed-topbar,
+/* La cabecera no se difumina: la interfaz superior debe seguir nítida en iOS.
+   El contenido modal mantiene su backdrop y el resto del cromo sus reglas. */
 html[data-modal-open="true"] .marbella-fixed-bottombar,
 html[data-modal-open="true"] [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
   filter: blur(6px);
   opacity: 0.35;
   pointer-events: none;
 }
-html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-topbar,
 html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-bottombar,
 html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
   filter: blur(1px);

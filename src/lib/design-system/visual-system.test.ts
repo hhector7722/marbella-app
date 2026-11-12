@@ -288,6 +288,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             assert.match(navbar, /<NotificationsBell \/>/, 'todas las notificaciones van en una sola campana');
             assert.doesNotMatch(navbar, /ReservationsBell/, 'sin calendario de notificaciones independiente');
             assert.match(navbar, /data-element="live-camera"/, 'se mantiene el acceso a cámaras');
+            assert.match(navbar, /userData\?\.authEmail \|\| identity\?\.realEmail/, 'la cámara prioriza el correo real de la sesión');
+            assert.match(navbar, /identity\?\.isViewingAs[\s\S]*?identity\.effectiveEmail/, 'Ver como conserva los permisos del usuario simulado');
+            assert.match(navbar, /data-camera-visible=\{canSeeCamera/, 'el layout móvil adapta el buscador cuando aparece cámara');
+            assert.doesNotMatch(css, /html\[data-modal-open="true"\] \.marbella-fixed-topbar/, 'los modales no difuminan la cabecera superior');
             assert.match(navbar, /router\.push\('\/camaras'\)/, 'la cámara conserva su ruta');
             assert.match(navbar, /data-element="navbar-copilot"/, 'se mantiene el asistente actual');
             assert.doesNotMatch(navbar, /-space-x-3/, 'los controles de la cabecera ya no se tapan');

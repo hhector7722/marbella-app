@@ -51,7 +51,14 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, [supabase]);
   const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
-  const effectiveCameraEmail = (identity?.effectiveEmail ?? userData?.email)?.trim().toLowerCase();
+  // La sesión real manda cuando no hay una simulación activa: el perfil visible
+  // (o una identidad efectiva previa) nunca debe ocultar la cámara a Héctor.
+  // Al usar «Ver como», los permisos siguen exclusivamente al usuario simulado.
+  const effectiveCameraEmail = (
+    identity?.isViewingAs
+      ? identity.effectiveEmail
+      : (userData?.authEmail || identity?.realEmail || userData?.email)
+  )?.trim().toLowerCase();
   const canSeeCamera = Boolean(sessionReady && effectiveCameraEmail && CAMERA_ACCESS_EMAILS.has(effectiveCameraEmail));
   const isHectorCameraUser = effectiveCameraEmail === HECTOR_CAMERA_EMAIL;
   const liveCameraIsGreen = isHectorCameraUser && cameraExternalOnline;
@@ -123,7 +130,7 @@ export default function Navbar() {
   const hideNavbarBack = isDashboard || (pathname === '/profile' && effectiveRole === 'manager');
   const compactName = displayName ? firstGivenName(displayName) : '';
   const searchIdentity = { userId: identity?.effectiveUserId ?? userData?.id ?? '', role: identity?.isViewingAs ? identity.effectiveRole : userData?.searchRole ?? null, email: identity?.isViewingAs ? identity.effectiveEmail : userData?.authEmail ?? null, isViewingAs: Boolean(identity?.isViewingAs) };
-  return <nav data-component="AppNavbar" data-hidden={topHidden && !searchOpen ? 'true' : undefined} className={cn('marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden')}>
+  return <nav data-component="AppNavbar" data-camera-visible={canSeeCamera ? 'true' : undefined} data-hidden={topHidden && !searchOpen ? 'true' : undefined} className={cn('marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden')}>
     <div className="relative max-w-7xl lg:max-w-none mx-auto flex items-center justify-between gap-1 px-1 lg:px-4 w-full min-w-0">
       <div className="flex min-w-0 shrink-0 items-center gap-1">
         <button
