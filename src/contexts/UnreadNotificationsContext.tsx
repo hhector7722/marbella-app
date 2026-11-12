@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 
 import { useUnreadNotificationCount } from '@/hooks/useUnreadNotificationCount'
 import type { UserNotificationRow } from '@/lib/user-notifications'
-import { RESERVATION_CENTER_NOTIFICATION_TYPES } from '@/lib/user-notifications'
 import { createClient } from '@/utils/supabase/client'
 
 type SupabaseClient = ReturnType<typeof createClient>
@@ -31,7 +30,7 @@ export function UnreadNotificationsProvider({ children }: { children: ReactNode 
   const { userId, unreadCount, items, loading, refresh, supabase } =
     useUnreadNotificationCount({
       withItems: true,
-      excludeTypes: RESERVATION_CENTER_NOTIFICATION_TYPES,
+      limit: 100,
       onFetchError: handleFetchError,
     })
 
