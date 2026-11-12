@@ -17,6 +17,7 @@ import { resolveCopilotFollowup } from "@/lib/copilot/followup-context";
 import { tryDirectRecipeAnswer } from "@/lib/copilot/direct-recipes";
 import { tryDirectSalesAnswer } from "@/lib/copilot/direct-sales";
 import { tryDirectInventoryAnswer } from "@/lib/copilot/direct-inventory";
+import { tryDirectSupplierPurchases } from "@/lib/copilot/direct-supplier-purchases";
 import { appDataToolForRole, runAppDataTool } from "@/lib/copilot/app-data-catalog";
 import { WEEKEND_NOTE_TOOL, WEEKEND_NOTE_TOOL_NAME, canProposeWeekendNote, prepareWeekendNoteProposal, wantsToWriteWeekendNote } from "@/lib/copilot/weekend-note-proposal";
 import {
@@ -310,6 +311,11 @@ ${body.attachmentContext}`;
         } catch {
           // A schema/read error must not prevent the normal AI fallback.
           console.warn("[copiloto] direct_recipe_unavailable");
+        }
+        try {
+          if (!answer) answer = await tryDirectSupplierPurchases(userText, { supabase, role }) ?? "";
+        } catch {
+          console.warn("[copiloto] direct_supplier_purchases_unavailable");
         }
         const dataQuestion = tools.some(tool => tool.function.name === WEEKEND_NOTE_TOOL_NAME) || Boolean(resolved) || /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|gramos?|kilos?|cantidad|cu[aá]nto|qu[eé] lleva|prepar|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|manual|importe|ingreso|coste|precio|informe|report|cobr|pag|nomina|salario|sueldo/i.test(userText);
         const started = Date.now();
