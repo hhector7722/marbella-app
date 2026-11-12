@@ -133,3 +133,36 @@ test("un empleado no puede consultar los fichajes de Fernando",async()=>{
   assert.deepEqual(answer,{error:"Sin permiso para consultar horas de otra persona"});
   assert.equal(called,false);
 });
+
+test("receta Entraña: recupera ñ sin exigir coincidencia literal de ILIKE", async () => {
+  const tables: string[] = [];
+  const fake = {
+    from: (table: string) => {
+      tables.push(table);
+      if (table === "recipes") {
+        return {
+          select: () => ({
+            ilike: () => ({ limit: async () => ({ data: [], error: null }) }),
+            limit: async () => ({ data: [{ id: "r-ent", name: "Entraña", elaboration: "Parrilla" }], error: null }),
+          }),
+        };
+      }
+      if (table === "recipe_ingredients") return {
+        select: () => ({ eq: () => ({ limit: async () => ({
+          data: [{ ingredient_id: "i-ent", quantity_gross: 220, quantity_net: 200, unit: "g" }], error: null,
+        }) }) }),
+      };
+      if (table === "ingredients") return {
+        select: () => ({ in: async () => ({ data: [{ id: "i-ent", name: "Entraña", unit: "g" }], error: null }) }),
+      };
+      throw new Error("Tabla inesperada: " + table);
+    },
+  } as unknown as Client;
+  const result = await runKnowledgeTool("consultar_receta_detallada",
+    { nombre: "entrana" }, { supabase: fake, role: "staff", userId, today }) as {
+      nombre: string; ingredientes: Array<{ nombre: string; cantidad_neta: number }>;
+    };
+  assert.equal(result.nombre, "Entraña");
+  assert.equal(result.ingredientes[0].cantidad_neta, 200);
+  assert.deepEqual(tables, ["recipes", "recipes", "recipe_ingredients", "ingredients"]);
+});

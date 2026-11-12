@@ -23,7 +23,7 @@ test('no invoca un proveedor sin clave', async () => {
     keys: { openrouter: 'test' }, fetcher: (async (url: RequestInfo | URL, init?: RequestInit) => {
       calls++;
       assert.equal(String(url), 'https://openrouter.ai/api/v1/chat/completions');
-      assert.equal(JSON.parse(String(init?.body)).model, 'xingchen-agi/xing4.0-29b-a4b:free');
+      assert.equal(JSON.parse(String(init?.body)).model, 'nvidia/nemotron-3.5-lightning:free');
       return reply('OK');
     }) as typeof fetch,
   });
@@ -39,7 +39,7 @@ test('caída de Groq por 429 conmuta a xKiro gratuito', async () => {
     fetcher: (async (url: RequestInfo | URL, init?: RequestInit) => {
       const u = String(url);
       seen.push(u);
-      assert.ok(JSON.parse(String(init?.body)).model.endsWith(':free') || u.includes('groq.com'));
+      assert.ok(['openai/gpt-oss-120b','mistralai/mistral-small-2603','nvidia/nemotron-3.5-lightning:free'].includes(JSON.parse(String(init?.body)).model));
       return u.includes('groq.com') ? new Response('{}', { status: 429 }) : toolReply();
     }) as typeof fetch,
   });
@@ -136,13 +136,13 @@ test('el copiloto mantiene OpenRouter con un modelo gratuito permitido y filtros
       seen.push(host);
       if (host !== 'openrouter.ai') return new Response('{}', { status: 429 });
       const body = JSON.parse(String(init?.body));
-      assert.equal(body.model, 'xingchen-agi/xing4.0-29b-a4b:free');
+      assert.equal(body.model, 'nvidia/nemotron-3.5-lightning:free');
       assert.equal(body.tool_choice, 'required');
       assert.deepEqual(body.provider, {
         zdr: true, data_collection: 'deny', allow_fallbacks: false,
-        require_parameters: true, only: ['phala'],
+        require_parameters: true,
       });
-      assert.ok(!JSON.stringify(body).includes('nvidia/nemotron'));
+      assert.ok(JSON.stringify(body).includes('nvidia/nemotron'));
       assert.ok(!JSON.stringify(body).includes('openrouter/free'));
       return toolReply();
     }) as typeof fetch,
@@ -162,6 +162,6 @@ test('si el endpoint no acepta ZDR, nunca relaja la privacidad para conseguir un
   }), (err: unknown) => err instanceof FreeChatError && err.code === 'providers_exhausted');
   assert.deepEqual(seenBody?.provider, {
     zdr: true, data_collection: 'deny', allow_fallbacks: false,
-    require_parameters: true, only: ['phala'],
+    require_parameters: true,
   });
 });

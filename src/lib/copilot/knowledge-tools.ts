@@ -201,6 +201,14 @@ export async function runKnowledgeTool(
       if (error) return {error:"No se pudo consultar el catálogo de recetas"};
       if (data?.length) { recipes = data; break; }
     }
+    if (!recipes.length) {
+      // The database ILIKE is accent-sensitive (Entraña != entrana).
+      // Load this small, bounded catalog under user RLS and compare normalized names.
+      const fallback=await ctx.supabase.from("recipes")
+        .select("id,name,elaboration,presentation,yield_quantity,yield_unit,sale_price").limit(500);
+      if (fallback.error) return {error:"No se pudo consultar el catálogo de recetas"};
+      recipes=(fallback.data??[]).filter(r=>searchTerms.some(term=>normalize(r.name).includes(term)));
+    }
     const exact = recipes.find(r=>normalize(r.name)===requested);
     if (!exact && recipes.length>1) return {error:"Varias recetas coinciden. Concreta cuál.",coincidencias:recipes.map(r=>r.name)};
     const recipe=exact||recipes[0];
