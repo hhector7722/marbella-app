@@ -34,9 +34,16 @@ test("Entraña: da coste y no inventa precio de venta/margen",async()=>{
  assert.match(answer??"",/No hay precio de venta registrado/);
 });
 test("staff y chef no consultan coste económico",async()=>{
- for(const role of ["staff","supervisor","chef"] as const){
+ for(const role of ["staff","chef"] as const){
   const m=fixture();const answer=await tryDirectRecipeCostAnswer(
     "Cuanto cuesta preparar una racion de bravas?",{supabase:m.db,role});
   assert.match(answer??"",/no tiene permiso/);assert.equal(m.calls.length,0);
  }
+});
+
+test("supervisor consulta escandallos como en el editor de recetas",async()=>{
+ const m=fixture(); const answer=await tryDirectRecipeCostAnswer(
+  "Cuanto nos cuesta preparar una racion de bravas?",{supabase:m.db,role:"supervisor"});
+ assert.match(answer??"",/1,61\s?€/);
+ assert.deepEqual(m.calls,["recipes","get_recipe_cost_v2"]);
 });

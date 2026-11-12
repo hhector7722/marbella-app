@@ -22,7 +22,7 @@ export async function tryDirectRecipeCostAnswer(
   const cost=/\b(?:cuesta|coste|costo|escandallo)\b/.test(q)
     && /\b(?:preparar|elaborar|racion|receta)\b/.test(q);
   if(!margin&&!cost)return null;
-  if(ctx.role!=="manager"&&ctx.role!=="admin"){
+  if(ctx.role!=="supervisor"&&ctx.role!=="manager"&&ctx.role!=="admin"){
     return "Tu perfil no tiene permiso para consultar el coste económico de las recetas.";
   }
   let recipeName:string|undefined;
