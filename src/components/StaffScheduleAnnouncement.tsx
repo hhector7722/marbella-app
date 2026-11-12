@@ -34,6 +34,16 @@ export function StaffScheduleAnnouncement() {
         return () => { cancelled = true; subscription.unsubscribe(); };
     }, [supabase]);
 
+    useEffect(() => {
+        if (!userId || !message) return;
+        // Registrar la primera visualización, sin esperar a que pulse «Entendido».
+        void supabase.from('staff_one_time_announcements')
+            .update({ viewed_at: new Date().toISOString() })
+            .eq('user_id', userId)
+            .eq('announcement_key', ANNOUNCEMENT_KEY)
+            .is('viewed_at', null);
+    }, [userId, message, supabase]);
+
     const acknowledge = async () => {
         if (!userId || saving) return;
         setSaving(true);
