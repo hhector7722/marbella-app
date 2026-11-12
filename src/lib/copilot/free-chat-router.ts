@@ -30,7 +30,7 @@ type ProviderConfig = {
 /** Prohibido introducir modelos de pago o routers sin restricción de coste. */
 const FREE_PROVIDERS: readonly ProviderConfig[] = [
   { name: 'groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'openai/gpt-oss-120b' },
-  { name: 'xkiro', endpoint: 'https://api.xkiro.com/v1/chat/completions', model: 'qwen/qwen3.8-max:free' },
+  { name: 'xkiro', endpoint: 'https://api.xkiro.com/v1/chat/completions', model: 'mistralai/mistral-small-2603' },
   { name: 'openrouter', endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'xingchen-agi/xing4.0-29b-a4b:free' },
 ];
 

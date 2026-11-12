@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ChevronLeft, Menu, X } from 'lucide-react';
+import { ChevronLeft, Menu, X, BotMessageSquare } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { ReservationsBell } from '@/components/ReservationsBell';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -15,6 +15,7 @@ import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
 import { useDesktopSidebar } from '@/components/chrome/DesktopSidebarProvider';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
+import { useAIStore } from '@/store/aiStore';
 
 const HECTOR_CAMERA_EMAIL = 'hhector7722@gmail.com';
 const FOGO_CAMERA_EMAIL = 'fogotorrat@gmail.com';
@@ -23,6 +24,7 @@ const CAMERA_ACCESS_EMAILS = new Set([FOGO_CAMERA_EMAIL, HECTOR_CAMERA_EMAIL]);
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const openChat = useAIStore(s => s.openChat);
   const supabase = createClient();
   const { topHidden } = useChromeScroll();
   const { isOpen: sidebarOpen, toggle: toggleSidebar } = useDesktopSidebar();
@@ -158,6 +160,14 @@ export default function Navbar() {
             className="block shrink-0 object-contain"
           />
         </button> : null}
+        {sessionReady && searchIdentity.userId ? <button
+          type="button"
+          data-element="navbar-copilot"
+          aria-label="Abrir asistente Marbella"
+          title="Asistente Marbella"
+          onClick={openChat}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-white/90 transition-opacity hover:opacity-100 active:opacity-70"
+        ><BotMessageSquare size={21} strokeWidth={1.9} aria-hidden /></button> : null}
         <ReservationsBell /><NotificationsBell />
       </div>
     </div>

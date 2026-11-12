@@ -18,6 +18,7 @@ const catalog = [
   tool("consultar_usuarios"),
   tool("consultar_registros_asistencia"),
   tool("consultar_registros_horas_extras"),
+  tool("consultar_extras_propias"),
   tool("consultar_costes_mano_obra"),
   tool("consultar_inventario"),
   tool("gestionar_recetas"),
@@ -30,11 +31,12 @@ test("una comparación de proveedores no se interpreta como mero listado", () =>
   assert.ok(names.includes("gestionar_ingredientes"));
 });
 
-test("la consulta de horas incluye resolución de usuarios antes de los registros", () => {
+test("la consulta de extras usa herramienta de datos propios sin exponer fichajes crudos", () => {
   const names = selectGroqTools("¿Cuántas horas extras hizo Fernando?", catalog)
     .map((x) => x.function.name);
-  assert.ok(names.includes("consultar_registros_asistencia"));
-  assert.ok(names.includes("consultar_registros_horas_extras"));
+  assert.ok(names.includes("consultar_extras_propias"));
+  assert.ok(!names.includes("consultar_registros_asistencia"));
+  assert.ok(!names.includes("consultar_registros_horas_extras"));
 });
 
 test("no hay proveedor de pago ni llamadas extra en un error 429", async () => {

@@ -14,6 +14,7 @@ import {
 import { selectGroqTools, type GroqChatMessage, type GroqTool } from "@/lib/copilot/groq-chat";
 import { completeFreeChat, configuredFreeProviders, operationalFreeProviderKeys, FreeChatError, type FreeProviderKeys, type FreeProvider } from "@/lib/copilot/free-chat-router";
 import { resolveCopilotFollowup } from "@/lib/copilot/followup-context";
+import { tryDirectRecipeAnswer } from "@/lib/copilot/direct-recipes";
 import { appDataToolForRole, runAppDataTool } from "@/lib/copilot/app-data-catalog";
 import { WEEKEND_NOTE_TOOL, WEEKEND_NOTE_TOOL_NAME, canProposeWeekendNote, prepareWeekendNoteProposal, wantsToWriteWeekendNote } from "@/lib/copilot/weekend-note-proposal";
 import {
@@ -40,7 +41,6 @@ const READ_ONLY_TOOLS = new Set<CopilotAction>([
   "gestionar_consumo_personal",
   // Los fichajes contienen campos de localización: enviar solo el resumen mínimo
   // mediante consultar_horas_trabajadas, nunca la RPC cruda al proveedor.
-  "consultar_registros_horas_extras",
   "consultar_costes_mano_obra",
   "consultar_reservas",
   "consultar_metricas_basicas",
@@ -217,6 +217,7 @@ export async function POST(req: Request) {
     "Para unidades vendidas de productos utiliza consultar_ventas_productos, no el recuento de tickets.",
     "Para qué lleva una receta utiliza consultar_receta_detallada y sus componentes reales.",
     "Para horas trabajadas utiliza consultar_horas_trabajadas, con nombre y periodo. No niegues acceso antes de consultar si tu rol lo permite.",
+    "Para tus propias horas extras utiliza consultar_extras_propias; no pidas UUID.",
     "Dispones del catálogo consultar_datos_aplicacion para consultar de forma transversal TODOS los módulos incluidos en las fuentes autorizadas: nóminas, contratos, extras, compras, albaranes, inventario, caja, reservas, fichajes y más.",
     "No digas que careces de un dato hasta haber intentado la fuente pertinente de consultar_datos_aplicacion.",
     "Para calcular cuánto cobrar EXTRA, usa fuente horas_extras que contiene importe_extras_eur OFICIAL del motor y tarifa efectiva. Nunca uses una tarifa supuesta ni multipliques la jornada total por una tarifa.",
@@ -285,11 +286,12 @@ ${body.attachmentContext}`;
           writer.write({ type: "text-end", id: "answer" });
           return;
         }
+        answer = await tryDirectRecipeAnswer(userText, { supabase, role, userId: user.id, today }) ?? "";
         const dataQuestion = tools.some(tool => tool.function.name === WEEKEND_NOTE_TOOL_NAME) || Boolean(resolved) || /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|gramos?|kilos?|cantidad|cu[aá]nto|qu[eé] lleva|prepar|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|manual|importe|ingreso|coste|precio|informe|report|cobr|pag|nomina|salario|sueldo/i.test(userText);
         const started = Date.now();
         const deadlineMs = started + 47500;
         let preferredProvider: FreeProvider | undefined;
-        for (let step = 0; step < 5 && Date.now() < deadlineMs; step++) {
+        for (let step = 0; !answer && step < 5 && Date.now() < deadlineMs; step++) {
           const completion = await completeFreeChat(history, tools, {
             keys: freeKeys,
             timeoutMs: 12000,

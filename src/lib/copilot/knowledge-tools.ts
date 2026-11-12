@@ -3,9 +3,9 @@ import { canExecute, type RoleName } from "./permissions.ts";
 import type { GroqTool } from "./groq-chat";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
-export type KnowledgeToolName = "consultar_ventas_productos" | "consultar_receta_detallada" | "consultar_horas_trabajadas";
+export type KnowledgeToolName = "consultar_ventas_productos" | "consultar_receta_detallada" | "consultar_horas_trabajadas" | "consultar_extras_propias";
 export const KNOWLEDGE_TOOLS = new Set<KnowledgeToolName>([
-  "consultar_ventas_productos", "consultar_receta_detallada", "consultar_horas_trabajadas",
+  "consultar_ventas_productos", "consultar_receta_detallada", "consultar_horas_trabajadas", "consultar_extras_propias",
 ]);
 
 type Dates = { periodo: "hoy" | "ayer" | "esta_semana" | "semana_pasada" | "rango"; fecha_inicio?: string; fecha_fin?: string };
@@ -42,6 +42,14 @@ export const KNOWLEDGE_TOOL_DEFS: Record<KnowledgeToolName, GroqTool> = {
       },
     },
   },
+  consultar_extras_propias: {
+    type: "function",
+    function: {
+      name: "consultar_extras_propias",
+      description: "Consulta solo las horas extras y el importe oficial de la persona autenticada. No necesita UUID ni admite empleado. Sirve para 'mis extras', '¿cuántas horas extras tengo?' y '¿cuánto cobraré de extras?'.",
+      parameters: { type: "object", properties: { ...dateProps }, required: ["periodo"], additionalProperties: false },
+    },
+  },
   consultar_horas_trabajadas: {
     type: "function",
     function: {
@@ -63,6 +71,7 @@ export function toolEnabled(role: RoleName, name: KnowledgeToolName): boolean {
   if (name === "consultar_ventas_productos") return canExecute(role, "consultar_metricas_basicas");
   if (name === "consultar_receta_detallada") return canExecute(role, "gestionar_recetas");
   if (name === "consultar_horas_trabajadas") return canExecute(role, "consultar_registros_asistencia");
+  if (name === "consultar_extras_propias") return canExecute(role, "consultar_registros_horas_extras");
   return false;
 }
 
@@ -175,7 +184,7 @@ function parseArgs(args: unknown): Record<string,unknown> {
   return args && typeof args==="object"&&!Array.isArray(args) ? args as Record<string,unknown> : {};
 }
 function filterName(value: string): string {
-  return normalize(value).replace(/[^\p{L}\p{N}\s-]/gu,"").slice(0,90);
+  return value.trim().replace(/[^\p{L}\p{N}\s-]/gu,"").slice(0,90);
 }
 
 export async function runKnowledgeTool(
@@ -201,7 +210,18 @@ export async function runKnowledgeTool(
       if (error) return {error:"No se pudo consultar el catálogo de recetas"};
       if (data?.length) { recipes = data; break; }
     }
-    const exact = recipes.find(r=>normalize(r.name)===requested);
+    if (!recipes.length) {
+      const {data:all,error:fallbackError} = await ctx.supabase.from("recipes")
+        .select("id,name,elaboration,presentation,yield_quantity,yield_unit,sale_price")
+        .order("name").limit(1000);
+      if (fallbackError) return {error:"No se pudo consultar el catálogo de recetas"};
+      const normalizedRequest=normalize(requested);
+      const useful=normalizedRequest.split(/\s+/).filter(word =>
+        word.length >= 4 && !/^(receta|plato|lleva|gramos|gramo|cantidad|racimo|cuanto|cuantos|preparacion|ingredientes)$/.test(word));
+      recipes=(all??[]).filter(r=>normalize(r.name).includes(normalizedRequest) ||
+        useful.some(word=>normalize(r.name).includes(word))).slice(0,30);
+    }
+    const exact = recipes.find(r=>normalize(r.name)===normalize(requested));
     if (!exact && recipes.length>1) return {error:"Varias recetas coinciden. Concreta cuál.",coincidencias:recipes.map(r=>r.name)};
     const recipe=exact||recipes[0];
     if (!recipe) return {error:"Receta no encontrada tras consultar el catálogo",nombre_buscado:requested};
@@ -262,6 +282,21 @@ export async function runKnowledgeTool(
   const dates = resolveDates(args as Dates, ctx.today || madridDate());
   if ("error" in dates) return dates;
 
+  if (name === "consultar_extras_propias") {
+    const {data,error}=await ctx.supabase.rpc("consultar_registros_horas_extras", {
+      p_user_id:ctx.userId,p_fecha_inicio:dates.inicio,p_fecha_fin:dates.fin,
+    });
+    if (error || !Array.isArray(data)) return {error:"No se pudieron consultar tus horas extras"};
+    const rows=data as Array<Record<string,unknown>>;
+    const registros=rows.slice(0,20).map(r=>({
+      semana:r.week_start,fin:r.week_end,
+      horas_extras:r.extra_hours,importe_extras_eur:r.total_cost,
+      pagado:r.is_paid,saldo_horas:r.final_balance,
+    }));
+    return {empleado:"Tú",periodo:dates,registros,registros_truncados:rows.length>20,
+      observacion:"Importes oficiales de la proyección semanal. No calcular tarifas por cuenta propia."};
+  }
+
   if (name === "consultar_ventas_productos") {
     const {data,error}=await ctx.supabase.rpc("get_full_period_ticket_sales_detail",{
       p_start_date:dates.inicio,p_end_date:dates.fin,
@@ -279,14 +314,14 @@ export async function runKnowledgeTool(
     const {data:people,error} = await ctx.supabase.from("profiles")
       .select("id,first_name,last_name").limit(150);
     if (error) return {error:"No se pudo identificar al empleado"};
-    const matches=(people??[]).filter(p=>normalize(`${p.first_name??""} ${p.last_name??""}`).includes(given));
+    const matches=(people??[]).filter(p=>normalize(`${p.first_name??""} ${p.last_name??""}`).includes(normalize(given)));
     if (!matches.length) return {error:"Empleado no encontrado con ese nombre"};
     if (matches.length>1) return {error:"Nombre ambiguo; añade apellido",coincidencias:matches.map(p=>`${p.first_name} ${p.last_name}`)};
     targetId=matches[0].id;
     display=`${matches[0].first_name??""} ${matches[0].last_name??""}`.trim();
   } else if (isStaff && given && !/^(yo|mi|mis|yo mismo)$/.test(given)) {
     const {data:self,error}=await ctx.supabase.from("profiles").select("first_name,last_name").eq("id",ctx.userId).single();
-    if (error || !self || !normalize(`${self.first_name??""} ${self.last_name??""}`).includes(given)) {
+    if (error || !self || !normalize(`${self.first_name??""} ${self.last_name??""}`).includes(normalize(given))) {
       return {error:"Sin permiso para consultar horas de otra persona"};
     }
   }

@@ -39,7 +39,8 @@ test('caída de Groq por 429 conmuta a xKiro gratuito', async () => {
     fetcher: (async (url: RequestInfo | URL, init?: RequestInit) => {
       const u = String(url);
       seen.push(u);
-      assert.ok(JSON.parse(String(init?.body)).model.endsWith(':free') || u.includes('groq.com'));
+      const model = JSON.parse(String(init?.body)).model;
+      assert.ok(u.includes('groq.com') || model === 'mistralai/mistral-small-2603' || model.endsWith(':free'));
       return u.includes('groq.com') ? new Response('{}', { status: 429 }) : toolReply();
     }) as typeof fetch,
   });

@@ -57,11 +57,11 @@ export function selectGroqTools(
   if (/inventario|stock|existencia|caduc|faltan|reponer/.test(q)) {
     include("consultar_inventario", "gestionar_ingredientes");
   }
-  if (/receta|elaborac|carta|plato|sangria|ingrediente|escandallo|gramos?|kilos?|cantidad|cuanto lleva|que lleva|preparar/.test(q)) {
+  if (/receta|elaborac|carta|plato|sangria|ingrediente|escandallo|gramos?|kilos?|cantidad|cuanto lleva|que lleva|preparar|porcion|racion/.test(q)) {
     include("consultar_receta_detallada", "gestionar_recetas", "gestionar_ingredientes");
   }
   if (/emplead|personal|usuario|turno|horario|fichaj|asistencia|horas?|trabaj|nomina|extra/.test(q)) {
-    include("consultar_horas_trabajadas", "consultar_registros_asistencia", "consultar_registros_horas_extras");
+    include("consultar_horas_trabajadas", "consultar_extras_propias");
     if (/coste|costo|mano de obra|nomina/.test(q)) include("consultar_costes_mano_obra");
   }
   if (/pedido|comanda|mesa|cocina|sala/.test(q)) include("consultar_pedidos_abiertos");
@@ -86,6 +86,7 @@ export function selectGroqTools(
     const recipe = exact("consultar_receta_detallada");
     if (recipe.length) return recipe;
   }
+  if (/\b(?:mi|mis|yo|mias)\b/.test(q) && /\bextra/.test(q)) return exact("consultar_extras_propias");
   if (/horas?/.test(q) && /trabaj|hizo|ficho|fichado/.test(q) && !/extra/.test(q)) {
     return exact("consultar_horas_trabajadas");
   }
