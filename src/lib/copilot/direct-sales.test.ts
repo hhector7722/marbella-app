@@ -9,6 +9,13 @@ function mock() {
   const supabase = {
     rpc: async (fn: string, args: Record<string, unknown>) => {
       calls.push({ fn, args });
+      if (fn === "get_full_period_ticket_sales_detail") return {
+        data: { summary: { count: 173 }, products: [
+          { nombre_articulo: "Cafe con leche", cantidad_total: 9, total_ingresos: 15 },
+          { nombre_articulo: "Cortado", cantidad_total: 6, total_ingresos: 9 },
+          { nombre_articulo: "Coca Cola", cantidad_total: 24, total_ingresos: 48 },
+        ] }, error: null,
+      };
       return { data: { total_ventas: 817, recuento_tickets: 173, ticket_medio: 817 / 173 }, error: null };
     },
   } as unknown as Client;
@@ -55,6 +62,9 @@ test("una pregunta de productos no recibe cifras del total de ventas", async () 
   const answer = await tryDirectSalesAnswer("¿Cuántos cafés hemos vendido hoy?", {
     supabase: m.supabase, role: "manager", today: "2026-11-12",
   });
-  assert.equal(answer, null);
-  assert.equal(m.calls.length, 0);
+  assert.match(answer ?? "", /15 unidades/);
+  assert.match(answer ?? "", /Cafe con leche: 9 ud/);
+  assert.match(answer ?? "", /Cortado: 6 ud/);
+  assert.doesNotMatch(answer ?? "", /Coca Cola/);
+  assert.equal(m.calls[0].fn, "get_full_period_ticket_sales_detail");
 });

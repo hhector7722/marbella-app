@@ -1,5 +1,6 @@
 import type { createClient } from "@/utils/supabase/server";
 import type { RoleName } from "./permissions";
+import { summarizeProductSales } from "./knowledge-tools.ts";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
 
@@ -27,6 +28,29 @@ export async function tryDirectSalesAnswer(
     ? "hoy"
     : /\bayer\b/.test(normalized) ? "ayer" : null;
   if (!period) return null;
+  const coffeeUnits = /\bcafes?\b/.test(normalized)
+    && /(?:cuant|unidades|vendid|vendim|venta|llevamos)/.test(normalized);
+  if (coffeeUnits) {
+    if (ctx.role !== "manager" && ctx.role !== "admin") {
+      return "Tu perfil no tiene permiso para consultar las ventas de artículos.";
+    }
+    const date = period === "hoy" ? ctx.today : dateShift(ctx.today, -1);
+    const { data, error } = await ctx.supabase.rpc("get_full_period_ticket_sales_detail", {
+      p_start_date: date, p_end_date: date,
+    });
+    if (error || !data) return "No he podido consultar las unidades vendidas del TPV.";
+    const summary = summarizeProductSales(data, "cafes");
+    if ("error" in summary) return "El TPV no ha devuelto un desglose de productos válido.";
+    const units = Number(summary.unidades);
+    const details = Array.isArray(summary.detalle) ? summary.detalle as Array<Record<string, unknown>> : [];
+    if (!Number.isFinite(units)) return "El desglose de cafés no contiene cantidades válidas.";
+    const itemSummary = details.slice(0, 15).map(p =>
+      String(p.articulo) + ": " + String(p.unidades) + " ud"
+    ).join("; ");
+    return (period === "hoy" ? "Hoy" : "Ayer") + " (" + date + ") se han vendido " +
+      units + " unidades de cafés y preparaciones de café." +
+      (itemSummary ? " Desglose TPV: " + itemSummary + "." : "");
+  }
   const salesIntent = /(?:cuanto|total|importe|facturacion|ventas|recaudacion|hemos vendido|vendimos|vendido)/.test(normalized)
     && /(?:vend|venta|factur|recaud|ingreso|ticket|caja)/.test(normalized);
   if (!salesIntent || /(?:producto|articulo|unidades|cafe|croissant|bocadillo|bravas|sangria|ticket medio|venta neta|margen|rentab|compar|por hora)/.test(normalized))
