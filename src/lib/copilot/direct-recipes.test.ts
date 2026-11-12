@@ -60,3 +60,35 @@ test("Costes de recetas nunca se sustituyen por una respuesta inventada de ingre
    {supabase:f.supabase,role:"manager",userId:uid,today:"2026-11-12"});
  assert.equal(answer,null);
 });
+
+test("recetas que contienen bacon: lista todas las relaciones directas y subrecetas sin depender del LLM",async()=>{
+  const ingredients=[{id:"ing-bacon",name:"Bacon"}];
+  const direct=[
+    {recipe_id:"r1",ingredient_id:"ing-bacon"},
+    {recipe_id:"r2",ingredient_id:"ing-bacon"},
+    {recipe_id:"r3",ingredient_id:"ing-bacon"},
+  ];
+  const recipes=[
+    {id:"r1",name:"Bacon queso"},
+    {id:"r2",name:"Salsa carbonara"},
+    {id:"r3",name:"Sup bacon"},
+    {id:"r4",name:"Pasta carbonara"},
+  ];
+  let parentsCall=0;
+  const supabase={
+    from:(table:string)=>{
+      if(table==="ingredients")return {select:()=>({ilike:()=>({limit:async()=>({data:ingredients,error:null})})})};
+      if(table==="recipe_ingredients")return {select:()=>({in:()=>({limit:async()=>({data:direct,error:null})})})};
+      if(table==="recipe_subrecipes")return {select:()=>({in:()=>({limit:async()=>({data:parentsCall++===0?[{child_recipe_id:"r2",parent_recipe_id:"r4"}]:[],error:null})})})};
+      if(table==="recipes")return {select:()=>({in:()=>({limit:async()=>({data:recipes,error:null})})})};
+      throw Error("Tabla inesperada "+table);
+    },
+  } as unknown as Awaited<ReturnType<typeof createClient>>;
+  const answer=await tryDirectRecipeAnswer("Que recetas contienen bacon?",{
+    supabase,role:"staff",userId:"staff-1",today:"2026-11-12",
+  });
+  for(const name of ["Bacon queso","Salsa carbonara","Sup bacon","Pasta carbonara"]){
+    assert.ok(answer?.includes(name),name+" ausente");
+  }
+  assert.doesNotMatch(answer??"",/potencialmente incompleta/);
+});

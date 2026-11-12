@@ -1,6 +1,7 @@
 import type { createClient } from "@/utils/supabase/server";
 import type { RoleName } from "./permissions";
 import { runKnowledgeTool } from "./knowledge-tools.ts";
+import { canExecute } from "./permissions.ts";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
 type Ingredient = {
@@ -77,6 +78,50 @@ export async function tryDirectRecipeAnswer(
   ctx: { supabase: Client; role: RoleName; userId: string; today: string },
 ): Promise<string | null> {
   const query=normalized(question);
+  const reverse=query.match(/(?:que|cuales?)\s+recetas\s+(?:contienen|llevan|utilizan|usan)\s+(?:el |la |los |las )?(.+?)(?:[?.!]|$)/);
+  if (reverse) {
+    if (!canExecute(ctx.role,"gestionar_recetas")) {
+      return "Tu perfil no tiene permiso para consultar recetas.";
+    }
+    const term=reverse[1].trim().replace(/[^\p{L}\p{N}\s-]/gu,"").trim();
+    if (term.length<2||term.length>70) return null;
+    const stem=term.slice(0,Math.min(3,term.length));
+    const {data:ingredients,error:ingredientError}=await ctx.supabase.from("ingredients")
+      .select("id,name").ilike("name","%"+stem+"%").limit(300);
+    if (ingredientError || !Array.isArray(ingredients)) return null;
+    const matched=ingredients.filter(i=>typeof i.name==="string"&&normalized(i.name).includes(term));
+    if (!matched.length) return "No encuentro un ingrediente registrado que coincida con «"+term+"».";
+    const ids=matched.map(i=>i.id).filter((id):id is string=>typeof id==="string");
+    if (!ids.length) return null;
+    const {data:direct,error:relationError}=await ctx.supabase.from("recipe_ingredients")
+      .select("recipe_id,ingredient_id").in("ingredient_id",ids).limit(3000);
+    if (relationError || !Array.isArray(direct)) return null;
+    const recipeIds=new Set<string>(direct.map(link=>link.recipe_id).filter((id):id is string=>typeof id==="string"));
+    let frontier=[...recipeIds], nestedFailed=false, truncated=direct.length===3000;
+    // La misma materia prima puede entrar indirectamente mediante una subreceta.
+    for(let depth=0;depth<5&&frontier.length;depth++){
+      const {data:parents,error}=await ctx.supabase.from("recipe_subrecipes")
+        .select("parent_recipe_id,child_recipe_id").in("child_recipe_id",frontier).limit(3000);
+      if(error||!Array.isArray(parents)){nestedFailed=true;break;}
+      if(parents.length===3000)truncated=true;
+      const next:string[]=[];
+      for(const row of parents){
+        if(typeof row.parent_recipe_id==="string"&&!recipeIds.has(row.parent_recipe_id)){
+          recipeIds.add(row.parent_recipe_id);next.push(row.parent_recipe_id);
+        }
+      }
+      frontier=next;
+      if(depth===4&&frontier.length)truncated=true;
+    }
+    if(!recipeIds.size) return "No hay recetas vinculadas al ingrediente «"+term+"».";
+    const {data:recipes,error:recipeError}=await ctx.supabase.from("recipes")
+      .select("id,name").in("id",[...recipeIds].slice(0,1000)).limit(1000);
+    if(recipeError||!Array.isArray(recipes)) return null;
+    const names=recipes.map(r=>String(r.name??"")).filter(Boolean).sort((a,b)=>a.localeCompare(b,"es"));
+    const note=nestedFailed?" No he podido comprobar las subrecetas.":truncated||recipeIds.size>1000?" Lista potencialmente incompleta por límites de consulta.":"";
+    return "Recetas con «"+term+"» como ingrediente directo o mediante subrecetas:\n"+
+      (names.length?names.map(n=>"• "+n).join("\n"):"No se encontraron recetas visibles.")+note;
+  }
   const directIntent=/(?:que.*(?:ingredientes|lleva)|ingredientes de|como se prepara|elaboracion de|preparar \d+|cantidades.*preparar|cuantos? gramos|cuantas? (?:unidades|raciones) lleva)/.test(query);
   if (!directIntent || /(?:que recetas|cuales recetas|comprar|stock|inventario|precio|coste|margen|rentab|mas de precio|han subido)/.test(query)) return null;
   const {data,error}=await ctx.supabase.from("recipes").select("name,is_sellable").order("name").limit(1000);
