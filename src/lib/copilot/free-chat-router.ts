@@ -31,8 +31,16 @@ type ProviderConfig = {
 const FREE_PROVIDERS: readonly ProviderConfig[] = [
   { name: 'groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'openai/gpt-oss-120b' },
   { name: 'xkiro', endpoint: 'https://api.xkiro.com/v1/chat/completions', model: 'mistralai/mistral-small-2603' },
-  { name: 'openrouter', endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'xingchen-agi/xing4.0-29b-a4b:free' },
+  { name: 'openrouter', endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'cohere/north-mini-code:free' },
 ];
+
+// Candidatos gratuitos con soporte de llamadas a herramientas del catálogo
+// público. OpenRouter aplica ZDR y data_collection=deny a cada intento.
+const OPENROUTER_FREE_MODELS = [
+  'cohere/north-mini-code:free',
+  'google/gemma-4-31b-it:free',
+  'dots-studio/dots-3-note-preview:free',
+] as const;
 
 export class FreeChatError extends Error {
   readonly code: 'not_configured' | 'providers_exhausted';
@@ -47,7 +55,7 @@ export class FreeChatError extends Error {
 
 /**
  * Solo modelos gratuitos revisados de la lista FREE_PROVIDERS.
- * OpenRouter se limita a Xing4.0 mediante Phala: ZDR y sin recolección.
+ * OpenRouter usa exclusivamente modelos gratuitos con ZDR y sin recolección.
  * No se usan Nemotron, Liquid u otros modelos que admiten datos de entrenamiento,
  * ni el router aleatorio openrouter/free.
  */
@@ -118,13 +126,15 @@ export async function completeFreeChat(
   const deadline = options.deadlineMs ?? Date.now() + 47000;
   let quotaBlocked = false;
   for (const provider of ordered) {
-    const remaining = deadline - Date.now();
+    const models = provider.name === 'openrouter' ? OPENROUTER_FREE_MODELS : [provider.model];
+    for (const model of models) {
+      const remaining = deadline - Date.now();
     if (remaining < 1000) break;
     const key = options.keys[provider.name]?.trim();
     if (!key) continue;
     const isGroq = provider.name === 'groq';
     const body = {
-      model: provider.model,
+      model,
       messages,
       tools: tools.length ? tools : undefined,
       tool_choice: tools.length ? (options.toolChoice ?? 'auto') : undefined,
@@ -143,9 +153,8 @@ export async function completeFreeChat(
         provider: {
           zdr: true,
           data_collection: 'deny',
-          allow_fallbacks: false,
+          allow_fallbacks: true,
           require_parameters: true,
-          only: ['phala'],
         },
       } : {}),
     };
@@ -188,6 +197,7 @@ export async function completeFreeChat(
         error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')
           ? 'timeout' : 'transport_or_json_error');
       continue;
+    }
     }
   }
   const soleGroq = ordered.length === 1 && ordered[0].name === 'groq';

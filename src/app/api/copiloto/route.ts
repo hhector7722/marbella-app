@@ -109,7 +109,14 @@ function availableTools(role: RoleName, question: string, mayProposeWeekendNote:
   // La preparación es de solo lectura. La escritura requiere confirmación en otra ruta.
   const proposeNote = mayProposeWeekendNote && wantsToWriteWeekendNote(question);
   // Priorizar una sola acción explícita; no mezclarla con herramientas de consulta.
-  return proposeNote ? [WEEKEND_NOTE_TOOL] : payQuery ? [dataTool] : [...chosen, dataTool];
+  // Personal, supervisor y cocina consultan solo sus propios extras.
+  // La fuente de liquidaciones de terceros queda exclusiva de gerencia.
+  const ownExtras = /horas? extras?|extras|saldo de horas/i.test(question)
+    && role !== "manager" && role !== "admin";
+  return proposeNote ? [WEEKEND_NOTE_TOOL]
+    : ownExtras ? knowledge.filter(tool => tool.function.name === "consultar_extras_propias")
+    : payQuery && (role === "manager" || role === "admin") ? [dataTool]
+    : [...chosen, dataTool];
 }
 
 function safeToolMessage(result: unknown): string {
