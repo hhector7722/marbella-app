@@ -324,6 +324,35 @@ export default function StaffDashboardView({
     const [clockLoading, setClockLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(() => initialUserId ?? null);
+    const [scheduleAnnouncement, setScheduleAnnouncement] = useState<string | null>(null);
+    const [scheduleAnnouncementSaving, setScheduleAnnouncementSaving] = useState(false);
+    useEffect(() => {
+        if (!userId || isMaster) return;
+        let cancelled = false;
+        void supabase.from('staff_one_time_announcements')
+            .select('body')
+            .eq('user_id', userId)
+            .eq('announcement_key', 'horarios-2026-11-12')
+            .is('acknowledged_at', null)
+            .maybeSingle()
+            .then(({ data, error }) => {
+                if (!cancelled && !error && data?.body) setScheduleAnnouncement(data.body);
+            });
+        return () => { cancelled = true; };
+    }, [userId, isMaster, supabase]);
+    const acknowledgeScheduleAnnouncement = async () => {
+        if (!userId || scheduleAnnouncementSaving) return;
+        setScheduleAnnouncementSaving(true);
+        const { error } = await supabase.from('staff_one_time_announcements')
+            .update({ acknowledged_at: new Date().toISOString() })
+            .eq('user_id', userId)
+            .eq('announcement_key', 'horarios-2026-11-12')
+            .is('acknowledged_at', null);
+        setScheduleAnnouncementSaving(false);
+        if (error) { toast.error('No se ha podido confirmar el aviso'); return; }
+        setScheduleAnnouncement(null);
+    };
+
     const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>(() => initialRole ?? 'staff');
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
     const [userEmail, setUserEmail] = useState<string>(() => initialEmail ?? '');
@@ -1520,6 +1549,21 @@ export default function StaffDashboardView({
 
             {/* (deduplicado) */}
 
+            <Modal
+                open={!!scheduleAnnouncement}
+                onClose={() => {}}
+                title="Aviso sobre los horarios"
+                variant="standard"
+                layer="base"
+                instance="staff-schedule-announcement-20261112"
+            >
+                <div className="space-y-5">
+                    <p className="text-base leading-relaxed">{scheduleAnnouncement}</p>
+                    <Button className="w-full" disabled={scheduleAnnouncementSaving} onClick={() => void acknowledgeScheduleAnnouncement()}>
+                        Entendido
+                    </Button>
+                </div>
+            </Modal>
             <CashClosingModal
                 isOpen={isClosingModalOpen}
                 onClose={() => setIsClosingModalOpen(false)}
