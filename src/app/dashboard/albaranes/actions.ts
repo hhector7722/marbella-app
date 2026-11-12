@@ -195,6 +195,8 @@ async function queryPurchaseInvoicesList(
     .from('purchase_invoices')
     .select(PURCHASE_INVOICE_LIST_SELECT)
     .neq('status', 'discarded')
+    // Hide owner-retired scanner captures without discarding their posted stock.
+    .filter('operational_hidden_at', 'is', 'null')
     .order('invoice_date', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
 
