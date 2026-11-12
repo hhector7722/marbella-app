@@ -122,15 +122,20 @@ const coffeePattern = /\b(cafe|cortado|americano|capuccino|cappuccino|descafeina
 export function summarizeProductSales(data: unknown, product?: string): Record<string,unknown> {
   if (!data || typeof data !== "object" || Array.isArray(data)) return { error: "Desglose de ventas inválido" };
   const source = data as Record<string, unknown>;
-  const all = Array.isArray(source.products) ? source.products : [];
+  if (source.error) return { error: "El servicio de ventas ha denegado o rechazado la consulta" };
+  if (!Array.isArray(source.products)) return { error: "El desglose de artículos no está disponible" };
+  const all = source.products;
   const filter = normalize(product ?? "");
+  // Equivalencia comercial ES/CA: el TPV puede registrar «PATATES BRAVES»
+  // aunque el usuario pregunte por «patatas bravas».
+  const lookup = /\bbrav(?:as|es)?\b/.test(filter) ? "brav" : filter;
   const selection = all.filter((p): p is Record<string, unknown> => Boolean(p && typeof p === "object" && !Array.isArray(p))).filter(p => {
     const name = normalize(String(p.nombre_articulo ?? ""));
     if (!filter) return true;
-    const singular = filter.length > 5 && filter.endsWith("s") ? filter.slice(0, -1) : filter;
-    return filter === "cafe" || filter === "cafes"
+    const singular = lookup.length > 5 && lookup.endsWith("s") ? lookup.slice(0, -1) : lookup;
+    return lookup === "cafe" || lookup === "cafes"
       ? coffeePattern.test(name)
-      : name.includes(filter) || name.includes(singular);
+      : name.includes(lookup) || name.includes(singular);
   });
   const ranked = selection.sort((a,b)=>Number(b.cantidad_total||0)-Number(a.cantidad_total||0));
   const total = ranked.reduce((acc,p)=>acc+Number(p.cantidad_total||0),0);

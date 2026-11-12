@@ -14,6 +14,7 @@ function mock() {
           { nombre_articulo: "Cafe con leche", cantidad_total: 9, total_ingresos: 15 },
           { nombre_articulo: "Cortado", cantidad_total: 6, total_ingresos: 9 },
           { nombre_articulo: "Coca Cola", cantidad_total: 24, total_ingresos: 48 },
+          { nombre_articulo: "PATATES BRAVES", cantidad_total: 8, total_ingresos: 41.60 },
         ] }, error: null,
       };
       return { data: { total_ventas: 817, recuento_tickets: 173, ticket_medio: 817 / 173 }, error: null };
@@ -67,4 +68,23 @@ test("una pregunta de productos no recibe cifras del total de ventas", async () 
   assert.match(answer ?? "", /Cortado: 6 ud/);
   assert.doesNotMatch(answer ?? "", /Coca Cola/);
   assert.equal(m.calls[0].fn, "get_full_period_ticket_sales_detail");
+});
+
+test("patatas bravas se corresponde con PATATES BRAVES del TPV",async()=>{
+  const m=mock();
+  const result=await tryDirectSalesAnswer("Cuanto han vendido ayer las patatas bravas?",{
+    supabase:m.supabase,role:"manager",today:"2026-11-12",
+  });
+  assert.match(result??"",/8 unidades/);
+  assert.match(result??"",/41,60\s?€/);
+  assert.equal(m.calls[0].fn,"get_full_period_ticket_sales_detail");
+  assert.equal(m.calls[0].args.p_start_date,"2026-11-11");
+});
+test("staff no puede consultar las ventas de bravas",async()=>{
+  const m=mock();
+  const result=await tryDirectSalesAnswer("Cuantas patatas bravas se vendieron ayer?",{
+    supabase:m.supabase,role:"staff",today:"2026-11-12",
+  });
+  assert.match(result??"",/no tiene permiso/);
+  assert.equal(m.calls.length,0);
 });

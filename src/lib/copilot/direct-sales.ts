@@ -51,6 +51,27 @@ export async function tryDirectSalesAnswer(
       units + " unidades de cafés y preparaciones de café." +
       (itemSummary ? " Desglose TPV: " + itemSummary + "." : "");
   }
+  const bravasQuery = /\bbrav(?:as|es)?\b/.test(normalized)
+    && /(?:cuant|vendid|vendim|venta|importe|factur|recaud)/.test(normalized);
+  if (bravasQuery) {
+    if (ctx.role !== "manager" && ctx.role !== "admin") {
+      return "Tu perfil no tiene permiso para consultar las ventas de artículos.";
+    }
+    const date = period === "hoy" ? ctx.today : dateShift(ctx.today, -1);
+    const {data,error} = await ctx.supabase.rpc("get_full_period_ticket_sales_detail",{
+      p_start_date:date,p_end_date:date,
+    });
+    if (error || !data) return "No he podido consultar las ventas de patatas bravas.";
+    const summary = summarizeProductSales(data,"patatas bravas");
+    if ("error" in summary) return "El TPV no ha devuelto un desglose válido de patatas bravas.";
+    const units=Number(summary.unidades), amount=Number(summary.importe_eur);
+    if (!Number.isFinite(units)||!Number.isFinite(amount)) return "Desglose de ventas incompleto.";
+    const detail=Array.isArray(summary.detalle)?summary.detalle as Array<Record<string,unknown>>:[];
+    const names=detail.map(item=>String(item.articulo??"")).filter(Boolean).slice(0,5);
+    return (period==="hoy"?"Hoy":"Ayer")+" ("+date+") se vendieron "+units+
+      " unidades de patatas bravas por "+eur(amount)+
+      (names.length?" (artículo TPV: "+names.join(", ")+").":".");
+  }
   const salesIntent = /(?:cuanto|total|importe|facturacion|ventas|recaudacion|hemos vendido|vendimos|vendido)/.test(normalized)
     && /(?:vend|venta|factur|recaud|ingreso|ticket|caja)/.test(normalized);
   if (!salesIntent || /(?:producto|articulo|unidades|cafe|croissant|bocadillo|bravas|sangria|ticket medio|venta neta|margen|rentab|compar|por hora)/.test(normalized))
