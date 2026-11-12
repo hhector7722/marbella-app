@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ChevronLeft, Menu, X, BotMessageSquare } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
-import { ReservationsBell } from '@/components/ReservationsBell';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { createClient } from "@/utils/supabase/client";
 import { cn, firstGivenName } from '@/lib/utils';
@@ -142,7 +141,7 @@ export default function Navbar() {
         <div className="flex min-w-0 items-center gap-1"><div data-element="logo" className="relative shrink-0"><Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority /></div>{hideNavbarBack ? <div data-element="greeting-block">{isMaster ? <button type="button" data-element="greeting" onClick={openViewAsPicker} className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative" aria-label={identity?.isViewingAs ? `Viendo como ${identity.effectiveName}. Cambiar usuario` : 'Cambiar usuario de vista'}>{compactName}</button> : <span data-element="greeting">{compactName}</span>}</div> : null}</div>
       </div>
       {sessionReady && searchIdentity.userId ? <div data-element="global-search-host" className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"><div className="pointer-events-auto"><GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} /></div></div> : null}
-      <div className="flex shrink-0 items-center -space-x-3">
+      <div className="flex shrink-0 items-center gap-0.5">
         {canSeeCamera ? <button
           type="button"
           data-element="live-camera"
@@ -168,7 +167,7 @@ export default function Navbar() {
           onClick={openChat}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-white/90 transition-opacity hover:opacity-100 active:opacity-70"
         ><BotMessageSquare size={21} strokeWidth={1.9} aria-hidden /></button> : null}
-        <ReservationsBell /><NotificationsBell />
+        <NotificationsBell />
       </div>
     </div>
   </nav>;
