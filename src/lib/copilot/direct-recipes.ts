@@ -3,18 +3,31 @@ import type { RoleName } from "./permissions";
 import { runKnowledgeTool } from "./knowledge-tools.ts";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
+type Ingredient = {
+  nombre: string;
+  cantidad_bruta?: number | null;
+  cantidad_neta?: number | null;
+  unidad?: string | null;
+};
+type Subrecipe = {
+  nombre: string;
+  cantidad?: number | null;
+  unidad?: string | null;
+  componentes?: {
+    ingredientes?: Ingredient[];
+    subrecetas?: Subrecipe[];
+    error?: string;
+    posible_truncamiento?: boolean;
+  };
+};
 type RecipeData = {
   nombre: string;
   elaboracion?: string | null;
-  presentacion?: string | null;
   rendimiento?: number | null;
   unidad_rendimiento?: string | null;
-  ingredientes?: Array<{
-    nombre: string;
-    cantidad_bruta?: number | null;
-    cantidad_neta?: number | null;
-    unidad?: string | null;
-  }>;
+  ingredientes?: Ingredient[];
+  subrecetas?: Subrecipe[];
+  posible_truncamiento?: boolean;
   error?: string;
 };
 
@@ -22,80 +35,105 @@ function normalized(text: string): string {
   return text.toLocaleLowerCase("es").normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "").trim();
 }
-
-function quantity(number: number): string {
-  return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 3 }).format(number);
+function formatted(value: number): string {
+  return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 3 }).format(value);
+}
+function ingredientQuantity(p: Ingredient, scale = 1): string {
+  const net=p.cantidad_neta, gross=p.cantidad_bruta;
+  const value=typeof net==="number" && Number.isFinite(net) ? net :
+    typeof gross==="number" && Number.isFinite(gross) ? gross : null;
+  return value===null ? "cantidad no registrada" :
+    (formatted(value*scale)+" "+(p.unidad??"")).trim();
+}
+function renderSubrecipe(sub: Subrecipe, depth=0,scale=1): string[] {
+  const pad="  ".repeat(depth+1);
+  const val=typeof sub.cantidad==="number" && Number.isFinite(sub.cantidad)
+    ? " — "+formatted(sub.cantidad*scale)+" "+(sub.unidad??"") : "";
+  const lines=[pad+"• Subreceta: "+sub.nombre+val];
+  if (!sub.componentes || sub.componentes.error) {
+    lines.push(pad+"  Composición no disponible.");
+    return lines;
+  }
+  if (sub.componentes.ingredientes?.length) {
+    lines.push(pad+"  Ingredientes del lote base (sin escalar):");
+    for (const p of sub.componentes.ingredientes) {
+      lines.push(pad+"  · "+p.nombre+" — "+ingredientQuantity(p));
+    }
+  }
+  if (depth<5) {
+    for (const child of sub.componentes.subrecetas??[]) {
+      lines.push(...renderSubrecipe(child,depth+1));
+    }
+  } else if ((sub.componentes.subrecetas?.length??0)>0) {
+    lines.push(pad+"  Composición demasiado profunda.");
+  }
+  if (sub.componentes.posible_truncamiento) lines.push(pad+"  Composición incompleta.");
+  return lines;
 }
 
-// Reads only permitted recipe fields, with no AI inference and no writes.
+/** Read-only recipe retrieval. Never invents ingredient quantities or production yields. */
 export async function tryDirectRecipeAnswer(
   question: string,
   ctx: { supabase: Client; role: RoleName; userId: string; today: string },
 ): Promise<string | null> {
-  const query = normalized(question);
-  const directIntent = /(?:que.*(?:ingredientes|lleva)|ingredientes de|como se prepara|elaboracion de|preparar \d+|cantidades.*preparar|cuantos? gramos|cuantas? (?:unidades|raciones) lleva)/.test(query);
+  const query=normalized(question);
+  const directIntent=/(?:que.*(?:ingredientes|lleva)|ingredientes de|como se prepara|elaboracion de|preparar \d+|cantidades.*preparar|cuantos? gramos|cuantas? (?:unidades|raciones) lleva)/.test(query);
   if (!directIntent || /(?:que recetas|cuales recetas|comprar|stock|inventario|precio|coste|margen|rentab|mas de precio|han subido)/.test(query)) return null;
-  const { data, error } = await ctx.supabase.from("recipes").select("name").order("name").limit(1000);
+  const {data,error}=await ctx.supabase.from("recipes").select("name,is_sellable").order("name").limit(1000);
   if (error || !Array.isArray(data)) return null;
-  const candidates = data
-    .filter((row): row is { name: string } => typeof row?.name === "string")
-    .map(row => ({ name: row.name, key: normalized(row.name) }))
-    .filter(row => query.includes(row.key) ||
-      row.key.split(/\s+/).some(word => word.length >= 5 &&
-        !["plato", "preparado", "racion", "grande", "medio"].includes(word) &&
-        query.includes(word)))
-    .sort((a, b) => b.key.length - a.key.length);
+  const candidates=data
+    .filter((row): row is {name:string;is_sellable:boolean|null}=>typeof row?.name==="string")
+    .map(row=>({name:row.name,key:normalized(row.name),sellable:row.is_sellable===true}))
+    .filter(row=>query.includes(row.key) || row.key.split(/\s+/).some(word=>
+      word.length>=5 && !["plato","preparado","racion","grande","medio"].includes(word) && query.includes(word)));
   if (!candidates.length) return null;
-  const matching = candidates.filter(c => candidates[0].key.includes(c.key) || c.key.includes(candidates[0].key));
-  if (matching.length !== candidates.length && !query.includes(candidates[0].key)) {
-    return "Hay varias recetas que podrían coincidir: " +
-      candidates.slice(0, 6).map(c => c.name).join(", ") +
-      ". Indica cuál necesitas.";
+  // Explicit exact names beat production recipes; otherwise choose the unique sellable dish.
+  const mentioned=candidates.filter(row=>query.includes(row.key));
+  const pool=mentioned.length?mentioned:candidates;
+  const sellable=pool.filter(row=>row.sellable);
+  const ranked=(sellable.length===1?sellable:pool)
+    .sort((a,b)=>b.key.length-a.key.length);
+  if (ranked.length>1 && (!mentioned.length || ranked[0].key.length===ranked[1].key.length)) {
+    return "Hay varias recetas que podrían coincidir: "+
+      ranked.slice(0,6).map(row=>row.name).join(", ")+". Indica cuál necesitas.";
   }
-  const found = await runKnowledgeTool("consultar_receta_detallada",
-    { nombre: candidates[0].name }, ctx) as RecipeData;
+  const chosen=ranked[0];
+  const found=await runKnowledgeTool("consultar_receta_detallada",{nombre:chosen.name},ctx) as RecipeData;
   if (found.error || !found.nombre || !Array.isArray(found.ingredientes)) return null;
 
-  const scaleMatch = query.match(/(?:preparar|para)\s+(\d{1,3})\s+(?:sangrias?|raciones?|porciones?|unidades?|platos?)/);
-  const count = scaleMatch ? Number(scaleMatch[1]) : null;
-  const yieldValue = Number(found.rendimiento);
-  const multiplier = count !== null && Number.isFinite(yieldValue) && yieldValue > 0
-    ? count / yieldValue : null;
-  const wantPreparation = /(?:como se prepara|elaboracion|como elaborar)/.test(query);
-  const gramsOnly = /cuantos? gramos/.test(query);
-
-  let lines: string[] = [];
-  if (count !== null) {
-    if (multiplier === null) {
-      return "La receta " + found.nombre +
-        " no tiene un rendimiento verificable registrado; no puedo calcular exactamente " + count + " raciones.";
-    }
-    lines.push("Ingredientes para " + count + " " +
-      ((found.unidad_rendimiento === "ración" && count > 1) ? "raciones" : (found.unidad_rendimiento || "elaboraciones")) + " de " + found.nombre + ":");
-  } else {
-    lines.push("Ingredientes de " + found.nombre + ":");
+  const scaleMatch=query.match(/(?:preparar|para)\s+(\d{1,3})\s+(?:sangrias?|raciones?|porciones?|unidades?|platos?)/);
+  const count=scaleMatch?Number(scaleMatch[1]):null;
+  const yieldValue=found.rendimiento;
+  const scale=count!==null && typeof yieldValue==="number" && Number.isFinite(yieldValue) && yieldValue>0
+    ? count/yieldValue : null;
+  if (count!==null && scale===null) {
+    return "La receta "+found.nombre+" no tiene un rendimiento verificable registrado; no puedo calcular exactamente "+count+" raciones.";
   }
-  const ingredients = gramsOnly
-    ? found.ingredientes.filter(p => /^(?:g|gr|gramos|kg)$/i.test((p.unidad ?? "").trim()))
+  const gramsOnly=/cuantos? gramos/.test(query);
+  let ingredients=gramsOnly
+    ? found.ingredientes.filter(p=>/^(?:g|gr|gramos|kg)$/i.test((p.unidad??"").trim()))
     : found.ingredientes;
-  if (!ingredients.length) {
-    return "La receta " + found.nombre + " no tiene cantidades en gramos verificables.";
+  if (gramsOnly && query.includes("carne")) {
+    const meat=ingredients.filter(p=>normalized(p.nombre).includes(normalized(found.nombre)));
+    if (meat.length) ingredients=meat;
   }
-  for (const ingredient of ingredients) {
-    const net = Number(ingredient.cantidad_neta);
-    const gross = Number(ingredient.cantidad_bruta);
-    const hasNet = ingredient.cantidad_neta !== null &&
-      ingredient.cantidad_neta !== undefined && Number.isFinite(net);
-    const hasGross = ingredient.cantidad_bruta !== null &&
-      ingredient.cantidad_bruta !== undefined && Number.isFinite(gross);
-    const value = hasNet ? net : hasGross ? gross : null;
-    lines.push("• " + ingredient.nombre +
-      (value === null ? " — cantidad no registrada" :
-        " — " + quantity(value * (multiplier ?? 1)) + " " + (ingredient.unidad || "")));
+  if (!ingredients.length && !(found.subrecetas?.length)) {
+    return "La receta "+found.nombre+" no tiene ingredientes verificables para esta consulta.";
   }
-  if (wantPreparation && found.elaboracion?.trim()) {
-    lines.push("Elaboración: " + found.elaboracion.trim());
+  const unit=count!==null && count>1 && found.unidad_rendimiento==="ración"
+    ? "raciones" : found.unidad_rendimiento||"elaboraciones";
+  const lines=[count===null ? "Ingredientes de "+found.nombre+":" :
+    "Ingredientes para "+count+" "+unit+" de "+found.nombre+":"];
+  for (const p of ingredients) lines.push("• "+p.nombre+" — "+ingredientQuantity(p,scale??1));
+  if (!gramsOnly && found.subrecetas?.length) {
+    lines.push("Subrecetas incorporadas:");
+    for (const sub of found.subrecetas) lines.push(...renderSubrecipe(sub,0,scale??1));
+    lines.push("Los ingredientes interiores indican el lote base de cada subreceta, no el consumo total de esta ración.");
   }
-  if (count !== null) lines.push("Cálculo basado en el rendimiento registrado de la receta; no descuenta existencias.");
+  if (/(?:como se prepara|elaboracion|como elaborar)/.test(query) && found.elaboracion?.trim()) {
+    lines.push("Elaboración: "+found.elaboracion.trim());
+  }
+  if (found.posible_truncamiento) lines.push("Atención: el detalle de ingredientes podría estar truncado.");
+  if (count!==null) lines.push("Cálculo basado en el rendimiento registrado, sin comprobar existencias.");
   return lines.join("\n");
 }

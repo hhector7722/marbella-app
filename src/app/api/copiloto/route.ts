@@ -286,7 +286,12 @@ ${body.attachmentContext}`;
           writer.write({ type: "text-end", id: "answer" });
           return;
         }
-        answer = await tryDirectRecipeAnswer(userText, { supabase, role, userId: user.id, today }) ?? "";
+        try {
+          answer = await tryDirectRecipeAnswer(userText, { supabase, role, userId: user.id, today }) ?? "";
+        } catch {
+          // A schema/read error must not prevent the normal AI fallback.
+          console.warn("[copiloto] direct_recipe_unavailable");
+        }
         const dataQuestion = tools.some(tool => tool.function.name === WEEKEND_NOTE_TOOL_NAME) || Boolean(resolved) || /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|gramos?|kilos?|cantidad|cu[aá]nto|qu[eé] lleva|prepar|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|manual|importe|ingreso|coste|precio|informe|report|cobr|pag|nomina|salario|sueldo/i.test(userText);
         const started = Date.now();
         const deadlineMs = started + 47500;
