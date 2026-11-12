@@ -75,6 +75,7 @@ import {
 } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { useAIStore } from '@/store/aiStore';
 import { getPendingStaffClockMessages, type StaffClockMessage } from '@/app/actions/staff-clock-messages';
 import { ClockMessagePrompt } from '@/components/staff/ClockMessagePrompt';
 import { trackGeofenceRejection } from '@/lib/usage/client';
@@ -92,6 +93,7 @@ const STAFF_INFO_MENU = [
     { title: 'Contactos', imageSrc: '/icons/contact.png', kind: 'contactos' as const },
     { title: 'Manuales', imageSrc: '/icons/guide.png', kind: 'manuales' as const },
     { title: 'Web', imageSrc: '/icons/web.png', kind: 'web' as const },
+    { title: 'Agente IA', imageSrc: '/icons/logo-share.png', kind: 'asistente' as const },
 ];
 
 const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
@@ -548,6 +550,7 @@ export default function StaffDashboardView({
     const trackStaffClockConfirm = useTrackModalApply('staff-clock-confirm', 'Confirmar fichaje');
     const trackStaffPurchaseMulti = useTrackModalApply('staff-purchase-multi-source', 'Compra multiorigen');
     const trackStaffInfoMenu = useTrackModalApply('staff-info-menu', 'Menú información');
+    const openChat = useAIStore((s) => s.openChat);
     const trackStaffShortcut = useTrackModalApply('staff-dashboard-shortcut', 'Atajo staff');
 
     useEffect(() => {
@@ -1276,6 +1279,12 @@ export default function StaffDashboardView({
                                         if (item.kind === 'contactos') {
                                             trackStaffInfoMenu(item.title);
                                             setInfoSubMenu('contactos');
+                                            return;
+                                        }
+                                        if (item.kind === 'asistente') {
+                                            trackStaffInfoMenu(item.title);
+                                            closeMenus();
+                                            setTimeout(openChat, 150);
                                             return;
                                         }
                                         if (item.kind === 'web') {

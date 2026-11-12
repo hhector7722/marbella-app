@@ -25,6 +25,7 @@ import { updateProfile } from '@/app/actions/profile';
 import { Modal } from '@/components/ui/modal';
 import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
+import { useAIStore } from '@/store/aiStore';
 import { OpsHomeScreen } from '@/components/dashboards/OpsHomeScreen';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
 import { HomeClosingMonthlyPair } from '@/components/dashboards/HomeClosingMonthlyPair';
@@ -247,6 +248,7 @@ const AdminDashboardView = ({
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
+    const openChat = useAIStore((s) => s.openChat);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     useEffect(() => {
@@ -703,6 +705,7 @@ const AdminDashboardView = ({
                             case 'info': setIsInfoModalOpen(true); break;
                             case 'compra': handleOpenCompra(); break;
                             case 'web': window.open('https://marbella-web.vercel.app', '_blank', 'noopener,noreferrer'); break;
+                            case 'asistente': openChat(); break;
                         }
                     }}
                 />

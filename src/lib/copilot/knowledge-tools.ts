@@ -188,13 +188,21 @@ export async function runKnowledgeTool(
   if (name === "consultar_receta_detallada") {
     const requested = filterName(String(args.nombre??""));
     if (requested.length < 2) return {error:"Indica el nombre de la receta"};
-    const {data:recipes,error} = await ctx.supabase.from("recipes")
+    // ILIKE no es insensible a tildes ni equipara ñ con n.
+    const direct = await ctx.supabase.from("recipes")
       .select("id,name,elaboration,presentation,yield_quantity,yield_unit,sale_price")
       .ilike("name", `%${requested}%`).limit(8);
-    if (error) return {error:"No se pudo consultar el catálogo de recetas"};
-    const exact = recipes?.find(r=>normalize(r.name)===requested);
-    if (!exact && (recipes?.length??0)>1) return {error:"Varias recetas coinciden. Concreta cuál.", coincidencias: recipes?.map(r=>r.name)};
-    const recipe=exact||recipes?.[0];
+    if (direct.error) return {error:"No se pudo consultar el catálogo de recetas"};
+    let recipes = direct.data ?? [];
+    if (!recipes.length) {
+      const fallback = await ctx.supabase.from("recipes")
+        .select("id,name,elaboration,presentation,yield_quantity,yield_unit,sale_price").limit(500);
+      if (fallback.error) return {error:"No se pudo consultar el catálogo de recetas"};
+      recipes = (fallback.data ?? []).filter(r=>normalize(r.name).includes(requested));
+    }
+    const exact = recipes.find(r=>normalize(r.name)===requested);
+    if (!exact && recipes.length>1) return {error:"Varias recetas coinciden. Concreta cuál.",coincidencias:recipes.map(r=>r.name)};
+    const recipe=exact||recipes[0];
     if (!recipe) return {error:"Receta no encontrada"};
     const {data:parts,error:pe} = await ctx.supabase.from("recipe_ingredients")
       .select("ingredient_id,quantity_gross,quantity_net,unit").eq("recipe_id",recipe.id).limit(80);

@@ -30,8 +30,8 @@ type ProviderConfig = {
 /** Prohibido introducir modelos de pago o routers sin restricción de coste. */
 const FREE_PROVIDERS: readonly ProviderConfig[] = [
   { name: 'groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'openai/gpt-oss-120b' },
-  { name: 'xkiro', endpoint: 'https://api.xkiro.com/v1/chat/completions', model: 'qwen/qwen3.8-max:free' },
-  { name: 'openrouter', endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'xingchen-agi/xing4.0-29b-a4b:free' },
+  { name: 'xkiro', endpoint: 'https://api.xkiro.com/v1/chat/completions', model: 'mistralai/mistral-small-2603' },
+  { name: 'openrouter', endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'nvidia/nemotron-3.5-lightning:free' },
 ];
 
 export class FreeChatError extends Error {
@@ -47,7 +47,7 @@ export class FreeChatError extends Error {
 
 /**
  * Solo modelos gratuitos revisados de la lista FREE_PROVIDERS.
- * OpenRouter se limita a Xing4.0 mediante Phala: ZDR y sin recolección.
+ * OpenRouter utiliza exclusivamente un modelo gratuito con ZDR obligatorio.
  * No se usan Nemotron, Liquid u otros modelos que admiten datos de entrenamiento,
  * ni el router aleatorio openrouter/free.
  */
@@ -145,7 +145,6 @@ export async function completeFreeChat(
           data_collection: 'deny',
           allow_fallbacks: false,
           require_parameters: true,
-          only: ['phala'],
         },
       } : {}),
     };
