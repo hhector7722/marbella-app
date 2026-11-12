@@ -34,6 +34,24 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
     return acc;
 }
 
+describe('Cabecera nítida con modales abiertos', () => {
+    it('recorta el backdrop base bajo la barra y no difumina el propio Navbar', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(css,
+            /html:has\(\.marbella-fixed-topbar\) \[data-modal-backdrop='base'\] \{[\s\S]*?clip-path:\s*inset\(calc\(var\(--app-navbar-height\) \+ env\(safe-area-inset-top, 0px\)\) 0 0 0\);/,
+            'el backdrop mantiene su blur únicamente por debajo de la cabecera y el safe area'
+        );
+        assert.match(css,
+            /html\[data-modal-open="true"\] \.marbella-fixed-topbar \{[\s\S]*?filter:\s*none;[\s\S]*?opacity:\s*1;/,
+            'el Navbar mantiene texto e iconos sin filtros ni atenuación'
+        );
+        assert.match(css,
+            /html\[data-modal-open="true"\] \.marbella-fixed-bottombar,[\s\S]*?filter:\s*blur\(6px\);/,
+            'el resto de la pantalla conserva el desenfoque original'
+        );
+    });
+});
+
 describe('Jerarquía visual canónica (ADR-0010)', () => {
     it('exporta identidades estables', () => {
         assert.equal(PAGE_SCREEN_COMPONENT_ID, 'PageScreen');
