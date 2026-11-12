@@ -285,13 +285,17 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             assert.match(navbar, /data-element="greeting"/, 'el nombre de la barra tiene identidad');
             assert.match(navbar, /data-element="logo"/, 'el logo de la barra tiene identidad');
             assert.match(navbar, /<GlobalSearch /, 'el buscador global ocupa la fila de cabecera');
-            assert.match(navbar, /<ReservationsBell \/>/, 'reservas van en la barra');
-            assert.match(navbar, /<NotificationsBell \/>/, 'notificaciones van en la barra');
-            assert.match(
-                navbar,
-                /<ReservationsBell \/>[\s\S]*<NotificationsBell \/>/,
-                'reservas y notificaciones van a la derecha'
-            );
+            assert.match(navbar, /<NotificationsBell \/>/, 'todas las notificaciones van en una sola campana');
+            assert.doesNotMatch(navbar, /ReservationsBell/, 'sin calendario de notificaciones independiente');
+            assert.match(navbar, /data-element="live-camera"/, 'se mantiene el acceso a cámaras');
+            assert.match(navbar, /router\.push\('\/camaras'\)/, 'la cámara conserva su ruta');
+            assert.match(navbar, /data-element="navbar-copilot"/, 'se mantiene el asistente actual');
+            assert.doesNotMatch(navbar, /-space-x-3/, 'los controles de la cabecera ya no se tapan');
+            const unreadProvider = readFileSync(join(SRC_ROOT, 'contexts/UnreadNotificationsContext.tsx'), 'utf8');
+            const bell = readFileSync(join(SRC_ROOT, 'components/NotificationsBell.tsx'), 'utf8');
+            assert.doesNotMatch(unreadProvider, /excludeTypes:\s*RESERVATION_CENTER_NOTIFICATION_TYPES/, 'las reservas y pedidos llegan a la campana');
+            assert.doesNotMatch(bell, /\.neq\('type', t\)/, 'Borrar todo incluye cualquier tipo de notificación');
+            assert.match(bell, /notificationDestination\(row\)/, 'las alertas conservan su destino original');
             assert.doesNotMatch(navbar, /id="ia-button"|data-chrome="ia"|toggleChat/, 'la barra no lleva IA');
             assert.doesNotMatch(navbar, /aria-label="Herramientas internas"|pgMenuOpen|>\s*PG\s*</, 'la barra no lleva PG');
             assert.doesNotMatch(
