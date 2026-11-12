@@ -40,3 +40,10 @@ test('la llamada real es WebRTC y está protegida contra gastos no autorizados',
   assert.match(tools, /toolEnabled\(role/);
   assert.doesNotMatch(tools, /executeCopilotTool|ACTION_SCHEMA/);
 });
+
+test('la respuesta de chat conserva margen frente al timeout del servidor', () => {
+  const route=source('app/api/copiloto/route.ts');
+  assert.match(route, /const requestStartedAt = Date\.now\(\);/);
+  assert.match(route, /const deadlineMs = Math\.min\(started \+ 47500, requestStartedAt \+ 44000\);/);
+  assert.match(route, /export const maxDuration = 60;/);
+});

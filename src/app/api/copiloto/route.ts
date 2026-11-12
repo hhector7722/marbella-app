@@ -130,6 +130,7 @@ function safeToolMessage(result: unknown): string {
 }
 
 export async function POST(req: Request) {
+  const requestStartedAt = Date.now();
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return Response.json({ error: "No autorizado" }, { status: 401 });
@@ -331,7 +332,9 @@ ${body.attachmentContext}`;
         }
         const dataQuestion = tools.some(tool => tool.function.name === WEEKEND_NOTE_TOOL_NAME) || Boolean(resolved) || /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|gramos?|kilos?|cantidad|cu[aá]nto|qu[eé] lleva|prepar|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|manual|importe|ingreso|coste|precio|informe|report|cobr|pag|nomina|salario|sueldo/i.test(userText);
         const started = Date.now();
-        const deadlineMs = started + 47500;
+        // El límite empieza en la entrada HTTP, no después de DB y herramientas.
+        // Reservar margen antes del timeout de 60 s de Vercel para persistir respuesta.
+        const deadlineMs = Math.min(started + 47500, requestStartedAt + 44000);
         let preferredProvider: FreeProvider | undefined;
         for (let step = 0; !answer && step < 5 && Date.now() < deadlineMs; step++) {
           const completion = await completeFreeChat(history, tools, {
