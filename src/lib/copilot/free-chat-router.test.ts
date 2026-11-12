@@ -23,7 +23,7 @@ test('no invoca un proveedor sin clave', async () => {
     keys: { openrouter: 'test' }, fetcher: (async (url: RequestInfo | URL, init?: RequestInit) => {
       calls++;
       assert.equal(String(url), 'https://openrouter.ai/api/v1/chat/completions');
-      assert.equal(JSON.parse(String(init?.body)).model, 'xingchen-agi/xing4.0-29b-a4b:free');
+      assert.equal(JSON.parse(String(init?.body)).model, 'cohere/north-mini-code:free');
       return reply('OK');
     }) as typeof fetch,
   });
@@ -137,11 +137,11 @@ test('el copiloto mantiene OpenRouter con un modelo gratuito permitido y filtros
       seen.push(host);
       if (host !== 'openrouter.ai') return new Response('{}', { status: 429 });
       const body = JSON.parse(String(init?.body));
-      assert.equal(body.model, 'xingchen-agi/xing4.0-29b-a4b:free');
+      assert.equal(body.model, 'cohere/north-mini-code:free');
       assert.equal(body.tool_choice, 'required');
       assert.deepEqual(body.provider, {
-        zdr: true, data_collection: 'deny', allow_fallbacks: false,
-        require_parameters: true, only: ['phala'],
+        zdr: true, data_collection: 'deny', allow_fallbacks: true,
+        require_parameters: true,
       });
       assert.ok(!JSON.stringify(body).includes('nvidia/nemotron'));
       assert.ok(!JSON.stringify(body).includes('openrouter/free'));
@@ -162,7 +162,29 @@ test('si el endpoint no acepta ZDR, nunca relaja la privacidad para conseguir un
     }) as typeof fetch,
   }), (err: unknown) => err instanceof FreeChatError && err.code === 'providers_exhausted');
   assert.deepEqual(seenBody?.provider, {
-    zdr: true, data_collection: 'deny', allow_fallbacks: false,
-    require_parameters: true, only: ['phala'],
+    zdr: true, data_collection: 'deny', allow_fallbacks: true,
+    require_parameters: true,
   });
+});
+
+test('si un modelo OpenRouter gratuito desaparece prueba el siguiente sin aflojar ZDR', async () => {
+  const seen: string[] = [];
+  const result = await completeFreeChat(messages, [tool], {
+    keys: { openrouter: 'test' }, toolChoice: 'required',
+    fetcher: (async (_url: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      seen.push(body.model);
+      assert.equal(body.provider.zdr, true);
+      assert.equal(body.provider.data_collection, 'deny');
+      assert.ok(body.model.endsWith(':free'));
+      return seen.length === 1
+        ? new Response('{}', { status: 404 })
+        : toolReply();
+    }) as typeof fetch,
+  });
+  assert.equal(result.provider, 'openrouter');
+  assert.deepEqual(seen, [
+    'cohere/north-mini-code:free',
+    'google/gemma-4-31b-it:free',
+  ]);
 });
