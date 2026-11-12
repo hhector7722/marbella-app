@@ -6454,18 +6454,12 @@ html:has(.dashboard-mosaic-switcher) {
   }
 }
 
-/* Mantener la cabecera superior nítida al abrir cualquier modal.
-   El filtro directo ya fue retirado, pero el backdrop de la capa Modal
-   (blur de 8 px) seguía difuminando la barra desde delante. Lo recortamos
-   a partir del borde inferior de la cabecera, respetando la safe area iOS.
-   El resto de la pantalla conserva su overlay y el modal su posición. */
+/* El modal base solo cubre el área por DEBAJO de la cabecera fija.
+   Así su backdrop-filter no llega a componer/blurrear el texto e iconos
+   superiores (ni en iOS ni en Chrome), respetando el área segura.
+   El propio Navbar no recibe ningún filtro ni cambio de opacidad. */
 html:has(.marbella-fixed-topbar) [data-modal-backdrop='base'] {
-  clip-path: inset(calc(var(--app-navbar-height) + env(safe-area-inset-top, 0px)) 0 0 0);
-}
-html[data-modal-open="true"] .marbella-fixed-topbar {
-  filter: none;
-  opacity: 1;
-  pointer-events: none;
+  top: calc(var(--app-navbar-height) + env(safe-area-inset-top, 0px));
 }
 /* La barra inferior y los demás elementos siguen difuminados. */
 html[data-modal-open="true"] .marbella-fixed-bottombar,

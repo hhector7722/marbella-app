@@ -35,19 +35,19 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
 }
 
 describe('Cabecera nítida con modales abiertos', () => {
-    it('recorta el backdrop base bajo la barra y no difumina el propio Navbar', () => {
+    it('el backdrop empieza bajo la cabecera, sin desenfocar el Navbar', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(css,
-            /html:has\(\.marbella-fixed-topbar\) \[data-modal-backdrop='base'\] \{[\s\S]*?clip-path:\s*inset\(calc\(var\(--app-navbar-height\) \+ env\(safe-area-inset-top, 0px\)\) 0 0 0\);/,
-            'el backdrop mantiene su blur únicamente por debajo de la cabecera y el safe area'
+            /html:has\(\.marbella-fixed-topbar\) \[data-modal-backdrop='base'\] \{[\s\S]*?top:\s*calc\(var\(--app-navbar-height\) \+ env\(safe-area-inset-top, 0px\)\);/,
+            'el backdrop empieza por debajo de la cabecera, incluida el área segura'
         );
-        assert.match(css,
-            /html\[data-modal-open="true"\] \.marbella-fixed-topbar \{[\s\S]*?filter:\s*none;[\s\S]*?opacity:\s*1;/,
-            'el Navbar mantiene texto e iconos sin filtros ni atenuación'
+        assert.doesNotMatch(css,
+            /html\[data-modal-open="true"\] \.marbella-fixed-topbar/,
+            'el Navbar no recibe filtro, opacidad ni bloqueo al abrir modales'
         );
         assert.match(css,
             /html\[data-modal-open="true"\] \.marbella-fixed-bottombar,[\s\S]*?filter:\s*blur\(6px\);/,
-            'el resto de la pantalla conserva el desenfoque original'
+            'la barra inferior conserva el tratamiento anterior'
         );
     });
 });
