@@ -144,6 +144,7 @@ test("receta Entraña: recupera ñ sin exigir coincidencia literal de ILIKE", as
         return {
           select: () => ({
             ilike: () => ({ limit: async () => ({ data: [], error: null }) }),
+            order: () => ({ limit: async () => ({ data: [{ id: "r-ent", name: "Entraña", elaboration: "Parrilla" }], error: null }) }),
             limit: async () => ({ data: [{ id: "r-ent", name: "Entraña", elaboration: "Parrilla" }], error: null }),
           }),
         };
