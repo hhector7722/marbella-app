@@ -46,6 +46,8 @@ import {
 } from '@/lib/labor-rate-session-cache';
 import { getSsotOrdinaryHourlyRate } from '@/app/actions/ssot-ordinary-rate';
 import { saveScheduleDayAction, type DaySaveActionResult } from '@/app/actions/schedule-save';
+import { getScheduleNegativeBalancesAction } from '@/app/actions/schedule-negative-balances';
+import { formatNegativeScheduleBalance } from '@/lib/schedule/negative-hour-balance';
 import type { PersistShiftInput } from '@/lib/schedule/persist';
 import {
     computeScheduleDayLaborCost,
@@ -462,6 +464,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [date, setDate] = useState('');
     const [activity, setActivity] = useState('');
     const [shifts, setShifts] = useState<ScheduleShift[]>([]);
+    const [negativeBalances, setNegativeBalances] = useState<Record<string, number>>({});
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [availableProfiles, setAvailableProfiles] = useState<PlantillaEmployee[]>([]);
     const [managedExtraSlots, setManagedExtraSlots] = useState<ManagedExtraSlotRef[]>([]);
@@ -527,6 +530,16 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         usageId: 'schedule-share',
         usageLabel: 'Compartir horario',
     });
+
+    // Solo lectura del saldo acumulado de la última semana cerrada; nunca de
+    // turnos en borrador. Una consulta al montar el editor, no por cada fecha.
+    useEffect(() => {
+        let active = true;
+        void getScheduleNegativeBalancesAction().then((result) => {
+            if (active && result.ok) setNegativeBalances(result.balances);
+        }).catch((error) => console.error('Error al consultar horas pendientes', error));
+        return () => { active = false; };
+    }, []);
 
     const trackScheduleCalendarDay = useTrackModalApply('schedule-calendar-day', 'Día calendario horarios');
     const trackScheduleDayNav = useTrackModalApply('schedule-day-nav', 'Navegación día horarios');
@@ -1498,6 +1511,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     >
                         {shifts.map((shift, idx) => {
                             const isEditing = editingIndex === idx;
+                            const negativeBalanceLabel = formatNegativeScheduleBalance(negativeBalances[shift.employeeId]);
                             return (
                                 <div key={shift.employeeId} className="flex w-full h-9 md:h-10 shrink-0 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
                                     <div className="w-24 md:w-28 px-2 flex items-center gap-1 shrink-0 overflow-hidden">
@@ -1520,6 +1534,15 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                         >
                                             {shift.name}
                                         </button>
+                                        {negativeBalanceLabel !== null ? (
+                                            <span
+                                                data-element="employee-negative-balance"
+                                                title={`Horas pendientes: ${negativeBalanceLabel}`}
+                                                className="shrink-0 whitespace-nowrap text-[10px] font-bold leading-none tabular-nums text-red-600"
+                                            >
+                                                {negativeBalanceLabel}
+                                            </span>
+                                        ) : null}
                                     </div>
                                     <div className="flex-1 relative min-h-0">
                                         <div className="absolute inset-0 flex pointer-events-none">
