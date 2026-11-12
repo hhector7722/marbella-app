@@ -19,6 +19,7 @@ import { tryDirectSalesAnswer } from "@/lib/copilot/direct-sales";
 import { tryDirectInventoryAnswer } from "@/lib/copilot/direct-inventory";
 import { tryDirectSupplierPurchases } from "@/lib/copilot/direct-supplier-purchases";
 import { tryDirectRecipeCostAnswer } from "@/lib/copilot/direct-recipe-costs";
+import { tryDirectTodayAttendanceAnswer } from "@/lib/copilot/direct-attendance";
 import { appDataToolForRole, runAppDataTool } from "@/lib/copilot/app-data-catalog";
 import { WEEKEND_NOTE_TOOL, WEEKEND_NOTE_TOOL_NAME, canProposeWeekendNote, prepareWeekendNoteProposal, wantsToWriteWeekendNote } from "@/lib/copilot/weekend-note-proposal";
 import {
@@ -312,6 +313,11 @@ ${body.attachmentContext}`;
         } catch {
           // A schema/read error must not prevent the normal AI fallback.
           console.warn("[copiloto] direct_recipe_unavailable");
+        }
+        try {
+          if (!answer) answer = await tryDirectTodayAttendanceAnswer(userText, { supabase, role, today }) ?? "";
+        } catch {
+          console.warn("[copiloto] direct_attendance_unavailable");
         }
         try {
           if (!answer) answer = await tryDirectRecipeCostAnswer(userText, { supabase, role }) ?? "";
