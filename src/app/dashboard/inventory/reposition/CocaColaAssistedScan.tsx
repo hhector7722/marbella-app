@@ -1,10 +1,7 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Camera } from 'lucide-react'
+import { Camera, Check, ChevronLeft, ChevronRight, Settings2, X } from 'lucide-react'
 import { openPreferredRearCamera } from '@/lib/replenishment/preferred-camera'
-import { Button } from '@/components/ui/button'
-import { Notice } from '@/components/ui/Notice'
-import { Surface } from '@/components/ui/Surface'
 import { detectCanEnds } from '@/lib/replenishment/vision'
 import { useCocaColaGridTracking } from './useCocaColaGridTracking'
 import {
@@ -17,11 +14,21 @@ const H = 240
 const positionLabel = (p: StackPosition) => 'Fila ' + p.row + ', columna ' + p.column
 const allPositions = COLA_LAYOUT
 
-export function CocaColaAssistedScan() {
+export function CocaColaAssistedScan({
+  fridgeName, onBack, onSettings, fridges, currentFridgeId, onFridgeChange,
+}: {
+  fridgeName: string
+  onBack: () => void
+  onSettings?: () => void
+  fridges: { id: string; name: string }[]
+  currentFridgeId: string
+  onFridgeChange: (id: string) => void
+}) {
   const [activeId, setActiveId] = useState(allPositions[0].id)
   const [counts, setCounts] = useState<StackCounts>({})
   const [scanning, setScanning] = useState(true)
   const [mapOpen, setMapOpen] = useState(false)
+  const [summaryOpen, setSummaryOpen] = useState(false)
   const [hint, setHint] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -41,6 +48,10 @@ export function CocaColaAssistedScan() {
     history.current = []
   }
   const tracking = useCocaColaGridTracking(activeId, choose)
+  const activeIndex = allPositions.findIndex(p => p.id === active.id)
+  const changePile = (delta: number) => {
+    choose(allPositions[(activeIndex + delta + allPositions.length) % allPositions.length].id)
+  }
   const trackFrameRef = useRef(tracking.renderFrame)
   useEffect(() => { trackFrameRef.current = tracking.renderFrame }, [tracking.renderFrame])
 
@@ -51,6 +62,7 @@ export function CocaColaAssistedScan() {
     const index = allPositions.findIndex(p => p.id === active.id)
     const next = [...allPositions.slice(index + 1), ...allPositions.slice(0, index)].find(p => !counts[p.id])
     if (next) setActiveId(next.id)
+    else setSummaryOpen(true)
   }
 
   const frame = useCallback((video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
@@ -121,173 +133,214 @@ export function CocaColaAssistedScan() {
   }, [scanning, frame])
 
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-zinc-600">
-        Apunta a una pila, indica cuántas latas tiene y avanzaremos a la siguiente.
-      </p>
-      <Surface instance="cola-assisted-camera" variant="block" className="flex flex-col gap-3 p-3">
-        <div className="flex justify-between gap-2">
-          <span className="text-sm font-semibold">
-            {active.product === 'original' ? 'Coca-Cola' : 'Coca-Cola Zero'} · Pila {allPositions.findIndex(p => p.id === active.id) + 1} de {allPositions.length}
-          </span>
-          <span className="text-xs text-zinc-500">{positionLabel(active)} · máximo 4</span>
-        </div>
-        {scanning && (
-          <div className="flex flex-col gap-2">
-            {mapOpen && <div className="flex flex-wrap items-center gap-2">
-              <Button instance="cola-grid-calibrate" variant="secondary" onClick={tracking.calibrate}>
-                {tracking.mode === 'tracking' ? 'Recalibrar mapa' : 'Calibrar mapa'}
-              </Button>
-              <span className="text-xs text-zinc-600">
-                {tracking.mode === 'tracking' ? 'Mapa seguido · toca una pila en la cámara' :
-                  tracking.mode === 'calibrating' ? 'Marca 4 esquinas: fondo izq. → der. → frente der. → izq. (' + tracking.corners.length + '/4)' :
-                    tracking.mode === 'lost' ? 'Referencia perdida · recalibra' : 'Mapa sin calibrar'}
-              </span>
-            </div>}
-            {mapOpen && tracking.alignmentError && (
-              <Notice instance="cola-grid-alignment-error" variant="warning">{tracking.alignmentError}</Notice>
-            )}
-
-          </div>
-        )}
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-zinc-950">
-          {scanning ? (
-            <>
-              <video ref={videoRef} muted autoPlay playsInline aria-label="Cámara para revisar la pila"
-                className="absolute inset-0 h-full w-full object-cover" />
-              <canvas ref={overlayRef} width={W} height={H}
-                onPointerUp={tracking.onPointerUp}
-                className={'absolute inset-0 h-full w-full touch-manipulation ' +
-                  (tracking.mode === 'tracking' || tracking.mode === 'calibrating' ? 'cursor-crosshair' : 'pointer-events-none')} />
-              {hint !== null && (
-                <span className="absolute bottom-2 left-2 rounded bg-black/75 px-2 py-1 text-xs text-white">
-                  La cámara estima {hint >= 4 ? '4 o más' : hint} latas (revisar)
-                </span>
-              )}
-            </>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-2 px-5 text-center text-white">
-              <Camera className="h-8 w-8" />
-              <p className="text-sm">La cámara no está disponible. Puedes seguir contando a mano.</p>
-            </div>
-          )}
-        </div>
-        {error && <Notice instance="cola-assisted-camera-error" variant="negative">{error}</Notice>}
-        <div className="flex flex-wrap gap-2">
-          {!scanning && <Button instance="cola-assisted-toggle" variant="secondary"
-            onClick={() => { setError(null); setHint(null); history.current = []; setScanning(true) }}>
-            Reintentar cámara
-          </Button>}
-          {hint !== null && (
-            <Button instance="cola-assisted-suggestion" variant="tertiary"
-              onClick={() => confirm(hint, 'confirmed-suggestion')}>
-              Confirmar pista: {hint >= 4 ? '4+' : hint}
-            </Button>
-          )}
-        </div>
-        {current && <p className="text-sm text-emerald-700">
-          Posición guardada: {current.count >= 4 ? '4 o más' : current.count} latas.
-        </p>}
-        <p className="text-sm font-semibold">¿Cuántas latas hay en esta pila? Toca la cantidad:</p>
-        <div className="grid grid-cols-5 gap-1">
-          {[0, 1, 2, 3, 4].map(n => (
-            <Button key={n} instance={'cola-assisted-answer-' + n}
-              variant={current?.count === n ? 'primary' : 'secondary'}
-              layout="fill" onClick={() => confirm(n, 'manual')}>
-              {n === 4 ? '4+' : String(n)}
-            </Button>
-          ))}
-        </div>
-        <p className="text-xs text-zinc-500">
-          Pulsa «4+» si la pila está llena. La cámara no puede ver las latas ocultas: comprueba la cantidad.
-        </p>
-      </Surface>
-      <Button instance="cola-assisted-map-toggle" variant="secondary" layout="fill"
-        onClick={() => setMapOpen(value => !value)}>
-        {mapOpen ? 'Ocultar mapa de pilas' : 'Ver mapa y cambiar de pila'}
-      </Button>
-      {mapOpen && (
-      <Surface instance="cola-assisted-map" variant="block" className="flex flex-col gap-3 p-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-base font-semibold">Ubicación de las pilas</h2>
-          <span className="text-xs tabular-nums text-zinc-500">{totals.confirmed}/{totals.positions} confirmadas</span>
-        </div>
-        <p className="text-xs text-zinc-600">
-          Toca una casilla para cambiar de pila. Después de contar, pasaremos automáticamente a la siguiente. La fila 1 está al fondo.
-        </p>
-        <div>
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: 7 }, (_, row) =>
-              Array.from({ length: 7 }, (_, col) => {
-                const position = allPositions.find(p => p.row === row + 1 && p.column === col + 1)
-                if (!position) return <div key={'hole-' + row + '-' + col} aria-hidden="true" className="h-9" />
-                const saved = counts[position.id]
-                const selected = active.id === position.id
-                const tone = saved
-                  ? saved.count >= 4 ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'
-                  : position.product === 'original' ? 'bg-red-100 text-red-900' : 'bg-zinc-200 text-zinc-800'
-                return (
-                  <button type="button" key={position.id}
-                    data-design-exception="native-business-button:rejilla-de-pilas"
-                    aria-label={positionLabel(position) + (saved ? ' · ' + saved.count + ' unidades' : ' · pendiente')}
-                    aria-pressed={selected}
-                    onClick={() => choose(position.id)}
-                    className={'min-h-10 min-w-0 rounded-md border text-xs tabular-nums ' +
-                      (selected ? 'border-zinc-900 ring-2 ring-zinc-900 ' : 'border-zinc-200 ') + tone}>
-                    <span className="block text-[10px]">{position.product === 'original' ? 'CC' : 'Zero'}</span>
-                    <strong>{saved ? (saved.count >= 4 ? '4+' : saved.count) : tracking.seenIds.includes(position.id) ? '◦' : '·'}</strong>
-                  </button>
-                )
-              }),
-            )}
-          </div>
-        </div>
-        <p className="text-xs text-zinc-500">Una quinta lata no cuenta como excedente, ni modifica otra pila.</p>
-      </Surface>
+    <div className="relative isolate h-full w-full overflow-hidden bg-zinc-950 text-white">
+      {scanning && (
+        <>
+          <video ref={videoRef} muted autoPlay playsInline aria-label="Cámara de nevera Coca-Cola"
+            className="absolute inset-0 h-full w-full object-cover" />
+          <canvas ref={overlayRef} width={W} height={H} className="hidden" aria-hidden />
+        </>
       )}
-      <Surface instance="cola-assisted-totals" variant="block" className="flex flex-col gap-3 p-3">
-        <h2 className="text-base font-semibold">Reposición acumulada</h2>
-        {([
-          ['Coca-Cola', original], ['Coca-Cola Zero', zero],
-        ] as const).map(([name, result]) => (
-          <div key={name} className="flex justify-between gap-2 border-b border-zinc-100 pb-2">
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/75 via-black/10 to-black/85" />
+      <div className="relative z-10 flex h-full min-h-0 flex-col">
+        <header className="shrink-0 px-4 pt-[max(14px,env(safe-area-inset-top))]">
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={onBack} aria-label="Volver al inventario"
+              className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/40 backdrop-blur-md">
+              <ChevronLeft className="size-5" />
+            </button>
+            <select aria-label="Cambiar nevera" value={currentFridgeId}
+              onChange={event => onFridgeChange(event.target.value)}
+              className="h-11 min-w-0 flex-1 appearance-none rounded-full border border-white/25 bg-black/45 px-4 text-center text-base font-semibold text-white backdrop-blur-md">
+              {fridges.map(fridge => <option key={fridge.id} value={fridge.id} className="text-zinc-950">{fridge.name}</option>)}
+            </select>
+            {onSettings && <button type="button" onClick={onSettings} aria-label="Configurar neveras"
+              className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/40 backdrop-blur-md">
+              <Settings2 className="size-5" />
+            </button>}
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-2 text-xs font-semibold text-white/85">
+            <span>RECUENTO · {fridgeName}</span>
+            <button type="button" onClick={() => setSummaryOpen(true)}
+              className="rounded-full border border-white/25 bg-black/40 px-3 py-1.5">
+              {totals.confirmed}/{totals.positions} pilas · Ver reposición
+            </button>
+          </div>
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/25">
+            <div className="h-full rounded-full bg-emerald-400 transition-all"
+              style={{ width: (totals.confirmed / totals.positions * 100) + '%' }} />
+          </div>
+        </header>
+        <div className="pointer-events-none mt-4 shrink-0 px-5">
+          <span className="text-xs font-bold uppercase tracking-widest text-emerald-300">Estás contando</span>
+          <h1 className="mt-1 text-3xl font-bold drop-shadow-lg">
+            {active.product === 'original' ? 'Coca-Cola' : 'Coca-Cola Zero'}
+          </h1>
+          <p className="mt-1 text-base font-medium text-white/90">
+            {positionLabel(active)} · Pila {activeIndex + 1} de {allPositions.length}
+          </p>
+          <p className="mt-2 max-w-xs text-sm leading-snug text-white/80">
+            Enfoca esta pila desde un lado. Cuenta las latas reales de esa pila, no toda la nevera.
+          </p>
+        </div>
+        <div className="pointer-events-none flex min-h-0 flex-1 items-center justify-center px-5">
+          {!scanning && (
+            <div className="pointer-events-auto rounded-2xl border border-white/20 bg-black/75 p-5 text-center backdrop-blur-md">
+              <Camera className="mx-auto size-8" />
+              <p className="mt-2 text-sm">La cámara no está disponible. Puedes contar manualmente.</p>
+              <button type="button" onClick={() => { setError(null); setScanning(true) }}
+                className="mt-3 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-zinc-950">
+                Reintentar cámara
+              </button>
+            </div>
+          )}
+        </div>
+        <section aria-label="Contar pila"
+          className="shrink-0 overflow-y-auto rounded-t-[26px] border-t border-white/20 bg-zinc-950/85 px-4 pt-3 shadow-2xl backdrop-blur-xl"
+          style={{ maxHeight: '62dvh', paddingBottom: 'max(14px,env(safe-area-inset-bottom))' }}>
+          {error && <p role="alert" className="mb-2 text-sm text-amber-200">{error}</p>}
+          <p className="mb-2 text-sm font-semibold">Cambia de producto</p>
+          <div role="group" aria-label="Producto a contar" className="flex gap-2">
+            {(['original', 'zero'] as const).map(product => {
+              const group = product === 'original' ? original : zero
+              return (
+                <button type="button" key={product}
+                  onClick={() => {
+                    const zones = allPositions.filter(position => position.product === product)
+                    choose((zones.find(position => !counts[position.id]) ?? zones[0]).id)
+                  }}
+                  aria-pressed={active.product === product}
+                  className={'flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold ' +
+                    (active.product === product ? 'border-white bg-white text-zinc-950' : 'border-white/25 bg-white/10 text-white')}>
+                  {group.confirmed === group.positions && <Check className="size-4" />}
+                  {product === 'original' ? 'Coca-Cola' : 'Zero'}
+                </button>
+              )
+            })}
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <button type="button" onClick={() => changePile(-1)} aria-label="Pila anterior"
+              className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/10">
+              <ChevronLeft className="size-5" />
+            </button>
+            <button type="button" onClick={() => setMapOpen(true)}
+              className="h-11 min-w-0 flex-1 rounded-xl border border-white/25 bg-white/10 px-3 text-sm font-semibold">
+              {positionLabel(active)} · Cambiar en el mapa
+            </button>
+            <button type="button" onClick={() => changePile(1)} aria-label="Pila siguiente"
+              className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/10">
+              <ChevronRight className="size-5" />
+            </button>
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-2">
             <div>
-              <p className="text-sm font-medium">{name}</p>
-              <p className="text-xs text-zinc-500">{result.confirmed}/{result.positions} pilas · {result.present} latas verificadas</p>
+              <p className="text-sm font-semibold">¿Cuántas latas tiene esta pila?</p>
+              <p className="text-xs text-white/60">Pulsa el número y avanzará sola.</p>
             </div>
-            <div className="text-right">
-              <strong className="text-xl tabular-nums">
-                {result.totalMissing === null ? '—' : result.totalMissing}
-              </strong>
-              <p className="text-xs text-zinc-500">
-                {result.totalMissing === null ? result.confirmedMissing + ' faltan en las revisadas' : 'para reponer'}
-              </p>
+            {current && <span className="text-xs font-semibold text-emerald-300">✓ {current.count} guardadas</span>}
+          </div>
+          <div role="group" aria-label="Latas en la pila" className="mt-2 grid grid-cols-5 gap-2">
+            {[0, 1, 2, 3, 4].map(amount => (
+              <button key={amount} type="button" onClick={() => confirm(amount, 'manual')}
+                aria-label={amount === 4 ? '4 o más latas' : amount + ' latas'}
+                className={'flex h-14 items-center justify-center rounded-xl border text-xl font-bold ' +
+                  (current?.count === amount ? 'border-emerald-400 bg-emerald-400 text-zinc-950' :
+                    'border-white/25 bg-white/10 text-white')}>
+                {amount === 4 ? '4+' : amount}
+              </button>
+            ))}
+          </div>
+          {hint !== null && scanning && (
+            <button type="button" onClick={() => confirm(hint, 'confirmed-suggestion')}
+              className="mt-2 w-full rounded-xl border border-emerald-400/50 bg-emerald-500/15 px-3 py-2 text-sm text-emerald-100">
+              Cámara estima {hint >= 4 ? '4+' : hint} latas · Usar si coincide
+            </button>
+          )}
+          <p className="mt-2 text-xs text-white/50">«4+» indica pila llena. Las latas ocultas deben comprobarse a mano.</p>
+        </section>
+      </div>
+      {mapOpen && (
+        <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm">
+          <section aria-label="Mapa de pilas"
+            className="w-full max-w-lg overflow-y-auto rounded-3xl border border-white/20 bg-zinc-900 p-4"
+            style={{ maxHeight: '85dvh', marginBottom: 'env(safe-area-inset-bottom)' }}>
+            <div className="mb-1 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Elige la pila</h2>
+              <button type="button" onClick={() => setMapOpen(false)} aria-label="Cerrar mapa"
+                className="flex size-10 items-center justify-center rounded-full bg-white/10"><X className="size-5" /></button>
             </div>
-          </div>
-        ))}
-        {totals.totalMissing === null ? (
-          <Notice instance="cola-assisted-incomplete" variant="warning">
-            Quedan {totals.positions - totals.confirmed} pilas sin revisar. Faltan
-            {' '}{totals.confirmedMissing} latas en las revisadas; todavía no es el total definitivo.
-          </Notice>
-        ) : <p className="text-sm font-semibold text-emerald-700">
-          Total para reponer: {totals.totalMissing} latas.
-        </p>}
-        {confirmReset ? (
-          <div className="flex flex-wrap gap-2">
-            <Button instance="cola-assisted-reset-confirm" variant="destructive"
-              onClick={() => { setCounts({}); choose(allPositions[0].id); setConfirmReset(false) }}>
-              Vaciar recuento
-            </Button>
-            <Button instance="cola-assisted-reset-cancel" variant="secondary"
-              onClick={() => setConfirmReset(false)}>Cancelar</Button>
-          </div>
-        ) : (
-          <Button instance="cola-assisted-reset" variant="tertiary" onClick={() => setConfirmReset(true)}>
-            Nuevo recuento
-          </Button>
-        )}
-      </Surface>
+            <p className="mb-3 text-xs text-white/65">Vista desde arriba · fila 1 al fondo, fila 7 junto a la puerta.</p>
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: 7 }, (_, row) =>
+                Array.from({ length: 7 }, (_, column) => {
+                  const position = allPositions.find(item => item.row === row + 1 && item.column === column + 1)
+                  if (!position) return <div key={'empty-' + row + '-' + column} aria-hidden />
+                  const reading = counts[position.id]
+                  return (
+                    <button type="button" key={position.id}
+                      aria-label={(position.product === 'original' ? 'Coca-Cola ' : 'Zero ') + positionLabel(position)}
+                      aria-pressed={active.id === position.id}
+                      onClick={() => { choose(position.id); setMapOpen(false) }}
+                      className={'flex aspect-square min-w-0 flex-col items-center justify-center rounded-lg border text-[10px] font-semibold ' +
+                        (active.id === position.id ? 'border-emerald-400 bg-emerald-500/45 text-white' :
+                          reading ? 'border-emerald-700 bg-emerald-900/40 text-emerald-200' :
+                            'border-white/15 bg-white/10 text-white/80')}>
+                      <span>{position.product === 'original' ? 'CC' : 'Z'}</span>
+                      <strong className="text-xs">{reading ? reading.count : '·'}</strong>
+                    </button>
+                  )
+                }),
+              )}
+            </div>
+            <p className="mt-3 text-xs text-white/60">Verde: contado · punto: pendiente.</p>
+          </section>
+        </div>
+      )}
+      {summaryOpen && (
+        <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm">
+          <section aria-label="Resumen de Coca-Cola"
+            className="w-full max-w-lg overflow-y-auto rounded-3xl border border-white/20 bg-zinc-900 p-5"
+            style={{ maxHeight: '85dvh', marginBottom: 'env(safe-area-inset-bottom)' }}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">Para reponer</h2>
+              <button type="button" onClick={() => setSummaryOpen(false)} aria-label="Cerrar resumen"
+                className="flex size-10 items-center justify-center rounded-full bg-white/10"><X className="size-5" /></button>
+            </div>
+            {([['Coca-Cola', original], ['Coca-Cola Zero', zero]] as const).map(([name, group]) => (
+              <div key={name} className="mt-4 flex items-center justify-between border-b border-white/15 pb-3">
+                <div>
+                  <p className="font-semibold">{name}</p>
+                  <p className="text-xs text-white/65">{group.confirmed}/{group.positions} pilas revisadas</p>
+                </div>
+                <div className="text-right">
+                  <strong className="text-2xl">{group.totalMissing ?? '—'}</strong>
+                  <span className="ml-1 text-xs">ud.</span>
+                </div>
+              </div>
+            ))}
+            <p className="mt-3 text-sm font-medium text-emerald-300">
+              {totals.totalMissing === null
+                ? 'Todavía quedan ' + (totals.positions - totals.confirmed) + ' pilas sin contar.'
+                : 'Total para reponer: ' + totals.totalMissing + ' latas.'}
+            </p>
+            <button type="button" onClick={() => setSummaryOpen(false)}
+              className="mt-4 h-12 w-full rounded-xl bg-white font-bold text-zinc-950">
+              {totals.totalMissing === null ? 'Seguir contando' : 'Volver a cámara'}
+            </button>
+            {confirmReset ? (
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={() => { setCounts({}); choose(allPositions[0].id); setConfirmReset(false); setSummaryOpen(false) }}
+                  className="flex-1 rounded-xl border border-red-400 px-3 py-2 text-sm text-red-200">
+                  Confirmar nuevo recuento
+                </button>
+                <button type="button" onClick={() => setConfirmReset(false)}
+                  className="rounded-xl border border-white/20 px-3 py-2 text-sm">Cancelar</button>
+              </div>
+            ) : <button type="button" onClick={() => setConfirmReset(true)}
+              className="mt-3 w-full py-2 text-sm text-white/65">Iniciar otro recuento</button>}
+          </section>
+        </div>
+      )}
     </div>
   )
 }
