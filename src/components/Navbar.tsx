@@ -198,10 +198,10 @@ export default function Navbar() {
           title="Asistente Marbella"
           onClick={openChat}
           className="flex h-10 w-8 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-white transition-opacity hover:opacity-100 active:opacity-70"
-        ><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.8" />
-          <path d="M8.4 7.55v8.9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-          <path d="m12.35 16.45 2.8-8.9h.9l2.8 8.9M13.55 13.6h4.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        ><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="4" />
+          <path d="M8.6 8.6v6.8" />
+          <path d="m12.6 15.4 2-6.8h.5l2 6.8M13.3 13.2h3.1" />
         </svg></button> : null}
         <NotificationsBell />
       </div>
