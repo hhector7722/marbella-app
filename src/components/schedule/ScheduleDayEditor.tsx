@@ -40,20 +40,13 @@ import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { countWorkersByHour } from '@/lib/schedule/hourly-coverage';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
-import {
-    getCachedLaborRate,
-    setCachedLaborRate,
-} from '@/lib/labor-rate-session-cache';
-import { getSsotOrdinaryHourlyRate } from '@/app/actions/ssot-ordinary-rate';
+import { getScheduleLaborCostContext } from '@/app/actions/schedule-labor-cost';
+import { computeScheduleDayLaborCost, computeRequiredBilling, type ScheduleLaborCostContext } from '@/lib/schedule-day-profitability';
 import { saveScheduleDayAction, type DaySaveActionResult } from '@/app/actions/schedule-save';
 import { getScheduleNegativeBalancesAction } from '@/app/actions/schedule-negative-balances';
 import { formatNegativeScheduleBalance } from '@/lib/schedule/negative-hour-balance';
 import type { PersistShiftInput } from '@/lib/schedule/persist';
-import {
-    computeScheduleDayLaborCost,
-    computeRequiredBilling,
-    formatScheduleEuro,
-} from '@/lib/schedule-day-profitability';
+import { formatScheduleEuro } from '@/lib/schedule-day-profitability';
 import type { Tables } from '@/types/supabase';
 
 type ScheduleShift = {
@@ -513,7 +506,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
     // Rentabilidad del día: coste de mano de obra y facturación rentable
     const [isMaster, setIsMaster] = useState(false);
-    const [rateByUserId, setRateByUserId] = useState<Record<string, number>>({});
+    const [laborContext, setLaborContext] = useState<{ key: string; data: ScheduleLaborCostContext } | null>(null);
 
     useModalUsageTracking({
         open: editingIndex !== null,
@@ -1100,53 +1093,27 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         return () => { cancelled = true; };
     }, [supabase]);
 
-    // Tarifas ordinarias por empleado (solo maestro)
+    // Contexto semanal en lectura: contratos versionados, fichajes previos y turnos previos.
     const activeEmployeeIds = useMemo(() => {
         const ids = new Set<string>();
-        for (const s of shifts) {
-            if (s.active === false || !s.start || !s.end) continue;
-            ids.add(s.employeeId);
+        for (const shift of shifts) {
+            if (shift.active !== false && shift.start && shift.end) ids.add(shift.employeeId);
         }
-        return [...ids];
+        return [...ids].sort();
     }, [shifts]);
+    const activeEmployeeKey = activeEmployeeIds.join(',');
 
     useEffect(() => {
         if (!isMaster || !date) return;
         let cancelled = false;
-
-        (async () => {
-            const next: Record<string, number> = {};
-            const toFetch: string[] = [];
-
-            for (const id of activeEmployeeIds) {
-                const cached = getCachedLaborRate(id, date);
-                if (cached !== undefined) {
-                    next[id] = cached;
-                } else {
-                    toFetch.push(id);
-                }
-            }
-
-            if (toFetch.length > 0) {
-                const fetched = await Promise.all(
-                    toFetch.map(async (userId) => {
-                        const res = await getSsotOrdinaryHourlyRate(userId, date);
-                        const rate = res.success ? res.rate : 0;
-                        setCachedLaborRate(userId, date, rate);
-                        return { userId, rate };
-                    }),
-                );
-                if (cancelled) return;
-                for (const { userId, rate } of fetched) {
-                    next[userId] = rate;
-                }
-            }
-
-            if (!cancelled) setRateByUserId(next);
-        })();
-
+        const requestKey = `${date}:${activeEmployeeKey}`;
+        void getScheduleLaborCostContext(date, activeEmployeeKey ? activeEmployeeKey.split(',') : []).then(result => {
+            if (!cancelled) setLaborContext(result.success ? { key: requestKey, data: result.data } : null);
+        }).catch(() => {
+            if (!cancelled) setLaborContext(null);
+        });
         return () => { cancelled = true; };
-    }, [isMaster, date, activeEmployeeIds, supabase]);
+    }, [isMaster, date, activeEmployeeKey]);
 
     const navigateDay = async (direction: -1 | 1) => {
         // Navegar NUNCA publica: coordina con la persistencia en curso y guarda
@@ -1171,14 +1138,15 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);
     const totals = countWorkersByHour(shifts, hoursHeader);
 
-    const laborCost = useMemo(
-        () => computeScheduleDayLaborCost(
-            shifts.map((s) => ({ employeeId: s.employeeId, start: s.start, end: s.end, active: s.active })),
-            rateByUserId,
-        ),
-        [shifts, rateByUserId],
-    );
-    const requiredBilling = useMemo(() => computeRequiredBilling(laborCost), [laborCost]);
+    const laborPreview = useMemo(() => {
+        if (!date || !laborContext || laborContext.key !== `${date}:${activeEmployeeKey}`) return null;
+        const cost = computeScheduleDayLaborCost(
+            date, shifts.map(s => ({ employeeId: s.employeeId, start: s.start, end: s.end, active: s.active })), laborContext.data,
+        );
+        return { cost: cost.totalCost, overtimeCost: cost.overtimeCost, requiredBilling: computeRequiredBilling(cost.totalCost) };
+    }, [date, activeEmployeeKey, laborContext, shifts]);
+    const formatPreview = (value: number | null | undefined) =>
+        value == null ? '—' : formatScheduleEuro(value);
 
     // La cabecera superior es de nivel día, no por empleado seleccionado
     const slot1ActivityValue = (activity ?? '').trim();
@@ -1601,21 +1569,23 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     </div>
                     ) : null}
 
-                    {/* Footer Coste | Rentabilidad — última fila, partida en dos */}
+                    {/* Previsión del día: ordinarias + extras valoradas por el contrato vigente. */}
+                    {isMaster ? (
                     <div className="flex w-full bg-white border-t border-gray-100 shrink-0 rounded-b-2xl">
-                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start pl-3 gap-1.5 min-w-0">
-                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase tracking-widest shrink-0">Coste</span>
-                            <span className="font-semibold text-gray-800 text-[10px] md:text-xs tabular-nums">
-                                {formatScheduleEuro(laborCost)}
-                            </span>
+                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start px-2 gap-1.5 min-w-0">
+                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase shrink-0">Coste total</span>
+                            <span className="font-semibold text-gray-800 text-[10px] md:text-xs tabular-nums">{formatPreview(laborPreview?.cost)}</span>
                         </div>
-                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start pl-3 gap-1.5 min-w-0 border-l border-gray-100">
-                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase tracking-widest shrink-0">Rentabilidad</span>
-                            <span className="font-semibold text-emerald-600 text-[10px] md:text-xs tabular-nums">
-                                {formatScheduleEuro(requiredBilling)}
-                            </span>
+                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start px-2 gap-1.5 min-w-0 border-l border-gray-100">
+                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase shrink-0">Extras</span>
+                            <span className="font-semibold text-gray-800 text-[10px] md:text-xs tabular-nums">{formatPreview(laborPreview?.overtimeCost)}</span>
+                        </div>
+                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start px-2 gap-1.5 min-w-0 border-l border-gray-100">
+                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase shrink-0">Ventas 30 %</span>
+                            <span className="font-semibold text-emerald-600 text-[10px] md:text-xs tabular-nums">{formatPreview(laborPreview?.requiredBilling)}</span>
                         </div>
                     </div>
+                    ) : null}
                 </div>
                 )}
             </div>
