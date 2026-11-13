@@ -130,6 +130,14 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const [micStarting, setMicStarting] = useState(false);
   const micStartingRef = useRef(false);
   const micStoppingRef = useRef(false);
+  const activeRecordingRef = useRef(false);
+  const suppressMicClickRef = useRef(false);
+  const holdRef = useRef<{
+    pointerId: number;
+    timer: ReturnType<typeof setTimeout> | null;
+    released: boolean;
+    cancelled: boolean;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -225,15 +233,18 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     }
   };
 
-  // Una pulsación abre la grabadora. Enviar es una acción separada.
-  const startVoiceNote = async () => {
-    if (micStartingRef.current || isVoiceActive || isTranscribing || micStoppingRef.current) return;
+  // Toque corto: grabación manual. Pulsación larga: grabar hasta soltar.
+  const startVoiceNote = async (): Promise<boolean> => {
+    if (micStartingRef.current || isVoiceActive || isTranscribing || micStoppingRef.current) return false;
     micStartingRef.current = true;
     setMicStarting(true);
     try {
       await startRecording();
+      activeRecordingRef.current = true;
+      return true;
     } catch (cause) {
       toast.error('Error de micrófono: ' + (cause instanceof Error ? cause.message : String(cause)));
+      return false;
     } finally {
       micStartingRef.current = false;
       setMicStarting(false);
@@ -241,14 +252,70 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   };
 
   const sendVoiceNote = async () => {
-    if (micStoppingRef.current || !isVoiceActive) return;
+    if (micStoppingRef.current || (!isVoiceActive && !activeRecordingRef.current)) return;
     micStoppingRef.current = true;
+    activeRecordingRef.current = false;
     try {
       const audioBlob = await stopRecording();
       if (audioBlob) await handleTranscription(audioBlob);
     } finally {
       micStoppingRef.current = false;
     }
+  };
+
+  // Los eventos se escuchan en window: el botón desaparece al iniciar la
+  // grabación y un onPointerUp en el propio botón no llegaría a ejecutarse.
+  useEffect(() => {
+    const finishHold = (event: PointerEvent, cancelled: boolean) => {
+      const hold = holdRef.current;
+      if (!hold || hold.pointerId !== event.pointerId) return;
+      hold.released = true;
+      hold.cancelled = cancelled;
+      if (hold.timer !== null) {
+        window.clearTimeout(hold.timer);
+        holdRef.current = null; // Toque corto: onClick conserva el flujo manual.
+      }
+    };
+    const release = (event: PointerEvent) => finishHold(event, false);
+    const cancel = (event: PointerEvent) => finishHold(event, true);
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', cancel);
+    return () => {
+      window.removeEventListener('pointerup', release);
+      window.removeEventListener('pointercancel', cancel);
+      if (holdRef.current?.timer != null) window.clearTimeout(holdRef.current.timer);
+      holdRef.current = null;
+    };
+  }, []);
+
+  const handleMicPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0 || micStartingRef.current || isVoiceActive || busy) return;
+    suppressMicClickRef.current = false;
+    const previous = holdRef.current;
+    if (previous?.timer != null) window.clearTimeout(previous.timer);
+    const hold = {
+      pointerId: event.pointerId,
+      timer: null as ReturnType<typeof setTimeout> | null,
+      released: false,
+      cancelled: false,
+    };
+    holdRef.current = hold;
+    hold.timer = window.setTimeout(async () => {
+      hold.timer = null;
+      suppressMicClickRef.current = true;
+      const started = await startVoiceNote();
+      if (hold.released) {
+        if (started) {
+          if (hold.cancelled) {
+            activeRecordingRef.current = false;
+            cancelRecording();
+          } else {
+            void sendVoiceNote();
+          }
+        }
+        if (holdRef.current === hold) holdRef.current = null;
+      }
+    }, 320);
   };
 
   const busy = (status !== 'ready' && status !== 'error') || uploadingFile || isTranscribing;
@@ -407,7 +474,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
           {isVoiceActive ? (
             <VoiceRecordingBar stream={getStream()} paused={voiceStatus === 'paused'}
               durationMs={durationMs} disabled={isTranscribing}
-              onCancel={() => { if (!micStoppingRef.current) cancelRecording(); }}
+              onCancel={() => { if (!micStoppingRef.current) { activeRecordingRef.current = false; cancelRecording(); } }}
               onTogglePause={() => {
                 if (micStoppingRef.current) return;
                 if (voiceStatus === 'paused') resumeRecording(); else pauseRecording();
@@ -487,11 +554,20 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
             <Send size={18} />
           </button>
 
-          {/* Una pulsación abre grabadora con pausa, borrado y envío. */}
-          <button type="button" onClick={() => void startVoiceNote()}
+          {/* Toque corto: grabadora manual. Mantener pulsado: grabar y enviar al soltar. */}
+          <button type="button"
+            onPointerDown={handleMicPointerDown}
+            onContextMenu={(event) => event.preventDefault()}
+            onClick={() => {
+              if (suppressMicClickRef.current) {
+                suppressMicClickRef.current = false;
+                return;
+              }
+              void startVoiceNote();
+            }}
             disabled={isTranscribing || busy}
-            className="flex h-10 w-8 shrink-0 items-center justify-center rounded-xl text-sky-100/75 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
-            aria-label="Grabar mensaje de voz" title="Grabar mensaje de voz">
+            className="flex h-10 w-8 shrink-0 touch-none select-none items-center justify-center rounded-xl text-sky-100/75 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
+            aria-label="Grabar mensaje de voz" title="Toca para grabar o mantén pulsado y suelta para enviar">
             <Mic size={18} />
           </button>
           </>
