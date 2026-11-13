@@ -74,6 +74,13 @@ export function selectGroqTools(
     include("consultar_metricas_basicas", "consultar_inventario", "consultar_receta_detallada", "gestionar_proveedores");
   }
 
+  // El horario operativo de actividades es independiente de las reservas.
+  // Evitar que un modelo use consultar_reservas para responder sobre eventos.
+  if (/(actividad|evento|partido|competicion|agenda|pabellon|finde|fin de semana|calendario de actividades)/.test(q)
+      && !/reserv/.test(q)) {
+    return tools.filter((t) => t.function.name === "consultar_actividades_horario");
+  }
+
   // Las preguntas de las capturas tienen una fuente inequívoca.
   // No ofrecer estadísticas de tickets como alternativa a unidades de artículos,
   // ni una receta resumida que omita sus ingredientes físicos.
