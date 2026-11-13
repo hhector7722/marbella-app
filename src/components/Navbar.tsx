@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ChevronLeft, Menu, X, BotMessageSquare } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
-import { ReservationsBell } from '@/components/ReservationsBell';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { createClient } from "@/utils/supabase/client";
 import { cn, firstGivenName } from '@/lib/utils';
@@ -31,6 +30,9 @@ export default function Navbar() {
   const { identity, isMaster, sessionReady, openViewAsPicker } = useMasterViewAs();
   const [userData, setUserData] = useState<{ id: string; name: string; role: string; searchRole: string; email: string; authEmail: string; is_supervisor?: boolean } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const navbarRowRef = useRef<HTMLDivElement>(null);
+  const leftActionsRef = useRef<HTMLDivElement>(null);
+  const rightActionsRef = useRef<HTMLDivElement>(null);
   const [cameraExternalOnline, setCameraExternalOnline] = useState(false);
   useEffect(() => {
     const fetchUserData = async () => {
@@ -52,10 +54,39 @@ export default function Navbar() {
     return () => subscription.unsubscribe();
   }, [supabase]);
   const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
-  const effectiveCameraEmail = (identity?.effectiveEmail ?? userData?.email)?.trim().toLowerCase();
+  const effectiveCameraEmail = (
+    identity?.isViewingAs
+      ? identity.effectiveEmail
+      : (userData?.authEmail || identity?.realEmail || userData?.email)
+  )?.trim().toLowerCase();
   const canSeeCamera = Boolean(sessionReady && effectiveCameraEmail && CAMERA_ACCESS_EMAILS.has(effectiveCameraEmail));
   const isHectorCameraUser = effectiveCameraEmail === HECTOR_CAMERA_EMAIL;
   const liveCameraIsGreen = isHectorCameraUser && cameraExternalOnline;
+
+  // El buscador permanece en el centro geométrico del viewport útil, no
+  // en el espacio libre entre controles (que tienen anchuras distintas).
+  // Reservar a ambos lados el mayor grupo evita cualquier solapamiento.
+  useLayoutEffect(() => {
+    const row = navbarRowRef.current;
+    const left = leftActionsRef.current;
+    const right = rightActionsRef.current;
+    if (!row || !left || !right) return;
+
+    const update = () => {
+      const width = Math.ceil(Math.max(left.getBoundingClientRect().width, right.getBoundingClientRect().width));
+      row.style.setProperty('--navbar-side-reserve', `${width}px`);
+    };
+    update();
+
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+    observer?.observe(left);
+    observer?.observe(right);
+    window.addEventListener('resize', update);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [pathname, sessionReady, canSeeCamera]);
 
   useEffect(() => {
     // Fogo siempre ve el icono rojo. Solo Héctor consulta el estado de terceros.
@@ -125,8 +156,8 @@ export default function Navbar() {
   const compactName = displayName ? firstGivenName(displayName) : '';
   const searchIdentity = { userId: identity?.effectiveUserId ?? userData?.id ?? '', role: identity?.isViewingAs ? identity.effectiveRole : userData?.searchRole ?? null, email: identity?.isViewingAs ? identity.effectiveEmail : userData?.authEmail ?? null, isViewingAs: Boolean(identity?.isViewingAs) };
   return <nav data-component="AppNavbar" data-hidden={topHidden && !searchOpen ? 'true' : undefined} className={cn('marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden')}>
-    <div className="relative max-w-7xl lg:max-w-none mx-auto flex items-center justify-between gap-1 px-1 lg:px-4 w-full min-w-0">
-      <div className="flex min-w-0 shrink-0 items-center gap-1">
+    <div ref={navbarRowRef} data-element="navbar-row" className="relative max-w-7xl lg:max-w-none mx-auto flex items-center justify-between gap-1 px-1 lg:px-4 w-full min-w-0">
+      <div ref={leftActionsRef} data-element="left-actions" className="flex min-w-0 shrink-0 items-center gap-1">
         <button
           type="button"
           data-element="desktop-menu-toggle"
@@ -142,7 +173,7 @@ export default function Navbar() {
         <div className="flex min-w-0 items-center gap-1"><div data-element="logo" className="relative shrink-0"><Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority /></div>{hideNavbarBack ? <div data-element="greeting-block">{isMaster ? <button type="button" data-element="greeting" onClick={openViewAsPicker} className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative" aria-label={identity?.isViewingAs ? `Viendo como ${identity.effectiveName}. Cambiar usuario` : 'Cambiar usuario de vista'}>{compactName}</button> : <span data-element="greeting">{compactName}</span>}</div> : null}</div>
       </div>
       {sessionReady && searchIdentity.userId ? <div data-element="global-search-host" className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"><div className="pointer-events-auto"><GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} /></div></div> : null}
-      <div className="flex shrink-0 items-center -space-x-3">
+      <div ref={rightActionsRef} data-element="right-actions" className="flex shrink-0 items-center gap-0 pr-2">
         {canSeeCamera ? <button
           type="button"
           data-element="live-camera"
@@ -168,7 +199,7 @@ export default function Navbar() {
           onClick={openChat}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-white/90 transition-opacity hover:opacity-100 active:opacity-70"
         ><BotMessageSquare size={21} strokeWidth={1.9} aria-hidden /></button> : null}
-        <ReservationsBell /><NotificationsBell />
+        <NotificationsBell />
       </div>
     </div>
   </nav>;

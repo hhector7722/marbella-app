@@ -6309,17 +6309,25 @@ html:has(.dashboard-mosaic-switcher) {
   flex: 0 1 auto;
 }
 .marbella-fixed-topbar [data-element='live-camera'] {
-  width: var(--tactil-minimo);
-  height: var(--tactil-minimo);
-  margin-right: calc(-1 * var(--espacio-1));
+  width: 40px;
+  height: 40px;
+  margin-right: 0;
 }
 .marbella-fixed-topbar [data-element='live-camera'] img {
   width: 29px;
   height: 29px;
 }
+/* Los laterales se miden en Navbar (ResizeObserver): el buscador queda
+   centrado en TODO el ancho de la cabecera y nunca tapa otros controles. */
+.marbella-fixed-topbar [data-element='navbar-row'] {
+  --navbar-side-reserve: 128px;
+}
 .marbella-fixed-topbar [data-element='global-search-host'] {
-  width: var(--buscador-global-ancho);
-  max-width: calc(100vw - (var(--espacio-2) * 2));
+  width: min(
+    var(--buscador-global-ancho),
+    max(0px, calc(100% - var(--navbar-side-reserve) - var(--navbar-side-reserve) - var(--espacio-4) - var(--espacio-1)))
+  );
+  max-width: calc(100% - var(--espacio-2));
 }
 .marbella-fixed-topbar [data-component='GlobalSearchTrigger'] [data-element='pill'] {
   height: var(--espacio-8);

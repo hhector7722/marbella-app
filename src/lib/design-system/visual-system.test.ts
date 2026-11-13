@@ -34,6 +34,21 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
     return acc;
 }
 
+describe('Cabecera móvil única, centrada y sin solapamientos', () => {
+    it('centra el buscador respecto al ancho de la pantalla y reserva ambos laterales', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const navbar = readFileSync(join(SRC_ROOT, 'components/Navbar.tsx'), 'utf8');
+        assert.match(navbar, /left-1\/2 top-1\/2 z-10 -translate-x-1\/2 -translate-y-1\/2/);
+        assert.match(navbar, /ref=\{navbarRowRef\} data-element="navbar-row"/);
+        assert.match(navbar, /ref=\{leftActionsRef\} data-element="left-actions"/);
+        assert.match(navbar, /ref=\{rightActionsRef\} data-element="right-actions"/);
+        assert.match(navbar, /Math\.max\(left\.getBoundingClientRect\(\)\.width, right\.getBoundingClientRect\(\)\.width\)/);
+        assert.match(css, /\.marbella-fixed-topbar \[data-element='global-search-host'\] \{[\s\S]*?width: min\([\s\S]*?calc\(100% - var\(--navbar-side-reserve\) - var\(--navbar-side-reserve\) - var\(--espacio-4\) - var\(--espacio-1\)\)/);
+        assert.doesNotMatch(navbar, /-space-x-/);
+        assert.doesNotMatch(navbar, /ReservationsBell/);
+    });
+});
+
 describe('Jerarquía visual canónica (ADR-0010)', () => {
     it('exporta identidades estables', () => {
         assert.equal(PAGE_SCREEN_COMPONENT_ID, 'PageScreen');
@@ -285,13 +300,13 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             assert.match(navbar, /data-element="greeting"/, 'el nombre de la barra tiene identidad');
             assert.match(navbar, /data-element="logo"/, 'el logo de la barra tiene identidad');
             assert.match(navbar, /<GlobalSearch /, 'el buscador global ocupa la fila de cabecera');
-            assert.match(navbar, /<ReservationsBell \/>/, 'reservas van en la barra');
-            assert.match(navbar, /<NotificationsBell \/>/, 'notificaciones van en la barra');
-            assert.match(
-                navbar,
-                /<ReservationsBell \/>[\s\S]*<NotificationsBell \/>/,
-                'reservas y notificaciones van a la derecha'
-            );
+            assert.match(navbar, /<NotificationsBell \/>/, 'una sola campana para todas las notificaciones');
+            assert.doesNotMatch(navbar, /ReservationsBell/, 'se retira el calendario de notificaciones');
+            assert.match(navbar, /data-element="live-camera"/, 'mantiene la cámara');
+            assert.match(navbar, /data-element="navbar-copilot"/, 'mantiene el asistente');
+            assert.match(navbar, /data-element="right-actions"[^>]*gap-0 pr-2/, 'los tres controles se agrupan junto a la campana');
+            assert.match(navbar, /ResizeObserver\(update\)/, 'el ancho del buscador sigue los laterales reales');
+            assert.match(navbar, /--navbar-side-reserve/, 'la reserva lateral se calcula dinámicamente');
             assert.doesNotMatch(navbar, /id="ia-button"|data-chrome="ia"|toggleChat/, 'la barra no lleva IA');
             assert.doesNotMatch(navbar, /aria-label="Herramientas internas"|pgMenuOpen|>\s*PG\s*</, 'la barra no lleva PG');
             assert.doesNotMatch(
@@ -2181,9 +2196,14 @@ describe('Reservas: primera comanda de personal notifica como reserva', () => {
         const push = readFileSync(join(SRC_ROOT, 'app/api/webhooks/reservations-push/route.ts'), 'utf8');
 
         assert.match(types, /RESERVATION_CENTER_NOTIFICATION_TYPES = \[[\s\S]*?'staff_order_created'/);
-        assert.match(bell, /includeTypes: RESERVATION_CENTER_NOTIFICATION_TYPES/);
-        assert.match(general, /excludeTypes: RESERVATION_CENTER_NOTIFICATION_TYPES/);
-        assert.match(bell, /row.type === 'staff_order_created' \? Package/);
+        const navbar = readFileSync(join(SRC_ROOT, 'components/Navbar.tsx'), 'utf8');
+        const notifications = readFileSync(join(SRC_ROOT, 'components/NotificationsBell.tsx'), 'utf8');
+        assert.doesNotMatch(navbar, /ReservationsBell/, 'el calendario ya no monta un segundo panel');
+        assert.match(general, /limit: 100/, 'la campana integra los avisos de reservas y los generales');
+        assert.doesNotMatch(general, /excludeTypes/, 'reservas y comandas no quedan filtradas');
+        assert.doesNotMatch(notifications, /RESERVATION_CENTER_NOTIFICATION_TYPES/, 'Borrar todo también marca como leídas las reservas');
+        assert.match(notifications, /\.from\('user_notifications'\)[\s\S]*?\.is\('read_at', null\)/, 'la campana actualiza todos los tipos pendientes');
+        assert.match(bell, /row.type === 'staff_order_created' \? Package/, 'el componente histórico sigue disponible, pero no montado');
         assert.match(reservations, /\.in\('type', \['client_order_submitted', 'staff_order_created'\]\)/);
         assert.ok(push.includes("body.kind === 'staff_order_created' && body.table === 'events'"));
         assert.ok(push.includes("title: '🛒 Nueva comanda'"));
