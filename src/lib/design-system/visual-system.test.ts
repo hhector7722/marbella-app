@@ -46,16 +46,12 @@ describe('Cabecera nítida con modales abiertos', () => {
             'el Navbar no recibe filtro, opacidad ni bloqueo al abrir modales'
         );
         assert.match(css,
-            /\[data-component='PageScreen'\] \[data-element='header'\] \{[\s\S]*?z-index:\s*calc\(var\(--z-modal-system\) \+ 1\);[\s\S]*?filter:\s*none;/,
-            'la cabecera de la pantalla queda por encima del backdrop y sin desenfoque'
+            /html:has\(\.marbella-fixed-topbar\):has\(\[data-component='PageScreen'\] \[data-element='header'\]\)[\s\S]*?\[data-modal-backdrop='base'\] \{\s*top:\s*calc\(var\(--estructura-cabecera\) \+ env\(safe-area-inset-top, 0px\) \+ var\(--espacio-4\) \+ var\(--modal-header-height\) \+ var\(--espacio-4\)\);/,
+            'el backdrop deja libre la cabecera de PageScreen, además del Navbar'
         );
-        assert.match(css,
-            /\[data-component='PageScreen'\] \[data-element='toolbar'\]\[data-pin='true'\] \{[\s\S]*?z-index:\s*calc\(var\(--z-modal-system\) \+ 1\);[\s\S]*?filter:\s*none;/,
-            'la barra de herramientas fija también conserva la nitidez'
-        );
-        assert.match(css,
-            /:is\(\[data-element='header'\], \[data-element='toolbar'\]\[data-pin='true'\]\) \* \{[\s\S]*?pointer-events:\s*none !important;/,
-            'los elementos elevados no son interactivos bajo los modales'
+        assert.doesNotMatch(css,
+            /html\[data-modal-open="true"\] \[data-component='PageScreen'\] \[data-element='toolbar'\]\[data-pin='true'\] \{[\s\S]*?filter:\s*blur/,
+            'la barra fija no recibe un desenfoque directo al abrir un modal'
         );
         assert.match(css,
             /html\[data-modal-open="true"\] \.marbella-fixed-bottombar \{[\s\S]*?filter:\s*blur\(6px\);/,

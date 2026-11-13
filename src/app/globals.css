@@ -6461,31 +6461,15 @@ html:has(.dashboard-mosaic-switcher) {
 html:has(.marbella-fixed-topbar) [data-modal-backdrop='base'] {
   top: calc(var(--app-navbar-height) + env(safe-area-inset-top, 0px));
 }
-/* La cabecera de cada pantalla (título, periodo y acciones) también debe
-   permanecer nítida al abrir un modal: el backdrop del portal se dibuja por
-   encima del main. Elevar solamente el cromo superior evita ese desenfoque
-   sin cambiar el aspecto del resto del contenido ni el propio modal.
-   La búsqueda global queda exceptuada porque ocupa precisamente esa zona. */
-html[data-modal-open="true"]:not(:has([data-component='Modal'][data-instance='global-search']))
-  [data-component='PageScreen'] [data-element='header'] {
-  position: relative;
-  z-index: calc(var(--z-modal-system) + 1);
-  filter: none;
-  opacity: 1;
-  pointer-events: none;
-}
-html[data-modal-open="true"]:not(:has([data-component='Modal'][data-instance='global-search']))
-  [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
-  z-index: calc(var(--z-modal-system) + 1);
-  filter: none;
-  opacity: 1;
-  pointer-events: none;
-}
-/* Los controles de la cabecera elevada no deben recibir clics bajo un modal,
-   incluso si un hijo declara pointer-events-auto. */
-html[data-modal-open="true"]:not(:has([data-component='Modal'][data-instance='global-search']))
-  [data-component='PageScreen'] :is([data-element='header'], [data-element='toolbar'][data-pin='true']) * {
-  pointer-events: none !important;
+/* Los títulos, periodos y acciones de PageScreen viven bajo el Navbar.
+   A diferencia del Navbar, están en un contexto de apilamiento del main:
+   subirles el z-index no los saca del backdrop del portal. Por eso el
+   backdrop arranca debajo del cromo de la página cuando existe cabecera.
+   La geometría combina el espacio reservado, la altura canónica de cabecera
+   y sus márgenes; no altera el modal ni el desenfoque del contenido inferior. */
+html:has(.marbella-fixed-topbar):has([data-component='PageScreen'] [data-element='header'])
+  [data-modal-backdrop='base'] {
+  top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px) + var(--espacio-4) + var(--modal-header-height) + var(--espacio-4));
 }
 /* La barra inferior conserva el desenfoque acordado. */
 html[data-modal-open="true"] .marbella-fixed-bottombar {
