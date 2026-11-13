@@ -134,7 +134,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
   const suppressMicClickRef = useRef(false);
   const holdRef = useRef<{
     pointerId: number;
-    timer: ReturnType<typeof setTimeout> | null;
+    timer: number | null;
     released: boolean;
     cancelled: boolean;
     started: boolean;
@@ -300,7 +300,7 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     if (previous?.timer != null) window.clearTimeout(previous.timer);
     const hold = {
       pointerId: event.pointerId,
-      timer: null as ReturnType<typeof setTimeout> | null,
+      timer: null as number | null,
       released: false,
       cancelled: false,
       started: false,
