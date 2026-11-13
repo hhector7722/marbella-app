@@ -11,7 +11,8 @@ export type AppUsageActionKind =
   | 'consumption_saved'
   | 'geofence_rejected'
   | 'global_search'
-  | 'global_search_result';
+  | 'global_search_result'
+  | 'chat_open';
 
 export type AppUsageMetadata = {
   action?: AppUsageActionKind;

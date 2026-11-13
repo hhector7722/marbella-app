@@ -39,16 +39,16 @@ function messageCombinedText(parts: unknown): string {
  * Cada montaje abre una "vida" con su propio id de generación: así una respuesta
  * en vuelo que llega tras el desmontaje no contamina al montaje siguiente.
  */
-type SessionLifetime = { id: string | null; generation: number };
+type SessionLifetime = { id: string | null; generation: number; ready: Promise<void> | null };
 
-let currentSession: SessionLifetime = { id: null, generation: 0 };
+let currentSession: SessionLifetime = { id: null, generation: 0, ready: null };
 
 function beginSessionLifetime(): () => void {
-  const lifetime: SessionLifetime = { id: null, generation: currentSession.generation + 1 };
+  const lifetime: SessionLifetime = { id: null, generation: currentSession.generation + 1, ready: null };
   currentSession = lifetime;
   return () => {
     if (currentSession === lifetime) {
-      currentSession = { id: null, generation: lifetime.generation + 1 };
+      currentSession = { id: null, generation: lifetime.generation + 1, ready: null };
     }
   };
 }
@@ -64,6 +64,14 @@ function getActiveSessionGeneration(): number {
 function setActiveSessionIdForGeneration(generation: number, id: string): void {
   if (currentSession.generation !== generation) return;
   currentSession.id = id;
+}
+
+function setActiveSessionReadyForGeneration(generation: number, ready: Promise<void>): void {
+  if (currentSession.generation === generation) currentSession.ready = ready;
+}
+
+function getActiveSessionReadyForGeneration(generation: number): Promise<void> | null {
+  return currentSession.generation === generation ? currentSession.ready : null;
 }
 
 export default function ChatMarbella() {
@@ -82,6 +90,7 @@ export default function ChatMarbella() {
       layer="base"
       scheme="dark"
       instance="chat-marbella"
+      disableUsageTracking
       hideHeaderDivider
       scrollContent={false}
     >
@@ -149,11 +158,37 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     resumeRecording, cancelRecording, getStream } = useVoiceRecorder();
   const isVoiceActive = voiceStatus === 'recording' || voiceStatus === 'paused';
 
-  useEffect(() => beginSessionLifetime(), []);
+  useEffect(() => {
+    const endLifetime = beginSessionLifetime();
+    const generation = getActiveSessionGeneration();
+    // Crear la sesión al abrir: una única entrada en Uso app enlaza
+    // inequívocamente con las preguntas y respuestas de esta apertura.
+    const ready = fetch('/api/copiloto/open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ path: window.location.pathname }),
+    }).then(async (response) => {
+      if (!response.ok) throw new Error('No se pudo registrar la apertura del chat');
+      const data = (await response.json()) as { sessionId?: string };
+      if (!data.sessionId) throw new Error('Sesión de chat sin identificador');
+      setActiveSessionIdForGeneration(generation, data.sessionId);
+    }).catch(() => {
+      // El chat sigue disponible: la ruta principal crea la sesión al enviar
+      // si falló el registro de uso. No se exponen mensajes en telemetría.
+    });
+    setActiveSessionReadyForGeneration(generation, ready);
+    return endLifetime;
+  }, []);
 
   const fetchWithSession = useCallback(
     async (url: RequestInfo | URL, opts?: RequestInit) => {
       const generation = getActiveSessionGeneration();
+      // Si se envía inmediatamente después de abrir, esperar el id real
+      // para no crear una segunda sesión huérfana por una carrera de red.
+      const ready = getActiveSessionReadyForGeneration(generation);
+      if (ready) await ready;
+      if (getActiveSessionGeneration() !== generation) throw new Error('Sesión de chat finalizada');
       let mergedBody: BodyInit | null | undefined = opts?.body;
       if (typeof opts?.body === 'string') {
         try {

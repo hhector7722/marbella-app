@@ -57,6 +57,7 @@ export type UsageRecentEvent = {
   title: string;
   createdAt: string;
   timeLabel: string;
+  isChatOpen: boolean;
 };
 
 export type UsageDashboardData = {
@@ -286,6 +287,7 @@ function mapRecentFeedToEvents(
       title: item.title,
       createdAt: item.createdAt,
       timeLabel: formatDateTimeMadrid(item.createdAt),
+      isChatOpen: row?.metadata?.action === 'chat_open' && typeof row.metadata.sessionId === 'string',
     };
   });
 }

@@ -50,6 +50,7 @@ export function formatUsageActivityTitle(row: UsageEventRowForPresent): string {
       const tabLabel = typeof meta.tabLabel === 'string' ? meta.tabLabel : place;
       return `Pestaña ${tabLabel}`;
     }
+    if (action === 'chat_open') return 'Abrió el chat';
     if (action === 'modal_open') {
       const modalLabel = typeof meta.modalLabel === 'string' ? meta.modalLabel : place;
       return `Abrió ${modalLabel}`;
@@ -109,6 +110,9 @@ function isDuplicateEvent(
         const candidateAction =
           typeof candidate.metadata?.action === 'string' ? candidate.metadata.action : null;
         if (prevAction !== candidateAction) continue;
+        // Cada apertura de chat lleva su propia sesión, incluso si
+        // ocurren dos aperturas en menos de tres segundos.
+        if (candidateAction === 'chat_open') continue;
 
         // Dos consultas distintas en menos de 3 s son eventos distintos;
         // nunca ocultar el texto buscado con la deduplicación general.
