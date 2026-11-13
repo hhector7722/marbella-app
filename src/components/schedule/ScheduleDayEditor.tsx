@@ -1143,7 +1143,12 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         const cost = computeScheduleDayLaborCost(
             date, shifts.map(s => ({ employeeId: s.employeeId, start: s.start, end: s.end, active: s.active })), laborContext.data,
         );
-        return { cost: cost.totalCost, overtimeCost: cost.overtimeCost, requiredBilling: computeRequiredBilling(cost.totalCost) };
+        return {
+            cost: cost.totalCost,
+            overtimeCost: cost.overtimeCost,
+            requiredBilling: computeRequiredBilling(cost.totalCost),
+            missingRateEmployeeIds: cost.missingRateEmployeeIds,
+        };
     }, [date, activeEmployeeKey, laborContext, shifts]);
     const formatPreview = (value: number | null | undefined) =>
         value == null ? '—' : formatScheduleEuro(value);
@@ -1569,22 +1574,27 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     </div>
                     ) : null}
 
-                    {/* Previsión del día: ordinarias + extras valoradas por el contrato vigente. */}
+                    {/* Previsión del día: ordinarias y extras, con objetivo laboral del 30 %. */}
                     {isMaster ? (
-                    <div className="flex w-full bg-white border-t border-gray-100 shrink-0 rounded-b-2xl">
-                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start px-2 gap-1.5 min-w-0">
-                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase shrink-0">Coste total</span>
-                            <span className="font-semibold text-gray-800 text-[10px] md:text-xs tabular-nums">{formatPreview(laborPreview?.cost)}</span>
+                        <div
+                            className="flex w-full shrink-0 rounded-b-2xl border-t border-gray-100 bg-white"
+                            title={laborPreview?.missingRateEmployeeIds.length
+                                ? 'Falta nómina ordinaria o tarifa de extras de algún trabajador: el total no se puede determinar.'
+                                : 'Previsión con coste empresa de nómina y tarifa contractual de extras.'}
+                        >
+                            <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-1 py-1.5 md:flex-row md:gap-1.5">
+                                <span className="shrink-0 text-[9px] font-semibold uppercase text-gray-400 md:text-xs">Coste total</span>
+                                <span className="max-w-full truncate text-[11px] font-semibold tabular-nums text-gray-800 md:text-xs">{formatPreview(laborPreview?.cost)}</span>
+                            </div>
+                            <div className="flex min-w-0 flex-1 flex-col items-center justify-center border-l border-gray-100 px-1 py-1.5 md:flex-row md:gap-1.5">
+                                <span className="shrink-0 text-[9px] font-semibold uppercase text-gray-400 md:text-xs">Coste extras</span>
+                                <span className="max-w-full truncate text-[11px] font-semibold tabular-nums text-gray-800 md:text-xs">{formatPreview(laborPreview?.overtimeCost)}</span>
+                            </div>
+                            <div className="flex min-w-0 flex-1 flex-col items-center justify-center border-l border-gray-100 px-1 py-1.5 md:flex-row md:gap-1.5">
+                                <span className="shrink-0 text-[9px] font-semibold uppercase text-gray-400 md:text-xs">Ventas 30 %</span>
+                                <span className="max-w-full truncate text-[11px] font-semibold tabular-nums text-emerald-600 md:text-xs">{formatPreview(laborPreview?.requiredBilling)}</span>
+                            </div>
                         </div>
-                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start px-2 gap-1.5 min-w-0 border-l border-gray-100">
-                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase shrink-0">Extras</span>
-                            <span className="font-semibold text-gray-800 text-[10px] md:text-xs tabular-nums">{formatPreview(laborPreview?.overtimeCost)}</span>
-                        </div>
-                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start px-2 gap-1.5 min-w-0 border-l border-gray-100">
-                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase shrink-0">Ventas 30 %</span>
-                            <span className="font-semibold text-emerald-600 text-[10px] md:text-xs tabular-nums">{formatPreview(laborPreview?.requiredBilling)}</span>
-                        </div>
-                    </div>
                     ) : null}
                 </div>
                 )}

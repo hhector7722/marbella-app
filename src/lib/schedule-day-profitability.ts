@@ -126,5 +126,5 @@ export function computeRequiredBilling(laborCost: number | null): number | null 
 
 export function formatScheduleEuro(value: number | null): string {
   if (value == null) return '—';
-  return `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 }).format(Math.round(value))} €`;
+  return `${new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)} €`;
 }
