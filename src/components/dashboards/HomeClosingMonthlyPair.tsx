@@ -78,6 +78,10 @@ function HomeMonthlySalesWidget({ fullWidget = false }: { fullWidget?: boolean }
     // El cambio automático solo se aplica al mes inicial, nunca a una fecha
     // elegida expresamente con las flechas del widget.
     const manualMonthSelectionRef = useRef(false);
+    // El comparativo es histórico: no necesita releerse cada 90 s.
+    const comparisonCacheRef = useRef(new Map<string, { totalSales: number | null; expiresAt: number }>());
+    // No lanzar la misma batería de consultas si aún hay una pendiente.
+    const inFlightKeyRef = useRef<string | null>(null);
     const [snapshot, setSnapshot] = useState<MonthlySnapshot | null>(null);
     const [errorKey, setErrorKey] = useState<string | null>(null);
     const monthStart = format(startOfMonth(month), 'yyyy-MM-dd');
@@ -99,6 +103,12 @@ function HomeMonthlySalesWidget({ fullWidget = false }: { fullWidget?: boolean }
     const failed = errorKey === key;
 
     const refresh = useCallback(async (signal?: AbortSignal) => {
+        if (signal?.aborted || inFlightKeyRef.current === key) return;
+        inFlightKeyRef.current = key;
+        try {
+        const comparisonKey = comparisonStart + ':' + comparisonEnd;
+        const cachedComparison = comparisonCacheRef.current.get(comparisonKey);
+        const useCachedComparison = Boolean(cachedComparison && cachedComparison.expiresAt > Date.now());
         // Reutilizar las mismas fuentes que el resumen mensual de /dashboard/ventas.
         // La RPC contiene todas las facturas del periodo, independientemente del cierre.
         const [ticketsResult, closingsResult, comparisonResult, matchingCurrentResult] = await Promise.all([
@@ -109,7 +119,7 @@ function HomeMonthlySalesWidget({ fullWidget = false }: { fullWidget?: boolean }
                 .select('closing_date,closed_at,tpv_sales,net_sales')
                 .gte('closing_date', monthStart).lte('closing_date', monthEnd)
                 .order('closed_at', { ascending: true }),
-            supabase.rpc('get_ventas_crossfilter', {
+            useCachedComparison ? Promise.resolve(null) : supabase.rpc('get_ventas_crossfilter', {
                 p_start_date: comparisonStart, p_end_date: comparisonEnd, p_limit: 1,
             }),
             matchingCurrentEnd === monthEnd ? Promise.resolve(null) :
@@ -135,8 +145,17 @@ function HomeMonthlySalesWidget({ fullWidget = false }: { fullWidget?: boolean }
             setMonth(value => subMonths(value, 1));
             return;
         }
-        const previousRaw = (comparisonResult.data as { summary?: { totalSales?: number } } | null)?.summary?.totalSales;
-        const previousSales = !comparisonResult.error && previousRaw != null && Number(previousRaw) > 0
+        const previousRaw = comparisonResult === null
+            ? cachedComparison?.totalSales
+            : comparisonResult.error ? null
+                : (comparisonResult.data as { summary?: { totalSales?: number } } | null)?.summary?.totalSales;
+        if (comparisonResult !== null && !comparisonResult.error) {
+            comparisonCacheRef.current.set(comparisonKey, {
+                totalSales: previousRaw == null ? null : Number(previousRaw),
+                expiresAt: Date.now() + 300_000,
+            });
+        }
+        const previousSales = previousRaw != null && Number(previousRaw) > 0
             ? Number(previousRaw) : null;
         const matchingSalesRaw = matchingCurrentResult === null
             ? sales
@@ -170,16 +189,27 @@ function HomeMonthlySalesWidget({ fullWidget = false }: { fullWidget?: boolean }
             monthChange,
         });
         setErrorKey(null);
+        } finally {
+            if (inFlightKeyRef.current === key) inFlightKeyRef.current = null;
+        }
     }, [supabase, monthStart, monthEnd, comparisonStart, comparisonEnd, matchingCurrentEnd, comparisonLabel, comparisonDays, key, isCurrentMonth]);
 
     useEffect(() => {
         const controller = new AbortController();
-        // Evitar un setState síncrono dentro de useEffect y cancelar consultas obsoletas.
-        const initial = window.setTimeout(() => { void refresh(controller.signal); }, 0);
-        // El mes abierto se actualiza automáticamente; meses históricos son estáticos.
-        if (!isCurrentMonth) return () => { controller.abort(); window.clearTimeout(initial); };
-        const interval = window.setInterval(() => { void refresh(controller.signal); }, 90_000);
-        return () => { controller.abort(); window.clearTimeout(initial); window.clearInterval(interval); };
+        // No consultar ventas de forma periódica mientras la pestaña está oculta.
+        const refreshVisible = () => {
+            if (document.visibilityState === 'visible') void refresh(controller.signal);
+        };
+        const initial = window.setTimeout(refreshVisible, 0);
+        const onVisibility = () => { if (document.visibilityState === 'visible') refreshVisible(); };
+        document.addEventListener('visibilitychange', onVisibility);
+        const interval = isCurrentMonth ? window.setInterval(refreshVisible, 90_000) : null;
+        return () => {
+            controller.abort();
+            window.clearTimeout(initial);
+            if (interval !== null) window.clearInterval(interval);
+            document.removeEventListener('visibilitychange', onVisibility);
+        };
     }, [refresh, isCurrentMonth]);
 
     return (
