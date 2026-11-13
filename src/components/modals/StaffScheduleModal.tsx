@@ -480,11 +480,16 @@ export const StaffScheduleModal = ({
         onClose();
     };
 
-    const navigateEditingDay = async (delta: number) => {
+    const navigateSelectedDay = (delta: -1 | 1) => {
+        if (!selectedDate) return;
+        const next = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + delta);
+        void handleDayClick(next);
+    };
+
+    const navigateEditingDay = async (delta: -1 | 1) => {
         if (!selectedDate) return;
         await scheduleEditorRef.current?.flushSave();
-        const next = new Date(selectedDate);
-        next.setDate(next.getDate() + delta);
+        const next = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + delta);
         setSelectedDate(next);
         setEditModeForDate(format(next, 'yyyy-MM-dd'));
     };
@@ -585,32 +590,43 @@ export const StaffScheduleModal = ({
                             type="button"
                             onClick={() => {
                                 if (editModeForDate) {
-                                    void exitEditModeAndRefresh();
+                                    void navigateEditingDay(-1);
                                 } else if (selectedDate) {
-                                    handleBack();
+                                    navigateSelectedDay(-1);
                                 } else {
                                     navigateMonth(-1);
                                 }
                             }}
-                            aria-label={editModeForDate ? 'Salir de edición' : selectedDate ? 'Volver al calendario' : 'Mes anterior'}
+                            aria-label={selectedDate ? 'Día anterior' : 'Mes anterior'}
                             className="relative flex h-8 w-7 shrink-0 items-center justify-center bg-transparent text-zinc-400 transition-colors hover:text-white active:opacity-70"
                         >
                             <ChevronLeft size={18} strokeWidth={2.5} />
                         </button>
-                        <span data-element="schedule-date-label" className="min-w-0 truncate whitespace-nowrap py-1 leading-[1.45]">
-                            {selectedDate
-                                ? formatDateTitle(selectedDate, "EEEE d 'de' MMMM")
-                                : formatDateTitle(currentDate, 'MMMM yyyy')}
-                        </span>
+                        {selectedDate ? (
+                            <button
+                                type="button"
+                                data-element="schedule-date-label"
+                                aria-label={editModeForDate ? 'Salir de edición' : 'Volver al calendario mensual'}
+                                onClick={() => {
+                                    if (editModeForDate) void exitEditModeAndRefresh();
+                                    else handleBack();
+                                }}
+                                className="min-w-0 truncate whitespace-nowrap bg-transparent py-1 text-inherit leading-[1.45]"
+                            >
+                                {formatDateTitle(selectedDate, "EEEE d 'de' MMMM")}
+                            </button>
+                        ) : (
+                            <span data-element="schedule-date-label" className="min-w-0 truncate whitespace-nowrap py-1 leading-[1.45]">
+                                {formatDateTitle(currentDate, 'MMMM yyyy')}
+                            </span>
+                        )}
                         <button
                             type="button"
                             onClick={() => {
                                 if (editModeForDate) {
                                     void navigateEditingDay(1);
                                 } else if (selectedDate) {
-                                    const nextDay = new Date(selectedDate);
-                                    nextDay.setDate(nextDay.getDate() + 1);
-                                    void handleDayClick(nextDay);
+                                    navigateSelectedDay(1);
                                 } else {
                                     navigateMonth(1);
                                 }
