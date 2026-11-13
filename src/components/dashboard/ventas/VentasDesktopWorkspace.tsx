@@ -1450,20 +1450,29 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
 
         let active = true;
         let latestRequest = 0;
+        let inFlight = false;
         const refresh = async () => {
-            const request = ++latestRequest;
-            const [sales, report] = await Promise.all([
-                supabase.rpc('get_daily_sales_stats', { target_date: date }),
-                todaySelected
-                    ? supabase.rpc('get_ventas_crossfilter', { p_start_date: date, p_end_date: date, p_limit: 1 })
-                    : Promise.resolve(null),
-            ]);
-            if (!active || request !== latestRequest) return;
-            if (!sales.error) {
-                const total = Number(sales.data?.total_ventas ?? 0);
-                if (Number.isFinite(total)) setLiveDaySales({ date, total });
+            // La carga en curso ya recupera la misma fecha; no solapar consultas
+            // por el temporizador, el foco y los eventos de nuevos tickets.
+            if (!active || document.visibilityState !== 'visible' || inFlight) return;
+            inFlight = true;
+            try {
+                const request = ++latestRequest;
+                const [sales, report] = await Promise.all([
+                    supabase.rpc('get_daily_sales_stats', { target_date: date }),
+                    todaySelected
+                        ? supabase.rpc('get_ventas_crossfilter', { p_start_date: date, p_end_date: date, p_limit: 1 })
+                        : Promise.resolve(null),
+                ]);
+                if (!active || request !== latestRequest) return;
+                if (!sales.error) {
+                    const total = Number(sales.data?.total_ventas ?? 0);
+                    if (Number.isFinite(total)) setLiveDaySales({ date, total });
+                }
+                if (report && !report.error && report.data) setDailyReport(report.data as TicketReport);
+            } finally {
+                inFlight = false;
             }
-            if (report && !report.error && report.data) setDailyReport(report.data as TicketReport);
         };
         void refresh();
         const channel = supabase.channel(`realtime_ventas_detail:${randomId()}`)
@@ -1473,10 +1482,13 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         const interval = setInterval(() => { void refresh(); }, 60000);
         const onFocus = () => { void refresh(); };
         window.addEventListener('focus', onFocus);
+        const onVisibility = () => { if (document.visibilityState === 'visible') void refresh(); };
+        document.addEventListener('visibilitychange', onVisibility);
         return () => {
             active = false;
             clearInterval(interval);
             window.removeEventListener('focus', onFocus);
+            document.removeEventListener('visibilitychange', onVisibility);
             void supabase.removeChannel(channel);
         };
     }, [supabase, period.start, period.end, initializing, desktopSalesCalendar, currentSalesDate, month, previewMode, monthStart, monthEnd]);
