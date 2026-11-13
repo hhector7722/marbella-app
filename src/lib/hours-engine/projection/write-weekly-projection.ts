@@ -27,6 +27,7 @@ import { validateExpectedHoursContractDays } from '../expected-hours-contract-va
 import { loadEmployeeBoundaryFacts } from '../load-employee-facts.ts';
 import { liquidateWeek } from '../liquidation-engine.ts';
 import { priceLiquidationOvertime } from '../week-card-from-liquidation.ts';
+import { settleOvertimePaidAdvance } from '../overtime-paid-advance.ts';
 import {
   assertMonday,
   compareCivilDate,
@@ -229,7 +230,7 @@ export async function writeWeeklyProjection(
     client
       .from('weekly_snapshots')
       .select(
-        'week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot',
+        'week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot, overtime_paid_advance_eur',
       )
       .eq('user_id', userId)
       .gte('week_start', logsFrom)
@@ -266,6 +267,29 @@ export async function writeWeeklyProjection(
   const isPaidByWeek = isPaidLookupFromRows(snapRows);
   const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapRows);
   const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(snapRows);
+
+  // Hechos B inmutables: los excesos ya pagados se compensan, pero nunca
+  // se recalculan desde weekly_snapshots.total_cost (proyección C).
+  const paidAdvanceByWeek = new Map<string, number>();
+  let firstAdvanceWeek: CivilDate | null = null;
+  for (const snapshot of snapRows) {
+    const amount = Number(snapshot.overtime_paid_advance_eur ?? 0);
+    if (!Number.isFinite(amount) || amount < 0) {
+      return { ok: false, error: 'writeWeeklyProjection: anticipo inválido en ' + snapshot.week_start };
+    }
+    if (amount > 0) {
+      const week = ymdKey(snapshot.week_start);
+      paidAdvanceByWeek.set(week, amount);
+      if (firstAdvanceWeek == null || compareCivilDate(week, firstAdvanceWeek) < 0) {
+        firstAdvanceWeek = week;
+      }
+    }
+  }
+  // Recalcular desde el primer anticipo garantiza el mismo crédito económico
+  // aunque la invalidación solicitada empiece semanas después.
+  if (firstAdvanceWeek != null && compareCivilDate(firstAdvanceWeek, fromWeekStart) < 0) {
+    fromWeekStart = firstAdvanceWeek;
+  }
 
   const engineLogs: TimeLogFact[] = (logsRes.data ?? []).map((l) => ({
     clockInIso: l.clock_in,
@@ -313,6 +337,7 @@ export async function writeWeeklyProjection(
   }
 
   const candidates: ProjectionWeekCandidate[] = [];
+  let availableAdvanceCredit = 0;
 
   for (
     let weekStart = fromWeekStart;
@@ -348,16 +373,27 @@ export async function writeWeeklyProjection(
         bagModeOverride,
         overrideRate,
       });
+      const paidAdvance = paidAdvanceByWeek.get(weekStart) ?? 0;
+      if (paidAdvance > 0 && !isPaid) {
+        throw new Error('anticipo de horas extras sin pago histórico confirmado');
+      }
+      const settlement = settleOvertimePaidAdvance({
+        grossCost: pricing.estimatedValue,
+        creditIn: availableAdvanceCredit,
+        paidAdvance,
+      });
+      availableAdvanceCredit = settlement.creditOut;
 
       candidates.push({
         liquidation,
-        estimatedValue: pricing.estimatedValue,
+        estimatedValue: settlement.estimatedValue,
         hourlyRate: pricing.hourlyRate ?? null,
         hasMissingRate: pricing.hasMissingRate === true,
         overrides: {
           isPaid,
           preferStockHoursOverride: bagModeOverride,
           overtimePriceSnapshot: overrideRate,
+          overtimePaidAdvanceEur: paidAdvance,
         },
       });
     } catch (err) {
@@ -396,7 +432,7 @@ export async function writeWeeklyProjection(
   let weeksUpdated = 0;
 
   const WEEK_READ_SELECT =
-    'user_id, week_start, week_end, pending_balance, balance_hours, final_balance, total_hours, ordinary_hours, extra_hours, contracted_hours_snapshot, total_cost, carry_out, prefer_stock_effective, has_missing_rate, overtime_rate_effective, is_paid, prefer_stock_hours_override, overtime_price_snapshot';
+    'user_id, week_start, week_end, pending_balance, balance_hours, final_balance, total_hours, ordinary_hours, extra_hours, contracted_hours_snapshot, total_cost, carry_out, prefer_stock_effective, has_missing_rate, overtime_rate_effective, is_paid, prefer_stock_hours_override, overtime_price_snapshot, overtime_paid_advance_eur';
 
   for (const row of rows) {
     const candidate = candidates.find(
@@ -528,10 +564,12 @@ export async function writeWeeklyProjection(
       const beforePaid = existing.is_paid;
       const beforeBag = existing.prefer_stock_hours_override;
       const beforeRate = existing.overtime_price_snapshot;
+      const beforeAdvance = Number(existing.overtime_paid_advance_eur ?? 0);
       if (
         beforePaid !== readBack.is_paid ||
         beforeBag !== readBack.prefer_stock_hours_override ||
-        beforeRate !== readBack.overtime_price_snapshot
+        beforeRate !== readBack.overtime_price_snapshot ||
+        beforeAdvance !== Number(readBack.overtime_paid_advance_eur ?? 0)
       ) {
         return {
           ok: false,

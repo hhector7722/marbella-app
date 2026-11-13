@@ -38,6 +38,8 @@ export type ProjectionWeekCandidate = {
     isPaid: boolean;
     preferStockHoursOverride: boolean | null;
     overtimePriceSnapshot: number | null;
+    /** Exceso ya pagado (hecho B, no recalculado). */
+    overtimePaidAdvanceEur?: number;
   };
 };
 
@@ -446,11 +448,12 @@ export function validateProjectionBatch(
       );
     }
 
-    // INV-P04 / INV-$01: carryOut < 0 ⇒ estimatedValue = 0
+    // INV-P04 / INV-$01: con deuda no hay nuevo cobro; solo puede
+    // figurar un anticipo histórico efectivamente pagado.
     if (
       liq.carryOut < -HOURS_EPS &&
       c.estimatedValue != null &&
-      Math.abs(c.estimatedValue) > MONEY_EPS
+      Math.abs(c.estimatedValue - (c.overrides.overtimePaidAdvanceEur ?? 0)) > MONEY_EPS
     ) {
       return fail(
         'INV-P04',

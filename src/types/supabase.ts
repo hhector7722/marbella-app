@@ -5816,6 +5816,7 @@ export type Database = {
           ordinary_hours: number | null
           overtime_price_snapshot: number | null
           overtime_rate_effective: number | null
+          overtime_paid_advance_eur: number
           pending_balance: number | null
           prefer_stock_effective: boolean | null
           prefer_stock_hours_override: boolean | null
@@ -5838,6 +5839,7 @@ export type Database = {
           ordinary_hours?: number | null
           overtime_price_snapshot?: number | null
           overtime_rate_effective?: number | null
+          overtime_paid_advance_eur?: number
           pending_balance?: number | null
           prefer_stock_effective?: boolean | null
           prefer_stock_hours_override?: boolean | null
@@ -5860,6 +5862,7 @@ export type Database = {
           ordinary_hours?: number | null
           overtime_price_snapshot?: number | null
           overtime_rate_effective?: number | null
+          overtime_paid_advance_eur?: number
           pending_balance?: number | null
           prefer_stock_effective?: boolean | null
           prefer_stock_hours_override?: boolean | null
