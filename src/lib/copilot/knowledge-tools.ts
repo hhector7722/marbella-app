@@ -1,11 +1,12 @@
 import type { createClient } from "@/utils/supabase/server";
 import { canExecute, type RoleName } from "./permissions.ts";
 import type { GroqTool } from "./groq-chat";
+import { ACTIVITY_OCCURRENCES_RANGE_SELECT, groupOccurrencesToByDate } from "../pavilion/bar-activities-range.ts";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
-export type KnowledgeToolName = "consultar_ventas_productos" | "consultar_receta_detallada" | "consultar_horas_trabajadas" | "consultar_extras_propias";
+export type KnowledgeToolName = "consultar_ventas_productos" | "consultar_receta_detallada" | "consultar_horas_trabajadas" | "consultar_extras_propias" | "consultar_actividades_horario";
 export const KNOWLEDGE_TOOLS = new Set<KnowledgeToolName>([
-  "consultar_ventas_productos", "consultar_receta_detallada", "consultar_horas_trabajadas", "consultar_extras_propias",
+  "consultar_ventas_productos", "consultar_receta_detallada", "consultar_horas_trabajadas", "consultar_extras_propias", "consultar_actividades_horario",
 ]);
 
 type Dates = { periodo: "hoy" | "ayer" | "esta_semana" | "semana_pasada" | "rango"; fecha_inicio?: string; fecha_fin?: string };
@@ -18,6 +19,24 @@ const dateProps = {
 };
 
 export const KNOWLEDGE_TOOL_DEFS: Record<KnowledgeToolName, GroqTool> = {
+  consultar_actividades_horario: {
+    type: "function",
+    function: {
+      name: "consultar_actividades_horario",
+      description: "Consulta los EVENTOS y ACTIVIDADES reales del calendario /horario, de las pistas P1-P4 del pabellón (NO reservas). Para 'qué hay el finde', 'actividades del fin de semana', partidos, eventos, agenda y ocupación del pabellón. Devuelve nombre, día, horario, pista y participantes cuando constan. Nunca deduzcas ausencia de actividades a partir de las reservas.",
+      parameters: {
+        type: "object",
+        properties: {
+          periodo: { type: "string", enum: ["este_fin_de_semana", "proximo_fin_de_semana", "esta_semana", "hoy", "manana", "rango"],
+            description: "Para 'el finde' usa este_fin_de_semana, calcula las fechas Europe/Madrid el servidor." },
+          dia: { type: "string", enum: ["sabado", "domingo"], description: "Opcional: solo uno de los días del fin de semana." },
+          fecha_inicio: { type: "string", description: "YYYY-MM-DD si periodo es rango" },
+          fecha_fin: { type: "string", description: "YYYY-MM-DD si periodo es rango" },
+        },
+        required: ["periodo"], additionalProperties: false,
+      },
+    },
+  },
   consultar_ventas_productos: {
     type: "function",
     function: {
@@ -68,6 +87,7 @@ export const KNOWLEDGE_TOOL_DEFS: Record<KnowledgeToolName, GroqTool> = {
 };
 
 export function toolEnabled(role: RoleName, name: KnowledgeToolName): boolean {
+  if (name === "consultar_actividades_horario") return canExecute(role, "gestionar_horarios");
   if (name === "consultar_ventas_productos") return canExecute(role, "consultar_metricas_basicas");
   if (name === "consultar_receta_detallada") return canExecute(role, "gestionar_recetas");
   if (name === "consultar_horas_trabajadas") return canExecute(role, "consultar_registros_asistencia");
@@ -111,6 +131,46 @@ export function resolveDates(args: Dates, today = madridDate()): { inicio: strin
   }
   const length = (end.getTime()-start.getTime()) / 86400000;
   if (length < 0 || length > 62 || end > shift(base,1)) return { error: "Rango inválido, futuro o mayor de 63 días" };
+  return { inicio: iso(start), fin: iso(end) };
+}
+
+type ActivityPeriod = "este_fin_de_semana" | "proximo_fin_de_semana" | "esta_semana" | "hoy" | "manana" | "rango";
+export function resolveActivityDates(args: {
+  periodo?: ActivityPeriod; dia?: "sabado" | "domingo"; fecha_inicio?: string; fecha_fin?: string;
+}, today = madridDate()): { inicio: string; fin: string } | { error: string } {
+  const base = dateToUtc(today);
+  if (!base) return { error: "Fecha local inválida" };
+  const period = args.periodo ?? "este_fin_de_semana";
+  let start = base, end = base;
+  switch (period) {
+    case "hoy": break;
+    case "manana": start = shift(base, 1); end = start; break;
+    case "esta_semana":
+      start = shift(base, -((base.getUTCDay() + 6) % 7));
+      end = shift(start, 6); break;
+    case "este_fin_de_semana":
+    case "proximo_fin_de_semana": {
+      const day = base.getUTCDay();
+      // En domingo, el fin de semana actual incluye el sábado anterior.
+      const saturday = shift(base, day === 0 ? -1 : day === 6 ? 0 : 6 - day);
+      start = period === "proximo_fin_de_semana" ? shift(saturday, 7) : saturday;
+      end = shift(start, 1);
+      if (args.dia === "sabado") end = start;
+      if (args.dia === "domingo") start = end;
+      break;
+    }
+    case "rango": {
+      const a = args.fecha_inicio && dateToUtc(args.fecha_inicio);
+      const b = args.fecha_fin && dateToUtc(args.fecha_fin);
+      if (!a || !b) return { error: "Especifica fecha_inicio y fecha_fin válidas" };
+      start = a; end = b; break;
+    }
+    default: return { error: "Periodo de actividades inválido" };
+  }
+  const durationDays = (end.getTime() - start.getTime()) / 86400000;
+  if (durationDays < 0 || durationDays > 62 || start < shift(base, -365) || end > shift(base, 366)) {
+    return { error: "Rango de actividades fuera del límite de consulta" };
+  }
   return { inicio: iso(start), fin: iso(end) };
 }
 
@@ -199,6 +259,43 @@ export async function runKnowledgeTool(
 ): Promise<unknown> {
   if (!toolEnabled(ctx.role, name)) return { error: "No tienes permiso para consultar esta información" };
   const args = parseArgs(rawArgs);
+  if (name === "consultar_actividades_horario") {
+    const dates = resolveActivityDates(args as Parameters<typeof resolveActivityDates>[0], ctx.today || madridDate());
+    if ("error" in dates) return dates;
+    // Misma selección y filtro de pistas que el calendario /horario;
+    // la sesión de cada usuario y RLS siguen aplicando.
+    const { data, error } = await ctx.supabase.from("activity_occurrences")
+      .select(ACTIVITY_OCCURRENCES_RANGE_SELECT)
+      .gte("activity_date", dates.inicio)
+      .lte("activity_date", dates.fin)
+      .order("activity_date", { ascending: true })
+      .order("start_time", { ascending: true })
+      .limit(500);
+    if (error) return { error: "No se pudo consultar el calendario de actividades con los permisos de esta sesión" };
+    const byDate = groupOccurrencesToByDate((data ?? []) as Record<string, unknown>[]);
+    const dias: Array<{ fecha: string; actividades: Array<Record<string, unknown>> }> = [];
+    for (let day = dateToUtc(dates.inicio); day && iso(day) <= dates.fin; day = shift(day, 1)) {
+      const date = iso(day);
+      const activities = byDate[date]?.barActivities ?? [];
+      dias.push({ fecha: date, actividades: activities.map((a) => ({
+        nombre: a.activityName,
+        inicio: a.startTime, fin: a.endTime,
+        pistas: a.venueCodes,
+        participantes: a.totalParticipants,
+        categorias: a.categories,
+      })) });
+    }
+    const count = dias.reduce((sum, day) => sum + day.actividades.length, 0);
+    return {
+      fuente: "Calendario /horario · actividades del pabellón en pistas P1-P4, no reservas",
+      periodo: dates, dias,
+      total_actividades: count,
+      completo: (data ?? []).length < 500,
+      nota: count === 0
+        ? "No hay actividades registradas en este calendario para esas fechas. Esto NO equivale a ausencia de reservas ni permite afirmar que no habrá otros eventos."
+        : "Son actividades programadas, distintas de las reservas de clientes.",
+    };
+  }
   if (name === "consultar_receta_detallada") {
     const requested = filterName(String(args.nombre??""));
     if (requested.length < 2) return {error:"Indica el nombre de la receta"};
