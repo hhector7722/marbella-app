@@ -550,6 +550,13 @@ html[data-quick-fab='open'] main {
 [data-component='Modal'] [data-element='footer']:has(> [data-element='footer-actions'] [data-schedule-notes-footer]) {
   padding-inline: 0;
 }
+/* El modal de horarios conserva su altura al navegar, cargar otro día o
+ * entrar/salir de edición. Solo el área interior se ajusta al contenido;
+ * en pantallas pequeñas se limita al espacio útil disponible. */
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='container'] {
+  height: min(680px, var(--modal-max-height)) !important;
+}
+
 /*
  * Cabecera del horario: la fecha y sus dos flechas forman una unidad de
  * anchura intrínseca. Evita el recorte de descendentes (g, p, j, q, y)
