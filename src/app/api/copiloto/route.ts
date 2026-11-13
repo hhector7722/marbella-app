@@ -119,6 +119,8 @@ function availableTools(role: RoleName, question: string, mayProposeWeekendNote:
   return proposeNote ? [WEEKEND_NOTE_TOOL]
     : ownExtras ? knowledge.filter(tool => tool.function.name === "consultar_extras_propias")
     : payQuery && (role === "manager" || role === "admin") ? [dataTool]
+    // El calendario /horario NO es la fuente de reservas: excluir esa alternativa.
+    : chosen.length === 1 && chosen[0].function.name === "consultar_actividades_horario" ? chosen
     : [...chosen, dataTool];
 }
 
@@ -229,6 +231,7 @@ export async function POST(req: Request) {
     "Si te preguntan por datos del negocio, consulta primero la base mediante herramientas antes de responder.",
     "Para unidades vendidas de productos utiliza consultar_ventas_productos, no el recuento de tickets.",
     "Para qué lleva una receta utiliza consultar_receta_detallada y sus componentes reales.",
+    "Si preguntan qué actividades, eventos o partidos hay el finde/fin de semana o en el horario, usa EXCLUSIVAMENTE consultar_actividades_horario para el calendario /horario (pistas P1-P4). No uses consultar_reservas para esa pregunta ni confundas ausencia de reservas con ausencia de actividades.",
     "Para horas trabajadas utiliza consultar_horas_trabajadas, con nombre y periodo. No niegues acceso antes de consultar si tu rol lo permite.",
     "Para tus propias horas extras utiliza consultar_extras_propias; no pidas UUID.",
     "Dispones del catálogo consultar_datos_aplicacion para consultar de forma transversal TODOS los módulos incluidos en las fuentes autorizadas: nóminas, contratos, extras, compras, albaranes, inventario, caja, reservas, fichajes y más.",
@@ -330,7 +333,7 @@ ${body.attachmentContext}`;
         } catch {
           console.warn("[copiloto] direct_supplier_purchases_unavailable");
         }
-        const dataQuestion = tools.some(tool => tool.function.name === WEEKEND_NOTE_TOOL_NAME) || Boolean(resolved) || /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|gramos?|kilos?|cantidad|cu[aá]nto|qu[eé] lleva|prepar|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|manual|importe|ingreso|coste|precio|informe|report|cobr|pag|nomina|salario|sueldo/i.test(userText);
+        const dataQuestion = tools.some(tool => tool.function.name === WEEKEND_NOTE_TOOL_NAME) || Boolean(resolved) || /venta|vend|ticket|cafe|café|producto|receta|sangr|ingrediente|gramos?|kilos?|cantidad|cu[aá]nto|qu[eé] lleva|prepar|hora|trabaj|fichaj|emplead|inventario|stock|caja|proveedor|pedido|reserva|actividad|evento|partido|pabell[oó]n|agenda|finde|fin de semana|manual|importe|ingreso|coste|precio|informe|report|cobr|pag|nomina|salario|sueldo/i.test(userText);
         const started = Date.now();
         // El límite empieza en la entrada HTTP, no después de DB y herramientas.
         // Reservar margen antes del timeout de 60 s de Vercel para persistir respuesta.
