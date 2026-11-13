@@ -3,14 +3,13 @@
 import { createClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { loadEmployeeBoundaryFactsBatch } from '@/lib/hours-engine/load-employee-facts';
-import { resolveEffectiveOvertimeRate } from '@/lib/hours-engine/contract-resolver';
+import { rateFromEmployeePayroll, overtimeRateForScheduleDay, type SchedulePayrollRow } from '@/lib/schedule-payroll-rate';
 import { mondayOnOrBefore } from '@/lib/hours-engine/week-dates';
 import { formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { roundMarbellaHours } from '@/lib/hours-engine/marbella-round';
-import type { EmployeeBoundaryFacts } from '@/lib/hours-engine/types';
 import type { ScheduleLaborCostContext } from '@/lib/schedule-day-profitability';
 
-type PayrollRow = { user_id: string; period_ym: string; total_company_cost: number };
+type PayrollRow = SchedulePayrollRow & { user_id: string };
 type ShiftRow = {
   user_id: string;
   start_time: string;
@@ -25,21 +24,6 @@ function monthBefore(ym: string): string {
   const [year, month] = ym.split('-').map(Number);
   const previous = new Date(Date.UTC(year!, month! - 2, 1));
   return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, '0')}`;
-}
-
-function contractedHoursInPayrollMonth(employee: EmployeeBoundaryFacts, ym: string): number {
-  const [year, month] = ym.split('-').map(Number);
-  const days = new Date(Date.UTC(year!, month!, 0)).getUTCDate();
-  let hours = 0;
-  for (let d = 1; d <= days; d++) {
-    const day = `${ym}-${String(d).padStart(2, '0')}`;
-    const term = employee.terms.find((t) =>
-      t.effectiveFrom <= day && (t.effectiveTo == null || t.effectiveTo >= day));
-    if (term?.regime === 'staff' && term.weeklyHours > 0) {
-      hours += term.weeklyHours / 7;
-    }
-  }
-  return hours;
 }
 
 function loggedHours(row: LogRow): number {
@@ -153,26 +137,16 @@ export async function getScheduleLaborCostContext(
     const result: ScheduleLaborCostContext = {};
     for (const id of ids) {
       const employee = employees[id]!;
-      let ordinaryHourlyRate: number | null = null;
-      let payrollPeriod: string | null = null;
-      for (const payroll of payrollByWorker.get(id) ?? []) {
-        const denominator = contractedHoursInPayrollMonth(employee, payroll.period_ym);
-        const total = Number(payroll.total_company_cost);
-        if (denominator > 0 && Number.isFinite(total) && total > 0) {
-          ordinaryHourlyRate = total / denominator;
-          payrollPeriod = payroll.period_ym;
-          break;
-        }
-      }
+      const rate = rateFromEmployeePayroll(employee, payrollByWorker.get(id) ?? []);
       const override = overrides.get(id);
-      const overtimeHourlyRate = resolveEffectiveOvertimeRate(
-        employee, weekStart, override == null ? undefined : Number(override));
+      const overtimeHourlyRate = overtimeRateForScheduleDay(
+        employee, day, override == null ? undefined : Number(override));
       result[id] = {
         employee,
-        ordinaryHourlyRate,
+        ordinaryHourlyRate: rate.rate,
         overtimeHourlyRate,
         earlierHoursByDay: earlier.get(id) ?? {},
-        payrollPeriod,
+        payrollPeriod: rate.period,
       };
     }
     return { success: true, data: result };
