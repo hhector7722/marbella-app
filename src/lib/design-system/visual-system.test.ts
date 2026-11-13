@@ -34,29 +34,25 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
     return acc;
 }
 
-describe('Cabecera nítida con modales abiertos', () => {
-    it('el backdrop empieza bajo la cabecera, sin desenfocar el Navbar', () => {
+describe('Cabecera normal nítida y desenfocada solo bajo modales', () => {
+    it('sin modal, la barra no usa filtros ni transformación de capa para ocultarse', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        assert.match(css,
-            /html:has\(\.marbella-fixed-topbar\) \[data-modal-backdrop='base'\] \{[\s\S]*?top:\s*calc\(var\(--app-navbar-height\) \+ env\(safe-area-inset-top, 0px\)\);/,
-            'el backdrop empieza por debajo de la cabecera, incluida el área segura'
-        );
-        assert.doesNotMatch(css,
-            /html\[data-modal-open="true"\] \.marbella-fixed-topbar/,
-            'el Navbar no recibe filtro, opacidad ni bloqueo al abrir modales'
-        );
-        assert.match(css,
-            /html:has\(\.marbella-fixed-topbar\):has\(\[data-component='PageScreen'\] \[data-element='header'\]\)[\s\S]*?\[data-modal-backdrop='base'\] \{\s*top:\s*calc\(var\(--estructura-cabecera\) \+ env\(safe-area-inset-top, 0px\) \+ var\(--espacio-4\) \+ var\(--modal-header-height\) \+ var\(--espacio-4\)\);/,
-            'el backdrop deja libre la cabecera de PageScreen, además del Navbar'
-        );
-        assert.doesNotMatch(css,
-            /html\[data-modal-open="true"\] \[data-component='PageScreen'\] \[data-element='toolbar'\]\[data-pin='true'\] \{[\s\S]*?filter:\s*blur/,
-            'la barra fija no recibe un desenfoque directo al abrir un modal'
-        );
-        assert.match(css,
-            /html\[data-modal-open="true"\] \.marbella-fixed-bottombar \{[\s\S]*?filter:\s*blur\(6px\);/,
-            'la barra inferior conserva el tratamiento anterior'
-        );
+        const navbar = css.match(/^\.marbella-fixed-topbar \{([^}]+)\}/m)?.[1] ?? '';
+        const hidden = css.match(/^\.marbella-fixed-topbar\[data-hidden='true'\] \{([^}]+)\}/m)?.[1] ?? '';
+        assert.match(navbar, /transition:\s*top 0\.35s/);
+        assert.match(navbar, /(?:^|\n)\s*filter:\s*none;/);
+        assert.match(navbar, /-webkit-backdrop-filter:\s*none;/);
+        assert.doesNotMatch(navbar, /(?:^|\n)\s*(?:-webkit-)?transform\s*:/);
+        assert.match(hidden, /top:\s*calc\(-1 \*/);
+        assert.doesNotMatch(hidden, /transform/);
+    });
+
+    it('con modal, la cabecera recupera el mismo blur y opacidad que el pie', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(css, /html\[data-modal-open="true"\] \.marbella-fixed-topbar,[\s\S]*?filter:\s*blur\(6px\);[\s\S]*?opacity:\s*0\.35;/);
+        assert.match(css, /html\[data-modal-open="true"\]:has\(\[data-component='Modal'\]\[data-instance='global-search'\]\) \.marbella-fixed-topbar,/);
+        assert.doesNotMatch(css, /html:has\(\.marbella-fixed-topbar\) \[data-modal-backdrop='base'\]/);
+        assert.doesNotMatch(css, /html:has\(\.marbella-fixed-topbar\):has\(\[data-component='PageScreen'/);
     });
 });
 
@@ -317,7 +313,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             assert.match(navbar, /userData\?\.authEmail \|\| identity\?\.realEmail/, 'la cámara prioriza el correo real de la sesión');
             assert.match(navbar, /identity\?\.isViewingAs[\s\S]*?identity\.effectiveEmail/, 'Ver como conserva los permisos del usuario simulado');
             assert.match(navbar, /data-camera-visible=\{canSeeCamera/, 'el layout móvil adapta el buscador cuando aparece cámara');
-            assert.doesNotMatch(css, /html\[data-modal-open="true"\] \.marbella-fixed-topbar/, 'los modales no difuminan la cabecera superior');
+            assert.match(css, /html\[data-modal-open="true"\] \.marbella-fixed-topbar,/, 'los modales difuminan la cabecera superior igual que el contenido');
             assert.match(navbar, /router\.push\('\/camaras'\)/, 'la cámara conserva su ruta');
             assert.match(navbar, /data-element="navbar-copilot"/, 'se mantiene el asistente actual');
             assert.doesNotMatch(navbar, /-space-x-3/, 'los controles de la cabecera ya no se tapan');

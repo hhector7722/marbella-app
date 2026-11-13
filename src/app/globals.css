@@ -5586,8 +5586,7 @@ html:has(.dashboard-mosaic-switcher) {
     left: var(--shell-sidebar-width);
   }
   .marbella-fixed-topbar[data-hidden='true'] {
-    transform: none;
-    -webkit-transform: none;
+    top: 0;
     opacity: 1;
     pointer-events: auto;
   }
@@ -6244,9 +6243,15 @@ html:has(.dashboard-mosaic-switcher) {
   box-sizing: border-box;
   overflow: visible;
   background-color: transparent;
+  /* Evitar rasterización borrosa en Safari iOS: la barra se oculta moviendo
+     su posición top, no transformando la capa que contiene texto e iconos. */
   transition:
-    transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+    top 0.35s cubic-bezier(0.32, 0.72, 0, 1),
     opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+  filter: none;
+  -webkit-filter: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 /* Recorte del degradado del shell solo a la franja de cabecera (sin capa viewport). */
 .marbella-fixed-topbar::before {
@@ -6262,8 +6267,7 @@ html:has(.dashboard-mosaic-switcher) {
   background-position: center top;
 }
 .marbella-fixed-topbar[data-hidden='true'] {
-  transform: translateY(-100%);
-  -webkit-transform: translateY(-100%);
+  top: calc(-1 * (var(--app-navbar-height) + env(safe-area-inset-top, 0px)));
   opacity: 0;
   pointer-events: none;
 }
@@ -6454,30 +6458,18 @@ html:has(.dashboard-mosaic-switcher) {
   }
 }
 
-/* El modal base solo cubre el área por DEBAJO de la cabecera fija.
-   Así su backdrop-filter no llega a componer/blurrear el texto e iconos
-   superiores (ni en iOS ni en Chrome), respetando el área segura.
-   El propio Navbar no recibe ningún filtro ni cambio de opacidad. */
-html:has(.marbella-fixed-topbar) [data-modal-backdrop='base'] {
-  top: calc(var(--app-navbar-height) + env(safe-area-inset-top, 0px));
-}
-/* Los títulos, periodos y acciones de PageScreen viven bajo el Navbar.
-   A diferencia del Navbar, están en un contexto de apilamiento del main:
-   subirles el z-index no los saca del backdrop del portal. Por eso el
-   backdrop arranca debajo del cromo de la página cuando existe cabecera.
-   La geometría combina el espacio reservado, la altura canónica de cabecera
-   y sus márgenes; no altera el modal ni el desenfoque del contenido inferior. */
-html:has(.marbella-fixed-topbar):has([data-component='PageScreen'] [data-element='header'])
-  [data-modal-backdrop='base'] {
-  top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px) + var(--espacio-4) + var(--modal-header-height) + var(--espacio-4));
-}
-/* La barra inferior conserva el desenfoque acordado. */
-html[data-modal-open="true"] .marbella-fixed-bottombar {
+/* El desenfoque del cromo solo se aplica al abrir un modal. Cuando no
+   hay ningún modal, Navbar permanece sin filtros y completamente nítido. */
+html[data-modal-open="true"] .marbella-fixed-topbar,
+html[data-modal-open="true"] .marbella-fixed-bottombar,
+html[data-modal-open="true"] [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
   filter: blur(6px);
   opacity: 0.35;
   pointer-events: none;
 }
-html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-bottombar {
+html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-topbar,
+html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-bottombar,
+html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
   filter: blur(1px);
   opacity: 0.78;
 }
