@@ -12,7 +12,8 @@ import { canGenerateAltaPdf, missingAltaPdfFields } from '@/lib/alta-laboral/com
 import { createAltaServiceClient } from '@/lib/alta-laboral/service-client.ts';
 import { generateIntakeToken, hashIntakeToken, intakeExpiresAt } from '@/lib/alta-laboral/token.ts';
 import { generateTemporaryPassword } from '@/lib/alta-laboral/password.ts';
-import { ALTA_BUCKET, imageExtension, profileDniPath } from '@/lib/alta-laboral/storage.ts';
+import { ALTA_BUCKET, imageExtension, intakeImagePath, profileDniPath } from '@/lib/alta-laboral/storage.ts';
+import { buildRehireDraft } from '@/lib/alta-laboral/rehire.ts';
 import { displayStatus } from '@/lib/alta-laboral/dates.ts';
 import type { CandidateFields, ContractFields, EmploymentIntakeRow } from '@/lib/alta-laboral/types.ts';
 import { INTAKE_STATUS_LABEL } from '@/lib/alta-laboral/types.ts';
@@ -61,6 +62,139 @@ export async function createEmploymentIntake(): Promise<
 
   revalidateAltas();
   return { success: true, id: data.id, token, path: `/alta/${token}` };
+}
+
+/**
+ * Reincorporación: copia independiente para gestoría. Nunca escribe en profiles,
+ * Auth ni hours_contract_terms. Las fechas nuevas las decide el responsable.
+ */
+export async function createEmploymentIntakeFromProfile(
+  profileId: string,
+): Promise<{ success: true; id: string } | { success: false; error: string }> {
+  if (await isSandboxRequest()) {
+    return { success: false, error: 'No se puede crear un alta desde el sandbox' };
+  }
+  const gate = await requireMaster();
+  if (!gate.ok || !gate.admin || !gate.user) return { success: false, error: gate.error ?? 'Acceso denegado' };
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profileId)) {
+    return { success: false, error: 'Trabajador no válido' };
+  }
+
+  const [profileResult, priorResult, termsResult] = await Promise.all([
+    gate.admin.from('profiles')
+      .select('id, first_name, last_name, dni, afiliacion_seguridad_social, nacionalidad, fecha_nacimiento, domicilio, phone, email, bank_account, contracted_hours_weekly')
+      .eq('id', profileId).maybeSingle(),
+    gate.admin.from('employment_intakes').select('*').eq('profile_id', profileId)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    gate.admin.from('hours_contract_terms').select('weekly_hours').eq('user_id', profileId)
+      .order('effective_from', { ascending: false }).limit(1).maybeSingle(),
+  ]);
+
+  if (profileResult.error || !profileResult.data) {
+    return { success: false, error: profileResult.error?.message ?? 'Trabajador no encontrado' };
+  }
+  if (priorResult.error) return { success: false, error: priorResult.error.message };
+  if (termsResult.error) return { success: false, error: termsResult.error.message };
+
+  const prior = (priorResult.data ?? null) as EmploymentIntakeRow | null;
+  const draft = buildRehireDraft(profileResult.data, prior, termsResult.data);
+  const token = generateIntakeToken();
+  const { data: created, error: createError } = await gate.admin
+    .from('employment_intakes')
+    .insert({
+      ...draft,
+      token_hash: hashIntakeToken(token),
+      status: 'submitted',
+      expires_at: intakeExpiresAt().toISOString(),
+      created_by: gate.user.id,
+      profile_id: profileId,
+    })
+    .select('id')
+    .single();
+  if (createError || !created) return { success: false, error: createError?.message ?? 'No se pudo preparar la ficha' };
+
+  // Se copian documentos a la carpeta del expediente nuevo; ninguna otra alta
+  // comparte sus rutas ni se escribe en la carpeta personal del trabajador.
+  const { data: documents, error: storageError } = await gate.admin.storage.from(ALTA_BUCKET)
+    .list(`${profileId}/dni`, { limit: 100 });
+  if (storageError) console.error('Reincorporación: lectura de DNI', storageError.message);
+  const storedPath = (side: 'delantera' | 'trasera') => {
+    const entry = (documents ?? []).find((file) => {
+      const name = file.name.replace(/\.[^.]+$/, '').toLowerCase();
+      return side === 'delantera'
+        ? name === 'delantera' || name.endsWith('-delantera') || name === 'anverso' ||
+          name === 'front' || (name.startsWith('dni_') && !name.includes('trasera') && !name.includes('reverso'))
+        : name === 'trasera' || name.endsWith('-trasera') || name === 'reverso' ||
+          name === 'back' || name.startsWith('dni_trasera');
+    });
+    return entry ? `${profileId}/dni/${entry.name}` : null;
+  };
+  const paths: { dni_front_storage_path: string | null; dni_back_storage_path: string | null } = {
+    dni_front_storage_path: null,
+    dni_back_storage_path: null,
+  };
+  for (const [side, key] of [
+    ['delantera', 'dni_front_storage_path'],
+    ['trasera', 'dni_back_storage_path'],
+  ] as const) {
+    const source = storedPath(side) ?? prior?.[key] ?? null;
+    if (!source) continue;
+    const ext = imageExtension(source);
+    if (!ext) continue;
+    const dest = intakeImagePath(created.id, side, ext);
+    let { error } = await gate.admin.storage.from(ALTA_BUCKET).copy(source, dest);
+    if (error) {
+      const downloaded = await gate.admin.storage.from(ALTA_BUCKET).download(source);
+      if (downloaded.data && !downloaded.error) {
+        ({ error } = await gate.admin.storage.from(ALTA_BUCKET).upload(dest, downloaded.data, {
+          contentType: downloaded.data.type || 'image/jpeg',
+        }));
+      }
+    }
+    if (error) {
+      console.error('Reincorporación: copia del documento', { side, error: error.message });
+    } else {
+      paths[key] = dest;
+    }
+  }
+
+  const complete = canGenerateAltaPdf({ ...draft, ...paths } as EmploymentIntakeRow);
+  const { error: updateError } = await gate.admin.from('employment_intakes').update({
+    ...paths,
+    status: complete ? 'completed' : 'submitted',
+    completed_at: complete ? new Date().toISOString() : null,
+  }).eq('id', created.id);
+  if (updateError) {
+    return { success: false, error: `Ficha creada, pero faltó actualizar sus documentos: ${updateError.message}` };
+  }
+  revalidateAltas(created.id);
+  return { success: true, id: created.id };
+}
+
+/** Eliminar únicamente este expediente: nunca elimina perfiles, cuentas ni contratos. */
+export async function deleteEmploymentIntake(
+  id: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  if (await isSandboxRequest()) {
+    return { success: false, error: 'No se puede eliminar desde el sandbox' };
+  }
+  const gate = await requireMaster();
+  if (!gate.ok || !gate.admin) return { success: false, error: gate.error ?? 'Acceso denegado' };
+  const { data: intake, error: readError } = await gate.admin.from('employment_intakes')
+    .select('dni_front_storage_path, dni_back_storage_path').eq('id', id).maybeSingle();
+  if (readError) return { success: false, error: readError.message };
+  if (!intake) return { success: false, error: 'Alta no encontrada' };
+
+  const { error } = await gate.admin.from('employment_intakes').delete().eq('id', id);
+  if (error) return { success: false, error: error.message };
+  const ownPaths = [intake.dni_front_storage_path, intake.dni_back_storage_path]
+    .filter((path): path is string => typeof path === 'string' && path.startsWith(`intakes/${id}/`));
+  if (ownPaths.length > 0) {
+    const removed = await gate.admin.storage.from(ALTA_BUCKET).remove(ownPaths);
+    if (removed.error) console.error('Alta eliminada: limpieza de imágenes pendiente', removed.error.message);
+  }
+  revalidateAltas(id);
+  return { success: true };
 }
 
 export type IntakeListItem = {
@@ -133,14 +267,16 @@ export async function saveEmploymentIntake(
   const patch: Record<string, unknown> = {};
 
   if (input.candidate) {
-    const hasAny = Object.values(input.candidate).some((v) => String(v ?? '').trim() !== '');
-    if (hasAny) {
-      const parsed = candidateFieldsSchema.safeParse(input.candidate);
-      if (!parsed.success) {
-        return { success: false, error: parsed.error.issues[0]?.message ?? 'Datos del trabajador no válidos' };
-      }
-      Object.assign(patch, candidateToRow(parsed.data));
+    // Una ficha recuperada puede tener datos históricos incompletos.
+    // Validamos los campos presentes sin impedir guardar los aún pendientes.
+    const populated = Object.fromEntries(
+      Object.entries(input.candidate).filter(([, value]) => String(value ?? '').trim() !== ''),
+    );
+    const parsed = candidateFieldsSchema.partial().safeParse(populated);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Datos del trabajador no válidos' };
     }
+    Object.assign(patch, candidateToRow({ ...input.candidate, ...parsed.data }));
   }
 
   if (input.contract) {
@@ -415,7 +551,7 @@ export async function applyIntakeLinkProfile(
   const copied = await copyDniToProfile(gate.admin, intake, profileId);
   if (!copied.success) return copied;
 
-  const terms = await applyContractTerms(gate.admin, profileId, intake, intake.profile_id === profileId ? 'create' : 'link');
+  const terms = await applyContractTerms(gate.admin, profileId, intake, 'link');
   if (!terms.success) return terms;
 
   const { error: applyErr } = await gate.admin
@@ -435,7 +571,7 @@ export async function applyIntakeLinkProfile(
 export async function listProfilesForIntakeLink(): Promise<
   | {
       success: true;
-      profiles: Array<{ id: string; first_name: string; last_name: string; email: string | null; avatar_url: string | null }>;
+      profiles: Array<{ id: string; first_name: string; last_name: string; email: string | null; avatar_url: string | null; end_date: string | null }>;
     }
   | { success: false; error: string }
 > {
@@ -444,7 +580,7 @@ export async function listProfilesForIntakeLink(): Promise<
 
   const { data, error } = await gate.admin
     .from('profiles')
-    .select('id, first_name, last_name, email, avatar_url')
+    .select('id, first_name, last_name, email, avatar_url, end_date')
     .order('first_name', { ascending: true });
   if (error) return { success: false, error: error.message };
   return {
@@ -455,6 +591,7 @@ export async function listProfilesForIntakeLink(): Promise<
       last_name: p.last_name ?? '',
       email: p.email,
       avatar_url: p.avatar_url,
+      end_date: p.end_date,
     })),
   };
 }

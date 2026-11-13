@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PageScreen } from '@/components/dashboard/DashboardDetailLayout';
+import { prepareIntakeImage } from '@/lib/alta-laboral/image-compression.ts';
+import styles from './AltaManagement.module.css';
 import { AltaCandidateFields } from '@/components/alta/AltaCandidateFields';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Field } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/modal';
 import { Notice } from '@/components/ui/Notice';
@@ -68,10 +69,18 @@ export function AltaDetailClient({ intake, profiles }: Props) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [confirmOverwrite, setConfirmOverwrite] = useState(false);
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(null);
+  const [documentPaths, setDocumentPaths] = useState({
+    front: intake.dni_front_storage_path,
+    back: intake.dni_back_storage_path,
+  });
+  const [uploadingSide, setUploadingSide] = useState<'delantera' | 'trasera' | null>(null);
+  const [documentVersion, setDocumentVersion] = useState(0);
 
   const status = displayStatus(intake);
   const merged: EmploymentIntakeRow = {
     ...intake,
+    dni_front_storage_path: documentPaths.front,
+    dni_back_storage_path: documentPaths.back,
     first_name: candidate.firstName,
     last_name: candidate.lastName,
     dni: candidate.dni,
@@ -120,6 +129,41 @@ export function AltaDetailClient({ intake, profiles }: Props) {
     }
   };
 
+  const onDocument = async (side: 'delantera' | 'trasera', file: File | null) => {
+    if (!file) return;
+    setUploadingSide(side);
+    try {
+      const prepared = await prepareIntakeImage(file);
+      const body = new FormData();
+      body.set('side', side);
+      body.set('image', prepared);
+      const response = await fetch(`/api/dashboard/altas/${intake.id}/documents`, {
+        method: 'POST',
+        body,
+      });
+      const result = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        error?: string;
+        path?: string;
+      } | null;
+      if (!response.ok || !result?.success || !result.path) {
+        toast.error(result?.error ?? 'No se pudo guardar la imagen');
+        return;
+      }
+      setDocumentPaths((previous) => ({
+        ...previous,
+        [side === 'delantera' ? 'front' : 'back']: result.path!,
+      }));
+      setDocumentVersion((version) => version + 1);
+      toast.success('Documento actualizado en este expediente');
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo preparar la imagen');
+    } finally {
+      setUploadingSide(null);
+    }
+  };
+
   const onPdf = async () => {
     const saved = await save();
     if (!saved) return;
@@ -134,13 +178,8 @@ export function AltaDetailClient({ intake, profiles }: Props) {
     const saved = await save();
     if (!saved) return;
     if (intake.profile_id) {
-      const appliedResult = await applyIntakeLinkProfile(intake.id, intake.profile_id, true);
-      if (!appliedResult.success) {
-        toast.error(appliedResult.error);
-        return;
-      }
-      toast.success('Contrato aplicado al usuario existente');
-      router.refresh();
+      setPendingProfileId(intake.profile_id);
+      setConfirmOverwrite(true);
       return;
     }
     const res = await applyIntakeCreateUser(intake.id);
@@ -183,9 +222,10 @@ export function AltaDetailClient({ intake, profiles }: Props) {
       subtitle={INTAKE_STATUS_LABEL[status]}
       backHref="/dashboard/altas"
       template="form"
-      maxWidthClass="max-w-2xl"
+      maxWidthClass="max-w-4xl"
+      className={styles.screen}
     >
-      <div className="flex flex-col gap-8">
+      <div className={styles.formContent}>
         {status === 'pending_candidate' ? (
           <Notice instance="alta-waiting" variant="info">
             El trabajador todavía no ha enviado el formulario.
@@ -198,8 +238,11 @@ export function AltaDetailClient({ intake, profiles }: Props) {
           </Notice>
         ) : null}
 
-        <section className="flex flex-col gap-4">
-          <h2 className="text-base font-semibold">Datos del trabajador</h2>
+        <section className={styles.formSection}>
+          <h2>Datos del trabajador</h2>
+          <p className={styles.sectionDescription}>
+            Información de este expediente. Los cambios no modifican automáticamente la ficha del usuario.
+          </p>
           <AltaCandidateFields
             values={candidate}
             errors={{}}
@@ -207,85 +250,81 @@ export function AltaDetailClient({ intake, profiles }: Props) {
             instancePrefix="alta-detail"
             disabled={applied}
           />
-          <div className="grid grid-cols-2 gap-3">
-            {intake.dni_front_storage_path ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`/api/alta/intake-image?id=${intake.id}&side=delantera`}
-                alt="Documento anverso"
-                className="w-full rounded-[var(--radio-control)]"
-              />
-            ) : (
-              <EmptyState instance="alta-no-front" variant="none" title="Sin anverso" />
-            )}
-            {intake.dni_back_storage_path ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`/api/alta/intake-image?id=${intake.id}&side=trasera`}
-                alt="Documento reverso"
-                className="w-full rounded-[var(--radio-control)]"
-              />
-            ) : (
-              <EmptyState instance="alta-no-back" variant="none" title="Sin reverso" />
-            )}
+        </section>
+
+        <section className={styles.formSection}>
+          <h2>Documento de identidad</h2>
+          <p className={styles.sectionDescription}>
+            Se incluyen ambas caras en el PDF. Puedes sustituirlas sin modificar los documentos del perfil.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {(['delantera', 'trasera'] as const).map((side) => {
+              const path = side === 'delantera' ? documentPaths.front : documentPaths.back;
+              return (
+                <label key={side} className={styles.documentPreview}>
+                  <span className={styles.documentLabel}>
+                    {side === 'delantera' ? 'Anverso' : 'Reverso'}
+                  </span>
+                  {path ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/alta/intake-image?id=${intake.id}&side=${side}&v=${documentVersion}`}
+                      alt={side === 'delantera' ? 'Documento anverso' : 'Documento reverso'}
+                    />
+                  ) : (
+                    <span className={styles.missingDocument}>Imagen pendiente</span>
+                  )}
+                  <span className="text-center text-xs font-semibold text-sky-800">
+                    {uploadingSide === side ? 'Guardando imagen…' : path ? 'Cambiar imagen' : 'Subir imagen'}
+                  </span>
+                  <input
+                    type="file" accept="image/jpeg,image/png,image/webp"
+                    className="sr-only" disabled={applied || Boolean(uploadingSide)}
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0] ?? null;
+                      void onDocument(side, file);
+                      event.currentTarget.value = '';
+                    }}
+                  />
+                </label>
+              );
+            })}
           </div>
         </section>
 
-        <section className="flex flex-col gap-4">
-          <h2 className="text-base font-semibold">Datos del contrato</h2>
-          <Field instance="alta-categoria" label="Categoría" htmlFor="alta-categoria">
-            <input
-              id="alta-categoria"
-              value={contract.categoria}
-              onChange={(e) => setContract((c) => ({ ...c, categoria: e.target.value }))}
-              disabled={applied}
-            />
-          </Field>
-          <Field instance="alta-tipo" label="Tipo de contrato" htmlFor="alta-tipo">
-            <input
-              id="alta-tipo"
-              value={contract.tipoContrato}
-              onChange={(e) => setContract((c) => ({ ...c, tipoContrato: e.target.value }))}
-              disabled={applied}
-            />
-          </Field>
-          <Field instance="alta-horas" label="Horas semanales" htmlFor="alta-horas">
-            <input
-              id="alta-horas"
-              type="number"
-              min="0"
-              step="0.5"
-              value={contract.weeklyHours == null ? '' : String(contract.weeklyHours)}
-              onChange={(e) =>
-                setContract((c) => ({
-                  ...c,
-                  weeklyHours: e.target.value === '' ? null : Number(e.target.value),
-                }))
-              }
-              disabled={applied}
-            />
-          </Field>
-          <Field instance="alta-inicio" label="Fecha de inicio" htmlFor="alta-inicio">
-            <input
-              id="alta-inicio"
-              type="date"
-              value={contract.fechaInicio}
-              onChange={(e) => setContract((c) => ({ ...c, fechaInicio: e.target.value }))}
-              disabled={applied}
-            />
-          </Field>
-          <Field instance="alta-fin" label="Fecha de finalización" htmlFor="alta-fin" hint="Vacío si es indefinido">
-            <input
-              id="alta-fin"
-              type="date"
-              value={contract.fechaFin ?? ''}
-              onChange={(e) => setContract((c) => ({ ...c, fechaFin: e.target.value }))}
-              disabled={applied}
-            />
-          </Field>
+        <section className={styles.formSection}>
+          <h2>Condiciones del nuevo contrato</h2>
+          <p className={styles.sectionDescription}>
+            Confirma categoría, modalidad, jornada y nuevas fechas antes de enviarlo a gestoría.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field instance="alta-categoria" label="Categoría" htmlFor="alta-categoria">
+              <input id="alta-categoria" value={contract.categoria}
+                onChange={(e) => setContract((c) => ({ ...c, categoria: e.target.value }))} disabled={applied} />
+            </Field>
+            <Field instance="alta-tipo" label="Tipo de contrato" htmlFor="alta-tipo">
+              <input id="alta-tipo" value={contract.tipoContrato}
+                onChange={(e) => setContract((c) => ({ ...c, tipoContrato: e.target.value }))} disabled={applied} />
+            </Field>
+            <Field instance="alta-horas" label="Horas semanales" htmlFor="alta-horas">
+              <input id="alta-horas" type="number" min="0" step="0.5"
+                value={contract.weeklyHours == null ? '' : String(contract.weeklyHours)}
+                onChange={(e) => setContract((c) => ({
+                  ...c, weeklyHours: e.target.value === '' ? null : Number(e.target.value),
+                }))} disabled={applied} />
+            </Field>
+            <Field instance="alta-inicio" label="Fecha de inicio" htmlFor="alta-inicio">
+              <input id="alta-inicio" type="date" value={contract.fechaInicio}
+                onChange={(e) => setContract((c) => ({ ...c, fechaInicio: e.target.value }))} disabled={applied} />
+            </Field>
+            <Field instance="alta-fin" label="Fecha de finalización" htmlFor="alta-fin" hint="Vacío si es indefinido">
+              <input id="alta-fin" type="date" value={contract.fechaFin ?? ''}
+                onChange={(e) => setContract((c) => ({ ...c, fechaFin: e.target.value }))} disabled={applied} />
+            </Field>
+          </div>
         </section>
 
-        <div className="flex flex-col gap-3">
+        <div className={styles.formFooter}>
           <Button type="button" variant="secondary" instance="alta-guardar" loading={saving} onClick={() => void save()} disabled={applied}>
             Guardar
           </Button>
@@ -298,7 +337,7 @@ export function AltaDetailClient({ intake, profiles }: Props) {
           <Button type="button" variant="secondary" instance="alta-vincular" onClick={() => setLinkOpen(true)} disabled={applied || !ready || Boolean(intake.profile_id)}>
             Vincular a un perfil
           </Button>
-          {status === 'pending_candidate' || status === 'submitted' ? (
+          {(status === 'pending_candidate' || status === 'submitted') && !intake.profile_id ? (
             <Button
               type="button"
               variant="destructive"
@@ -334,7 +373,7 @@ export function AltaDetailClient({ intake, profiles }: Props) {
       <Modal
         open={confirmOverwrite}
         onClose={() => setConfirmOverwrite(false)}
-        title="Sustituir datos del perfil"
+        title="Confirmar cambios del usuario"
         instance="alta-overwrite"
         variant="standard"
         layer="derived"
@@ -354,7 +393,8 @@ export function AltaDetailClient({ intake, profiles }: Props) {
           </div>
         }
       >
-        Este perfil ya tiene documento o IBAN. Si continúas, se sustituyen por los de esta alta.
+        Esta acción sí modificará datos del usuario y sus condiciones laborales. No es necesaria para generar
+        el PDF ni enviarlo a gestoría. ¿Quieres aplicar estos datos al perfil?
       </Modal>
 
       <Modal

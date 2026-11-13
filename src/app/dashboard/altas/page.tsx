@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
-import { listEmploymentIntakes } from '@/app/actions/employment-intakes';
+import { listEmploymentIntakes, listProfilesForIntakeLink } from '@/app/actions/employment-intakes';
 import { AltasListClient } from '@/components/alta/AltasListClient';
 import { PageScreen } from '@/components/dashboard/DashboardDetailLayout';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -17,7 +17,7 @@ export default async function AltasPage() {
     redirect('/dashboard');
   }
 
-  const listed = await listEmploymentIntakes();
+  const [listed, profiles] = await Promise.all([listEmploymentIntakes(), listProfilesForIntakeLink()]);
   if (!listed.success) {
     return (
       <PageScreen title="Altas laborales" backHref="/master/dashboard" template="list">
@@ -26,5 +26,12 @@ export default async function AltasPage() {
     );
   }
 
-  return <AltasListClient items={listed.items} />;
+  if (!profiles.success) {
+    return (
+      <PageScreen title="Altas laborales" backHref="/master/dashboard" template="list">
+        <EmptyState instance="altas-profiles-error" variant="error" title="No se ha podido cargar la plantilla" description={profiles.error} />
+      </PageScreen>
+    );
+  }
+  return <AltasListClient items={listed.items} profiles={profiles.profiles} />;
 }
