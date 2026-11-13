@@ -6309,9 +6309,18 @@ html:has(.dashboard-mosaic-switcher) {
   flex: 0 1 auto;
 }
 .marbella-fixed-topbar [data-element='live-camera'] {
-  width: 40px;
+  width: 32px;
   height: 40px;
   margin-right: 0;
+}
+/* Iconos compactos con zonas táctiles independientes, sin márgenes negativos. */
+.marbella-fixed-topbar [data-element='right-actions'] [data-element='chrome'] {
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+}
+.marbella-fixed-topbar [data-element='right-actions'] [data-element='chrome']::after {
+  width: 32px;
 }
 .marbella-fixed-topbar [data-element='live-camera'] img {
   width: 29px;
@@ -6324,8 +6333,8 @@ html:has(.dashboard-mosaic-switcher) {
 }
 .marbella-fixed-topbar [data-element='global-search-host'] {
   width: min(
-    var(--buscador-global-ancho),
-    max(0px, calc(100% - var(--navbar-side-reserve) - var(--navbar-side-reserve) - var(--espacio-4) - var(--espacio-1)))
+    520px,
+    max(0px, calc(100% - var(--navbar-side-reserve) - var(--navbar-side-reserve) - var(--espacio-3)))
   );
   max-width: calc(100% - var(--espacio-2));
 }

@@ -43,7 +43,10 @@ describe('Cabecera móvil única, centrada y sin solapamientos', () => {
         assert.match(navbar, /ref=\{leftActionsRef\} data-element="left-actions"/);
         assert.match(navbar, /ref=\{rightActionsRef\} data-element="right-actions"/);
         assert.match(navbar, /Math\.max\(left\.getBoundingClientRect\(\)\.width, right\.getBoundingClientRect\(\)\.width\)/);
-        assert.match(css, /\.marbella-fixed-topbar \[data-element='global-search-host'\] \{[\s\S]*?width: min\([\s\S]*?calc\(100% - var\(--navbar-side-reserve\) - var\(--navbar-side-reserve\) - var\(--espacio-4\) - var\(--espacio-1\)\)/);
+        assert.match(css, /\.marbella-fixed-topbar \[data-element='global-search-host'\] \{[\s\S]*?width: min\([\s\S]*?520px,[\s\S]*?calc\(100% - var\(--navbar-side-reserve\) - var\(--navbar-side-reserve\) - var\(--espacio-3\)\)/);
+        assert.match(css, /\.marbella-fixed-topbar \[data-element='right-actions'\] \[data-element='chrome'\] \{[\s\S]*?width: 32px;/);
+        assert.match(css, /\.marbella-fixed-topbar \[data-element='live-camera'\] \{[\s\S]*?width: 32px;/);
+        assert.match(navbar, /data-element="navbar-copilot"[\s\S]*?className="flex h-10 w-8/);
         assert.doesNotMatch(navbar, /-space-x-/);
         assert.doesNotMatch(navbar, /ReservationsBell/);
     });
@@ -304,7 +307,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             assert.doesNotMatch(navbar, /ReservationsBell/, 'se retira el calendario de notificaciones');
             assert.match(navbar, /data-element="live-camera"/, 'mantiene la cámara');
             assert.match(navbar, /data-element="navbar-copilot"/, 'mantiene el asistente');
-            assert.match(navbar, /data-element="right-actions"[^>]*gap-0 pr-2/, 'los tres controles se agrupan junto a la campana');
+            assert.match(navbar, /data-element="right-actions"[^>]*gap-0 pr-1/, 'los tres controles se agrupan junto a la campana');
             assert.match(navbar, /ResizeObserver\(update\)/, 'el ancho del buscador sigue los laterales reales');
             assert.match(navbar, /--navbar-side-reserve/, 'la reserva lateral se calcula dinámicamente');
             assert.doesNotMatch(navbar, /id="ia-button"|data-chrome="ia"|toggleChat/, 'la barra no lleva IA');

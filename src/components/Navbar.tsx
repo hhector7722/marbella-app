@@ -173,7 +173,7 @@ export default function Navbar() {
         <div className="flex min-w-0 items-center gap-1"><div data-element="logo" className="relative shrink-0"><Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority /></div>{hideNavbarBack ? <div data-element="greeting-block">{isMaster ? <button type="button" data-element="greeting" onClick={openViewAsPicker} className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative" aria-label={identity?.isViewingAs ? `Viendo como ${identity.effectiveName}. Cambiar usuario` : 'Cambiar usuario de vista'}>{compactName}</button> : <span data-element="greeting">{compactName}</span>}</div> : null}</div>
       </div>
       {sessionReady && searchIdentity.userId ? <div data-element="global-search-host" className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"><div className="pointer-events-auto"><GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} /></div></div> : null}
-      <div ref={rightActionsRef} data-element="right-actions" className="flex shrink-0 items-center gap-0 pr-2">
+      <div ref={rightActionsRef} data-element="right-actions" className="flex shrink-0 items-center gap-0 pr-1">
         {canSeeCamera ? <button
           type="button"
           data-element="live-camera"
@@ -197,7 +197,7 @@ export default function Navbar() {
           aria-label="Abrir asistente Marbella"
           title="Asistente Marbella"
           onClick={openChat}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-white/90 transition-opacity hover:opacity-100 active:opacity-70"
+          className="flex h-10 w-8 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-white/90 transition-opacity hover:opacity-100 active:opacity-70"
         ><BotMessageSquare size={21} strokeWidth={1.9} aria-hidden /></button> : null}
         <NotificationsBell />
       </div>
