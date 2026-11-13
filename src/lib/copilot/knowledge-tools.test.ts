@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import {
   resolveDates,
+  resolveActivityDates,
   summarizeProductSales,
   calculateWorkedHours,
   toolEnabled,
@@ -133,4 +134,57 @@ test("un empleado no puede consultar los fichajes de Fernando",async()=>{
     {supabase:fake,role:"staff",userId,today});
   assert.deepEqual(answer,{error:"Sin permiso para consultar horas de otra persona"});
   assert.equal(called,false);
+});
+
+test("el fin de semana del calendario de Madrid incluye sábado y domingo, también en domingo", () => {
+  assert.deepEqual(resolveActivityDates({periodo:"este_fin_de_semana"},"2026-11-13"),
+    {inicio:"2026-11-14",fin:"2026-11-15"});
+  assert.deepEqual(resolveActivityDates({periodo:"este_fin_de_semana"},"2026-11-15"),
+    {inicio:"2026-11-14",fin:"2026-11-15"});
+  assert.deepEqual(resolveActivityDates({periodo:"este_fin_de_semana",dia:"domingo"},"2026-11-13"),
+    {inicio:"2026-11-15",fin:"2026-11-15"});
+  assert.deepEqual(resolveActivityDates({periodo:"proximo_fin_de_semana"},"2026-11-13"),
+    {inicio:"2026-11-21",fin:"2026-11-22"});
+});
+
+test("las preguntas de actividades del finde usan calendario y nunca reservas", () => {
+  const available=Object.values(KNOWLEDGE_TOOL_DEFS);
+  for (const question of ["qué actividades hay el finde", "eventos del fin de semana", "partidos del sábado", "qué hay en el pabellón"]) {
+    assert.deepEqual(selectGroqTools(question,available).map(t=>t.function.name),
+      ["consultar_actividades_horario"], question);
+  }
+  assert.equal(toolEnabled("staff","consultar_actividades_horario"),true);
+});
+
+test("el asistente consulta las mismas actividades de P1-P4 que /horario, no las reservas", async () => {
+  const calls:Array<{method:string;args:unknown[]}>= [];
+  const rows=[
+    {activity_date:"2026-11-14",start_time:"10:00:00",end_time:"12:00:00",
+      preferred_start_time:"pdf",preferred_end_time:"pdf",form_start_time:null,form_end_time:null,
+      total_participants:40,activities:{name:"Torneo infantil",color:"#fff",active:true},
+      activity_kinds:{icon:null},occurrence_venues:[{venues:{code:"P1",affects_bar:true}}],
+      occurrence_groups:[]},
+    {activity_date:"2026-11-14",start_time:"14:00:00",end_time:"16:00:00",
+      preferred_start_time:"pdf",preferred_end_time:"pdf",form_start_time:null,form_end_time:null,
+      total_participants:8,activities:{name:"Actividad fuera de barra",color:"#fff",active:true},
+      activity_kinds:{icon:null},occurrence_venues:[{venues:{code:"P7",affects_bar:false}}],
+      occurrence_groups:[]},
+  ];
+  const query={
+    select:(...args:unknown[])=>{calls.push({method:"select",args});return query;},
+    gte:(...args:unknown[])=>{calls.push({method:"gte",args});return query;},
+    lte:(...args:unknown[])=>{calls.push({method:"lte",args});return query;},
+    order:(...args:unknown[])=>{calls.push({method:"order",args});return query;},
+    limit:(...args:unknown[])=>{calls.push({method:"limit",args});return Promise.resolve({data:rows,error:null});},
+  };
+  const fake={from:(table:string)=>{assert.equal(table,"activity_occurrences");return query;}} as unknown as Client;
+  const response=await runKnowledgeTool("consultar_actividades_horario",
+    {periodo:"este_fin_de_semana"}, {supabase:fake,role:"staff",userId,today:"2026-11-13"}) as
+    {total_actividades:number;dias:Array<{fecha:string;actividades:Array<{nombre:string;pistas:string[]}>}>};
+  assert.equal(response.total_actividades,1);
+  assert.deepEqual(response.dias.map(d=>d.fecha),["2026-11-14","2026-11-15"]);
+  assert.equal(response.dias[0].actividades[0].nombre,"Torneo infantil");
+  assert.deepEqual(response.dias[0].actividades[0].pistas,["P1"]);
+  assert.ok(calls.some(c=>c.method==="gte" && c.args[1]==="2026-11-14"));
+  assert.ok(calls.some(c=>c.method==="lte" && c.args[1]==="2026-11-15"));
 });
