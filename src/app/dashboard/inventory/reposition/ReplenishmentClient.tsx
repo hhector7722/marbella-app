@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Camera, Check, Settings2, Trash2 } from 'lucide-react'
+import { openPreferredRearCamera } from '@/lib/replenishment/preferred-camera'
 import { PageScreen } from '@/components/dashboard/DashboardDetailLayout'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/Field'
@@ -54,9 +55,8 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
   const [slotId, setSlotId] = useState('')
   const [confirmed, setConfirmed] = useState<Record<string, Confirmed>>({})
   const [observed, setObserved] = useState('')
-  const [isScanning, setScanning] = useState(false)
+  const [isScanning, setScanning] = useState(true)
   const [cameraError, setCameraError] = useState<string | null>(null)
-  const [detected, setDetected] = useState<number | null>(null)
   const [stable, setStable] = useState<number | null>(null)
   const [configOpen, setConfigOpen] = useState(false)
   const [fridgeName, setFridgeName] = useState('')
@@ -90,10 +90,8 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
   const activeSlotId = activeSlot?.id ?? ''
 
   const activateSlot = (id: string) => {
-    setScanning(false)
     setSlotId(id)
-    setObserved('')
-    setDetected(null)
+    setObserved(confirmed[id] ? String(confirmed[id].count) : '')
     setStable(null)
     historyRef.current = []
   }
@@ -129,16 +127,17 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
 
     // Un círculo es una posición; el número de unidades ocultas se supone, no se observa.
     const count = circles.length
-    setDetected(count)
     historyRef.current = [...historyRef.current.slice(-3), count]
     const multiplier = activeSlot?.units_per_position ?? 1
     const stablePositions = isStableCount(historyRef.current,
       Math.floor((activeSlot?.capacity ?? 0) / multiplier))
     setStable(stablePositions === null ? null : stablePositions * multiplier)
   }, [activeSlot?.capacity, activeSlot?.units_per_position])
+  const onFrameRef = useRef(onFrame)
+  useEffect(() => { onFrameRef.current = onFrame }, [onFrame])
 
   useEffect(() => {
-    if (!isScanning) return
+    if (!isScanning || isConfiguredCola || fridgeSlots.length === 0) return
     let cancelled = false
     let timer: ReturnType<typeof setInterval> | undefined
     let stream: MediaStream | undefined
@@ -150,10 +149,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
         return
       }
       try {
-        const result = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
-        })
+        const { stream: result } = await openPreferredRearCamera()
         if (cancelled) { result.getTracks().forEach(t => t.stop()); return }
         stream = result
         const video = videoElement
@@ -164,8 +160,8 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
         setCameraError(null)
         const overlay = overlayRef.current
         if (!overlay) return
-        onFrame(video, overlay)
-        timer = setInterval(() => onFrame(video, overlay), 750)
+        onFrameRef.current(video, overlay)
+        timer = setInterval(() => onFrameRef.current(video, overlay), 750)
       } catch {
         if (!cancelled) {
           setCameraError('No se pudo abrir la cámara. Comprueba el permiso y que no esté ocupada.')
@@ -180,7 +176,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
       stream?.getTracks().forEach(t => t.stop())
       if (videoElement) videoElement.srcObject = null
     }
-  }, [isScanning, onFrame])
+  }, [isScanning, isConfiguredCola, fridgeSlots.length])
 
   const productTotals = useMemo(() => {
     const grouped = new Map<string, { name: string; missing: number; pending: number }>()
@@ -212,7 +208,6 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
       ...previous,
       [activeSlot.id]: { count: Math.min(activeSlot.capacity, value), source: stable === value ? 'camera' : 'manual' },
     }))
-    setScanning(false)
     const next = fridgeSlots.find(s => s.id !== activeSlot.id && confirmed[s.id] === undefined)
     if (next) activateSlot(next.id)
     toast.success('Nivel registrado.')
@@ -252,7 +247,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
   ) : undefined
 
   return (
-    <PageScreen title="Reposición visual" backHref="/dashboard/inventory" template="detail"
+    <PageScreen title="Reponer neveras" backHref="/dashboard/inventory" template="detail"
       rightSlot={rightSlot} maxWidthClass="max-w-3xl">
       <div className="flex flex-col gap-4 p-3 sm:p-5">
         {error ? (
@@ -265,7 +260,7 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
               </Notice>
             ) : (
               <>
-                <Field instance="replenishment-fridge" label="Nevera" htmlFor="replenishment-fridge">
+                <Field instance="replenishment-fridge" label="¿Qué nevera vas a reponer?" htmlFor="replenishment-fridge">
                   <select id="replenishment-fridge" className={fieldClass} value={currentFridgeId}
                     onChange={event => selectFridge(event.target.value)}>
                     {fridges.map(fridge => (
@@ -281,85 +276,121 @@ export function ReplenishmentClient({ fridges, slots, products, canManage, error
                   <CocaColaAssistedScan />
                 ) : (
                   <>
-                    <Field instance="replenishment-slot" label="Producto y nivel a escanear" htmlFor="replenishment-slot">
-                      <select id="replenishment-slot" className={fieldClass} value={activeSlotId}
-                        onChange={event => activateSlot(event.target.value)}>
-                        {fridgeSlots.map(slot => (
-                          <option key={slot.id} value={slot.id}>
-                            {unitLabel(slot, productNames)}
-                            {confirmed[slot.id] ? ' ✓' : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h2 className="text-base font-semibold text-zinc-900">Cuenta lo que hay</h2>
+                        <p className="text-sm text-zinc-500">Elige la zona, comprueba las unidades y guarda.</p>
+                      </div>
+                      <strong className="shrink-0 text-sm tabular-nums text-zinc-800">
+                        {fridgeSlots.length - pending}/{fridgeSlots.length}
+                      </strong>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-zinc-200">
+                      <div className="h-full rounded-full bg-emerald-600 transition-all"
+                        style={{ width: ((fridgeSlots.length - pending) / fridgeSlots.length * 100) + '%' }} />
+                    </div>
+                    <div role="group" aria-label="Seleccionar producto o zona"
+                      className="flex gap-2 overflow-x-auto pb-2">
+                      {fridgeSlots.map(slot => {
+                        const selected = slot.id === activeSlotId
+                        const counted = confirmed[slot.id]
+                        return (
+                          <button type="button" key={slot.id} onClick={() => activateSlot(slot.id)}
+                            data-design-exception="native-business-button:selector-zona-nevera"
+                            aria-pressed={selected}
+                            className={'flex min-h-16 min-w-[148px] max-w-[220px] shrink-0 flex-col justify-center rounded-xl border px-3 py-2 text-left transition-colors ' +
+                              (selected ? 'border-zinc-900 bg-zinc-900 text-white' :
+                                'border-zinc-200 bg-white text-zinc-900')}>
+                            <span className={'text-[11px] ' + (selected ? 'text-zinc-300' :
+                              counted ? 'text-emerald-700' : 'text-zinc-500')}>
+                              {counted ? '✓ Contado: ' + counted.count + ' ud.' : 'Por contar'}
+                            </span>
+                            <span className="line-clamp-2 text-sm font-semibold leading-tight">
+                              {unitLabel(slot, productNames)}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
                     {activeSlot && (
                       <Surface variant="block" instance="replenishment-capture" className="flex flex-col gap-3 p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-semibold text-zinc-900">{unitLabel(activeSlot, productNames)}</span>
-                          <span className="text-xs tabular-nums text-zinc-500">{activeSlot.capacity / activeSlot.units_per_position} posiciones × {activeSlot.units_per_position} ud. = {activeSlot.capacity}</span>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="text-base font-semibold text-zinc-900">{unitLabel(activeSlot, productNames)}</h3>
+                            <p className="text-xs text-zinc-500">Para llenarla caben {activeSlot.capacity} unidades.</p>
+                          </div>
+                          {confirmed[activeSlot.id] && <span className="shrink-0 text-xs font-medium text-emerald-700">✓ Guardado</span>}
                         </div>
-                        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-zinc-950">
+                        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-zinc-950">
                           {isScanning ? (
                             <>
                               <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover"
                                 playsInline autoPlay muted aria-label="Cámara de reposición" />
                               <canvas ref={overlayRef} width={WORK_WIDTH} height={WORK_HEIGHT}
                                 className="pointer-events-none absolute inset-0 h-full w-full" />
-                              <div className="absolute bottom-2 left-2 rounded bg-black/75 px-3 py-2 text-white">
-                                <span className="block text-xs">Posiciones visibles estimadas</span>
-                                <strong className="text-2xl tabular-nums">{detected ?? '—'}</strong>
-                                <span className="ml-2 text-xs">{stable !== null ? 'Estable' : 'Buscando…'}</span>
-                                {stable !== null && activeSlot ? (
-                                  <span className="mt-1 block text-xs font-semibold">
-                                    Faltarían {activeSlot.capacity - stable} · estimación sin confirmar
+                              <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2">
+                                <span className="rounded-lg bg-black/70 px-2.5 py-1.5 text-xs font-medium text-white">
+                                  Enfoca el producto que estás contando
+                                </span>
+                                {stable !== null && (
+                                  <span className="rounded-lg bg-black/75 px-2.5 py-1.5 text-xs text-white">
+                                    Estimación: {stable} ud.
                                   </span>
-                                ) : null}
+                                )}
                               </div>
                             </>
                           ) : (
-                            <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-white">
-                              <Camera className="h-8 w-8" />
-                              <p className="max-w-xs px-4 text-sm">
-                                Enfoca solo las bases de este producto y nivel. Muestra los niveles ocultos por separado.
-                              </p>
+                            <div className="flex h-full flex-col items-center justify-center gap-2 px-5 text-center text-white">
+                              <Camera className="h-7 w-7" />
+                              <p className="text-sm">Cámara no disponible. Puedes contar a mano.</p>
                             </div>
                           )}
                         </div>
                         {cameraError && <Notice instance="replenishment-camera-error" variant="negative">{cameraError}</Notice>}
-                        <div className="flex flex-wrap gap-2">
-                          <Button variant="secondary" instance="replenishment-toggle-camera"
-                            onClick={() => {
-                              setCameraError(null)
-                              if (!isScanning) {
-                                setDetected(null)
-                                setStable(null)
-                                historyRef.current = []
-                              }
-                              setScanning(v => !v)
-                            }}>
-                            {isScanning ? 'Detener cámara' : 'Abrir cámara'}
+                        {!isScanning && (
+                          <Button variant="secondary" layout="fill" instance="replenishment-toggle-camera"
+                            onClick={() => { setCameraError(null); setScanning(true) }}>
+                            Reintentar cámara
                           </Button>
-                          {isScanning && (
-                            <Button variant="tertiary" instance="replenishment-accept-detection"
-                              disabled={stable === null} onClick={() => setObserved(String(stable))}>
-                              Usar detección
-                            </Button>
-                          )}
-                        </div>
-                        <Field instance="replenishment-observed" label="Unidades presentes (revisar y corregir)" htmlFor="replenishment-observed">
-                          <input type="number" inputMode="numeric" id="replenishment-observed"
-                            className={fieldClass} min={0} step={1}
-                            value={observed} onChange={event => setObserved(event.target.value)}
-                            placeholder="Introduce o acepta el recuento" />
+                        )}
+                        <Field instance="replenishment-observed" label="¿Cuántas unidades hay ahora?"
+                          htmlFor="replenishment-observed">
+                          <div className="flex items-center gap-2">
+                            <Button variant="secondary" instance="replenishment-minus" aria-label="Restar una unidad"
+                              disabled={observed.trim() === '' || Number(observed) <= 0}
+                              onClick={() => setObserved(String(Math.max(0, Number(observed) - 1)))}>−</Button>
+                            <input type="number" inputMode="numeric" id="replenishment-observed"
+                              className={fieldClass + ' flex-1 text-center text-xl font-semibold tabular-nums'}
+                              min={0} step={1} value={observed}
+                              onChange={event => setObserved(event.target.value)} placeholder="0" />
+                            <Button variant="secondary" instance="replenishment-plus" aria-label="Sumar una unidad"
+                              onClick={() => setObserved(String(Math.max(0, Number(observed) || 0) + 1))}>+</Button>
+                          </div>
                         </Field>
-                        <Button variant="primary" layout="fill" instance="replenishment-confirm-level" onClick={saveCount}>
-                          Confirmar este nivel
+                        {isScanning && stable !== null && (
+                          <Button variant="secondary" layout="fill" instance="replenishment-accept-detection"
+                            onClick={() => setObserved(String(stable))}>
+                            Usar estimación de la cámara: {stable} ud.
+                          </Button>
+                        )}
+                        <div className="flex items-center justify-between rounded-xl bg-zinc-100 px-4 py-3">
+                          <span className="text-sm font-medium text-zinc-700">Tendrás que añadir</span>
+                          <strong className="text-2xl tabular-nums text-zinc-900">
+                            {observed.trim() !== '' && Number.isInteger(Number(observed)) && Number(observed) >= 0
+                              ? Math.max(0, activeSlot.capacity - Math.min(activeSlot.capacity, Number(observed)))
+                              : '—'}
+                            <span className="ml-1 text-sm font-normal">ud.</span>
+                          </strong>
+                        </div>
+                        <Button variant="primary" layout="fill" instance="replenishment-confirm-level"
+                          disabled={observed.trim() === '' || !Number.isInteger(Number(observed)) || Number(observed) < 0}
+                          onClick={saveCount}>
+                          {fridgeSlots.some(slot => slot.id !== activeSlot.id && !confirmed[slot.id])
+                            ? 'Guardar y pasar al siguiente'
+                            : 'Guardar recuento'}
                         </Button>
                         <p className="text-xs text-zinc-500">
-                          El reconocimiento es orientativo: cada círculo se multiplica por {activeSlot.units_per_position} unidades
-                          según la distribución. La cámara no puede comprobar las latas ocultas ni detectar pilas parcialmente vacías.
-                          Revisa y corrige la cantidad real antes de confirmar. Las unidades por encima de la capacidad
-                          se ignoran para reposición: nunca restan de otra zona ni generan faltantes negativos.
+                          La cámara solo orienta: no ve las unidades que quedan detrás. Comprueba la cantidad real.
                         </p>
                       </Surface>
                     )}

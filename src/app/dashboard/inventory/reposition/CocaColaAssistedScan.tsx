@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Camera } from 'lucide-react'
+import { openPreferredRearCamera } from '@/lib/replenishment/preferred-camera'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/Notice'
 import { Surface } from '@/components/ui/Surface'
@@ -19,7 +20,8 @@ const allPositions = COLA_LAYOUT
 export function CocaColaAssistedScan() {
   const [activeId, setActiveId] = useState(allPositions[0].id)
   const [counts, setCounts] = useState<StackCounts>({})
-  const [scanning, setScanning] = useState(false)
+  const [scanning, setScanning] = useState(true)
+  const [mapOpen, setMapOpen] = useState(false)
   const [hint, setHint] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -96,9 +98,7 @@ export function CocaColaAssistedScan() {
         return
       }
       try {
-        const next = await navigator.mediaDevices.getUserMedia({
-          audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
-        })
+        const { stream: next } = await openPreferredRearCamera()
         if (cancelled) { next.getTracks().forEach(t => t.stop()); return }
         stream = next
         if (!video || !overlay) { next.getTracks().forEach(t => t.stop()); return }
@@ -122,54 +122,19 @@ export function CocaColaAssistedScan() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Surface instance="cola-assisted-map" variant="block" className="flex flex-col gap-3 p-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-base font-semibold">Mapa de pilas · Coca-Cola</h2>
-          <span className="text-xs tabular-nums text-zinc-500">{totals.confirmed}/{totals.positions} confirmadas</span>
-        </div>
-        <p className="text-xs text-zinc-600">
-          Selecciona la pila en el mapa o toca su posición sobre la cámara calibrada.
-          Muéstrala desde distintos ángulos y confirma la cantidad. Filas del fondo hacia la puerta.
-        </p>
-        <div className="overflow-x-auto">
-          <div className="grid min-w-[348px] grid-cols-7 gap-0.5">
-            {Array.from({ length: 7 }, (_, row) =>
-              Array.from({ length: 7 }, (_, col) => {
-                const position = allPositions.find(p => p.row === row + 1 && p.column === col + 1)
-                if (!position) return <div key={'hole-' + row + '-' + col} aria-hidden="true" className="h-12" />
-                const saved = counts[position.id]
-                const selected = active.id === position.id
-                const tone = saved
-                  ? saved.count >= 4 ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'
-                  : position.product === 'original' ? 'bg-red-100 text-red-900' : 'bg-zinc-200 text-zinc-800'
-                return (
-                  <button type="button" key={position.id}
-                    data-design-exception="native-business-button:rejilla-de-pilas"
-                    aria-label={positionLabel(position) + (saved ? ' · ' + saved.count + ' unidades' : ' · pendiente')}
-                    aria-pressed={selected}
-                    onClick={() => choose(position.id)}
-                    className={'min-h-12 min-w-12 border text-xs tabular-nums ' +
-                      (selected ? 'border-zinc-900 ring-2 ring-zinc-900 ' : 'border-zinc-200 ') + tone}>
-                    <span className="block text-[10px]">{position.product === 'original' ? 'CC' : 'Zero'}</span>
-                    <strong>{saved ? (saved.count >= 4 ? '4+' : saved.count) : tracking.seenIds.includes(position.id) ? '◦' : '·'}</strong>
-                  </button>
-                )
-              }),
-            )}
-          </div>
-        </div>
-        <p className="text-xs text-zinc-500">Una quinta lata no cuenta como excedente, ni modifica otra pila.</p>
-      </Surface>
+      <p className="text-sm text-zinc-600">
+        Apunta a una pila, indica cuántas latas tiene y avanzaremos a la siguiente.
+      </p>
       <Surface instance="cola-assisted-camera" variant="block" className="flex flex-col gap-3 p-3">
         <div className="flex justify-between gap-2">
           <span className="text-sm font-semibold">
-            {positionLabel(active)} · {active.product === 'original' ? 'Coca-Cola' : 'Coca-Cola Zero'}
+            {active.product === 'original' ? 'Coca-Cola' : 'Coca-Cola Zero'} · Pila {allPositions.findIndex(p => p.id === active.id) + 1} de {allPositions.length}
           </span>
-          <span className="text-xs text-zinc-500">4 máximo</span>
+          <span className="text-xs text-zinc-500">{positionLabel(active)} · máximo 4</span>
         </div>
         {scanning && (
           <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2">
+            {mapOpen && <div className="flex flex-wrap items-center gap-2">
               <Button instance="cola-grid-calibrate" variant="secondary" onClick={tracking.calibrate}>
                 {tracking.mode === 'tracking' ? 'Recalibrar mapa' : 'Calibrar mapa'}
               </Button>
@@ -178,13 +143,11 @@ export function CocaColaAssistedScan() {
                   tracking.mode === 'calibrating' ? 'Marca 4 esquinas: fondo izq. → der. → frente der. → izq. (' + tracking.corners.length + '/4)' :
                     tracking.mode === 'lost' ? 'Referencia perdida · recalibra' : 'Mapa sin calibrar'}
               </span>
-            </div>
-            {tracking.alignmentError && (
+            </div>}
+            {mapOpen && tracking.alignmentError && (
               <Notice instance="cola-grid-alignment-error" variant="warning">{tracking.alignmentError}</Notice>
             )}
-            <p className="text-xs text-zinc-500">
-              {tracking.seenIds.length} posiciones observadas en cámara, no contadas. Cada pila requiere confirmación.
-            </p>
+
           </div>
         )}
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-zinc-950">
@@ -196,24 +159,25 @@ export function CocaColaAssistedScan() {
                 onPointerUp={tracking.onPointerUp}
                 className={'absolute inset-0 h-full w-full touch-manipulation ' +
                   (tracking.mode === 'tracking' || tracking.mode === 'calibrating' ? 'cursor-crosshair' : 'pointer-events-none')} />
-              <span className="absolute bottom-2 left-2 rounded bg-black/75 px-2 py-1 text-xs text-white">
-                {hint === null ? 'Sin pista fiable; confirma con los botones' :
-                  'Pista: ' + (hint >= 4 ? '4 o más' : hint) + ' visibles (verificar)'}
-              </span>
+              {hint !== null && (
+                <span className="absolute bottom-2 left-2 rounded bg-black/75 px-2 py-1 text-xs text-white">
+                  La cámara estima {hint >= 4 ? '4 o más' : hint} latas (revisar)
+                </span>
+              )}
             </>
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-2 px-5 text-center text-white">
               <Camera className="h-8 w-8" />
-              <p className="text-sm">Apunta lateralmente a una sola pila para distinguir las latas.</p>
+              <p className="text-sm">La cámara no está disponible. Puedes seguir contando a mano.</p>
             </div>
           )}
         </div>
         {error && <Notice instance="cola-assisted-camera-error" variant="negative">{error}</Notice>}
         <div className="flex flex-wrap gap-2">
-          <Button instance="cola-assisted-toggle" variant="secondary"
-            onClick={() => { setError(null); setHint(null); history.current = []; tracking.reset(); setScanning(value => !value) }}>
-            {scanning ? 'Detener cámara' : 'Abrir cámara'}
-          </Button>
+          {!scanning && <Button instance="cola-assisted-toggle" variant="secondary"
+            onClick={() => { setError(null); setHint(null); history.current = []; setScanning(true) }}>
+            Reintentar cámara
+          </Button>}
           {hint !== null && (
             <Button instance="cola-assisted-suggestion" variant="tertiary"
               onClick={() => confirm(hint, 'confirmed-suggestion')}>
@@ -224,7 +188,7 @@ export function CocaColaAssistedScan() {
         {current && <p className="text-sm text-emerald-700">
           Posición guardada: {current.count >= 4 ? '4 o más' : current.count} latas.
         </p>}
-        <p className="text-sm font-semibold">¿Cuántas latas hay en esta pila?</p>
+        <p className="text-sm font-semibold">¿Cuántas latas hay en esta pila? Toca la cantidad:</p>
         <div className="grid grid-cols-5 gap-1">
           {[0, 1, 2, 3, 4].map(n => (
             <Button key={n} instance={'cola-assisted-answer-' + n}
@@ -235,10 +199,52 @@ export function CocaColaAssistedScan() {
           ))}
         </div>
         <p className="text-xs text-zinc-500">
-          «4+» incluye la quinta lata sobrante; no genera cantidades negativas.
-          Las sugerencias visuales requieren confirmación, pues no se observan las latas ocultas.
+          Pulsa «4+» si la pila está llena. La cámara no puede ver las latas ocultas: comprueba la cantidad.
         </p>
       </Surface>
+      <Button instance="cola-assisted-map-toggle" variant="secondary" layout="fill"
+        onClick={() => setMapOpen(value => !value)}>
+        {mapOpen ? 'Ocultar mapa de pilas' : 'Ver mapa y cambiar de pila'}
+      </Button>
+      {mapOpen && (
+      <Surface instance="cola-assisted-map" variant="block" className="flex flex-col gap-3 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-base font-semibold">Ubicación de las pilas</h2>
+          <span className="text-xs tabular-nums text-zinc-500">{totals.confirmed}/{totals.positions} confirmadas</span>
+        </div>
+        <p className="text-xs text-zinc-600">
+          Toca una casilla para cambiar de pila. Después de contar, pasaremos automáticamente a la siguiente. La fila 1 está al fondo.
+        </p>
+        <div>
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: 7 }, (_, row) =>
+              Array.from({ length: 7 }, (_, col) => {
+                const position = allPositions.find(p => p.row === row + 1 && p.column === col + 1)
+                if (!position) return <div key={'hole-' + row + '-' + col} aria-hidden="true" className="h-9" />
+                const saved = counts[position.id]
+                const selected = active.id === position.id
+                const tone = saved
+                  ? saved.count >= 4 ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'
+                  : position.product === 'original' ? 'bg-red-100 text-red-900' : 'bg-zinc-200 text-zinc-800'
+                return (
+                  <button type="button" key={position.id}
+                    data-design-exception="native-business-button:rejilla-de-pilas"
+                    aria-label={positionLabel(position) + (saved ? ' · ' + saved.count + ' unidades' : ' · pendiente')}
+                    aria-pressed={selected}
+                    onClick={() => choose(position.id)}
+                    className={'min-h-10 min-w-0 rounded-md border text-xs tabular-nums ' +
+                      (selected ? 'border-zinc-900 ring-2 ring-zinc-900 ' : 'border-zinc-200 ') + tone}>
+                    <span className="block text-[10px]">{position.product === 'original' ? 'CC' : 'Zero'}</span>
+                    <strong>{saved ? (saved.count >= 4 ? '4+' : saved.count) : tracking.seenIds.includes(position.id) ? '◦' : '·'}</strong>
+                  </button>
+                )
+              }),
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-zinc-500">Una quinta lata no cuenta como excedente, ni modifica otra pila.</p>
+      </Surface>
+      )}
       <Surface instance="cola-assisted-totals" variant="block" className="flex flex-col gap-3 p-3">
         <h2 className="text-base font-semibold">Reposición acumulada</h2>
         {([
