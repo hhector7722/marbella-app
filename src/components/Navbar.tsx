@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ChevronLeft, Menu, X, BotMessageSquare } from 'lucide-react';
+import { ChevronLeft, Menu, X } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { createClient } from "@/utils/supabase/client";
@@ -197,8 +197,12 @@ export default function Navbar() {
           aria-label="Abrir asistente Marbella"
           title="Asistente Marbella"
           onClick={openChat}
-          className="flex h-10 w-8 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-white/90 transition-opacity hover:opacity-100 active:opacity-70"
-        ><BotMessageSquare size={21} strokeWidth={1.9} aria-hidden /></button> : null}
+          className="flex h-10 w-8 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-white transition-opacity hover:opacity-100 active:opacity-70"
+        ><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M8.4 7.55v8.9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+          <path d="m12.35 16.45 2.8-8.9h.9l2.8 8.9M13.55 13.6h4.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg></button> : null}
         <NotificationsBell />
       </div>
     </div>
