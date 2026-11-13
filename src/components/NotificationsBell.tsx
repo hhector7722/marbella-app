@@ -14,6 +14,7 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import {
   formatNotificationDateTimeLine,
   getNotificationVisual,
+  RESERVATION_CENTER_NOTIFICATION_TYPES,
   type UserNotificationRow,
 } from '@/lib/user-notifications'
 
@@ -205,11 +206,17 @@ export function NotificationsBell() {
     setClearingAll(true)
     try {
       const now = new Date().toISOString()
-      const { error } = await supabase
+      let query = supabase
         .from('user_notifications')
         .update({ read_at: now })
         .eq('user_id', userId)
         .is('read_at', null)
+
+      for (const t of RESERVATION_CENTER_NOTIFICATION_TYPES) {
+        query = query.neq('type', t)
+      }
+
+      const { error } = await query
 
       if (error) {
         toast.error(error.message || 'No se pudieron borrar las notificaciones')

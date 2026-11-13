@@ -5586,7 +5586,8 @@ html:has(.dashboard-mosaic-switcher) {
     left: var(--shell-sidebar-width);
   }
   .marbella-fixed-topbar[data-hidden='true'] {
-    top: 0;
+    transform: none;
+    -webkit-transform: none;
     opacity: 1;
     pointer-events: auto;
   }
@@ -6243,15 +6244,9 @@ html:has(.dashboard-mosaic-switcher) {
   box-sizing: border-box;
   overflow: visible;
   background-color: transparent;
-  /* Evitar rasterización borrosa en Safari iOS: la barra se oculta moviendo
-     su posición top, no transformando la capa que contiene texto e iconos. */
   transition:
-    top 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+    transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
     opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-  filter: none;
-  -webkit-filter: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
 }
 /* Recorte del degradado del shell solo a la franja de cabecera (sin capa viewport). */
 .marbella-fixed-topbar::before {
@@ -6267,7 +6262,8 @@ html:has(.dashboard-mosaic-switcher) {
   background-position: center top;
 }
 .marbella-fixed-topbar[data-hidden='true'] {
-  top: calc(-1 * (var(--app-navbar-height) + env(safe-area-inset-top, 0px)));
+  transform: translateY(-100%);
+  -webkit-transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
 }
@@ -6324,25 +6320,6 @@ html:has(.dashboard-mosaic-switcher) {
 .marbella-fixed-topbar [data-element='global-search-host'] {
   width: var(--buscador-global-ancho);
   max-width: calc(100vw - (var(--espacio-2) * 2));
-}
-/* Con cámara + IA + campana, el buscador participa del flex móvil para que
-   nunca se superponga ni oculte el icono de cámara. */
-@media (max-width: 639px) {
-  .marbella-fixed-topbar[data-camera-visible='true'] [data-element='global-search-host'] {
-    position: relative;
-    left: auto;
-    top: auto;
-    z-index: 1;
-    flex: 1 1 0;
-    min-width: 0;
-    width: auto;
-    max-width: none;
-    transform: none;
-  }
-  .marbella-fixed-topbar[data-camera-visible='true'] [data-element='global-search-host'] > div {
-    min-width: 0;
-    width: 100%;
-  }
 }
 .marbella-fixed-topbar [data-component='GlobalSearchTrigger'] [data-element='pill'] {
   height: var(--espacio-8);
@@ -6458,15 +6435,14 @@ html:has(.dashboard-mosaic-switcher) {
   }
 }
 
-/* Nunca aplicar blur ni opacidad directamente al Navbar: el backdrop del
-   Modal (z=200, sobre el Navbar z=100) ya difumina toda la pantalla detrás.
-   De esta forma un estado de modal residual no deja borrosa la cabecera. */
-html[data-modal-open="true"]:has([data-component='Modal'], [data-component='ConsumptionBottomSheet']) .marbella-fixed-bottombar,
-html[data-modal-open="true"]:has([data-component='Modal'], [data-component='ConsumptionBottomSheet']) [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
+html[data-modal-open="true"] .marbella-fixed-topbar,
+html[data-modal-open="true"] .marbella-fixed-bottombar,
+html[data-modal-open="true"] [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
   filter: blur(6px);
   opacity: 0.35;
   pointer-events: none;
 }
+html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-topbar,
 html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-bottombar,
 html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
   filter: blur(1px);

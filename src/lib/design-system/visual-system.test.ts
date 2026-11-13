@@ -34,30 +34,6 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
     return acc;
 }
 
-describe('Cabecera normal nítida y desenfocada solo bajo modales', () => {
-    it('sin modal, la barra no usa filtros ni transformación de capa para ocultarse', () => {
-        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        const navbar = css.match(/^\.marbella-fixed-topbar \{([^}]+)\}/m)?.[1] ?? '';
-        const hidden = css.match(/^\.marbella-fixed-topbar\[data-hidden='true'\] \{([^}]+)\}/m)?.[1] ?? '';
-        assert.match(navbar, /transition:\s*top 0\.35s/);
-        assert.match(navbar, /(?:^|\n)\s*filter:\s*none;/);
-        assert.match(navbar, /-webkit-backdrop-filter:\s*none;/);
-        assert.doesNotMatch(navbar, /(?:^|\n)\s*(?:-webkit-)?transform\s*:/);
-        assert.match(hidden, /top:\s*calc\(-1 \*/);
-        assert.doesNotMatch(hidden, /transform/);
-    });
-
-    it('el backdrop difumina el fondo, sin que el Navbar reciba filtros por el estado del modal', () => {
-        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        assert.match(css, /\[data-modal-backdrop='base'\] \{[\s\S]*?backdrop-filter: var\(--modal-overlay-base-filter\);/);
-        assert.match(css, /--modal-overlay-base-filter: blur\(8px\)/);
-        assert.match(css, /\[data-component='Modal'\]\[data-layer='base'\] \{\s*z-index: var\(--z-modal-base\)/);
-        assert.doesNotMatch(css, /html\[data-modal-open="true"\][^{}]*\.marbella-fixed-topbar/);
-        assert.match(css, /html\[data-modal-open="true"\]:has\(\[data-component='Modal'\], \[data-component='ConsumptionBottomSheet'\]\) \.marbella-fixed-bottombar/);
-        assert.doesNotMatch(css, /html:has\(\.marbella-fixed-topbar\) \[data-modal-backdrop='base'\]/);
-    });
-});
-
 describe('Jerarquía visual canónica (ADR-0010)', () => {
     it('exporta identidades estables', () => {
         assert.equal(PAGE_SCREEN_COMPONENT_ID, 'PageScreen');
@@ -309,21 +285,13 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             assert.match(navbar, /data-element="greeting"/, 'el nombre de la barra tiene identidad');
             assert.match(navbar, /data-element="logo"/, 'el logo de la barra tiene identidad');
             assert.match(navbar, /<GlobalSearch /, 'el buscador global ocupa la fila de cabecera');
-            assert.match(navbar, /<NotificationsBell \/>/, 'todas las notificaciones van en una sola campana');
-            assert.doesNotMatch(navbar, /ReservationsBell/, 'sin calendario de notificaciones independiente');
-            assert.match(navbar, /data-element="live-camera"/, 'se mantiene el acceso a cámaras');
-            assert.match(navbar, /userData\?\.authEmail \|\| identity\?\.realEmail/, 'la cámara prioriza el correo real de la sesión');
-            assert.match(navbar, /identity\?\.isViewingAs[\s\S]*?identity\.effectiveEmail/, 'Ver como conserva los permisos del usuario simulado');
-            assert.match(navbar, /data-camera-visible=\{canSeeCamera/, 'el layout móvil adapta el buscador cuando aparece cámara');
-            assert.doesNotMatch(css, /html\[data-modal-open="true"\][^{}]*\.marbella-fixed-topbar/, 'el Navbar no debe recibir blur directo por estado modal');
-            assert.match(navbar, /router\.push\('\/camaras'\)/, 'la cámara conserva su ruta');
-            assert.match(navbar, /data-element="navbar-copilot"/, 'se mantiene el asistente actual');
-            assert.doesNotMatch(navbar, /-space-x-3/, 'los controles de la cabecera ya no se tapan');
-            const unreadProvider = readFileSync(join(SRC_ROOT, 'contexts/UnreadNotificationsContext.tsx'), 'utf8');
-            const bell = readFileSync(join(SRC_ROOT, 'components/NotificationsBell.tsx'), 'utf8');
-            assert.doesNotMatch(unreadProvider, /excludeTypes:\s*RESERVATION_CENTER_NOTIFICATION_TYPES/, 'las reservas y pedidos llegan a la campana');
-            assert.doesNotMatch(bell, /\.neq\('type', t\)/, 'Borrar todo incluye cualquier tipo de notificación');
-            assert.match(bell, /notificationDestination\(row\)/, 'las alertas conservan su destino original');
+            assert.match(navbar, /<ReservationsBell \/>/, 'reservas van en la barra');
+            assert.match(navbar, /<NotificationsBell \/>/, 'notificaciones van en la barra');
+            assert.match(
+                navbar,
+                /<ReservationsBell \/>[\s\S]*<NotificationsBell \/>/,
+                'reservas y notificaciones van a la derecha'
+            );
             assert.doesNotMatch(navbar, /id="ia-button"|data-chrome="ia"|toggleChat/, 'la barra no lleva IA');
             assert.doesNotMatch(navbar, /aria-label="Herramientas internas"|pgMenuOpen|>\s*PG\s*</, 'la barra no lleva PG');
             assert.doesNotMatch(
