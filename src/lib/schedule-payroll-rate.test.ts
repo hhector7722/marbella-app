@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { payrollMonthContractedHours, rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay } from './schedule-payroll-rate.ts';
+import { payrollMonthContractedHours, rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay, resolveOrdinaryScheduleHourlyRate } from './schedule-payroll-rate.ts';
 import type { EmployeeBoundaryFacts } from './hours-engine/types.ts';
 
 const worker = (employeeId: string, weeklyHours: number, hourlyRate: number): EmployeeBoundaryFacts => ({
@@ -122,4 +122,13 @@ test('sin contrato de horas, la tarifa versionada de extras sigue disponible', (
     { valid_from: '2026-11-01', valid_to: null, overtime_cost_per_hour: 16 },
   ], '2026-11-13'), 16);
   assert.equal(versionedOvertimeRateForDay([], '2026-11-13'), null);
+});
+
+
+test('el pie del horario recupera coste ordinario si la nómina está ausente, ambigua o inutilizable', () => {
+  assert.equal(resolveOrdinaryScheduleHourlyRate(18.5, true, 14.1), 18.5);
+  assert.equal(resolveOrdinaryScheduleHourlyRate(null, true, 14.1), 14.1);
+  assert.equal(resolveOrdinaryScheduleHourlyRate(0, true, 14.1), 14.1);
+  assert.equal(resolveOrdinaryScheduleHourlyRate(null, false, 14.1), null);
+  assert.equal(resolveOrdinaryScheduleHourlyRate(null, true, null), null);
 });

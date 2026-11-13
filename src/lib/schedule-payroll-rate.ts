@@ -161,3 +161,21 @@ export function versionedOvertimeRateForDay(
   const value = Number(raw);
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
+
+/**
+ * El dato individual prevalece. Si no se puede obtener una tarifa individual
+ * utilizable, un contrato vigente permite estimar con la tarifa modal de empresa.
+ * Sin contrato no se imputan ordinarias (las horas se consideran extras).
+ */
+export function resolveOrdinaryScheduleHourlyRate(
+  individual: number | null,
+  hasContract: boolean,
+  companyTypical: number | null,
+): number | null {
+  if (individual != null && Number.isFinite(individual) && individual > 0) return individual;
+  if (!hasContract) return null;
+  if (companyTypical != null && Number.isFinite(companyTypical) && companyTypical > 0) {
+    return companyTypical;
+  }
+  return null;
+}

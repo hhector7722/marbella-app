@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { loadEmployeeBoundaryFactsBatch } from '@/lib/hours-engine/load-employee-facts';
-import { rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay, type CompanyPayrollFact } from '@/lib/schedule-payroll-rate';
+import { rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay, resolveOrdinaryScheduleHourlyRate, type CompanyPayrollFact } from '@/lib/schedule-payroll-rate';
 import { mondayOnOrBefore } from '@/lib/hours-engine/week-dates';
 import { formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { roundMarbellaHours } from '@/lib/hours-engine/marbella-round';
@@ -156,10 +156,13 @@ export async function getScheduleLaborCostContext(
       const rate = rateFromEmployeePayroll(employee, payrollByWorker.get(id) ?? []);
       const activeContract = employee.terms.some(t => t.weeklyHours > 0 &&
         t.effectiveFrom <= day && (t.effectiveTo == null || t.effectiveTo >= day));
-      // Solo si no hay nómina propia y existe contrato: referencia común de la empresa,
-      // expresada en €/h; se adapta automáticamente a las horas de su contrato.
-      const fallbackRate = rate.reason === 'missing' && activeContract
-        ? commonHourlyCost?.rate ?? null : null;
+      // Una nómina no utilizable (ausente, ambigua o sin divisor contractual)
+      // no debe dejar sin total el horario: si hay contrato activo, tomar la
+      // referencia horaria empresarial. Nunca sustituir una nómina individual válida.
+      const ordinaryHourlyRate = resolveOrdinaryScheduleHourlyRate(
+        rate.rate, activeContract, commonHourlyCost?.rate ?? null,
+      );
+      const usedCompanyFallback = rate.rate == null && ordinaryHourlyRate != null;
       const override = overrides.get(id);
       const effectiveOverride = override == null ? undefined : Number(override);
       const contractualOtRate = overtimeRateForScheduleDay(employee, day, effectiveOverride);
@@ -167,10 +170,10 @@ export async function getScheduleLaborCostContext(
         overtimeTerms.get(id) ?? [], day);
       result[id] = {
         employee,
-        ordinaryHourlyRate: rate.rate ?? fallbackRate,
+        ordinaryHourlyRate,
         overtimeHourlyRate,
         earlierHoursByDay: earlier.get(id) ?? {},
-        payrollPeriod: rate.period ?? (fallbackRate != null ? commonHourlyCost?.period ?? null : null),
+        payrollPeriod: usedCompanyFallback ? commonHourlyCost?.period ?? null : rate.period,
       };
     }
     return { success: true, data: result };
