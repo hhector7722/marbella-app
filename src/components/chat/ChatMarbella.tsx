@@ -137,6 +137,9 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
     timer: ReturnType<typeof setTimeout> | null;
     released: boolean;
     cancelled: boolean;
+    started: boolean;
+    finalized: boolean;
+    onRelease: (() => void) | null;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -274,6 +277,8 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       if (hold.timer !== null) {
         window.clearTimeout(hold.timer);
         holdRef.current = null; // Toque corto: onClick conserva el flujo manual.
+      } else {
+        hold.onRelease?.(); // En una pulsación larga ya iniciada, finalizar aquí.
       }
     };
     const release = (event: PointerEvent) => finishHold(event, false);
@@ -298,23 +303,28 @@ function TextChatView({ onCallOpen }: { onCallOpen: () => void }) {
       timer: null as ReturnType<typeof setTimeout> | null,
       released: false,
       cancelled: false,
+      started: false,
+      finalized: false,
+      onRelease: null as (() => void) | null,
+    };
+    hold.onRelease = () => {
+      if (!hold.released || !hold.started || hold.finalized) return;
+      hold.finalized = true;
+      if (hold.cancelled) {
+        activeRecordingRef.current = false;
+        cancelRecording();
+      } else {
+        void sendVoiceNote();
+      }
+      if (holdRef.current === hold) holdRef.current = null;
     };
     holdRef.current = hold;
     hold.timer = window.setTimeout(async () => {
       hold.timer = null;
       suppressMicClickRef.current = true;
-      const started = await startVoiceNote();
-      if (hold.released) {
-        if (started) {
-          if (hold.cancelled) {
-            activeRecordingRef.current = false;
-            cancelRecording();
-          } else {
-            void sendVoiceNote();
-          }
-        }
-        if (holdRef.current === hold) holdRef.current = null;
-      }
+      hold.started = await startVoiceNote();
+      if (!hold.started && holdRef.current === hold) holdRef.current = null;
+      else hold.onRelease?.(); // Cubrir el permiso de micro concedido después de soltar.
     }, 320);
   };
 
