@@ -6458,11 +6458,12 @@ html:has(.dashboard-mosaic-switcher) {
   }
 }
 
-/* El desenfoque del cromo solo se aplica al abrir un modal. Cuando no
-   hay ningún modal, Navbar permanece sin filtros y completamente nítido. */
-html[data-modal-open="true"] .marbella-fixed-topbar,
-html[data-modal-open="true"] .marbella-fixed-bottombar,
-html[data-modal-open="true"] [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
+/* Solo desenfocar si el modal sigue montado en el DOM. La marca
+   data-modal-open puede quedar rezagada tras cerrar un aviso: no debe
+   afectar a la cabecera cuando no queda ningún modal visible. */
+html[data-modal-open="true"]:has([data-component='Modal'], [data-component='ConsumptionBottomSheet']) .marbella-fixed-topbar,
+html[data-modal-open="true"]:has([data-component='Modal'], [data-component='ConsumptionBottomSheet']) .marbella-fixed-bottombar,
+html[data-modal-open="true"]:has([data-component='Modal'], [data-component='ConsumptionBottomSheet']) [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
   filter: blur(6px);
   opacity: 0.35;
   pointer-events: none;

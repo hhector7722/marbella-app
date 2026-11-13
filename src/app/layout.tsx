@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import { StaffScheduleAnnouncement } from "@/components/StaffScheduleAnnouncement";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
@@ -94,7 +93,6 @@ export default function RootLayout({
             <MainWrapper>{children}</MainWrapper>
             <BottomNavWrapper />
             <UsageAuthenticatedTracker />
-            <StaffScheduleAnnouncement />
 
             {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
             <ChatMarbellaLazy />

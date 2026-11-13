@@ -49,7 +49,8 @@ describe('Cabecera normal nítida y desenfocada solo bajo modales', () => {
 
     it('con modal, la cabecera recupera el mismo blur y opacidad que el pie', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        assert.match(css, /html\[data-modal-open="true"\] \.marbella-fixed-topbar,[\s\S]*?filter:\s*blur\(6px\);[\s\S]*?opacity:\s*0\.35;/);
+        assert.match(css, /html\[data-modal-open="true"\]:has\(\[data-component='Modal'\], \[data-component='ConsumptionBottomSheet'\]\) \.marbella-fixed-topbar,[\s\S]*?filter:\s*blur\(6px\);[\s\S]*?opacity:\s*0\.35;/);
+        assert.doesNotMatch(css, /html\[data-modal-open="true"\] \.marbella-fixed-topbar,/);
         assert.match(css, /html\[data-modal-open="true"\]:has\(\[data-component='Modal'\]\[data-instance='global-search'\]\) \.marbella-fixed-topbar,/);
         assert.doesNotMatch(css, /html:has\(\.marbella-fixed-topbar\) \[data-modal-backdrop='base'\]/);
         assert.doesNotMatch(css, /html:has\(\.marbella-fixed-topbar\):has\(\[data-component='PageScreen'/);
@@ -313,7 +314,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             assert.match(navbar, /userData\?\.authEmail \|\| identity\?\.realEmail/, 'la cámara prioriza el correo real de la sesión');
             assert.match(navbar, /identity\?\.isViewingAs[\s\S]*?identity\.effectiveEmail/, 'Ver como conserva los permisos del usuario simulado');
             assert.match(navbar, /data-camera-visible=\{canSeeCamera/, 'el layout móvil adapta el buscador cuando aparece cámara');
-            assert.match(css, /html\[data-modal-open="true"\] \.marbella-fixed-topbar,/, 'los modales difuminan la cabecera superior igual que el contenido');
+            assert.match(css, /html\[data-modal-open="true"\]:has\(\[data-component='Modal'\], \[data-component='ConsumptionBottomSheet'\]\) \.marbella-fixed-topbar,/, 'la cabecera solo se difumina mientras existe realmente un modal');
             assert.match(navbar, /router\.push\('\/camaras'\)/, 'la cámara conserva su ruta');
             assert.match(navbar, /data-element="navbar-copilot"/, 'se mantiene el asistente actual');
             assert.doesNotMatch(navbar, /-space-x-3/, 'los controles de la cabecera ya no se tapan');
