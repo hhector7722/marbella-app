@@ -64,7 +64,7 @@ export async function GET(
   ]);
 
   try {
-    const pdf = buildAltaLaboralPdf({ row, frontImage, backImage });
+    const pdf = await buildAltaLaboralPdf({ row, frontImage, backImage });
     return new NextResponse(Buffer.from(pdf.bytes), {
       headers: {
         'Content-Type': 'application/pdf',

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import sharp from 'sharp';
+import { PDFDocument } from 'pdf-lib';
 import { canGenerateAltaPdf, missingAltaPdfFields } from './completeness.ts';
 import { formatCivilDateEs } from './dates.ts';
 import { candidateToRow, intakeToProfilePatch } from './mapping.ts';
@@ -52,20 +54,57 @@ describe('alta laboral', () => {
     assert.equal(hashIntakeToken(token).length, 64);
   });
 
-  it('no genera PDF si falta un dato vital', () => {
+  it('genera el alta con la plantilla real, datos y DNI en una única página', async () => {
     const incomplete = baseRow({ categoria: null, weekly_hours: null });
     assert.equal(canGenerateAltaPdf(incomplete), false);
     const labels = missingAltaPdfFields(incomplete).map((f) => f.label);
     assert.ok(labels.includes('Categoría'));
     assert.ok(labels.includes('Horas semanales'));
     assert.equal(canGenerateAltaPdf(baseRow()), true);
-    assert.throws(
+    await assert.rejects(
       () => buildAltaLaboralPdf({ row: incomplete, frontImage: null, backImage: null }),
       /Faltan datos para el PDF/,
     );
-    const pdf = buildAltaLaboralPdf({ row: baseRow(), frontImage: null, backImage: null });
-    assert.ok(pdf.bytes.byteLength > 100);
+    await assert.rejects(
+      () => buildAltaLaboralPdf({ row: baseRow(), frontImage: null, backImage: null }),
+      /dos imágenes del documento de identidad/,
+    );
+    const image = {
+      dataUrl: `data:image/png;base64,${(await sharp({
+        create: { width: 256, height: 160, channels: 3, background: '#f3f3f3' },
+      }).png().toBuffer()).toString('base64')}`,
+      format: 'PNG' as const,
+    };
+    const pdf = await buildAltaLaboralPdf({ row: baseRow(), frontImage: image, backImage: image });
+    assert.ok(pdf.bytes.byteLength > 10000);
     assert.match(pdf.filename, /^alta-laboral-hector-sanchez\.pdf$/);
+    const document = await PDFDocument.load(pdf.bytes);
+    assert.equal(document.getPageCount(), 1);
+    assert.equal(document.getPage(0).getWidth(), 612);
+    assert.equal(document.getPage(0).getHeight(), 792);
+  });
+
+  it('admite fotografías WebP y no recorta campos jurídicos largos sin avisar', async () => {
+    const image = {
+      dataUrl: 'data:image/webp;base64,' + (await sharp({
+        create: { width: 900, height: 570, channels: 3, background: '#dce3ef' },
+      }).webp().toBuffer()).toString('base64'),
+      format: 'WEBP' as const,
+    };
+    const result = await buildAltaLaboralPdf({
+      row: baseRow({ domicilio: 'Carrer de la Marina, 123, primera planta, puerta segunda, Barcelona' }),
+      frontImage: image,
+      backImage: image,
+    });
+    assert.equal((await PDFDocument.load(result.bytes)).getPageCount(), 1);
+    await assert.rejects(
+      () => buildAltaLaboralPdf({
+        row: baseRow({ domicilio: 'Domicilio '.repeat(95) }),
+        frontImage: image,
+        backImage: image,
+      }),
+      /demasiado largo/,
+    );
   });
 
   it('mapea el expediente al parche de perfil sin categoría ni tipo de contrato', () => {
