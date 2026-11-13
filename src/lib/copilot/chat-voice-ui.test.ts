@@ -47,3 +47,15 @@ test('la respuesta de chat conserva margen frente al timeout del servidor', () =
   assert.match(route, /const deadlineMs = Math\.min\(started \+ 47500, requestStartedAt \+ 44000\);/);
   assert.match(route, /export const maxDuration = 60;/);
 });
+
+test('el micro soporta toque corto y pulsación larga que finaliza al soltar', () => {
+  const chat = source('components/chat/ChatMarbella.tsx');
+  assert.match(chat, /onPointerDown=\{handleMicPointerDown\}/);
+  assert.match(chat, /addEventListener\('pointerup', release\)/);
+  assert.match(chat, /addEventListener\('pointercancel', cancel\)/);
+  assert.match(chat, /window\.clearTimeout\(hold\.timer\)/);
+  assert.match(chat, /hold\.onRelease\?\.\(\)/);
+  assert.match(chat, /hold\.started = await startVoiceNote\(\)/);
+  assert.match(chat, /suppressMicClickRef\.current/);
+  assert.match(chat, /void sendVoiceNote\(\)/);
+});
