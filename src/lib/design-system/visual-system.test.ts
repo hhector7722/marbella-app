@@ -46,7 +46,19 @@ describe('Cabecera nítida con modales abiertos', () => {
             'el Navbar no recibe filtro, opacidad ni bloqueo al abrir modales'
         );
         assert.match(css,
-            /html\[data-modal-open="true"\] \.marbella-fixed-bottombar,[\s\S]*?filter:\s*blur\(6px\);/,
+            /\[data-component='PageScreen'\] \[data-element='header'\] \{[\s\S]*?z-index:\s*calc\(var\(--z-modal-system\) \+ 1\);[\s\S]*?filter:\s*none;/,
+            'la cabecera de la pantalla queda por encima del backdrop y sin desenfoque'
+        );
+        assert.match(css,
+            /\[data-component='PageScreen'\] \[data-element='toolbar'\]\[data-pin='true'\] \{[\s\S]*?z-index:\s*calc\(var\(--z-modal-system\) \+ 1\);[\s\S]*?filter:\s*none;/,
+            'la barra de herramientas fija también conserva la nitidez'
+        );
+        assert.match(css,
+            /:is\(\[data-element='header'\], \[data-element='toolbar'\]\[data-pin='true'\]\) \* \{[\s\S]*?pointer-events:\s*none !important;/,
+            'los elementos elevados no son interactivos bajo los modales'
+        );
+        assert.match(css,
+            /html\[data-modal-open="true"\] \.marbella-fixed-bottombar \{[\s\S]*?filter:\s*blur\(6px\);/,
             'la barra inferior conserva el tratamiento anterior'
         );
     });

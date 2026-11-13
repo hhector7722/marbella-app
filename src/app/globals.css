@@ -6461,15 +6461,39 @@ html:has(.dashboard-mosaic-switcher) {
 html:has(.marbella-fixed-topbar) [data-modal-backdrop='base'] {
   top: calc(var(--app-navbar-height) + env(safe-area-inset-top, 0px));
 }
-/* La barra inferior y los demás elementos siguen difuminados. */
-html[data-modal-open="true"] .marbella-fixed-bottombar,
-html[data-modal-open="true"] [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
+/* La cabecera de cada pantalla (título, periodo y acciones) también debe
+   permanecer nítida al abrir un modal: el backdrop del portal se dibuja por
+   encima del main. Elevar solamente el cromo superior evita ese desenfoque
+   sin cambiar el aspecto del resto del contenido ni el propio modal.
+   La búsqueda global queda exceptuada porque ocupa precisamente esa zona. */
+html[data-modal-open="true"]:not(:has([data-component='Modal'][data-instance='global-search']))
+  [data-component='PageScreen'] [data-element='header'] {
+  position: relative;
+  z-index: calc(var(--z-modal-system) + 1);
+  filter: none;
+  opacity: 1;
+  pointer-events: none;
+}
+html[data-modal-open="true"]:not(:has([data-component='Modal'][data-instance='global-search']))
+  [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
+  z-index: calc(var(--z-modal-system) + 1);
+  filter: none;
+  opacity: 1;
+  pointer-events: none;
+}
+/* Los controles de la cabecera elevada no deben recibir clics bajo un modal,
+   incluso si un hijo declara pointer-events-auto. */
+html[data-modal-open="true"]:not(:has([data-component='Modal'][data-instance='global-search']))
+  [data-component='PageScreen'] :is([data-element='header'], [data-element='toolbar'][data-pin='true']) * {
+  pointer-events: none !important;
+}
+/* La barra inferior conserva el desenfoque acordado. */
+html[data-modal-open="true"] .marbella-fixed-bottombar {
   filter: blur(6px);
   opacity: 0.35;
   pointer-events: none;
 }
-html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-bottombar,
-html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
+html[data-modal-open="true"]:has([data-component='Modal'][data-instance='global-search']) .marbella-fixed-bottombar {
   filter: blur(1px);
   opacity: 0.78;
 }
