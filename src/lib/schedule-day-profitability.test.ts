@@ -46,3 +46,23 @@ test('una tarifa de extras ausente nunca se sustituye por una tarifa inventada',
   assert.equal(cost.overtimeCost, null);
   assert.deepEqual(cost.missingRateEmployeeIds, ['worker']);
 });
+
+
+test('si no hay contrato ni nómina, todas las horas previstas son extras a su tarifa personal', () => {
+  const existing = context(8, 0, 12).worker!;
+  const result = computeScheduleDayLaborCost('2026-11-13', [
+    { employeeId: 'worker', start: '10:00', end: '16:00' },
+  ], {
+    worker: {
+      ...existing,
+      employee: { ...existing.employee, terms: [] },
+      ordinaryHourlyRate: null,
+      overtimeHourlyRate: 12,
+    },
+  });
+  assert.equal(result.ordinaryHours, 0);
+  assert.equal(result.overtimeHours, 6);
+  assert.equal(result.ordinaryCost, 0);
+  assert.equal(result.overtimeCost, 72);
+  assert.equal(result.totalCost, 72);
+});

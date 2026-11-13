@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { payrollMonthContractedHours, rateFromEmployeePayroll, overtimeRateForScheduleDay } from './schedule-payroll-rate.ts';
+import { payrollMonthContractedHours, rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay } from './schedule-payroll-rate.ts';
 import type { EmployeeBoundaryFacts } from './hours-engine/types.ts';
 
 const worker = (employeeId: string, weeklyHours: number, hourlyRate: number): EmployeeBoundaryFacts => ({
@@ -70,4 +70,56 @@ test('sin nómina ni tarifa acreditada, no se inventan cifras', () => {
   const employee = worker('a', 8, 12);
   assert.deepEqual(rateFromEmployeePayroll(employee, []), { rate: null, period: null, reason: 'missing' });
   assert.equal(overtimeRateForScheduleDay({ ...employee, terms: [] }, '2026-11-13', null), null);
+});
+
+
+test('sin nómina propia, la referencia es el coste €/h más frecuente, no una nómina de 40h aplicada a un contrato de 8h', () => {
+  const employees = {
+    a: worker('a', 40, 10),
+    b: worker('b', 20, 12),
+    c: worker('c', 8, 11),
+    d: worker('d', 40, 15),
+  };
+  const amounts = { a: 13.7, b: 14.1, c: 14.2, d: 17.9 };
+  const rows = (Object.keys(employees) as Array<keyof typeof employees>).map(id => ({
+    user_id: id, period_ym: '2026-10',
+    total_company_cost: payrollMonthContractedHours(employees[id], '2026-10') * amounts[id],
+  }));
+  const typical = mostCommonCompanyHourlyRate(rows, employees);
+  assert.ok(typical);
+  assert.ok(Math.abs(typical.rate - 14.1) < 1e-9);
+  assert.equal(typical.employeesSampled, 4);
+  assert.equal(typical.employeesInModalBand, 3);
+  assert.equal(typical.period, '2026-10');
+  assert.ok(Math.abs(typical.rate * (8 * 52 / 12) - 488.8) < 1e-9);
+});
+
+test('un único coste no es una moda empresarial; usar mes anterior con muestra suficiente', () => {
+  const employees = { a: worker('a', 40, 10), b: worker('b', 20, 10) };
+  const common = mostCommonCompanyHourlyRate([
+    { user_id: 'a', period_ym: '2026-11', total_company_cost: 999 },
+    { user_id: 'a', period_ym: '2026-10', total_company_cost: payrollMonthContractedHours(employees.a, '2026-10') * 14 },
+    { user_id: 'b', period_ym: '2026-10', total_company_cost: payrollMonthContractedHours(employees.b, '2026-10') * 14 },
+  ], employees);
+  assert.equal(common?.period, '2026-10');
+  assert.ok(Math.abs((common?.rate ?? 0) - 14) < 1e-9);
+  assert.equal(mostCommonCompanyHourlyRate([], employees), null);
+});
+
+test('no se duplica ni se usan importes ambiguos como referencia de empresa', () => {
+  const employees = { a: worker('a', 40, 10), b: worker('b', 20, 10) };
+  const common = mostCommonCompanyHourlyRate([
+    { user_id: 'a', period_ym: '2026-10', total_company_cost: 2000 },
+    { user_id: 'a', period_ym: '2026-10', total_company_cost: 2400 },
+    { user_id: 'b', period_ym: '2026-10', total_company_cost: 1400 },
+  ], employees);
+  assert.equal(common, null);
+});
+
+test('sin contrato de horas, la tarifa versionada de extras sigue disponible', () => {
+  assert.equal(versionedOvertimeRateForDay([
+    { valid_from: '2026-09-01', valid_to: '2026-10-31', overtime_cost_per_hour: 11 },
+    { valid_from: '2026-11-01', valid_to: null, overtime_cost_per_hour: 16 },
+  ], '2026-11-13'), 16);
+  assert.equal(versionedOvertimeRateForDay([], '2026-11-13'), null);
 });

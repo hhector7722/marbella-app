@@ -3,13 +3,14 @@
 import { createClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { loadEmployeeBoundaryFactsBatch } from '@/lib/hours-engine/load-employee-facts';
-import { rateFromEmployeePayroll, overtimeRateForScheduleDay, type SchedulePayrollRow } from '@/lib/schedule-payroll-rate';
+import { rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay, type CompanyPayrollFact } from '@/lib/schedule-payroll-rate';
 import { mondayOnOrBefore } from '@/lib/hours-engine/week-dates';
 import { formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { roundMarbellaHours } from '@/lib/hours-engine/marbella-round';
 import type { ScheduleLaborCostContext } from '@/lib/schedule-day-profitability';
 
-type PayrollRow = SchedulePayrollRow & { user_id: string };
+type PayrollRow = CompanyPayrollFact;
+type HistoricalOvertimeRateRow = { user_id: string; valid_from: string; valid_to: string | null; overtime_cost_per_hour: number | string | null };
 type ShiftRow = {
   user_id: string;
   start_time: string;
@@ -65,11 +66,10 @@ export async function getScheduleLaborCostContext(
     for (let i = 0; i < 12; i++) earliestPayrollMonth = monthBefore(earliestPayrollMonth);
     const { startIso, endIso } = madridRangeUtcIso(weekStart, day);
 
-    const [employees, payrollRes, shiftsRes, logsRes, weeklyRes] = await Promise.all([
-      loadEmployeeBoundaryFactsBatch(supabase, ids),
+    const [payrollRes, shiftsRes, logsRes, weeklyRes, historicalOtRes] = await Promise.all([
       supabase.from('employee_payroll_facts')
         .select('user_id, period_ym, total_company_cost')
-        .in('user_id', ids).eq('status', 'active').eq('settlement_type', 'ordinary')
+        .eq('status', 'active').eq('settlement_type', 'ordinary')
         .gte('period_ym', earliestPayrollMonth).lte('period_ym', upperPayrollMonth)
         .order('period_ym', { ascending: false }),
       supabase.from('shifts')
@@ -82,16 +82,25 @@ export async function getScheduleLaborCostContext(
       supabase.from('weekly_snapshots')
         .select('user_id, overtime_price_snapshot')
         .in('user_id', ids).eq('week_start', weekStart),
+      supabase.from('profile_labor_cost_terms')
+        .select('user_id, valid_from, valid_to, overtime_cost_per_hour')
+        .in('user_id', ids).lte('valid_from', day),
     ]);
     for (const [name, error] of [
       ['nóminas', payrollRes.error], ['turnos', shiftsRes.error],
       ['fichajes', logsRes.error], ['condiciones semanales', weeklyRes.error],
+      ['tarifas históricas', historicalOtRes.error],
     ] as const) {
       if (error) throw new Error(`${name}: ${error.message}`);
     }
 
+    const companyPayrollFacts = (payrollRes.data ?? []) as PayrollRow[];
+    const donorIds = [...new Set([...ids, ...companyPayrollFacts.map(p => p.user_id)])];
+    // Un único lote de tramos contractuales para los turnos y los empleados de referencia.
+    const employees = await loadEmployeeBoundaryFactsBatch(supabase, donorIds);
+    const commonHourlyCost = mostCommonCompanyHourlyRate(companyPayrollFacts, employees);
     const payrollByWorker = new Map<string, PayrollRow[]>();
-    for (const fact of (payrollRes.data ?? []) as PayrollRow[]) {
+    for (const fact of companyPayrollFacts) {
       const rows = payrollByWorker.get(fact.user_id) ?? [];
       rows.push(fact);
       payrollByWorker.set(fact.user_id, rows);
@@ -134,19 +143,34 @@ export async function getScheduleLaborCostContext(
       (weeklyRes.data ?? []).map((row) => [row.user_id, row.overtime_price_snapshot]),
     );
 
+    const overtimeTerms = new Map<string, HistoricalOvertimeRateRow[]>();
+    for (const term of (historicalOtRes.data ?? []) as HistoricalOvertimeRateRow[]) {
+      const list = overtimeTerms.get(term.user_id) ?? [];
+      list.push(term);
+      overtimeTerms.set(term.user_id, list);
+    }
+
     const result: ScheduleLaborCostContext = {};
     for (const id of ids) {
       const employee = employees[id]!;
       const rate = rateFromEmployeePayroll(employee, payrollByWorker.get(id) ?? []);
+      const activeContract = employee.terms.some(t => t.weeklyHours > 0 &&
+        t.effectiveFrom <= day && (t.effectiveTo == null || t.effectiveTo >= day));
+      // Solo si no hay nómina propia y existe contrato: referencia común de la empresa,
+      // expresada en €/h; se adapta automáticamente a las horas de su contrato.
+      const fallbackRate = rate.reason === 'missing' && activeContract
+        ? commonHourlyCost?.rate ?? null : null;
       const override = overrides.get(id);
-      const overtimeHourlyRate = overtimeRateForScheduleDay(
-        employee, day, override == null ? undefined : Number(override));
+      const effectiveOverride = override == null ? undefined : Number(override);
+      const contractualOtRate = overtimeRateForScheduleDay(employee, day, effectiveOverride);
+      const overtimeHourlyRate = contractualOtRate ?? versionedOvertimeRateForDay(
+        overtimeTerms.get(id) ?? [], day);
       result[id] = {
         employee,
-        ordinaryHourlyRate: rate.rate,
+        ordinaryHourlyRate: rate.rate ?? fallbackRate,
         overtimeHourlyRate,
         earlierHoursByDay: earlier.get(id) ?? {},
-        payrollPeriod: rate.period,
+        payrollPeriod: rate.period ?? (fallbackRate != null ? commonHourlyCost?.period ?? null : null),
       };
     }
     return { success: true, data: result };

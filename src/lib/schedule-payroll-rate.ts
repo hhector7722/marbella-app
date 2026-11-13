@@ -78,3 +78,86 @@ export function overtimeRateForScheduleDay(
   const rate = matches[0]!.overtimeRatePerHour;
   return rate != null && Number.isFinite(rate) && rate >= 0 ? rate : null;
 }
+
+export type CompanyPayrollFact = SchedulePayrollRow & { user_id: string };
+
+export type CompanyCommonHourlyRate = {
+  rate: number;
+  period: string;
+  employeesSampled: number;
+  employeesInModalBand: number;
+};
+
+function medianSorted(values: readonly number[]): number {
+  const middle = Math.floor(values.length / 2);
+  return values.length % 2 === 1
+    ? values[middle]!
+    : (values[middle - 1]! + values[middle]!) / 2;
+}
+
+/**
+ * Coste empresarial MÁS FRECUENTE, expresado en €/h para poder comparar
+ * contratos de 8, 20 o 40 h sin confundir sus costes mensuales absolutos.
+ * Una banda representa 1 €/h; dentro de la banda ganadora se usa la mediana
+ * de los importes originales (sin redondear previamente los costes).
+ * Se utiliza el último mes CERRADO con al menos dos trabajadores válidos.
+ */
+export function mostCommonCompanyHourlyRate(
+  facts: readonly CompanyPayrollFact[],
+  employeeFactsById: Record<string, EmployeeBoundaryFacts>,
+): CompanyCommonHourlyRate | null {
+  const periods = [...new Set(facts.map(f => f.period_ym))].sort().reverse();
+  for (const period of periods) {
+    const byEmployee = new Map<string, SchedulePayrollRow[]>();
+    for (const f of facts) {
+      if (f.period_ym !== period) continue;
+      const list = byEmployee.get(f.user_id) ?? [];
+      list.push(f);
+      byEmployee.set(f.user_id, list);
+    }
+    const rates: number[] = [];
+    for (const [id, rows] of byEmployee) {
+      const employee = employeeFactsById[id];
+      if (!employee) continue;
+      const result = rateFromEmployeePayroll(employee, rows);
+      if (result.rate != null && result.rate > 0 && Number.isFinite(result.rate)) {
+        rates.push(result.rate);
+      }
+    }
+    // Un solo trabajador no define un coste común en la empresa.
+    if (rates.length < 2) continue;
+
+    rates.sort((a, b) => a - b);
+    const center = medianSorted(rates);
+    const bands = new Map<number, number[]>();
+    for (const rate of rates) {
+      const key = Math.round(rate); // Modo de tarifas a 1 €/h.
+      const members = bands.get(key) ?? [];
+      members.push(rate);
+      bands.set(key, members);
+    }
+    const mostCommon = [...bands.entries()].sort(([ka, a], [kb, b]) =>
+      b.length - a.length || Math.abs(ka - center) - Math.abs(kb - center) || ka - kb
+    )[0]!;
+    return {
+      rate: medianSorted(mostCommon[1]),
+      period,
+      employeesSampled: rates.length,
+      employeesInModalBand: mostCommon[1].length,
+    };
+  }
+  return null;
+}
+
+/** Tarifa versionada del trabajador para jornadas clasificadas íntegramente como extras. */
+export function versionedOvertimeRateForDay(
+  terms: readonly { valid_from: string; valid_to: string | null; overtime_cost_per_hour: number | string | null }[],
+  day: string,
+): number | null {
+  const effective = terms.filter(t => t.valid_from <= day && (t.valid_to == null || t.valid_to >= day));
+  if (effective.length !== 1) return null;
+  const raw = effective[0]!.overtime_cost_per_hour;
+  if (raw == null) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
