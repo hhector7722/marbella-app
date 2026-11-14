@@ -81,6 +81,7 @@ describe('Mensajes privados entregados al próximo fichaje', () => {
   it('permite imágenes, audio y vídeo privados, con galería y confirmación posterior al fichaje', () => {
     const migration = source('supabase/migrations/20261114135141_staff_clock_message_media_20261114.sql');
     const media = source('src/components/staff/ClockMessageAttachments.tsx');
+    const waveform = source('src/components/staff/ClockVoiceWaveform.tsx');
     assert.match(migration, /'staff-clock-media'[\s\S]*false, 52428800/);
     assert.match(migration, /CREATE POLICY staff_clock_media_owner_upload/);
     assert.match(migration, /CREATE POLICY staff_clock_media_authorized_read/);
@@ -89,9 +90,17 @@ describe('Mensajes privados entregados al próximo fichaje', () => {
     assert.match(profile, /ClockMediaPicker/);
     assert.match(modal, /ClockMediaGallery/);
     assert.match(media, /new MediaRecorder/);
-    assert.match(media, /<audio/);
+    assert.match(waveform, /<audio/);
     assert.match(media, /<video/);
     assert.match(media, /setExpanded\(item\)/);
+    assert.match(media, /aria-label="Cerrar contenido ampliado"/);
+    assert.match(media, /onClick=\{\(\) => setExpanded\(null\)\}/);
+    assert.match(media, /rounded-xl object-cover/);
+    assert.match(waveform, /decodeAudioData/);
+    assert.match(waveform, /getByteTimeDomainData/);
+    assert.match(media, /ClockRecordingWaveform stream=\{recordingStream\}/);
+    assert.doesNotMatch(media, /<p[^>]*>\{item.name\}/);
+    assert.match(media, /ClockVoicePlayer src=\{item.url\}/);
   });
 
   it('nadie más puede cambiar los mensajes y la lectura requiere confirmación', () => {
