@@ -8,7 +8,6 @@ import { createClient } from '@/utils/supabase/client';
 import { formatRoundedCurrencySpanish } from '@/lib/rounded-currency';
 import { formatCurrencySpanish, formatNumberSpanish } from '@/lib/cash-closing-metrics';
 import { MasterLastClosingWidget } from './MasterLastClosingWidget';
-import MasterHudFrame from './MasterHudFrame';
 import { SalesPreviewModal, type SalesPreview } from './SalesPreviewModal';
 
 type MonthlySnapshot = {
@@ -294,16 +293,14 @@ function HomeMonthlySalesWidget({ fullWidget = false }: { fullWidget?: boolean }
 }
 
 /** Un solo hueco de HomeScreen, dividido en dos tarjetas iguales: no desplaza horarios ni accesos. */
-export function HomeClosingMonthlyPair({ fullWidget = false, hudFrame = false }: { fullWidget?: boolean; hudFrame?: boolean }) {
+export function HomeClosingMonthlyPair({ fullWidget = false }: { fullWidget?: boolean }) {
     return (
         <div data-element="home-closing-monthly-pair" data-master-full={fullWidget ? 'true' : undefined} className="grid h-full min-h-0 w-full grid-cols-2 gap-2">
             <section data-element="closing-half" className="min-h-0 min-w-0 overflow-hidden">
                 <MasterLastClosingWidget compact fullWidget={fullWidget}/>
-                {hudFrame && <MasterHudFrame />}
             </section>
             <div data-element="monthly-container" className="min-h-0 min-w-0 overflow-hidden">
                 <HomeMonthlySalesWidget fullWidget={fullWidget}/>
-                {hudFrame && <MasterHudFrame />}
             </div>
         </div>
     );

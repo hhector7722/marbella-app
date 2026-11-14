@@ -49,8 +49,6 @@ import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import './master-hud-frame.css';
-import MasterHudFrame from './MasterHudFrame';
 
 type MasterDashboardViewProps = {
     initialData?: {
@@ -545,10 +543,9 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                             salesChartData: initialData?.salesChartData,
                         }}
                     />
-                    <MasterHudFrame />
                 </HomeScreenSlot>
                 <HomeScreenSlot size="wide" instance="master-ultimo-cierre">
-                    <HomeClosingMonthlyPair fullWidget hudFrame />
+                    <HomeClosingMonthlyPair fullWidget />
                 </HomeScreenSlot>
                 <HomeScreenSlot
                     size={attendanceExpanded ? 'tall' : 'tile'}
@@ -573,7 +570,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                         onOpenWeekDetail={(week) => setOvertimeWeekDetail(week)}
                         overtimeRefreshKey={overtimeRefreshKey}
                     />
-                    <MasterHudFrame />
                 </HomeScreenSlot>
                 <MasterShortcutGrid
                     actualBalance={actualBalance}
