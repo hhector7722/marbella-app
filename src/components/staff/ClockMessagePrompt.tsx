@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { ClockMediaGallery } from '@/components/staff/ClockMessageAttachments';
 import {
   acknowledgeStaffClockMessage,
   type StaffClockMessage,
@@ -53,6 +54,9 @@ export function ClockMessagePrompt({
         <p className="w-full whitespace-pre-wrap break-words text-base font-medium leading-relaxed">
           {message?.body ?? ''}
         </p>
+        <ClockMediaGallery items={(message?.attachments ?? [])
+          .filter((attachment) => Boolean(attachment.url))
+          .map((attachment) => ({ kind: attachment.kind, name: attachment.name, url: attachment.url! }))}/>
         <Button
           variant="primary"
           instance="staff-clock-message-acknowledge"

@@ -17,7 +17,7 @@ describe('Mensajes privados entregados al próximo fichaje', () => {
 
   it('solo Héctor puede enviar, también a su propio perfil', () => {
     assert.match(profile, /isMasterDashboardUser\(currentUser\?\.email\)/);
-    assert.match(profile, /sendStaffClockMessage\(profile\.id, clockMessageDraft\)/);
+    assert.match(profile, /sendStaffClockMessage\(profile\.id, clockMessageDraft, attachments\)/);
     assert.match(profile, /isMasterDashboardUser\(currentUser\?\.email\) && \(\s*<div className="mt-4 flex justify-center">/,
       'Héctor encuentra un botón claramente visible en el menú de su perfil');
     assert.match(profile, /Enviar mensaje al fichar/);
@@ -76,6 +76,22 @@ describe('Mensajes privados entregados al próximo fichaje', () => {
     assert.match(profile, /\{clockMessagePending\?\.body\}/, 'se ve el texto completo del mensaje pendiente');
     assert.match(profile, /hasta[\s\S]*?que registre su entrada o salida y confirme que lo ha leído/);
     assert.match(actions, /acknowledged_at: new Date\(\)\.toISOString\(\)/);
+  });
+
+  it('permite imágenes, audio y vídeo privados, con galería y confirmación posterior al fichaje', () => {
+    const migration = source('supabase/migrations/20261114135141_staff_clock_message_media_20261114.sql');
+    const media = source('src/components/staff/ClockMessageAttachments.tsx');
+    assert.match(migration, /'staff-clock-media'.*false, 52428800/s);
+    assert.match(migration, /CREATE POLICY staff_clock_media_owner_upload/);
+    assert.match(migration, /CREATE POLICY staff_clock_media_authorized_read/);
+    assert.match(actions, /withSignedClockMedia/);
+    assert.match(actions, /validateClockMediaAttachments/);
+    assert.match(profile, /ClockMediaPicker/);
+    assert.match(modal, /ClockMediaGallery/);
+    assert.match(media, /new MediaRecorder/);
+    assert.match(media, /<audio/);
+    assert.match(media, /<video/);
+    assert.match(media, /setExpanded\(item\)/);
   });
 
   it('nadie más puede cambiar los mensajes y la lectura requiere confirmación', () => {

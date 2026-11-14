@@ -49,6 +49,7 @@ import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import './master-hud-frame.css';
 
 type MasterDashboardViewProps = {
     initialData?: {

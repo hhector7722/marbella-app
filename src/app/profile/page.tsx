@@ -34,6 +34,11 @@ import {
     type PlantillaEmployee,
 } from '@/components/modals/StaffSelectionModal';
 import type { User } from '@supabase/supabase-js';
+import { ClockMediaPicker, ClockMediaGallery } from '@/components/staff/ClockMessageAttachments';
+import {
+  STAFF_CLOCK_MEDIA_BUCKET, staffClockMediaExtension, staffClockMediaKind,
+  type StaffClockAttachment,
+} from '@/lib/staff/clock-media';
 import {
     checkPendingStaffClockMessage,
     sendStaffClockMessage,
@@ -97,6 +102,9 @@ function ProfileContent() {
     const [logoutConfirm, setLogoutConfirm] = useState(false);
     const [clockMessageComposerOpen, setClockMessageComposerOpen] = useState(false);
     const [clockMessageDraft, setClockMessageDraft] = useState('');
+    const [clockMessageFiles, setClockMessageFiles] = useState<File[]>([]);
+    const [clockMediaRecording, setClockMediaRecording] = useState(false);
+    const [clockMediaProgress, setClockMediaProgress] = useState('');
     const [clockMessageSending, setClockMessageSending] = useState(false);
     const [clockMessageChecking, setClockMessageChecking] = useState(false);
     const [clockMessagePending, setClockMessagePending] = useState<StaffClockMessage | null>(null);
@@ -118,6 +126,7 @@ function ProfileContent() {
             } else {
                 setClockMessagePending(null);
                 setClockMessageDraft('');
+                setClockMessageFiles([]);
                 setClockMessageComposerOpen(true);
             }
         } catch {
@@ -129,9 +138,36 @@ function ProfileContent() {
 
     const sendClockMessage = async () => {
         if (!profile || !isMasterDashboardUser(currentUser?.email) || clockMessageSending) return;
+        if ((!clockMessageDraft.trim() && !clockMessageFiles.length) || clockMediaRecording) return;
         setClockMessageSending(true);
+        const uploaded: string[] = [];
+        let saved = false;
         try {
-            const result = await sendStaffClockMessage(profile.id, clockMessageDraft);
+            const { data: { user: sessionUser }, error: authError } = await supabase.auth.getUser();
+            if (authError || !sessionUser || !isMasterDashboardUser(sessionUser.email)) {
+                throw new Error('Sesión no autorizada para adjuntar archivos.');
+            }
+            const attachments: StaffClockAttachment[] = [];
+            for (let index = 0; index < clockMessageFiles.length; index++) {
+                const file = clockMessageFiles[index];
+                setClockMediaProgress(`Subiendo archivo ${index + 1} de ${clockMessageFiles.length}…`);
+                const extension = staffClockMediaExtension(file.type);
+                const kind = staffClockMediaKind(file.type);
+                if (!extension || !kind) throw new Error('Formato de archivo no admitido.');
+                const path = `${sessionUser.id}/${crypto.randomUUID()}.${extension}`;
+                const { error: uploadError } = await supabase.storage
+                    .from(STAFF_CLOCK_MEDIA_BUCKET).upload(path, file, {
+                        upsert: false, contentType: file.type, cacheControl: '60',
+                    });
+                if (uploadError) throw new Error(`No se pudo subir "${file.name}": ${uploadError.message}`);
+                uploaded.push(path);
+                attachments.push({
+                    kind, path, contentType: file.type, size: file.size,
+                    name: file.name.trim().slice(0, 180) || 'Adjunto',
+                });
+            }
+            setClockMediaProgress('Guardando mensaje…');
+            const result = await sendStaffClockMessage(profile.id, clockMessageDraft, attachments);
             if (!result.success) {
                 // Puede llegar otro mensaje desde otra sesión entre la
                 // comprobación inicial y el guardado: mostrar el mismo aviso.
@@ -143,12 +179,19 @@ function ProfileContent() {
                 }
                 return;
             }
+            saved = true;
             toast.success('Mensaje guardado para el próximo fichaje.');
+            setClockMessageFiles([]);
             setClockMessageDraft('');
             setClockMessageComposerOpen(false);
-        } catch {
-            toast.error('No se ha podido guardar el mensaje.');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'No se ha podido guardar el mensaje.');
         } finally {
+            if (!saved && uploaded.length) {
+                const { error: cleanupError } = await supabase.storage.from(STAFF_CLOCK_MEDIA_BUCKET).remove(uploaded);
+                if (cleanupError) console.warn('No se pudieron limpiar adjuntos no enviados:', cleanupError.message);
+            }
+            setClockMediaProgress('');
             setClockMessageSending(false);
         }
     };
@@ -704,6 +747,9 @@ function ProfileContent() {
                     >
                         {clockMessagePending?.body}
                     </div>
+                    <ClockMediaGallery items={(clockMessagePending?.attachments ?? [])
+                        .filter((attachment) => Boolean(attachment.url))
+                        .map((attachment) => ({ kind: attachment.kind, name: attachment.name, url: attachment.url! }))}/>
                 </div>
             </Modal>
 
@@ -721,7 +767,7 @@ function ProfileContent() {
                             Cancelar
                         </Button>
                         <Button type="button" variant="primary" instance="clock-message-send"
-                            disabled={!clockMessageDraft.trim() || clockMessageSending}
+                            disabled={(!clockMessageDraft.trim() && !clockMessageFiles.length) || clockMessageSending || clockMediaRecording}
                             loading={clockMessageSending} loadingLabel="Guardando…"
                             onClick={() => void sendClockMessage()}>
                             Guardar mensaje
@@ -746,6 +792,13 @@ function ProfileContent() {
                         className="w-full resize-y rounded-xl border border-zinc-300 bg-white p-3 text-base text-zinc-900 outline-none focus:border-blue-500"
                     />
                     <p className="text-right text-xs text-zinc-500">{clockMessageDraft.length}/2000</p>
+                    <ClockMediaPicker
+                        files={clockMessageFiles}
+                        onChange={setClockMessageFiles}
+                        onRecordingChange={setClockMediaRecording}
+                        disabled={clockMessageSending}
+                    />
+                    {clockMediaProgress && <p role="status" className="text-sm text-blue-700">{clockMediaProgress}</p>}
                 </div>
             </Modal>
 

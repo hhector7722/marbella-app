@@ -1,0 +1,59 @@
+/*
+ * Marco HUD violeta, inspirado en la captura facilitada.
+ * Scope obligatorio: únicamente HomeScreen de /master/dashboard.
+ * No cambia el relleno ni los componentes funcionales.
+ */
+[data-component='HomeScreen'][data-layout='master'] {
+  --master-hud-cut: polygon(
+    0 15px, 15px 0, 31% 0, 34% 5px, 72% 5px, 75% 0,
+    calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px),
+    calc(100% - 15px) 100%, 16px 100%, 0 calc(100% - 16px)
+  );
+}
+
+[data-component='HomeScreen'][data-layout='master']
+  > [data-instance='dashboard-ventas'] > [data-element='body'],
+[data-component='HomeScreen'][data-layout='master']
+  > [data-instance='master-horarios'] > [data-element='body'],
+[data-component='HomeScreen'][data-layout='master']
+  [data-element='home-closing-monthly-pair'] > [data-element='closing-half'],
+[data-component='HomeScreen'][data-layout='master']
+  [data-element='home-closing-monthly-pair'] > [data-element='monthly-container'] {
+  position: relative;
+}
+
+/* Los bordes son superpuestos: no alteran las dimensiones del widget. */
+[data-component='HomeScreen'][data-layout='master']
+  > [data-instance='dashboard-ventas'] > [data-element='body']::after,
+[data-component='HomeScreen'][data-layout='master']
+  > [data-instance='master-horarios'] > [data-element='body']::after,
+[data-component='HomeScreen'][data-layout='master']
+  [data-element='home-closing-monthly-pair'] > [data-element='closing-half']::after,
+[data-component='HomeScreen'][data-layout='master']
+  [data-element='home-closing-monthly-pair'] > [data-element='monthly-container']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  box-sizing: border-box;
+  padding: 2px;
+  background: linear-gradient(115deg,
+    #b56cf9 0%, #dd8dff 28%, #775ce0 52%, #aa5ee7 75%, #e5a0ff 100%);
+  clip-path: var(--master-hud-cut);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 5px rgb(175 87 240 / .45));
+}
+
+@media (max-width: 430px) {
+  [data-component='HomeScreen'][data-layout='master'] {
+    --master-hud-cut: polygon(
+      0 10px, 10px 0, 29% 0, 33% 4px, 71% 4px, 75% 0,
+      calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px),
+      calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px)
+    );
+  }
+}
