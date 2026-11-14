@@ -179,3 +179,19 @@ export function resolveOrdinaryScheduleHourlyRate(
   }
   return null;
 }
+
+/** Contrato ordinario vigente realmente en la fecha del turno. */
+export function hasActiveOrdinaryContract(employee: EmployeeBoundaryFacts, day: string): boolean {
+  if (employee.joiningDate && day < employee.joiningDate) return false;
+  if (employee.endDate && day > employee.endDate) return false;
+  return employee.terms.some(t =>
+    t.weeklyHours > 0 && t.effectiveFrom <= day && (t.effectiveTo == null || t.effectiveTo >= day),
+  );
+}
+
+/** Última alternativa: tarifa personal vigente registrada en la ficha del trabajador. */
+export function fallbackProfileOvertimeRate(rate: number | string | null | undefined): number | null {
+  if (rate == null) return null;
+  const result = Number(rate);
+  return Number.isFinite(result) && result >= 0 ? result : null;
+}

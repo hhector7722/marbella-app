@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { loadEmployeeBoundaryFactsBatch } from '@/lib/hours-engine/load-employee-facts';
-import { rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay, resolveOrdinaryScheduleHourlyRate, type CompanyPayrollFact } from '@/lib/schedule-payroll-rate';
+import { rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay, resolveOrdinaryScheduleHourlyRate, hasActiveOrdinaryContract, fallbackProfileOvertimeRate, type CompanyPayrollFact } from '@/lib/schedule-payroll-rate';
 import { mondayOnOrBefore } from '@/lib/hours-engine/week-dates';
 import { formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { roundMarbellaHours } from '@/lib/hours-engine/marbella-round';
@@ -66,7 +66,7 @@ export async function getScheduleLaborCostContext(
     for (let i = 0; i < 12; i++) earliestPayrollMonth = monthBefore(earliestPayrollMonth);
     const { startIso, endIso } = madridRangeUtcIso(weekStart, day);
 
-    const [payrollRes, shiftsRes, logsRes, weeklyRes, historicalOtRes] = await Promise.all([
+    const [payrollRes, shiftsRes, logsRes, weeklyRes, historicalOtRes, profilesCostRes] = await Promise.all([
       supabase.from('employee_payroll_facts')
         .select('user_id, period_ym, total_company_cost')
         .eq('status', 'active').eq('settlement_type', 'ordinary')
@@ -85,11 +85,15 @@ export async function getScheduleLaborCostContext(
       supabase.from('profile_labor_cost_terms')
         .select('user_id, valid_from, valid_to, overtime_cost_per_hour')
         .in('user_id', ids).lte('valid_from', day),
+      supabase.from('profiles')
+        .select('id, overtime_cost_per_hour')
+        .in('id', ids),
     ]);
     for (const [name, error] of [
       ['nóminas', payrollRes.error], ['turnos', shiftsRes.error],
       ['fichajes', logsRes.error], ['condiciones semanales', weeklyRes.error],
       ['tarifas históricas', historicalOtRes.error],
+      ['tarifas personales', profilesCostRes.error],
     ] as const) {
       if (error) throw new Error(`${name}: ${error.message}`);
     }
@@ -150,12 +154,13 @@ export async function getScheduleLaborCostContext(
       overtimeTerms.set(term.user_id, list);
     }
 
+    const profileRates = new Map((profilesCostRes.data ?? []).map(p => [p.id, p.overtime_cost_per_hour]));
+
     const result: ScheduleLaborCostContext = {};
     for (const id of ids) {
       const employee = employees[id]!;
       const rate = rateFromEmployeePayroll(employee, payrollByWorker.get(id) ?? []);
-      const activeContract = employee.terms.some(t => t.weeklyHours > 0 &&
-        t.effectiveFrom <= day && (t.effectiveTo == null || t.effectiveTo >= day));
+      const activeContract = hasActiveOrdinaryContract(employee, day);
       // Una nómina no utilizable (ausente, ambigua o sin divisor contractual)
       // no debe dejar sin total el horario: si hay contrato activo, tomar la
       // referencia horaria empresarial. Nunca sustituir una nómina individual válida.
@@ -166,8 +171,9 @@ export async function getScheduleLaborCostContext(
       const override = overrides.get(id);
       const effectiveOverride = override == null ? undefined : Number(override);
       const contractualOtRate = overtimeRateForScheduleDay(employee, day, effectiveOverride);
-      const overtimeHourlyRate = contractualOtRate ?? versionedOvertimeRateForDay(
-        overtimeTerms.get(id) ?? [], day);
+      const overtimeHourlyRate = contractualOtRate
+        ?? versionedOvertimeRateForDay(overtimeTerms.get(id) ?? [], day)
+        ?? fallbackProfileOvertimeRate(profileRates.get(id));
       result[id] = {
         employee,
         ordinaryHourlyRate,

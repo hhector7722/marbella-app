@@ -6,6 +6,7 @@
  */
 import { liquidateWeek } from './hours-engine/liquidation-engine.ts';
 import { mondayOnOrBefore } from './hours-engine/week-dates.ts';
+import { hasActiveOrdinaryContract } from './schedule-payroll-rate.ts';
 import type { EmployeeBoundaryFacts } from './hours-engine/types.ts';
 
 export const SCHEDULE_LABOR_TARGET_RATIO = 0.30;
@@ -81,29 +82,44 @@ export function computeScheduleDayLaborCost(
       continue;
     }
 
-    const logs = Object.entries({ ...context.earlierHoursByDay, [date]: hours }).map(
-      ([day, dailyHours]) => ({ clockInIso: `${day}T12:00:00Z`, totalHours: dailyHours }),
-    );
-    const breakdown = liquidateWeek({ employee: context.employee, weekStart, logs, isPaid: false, carryIn: 0 });
-    const today = breakdown.dailyBreakdown.days.find((d) => d.day === date);
-    if (!today) continue;
-    ordinaryHours += today.ordinaryHours;
-    overtimeHours += today.overtimeHours;
+    // Sin contrato ordinario vigente, el 100 % del turno se valora como extras.
+    // No depender del motor de liquidación cuando solo hay contratos históricos:
+    // para semanas posteriores a la baja devuelve una liquidación sin segmentos.
+    const hasContract = hasActiveOrdinaryContract(context.employee, date);
+    let ordinaryDayHours = 0;
+    let overtimeDayHours = hours;
+    if (hasContract) {
+      const logs = Object.entries({ ...context.earlierHoursByDay, [date]: hours }).map(
+        ([day, dailyHours]) => ({ clockInIso: `${day}T12:00:00Z`, totalHours: dailyHours }),
+      );
+      const breakdown = liquidateWeek({ employee: context.employee, weekStart, logs, isPaid: false, carryIn: 0 });
+      const today = breakdown.dailyBreakdown.days.find((d) => d.day === date);
+      if (!today) {
+        missing.add(id);
+        ordinaryIncomplete = true;
+        overtimeIncomplete = true;
+        continue;
+      }
+      ordinaryDayHours = today.ordinaryHours;
+      overtimeDayHours = today.overtimeHours;
+    }
+    ordinaryHours += ordinaryDayHours;
+    overtimeHours += overtimeDayHours;
 
-    if (today.ordinaryHours > 0) {
+    if (ordinaryDayHours > 0) {
       if (context.ordinaryHourlyRate == null || !Number.isFinite(context.ordinaryHourlyRate)) {
         ordinaryIncomplete = true;
         missing.add(id);
       } else {
-        ordinaryCost += today.ordinaryHours * context.ordinaryHourlyRate;
+        ordinaryCost += ordinaryDayHours * context.ordinaryHourlyRate;
       }
     }
-    if (today.overtimeHours > 0) {
+    if (overtimeDayHours > 0) {
       if (context.overtimeHourlyRate == null || !Number.isFinite(context.overtimeHourlyRate)) {
         overtimeIncomplete = true;
         missing.add(id);
       } else {
-        overtimeCost += today.overtimeHours * context.overtimeHourlyRate;
+        overtimeCost += overtimeDayHours * context.overtimeHourlyRate;
       }
     }
   }

@@ -66,3 +66,54 @@ test('si no hay contrato ni nómina, todas las horas previstas son extras a su t
   assert.equal(result.overtimeCost, 72);
   assert.equal(result.totalCost, 72);
 });
+
+test('un contrato histórico ya vencido NO oculta las horas: toda la jornada va a extras', () => {
+  const old = context(8, 0, 12).worker!;
+  const pastTerm = { ...old.employee.terms[0]!, effectiveTo: '2026-10-31' };
+  const result = computeScheduleDayLaborCost('2026-11-14', [
+    { employeeId: 'worker', start: '09:00', end: '17:00' },
+  ], {
+    worker: {
+      ...old,
+      employee: { ...old.employee, terms: [pastTerm] },
+      ordinaryHourlyRate: null,
+    },
+  });
+  assert.equal(result.ordinaryHours, 0);
+  assert.equal(result.overtimeHours, 8);
+  assert.equal(result.ordinaryCost, 0);
+  assert.equal(result.overtimeCost, 96);
+  assert.equal(result.totalCost, 96);
+  assert.equal(computeRequiredBilling(result.totalCost), 320);
+});
+
+test('si la relación laboral terminó, el turno sigue valorándose como extras', () => {
+  const old = context(40, 0, 11).worker!;
+  const result = computeScheduleDayLaborCost('2026-11-14', [
+    { employeeId: 'worker', start: '12:00', end: '16:00' },
+  ], {
+    worker: {
+      ...old,
+      employee: { ...old.employee, endDate: '2026-11-10' },
+    },
+  });
+  assert.equal(result.totalCost, 44);
+  assert.equal(result.overtimeCost, 44);
+});
+
+test('mezcla de contrato + extras puras: siempre suma los tres importes', () => {
+  const staff = context(8, 0, 12).worker!;
+  const extra = context(0, 0, 10).worker!;
+  const result = computeScheduleDayLaborCost('2026-11-14', [
+    { employeeId: 'staff', start: '09:00', end: '13:00' },
+    { employeeId: 'extra', start: '10:00', end: '16:00' },
+  ], {
+    staff: { ...staff, employee: { ...staff.employee, employeeId: 'staff' } },
+    extra: { ...extra, employee: { ...extra.employee, employeeId: 'extra' }, ordinaryHourlyRate: null },
+  });
+  assert.equal(result.ordinaryCost, 60);
+  assert.equal(result.overtimeCost, 60);
+  assert.equal(result.totalCost, 120);
+  assert.equal(computeRequiredBilling(result.totalCost), 400);
+  assert.deepEqual(result.missingRateEmployeeIds, []);
+});

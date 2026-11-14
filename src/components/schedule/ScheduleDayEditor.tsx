@@ -506,7 +506,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
     // Rentabilidad del día: coste de mano de obra y facturación rentable
     const [isMaster, setIsMaster] = useState(false);
-    const [laborContext, setLaborContext] = useState<{ key: string; data: ScheduleLaborCostContext } | null>(null);
+    const [laborContext, setLaborContext] = useState<
+        { key: string; data: ScheduleLaborCostContext; error?: never }
+        | { key: string; data?: never; error: string }
+        | null
+    >(null);
 
     useModalUsageTracking({
         open: editingIndex !== null,
@@ -1108,9 +1112,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         let cancelled = false;
         const requestKey = `${date}:${activeEmployeeKey}`;
         void getScheduleLaborCostContext(date, activeEmployeeKey ? activeEmployeeKey.split(',') : []).then(result => {
-            if (!cancelled) setLaborContext(result.success ? { key: requestKey, data: result.data } : null);
+            if (!cancelled) setLaborContext(result.success
+                ? { key: requestKey, data: result.data }
+                : { key: requestKey, error: result.error });
         }).catch(() => {
-            if (!cancelled) setLaborContext(null);
+            if (!cancelled) setLaborContext({ key: requestKey, error: 'No se pudieron consultar los costes laborales' });
         });
         return () => { cancelled = true; };
     }, [isMaster, date, activeEmployeeKey]);
@@ -1139,7 +1145,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const totals = countWorkersByHour(shifts, hoursHeader);
 
     const laborPreview = useMemo(() => {
-        if (!date || !laborContext || laborContext.key !== `${date}:${activeEmployeeKey}`) return null;
+        if (!date || !laborContext?.data || laborContext.key !== `${date}:${activeEmployeeKey}`) return null;
         const cost = computeScheduleDayLaborCost(
             date, shifts.map(s => ({ employeeId: s.employeeId, start: s.start, end: s.end, active: s.active })), laborContext.data,
         );
@@ -1150,8 +1156,13 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             missingRateEmployeeIds: cost.missingRateEmployeeIds,
         };
     }, [date, activeEmployeeKey, laborContext, shifts]);
-    const formatPreview = (value: number | null | undefined) =>
-        value == null ? 'Sin dato' : formatScheduleEuro(value);
+    const laborContextCurrent = laborContext?.key === `${date}:${activeEmployeeKey}` ? laborContext : null;
+    const formatPreview = (value: number | null | undefined) => {
+        if (value != null) return formatScheduleEuro(value);
+        if (laborContextCurrent?.error) return 'Error de lectura';
+        if (laborPreview) return 'Revisar tarifa';
+        return 'Calculando…';
+    };
 
     // La cabecera superior es de nivel día, no por empleado seleccionado
     const slot1ActivityValue = (activity ?? '').trim();
@@ -1581,9 +1592,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             role="group"
                             aria-label="Previsión de coste de personal y ventas"
                             className="grid w-full shrink-0 grid-cols-3 rounded-b-2xl border-t border-gray-100 bg-white"
-                            title={laborPreview?.missingRateEmployeeIds.length
-                                ? 'Hay trabajadores sin tarifa verificable. Los importes no disponibles se indican expresamente.'
-                                : 'Previsión laboral por empleado: nómina individual, referencia empresarial si hace falta y extras a tarifa individual.'}
+                            title={laborContextCurrent?.error
+                                ?? (laborPreview?.missingRateEmployeeIds.length
+                                    ? 'Hay trabajadores sin tarifa verificable. Revisar la tarifa de extras individual y las nóminas.'
+                                    : 'Previsión laboral por empleado: nómina individual, referencia empresarial si hace falta y extras a tarifa individual.')}
                         >
                             <div data-element="schedule-labor-total" className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 py-1.5">
                                 <span className="text-[9px] font-semibold uppercase tracking-tight text-slate-500 sm:text-[10px]">Coste total</span>

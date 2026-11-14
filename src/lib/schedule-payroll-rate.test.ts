@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { payrollMonthContractedHours, rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay, resolveOrdinaryScheduleHourlyRate } from './schedule-payroll-rate.ts';
+import { payrollMonthContractedHours, rateFromEmployeePayroll, overtimeRateForScheduleDay, mostCommonCompanyHourlyRate, versionedOvertimeRateForDay, resolveOrdinaryScheduleHourlyRate, hasActiveOrdinaryContract, fallbackProfileOvertimeRate } from './schedule-payroll-rate.ts';
 import type { EmployeeBoundaryFacts } from './hours-engine/types.ts';
 
 const worker = (employeeId: string, weeklyHours: number, hourlyRate: number): EmployeeBoundaryFacts => ({
@@ -131,4 +131,21 @@ test('el pie del horario recupera coste ordinario si la nómina está ausente, a
   assert.equal(resolveOrdinaryScheduleHourlyRate(0, true, 14.1), 14.1);
   assert.equal(resolveOrdinaryScheduleHourlyRate(null, false, 14.1), null);
   assert.equal(resolveOrdinaryScheduleHourlyRate(null, true, null), null);
+});
+
+
+test('contrato vigente distingue altas, bajas y tramos históricos', () => {
+  const employee = worker('w', 8, 12);
+  assert.equal(hasActiveOrdinaryContract(employee, '2026-11-14'), true);
+  assert.equal(hasActiveOrdinaryContract({ ...employee, joiningDate: '2026-11-15' }, '2026-11-14'), false);
+  assert.equal(hasActiveOrdinaryContract({ ...employee, endDate: '2026-11-13' }, '2026-11-14'), false);
+  assert.equal(hasActiveOrdinaryContract({ ...employee, terms: [{ ...employee.terms[0]!, effectiveTo: '2026-10-31' }] }, '2026-11-14'), false);
+  assert.equal(hasActiveOrdinaryContract({ ...employee, terms: [{ ...employee.terms[0]!, weeklyHours: 0 }] }, '2026-11-14'), false);
+});
+
+test('tarifa personal es el último respaldo para extras cuando el tramo contractual no tiene tarifa', () => {
+  assert.equal(fallbackProfileOvertimeRate(12), 12);
+  assert.equal(fallbackProfileOvertimeRate('14.50'), 14.5);
+  assert.equal(fallbackProfileOvertimeRate(null), null);
+  assert.equal(fallbackProfileOvertimeRate(undefined), null);
 });
