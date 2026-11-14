@@ -81,7 +81,7 @@ describe('Mensajes privados entregados al próximo fichaje', () => {
   it('permite imágenes, audio y vídeo privados, con galería y confirmación posterior al fichaje', () => {
     const migration = source('supabase/migrations/20261114135141_staff_clock_message_media_20261114.sql');
     const media = source('src/components/staff/ClockMessageAttachments.tsx');
-    assert.match(migration, /'staff-clock-media'.*false, 52428800/s);
+    assert.match(migration, /'staff-clock-media'[\s\S]*false, 52428800/);
     assert.match(migration, /CREATE POLICY staff_clock_media_owner_upload/);
     assert.match(migration, /CREATE POLICY staff_clock_media_authorized_read/);
     assert.match(actions, /withSignedClockMedia/);
