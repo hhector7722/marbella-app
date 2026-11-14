@@ -49,7 +49,6 @@ import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import './master-synthwave.css';
 
 type MasterDashboardViewProps = {
     initialData?: {
@@ -534,7 +533,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     };
 
     return (
-        <div className="home-mosaic-page master-synthwave">
+        <div className="home-mosaic-page">
             <HomeScreen layout="master" className={attendanceExpanded ? 'asis-expanded' : undefined}>
                 <HomeScreenSlot size="wide" instance="dashboard-ventas">
                     <DashboardVentasSection
