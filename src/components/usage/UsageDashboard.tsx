@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { UsageFilters } from '@/components/usage/UsageFilters';
+import { UsageSessionExplorer } from '@/components/usage/UsageSessionExplorer';
 import { UsageRecentActivity } from '@/components/usage/UsageRecentActivity';
 import { UsageUserSummary } from '@/components/usage/UsageUserSummary';
 import type { UsageDashboardData } from '@/lib/usage/queries';
@@ -17,6 +18,12 @@ export function UsageDashboard({ data }: { data: UsageDashboardData }) {
       </Suspense>
 
       <UsageUserSummary summaries={data.summaries} />
+
+      <UsageSessionExplorer
+        key={`sesiones-${data.filters.day ?? 'todos'}-${serializeFiltersKey(data.filters.profileIds)}`}
+        events={data.sessionEvents}
+        limited={data.sessionEventsLimited}
+      />
 
       <UsageRecentActivity
         key={`${data.filters.day ?? 'all'}-${serializeFiltersKey(data.filters.profileIds)}`}

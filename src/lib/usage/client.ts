@@ -1,6 +1,35 @@
 import { MAX_DISTANCE_METERS, type GeofenceClockAction } from '@/lib/location';
 import type { UsageClientEventPayload } from '@/lib/usage/types';
 
+/**
+ * ID de seguimiento por pestaña, independiente de las sesiones del chat
+ * y de la cookie de middleware (compartida entre pestañas).
+ * El reposo de 30 minutos inicia un recorrido nuevo.
+ */
+const USAGE_TAB_SESSION_KEY = 'mb_usage_tab_session_v1';
+const SESSION_IDLE_MS = 30 * 60 * 1000;
+let fallbackSession: { id: string; last: number } | null = null;
+
+function currentUsageSessionId(): string {
+  const now = Date.now();
+  let stored: { id?: string; last?: number } | null = null;
+  try {
+    stored = JSON.parse(sessionStorage.getItem(USAGE_TAB_SESSION_KEY) || 'null') as typeof stored;
+  } catch {
+    stored = fallbackSession;
+  }
+  const valid = typeof stored?.id === 'string'
+    && /^[0-9a-f-]{36}$/i.test(stored.id)
+    && typeof stored.last === 'number'
+    && now >= stored.last
+    && now - stored.last < SESSION_IDLE_MS;
+  const id = valid ? stored!.id! : crypto.randomUUID();
+  const next = { id, last: now };
+  fallbackSession = next;
+  try { sessionStorage.setItem(USAGE_TAB_SESSION_KEY, JSON.stringify(next)); } catch { /* Modo privado */ }
+  return id;
+}
+
 export async function sendUsageEvent(payload: UsageClientEventPayload): Promise<void> {
   try {
     await fetch('/api/usage/event', {
@@ -8,7 +37,7 @@ export async function sendUsageEvent(payload: UsageClientEventPayload): Promise<
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...payload,
-        metadata: { ...payload.metadata, source: 'client' },
+        metadata: { ...payload.metadata, usageSessionId: currentUsageSessionId(), source: 'client' },
       }),
       keepalive: true,
     });

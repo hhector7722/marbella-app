@@ -3,6 +3,7 @@ import type { AppUsageEventType } from '@/lib/usage/types';
 
 export type UsageEventRowForPresent = {
   id: string;
+  profile_id?: string;
   event_type: AppUsageEventType;
   path: string | null;
   search: string | null;
@@ -97,6 +98,11 @@ function isDuplicateEvent(
   const candidateTs = new Date(candidate.created_at).getTime();
 
   for (const prev of included) {
+    // No ocultar acciones casi simultáneas de usuarios o pestañas distintas.
+    if (candidate.profile_id && prev.profile_id && candidate.profile_id !== prev.profile_id) continue;
+    const candidateSession = typeof candidate.metadata?.usageSessionId === 'string' ? candidate.metadata.usageSessionId : null;
+    const previousSession = typeof prev.metadata?.usageSessionId === 'string' ? prev.metadata.usageSessionId : null;
+    if ((candidateSession || previousSession) && candidateSession !== previousSession) continue;
     const prevTs = new Date(prev.created_at).getTime();
     const delta = Math.abs(prevTs - candidateTs);
 
