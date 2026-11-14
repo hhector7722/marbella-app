@@ -7,7 +7,7 @@ import {
   resolveUsageProfileIds,
   USAGE_RECENT_PAGE_SIZE,
 } from '@/lib/usage/filters';
-import { buildUsageRecentFeed, hasMoreUsageRecentFeed } from '@/lib/usage/present';
+import { buildUsageRecentFeed, formatUsageActivityTitle, hasMoreUsageRecentFeed } from '@/lib/usage/present';
 import type { AppUsageEventType } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
 
@@ -60,7 +60,26 @@ export type UsageRecentEvent = {
   isChatOpen: boolean;
 };
 
+/** Eventos sin deduplicar: cada movimiento conserva su hora y sesión. */
+export type UsageSessionEvent = {
+  id: string;
+  profileId: string;
+  displayName: string;
+  deviceType: UsageDeviceType | null;
+  usageSessionId: string | null;
+  eventType: AppUsageEventType;
+  action: string | null;
+  title: string;
+  path: string | null;
+  referrerPath: string | null;
+  durationMs: number | null;
+  createdAt: string;
+  timeLabel: string;
+};
+
 export type UsageDashboardData = {
+  sessionEvents: UsageSessionEvent[];
+  sessionEventsLimited: boolean;
   summaries: UsageUserSummary[];
   recentEvents: UsageRecentEvent[];
   recentHasMore: boolean;
@@ -87,6 +106,7 @@ type UsageEventRow = {
   path: string | null;
   search: string | null;
   label: string | null;
+  referrer_path: string | null;
   duration_ms: number | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
@@ -238,6 +258,7 @@ async function fetchUsageEventRows(
       path,
       search,
       label,
+      referrer_path,
       duration_ms,
       metadata,
       created_at,
@@ -290,6 +311,49 @@ function mapRecentFeedToEvents(
       isChatOpen: row?.metadata?.action === 'chat_open' && typeof row.metadata.sessionId === 'string',
     };
   });
+}
+
+
+function mapUsageSessionEvent(row: UsageEventRow): UsageSessionEvent {
+  const profile = resolveUsageEventProfile(row.profiles);
+  const meta = row.metadata ?? {};
+  return {
+    id: row.id,
+    profileId: row.profile_id,
+    displayName: profileDisplayName(profile, profile?.email ?? '?'),
+    deviceType: usageDeviceFromMetadata(row.metadata),
+    usageSessionId: typeof meta.usageSessionId === 'string' && /^[0-9a-f-]{36}$/i.test(meta.usageSessionId)
+      ? meta.usageSessionId : null,
+    eventType: row.event_type,
+    action: typeof meta.action === 'string' ? meta.action : null,
+    title: formatUsageActivityTitle(row),
+    path: row.path,
+    referrerPath: row.referrer_path,
+    durationMs: row.duration_ms,
+    createdAt: row.created_at,
+    timeLabel: formatDateTimeMadrid(row.created_at),
+  };
+}
+
+/** Consulta completa de un recorrido identificado, con límite explícito. */
+export async function getUsageSessionDetails(
+  profileId: string,
+  usageSessionId: string,
+): Promise<{ events: UsageSessionEvent[]; truncated: boolean }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('app_usage_events')
+    .select(`
+      id, event_type, path, search, label, referrer_path, duration_ms,
+      metadata, created_at, profile_id,
+      profiles (email, first_name, last_name)
+    `)
+    .eq('profile_id', profileId)
+    .contains('metadata', { usageSessionId })
+    .order('created_at', { ascending: true })
+    .limit(1501);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as UsageEventRow[];
+  return { events: rows.slice(0, 1500).map(mapUsageSessionEvent), truncated: rows.length > 1500 };
 }
 
 export async function getUsageRecentEventsPage(
@@ -388,6 +452,8 @@ export async function getUsageDashboardData(
 
   return {
     summaries,
+    sessionEvents: recentRows.slice(0, 500).map(mapUsageSessionEvent),
+    sessionEventsLimited: recentRows.length > 500,
     recentEvents,
     recentHasMore,
     filterUsers,
