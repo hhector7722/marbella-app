@@ -13381,6 +13381,26 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 @media (min-width: 1024px) {
   [data-component='HomeScreen'][data-layout='master']
     [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) {
+    display: grid;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 0;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) > div:first-child {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    align-items: center;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) > :nth-child(2) {
+    grid-row: 2 / 4;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
     [data-element='closing-compact'] > div:first-child button {
     font-size: 12px;
   }
@@ -13417,8 +13437,9 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   [data-component='HomeScreen'][data-layout='master']
     [data-element='home-closing-monthly-pair']
     :is([data-element='closing-compact'] .grid.grid-cols-3, [data-element='monthly-half'] .grid.grid-cols-6) {
-    grid-template-rows: repeat(2, max-content);
-    align-content: center;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    row-gap: 0;
+    align-items: center;
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-element='home-closing-monthly-pair']
@@ -13464,7 +13485,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-instance='dashboard-ventas'] [data-element='mobile-sales-products'] {
-    grid-template-columns: minmax(0, 1fr) minmax(22px, .35fr) max-content;
+    grid-template-columns: minmax(0, 1fr) max-content;
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-instance='dashboard-ventas']
@@ -13474,8 +13495,18 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   [data-component='HomeScreen'][data-layout='master']
     [data-instance='dashboard-ventas']
     :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
-    [data-element='mobile-sales-units'] {
+    [data-element='mobile-sales-units'],
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-product-bar'] {
     display: none;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-hours']
+    > [data-current-hour='true'] > span:first-child,
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-hours']
+    > [data-current-hour='true'] > span:first-child > span {
+    color: #4ade80;
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-instance='dashboard-ventas']
