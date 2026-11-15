@@ -13386,6 +13386,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
     gap: var(--espacio-1);
+    padding-block-end: var(--espacio-4);
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-element='home-closing-monthly-pair']
@@ -13599,7 +13600,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     [data-element='home-closing-monthly-pair']
     [data-element='closing-compact']:has([data-element='closing-primary-cards']) {
     justify-content: center;
-    gap: var(--espacio-2);
+    gap: var(--espacio-4);
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
@@ -13607,7 +13608,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     [data-element='closing-compact'] > div:first-child {
     flex: 0 0 auto;
     height: auto;
-    min-height: 0;
+    min-height: var(--espacio-6);
     max-height: none;
     padding-inline: var(--espacio-1);
     align-items: center;
@@ -13630,6 +13631,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: repeat(3, minmax(0, 1fr));
     gap: var(--espacio-1);
+    padding-block-end: var(--espacio-3);
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
@@ -13793,6 +13795,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     align-self: center;
     align-items: flex-start;
     height: auto;
+    padding-block: clamp(7px, 1.1dvh, 12px);
     text-align: left;
   }
 
