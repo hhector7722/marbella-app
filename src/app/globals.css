@@ -12694,7 +12694,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
       'horarios horarios horarios horarios arent ainfo acompra mas';
   }
   [data-component='HomeScreen'][data-layout='ops-admin']
-    > [data-element='slot'][data-instance='admin-extra-web'] {
+    > [data-element='slot']:is([data-instance='admin-extra-web'], [data-instance='admin-extra-asistente']) {
     display: none;
   }
 
@@ -14080,6 +14080,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     [data-component='HomeScreen'][data-layout='ops-admin'] {
       --home-row-gap: clamp(4px, 1cqb, 8px);
       grid-template-rows: repeat(2, minmax(110px, 1.17fr)) repeat(3, minmax(0, 1fr));
+      position: relative;
       --admin-track-space: calc(100cqb - 4 * var(--home-row-gap));
       /* La pista más baja es la menor entre el reparto flexible y el
          espacio restante al reservar la altura mínima de las dos primeras. */
@@ -14092,6 +14093,45 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-slot='icon'] {
       --home-icon-size: min(var(--admin-shortcut-size), 100cqi);
     }
+    /* Las columnas siguen las áreas originales; los accesos reparten
+       la altura en cinco filas iguales, independientes del calendario. */
+    [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-slot='icon'] {
+      position: absolute;
+      grid-row: 1 / -1;
+      inset-inline: 0;
+      inset-block-start: calc(
+        var(--admin-shortcut-row, 0) * 20% +
+        max(0px, (20cqb - var(--admin-shortcut-size) - var(--home-shortcut-label-band)) / 2)
+      );
+      height: 20%;
+      align-items: flex-start;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-slot='icon']:is([data-instance='caja-inicial'], [data-instance='cajas-cambio']) {
+      --home-icon-center-offset: 0px;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-slot='icon']:is([data-instance='admin-recetas'], [data-instance='admin-albaranes'], [data-instance='admin-asistencia'], [data-instance='cajas-cambio']) {
+      --admin-shortcut-row: 1;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-slot='icon']:is([data-instance='admin-ingredientes'], [data-instance='admin-extra-carta'], [data-instance='admin-extra-staff-pedidos'], [data-instance='admin-extra-consumo']) {
+      --admin-shortcut-row: 2;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-slot='icon']:is([data-instance='admin-extra-cambio'], [data-instance='admin-extra-staff-cierre'], [data-instance='admin-extra-reservas'], [data-instance='admin-extra-propinas']) {
+      --admin-shortcut-row: 3;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-slot='icon']:is([data-instance='admin-extra-rentabilidad'], [data-instance='admin-extra-staff-info'], [data-instance='admin-extra-staff-compra'], [data-instance='admin-mas-funciones']) {
+      --admin-shortcut-row: 4;
+    }
+
 
     [data-component='HomeScreen'][data-layout='ops-admin']
       [data-element='home-closing-monthly-pair'] [data-element='monthly-half'] {
