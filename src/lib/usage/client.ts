@@ -5,6 +5,7 @@ import {
   USAGE_BROWSER_COOKIE,
   USAGE_BROWSER_SESSION_COOKIE,
 } from '@/lib/usage/browser-context';
+import { isTabSessionOccupied, shouldAcknowledgeTabClaim, type UsageTabSignal } from '@/lib/usage/tab-isolation';
 
 /**
  * ID de seguimiento por pestaña, independiente de las sesiones del chat
@@ -97,28 +98,117 @@ function clientDeviceEvidence(): { clientDeviceType: 'smartphone' | 'tablet' | '
   return { clientDeviceType: 'desktop', deviceEvidence: 'desktop-ua' };
 }
 
+
+const USAGE_TAB_CHANNEL = 'mb_usage_tab_exclusivity_v1';
+let tabRuntimeId: string | null = null;
+let activeTabSessionId: string | null = null;
+let tabChannel: BroadcastChannel | null = null;
+let sessionHandshake: Promise<void> | null = null;
+
+function tabRuntimeIdentifier(): string {
+  tabRuntimeId ??= crypto.randomUUID();
+  return tabRuntimeId;
+}
+
+function rotateCopiedSession(): void {
+  const next = { id: crypto.randomUUID(), last: Date.now() };
+  activeTabSessionId = next.id;
+  fallbackSession = next;
+  try { sessionStorage.setItem(USAGE_TAB_SESSION_KEY, JSON.stringify(next)); } catch {
+    // Entornos que bloquean sessionStorage.
+  }
+}
+
+/** Antes del primer evento detecta si otra pestaña activa heredó el mismo ID. */
+function ensureUniqueTabSession(): Promise<void> {
+  if (sessionHandshake) return sessionHandshake;
+  sessionHandshake = new Promise<void>((resolve) => {
+    activeTabSessionId = currentUsageSessionId();
+    if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
+      resolve();
+      return;
+    }
+    try {
+      const self = tabRuntimeIdentifier();
+      const current = new BroadcastChannel(USAGE_TAB_CHANNEL);
+      tabChannel = current;
+      let collision = false;
+
+      current.onmessage = (event: MessageEvent<UsageTabSignal>) => {
+        const signal = event.data;
+        if (!signal || typeof signal !== 'object') return;
+        if (shouldAcknowledgeTabClaim(signal, activeTabSessionId ?? '', self)) {
+          current.postMessage({
+            kind: 'occupied', sessionId: signal.sessionId, targetId: signal.runtimeId,
+          } satisfies UsageTabSignal);
+        }
+        if (isTabSessionOccupied(signal, activeTabSessionId ?? '', self)) {
+          collision = true;
+        }
+      };
+
+      current.postMessage({
+        kind: 'claim', sessionId: activeTabSessionId, runtimeId: self,
+      } satisfies UsageTabSignal);
+      window.setTimeout(() => {
+        if (collision) rotateCopiedSession();
+        resolve();
+      }, 140);
+    } catch {
+      tabChannel?.close();
+      tabChannel = null;
+      resolve();
+    }
+  });
+  return sessionHandshake;
+}
+
+const RETRY_DELAYS_MS = [0, 450, 1500] as const;
+function usageDelay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
 export async function sendUsageEvent(payload: UsageClientEventPayload): Promise<void> {
   try {
-    await fetch('/api/usage/event', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...payload,
-        metadata: {
-          ...payload.metadata,
-          ...clientDeviceEvidence(),
-          usageBrowserId: currentBrowserId(),
-          ...(readUsageCookie(USAGE_BROWSER_SESSION_COOKIE)
-            ? { usageBrowserSessionId: readUsageCookie(USAGE_BROWSER_SESSION_COOKIE) }
-            : {}),
-          usageSessionId: currentUsageSessionId(),
-          source: 'client',
-        },
-      }),
-      keepalive: true,
+    await ensureUniqueTabSession();
+    const browserSessionId = readUsageCookie(USAGE_BROWSER_SESSION_COOKIE);
+    // Se crea el ID una sola vez: todos los reintentos envían el mismo body.
+    const body = JSON.stringify({
+      ...payload,
+      metadata: {
+        ...payload.metadata,
+        ...clientDeviceEvidence(),
+        usageEventId: crypto.randomUUID(),
+        usageBrowserId: currentBrowserId(),
+        ...(browserSessionId ? { usageBrowserSessionId: browserSessionId } : {}),
+        usageSessionId: currentUsageSessionId(),
+        source: 'client',
+      },
     });
-  } catch {
-    // No bloquear UX si falla el tracking.
+
+    for (let attempt = 0; attempt < RETRY_DELAYS_MS.length; attempt += 1) {
+      if (attempt) await usageDelay(RETRY_DELAYS_MS[attempt]);
+      try {
+        const response = await fetch('/api/usage/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          cache: 'no-store',
+          keepalive: true,
+        });
+        if (response.ok) return;
+        if (response.status !== 429 && response.status < 500) {
+          console.warn('[usage] movimiento rechazado', response.status, payload.eventType);
+          return;
+        }
+      } catch {
+        // Error transitorio de red; siguiente intento reutiliza el mismo ID.
+      }
+    }
+    console.error('[usage] movimiento no confirmado tras reintentos', payload.eventType);
+  } catch (error) {
+    // El tracking no bloquea las operaciones del usuario.
+    console.error('[usage] no se pudo enviar movimiento', payload.eventType, error);
   }
 }
 

@@ -11,6 +11,7 @@ import { recordAppUsageEventWithClient } from '@/lib/usage/record';
 import type { AppUsageEventType, UsageClientEventPayload } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
 import { resolveSessionUser } from '@/lib/auth/resolve-session-user';
+import { USAGE_SESSION_COOKIE } from '@/lib/usage/middleware-track';
 
 const ALLOWED_TYPES: AppUsageEventType[] = ['login', 'page_view', 'action'];
 
@@ -85,7 +86,8 @@ export async function POST(request: Request) {
   if (resolution.type) metadata.deviceType = resolution.type;
   metadata.deviceSource = resolution.source;
 
-  await recordAppUsageEventWithClient(supabase, user.id, {
+  try {
+    await recordAppUsageEventWithClient(supabase, user.id, {
     eventType: body.eventType,
     path,
     label:
@@ -95,7 +97,21 @@ export async function POST(request: Request) {
     referrerPath: sanitizePath(body.referrerPath),
     durationMs: sanitizeDuration(body.durationMs),
     metadata,
-  });
+  }, { strict: true });
+  } catch (error) {
+    console.error('[usage] event API persist failed:', error);
+    return NextResponse.json(
+      { ok: false, error: 'No se ha podido guardar el movimiento' },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
 
-  return NextResponse.json({ ok: true });
+  const result = NextResponse.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } });
+  // Las acciones SPA actualizan la última actividad del navegador en servidor.
+  if (isUsageTrackingId(browserSessionId)) {
+    result.cookies.set(USAGE_SESSION_COOKIE, String(Date.now()), {
+      httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30,
+    });
+  }
+  return result;
 }
