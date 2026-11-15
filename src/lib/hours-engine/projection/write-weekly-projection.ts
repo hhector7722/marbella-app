@@ -27,7 +27,7 @@ import { validateExpectedHoursContractDays } from '../expected-hours-contract-va
 import { loadEmployeeBoundaryFacts } from '../load-employee-facts.ts';
 import { liquidateWeek } from '../liquidation-engine.ts';
 import { priceLiquidationOvertime } from '../week-card-from-liquidation.ts';
-import { settleOvertimePaidAdvance } from '../overtime-paid-advance.ts';
+import { pendingAdvanceHoursAtWeekStart, settleOvertimePaidAdvance } from '../overtime-paid-advance.ts';
 import {
   assertMonday,
   compareCivilDate,
@@ -140,6 +140,8 @@ function rowFromDb(raw: {
   prefer_stock_effective: boolean | null;
   has_missing_rate: boolean | null;
   overtime_rate_effective: number | null;
+  overtime_advance_pending_hours: number | null;
+  overtime_advance_compensated_hours: number | null;
 }): WeeklyProjectionDomainRow {
   if (raw.carry_out == null || raw.prefer_stock_effective == null || raw.has_missing_rate == null) {
     throw new Error(
@@ -161,6 +163,8 @@ function rowFromDb(raw: {
     carry_out: raw.carry_out,
     prefer_stock_effective: raw.prefer_stock_effective,
     has_missing_rate: raw.has_missing_rate,
+    overtime_advance_pending_hours: raw.overtime_advance_pending_hours ?? 0,
+    overtime_advance_compensated_hours: raw.overtime_advance_compensated_hours ?? 0,
     overtime_rate_effective:
       raw.overtime_rate_effective != null && Number.isFinite(Number(raw.overtime_rate_effective))
         ? Number(raw.overtime_rate_effective)
@@ -377,16 +381,28 @@ export async function writeWeeklyProjection(
       if (paidAdvance > 0 && !isPaid) {
         throw new Error('anticipo de horas extras sin pago histórico confirmado');
       }
+      // Proyección de lectura: conserva el crédito presente AL INICIO,
+      // incluso en la semana en que esa hora se compensa.
+      const advancePendingHours = pendingAdvanceHoursAtWeekStart(
+        availableAdvanceCredit,
+        pricing.hourlyRate ?? null,
+      );
       const settlement = settleOvertimePaidAdvance({
         grossCost: pricing.estimatedValue,
         creditIn: availableAdvanceCredit,
         paidAdvance,
       });
+      const advanceCompensatedHours = pendingAdvanceHoursAtWeekStart(
+        settlement.creditUsed,
+        pricing.hourlyRate ?? null,
+      );
       availableAdvanceCredit = settlement.creditOut;
 
       candidates.push({
         liquidation,
         estimatedValue: settlement.estimatedValue,
+        advancePendingHours,
+        advanceCompensatedHours,
         hourlyRate: pricing.hourlyRate ?? null,
         hasMissingRate: pricing.hasMissingRate === true,
         overrides: {
@@ -432,7 +448,7 @@ export async function writeWeeklyProjection(
   let weeksUpdated = 0;
 
   const WEEK_READ_SELECT =
-    'user_id, week_start, week_end, pending_balance, balance_hours, final_balance, total_hours, ordinary_hours, extra_hours, contracted_hours_snapshot, total_cost, carry_out, prefer_stock_effective, has_missing_rate, overtime_rate_effective, is_paid, prefer_stock_hours_override, overtime_price_snapshot, overtime_paid_advance_eur';
+    'user_id, week_start, week_end, pending_balance, balance_hours, final_balance, total_hours, ordinary_hours, extra_hours, contracted_hours_snapshot, total_cost, carry_out, prefer_stock_effective, has_missing_rate, overtime_rate_effective, is_paid, prefer_stock_hours_override, overtime_price_snapshot, overtime_paid_advance_eur, overtime_advance_pending_hours, overtime_advance_compensated_hours';
 
   for (const row of rows) {
     const candidate = candidates.find(

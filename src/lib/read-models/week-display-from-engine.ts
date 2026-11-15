@@ -24,7 +24,7 @@ import { netPayableHoursFromLiquidation } from '../hours-engine/week-card-from-l
 const EPS = 1e-9;
 
 const SNAP_SELECT =
-  'week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot, pending_balance, balance_hours, final_balance, total_hours, ordinary_hours, extra_hours, contracted_hours_snapshot, total_cost, carry_out, prefer_stock_effective, has_missing_rate, overtime_rate_effective';
+  'week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot, pending_balance, balance_hours, final_balance, total_hours, ordinary_hours, extra_hours, contracted_hours_snapshot, total_cost, carry_out, prefer_stock_effective, has_missing_rate, overtime_rate_effective, overtime_advance_pending_hours, overtime_advance_compensated_hours';
 
 /** DTO final para pintar. Sin lógica en el cliente. */
 export type WeekDisplayDto = {
@@ -100,6 +100,8 @@ type ProjectionSnapRow = {
   prefer_stock_effective: boolean | null;
   has_missing_rate: boolean | null;
   overtime_rate_effective: number | null;
+  overtime_advance_pending_hours: number | null;
+  overtime_advance_compensated_hours: number | null;
 };
 
 type ProjectionDayRow = {
@@ -219,7 +221,7 @@ export function weekDisplayFromProjectionFields(input: {
   };
 }
 
-function displayFromSnap(snap: ProjectionSnapRow): WeekDisplayDto {
+export function displayFromSnap(snap: ProjectionSnapRow): WeekDisplayDto {
   if (snap.carry_out == null || snap.prefer_stock_effective == null || snap.has_missing_rate == null) {
     throw missingProjectionError(weekKey(snap.week_start));
   }
@@ -236,10 +238,16 @@ function displayFromSnap(snap: ProjectionSnapRow): WeekDisplayDto {
     balanceFinal,
   });
   const hasMissingRate = snap.has_missing_rate === true;
+  // Los dos ajustes proceden de la proyección del Writer: Asistencia
+  // no recalcula la compensación monetaria. El crédito se muestra en rojo
+  // al abrir la semana; en la semana de liquidación reduce solo el pie
+  // «Extras» (el desglose diario conserva las horas realmente trabajadas).
+  const pendingAdvanceHours = num(snap.overtime_advance_pending_hours);
+  const compensatedAdvanceHours = num(snap.overtime_advance_compensated_hours);
   return weekDisplayFromProjectionFields({
     totalHours: num(snap.total_hours),
-    pendingBalance: carryIn,
-    extrasFooter,
+    pendingBalance: carryIn - pendingAdvanceHours,
+    extrasFooter: Math.max(0, extrasFooter - compensatedAdvanceHours),
     estimatedValue: hasMissingRate ? null : num(snap.total_cost),
     preferStock,
     ordinaryHours: num(snap.ordinary_hours),

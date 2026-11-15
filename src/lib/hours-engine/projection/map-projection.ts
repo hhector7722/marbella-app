@@ -23,6 +23,8 @@ export type ProjectionPricingInput = {
   hourlyRate?: number | null;
   hasMissingRate?: boolean;
   bagModeOverride?: boolean | null;
+  advancePendingHours?: number;
+  advanceCompensatedHours?: number;
 };
 
 /**
@@ -45,6 +47,8 @@ export type WeeklyProjectionDomainRow = {
   prefer_stock_effective: boolean;
   has_missing_rate: boolean;
   overtime_rate_effective: number | null;
+  overtime_advance_pending_hours: number;
+  overtime_advance_compensated_hours: number;
 };
 
 export type WeeklyProjectionDayRow = {
@@ -98,6 +102,8 @@ export function mapEnginesToProjectionRow(
       pricing.bagModeOverride,
     ),
     has_missing_rate: hasMissingRate,
+    overtime_advance_pending_hours: roundMoneyCents(pricing.advancePendingHours ?? 0),
+    overtime_advance_compensated_hours: roundMoneyCents(pricing.advanceCompensatedHours ?? 0),
     overtime_rate_effective:
       pricing.hourlyRate != null && Number.isFinite(pricing.hourlyRate)
         ? roundMoneyCents(pricing.hourlyRate)
@@ -177,6 +183,8 @@ export function domainRowToUpdatePayload(
   prefer_stock_effective: boolean;
   has_missing_rate: boolean;
   overtime_rate_effective: number | null;
+  overtime_advance_pending_hours: number;
+  overtime_advance_compensated_hours: number;
 } {
   return {
     week_end: row.week_end,
@@ -192,6 +200,8 @@ export function domainRowToUpdatePayload(
     prefer_stock_effective: row.prefer_stock_effective,
     has_missing_rate: row.has_missing_rate,
     overtime_rate_effective: row.overtime_rate_effective,
+    overtime_advance_pending_hours: row.overtime_advance_pending_hours,
+    overtime_advance_compensated_hours: row.overtime_advance_compensated_hours,
   };
 }
 
@@ -214,6 +224,8 @@ export function domainRowToInsertPayload(
   prefer_stock_effective: boolean;
   has_missing_rate: boolean;
   overtime_rate_effective: number | null;
+  overtime_advance_pending_hours: number;
+  overtime_advance_compensated_hours: number;
 } {
   return {
     user_id: row.user_id,
@@ -231,6 +243,8 @@ export function domainRowToInsertPayload(
     prefer_stock_effective: row.prefer_stock_effective,
     has_missing_rate: row.has_missing_rate,
     overtime_rate_effective: row.overtime_rate_effective,
+    overtime_advance_pending_hours: row.overtime_advance_pending_hours,
+    overtime_advance_compensated_hours: row.overtime_advance_compensated_hours,
   };
 }
 
@@ -259,6 +273,8 @@ export function projectionDomainEquals(
     [a.extra_hours, b.extra_hours],
     [a.contracted_hours_snapshot, b.contracted_hours_snapshot],
     [a.carry_out, b.carry_out],
+    [a.overtime_advance_pending_hours, b.overtime_advance_pending_hours],
+    [a.overtime_advance_compensated_hours, b.overtime_advance_compensated_hours],
   ];
   for (const [x, y] of pairs) {
     if (Math.abs(x - y) > hoursEps) return false;

@@ -33,6 +33,8 @@ export type ProjectionWeekCandidate = {
   estimatedValue: number | null;
   hourlyRate?: number | null;
   hasMissingRate?: boolean;
+  advancePendingHours?: number;
+  advanceCompensatedHours?: number;
   /** Overrides leídos como input (no se escriben). */
   overrides: {
     isPaid: boolean;
@@ -423,6 +425,8 @@ export function validateProjectionBatch(
       hourlyRate: c.hourlyRate ?? null,
       hasMissingRate: c.hasMissingRate === true,
       bagModeOverride: c.overrides.preferStockHoursOverride,
+      advancePendingHours: c.advancePendingHours,
+      advanceCompensatedHours: c.advanceCompensatedHours,
     });
     if (!close(row.pending_balance, liq.carryIn)) {
       return fail('INV-J01', `INV-J01 pending_balance≠carryIn @ ${liq.weekStart}`);

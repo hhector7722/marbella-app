@@ -43,3 +43,25 @@ export function settleOvertimePaidAdvance(input: {
     creditUsed: consumed / 100,
   };
 }
+
+/**
+ * Equivalencia en horas del crédito monetario AL ABRIR una semana.
+ * Se genera en el Writer y queda persistida para la lectura de Asistencia.
+ * En la semana de compensación se sigue mostrando: el crédito existía
+ * al inicio y se liquida durante esa semana.
+ */
+export function pendingAdvanceHoursAtWeekStart(
+  creditIn: number,
+  effectiveOvertimeRate: number | null,
+): number {
+  const creditCents = cents(creditIn, 'crédito inicial');
+  if (creditCents === 0) return 0;
+  if (
+    effectiveOvertimeRate == null ||
+    !Number.isFinite(effectiveOvertimeRate) ||
+    effectiveOvertimeRate <= 0
+  ) {
+    throw new Error('Anticipo de extras: falta tarifa para expresar deuda en horas');
+  }
+  return Math.round((creditCents / 100 / effectiveOvertimeRate) * 100) / 100;
+}

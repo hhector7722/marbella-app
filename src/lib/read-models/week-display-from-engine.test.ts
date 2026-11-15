@@ -5,6 +5,7 @@ import { liquidateWeekForCard } from '../hours-engine/week-card-from-liquidation
 import type { EmployeeBoundaryFacts, TimeLogFact } from '../hours-engine/types.ts';
 import {
   assertWeekDisplayInvariants,
+  displayFromSnap,
   weekDisplayFromEngine,
 } from './week-display-from-engine.ts';
 
@@ -94,5 +95,61 @@ describe('week-display-from-engine invariantes', () => {
     });
     const broken = { ...summary, weeklyBalance: 12 };
     assert.throws(() => assertWeekDisplayInvariants(result, broken, null));
+  });
+});
+
+describe('Asistencia — crédito de anticipo y compensación de extras', () => {
+  function snapshotFor(weekStart: string, pending: number, compensated: number, rawExtraHours: number) {
+    return {
+      week_start: weekStart,
+      is_paid: false,
+      prefer_stock_hours_override: null,
+      overtime_price_snapshot: null,
+      pending_balance: 0,
+      balance_hours: rawExtraHours,
+      final_balance: rawExtraHours,
+      total_hours: 16 + rawExtraHours,
+      ordinary_hours: 16,
+      extra_hours: rawExtraHours,
+      contracted_hours_snapshot: 16,
+      total_cost: 0,
+      carry_out: 0,
+      prefer_stock_effective: false,
+      has_missing_rate: false,
+      overtime_rate_effective: 12,
+      overtime_advance_pending_hours: pending,
+      overtime_advance_compensated_hours: compensated,
+    };
+  }
+
+  it('semanas 42–44: Pendientes 1 rojo y Extras 0', () => {
+    for (const weekStart of ['2026-10-12', '2026-10-19', '2026-10-26']) {
+      const week = displayFromSnap(snapshotFor(weekStart, 1, 0, 0));
+      assert.equal(week.startBalance, -1, weekStart);
+      assert.equal(week.weeklyBalance, 0, weekStart);
+      assert.equal(week.estimatedValue, 0, weekStart);
+    }
+  });
+
+  it('semana 45: Pendientes 1 rojo, Extras sin 1 e importe 0 €', () => {
+    const week = displayFromSnap(snapshotFor('2026-11-02', 1, 1, 1));
+    assert.equal(week.startBalance, -1);
+    assert.equal(week.displayPendingBalance, -1);
+    assert.equal(week.weeklyBalance, 0);
+    assert.equal(week.displayExtras, 0);
+    assert.equal(week.estimatedValue, 0);
+    assert.equal(week.totalHours, 17);
+  });
+
+  it('semana 46: desaparece Pendientes al liquidarse el anticipo', () => {
+    const week = displayFromSnap(snapshotFor('2026-11-09', 0, 0, 0));
+    assert.equal(week.startBalance, 0);
+    assert.equal(week.weeklyBalance, 0);
+  });
+
+  it('sin anticipo: respeta el saldo original y las extras habituales', () => {
+    const week = displayFromSnap(snapshotFor('2026-11-02', 0, 0, 1));
+    assert.equal(week.startBalance, 0);
+    assert.equal(week.weeklyBalance, 1);
   });
 });

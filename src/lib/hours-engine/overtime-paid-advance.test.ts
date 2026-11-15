@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { settleOvertimePaidAdvance } from './overtime-paid-advance.ts';
+import { pendingAdvanceHoursAtWeekStart, settleOvertimePaidAdvance } from './overtime-paid-advance.ts';
 
 describe('Anticipo económico de horas extras', () => {
   it('Silvia: paga 12 € en semana 41 y compensa semana 45 sin nuevos pagos', () => {
@@ -24,6 +24,33 @@ describe('Anticipo económico de horas extras', () => {
       credit = settlement.creditOut;
     }
     assert.equal(credit, 0);
+  });
+
+  it('muestra 1 pendiente en semanas 42–45, incluida la semana de liquidación', () => {
+    let credit = 0;
+    const weeks = [
+      { week: 41, grossCost: 0, advance: 12, pendingAtStart: 0 },
+      { week: 42, grossCost: 0, advance: 0, pendingAtStart: 1 },
+      { week: 43, grossCost: 0, advance: 0, pendingAtStart: 1 },
+      { week: 44, grossCost: 0, advance: 0, pendingAtStart: 1 },
+      { week: 45, grossCost: 12, advance: 0, pendingAtStart: 1 },
+      { week: 46, grossCost: 0, advance: 0, pendingAtStart: 0 },
+    ];
+    for (const week of weeks) {
+      assert.equal(pendingAdvanceHoursAtWeekStart(credit, 12), week.pendingAtStart, String(week.week));
+      credit = settleOvertimePaidAdvance({
+        creditIn: credit,
+        grossCost: week.grossCost,
+        paidAdvance: week.advance,
+      }).creditOut;
+    }
+    assert.equal(credit, 0);
+  });
+
+  it('exige tarifa válida solo cuando existe crédito', () => {
+    assert.equal(pendingAdvanceHoursAtWeekStart(0, null), 0);
+    assert.throws(() => pendingAdvanceHoursAtWeekStart(12, null));
+    assert.throws(() => pendingAdvanceHoursAtWeekStart(12, 0));
   });
 
   it('compensa parcialmente y mantiene exactamente el crédito restante', () => {
