@@ -13377,8 +13377,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
 }
 
-/* Master Dashboard · escritorio: legibilidad de los tres resúmenes de ventas.
-   Exclusivamente tipografía; no cambiar datos, cuadrículas, cards ni móvil. */
+/* Master Dashboard · escritorio: resúmenes compactos y rankings sin unidades. */
 @media (min-width: 1024px) {
   [data-component='HomeScreen'][data-layout='master']
     [data-element='home-closing-monthly-pair']
@@ -13416,6 +13415,31 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     font-size: clamp(12px, calc(.55vw + 5.9px), 15px);
   }
   [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3, [data-element='monthly-half'] .grid.grid-cols-6) {
+    grid-template-rows: repeat(2, max-content);
+    align-content: center;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3 > :is(button, div),
+        [data-element='monthly-half'] .grid.grid-cols-6 > div > [data-metric]) {
+    height: auto;
+    padding-block: calc(var(--espacio-1) / 2);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3 > :nth-child(-n + 3) > div,
+        [data-element='monthly-half'] .grid.grid-cols-6 > :nth-child(-n + 3) > [data-metric] > [data-element='monthly-metric-content']) > span {
+    font-size: clamp(11px, .9vw, 13px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3 > :nth-child(-n + 3) > div,
+        [data-element='monthly-half'] .grid.grid-cols-6 > :nth-child(-n + 3) > [data-metric] > [data-element='monthly-metric-content']) > strong {
+    font-size: clamp(13px, calc(.65vw + 5px), 17px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
     [data-instance='dashboard-ventas'] [data-element='header']
     [data-element='centered-date-controls'] button {
     font-size: clamp(12px, 1vw, 15px);
@@ -13435,10 +13459,23 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     font-size: clamp(13px, 1.07vw, 18px);
   }
   [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-hours'] {
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas'] [data-element='mobile-sales-products'] {
+    grid-template-columns: minmax(0, 1fr) minmax(22px, .35fr) max-content;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-instance='dashboard-ventas']
+    :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products']) > :is(div, [role='status']) {
+    grid-column: 1 / -1;
+  }
+  [data-component='HomeScreen'][data-layout='master']
     [data-instance='dashboard-ventas']
     :is([data-element='mobile-sales-hours'], [data-element='mobile-sales-products'])
-    > div > [data-element='mobile-sales-units'] {
-    font-size: clamp(12px, .98vw, 17px);
+    [data-element='mobile-sales-units'] {
+    display: none;
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-instance='dashboard-ventas']
