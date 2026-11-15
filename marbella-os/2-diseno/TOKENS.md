@@ -85,13 +85,15 @@ Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepcion
 
 | Token local | Valor | Papel | Estado |
 |---|---|---|---|
-| `ventas.firetv.mensual.fondo` | `linear-gradient(110deg, rgb(105 213 255 / 0.075), transparent 38%), linear-gradient(145deg, #31174f, #1c0d38 60%, #2a114b)` | Fondo violeta oscuro con reflexión fría | adoptado (selector acotado en `globals.css`) |
+| `ventas.firetv.mensual.fondo` | `linear-gradient(125deg, rgb(89 51 130 / 0.12), transparent 42%), linear-gradient(155deg, #1d1032, #10091f 57%, #160b2c)` | Base violeta casi negra para distinguir las tres zonas de contenido | adoptado (selector acotado en `globals.css`) |
 | `ventas.firetv.mensual.lavanda` | `#D8A7FF` | Línea de gráfica y borde luminoso | adoptado (`--ventas-tv-mensual-lavanda`) |
 | `ventas.firetv.mensual.texto` | `#F6E7FF` | Texto principal claro | adoptado (`--ventas-tv-mensual-texto`) |
 | `ventas.firetv.mensual.tenue` | `#D8B7ED` | Texto auxiliar lavanda | adoptado (`--ventas-tv-mensual-tenue`) |
 | `ventas.firetv.mensual.menta` | `#9FFFD7` | Foco de selector activo, sin cambiar estados de datos | adoptado (`--ventas-tv-mensual-menta`) |
-| `ventas.firetv.mensual.divisor` | `rgb(220 160 250 / 0.23)` | Separadores y bordes interiores | adoptado (`--ventas-tv-mensual-divisor`) |
-| `ventas.firetv.mensual.contorno` | `rgb(216 167 255 / 0.79)` y halo `0 0 21px rgb(173 85 248 / 0.20)` | Contorno externo iluminado sin crecimiento del layout | adoptado (selector acotado en `globals.css`) |
+| `ventas.firetv.mensual.divisor` | `rgb(220 160 250 / 0.32)` | Separadores y bordes interiores, visibles sobre fondo oscuro | adoptado (`--ventas-tv-mensual-divisor`) |
+| `ventas.firetv.mensual.contorno` | Borde exterior de 1 px `rgb(200 178 229 / 0.20)`; sin trazos de esquina ni halo; relieve `0 9px 22px rgb(1 5 19 / 0.22)` | Mismo grosor y lenguaje de elevación que la columna diaria, sin contorno exterior luminoso | adoptado (selector acotado en `globals.css`) |
+| `ventas.firetv.mensual.zonas` | KPIs `#3B2056` → `#2B163F`; productos `#31194A` → `#241137`; horas `#34194C` → `#261138` | Superficies internas más claras que el fondo, con contraste equivalente al panel diario | adoptado (selector acotado en `globals.css`) |
+| `ventas.firetv.mensual.tarjetas` | Ventas `#492662` → `#301742`; venta neta `#40235A` → `#2D163F`; secundarios `rgb(155 98 207 / 0.22)` | Tarjetas interiores oscuras con contraste sobre la superficie de KPIs | adoptado (selector acotado en `globals.css`) |
 | `ventas.firetv.mensual.grafica` | `#D8A7FF`; barras `#985BDC` → `#E8B5FF` | Lectura de horas y ranking de productos | adoptado (selector acotado en `globals.css`) |
 
 ### Fondo contextual compartido de la carta
