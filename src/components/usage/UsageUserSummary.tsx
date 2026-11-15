@@ -65,7 +65,7 @@ export function UsageUserSummary({ summaries }: UsageUserSummaryProps) {
                     <p className="min-w-0 truncate font-semibold text-zinc-800">
                       {firstNameOnly(user.displayName)}
                     </p>
-                    <UsageDeviceIcon deviceType={user.deviceType} />
+                    {user.deviceType ? <span className="flex shrink-0 items-center gap-1 text-[10px] text-zinc-400" title="Solo el último dispositivo identificado, no todos los utilizados">Último detectado <UsageDeviceIcon deviceType={user.deviceType} /></span> : null}
                   </div>
                   <p className="shrink-0 text-zinc-500">{user.pageViewCount} pag</p>
                   <p className="shrink-0 text-zinc-500">{user.actionCount} acc</p>

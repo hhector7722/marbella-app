@@ -30,6 +30,47 @@ function currentUsageSessionId(): string {
   return id;
 }
 
+const USAGE_BROWSER_KEY = 'mb_usage_browser_v1';
+let fallbackBrowserId: string | null = null;
+
+/** Identificador anónimo del navegador; distinto del identificador de cada sesión/pestaña. */
+function currentBrowserId(): string {
+  if (fallbackBrowserId) return fallbackBrowserId;
+  try {
+    const id = localStorage.getItem(USAGE_BROWSER_KEY);
+    if (id && /^[0-9a-f-]{36}$/i.test(id)) return id;
+    const next = crypto.randomUUID();
+    localStorage.setItem(USAGE_BROWSER_KEY, next);
+    return next;
+  } catch {
+    fallbackBrowserId = crypto.randomUUID();
+    return fallbackBrowserId;
+  }
+}
+
+/**
+ * UA no siempre distingue iPad/móvil con modo escritorio.
+ * La señal de pantalla/táctil ayuda a identificar futuros eventos sin
+ * atribuir retrospectivamente dispositivos a registros desconocidos.
+ */
+function clientDeviceEvidence(): { clientDeviceType: 'smartphone' | 'tablet' | 'desktop'; deviceEvidence: string } {
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const touch = navigator.maxTouchPoints ?? 0;
+  const width = window.screen?.width || 0;
+  const mobileHint = (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData?.mobile === true;
+  if (mobileHint || /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua)) {
+    return { clientDeviceType: 'smartphone', deviceEvidence: 'mobile-ua' };
+  }
+  if (/iPad|Tablet|Kindle|Silk/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua))) {
+    return { clientDeviceType: 'tablet', deviceEvidence: 'tablet-ua' };
+  }
+  if (/MacIntel/i.test(platform) && touch >= 2 && width > 0) {
+    return { clientDeviceType: width <= 600 ? 'smartphone' : 'tablet', deviceEvidence: 'mac-touch' };
+  }
+  return { clientDeviceType: 'desktop', deviceEvidence: 'desktop-ua' };
+}
+
 export async function sendUsageEvent(payload: UsageClientEventPayload): Promise<void> {
   try {
     await fetch('/api/usage/event', {
@@ -37,7 +78,7 @@ export async function sendUsageEvent(payload: UsageClientEventPayload): Promise<
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...payload,
-        metadata: { ...payload.metadata, usageSessionId: currentUsageSessionId(), source: 'client' },
+        metadata: { ...payload.metadata, ...clientDeviceEvidence(), usageBrowserId: currentBrowserId(), usageSessionId: currentUsageSessionId(), source: 'client' },
       }),
       keepalive: true,
     });
