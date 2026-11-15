@@ -13,6 +13,7 @@ import { formatCashCountDateInput } from '@/components/cash/CashCountDateButton'
 import { Button } from '@/components/ui/button';
 import { eligiblePurchaseChangeSources, resolvePurchaseChangeDestination } from '@/lib/purchase-change';
 import { randomId } from '@/lib/random-id';
+import { CASH_BOX_PLAN, type CashBoxPlanKey } from '@/lib/cash-box-plan';
 
 export interface PaymentSourceOption {
     id: string;
@@ -85,22 +86,10 @@ function resolveBoxImage(source: PaymentSourceOption): string {
 }
 
 
-type PurchasePlanKey = 'tpv1' | 'tpv2' | 'cambio1' | 'cambio2' | 'inicial';
 type PurchasePlanPoint = { x: number; y: number };
 type PurchasePlanView = PurchasePlanPoint & { zoom: number };
 
-/** El mismo plano, posiciones, imágenes y rótulos del modal Cambio. */
-const PURCHASE_BOX_PLAN: Record<PurchasePlanKey, {
-    x: number; y: number; width: number; image: string; imageWidth: number; imageHeight: number; label: string;
-}> = {
-    tpv1: { x: 58.5, y: 71.7, width: 8.8, image: '/images/cash-change/tpv.avif', imageWidth: 591, imageHeight: 600, label: 'TPV 1' },
-    tpv2: { x: 58.5, y: 36.5, width: 8.8, image: '/images/cash-change/tpv.avif', imageWidth: 591, imageHeight: 600, label: 'TPV 2' },
-    cambio1: { x: 10.4, y: 24.1, width: 6.5, image: '/images/cash-change/cambio1.avif', imageWidth: 550, imageHeight: 492, label: 'Cambio 1' },
-    cambio2: { x: 33, y: 15.4, width: 8, image: '/images/cash-change/cambio2.avif', imageWidth: 535, imageHeight: 550, label: 'Cambio 2' },
-    inicial: { x: 21, y: 15.4, width: 5.8, image: '/images/cash-change/inicial.avif', imageWidth: 550, imageHeight: 529, label: 'Inicial' },
-};
-
-function purchasePlanKey(source: PaymentSourceOption): PurchasePlanKey | null {
+function purchasePlanKey(source: PaymentSourceOption): CashBoxPlanKey | null {
     const name = (source.name + source.shortLabel).toLowerCase().normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
     if (source.id === 'tpv1' || name.includes('tpv1')) return 'tpv1';
@@ -164,7 +153,7 @@ function PurchaseBoxPlanPicker({
 
     const positioned = paymentSources
         .map(source => ({ source, key: purchasePlanKey(source) }))
-        .filter((item): item is { source: PaymentSourceOption; key: PurchasePlanKey } => item.key !== null);
+        .filter((item): item is { source: PaymentSourceOption; key: CashBoxPlanKey } => item.key !== null);
 
     return (
         <div
@@ -258,7 +247,7 @@ function PurchaseBoxPlanPicker({
                     className="select-none object-cover opacity-90"
                 />
                 {positioned.map(({ source, key }) => {
-                    const item = PURCHASE_BOX_PLAN[key];
+                    const item = CASH_BOX_PLAN[key];
                     const isSelected = selectedBoxIds.includes(source.id);
                     const isAlreadyUsed = isSelected && source.id !== replacingSourceId;
                     return (
@@ -282,7 +271,7 @@ function PurchaseBoxPlanPicker({
                     );
                 })}
                 {positioned.map(({ source, key }) => {
-                    const item = PURCHASE_BOX_PLAN[key];
+                    const item = CASH_BOX_PLAN[key];
                     const isAlreadyUsed = selectedBoxIds.includes(source.id) && source.id !== replacingSourceId;
                     return (
                         <button key={source.id} type="button" data-plan-box={key}

@@ -14,6 +14,7 @@ import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { randomId } from '@/lib/random-id';
+import { CASH_BOX_PLAN, type CashBoxPlanKey } from '@/lib/cash-box-plan';
 import { DenominationCountGrid, DenominationStepper } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -44,32 +45,7 @@ function zoomPlanAt(view: PlanView, zoom: number, point: PlanPoint, width: numbe
     }, width, height);
 }
 
-const CASH_CHANGE_PLAN_POSITIONS = {
-    // Coordenadas aprobadas sobre el plano limpio 2048 × 1084.
-    tpv1: { x: 58.5, y: 36.5 },
-    tpv2: { x: 58.5, y: 71.7 },
-    cambio1: { x: 10.4, y: 24.1 },
-    cambio2: { x: 33, y: 15.4 },
-    inicial: { x: 21, y: 15.4 },
-} satisfies Record<string, PlanPoint>;
-
-const CASH_CHANGE_PLAN_WIDTHS: Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, number> = {
-    tpv1: 8.8,
-    tpv2: 8.8,
-    cambio1: 6.5,
-    cambio2: 8,
-    inicial: 5.8,
-};
-
-const CASH_CHANGE_PLAN_ASSET_SIZES: Record<keyof typeof CASH_CHANGE_PLAN_POSITIONS, { width: number; height: number }> = {
-    tpv1: { width: 591, height: 600 },
-    tpv2: { width: 591, height: 600 },
-    cambio1: { width: 550, height: 492 },
-    cambio2: { width: 535, height: 550 },
-    inicial: { width: 550, height: 529 },
-};
-
-function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITIONS | null {
+function cashChangePlanKey(box: BoxOption): CashBoxPlanKey | null {
     const compact = (box.name || '')
         .toLowerCase()
         .normalize('NFD')
@@ -92,31 +68,17 @@ function cashChangePlanKey(box: BoxOption): keyof typeof CASH_CHANGE_PLAN_POSITI
 
 function resolveCashChangePlanPosition(box: BoxOption): PlanPoint | null {
     const key = cashChangePlanKey(box);
-    return key ? CASH_CHANGE_PLAN_POSITIONS[key] : null;
+    return key ? CASH_BOX_PLAN[key] : null;
 }
 
 function cashChangePlanImage(box: BoxOption): string | null {
-    switch (cashChangePlanKey(box)) {
-        case 'cambio1': return '/images/cash-change/cambio1.avif';
-        case 'cambio2': return '/images/cash-change/cambio2.avif';
-        case 'inicial': return '/images/cash-change/inicial.avif';
-        case 'tpv1':
-        case 'tpv2':
-            return '/images/cash-change/tpv.avif';
-        default:
-            return box.image_url || null;
-    }
+    const key = cashChangePlanKey(box);
+    return key ? CASH_BOX_PLAN[key].image : box.image_url || null;
 }
 
 function cashChangePlanDisplayLabel(box: BoxOption): string {
-    switch (cashChangePlanKey(box)) {
-        case 'cambio1': return 'Cambio 1';
-        case 'cambio2': return 'Cambio 2';
-        case 'inicial': return 'Inicial';
-        case 'tpv1': return 'TPV 1';
-        case 'tpv2': return 'TPV 2';
-        default: return box.name;
-    }
+    const key = cashChangePlanKey(box);
+    return key ? CASH_BOX_PLAN[key].label : box.name;
 }
 
 function formatExchangeAmount(amount: number): string {
@@ -979,127 +941,129 @@ export const CashChangeModal = ({
                         </div>
                     </div>
 
-                    <div
-                        ref={planViewportRef}
-                        data-element="cash-change-plan"
-                        data-design-exception="cash-change-plan-radius:igual-al-contorno-del-modal"
-                        className="relative mx-auto aspect-[2048/1084] w-full max-w-[1136px] shrink-0 touch-none overflow-hidden rounded-ds-superficie border border-white/70 bg-zinc-100"
-                        tabIndex={0}
-                        role="region"
-                        aria-label="Plano de cajas: usa la rueda o pellizca para ampliar y arrastra para desplazarte"
-                        onKeyDown={(event) => {
-                            if (event.target !== event.currentTarget) return;
-                            const rect = event.currentTarget.getBoundingClientRect();
-                            const center = { x: rect.width / 2, y: rect.height / 2 };
-                            if (event.key === '+' || event.key === '=') {
-                                event.preventDefault();
-                                updatePlanView(zoomPlanAt(planViewRef.current, planViewRef.current.zoom * 1.2, center, rect.width, rect.height));
-                            } else if (event.key === '-') {
-                                event.preventDefault();
-                                updatePlanView(zoomPlanAt(planViewRef.current, planViewRef.current.zoom / 1.2, center, rect.width, rect.height));
-                            } else if (event.key.startsWith('Arrow') && planViewRef.current.zoom > 1) {
-                                event.preventDefault();
-                                const delta = 48;
-                                updatePlanView(clampPlanView({
-                                    ...planViewRef.current,
-                                    x: planViewRef.current.x + (event.key === 'ArrowLeft' ? delta : event.key === 'ArrowRight' ? -delta : 0),
-                                    y: planViewRef.current.y + (event.key === 'ArrowUp' ? delta : event.key === 'ArrowDown' ? -delta : 0),
-                                }, rect.width, rect.height));
-                            }
-                        }}
-                        onPointerDown={handlePlanPointerDown}
-                        onPointerMove={handlePlanPointerMove}
-                        onPointerUp={handlePlanPointerEnd}
-                        onPointerCancel={handlePlanPointerEnd}
-                        onClickCapture={(event) => {
-                            if (planDraggedRef.current) {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                planDraggedRef.current = false;
-                            }
-                        }}
-                    >
+                    <div className="grid min-h-0 flex-1 place-items-center [container-type:size]">
                         <div
-                            className="absolute inset-0 origin-top-left"
-                            style={{ transform: `translate(${planView.x}px, ${planView.y}px) scale(${planView.zoom})` }}
+                            ref={planViewportRef}
+                            data-element="cash-change-plan"
+                            data-design-exception="cash-change-plan-radius:igual-al-contorno-del-modal"
+                            className="relative mx-auto aspect-[2048/1084] w-full max-w-[min(1136px,calc(100cqh*2048/1084))] touch-none overflow-hidden rounded-ds-superficie border border-white/70 bg-zinc-100"
+                            tabIndex={0}
+                            role="region"
+                            aria-label="Plano de cajas: usa la rueda o pellizca para ampliar y arrastra para desplazarte"
+                            onKeyDown={(event) => {
+                                if (event.target !== event.currentTarget) return;
+                                const rect = event.currentTarget.getBoundingClientRect();
+                                const center = { x: rect.width / 2, y: rect.height / 2 };
+                                if (event.key === '+' || event.key === '=') {
+                                    event.preventDefault();
+                                    updatePlanView(zoomPlanAt(planViewRef.current, planViewRef.current.zoom * 1.2, center, rect.width, rect.height));
+                                } else if (event.key === '-') {
+                                    event.preventDefault();
+                                    updatePlanView(zoomPlanAt(planViewRef.current, planViewRef.current.zoom / 1.2, center, rect.width, rect.height));
+                                } else if (event.key.startsWith('Arrow') && planViewRef.current.zoom > 1) {
+                                    event.preventDefault();
+                                    const delta = 48;
+                                    updatePlanView(clampPlanView({
+                                        ...planViewRef.current,
+                                        x: planViewRef.current.x + (event.key === 'ArrowLeft' ? delta : event.key === 'ArrowRight' ? -delta : 0),
+                                        y: planViewRef.current.y + (event.key === 'ArrowUp' ? delta : event.key === 'ArrowDown' ? -delta : 0),
+                                    }, rect.width, rect.height));
+                                }
+                            }}
+                            onPointerDown={handlePlanPointerDown}
+                            onPointerMove={handlePlanPointerMove}
+                            onPointerUp={handlePlanPointerEnd}
+                            onPointerCancel={handlePlanPointerEnd}
+                            onClickCapture={(event) => {
+                                if (planDraggedRef.current) {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    planDraggedRef.current = false;
+                                }
+                            }}
                         >
-                            <Image
-                                src="/images/cash-change-plan.avif"
-                                alt="Plano de cajas"
-                                fill
-                                priority
-                                unoptimized
-                                sizes="(max-width: 1200px) calc(100vw - 1rem), 1136px"
-                                className={cn(
-                                    'select-none object-cover transition-opacity duration-200',
-                                    boxA ? 'opacity-40' : 'opacity-90',
-                                )}
-                            />
+                            <div
+                                className="absolute inset-0 origin-top-left"
+                                style={{ transform: `translate(${planView.x}px, ${planView.y}px) scale(${planView.zoom})` }}
+                            >
+                                <Image
+                                    src="/images/cash-change-plan.avif"
+                                    alt="Plano de cajas"
+                                    fill
+                                    priority
+                                    unoptimized
+                                    sizes="(max-width: 1200px) calc(100vw - 1rem), 1136px"
+                                    className={cn(
+                                        'select-none object-cover transition-opacity duration-200',
+                                        boxA ? 'opacity-40' : 'opacity-90',
+                                    )}
+                                />
 
-                            {positionedOptions.map(({ option, position }) => {
-                                const key = cashChangePlanKey(option);
-                                const image = cashChangePlanImage(option);
-                                if (!key || !image) return null;
-                                const isA = boxA?.id === option.id;
-                                const isB = boxB?.id === option.id;
-                                const isSelected = isA || isB;
-                                const shouldDim = Boolean(boxA && boxB && !isSelected);
-                                const size = CASH_CHANGE_PLAN_ASSET_SIZES[key];
-                                return (
-                                    <Fragment key={`${option.id}-asset`}>
-                                        <div
-                                            aria-hidden
-                                            className={cn(
-                                                'pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-200',
-                                                shouldDim ? 'opacity-25' : 'opacity-100',
-                                            )}
-                                            style={{
-                                                left: position.x + '%',
-                                                top: position.y + '%',
-                                                width: CASH_CHANGE_PLAN_WIDTHS[key] + '%',
-                                            }}
-                                        >
-                                            <Image
-                                                src={image}
-                                                alt=""
-                                                width={size.width}
-                                                height={size.height}
-                                                unoptimized
+                                {positionedOptions.map(({ option, position }) => {
+                                    const key = cashChangePlanKey(option);
+                                    const image = cashChangePlanImage(option);
+                                    if (!key || !image) return null;
+                                    const isA = boxA?.id === option.id;
+                                    const isB = boxB?.id === option.id;
+                                    const isSelected = isA || isB;
+                                    const shouldDim = Boolean(boxA && boxB && !isSelected);
+                                    const asset = CASH_BOX_PLAN[key];
+                                    return (
+                                        <Fragment key={`${option.id}-asset`}>
+                                            <div
+                                                aria-hidden
                                                 className={cn(
-                                                    "h-auto w-full select-none object-contain transition-transform duration-200",
-                                                    isSelected ? "scale-[1.06]" : "scale-100",
+                                                    'pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-200',
+                                                    shouldDim ? 'opacity-25' : 'opacity-100',
                                                 )}
-                                            />
-                                            <span
-                                                data-element="cash-change-plan-label"
-                                                className={cn(
-                                                    'absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white shadow-sm',
-                                                    key === 'inicial' ? 'bottom-full mb-1' : 'top-full mt-1',
-                                                )}
+                                                style={{
+                                                    left: position.x + '%',
+                                                    top: position.y + '%',
+                                                    width: asset.width + '%',
+                                                }}
                                             >
-                                                {cashChangePlanDisplayLabel(option)}
-                                            </span>
-                                        </div>
-                                    </Fragment>
-                                );
-                            })}
+                                                <Image
+                                                    src={image}
+                                                    alt=""
+                                                    width={asset.imageWidth}
+                                                    height={asset.imageHeight}
+                                                    unoptimized
+                                                    className={cn(
+                                                        "h-auto w-full select-none object-contain transition-transform duration-200",
+                                                        isSelected ? "scale-[1.06]" : "scale-100",
+                                                    )}
+                                                />
+                                                <span
+                                                    data-element="cash-change-plan-label"
+                                                    className={cn(
+                                                        'absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white shadow-sm',
+                                                        key === 'inicial' ? 'bottom-full mb-1' : 'top-full mt-1',
+                                                    )}
+                                                >
+                                                    {cashChangePlanDisplayLabel(option)}
+                                                </span>
+                                            </div>
+                                        </Fragment>
+                                    );
+                                })}
 
-                            {positionedOptions.map(({ option, position }) => {
-                                const isA = boxA?.id === option.id;
-                                const isB = boxB?.id === option.id;
-                                return (
-                                    <button
-                                        key={option.id}
-                                        type="button"
-                                        onClick={() => toggleBoxSelection(option)}
-                                        aria-label={option.name}
-                                        aria-pressed={isA || isB}
-                                        data-plan-box={cashChangePlanKey(option) ?? undefined}
-                                        className="absolute z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-xl border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:h-20 sm:w-24"
-                                        style={{ left: position.x + '%', top: position.y + '%' }}
-                                    />
-                                );
-                            })}
+                                {positionedOptions.map(({ option, position }) => {
+                                    const isA = boxA?.id === option.id;
+                                    const isB = boxB?.id === option.id;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            onClick={() => toggleBoxSelection(option)}
+                                            aria-label={option.name}
+                                            aria-pressed={isA || isB}
+                                            data-plan-box={cashChangePlanKey(option) ?? undefined}
+                                            className="absolute z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-xl border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:h-20 sm:w-24"
+                                            style={{ left: position.x + '%', top: position.y + '%' }}
+                                        />
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
 
