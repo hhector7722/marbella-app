@@ -13488,3 +13488,80 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 ) [data-element='financial-settlement-card'] > :is(button, div) {
   padding-inline: 6px;
 }
+
+/* /dashboard · escritorio: cabeceras de los resúmenes y KPIs diarios apilados. */
+@media (min-width: 1024px) {
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'], [data-element='monthly-half']) > div:first-child {
+    flex-basis: calc(var(--espacio-8) + var(--espacio-3));
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding-inline: var(--espacio-1);
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='monthly-half'] > div:first-child {
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: var(--espacio-1);
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='monthly-half'] > div:first-child > [data-element='monthly-widget-title'],
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='closing-compact'] > div:first-child > button {
+    font-size: clamp(16px, 1.2vw, 22px);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin'] [data-element='monthly-widget-title'] {
+    display: block;
+    flex-basis: 100%;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='monthly-half'] > div:first-child > span:not([data-element='monthly-widget-title']),
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] :is([data-element='mobile-sales-date'] span, [data-element='mobile-sales-history-date']) {
+    font-size: clamp(13px, 1vw, 17px);
+    font-weight: 600;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='closing-compact'] > div:first-child > span {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    font-size: clamp(11px, .85vw, 14px);
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-element='header'] {
+    flex-basis: calc(var(--espacio-8) + var(--espacio-3));
+    height: auto;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-element='header'] > a[data-style='calculator-primary'] {
+    padding: var(--espacio-1) var(--espacio-2);
+    font-size: clamp(13px, 1.05vw, 18px);
+    font-weight: 700;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: minmax(0, 1fr);
+    height: min(100%, calc(var(--espacio-8) * 5));
+    gap: var(--espacio-2);
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > span {
+    font-size: clamp(14px, 1.1vw, 17px);
+    font-weight: 600;
+  }
+}

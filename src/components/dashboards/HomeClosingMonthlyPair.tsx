@@ -221,6 +221,7 @@ function HomeMonthlySalesWidget({ fullWidget = false }: { fullWidget?: boolean }
             className="flex h-full min-h-0 min-w-0 flex-col justify-center gap-1 px-1.5 py-1 text-white tabular-nums"
             aria-label="Resumen mensual de ventas">
             <div className="flex h-[15px] shrink-0 items-center justify-center gap-0.5">
+                <span data-element="monthly-widget-title" className="hidden text-center text-white">Ventas mensuales</span>
                 <button type="button" aria-label="Mes anterior" title="Mes anterior"
                     onClick={() => {
                         manualMonthSelectionRef.current = true;
