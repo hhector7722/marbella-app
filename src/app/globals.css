@@ -13427,8 +13427,14 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   [data-component='HomeScreen'][data-layout='master']
     [data-element='home-closing-monthly-pair']
     :is([data-element='closing-compact'] .grid.grid-cols-3 > :is(button, div) > div,
+        [data-element='monthly-half'] .grid.grid-cols-6 [data-element='monthly-metric-content']) {
+    container-type: inline-size;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-compact'] .grid.grid-cols-3 > :is(button, div) > div,
         [data-element='monthly-half'] .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content']) > strong {
-    font-size: clamp(12px, calc(.7vw + 4.8px), 16px);
+    font-size: min(clamp(12px, calc(.7vw + 4.8px), 16px), 18.5cqi);
   }
   /* La cifra mensual más larga requiere una escala algo más moderada
      para conservar los decimales dentro de cada columna del resumen 3×2. */
@@ -13436,7 +13442,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     [data-element='home-closing-monthly-pair']
     [data-element='monthly-half'] .grid.grid-cols-6 > div > [data-metric]
     > [data-element='monthly-metric-content'] > strong {
-    font-size: clamp(12px, calc(.55vw + 5.9px), 15px);
+    font-size: min(clamp(12px, calc(.55vw + 5.9px), 15px), 18.5cqi);
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-element='home-closing-monthly-pair']
@@ -13474,7 +13480,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     [data-element='home-closing-monthly-pair']
     :is([data-element='closing-compact'] .grid.grid-cols-3 > :nth-child(-n + 3) > div,
         [data-element='monthly-half'] .grid.grid-cols-6 > :nth-child(-n + 3) > [data-metric] > [data-element='monthly-metric-content']) > strong {
-    font-size: clamp(13px, calc(.65vw + 5px), 17px);
+    font-size: min(clamp(13px, calc(.65vw + 5px), 17px), 18.5cqi);
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-instance='dashboard-ventas'] [data-element='header']
