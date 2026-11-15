@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, Clock3, Layers3, List, Loader2, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers3, List, Loader2, RefreshCw } from 'lucide-react';
 import { UsageDeviceIcon } from '@/components/usage/UsageDeviceIcon';
 import { serializeProfileIdsForUrl } from '@/lib/usage/filters';
 import type { UsageDashboardFilters, UsageSessionEvent, UsageTimelineCounts, UsageTimelinePage } from '@/lib/usage/queries';
@@ -370,7 +370,7 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
                 <DeviceChip device={group.device} />
                 <span className="block text-[11px] text-zinc-500">{shortDate.format(new Date(group.last))} · {displayHour(group.last)}</span>
                 <span className="block text-[11px] text-zinc-500">
-                  {group.historical ? 'Histórico sin sesión identificada' : 'Sesión identificada'}
+                  {group.historical ? 'Eventos sin sesión identificada' : 'Sesión identificada'}
                 </span>
               </button>
             ))}
@@ -385,7 +385,7 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">
                     {activeSession.historical
-                      ? 'Agrupación visual de eventos antiguos. No equivale a una sesión individual.'
+                      ? 'Eventos agrupados por día y tipo de dispositivo. No permiten identificar una pestaña concreta.'
                       : 'Movimientos de esta sesión de navegador, ordenados cronológicamente.'}
                   </p>
                 </div>
@@ -419,7 +419,7 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
 
       <div className="border-t border-zinc-100 bg-zinc-50 px-4 py-3 text-[11px] leading-5 text-zinc-500">
         Cada registro aparece por separado, aunque varios dispositivos actúen en el mismo minuto.
-        Los eventos sin identificación antigua permanecen como «Sin identificar». El tipo se
+        Los eventos sin información de dispositivo permanecen como «Sin identificar». El tipo se
         deduce de las señales del navegador; no es una prueba del dispositivo físico.
       </div>
     </section>
