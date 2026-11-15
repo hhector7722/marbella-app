@@ -13461,17 +13461,6 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-element='home-closing-monthly-pair']
-    :is([data-element='closing-compact'] .grid.grid-cols-3 > :nth-child(-n + 3),
-        [data-element='monthly-half'] .grid.grid-cols-6 > :nth-child(-n + 3)) {
-    align-self: stretch;
-  }
-  [data-component='HomeScreen'][data-layout='master']
-    [data-element='home-closing-monthly-pair']
-    [data-element='monthly-half'] .grid.grid-cols-6 > :nth-child(-n + 3) > [data-metric] {
-    align-self: stretch;
-  }
-  [data-component='HomeScreen'][data-layout='master']
-    [data-element='home-closing-monthly-pair']
     :is([data-element='closing-compact'] .grid.grid-cols-3 > :nth-child(-n + 3) > div,
         [data-element='monthly-half'] .grid.grid-cols-6 > :nth-child(-n + 3) > [data-metric] > [data-element='monthly-metric-content']) > span {
     font-size: clamp(11px, .9vw, 13px);
@@ -13644,8 +13633,16 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
-    [data-element='monthly-half'] [data-element='monthly-primary-cards'] {
-    grid-template-rows: minmax(0, 1fr);
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) {
+    grid-template-rows: max-content;
+    align-content: center;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
+    :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div) {
+    height: auto;
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
@@ -13755,8 +13752,19 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 
   [data-component='HomeScreen'][data-layout='ops-admin']
     [data-instance='dashboard-ventas'] [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div {
-    align-items: center;
-    text-align: center;
+    align-self: center;
+    align-items: flex-start;
+    height: auto;
+    text-align: left;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-instance='dashboard-ventas'] [data-cards-chart-only='true'] [data-element='mobile-sales-kpis']
+    > div > :is(span, strong) {
+    align-self: stretch;
+    width: 100%;
+    margin-inline: 0;
+    text-align: left;
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
