@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { deriveUsageLabel } from '@/lib/usage/labels';
-import { usageDeviceFromUserAgent } from '@/lib/usage/device';
+import { usageDeviceFromSignals, usageDeviceFromUserAgent } from '@/lib/usage/device';
 import { recordAppUsageEventWithClient } from '@/lib/usage/record';
 import type { AppUsageEventType, UsageClientEventPayload } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
@@ -61,10 +61,14 @@ export async function POST(request: Request) {
 
   const path = sanitizePath(body.path);
   const metadata = sanitizeMetadata(body.metadata);
-  // El dispositivo se obtiene de la solicitud, no de datos enviados por el cliente.
+  // El servidor decide el dispositivo. La detección táctil solo corrige UA
+  // ambiguos de Safari/iPad en modo escritorio; nunca se altera el histórico.
   delete metadata.deviceType;
-  const deviceType = usageDeviceFromUserAgent(request.headers.get('user-agent'));
-  if (deviceType) metadata.deviceType = deviceType;
+  delete metadata.deviceSource;
+  const serverType = usageDeviceFromUserAgent(request.headers.get('user-agent'));
+  const resolution = usageDeviceFromSignals(serverType, metadata);
+  if (resolution.type) metadata.deviceType = resolution.type;
+  metadata.deviceSource = resolution.source;
 
   await recordAppUsageEventWithClient(supabase, user.id, {
     eventType: body.eventType,

@@ -19,6 +19,26 @@ export function usageDeviceFromUserAgent(userAgent: string | null): UsageDeviceT
   return null;
 }
 
+/** Acepta una señal táctil específica cuando el UA de servidor aparenta escritorio (iPadOS). */
+export function usageDeviceFromSignals(
+  serverType: UsageDeviceType | null,
+  metadata: Record<string, unknown>,
+): { type: UsageDeviceType | null; source: string } {
+  const clientType = metadata.clientDeviceType;
+  const evidence = metadata.deviceEvidence;
+  if (
+    serverType === 'desktop' &&
+    evidence === 'mac-touch' &&
+    (clientType === 'smartphone' || clientType === 'tablet')
+  ) return { type: clientType, source: 'mac-touch' };
+  if (!serverType && (
+    (evidence === 'mobile-ua' && clientType === 'smartphone') ||
+    (evidence === 'tablet-ua' && clientType === 'tablet') ||
+    (evidence === 'mac-touch' && (clientType === 'smartphone' || clientType === 'tablet'))
+  )) return { type: clientType, source: 'client-hint' };
+  return { type: serverType, source: serverType ? 'user-agent' : 'unknown' };
+}
+
 export function usageDeviceFromMetadata(metadata: Record<string, unknown> | null | undefined): UsageDeviceType | null {
   const type = metadata?.deviceType;
   return type === 'smartphone' || type === 'tablet' || type === 'desktop' ? type : null;

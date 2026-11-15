@@ -67,6 +67,7 @@ export type UsageSessionEvent = {
   displayName: string;
   deviceType: UsageDeviceType | null;
   usageSessionId: string | null;
+  usageBrowserId: string | null;
   eventType: AppUsageEventType;
   action: string | null;
   title: string;
@@ -75,6 +76,20 @@ export type UsageSessionEvent = {
   durationMs: number | null;
   createdAt: string;
   timeLabel: string;
+};
+
+export type UsageTimelineCounts = {
+  total: number;
+  smartphone: number;
+  desktop: number;
+  tablet: number;
+  unknown: number;
+};
+
+export type UsageTimelinePage = {
+  events: UsageSessionEvent[];
+  nextCursor: string | null;
+  counts: UsageTimelineCounts | null;
 };
 
 export type UsageDashboardData = {
@@ -324,6 +339,8 @@ function mapUsageSessionEvent(row: UsageEventRow): UsageSessionEvent {
     deviceType: usageDeviceFromMetadata(row.metadata),
     usageSessionId: typeof meta.usageSessionId === 'string' && /^[0-9a-f-]{36}$/i.test(meta.usageSessionId)
       ? meta.usageSessionId : null,
+    usageBrowserId: typeof meta.usageBrowserId === 'string' && /^[0-9a-f-]{36}$/i.test(meta.usageBrowserId)
+      ? meta.usageBrowserId : null,
     eventType: row.event_type,
     action: typeof meta.action === 'string' ? meta.action : null,
     title: formatUsageActivityTitle(row),
@@ -465,5 +482,81 @@ export async function getUsageDashboardData(
       loginsCount,
       actionsCount,
     },
+  };
+}
+
+/**
+ * Historial exacto, paginado por timestamp + ID. Nunca se deduplican eventos
+ * entre usuarios o dispositivos, aunque se registren en el mismo segundo.
+ */
+export async function getUsageTimelinePage(
+  filters: UsageDashboardFilters,
+  device: 'all' | 'smartphone' | 'desktop' | 'tablet' | 'unknown',
+  cursor: string | null,
+  limit = 150,
+): Promise<UsageTimelinePage> {
+  const users = await getUsageFilterUsers();
+  const profileIds = resolveUsageProfileIds(filters.profileIds, users);
+  if (!profileIds.length) {
+    return { events: [], nextCursor: null, counts: { total: 0, smartphone: 0, desktop: 0, tablet: 0, unknown: 0 } };
+  }
+
+  const supabase = await createClient();
+  const bounds = filters.day ? madridDayRange(filters.day) : null;
+  const createBase = () => {
+    let query = supabase.from('app_usage_events').select(`
+      id, profile_id, event_type, path, search, label, referrer_path,
+      duration_ms, metadata, created_at,
+      profiles (email, first_name, last_name)
+    `).in('profile_id', profileIds);
+    if (bounds) query = query.gte('created_at', bounds.start).lte('created_at', bounds.end);
+    return query;
+  };
+
+  let records = createBase();
+  if (device === 'unknown') {
+    records = records.is('metadata->>deviceType', null);
+  } else if (device !== 'all') {
+    records = records.eq('metadata->>deviceType', device);
+  }
+
+  if (cursor) {
+    const position = cursor.lastIndexOf('|');
+    const at = cursor.slice(0, position);
+    const id = cursor.slice(position + 1);
+    if (
+      position < 1 || at.length > 40 || !/^\d{4}-\d{2}-\d{2}T[\d:.+-]+Z?$/.test(at) ||
+      !/^[0-9a-f-]{36}$/i.test(id) || !Number.isFinite(Date.parse(at))
+    ) throw new Error('Cursor de paginación no válido');
+    records = records.or(`created_at.lt.${at},and(created_at.eq.${at},id.lt.${id})`);
+  }
+
+  const take = Math.min(200, Math.max(1, Math.floor(limit)));
+  const [result, counts] = await Promise.all([
+    records.order('created_at', { ascending: false }).order('id', { ascending: false }).limit(take + 1),
+    cursor ? Promise.resolve(null) : (async (): Promise<UsageTimelineCounts> => {
+      const count = async (type: UsageDeviceType | 'all') => {
+        let q = supabase.from('app_usage_events')
+          .select('id', { head: true, count: 'exact' }).in('profile_id', profileIds);
+        if (bounds) q = q.gte('created_at', bounds.start).lte('created_at', bounds.end);
+        if (type !== 'all') q = q.eq('metadata->>deviceType', type);
+        const { count: n, error } = await q;
+        if (error) throw new Error(error.message);
+        return n ?? 0;
+      };
+      const [total, smartphone, desktop, tablet] = await Promise.all([
+        count('all'), count('smartphone'), count('desktop'), count('tablet'),
+      ]);
+      return { total, smartphone, desktop, tablet, unknown: Math.max(0, total - smartphone - desktop - tablet) };
+    })(),
+  ]);
+  if (result.error) throw new Error(result.error.message);
+  const raw = (result.data ?? []) as UsageEventRow[];
+  const page = raw.slice(0, take);
+  const last = page[page.length - 1];
+  return {
+    events: page.map(mapUsageSessionEvent),
+    nextCursor: raw.length > take && last ? `${last.created_at}|${last.id}` : null,
+    counts,
   };
 }
