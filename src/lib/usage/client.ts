@@ -1,5 +1,10 @@
 import { MAX_DISTANCE_METERS, type GeofenceClockAction } from '@/lib/location';
 import type { UsageClientEventPayload } from '@/lib/usage/types';
+import {
+  isUsageTrackingId,
+  USAGE_BROWSER_COOKIE,
+  USAGE_BROWSER_SESSION_COOKIE,
+} from '@/lib/usage/browser-context';
 
 /**
  * ID de seguimiento por pestaña, independiente de las sesiones del chat
@@ -31,21 +36,42 @@ function currentUsageSessionId(): string {
 }
 
 const USAGE_BROWSER_KEY = 'mb_usage_browser_v1';
+
+function readUsageCookie(name: string): string | null {
+  const value = document.cookie.split('; ')
+    .find((entry) => entry.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
+  return isUsageTrackingId(value) ? value : null;
+}
+
+function writeBrowserCookie(id: string): void {
+  const secure = location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${USAGE_BROWSER_COOKIE}=${id}; Path=/; Max-Age=2592000; SameSite=Lax${secure}`;
+}
 let fallbackBrowserId: string | null = null;
 
 /** Identificador anónimo del navegador; distinto del identificador de cada sesión/pestaña. */
 function currentBrowserId(): string {
-  if (fallbackBrowserId) return fallbackBrowserId;
-  try {
-    const id = localStorage.getItem(USAGE_BROWSER_KEY);
-    if (id && /^[0-9a-f-]{36}$/i.test(id)) return id;
-    const next = crypto.randomUUID();
-    localStorage.setItem(USAGE_BROWSER_KEY, next);
-    return next;
-  } catch {
-    fallbackBrowserId = crypto.randomUUID();
-    return fallbackBrowserId;
+  // La cookie emitida por el proxy tiene prioridad: ambos extremos
+  // deben registrar EXACTAMENTE el mismo identificador de navegador.
+  const cookieId = readUsageCookie(USAGE_BROWSER_COOKIE);
+  if (cookieId) return cookieId;
+
+  let id = fallbackBrowserId;
+  if (!id) {
+    try {
+      const stored = localStorage.getItem(USAGE_BROWSER_KEY);
+      id = isUsageTrackingId(stored) ? stored : crypto.randomUUID();
+      localStorage.setItem(USAGE_BROWSER_KEY, id);
+    } catch {
+      id = crypto.randomUUID();
+    }
+    fallbackBrowserId = id;
   }
+  // Si el proxy no había emitido cookie (p.ej. primera página tras login),
+  // se establece ahora para que la siguiente petición del proxy la reciba.
+  try { writeBrowserCookie(id); } catch { /* Seguimiento no bloqueante */ }
+  return id;
 }
 
 /**
@@ -78,7 +104,16 @@ export async function sendUsageEvent(payload: UsageClientEventPayload): Promise<
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...payload,
-        metadata: { ...payload.metadata, ...clientDeviceEvidence(), usageBrowserId: currentBrowserId(), usageSessionId: currentUsageSessionId(), source: 'client' },
+        metadata: {
+          ...payload.metadata,
+          ...clientDeviceEvidence(),
+          usageBrowserId: currentBrowserId(),
+          ...(readUsageCookie(USAGE_BROWSER_SESSION_COOKIE)
+            ? { usageBrowserSessionId: readUsageCookie(USAGE_BROWSER_SESSION_COOKIE) }
+            : {}),
+          usageSessionId: currentUsageSessionId(),
+          source: 'client',
+        },
       }),
       keepalive: true,
     });

@@ -1,4 +1,10 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import {
+  isUsageTrackingId,
+  USAGE_BROWSER_COOKIE,
+  USAGE_BROWSER_SESSION_COOKIE,
+} from '@/lib/usage/browser-context';
 import { deriveUsageLabel } from '@/lib/usage/labels';
 import { usageDeviceFromSignals, usageDeviceFromUserAgent } from '@/lib/usage/device';
 import { recordAppUsageEventWithClient } from '@/lib/usage/record';
@@ -61,6 +67,15 @@ export async function POST(request: Request) {
 
   const path = sanitizePath(body.path);
   const metadata = sanitizeMetadata(body.metadata);
+  // El contexto del navegador se obtiene de las cookies de esta petición,
+  // no se confía en los IDs declarados en el JSON del cliente.
+  const browserCookies = await cookies();
+  delete metadata.usageBrowserId;
+  delete metadata.usageBrowserSessionId;
+  const browserId = browserCookies.get(USAGE_BROWSER_COOKIE)?.value;
+  const browserSessionId = browserCookies.get(USAGE_BROWSER_SESSION_COOKIE)?.value;
+  if (isUsageTrackingId(browserId)) metadata.usageBrowserId = browserId;
+  if (isUsageTrackingId(browserSessionId)) metadata.usageBrowserSessionId = browserSessionId;
   // El servidor decide el dispositivo. La detección táctil solo corrige UA
   // ambiguos de Safari/iPad en modo escritorio; nunca se altera el histórico.
   delete metadata.deviceType;

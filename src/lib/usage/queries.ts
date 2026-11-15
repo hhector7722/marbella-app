@@ -68,6 +68,7 @@ export type UsageSessionEvent = {
   deviceType: UsageDeviceType | null;
   usageSessionId: string | null;
   usageBrowserId: string | null;
+  usageBrowserSessionId: string | null;
   eventType: AppUsageEventType;
   action: string | null;
   title: string;
@@ -341,6 +342,8 @@ function mapUsageSessionEvent(row: UsageEventRow): UsageSessionEvent {
       ? meta.usageSessionId : null,
     usageBrowserId: typeof meta.usageBrowserId === 'string' && /^[0-9a-f-]{36}$/i.test(meta.usageBrowserId)
       ? meta.usageBrowserId : null,
+    usageBrowserSessionId: typeof meta.usageBrowserSessionId === 'string' && /^[0-9a-f-]{36}$/i.test(meta.usageBrowserSessionId)
+      ? meta.usageBrowserSessionId : null,
     eventType: row.event_type,
     action: typeof meta.action === 'string' ? meta.action : null,
     title: formatUsageActivityTitle(row),

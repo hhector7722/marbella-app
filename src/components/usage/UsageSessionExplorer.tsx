@@ -17,6 +17,8 @@ type SessionGroup = {
   device: Device;
   sessionId: string | null;
   browserId: string | null;
+  browserSessionId: string | null;
+  browserOpening: boolean;
   last: string;
   events: UsageSessionEvent[];
   historical: boolean;
@@ -61,21 +63,29 @@ function sessionGroups(events: UsageSessionEvent[]): SessionGroup[] {
   const groups = new Map<string, SessionGroup>();
   for (const event of events) {
     const device = deviceOf(event);
-    const historical = !event.usageSessionId;
-    // El histórico carece de sesión: agrupar solo por fecha/dispositivo
-    // y declararlo como agrupación visual, nunca como una sesión comprobada.
-    const key = historical
-      ? `historical:${event.profileId}:${device}:${dayOf(event.createdAt)}`
-      : `identified:${event.profileId}:${device}:${event.usageSessionId}`;
+    const browserOpening = !event.usageSessionId && !!event.usageBrowserSessionId;
+    const historical = !event.usageSessionId && !event.usageBrowserSessionId;
+    // Los registros del proxy identifican el NAVEGADOR, pero no la pestaña.
+    // Nunca atribuir una apertura del proxy a una pestaña concreta.
+    const key = browserOpening
+      ? `browser:${event.profileId}:${device}:${event.usageBrowserSessionId}`
+      : historical
+        ? `historical:${event.profileId}:${device}:${dayOf(event.createdAt)}`
+        : `identified:${event.profileId}:${device}:${event.usageSessionId}`;
     let group = groups.get(key);
     if (!group) {
       group = {
         key, profileId: event.profileId, name: event.displayName, device,
         sessionId: historical ? null : event.usageSessionId,
         browserId: event.usageBrowserId,
+        browserSessionId: event.usageBrowserSessionId,
+        browserOpening,
         last: event.createdAt, events: [], historical,
       };
       groups.set(key, group);
+    }
+    if (!group.browserSessionId && event.usageBrowserSessionId) {
+      group.browserSessionId = event.usageBrowserSessionId;
     }
     if (event.createdAt > group.last) group.last = event.createdAt;
     group.events.push(event);
@@ -254,6 +264,8 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
             {event.referrerPath ? <p className="break-all"><b>Viene de:</b> {event.referrerPath}</p> : null}
             {event.durationMs !== null ? <p><b>Duración registrada:</b> {Math.round(event.durationMs / 1000)} segundos</p> : null}
             {event.usageBrowserId ? <p><b>Navegador:</b> {event.usageBrowserId.slice(0, 8)}</p> : null}
+            {event.usageBrowserSessionId ? <p><b>Sesión del navegador:</b> {event.usageBrowserSessionId.slice(0, 8)}</p> : null}
+            {event.usageSessionId ? <p><b>Pestaña:</b> {event.usageSessionId.slice(0, 8)}</p> : null}
             {event.action === 'chat_open' ? (
               <div className="mt-2 space-y-2 border-t border-zinc-200 pt-2">
                 {chatLoading === event.id ? <p className="flex items-center gap-2"><Loader2 size={13} className="animate-spin" /> Cargando conversación…</p> : null}
@@ -370,7 +382,7 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
                 <DeviceChip device={group.device} />
                 <span className="block text-[11px] text-zinc-500">{shortDate.format(new Date(group.last))} · {displayHour(group.last)}</span>
                 <span className="block text-[11px] text-zinc-500">
-                  {group.historical ? 'Eventos sin sesión identificada' : 'Sesión identificada'}
+                  {group.browserOpening ? 'Apertura del navegador' : group.historical ? 'Eventos sin sesión identificada' : 'Sesión de pestaña'}
                 </span>
               </button>
             ))}
@@ -384,9 +396,14 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
                     <DeviceChip device={activeSession.device} />
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">
-                    {activeSession.historical
-                      ? 'Eventos agrupados por día y tipo de dispositivo. No permiten identificar una pestaña concreta.'
-                      : 'Movimientos de esta sesión de navegador, ordenados cronológicamente.'}
+                    {activeSession.browserOpening
+                      ? 'Inicio de navegador registrado por el proxy. Vinculado por navegador, pero no asignable a una pestaña concreta.'
+                      : activeSession.historical
+                        ? 'Eventos agrupados por día y dispositivo; no se puede identificar una pestaña concreta.'
+                        : 'Movimientos de esta pestaña, ordenados cronológicamente.'}
+                    {activeSession.browserSessionId && !activeSession.historical ? (
+                      <span className="mt-1 block">Contexto de navegador: {activeSession.browserSessionId.slice(0, 8)}</span>
+                    ) : null}
                   </p>
                 </div>
                 {sessionLoading === activeSession.key ? (

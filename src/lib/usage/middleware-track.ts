@@ -4,6 +4,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { deriveUsageLabel } from '@/lib/usage/labels';
 import { usageDeviceFromUserAgent } from '@/lib/usage/device';
+import {
+  isUsageTrackingId,
+  USAGE_BROWSER_COOKIE,
+  USAGE_BROWSER_SESSION_COOKIE,
+} from '@/lib/usage/browser-context';
 
 import { recordAppUsageEventWithClient } from '@/lib/usage/record';
 
@@ -18,6 +23,13 @@ export const USAGE_LAST_PATH_COOKIE = 'mb_usage_last_path';
 
 
 const SESSION_IDLE_MS = 30 * 60 * 1000;
+
+export type UsageTrackingFlags = {
+  session: boolean;
+  pageView: boolean;
+  browserId: string | null;
+  browserSessionId: string | null;
+};
 
 
 
@@ -81,28 +93,33 @@ export function getUsageTrackingFlags(
 
   pathname: string
 
-): { session: boolean; pageView: boolean } {
+): UsageTrackingFlags {
 
   if (!shouldTrackPath(pathname)) {
-
-    return { session: false, pageView: false };
-
+    return { session: false, pageView: false, browserId: null, browserSessionId: null };
   }
 
-
-
   const now = Date.now();
+  const lastSession = Number(request.cookies.get(USAGE_SESSION_COOKIE)?.value ?? 0);
+  const previousBrowserId = request.cookies.get(USAGE_BROWSER_COOKIE)?.value;
+  const browserId = isUsageTrackingId(previousBrowserId) ? previousBrowserId : crypto.randomUUID();
+  const previousSessionId = request.cookies.get(USAGE_BROWSER_SESSION_COOKIE)?.value;
+  const validSessionId = isUsageTrackingId(previousSessionId) ? previousSessionId : null;
 
-  const lastSessionRaw = request.cookies.get(USAGE_SESSION_COOKIE)?.value;
+  // Reiniciar tras 30 minutos SIN peticiones. La cookie de actividad se
+  // actualiza en cada solicitud (antes solo se actualizaba al abrir sesión).
+  const isNewSession = !Number.isFinite(lastSession)
+    || lastSession <= 0
+    || now < lastSession
+    || now - lastSession >= SESSION_IDLE_MS
+    || !validSessionId;
 
-  const lastSession = lastSessionRaw ? Number(lastSessionRaw) : 0;
-
-  const isNewSession = !lastSession || now - lastSession >= SESSION_IDLE_MS;
-
-
-
-  return { session: isNewSession, pageView: false };
-
+  return {
+    session: isNewSession,
+    pageView: false,
+    browserId,
+    browserSessionId: isNewSession ? crypto.randomUUID() : validSessionId,
+  };
 }
 
 
@@ -119,7 +136,9 @@ export function enqueueUsageSessionRecord(
 
   search: string,
 
-  userAgent: string | null = null
+  userAgent: string | null = null,
+  browserId: string | null = null,
+  browserSessionId: string | null = null,
 
 ): void {
 
@@ -135,7 +154,12 @@ export function enqueueUsageSessionRecord(
 
     label: deriveUsageLabel(pathname),
 
-    metadata: { source: 'middleware', ...(deviceType ? { deviceType } : {}) },
+    metadata: {
+      source: 'middleware',
+      ...(deviceType ? { deviceType } : {}),
+      ...(browserId ? { usageBrowserId: browserId } : {}),
+      ...(browserSessionId ? { usageBrowserSessionId: browserSessionId } : {}),
+    },
 
   });
 
@@ -161,7 +185,10 @@ export async function trackAppUsageInMiddleware(
 
   if (flags.session) {
 
-    enqueueUsageSessionRecord(supabase, profileId, pathname, request.nextUrl.search, request.headers.get('user-agent'));
+    enqueueUsageSessionRecord(
+      supabase, profileId, pathname, request.nextUrl.search,
+      request.headers.get('user-agent'), flags.browserId, flags.browserSessionId,
+    );
 
   }
 
@@ -179,7 +206,7 @@ export function applyUsageTrackingCookies(
 
   search: string,
 
-  flags: { session: boolean; pageView: boolean }
+  flags: UsageTrackingFlags
 
 ): void {
 
@@ -201,13 +228,16 @@ export function applyUsageTrackingCookies(
 
 
 
-  if (flags.session) {
+  if (flags.browserId && flags.browserSessionId) {
+    // Estos IDs son únicamente para seguimiento, NO para autenticación.
+    // Necesitan ser legibles por el cliente para enlazar los registros.
+    const browserCookie = { ...cookieBase, httpOnly: false };
+    response.cookies.set(USAGE_BROWSER_COOKIE, flags.browserId, browserCookie);
+    response.cookies.set(USAGE_BROWSER_SESSION_COOKIE, flags.browserSessionId, browserCookie);
 
+    // Guardar la última actividad, no la hora de inicio.
     response.cookies.set(USAGE_SESSION_COOKIE, String(now), cookieBase);
-
   }
-
-
 
   response.cookies.set(USAGE_LAST_PATH_COOKIE, fullPath, cookieBase);
 
