@@ -13447,6 +13447,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   [data-component='HomeScreen'][data-layout='master']
     [data-element='home-closing-monthly-pair']
     :is([data-element='closing-compact'] .grid.grid-cols-3, [data-element='monthly-half'] .grid.grid-cols-6) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-row: 1 / -1;
     grid-template-rows: subgrid;
     row-gap: inherit;
@@ -13470,6 +13471,30 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     :is([data-element='closing-compact'] .grid.grid-cols-3 > :nth-child(-n + 3) > div,
         [data-element='monthly-half'] .grid.grid-cols-6 > :nth-child(-n + 3) > [data-metric] > [data-element='monthly-metric-content']) > strong {
     font-size: min(clamp(13px, calc(.65vw + 5px), 17px), 18.5cqi);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric] {
+    width: 100%;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair'] [data-element='monthly-half']
+    .grid.grid-cols-6 > div > [data-metric] > [data-element='monthly-metric-content'] {
+    width: 100%;
+    padding-inline: clamp(1px, calc((100% - 56px) / 2), 6px);
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair'] [data-element='monthly-half']
+    .grid.grid-cols-6 [data-element='monthly-metric-content'] > :is(span, strong) {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+  [data-component='HomeScreen'][data-layout='master']
+    [data-element='home-closing-monthly-pair'] [data-element='monthly-half']
+    .grid.grid-cols-6 > :nth-child(-n + 3) > [data-metric] > [data-element='monthly-metric-content'] > strong {
+    font-size: min(clamp(13px, calc(.65vw + 5px), 17px), 16.5cqi);
   }
   [data-component='HomeScreen'][data-layout='master']
     [data-instance='dashboard-ventas'] [data-element='header']
@@ -13572,20 +13597,38 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 @media (min-width: 1024px) {
   [data-component='HomeScreen'][data-layout='ops-admin']
     [data-element='home-closing-monthly-pair']
+    [data-element='closing-compact']:has([data-element='closing-primary-cards']) {
+    justify-content: center;
+    gap: var(--espacio-2);
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
     [data-element='closing-compact'] > div:first-child {
-    flex-basis: calc(var(--espacio-8) + var(--espacio-3));
+    flex: 0 0 auto;
     height: auto;
     min-height: 0;
     max-height: none;
     padding-inline: var(--espacio-1);
-    padding-block-start: var(--espacio-2);
+    align-items: center;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair']
+    [data-element='closing-compact']:has([data-element='closing-primary-cards']) > :nth-child(2) {
+    flex: 0 0 auto;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='closing-compact'] [data-element='closing-primary-cards'] {
+    height: auto;
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
     [data-element='home-closing-monthly-pair'] [data-element='monthly-half'] {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+    grid-template-rows: repeat(3, minmax(0, 1fr));
     gap: var(--espacio-1);
   }
 
@@ -13625,11 +13668,6 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     display: block;
     grid-area: 1 / 1 / 2 / -1;
     text-align: left;
-  }
-
-  [data-component='HomeScreen'][data-layout='ops-admin']
-    [data-element='closing-compact'] > div:first-child {
-    align-items: flex-start;
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
