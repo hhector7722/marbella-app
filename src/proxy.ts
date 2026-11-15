@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextFetchEvent, type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getHomeHrefForUser, isMasterDashboardUser } from "@/lib/master-dashboard";
 import { MASTER_VIEW_AS_COOKIE } from "@/lib/master-view-as";
@@ -41,19 +41,19 @@ function attachUsageTracking(
   request: NextRequest,
   supabase: ReturnType<typeof createServerClient>,
   profileId: string,
-  pathname: string
+  pathname: string,
+  event: NextFetchEvent,
 ): void {
   const flags = getUsageTrackingFlags(request, pathname);
   applyUsageTrackingCookies(response, pathname, request.nextUrl.search, flags);
   if (flags.session) {
-    enqueueUsageSessionRecord(
-      supabase,
-      profileId,
-      pathname,
-      request.nextUrl.search,
-      request.headers.get('user-agent'),
-      flags.browserId,
-      flags.browserSessionId,
+    event.waitUntil(
+      enqueueUsageSessionRecord(
+        supabase, profileId, pathname, request.nextUrl.search,
+        request.headers.get('user-agent'), flags.browserId, flags.browserSessionId,
+      ).catch((error: unknown) => {
+        console.error('[usage] middleware event persist failed:', error);
+      }),
     );
   }
 }
@@ -154,7 +154,7 @@ async function resolveEffectiveRole(
   };
 }
 
-export async function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const path = request.nextUrl.pathname;
   const isRecoveryProfileRoute = isPasswordRecoveryProfileRequest(request);
 
@@ -252,7 +252,7 @@ export async function proxy(request: NextRequest) {
 
     // Con sesión, la acción sigue en su ruta. Un 302 a home/login es HTML, no payload.
     if (isAction) {
-      attachUsageTracking(response, request, supabase, user.id, path);
+      attachUsageTracking(response, request, supabase, user.id, path, event);
       return response;
     }
 
@@ -306,7 +306,7 @@ export async function proxy(request: NextRequest) {
         const home = getHomeHrefForUser(effective.email, effective.role ?? "staff");
         const homeRedirect = NextResponse.redirect(new URL(home, request.url));
         copyResponseCookies(response, homeRedirect);
-        attachUsageTracking(homeRedirect, request, supabase, user.id, path);
+        attachUsageTracking(homeRedirect, request, supabase, user.id, path, event);
         return homeRedirect;
       }
 
@@ -314,7 +314,7 @@ export async function proxy(request: NextRequest) {
         const home = getHomeHrefForUser(emailFromJwt);
         const homeRedirect = NextResponse.redirect(new URL(home, request.url));
         copyResponseCookies(response, homeRedirect);
-        attachUsageTracking(homeRedirect, request, supabase, user.id, path);
+        attachUsageTracking(homeRedirect, request, supabase, user.id, path, event);
         return homeRedirect;
       }
 
@@ -339,7 +339,7 @@ export async function proxy(request: NextRequest) {
       const home = getHomeHrefForUser(email, role ?? "staff");
       const homeRedirect = NextResponse.redirect(new URL(home, request.url));
       copyResponseCookies(response, homeRedirect);
-      attachUsageTracking(homeRedirect, request, supabase, user.id, path);
+      attachUsageTracking(homeRedirect, request, supabase, user.id, path, event);
       return homeRedirect;
     }
 
@@ -372,7 +372,7 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    attachUsageTracking(response, request, supabase, user.id, path);
+    attachUsageTracking(response, request, supabase, user.id, path, event);
   }
 
   return response;

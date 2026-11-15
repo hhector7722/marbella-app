@@ -140,11 +140,11 @@ export function enqueueUsageSessionRecord(
   browserId: string | null = null,
   browserSessionId: string | null = null,
 
-): void {
+): Promise<void> {
 
   const deviceType = usageDeviceFromUserAgent(userAgent);
 
-  void recordAppUsageEventWithClient(supabase, profileId, {
+  return recordAppUsageEventWithClient(supabase, profileId, {
 
     eventType: 'session',
 
@@ -161,7 +161,7 @@ export function enqueueUsageSessionRecord(
       ...(browserSessionId ? { usageBrowserSessionId: browserSessionId } : {}),
     },
 
-  });
+  }, { strict: true });
 
 }
 
@@ -185,7 +185,7 @@ export async function trackAppUsageInMiddleware(
 
   if (flags.session) {
 
-    enqueueUsageSessionRecord(
+    await enqueueUsageSessionRecord(
       supabase, profileId, pathname, request.nextUrl.search,
       request.headers.get('user-agent'), flags.browserId, flags.browserSessionId,
     );
