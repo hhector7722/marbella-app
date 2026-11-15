@@ -13953,3 +13953,92 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     color: #fff0ff;
   }
 }
+
+/* /dashboard de escritorio: preservar el mosaico amplio y dar espacio al contenido cuando la ventana es baja. */
+@media (min-width: 1024px) {
+  .home-mosaic-page:has(> [data-component='HomeScreen'][data-layout='ops-admin']) {
+    overflow-y: auto;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin'] {
+    /* Cada resumen ocupa una pista. Si cinco pistas no caben, la página puede desplazarse. */
+    min-height: calc(5 * 132px + 4 * var(--home-row-gap));
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin'] [data-element='monthly-container'],
+  [data-component='HomeScreen'][data-layout='ops-admin'] [data-element='closing-half'] {
+    container-type: size;
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    > [data-element='slot'][data-instance='dashboard-ventas'] > [data-element='body'] {
+    container: admin-daily-sales / size;
+  }
+
+  @container monthly-metrics (height < 158px) {
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-element='home-closing-monthly-pair'] [data-element='monthly-half'] {
+      grid-template-rows: repeat(3, max-content);
+      align-content: center;
+      row-gap: var(--espacio-2);
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-element='monthly-half'] [data-element='monthly-primary-cards'] {
+      height: auto;
+    }
+  }
+
+  @container closing-metrics (height < 148px) {
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-element='home-closing-monthly-pair']
+      [data-element='closing-compact']:has([data-element='closing-primary-cards']) {
+      gap: var(--espacio-3);
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-element='home-closing-monthly-pair'] [data-element='closing-compact'] > div:first-child {
+      translate: none;
+    }
+  }
+
+  @container monthly-metrics (width < 268px) {
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-element='monthly-primary-cards'] > :is(button, div) > strong {
+      font-size: min(clamp(19px, 2.1vw, 28px), 9.5cqi);
+    }
+  }
+
+  @container closing-metrics (width < 268px) {
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-element='closing-primary-cards'] > :is(button, div) > strong {
+      font-size: min(clamp(19px, 2.1vw, 28px), 9.5cqi);
+    }
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-element='home-closing-monthly-pair'] [data-element='closing-compact'] > div:first-child > span {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+  }
+
+  @container admin-daily-sales (height < 312px) {
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='dashboard-ventas'] > [data-element='body']
+      > [data-component='Surface'][data-instance='dashboard-ventas'] {
+      grid-template-rows: minmax(28px, max-content) minmax(28px, max-content) repeat(2, minmax(max-content, 1fr));
+      row-gap: clamp(4px, 2.5cqb, 8px);
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-instance='dashboard-ventas'] [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div {
+      padding-block: var(--espacio-2);
+    }
+  }
+
+  @container admin-daily-sales (width < 245px) {
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-instance='dashboard-ventas'] [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > strong {
+      font-size: min(clamp(20px, 1.75vw, 32px), 12cqi);
+    }
+  }
+}
