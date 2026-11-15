@@ -65,7 +65,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 
 `color.superficie` no pinta el cuerpo del widget de HomeScreen. Ese hueco es material de sistema (`--home-widget-fill` + blur del `--color-envolvente`). Claro u oscuro según la luminancia del wallpaper. PageScreen, Modal y Surface fuera del mosaico siguen blancos, salvo las excepciones locales expresas. En `/staff/propinas` las cards del historial (`staff-propinas-history-entry`) usan el relleno secundario del mosaico (`--home-widget-fill-secondary`, el mismo que sáb/dom del widget de horario); «Último reparto» permanece en papel. En Ventas y sus detalles se aplica la excepción cromática siguiente.
 
-Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepciones-visuales-locales.md)): el dato de ventas se lee sobre azul marino. El widget Ventas conserva su marino original; el detalle diario usa el azul más luminoso. Último cierre, Mensual, Horarios y los resúmenes emplean un azul más discreto. Los indicadores interiores conservan sus tonos semánticos originales de ventas, neto y tendencia. No sustituye `color.superficie` en el resto del producto ni cambia el color de marca.
+Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepciones-visuales-locales.md)): el dato de ventas se lee sobre azul marino. El widget Ventas conserva su marino original; el detalle diario usa el azul más luminoso. Último cierre, Mensual en el mosaico, Horarios y los resúmenes emplean un azul más discreto. La **columna izquierda de Ventas mensuales en escritorio** adopta exclusivamente la variante local violeta de los paneles del Fire TV (tabla siguiente), por decisión explícita de propiedad. Fuera de esa columna, los indicadores interiores conservan sus tonos semánticos originales de ventas, neto y tendencia. No sustituye `color.superficie` en el resto del producto ni cambia el color de marca.
 
 | Token local | Valor | Papel | Estado |
 |---|---|---|---|
@@ -78,6 +78,21 @@ Excepción visual local de Ventas ([ADR-0024](../4-decisiones/ADR-0024-excepcion
 | `ventas.premium.sombra-secundaria` | bisel superior tenue y sombra de `0 6px 14px` | Elevación menor para Cierre, Mensual, Horarios y resúmenes | adoptado (`--ventas-premium-shadow-secondary`) |
 | `ventas.premium.kpi-alto` | 84 px | Altura mínima de Ventas y Venta neta en escritorio | adoptado (`--ventas-premium-kpi-height`) |
 | `ventas.premium.kpi-ancho` | 180 px | Ancho máximo igualado de ambas tarjetas en escritorio | adoptado (`--ventas-premium-kpi-max-width`) |
+
+### Excepción local: mensual de Ventas en escritorio (Fire TV)
+
+**Alcance estricto:** `HistoryDesktopWorkspace[data-page='ventas-consolidated'] .history-desktop-summary` con viewport de al menos 1024 px. Solo el aspecto del contenedor mensual y sus subpaneles ya existentes (cifras, producto y horas); no afecta a ficha diaria, calendario, facturas, página móvil, sus dimensiones ni comportamiento. Excepción visual expresamente solicitada por propiedad, conforme a ADR-0024. Se evita `backdrop-filter` y la animación continua, como en el Fire TV.
+
+| Token local | Valor | Papel | Estado |
+|---|---|---|---|
+| `ventas.firetv.mensual.fondo` | `linear-gradient(110deg, rgb(105 213 255 / 0.075), transparent 38%), linear-gradient(145deg, #31174f, #1c0d38 60%, #2a114b)` | Fondo violeta oscuro con reflexión fría | adoptado (selector acotado en `globals.css`) |
+| `ventas.firetv.mensual.lavanda` | `#D8A7FF` | Línea de gráfica y borde luminoso | adoptado (`--ventas-tv-mensual-lavanda`) |
+| `ventas.firetv.mensual.texto` | `#F6E7FF` | Texto principal claro | adoptado (`--ventas-tv-mensual-texto`) |
+| `ventas.firetv.mensual.tenue` | `#D8B7ED` | Texto auxiliar lavanda | adoptado (`--ventas-tv-mensual-tenue`) |
+| `ventas.firetv.mensual.menta` | `#9FFFD7` | Foco de selector activo, sin cambiar estados de datos | adoptado (`--ventas-tv-mensual-menta`) |
+| `ventas.firetv.mensual.divisor` | `rgb(220 160 250 / 0.23)` | Separadores y bordes interiores | adoptado (`--ventas-tv-mensual-divisor`) |
+| `ventas.firetv.mensual.contorno` | `rgb(216 167 255 / 0.79)` y halo `0 0 21px rgb(173 85 248 / 0.20)` | Contorno externo iluminado sin crecimiento del layout | adoptado (selector acotado en `globals.css`) |
+| `ventas.firetv.mensual.grafica` | `#D8A7FF`; barras `#985BDC` → `#E8B5FF` | Lectura de horas y ranking de productos | adoptado (selector acotado en `globals.css`) |
 
 ### Fondo contextual compartido de la carta
 

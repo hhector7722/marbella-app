@@ -13778,3 +13778,154 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     font-size: clamp(20px, 1.75vw, 32px);
   }
 }
+
+/* Ventas mensuales · escritorio · excepción local Fire TV Marbella.
+   Traslada solo el material visual de los widgets y sus detalles del Fire TV:
+   violeta translúcido, borde lavanda y foco menta. No modifica geometría,
+   métricas ni el panel diario, calendario, facturas o vista móvil.
+   Contrato cromático: marbella-os/2-diseno/TOKENS.md (ventas.firetv.mensual.*). */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary {
+    --ventas-tv-mensual-lavanda: #d8a7ff;
+    --ventas-tv-mensual-texto: #f6e7ff;
+    --ventas-tv-mensual-tenue: #d8b7ed;
+    --ventas-tv-mensual-menta: #9fffd7;
+    --ventas-tv-mensual-divisor: rgb(220 160 250 / 0.23);
+    position: relative;
+    isolation: isolate;
+    color: var(--ventas-tv-mensual-texto);
+    background:
+      linear-gradient(110deg, rgb(105 213 255 / 0.075), transparent 38%),
+      linear-gradient(145deg, #31174f 0%, #1c0d38 60%, #2a114b 100%);
+    border-color: rgb(216 167 255 / 0.79);
+    box-shadow:
+      0 0 21px rgb(173 85 248 / 0.20),
+      inset 0 1px rgb(249 218 255 / 0.24),
+      inset 0 0 19px rgb(162 98 255 / 0.09);
+  }
+
+  /* Las cuatro trazas de las esquinas pertenecen al mismo panel,
+     no crean una nueva card ni interceptan clics. */
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary::before {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+      linear-gradient(90deg, #f2d5ff, #c788ff 60%, transparent) left top / 64% 2px no-repeat,
+      linear-gradient(180deg, #e5c5ff, #ad71f2 55%, transparent) left top / 2px 43% no-repeat,
+      linear-gradient(270deg, #ebc0ff, #a96beb 58%, transparent) right bottom / 62% 2px no-repeat,
+      linear-gradient(0deg, #d8a7ff, #8958e7 52%, transparent) right bottom / 2px 42% no-repeat;
+    filter: drop-shadow(0 0 5px rgb(201 125 255 / 0.35));
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='sales-desktop-header'] {
+    background: transparent;
+    border-bottom-color: var(--ventas-tv-mensual-divisor);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='sales-desktop-header-left'] {
+    color: #fff2ff;
+    text-shadow: 0 0 9px rgb(217 153 255 / 0.30);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='sales-desktop-header-center'] button:hover {
+    background: rgb(185 105 241 / 0.19);
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary :is([data-element='month-financials'],
+      [data-element='products-section'], [data-element='hours-section']) {
+    outline-color: rgb(214 156 250 / 0.47);
+    box-shadow:
+      inset 0 1px rgb(241 207 255 / 0.13),
+      0 0 11px rgb(185 96 245 / 0.12);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='month-financials'] {
+    background: linear-gradient(145deg, rgb(98 45 140 / 0.34), rgb(36 14 73 / 0.47));
+    border-bottom-color: transparent;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='products-section'] {
+    background: linear-gradient(145deg, rgb(76 35 112 / 0.27), rgb(31 12 63 / 0.35));
+    border-bottom-color: transparent;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='hours-section'] {
+    background: linear-gradient(145deg, rgb(88 39 127 / 0.30), rgb(30 11 63 / 0.45));
+  }
+
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary .ventas-kpi-primary[data-kpi-tone] {
+    background: linear-gradient(145deg, rgb(141 75 183 / 0.52), rgb(67 29 106 / 0.68));
+    border-color: rgb(224 170 255 / 0.43);
+    box-shadow: inset 0 1px rgb(255 224 255 / 0.13);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary .ventas-kpi-primary[data-kpi-tone='net'] {
+    background: linear-gradient(145deg, rgb(120 64 163 / 0.48), rgb(55 24 94 / 0.72));
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='financial-kpi-grid'] > :nth-child(-n+3) {
+    background: rgb(143 78 191 / 0.18);
+    border-color: rgb(223 169 251 / 0.30);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='financial-settlement-card'] {
+    background: rgb(128 65 178 / 0.12);
+    border-color: var(--ventas-tv-mensual-divisor);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [aria-pressed='true']:is(button, [data-crossfilter-trigger]) {
+    border-color: var(--ventas-tv-mensual-menta);
+    outline: 1px solid var(--ventas-tv-mensual-menta);
+    outline-offset: -1px;
+    box-shadow: 0 0 11px rgb(139 255 222 / 0.37);
+    background-color: rgb(166 95 209 / 0.34);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='products-section'] button {
+    border-bottom-color: var(--ventas-tv-mensual-divisor);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='products-section'] button:hover {
+    background-color: rgb(169 99 228 / 0.14);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='products-section'] [role='img'] > div {
+    background: linear-gradient(90deg, #985bdc, #e8b5ff);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='hours-plot'] svg {
+    color: var(--ventas-tv-mensual-lavanda);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='hours-plot'] > span[aria-hidden='true'] {
+    background: var(--ventas-tv-mensual-lavanda);
+    box-shadow: 0 0 9px rgb(211 148 255 / 0.58);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='hours-details'] {
+    background: rgb(132 70 185 / 0.13);
+    border-color: var(--ventas-tv-mensual-divisor);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='hours-details'] tr {
+    border-bottom-color: var(--ventas-tv-mensual-divisor);
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='hours-details'] td.text-teal-200 {
+    color: #ecc8ff;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+    .history-desktop-summary [data-element='hours-details'] tr[class*='bg-sky-300'] {
+    background: rgb(159 88 205 / 0.28);
+    color: #fff0ff;
+  }
+}
