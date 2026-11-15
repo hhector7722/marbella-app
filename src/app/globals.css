@@ -13956,15 +13956,6 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 
 /* /dashboard de escritorio: preservar el mosaico amplio y dar espacio al contenido cuando la ventana es baja. */
 @media (min-width: 1024px) {
-  .home-mosaic-page:has(> [data-component='HomeScreen'][data-layout='ops-admin']) {
-    overflow-y: auto;
-  }
-
-  [data-component='HomeScreen'][data-layout='ops-admin'] {
-    /* Cada resumen ocupa una pista. Si cinco pistas no caben, la página puede desplazarse. */
-    min-height: calc(5 * 132px + 4 * var(--home-row-gap));
-  }
-
   [data-component='HomeScreen'][data-layout='ops-admin'] [data-element='monthly-container'],
   [data-component='HomeScreen'][data-layout='ops-admin'] [data-element='closing-half'] {
     container-type: size;
@@ -14039,6 +14030,115 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     [data-component='HomeScreen'][data-layout='ops-admin']
       [data-instance='dashboard-ventas'] [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div > strong {
       font-size: min(clamp(20px, 1.75vw, 32px), 12cqi);
+    }
+  }
+}
+
+/* Cuando el área útil es baja, conservar dos pistas para ventas y repartir
+   las otras tres entre el calendario y los accesos del mosaico Admin. */
+@media (min-width: 1024px) {
+  .home-mosaic-page:has(> [data-component='HomeScreen'][data-layout='ops-admin']) {
+    container: admin-home / size;
+  }
+
+  @container admin-home (height < 724px) {
+    [data-component='HomeScreen'][data-layout='ops-admin'] {
+      --home-row-gap: clamp(4px, 1cqb, 8px);
+      grid-template-rows: repeat(2, minmax(110px, 1.17fr)) repeat(3, minmax(0, 1fr));
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-element='home-closing-monthly-pair'] [data-element='monthly-half'] {
+      row-gap: var(--espacio-1);
+      padding-block-end: var(--espacio-2);
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      [data-element='home-closing-monthly-pair']
+      [data-element='closing-compact']:has([data-element='closing-primary-cards']) {
+      gap: var(--espacio-2);
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='dashboard-ventas'] > [data-element='body']
+      > [data-component='Surface'][data-instance='dashboard-ventas'] {
+      row-gap: var(--espacio-1);
+      padding-block: var(--espacio-2);
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios'][data-slot='panel']
+      [data-component='StaffWeekSchedule'] {
+      --staff-calendar-gap: var(--espacio-1);
+      --staff-week-day-size: clamp(17px, 3.7cqb, 25px);
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios']
+      :is([data-element='month-scroll'], [data-element='month-weeks']) {
+      gap: var(--espacio-1);
+      overflow: visible;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios']
+      [data-element='month-weeks'] > [data-element='week-block'][data-expanded='true'] {
+      flex: 0 0 auto;
+      height: auto;
+      overflow: visible;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios']
+      [data-element='week-expansion'] {
+      grid-template-rows: auto;
+      flex: 0 0 auto;
+      padding-block: 0;
+      overflow: visible;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios']
+      :is([data-element='weekend-card'], [data-element='weekend-day'], [data-element='weekend-details']) {
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios'] [data-element='weekend-card'] {
+      padding: var(--espacio-1);
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios'] [data-week-row] button > span {
+      font-size: clamp(13px, 3cqb, 18px);
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios']
+      :is([data-element='weekend-evento-row'], [data-element='weekend-evento-detail-row']) {
+      gap: 2px var(--espacio-1);
+      flex-wrap: wrap;
+      overflow: visible;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios']
+      :is([data-element='weekend-evento'], [data-element='weekend-evento-value'],
+           [data-element='weekend-evento-detail-value']) {
+      min-width: 0;
+      max-width: 100%;
+      white-space: normal;
+      overflow: visible;
+      overflow-wrap: anywhere;
+      text-overflow: clip;
+    }
+
+    [data-component='HomeScreen'][data-layout='ops-admin']
+      > [data-element='slot'][data-instance='master-horarios']
+      [data-element='weekend-evento-detail-value'][data-segment-kind='categories'] {
+      min-width: min-content;
     }
   }
 }
