@@ -87,6 +87,9 @@ function sessionGroups(events: UsageSessionEvent[]): SessionGroup[] {
     if (!group.browserSessionId && event.usageBrowserSessionId) {
       group.browserSessionId = event.usageBrowserSessionId;
     }
+    if (!group.browserId && event.usageBrowserId) {
+      group.browserId = event.usageBrowserId;
+    }
     if (event.createdAt > group.last) group.last = event.createdAt;
     group.events.push(event);
   }
@@ -405,6 +408,28 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
                       <span className="mt-1 block">Contexto de navegador: {activeSession.browserSessionId.slice(0, 8)}</span>
                     ) : null}
                   </p>
+                  {activeSession.browserSessionId ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      {groups
+                        .filter((group) =>
+                          group.key !== activeSession.key &&
+                          group.profileId === activeSession.profileId &&
+                          group.browserId === activeSession.browserId &&
+                          group.browserSessionId === activeSession.browserSessionId
+                        )
+                        .map((group) => (
+                          <button
+                            key={group.key}
+                            type="button"
+                            onClick={() => { setSelectedSession(group.key); setExpanded(null); }}
+                            className="rounded-md border border-[#36606F]/25 bg-[#36606F]/5 px-2.5 py-1.5 text-[11px] font-medium text-[#36606F] hover:bg-[#36606F]/10"
+                          >
+                            {group.browserOpening ? 'Apertura del navegador' : 'Pestaña relacionada'}
+                            {' · '}{displayHour(group.last)}
+                          </button>
+                        ))}
+                    </div>
+                  ) : null}
                 </div>
                 {sessionLoading === activeSession.key ? (
                   <p className="flex items-center gap-2 p-3 text-xs text-zinc-500"><Loader2 className="animate-spin" size={14} /> Recuperando sesión completa…</p>
