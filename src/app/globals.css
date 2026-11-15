@@ -13612,6 +13612,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     max-height: none;
     padding-inline: var(--espacio-1);
     align-items: center;
+    translate: 0 calc(-1 * var(--espacio-1));
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
