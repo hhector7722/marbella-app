@@ -13540,8 +13540,14 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
-    [data-element='monthly-half'] > div:first-child {
-    flex-basis: calc(var(--espacio-8) + var(--espacio-6));
+    [data-element='home-closing-monthly-pair'] [data-element='monthly-half'] {
+    gap: var(--espacio-2);
+  }
+
+  [data-component='HomeScreen'][data-layout='ops-admin']
+    [data-element='home-closing-monthly-pair'] [data-element='monthly-half'] > div:first-child {
+    flex: 0 0 auto;
+    min-height: calc(var(--espacio-8) + var(--espacio-6));
     flex-wrap: wrap;
     align-content: space-between;
     row-gap: var(--espacio-1);
@@ -13586,16 +13592,16 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
-    [data-instance='dashboard-ventas'] [data-element='header'] {
+    > [data-element='slot'][data-instance='dashboard-ventas'] [data-element='header'] {
     display: grid;
-    grid-template: 'clock action' minmax(var(--espacio-8), 1fr)
-                   'date date' minmax(var(--espacio-8), 1fr)
+    grid-template: 'clock action' minmax(var(--espacio-8), auto)
+                   'date date' minmax(var(--espacio-8), auto)
                    / minmax(0, 1fr) auto;
     justify-content: stretch;
     flex: 0 0 auto;
     height: auto;
     gap: var(--espacio-1) var(--espacio-2);
-    padding: var(--espacio-2) 14px 0;
+    padding: var(--espacio-2) 14px var(--espacio-1);
   }
 
   [data-component='HomeScreen'][data-layout='ops-admin']
@@ -13645,7 +13651,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
     grid-auto-rows: minmax(0, 1fr);
-    height: 100%;
+    height: min(100%, clamp(96px, 17dvh, 180px));
     gap: var(--espacio-2);
   }
 
