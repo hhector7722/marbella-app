@@ -14290,9 +14290,9 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
 
   .marbella-fixed-topbar [data-element='desktop-navigation'] {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
-    margin-left: auto;
+    margin-left: 0;
     align-items: center;
     justify-content: center;
   }
@@ -14355,16 +14355,17 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     color: white;
   }
 
-  /* El buscador pasa de superpuesto al centro a una columna flexible:
-     permanece en la misma fila sin pisar navegación ni controles derechos. */
+  /* Centrado geométrico como antes. El grupo derecho incluye la navegación,
+     de modo que --navbar-side-reserve (medido por ResizeObserver en Navbar)
+     reduce el ancho del buscador antes de solaparlo con los accesos. */
   .marbella-fixed-topbar [data-element='global-search-host'] {
-    position: relative;
-    top: auto;
-    left: auto;
-    transform: none;
-    flex: 1 1 180px;
-    min-width: 145px;
-    width: auto;
-    max-width: 330px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    flex: none;
+    min-width: 0;
+    width: min(520px, max(0px, calc(100% - var(--navbar-side-reserve) - var(--navbar-side-reserve) - var(--espacio-3))));
+    max-width: calc(100% - var(--espacio-2));
   }
 }

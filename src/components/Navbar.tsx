@@ -159,9 +159,9 @@ export default function Navbar() {
         {!hideNavbarBack && <button onClick={() => { if (!navigateInsideSandbox(homePath)) router.push(homePath); }} className={cn('shrink-0 grid place-items-center', 'border-0 bg-transparent shadow-none rounded-none', 'active:opacity-70 transition-opacity')} data-element="chrome" aria-label="Ir a inicio"><ChevronLeft strokeWidth={2.5} aria-hidden /></button>}
         <div className="flex min-w-0 items-center gap-1"><div data-element="logo" className="relative shrink-0"><Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority /></div>{hideNavbarBack ? <div data-element="greeting-block">{isMaster ? <button type="button" data-element="greeting" onClick={openViewAsPicker} className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative" aria-label={identity?.isViewingAs ? `Viendo como ${identity.effectiveName}. Cambiar usuario` : 'Cambiar usuario de vista'}>{compactName}</button> : <span data-element="greeting">{compactName}</span>}</div> : null}</div>
       </div>
-      <div id="marbella-desktop-nav-host" data-element="desktop-navigation" className="hidden lg:flex" />
       {sessionReady && searchIdentity.userId ? <div data-element="global-search-host" className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"><div className="pointer-events-auto"><GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} /></div></div> : null}
       <div ref={rightActionsRef} data-element="right-actions" className="flex shrink-0 items-center gap-0 pr-1">
+        <div id="marbella-desktop-nav-host" data-element="desktop-navigation" className="hidden lg:flex" />
         {canSeeCamera ? <button
           type="button"
           data-element="live-camera"

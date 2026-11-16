@@ -2166,8 +2166,10 @@ describe('Accesos de escritorio', () => {
         assert.match(desktopCss, /--shell-sidebar-width: 0px/);
         assert.match(desktopCss, /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?display: none !important/);
         assert.match(desktopCss, /\[data-component='DesktopHeaderNav'\]/);
-        assert.match(desktopCss, /\[data-element='global-search-host'\] \{[\s\S]*?position: relative/);
-        assert.match(navbar, /id="marbella-desktop-nav-host"/);
+        assert.match(desktopCss, /\[data-element='global-search-host'\] \{[\s\S]*?position: absolute/);
+        assert.match(desktopCss, /\[data-element='global-search-host'\] \{[\s\S]*?left: 50%/);
+        assert.match(desktopCss, /\[data-element='global-search-host'\] \{[\s\S]*?--navbar-side-reserve/);
+        assert.match(navbar, /data-element="right-actions"[\s\S]*?id="marbella-desktop-nav-host"/);
         assert.doesNotMatch(navbar, /onClick=\{toggleSidebar\}/);
         assert.match(nav, /createPortal\(/);
         assert.match(nav, /data-component="DesktopHeaderNav"/);
