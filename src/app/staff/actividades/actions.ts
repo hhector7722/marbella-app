@@ -416,3 +416,56 @@ export async function deletePavilionActivityAction(params: {
 
   return { success: true };
 }
+
+
+export type PavilionProcessingIssue = {
+  activityDate: string;
+  status: 'error' | 'partial';
+  details: string;
+  attempts: number;
+};
+
+/**
+ * Solo para administradores. Un documento 'processed' con advertencias
+ * permanece disponible, pero sus filas omitidas requieren revisión humana.
+ */
+export async function fetchPavilionProcessingIssuesAction(params: {
+  startDate: string;
+  endDate: string;
+}): Promise<
+  | { success: true; issues: PavilionProcessingIssue[] }
+  | { success: false; error: string }
+> {
+  const auth = await requireMasterUpload();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(params.startDate) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(params.endDate) ||
+      params.startDate > params.endDate) {
+    return { success: false, error: 'Rango de fechas no válido.' };
+  }
+
+  const { data, error } = await auth.supabase
+    .from('pavilion_activity_sheets')
+    .select('activity_date, processing_status, processing_error, processing_attempts')
+    .gte('activity_date', params.startDate)
+    .lte('activity_date', params.endDate)
+    .order('activity_date', { ascending: true });
+
+  if (error) return { success: false, error: error.message };
+
+  const issues: PavilionProcessingIssue[] = (data ?? [])
+    .filter((row) =>
+      row.processing_status === 'error' ||
+      (row.processing_status === 'processed' &&
+        String(row.processing_error ?? '').startsWith('REVISAR extracción parcial')),
+    )
+    .map((row) => ({
+      activityDate: String(row.activity_date),
+      status: row.processing_status === 'error' ? 'error' as const : 'partial' as const,
+      details: String(row.processing_error ?? 'Pendiente de revisión.'),
+      attempts: Number(row.processing_attempts ?? 0),
+    }));
+
+  return { success: true, issues };
+}

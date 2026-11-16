@@ -28,6 +28,8 @@ import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import {
   fetchActivitiesForRangeAction,
   type DayCalendarData,
+  fetchPavilionProcessingIssuesAction,
+  type PavilionProcessingIssue,
 } from '@/app/staff/actividades/actions';
 import { usePageView } from '@/lib/usage/usePageView';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
@@ -125,6 +127,7 @@ export default function ActividadesPage() {
   const [byDate, setByDate] = useState<Record<string, DayCalendarData>>({});
   const [isMaster, setIsMaster] = useState(false);
   const [retryingFailedPdf, setRetryingFailedPdf] = useState(false);
+  const [processingIssues, setProcessingIssues] = useState<PavilionProcessingIssue[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,6 +221,26 @@ export default function ActividadesPage() {
     void loadData();
   }, [loadData]);
 
+  const loadProcessingIssues = useCallback(async () => {
+    if (!isMaster) {
+      setProcessingIssues([]);
+      return;
+    }
+    const result = await fetchPavilionProcessingIssuesAction({
+      startDate: rangeStart,
+      endDate: rangeEnd,
+    });
+    if (result.success) {
+      setProcessingIssues(result.issues);
+    } else {
+      toast.error(result.error);
+    }
+  }, [isMaster, rangeStart, rangeEnd]);
+
+  useEffect(() => {
+    void loadProcessingIssues();
+  }, [loadProcessingIssues]);
+
   const retryFailedPdf = async () => {
     if (retryingFailedPdf) return;
     setRetryingFailedPdf(true);
@@ -229,16 +252,19 @@ export default function ActividadesPage() {
       const data = await response.json() as {
         success?: boolean;
         queued?: number;
+        recovered?: number;
+        failed?: number;
+        skipped?: number;
         error?: string;
       };
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'No se pudo iniciar la recuperación.');
       }
       if (!data.queued) {
-        toast.success('No hay PDF fallidos pendientes de recuperación automática.');
+        toast.success('No hay PDF fallidos que se puedan recuperar ahora.');
       } else {
         toast.success(
-          `Reprocesamiento iniciado para ${data.queued} PDF. Se conservarán los días correctos.`,
+          `PDF recuperados: ${data.recovered ?? 0}. Fallidos: ${data.failed ?? 0}. Protegidos: ${data.skipped ?? 0}.`,
           { duration: 6500 },
         );
       }
@@ -246,6 +272,8 @@ export default function ActividadesPage() {
       toast.error(error instanceof Error ? error.message : 'Error iniciando OCR.');
     } finally {
       setRetryingFailedPdf(false);
+      void loadProcessingIssues();
+      void loadData();
     }
   };
 
@@ -298,7 +326,7 @@ export default function ActividadesPage() {
             <Button
               variant="tertiary"
               instance="actividades-recuperar-pdf"
-              aria-label="Recuperar los cinco PDF fallidos"
+              aria-label="Recuperar PDF fallidos"
               icon={<RefreshCcw size={20} strokeWidth={2.5} />}
               loading={retryingFailedPdf}
               disabled={retryingFailedPdf}
@@ -325,6 +353,23 @@ export default function ActividadesPage() {
         </div>
       }
     >
+          {isMaster && processingIssues.length > 0 && (
+            <div className="mx-2 mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
+              <p className="text-xs font-bold">Documentos pendientes de revisión ({processingIssues.length})</p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {processingIssues.map((issue) => (
+                  <a
+                    key={issue.activityDate}
+                    href={`/staff/actividades/revision?date=${issue.activityDate}`}
+                    title={issue.details}
+                    className="rounded-md border border-amber-300 bg-white/80 px-2 py-1 text-xs font-semibold hover:bg-white"
+                  >
+                    {issue.activityDate.split('-').reverse().join('/')} · {issue.status === 'error' ? 'Error OCR' : 'Extracción parcial'}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           {/* ── Calendar ── */}
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-4 py-20 month-cal-body">
