@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ChevronLeft, Menu, X } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { createClient } from "@/utils/supabase/client";
@@ -12,7 +12,6 @@ import { getHomeHrefForUser } from '@/lib/master-dashboard';
 import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
-import { useDesktopSidebar } from '@/components/chrome/DesktopSidebarProvider';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 import { useAIStore } from '@/store/aiStore';
 
@@ -26,7 +25,6 @@ export default function Navbar() {
   const openChat = useAIStore(s => s.openChat);
   const supabase = createClient();
   const { topHidden } = useChromeScroll();
-  const { isOpen: sidebarOpen, toggle: toggleSidebar } = useDesktopSidebar();
   const { identity, isMaster, sessionReady, openViewAsPicker } = useMasterViewAs();
   const [userData, setUserData] = useState<{ id: string; name: string; role: string; searchRole: string; email: string; authEmail: string; is_supervisor?: boolean } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -158,20 +156,10 @@ export default function Navbar() {
   return <nav data-component="AppNavbar" data-hidden={topHidden && !searchOpen ? 'true' : undefined} className={cn('marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden')}>
     <div ref={navbarRowRef} data-element="navbar-row" className="relative max-w-7xl lg:max-w-none mx-auto flex items-center justify-between gap-1 px-1 lg:px-4 w-full min-w-0">
       <div ref={leftActionsRef} data-element="left-actions" className="flex min-w-0 shrink-0 items-center gap-1">
-        <button
-          type="button"
-          data-element="desktop-menu-toggle"
-          aria-label={sidebarOpen ? 'Ocultar menú de navegación' : 'Mostrar menú de navegación'}
-          aria-expanded={sidebarOpen}
-          aria-controls="marbella-desktop-sidebar"
-          onClick={toggleSidebar}
-          className="desktop-sidebar-toggle shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none hover:opacity-90 active:opacity-70"
-        >
-          {sidebarOpen ? <X size={21} strokeWidth={2} aria-hidden /> : <Menu size={21} strokeWidth={2} aria-hidden />}
-        </button>
         {!hideNavbarBack && <button onClick={() => { if (!navigateInsideSandbox(homePath)) router.push(homePath); }} className={cn('shrink-0 grid place-items-center', 'border-0 bg-transparent shadow-none rounded-none', 'active:opacity-70 transition-opacity')} data-element="chrome" aria-label="Ir a inicio"><ChevronLeft strokeWidth={2.5} aria-hidden /></button>}
         <div className="flex min-w-0 items-center gap-1"><div data-element="logo" className="relative shrink-0"><Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority /></div>{hideNavbarBack ? <div data-element="greeting-block">{isMaster ? <button type="button" data-element="greeting" onClick={openViewAsPicker} className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative" aria-label={identity?.isViewingAs ? `Viendo como ${identity.effectiveName}. Cambiar usuario` : 'Cambiar usuario de vista'}>{compactName}</button> : <span data-element="greeting">{compactName}</span>}</div> : null}</div>
       </div>
+      <div id="marbella-desktop-nav-host" data-element="desktop-navigation" className="hidden lg:flex" />
       {sessionReady && searchIdentity.userId ? <div data-element="global-search-host" className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"><div className="pointer-events-auto"><GlobalSearch key={searchIdentity.userId} identity={searchIdentity} onOpenChange={setSearchOpen} /></div></div> : null}
       <div ref={rightActionsRef} data-element="right-actions" className="flex shrink-0 items-center gap-0 pr-1">
         {canSeeCamera ? <button

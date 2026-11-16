@@ -2156,27 +2156,25 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
     });
 });
 
-describe('Menú lateral desktop cerrado por defecto', () => {
-    it('no reserva margen, se abre desde la esquina superior izquierda y se cierra en cada ruta', () => {
+describe('Accesos de escritorio', () => {
+    it('navegación horizontal comparte la cabecera con el buscador, sin menú lateral ni ocupar espacio vertical', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
-        const provider = readFileSync(join(SRC_ROOT, 'components/chrome/DesktopSidebarProvider.tsx'), 'utf8');
-        const layout = readFileSync(join(SRC_ROOT, 'app/layout.tsx'), 'utf8');
         const navbar = readFileSync(join(SRC_ROOT, 'components/Navbar.tsx'), 'utf8');
         const nav = readFileSync(join(SRC_ROOT, 'components/StaffBottomNav.tsx'), 'utf8');
-        const desktopCss = css.slice(css.indexOf('Menú de navegación escritorio: oculto al cargar'));
-        assert.ok(desktopCss.includes('@media (min-width: 1024px)'));
-        assert.match(desktopCss, /--shell-sidebar-width: 0px;/);
-        assert.match(desktopCss, /html\[data-desktop-sidebar='open'\] \{[\s\S]*?--shell-sidebar-width: var\(--desktop-nav-width\)/);
-        assert.match(desktopCss, /visibility: hidden;[\s\S]*?translateX\(-105%\)/);
-        assert.match(desktopCss, /html\[data-desktop-sidebar='open'\] \[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?visibility: visible;/);
-        assert.match(provider, /useState\(false\)/);
-        assert.match(provider, /setIsOpen\(false\)/);
-        assert.match(provider, /dataset\.desktopSidebar = isOpen \? 'open' : 'closed'/);
-        assert.match(layout, /<DesktopSidebarProvider>/);
-        assert.match(navbar, /aria-controls="marbella-desktop-sidebar"/);
-        assert.match(navbar, /onClick=\{toggleSidebar\}/);
-        assert.match(nav, /id="marbella-desktop-sidebar"/);
-        assert.match(nav, /closeDesktopSidebar\(\)/);
+        const desktopCss = css.slice(css.indexOf('Navegación de escritorio en la misma fila de cabecera'));
+        assert.match(desktopCss, /@media screen and \(min-width: 1024px\)/);
+        assert.match(desktopCss, /--shell-sidebar-width: 0px/);
+        assert.match(desktopCss, /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?display: none !important/);
+        assert.match(desktopCss, /\[data-component='DesktopHeaderNav'\]/);
+        assert.match(desktopCss, /\[data-element='global-search-host'\] \{[\s\S]*?position: relative/);
+        assert.match(navbar, /id="marbella-desktop-nav-host"/);
+        assert.doesNotMatch(navbar, /onClick=\{toggleSidebar\}/);
+        assert.match(nav, /createPortal\(/);
+        assert.match(nav, /data-component="DesktopHeaderNav"/);
+        assert.match(nav, /\{renderNavItems\(\)\}/);
+        assert.match(nav, /data-component="TabBar"/);
+        assert.match(nav, /setIsSupplierModalOpen\(true\)/);
+        assert.match(nav, /trackUsageTabSwitch/);
     });
 
     it('Master: el widget de Asistencia se mantiene en fila 1, columna 5 con tamaño de icono', () => {

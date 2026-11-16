@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { Calendar, Clock, Home, Package, User, type LucideIcon } from 'lucide-react';
 import { trackUsageTabSwitch } from '@/lib/usage/client';
@@ -46,6 +47,14 @@ export default function StaffBottomNav() {
   useVisualViewportBottomPin(navRef);
 
   const [homeHref, setHomeHref] = useState('/staff/dashboard');
+  const [desktopNavHost, setDesktopNavHost] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setDesktopNavHost(document.getElementById('marbella-desktop-nav-host'));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [userData, setUserData] = useState<{
     id: string;
@@ -128,6 +137,49 @@ export default function StaffBottomNav() {
 
   const scheduleHref = '/horario';
 
+  const renderNavItems = () => {
+    return STAFF_NAV_ITEMS.map((item) => {
+      const active = isActive(item);
+      const Icon = item.icon;
+      const linkHref =
+        item.action === 'home' ? homeHref
+        : item.action === 'scheduleModal' ? scheduleHref
+        : item.href;
+      return (
+        <Link
+          key={item.name}
+          href={linkHref}
+          data-element="item"
+          data-active={active ? 'true' : undefined}
+          aria-current={active ? 'page' : undefined}
+          onClick={(e) => {
+            closeDesktopSidebar();
+            if (item.action === 'scheduleModal') {
+              e.preventDefault();
+              trackUsageTabSwitch(effectivePathname, scheduleHref, item.name);
+              router.push(scheduleHref);
+            } else if (item.action === 'supplierModal') {
+              e.preventDefault();
+              trackUsageTabSwitch(effectivePathname, '/orders/new', item.name);
+              setIsSupplierModalOpen(true);
+            } else if (item.action === 'home') {
+              e.preventDefault();
+              trackUsageTabSwitch(effectivePathname, homeHref, item.name);
+              router.push(homeHref);
+            } else if (!item.href.startsWith('#')) {
+              trackUsageTabSwitch(effectivePathname, linkHref, item.name);
+            }
+          }}
+        >
+          <span data-element="icon" aria-hidden>
+            <Icon strokeWidth={active ? 2 : 1.75} fill="none" />
+          </span>
+          <span data-element="label">{item.name}</span>
+        </Link>
+      );
+    });
+  };
+
   return (
     <>
       <nav
@@ -141,47 +193,14 @@ export default function StaffBottomNav() {
         className="marbella-fixed-bottombar print:hidden"
         aria-label="Navegación"
       >
-        {STAFF_NAV_ITEMS.map((item) => {
-          const active = isActive(item);
-          const Icon = item.icon;
-          const linkHref =
-            item.action === 'home' ? homeHref
-            : item.action === 'scheduleModal' ? scheduleHref
-            : item.href;
-          return (
-            <Link
-              key={item.name}
-              href={linkHref}
-              data-element="item"
-              data-active={active ? 'true' : undefined}
-              aria-current={active ? 'page' : undefined}
-              onClick={(e) => {
-                closeDesktopSidebar();
-                if (item.action === 'scheduleModal') {
-                  e.preventDefault();
-                  trackUsageTabSwitch(effectivePathname, scheduleHref, item.name);
-                  router.push(scheduleHref);
-                } else if (item.action === 'supplierModal') {
-                  e.preventDefault();
-                  trackUsageTabSwitch(effectivePathname, '/orders/new', item.name);
-                  setIsSupplierModalOpen(true);
-                } else if (item.action === 'home') {
-                  e.preventDefault();
-                  trackUsageTabSwitch(effectivePathname, homeHref, item.name);
-                  router.push(homeHref);
-                } else if (!item.href.startsWith('#')) {
-                  trackUsageTabSwitch(effectivePathname, linkHref, item.name);
-                }
-              }}
-            >
-              <span data-element="icon" aria-hidden>
-                <Icon strokeWidth={active ? 2 : 1.75} fill="none" />
-              </span>
-              <span data-element="label">{item.name}</span>
-            </Link>
-          );
-        })}
+        {renderNavItems()}
       </nav>
+      {desktopNavHost ? createPortal(
+        <nav data-component="DesktopHeaderNav" aria-label="Navegación principal" className="print:hidden">
+          {renderNavItems()}
+        </nav>,
+        desktopNavHost
+      ) : null}
       <SupplierSelectionModal
         isOpen={isSupplierModalOpen}
         onClose={() => setIsSupplierModalOpen(false)}

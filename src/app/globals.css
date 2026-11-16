@@ -14270,3 +14270,101 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     }
   }
 }
+
+/* Navegación de escritorio en la misma fila de cabecera. La TabBar móvil
+   mantiene su aspecto, visibilidad y comportamiento originales. */
+@media screen and (min-width: 1024px) {
+  :root,
+  html[data-desktop-sidebar='open'] {
+    --shell-sidebar-width: 0px;
+  }
+
+  .marbella-fixed-topbar [data-element='desktop-menu-toggle'],
+  [data-component='TabBar'].marbella-fixed-bottombar {
+    display: none !important;
+  }
+
+  .marbella-fixed-topbar [data-element='navbar-row'] {
+    justify-content: space-between;
+    gap: clamp(5px, 0.7vw, 12px);
+  }
+
+  .marbella-fixed-topbar [data-element='desktop-navigation'] {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-left: auto;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .marbella-fixed-topbar [data-component='DesktopHeaderNav'] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: var(--app-navbar-height);
+    gap: 2px;
+  }
+
+  .marbella-fixed-topbar [data-component='DesktopHeaderNav'] [data-element='item'] {
+    display: flex;
+    flex: 0 1 clamp(51px, 5.25vw, 78px);
+    min-width: 0;
+    width: clamp(51px, 5.25vw, 78px);
+    height: 36px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 2px 3px;
+    border-radius: var(--radio-control);
+    color: rgb(255 255 255 / 0.65);
+    text-decoration: none;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .marbella-fixed-topbar [data-component='DesktopHeaderNav'] [data-element='icon'] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .marbella-fixed-topbar [data-component='DesktopHeaderNav'] [data-element='icon'] svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .marbella-fixed-topbar [data-component='DesktopHeaderNav'] [data-element='label'] {
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 500;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .marbella-fixed-topbar [data-component='DesktopHeaderNav'] [data-element='item']:hover,
+  .marbella-fixed-topbar [data-component='DesktopHeaderNav'] [data-element='item']:focus-visible {
+    background-color: rgb(255 255 255 / 0.09);
+    color: white;
+  }
+
+  .marbella-fixed-topbar [data-component='DesktopHeaderNav'] [data-element='item'][data-active='true'] {
+    background-color: rgb(255 255 255 / 0.15);
+    color: white;
+  }
+
+  /* El buscador pasa de superpuesto al centro a una columna flexible:
+     permanece en la misma fila sin pisar navegación ni controles derechos. */
+  .marbella-fixed-topbar [data-element='global-search-host'] {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    flex: 1 1 180px;
+    min-width: 145px;
+    width: auto;
+    max-width: 330px;
+  }
+}
