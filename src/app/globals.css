@@ -5278,10 +5278,11 @@ button[data-element='catalog-filter'] {
       font-size: 0.6875rem !important; /* tipo.minimo */
     }
 
-    /* Filas de hora: reparte el extra; no encoge por debajo de lo legible. */
+    /* Las filas de tabla necesitan altura efectiva: min-height en <tr>
+       no evita que el contenido con position:absolute colapse. */
     .day-modal-activities tbody tr,
     .day-modal-activities tbody tr.day-modal-hour-row {
-      height: 1% !important;
+      height: 2.25rem !important;
       min-height: 2.25rem !important;
     }
 
