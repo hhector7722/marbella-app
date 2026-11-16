@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         // la antigua se abandona y nunca sobrescribe datos nuevos.
         const { data: before, error: beforeError } = await supabase
           .from('pavilion_activity_sheets')
-          .select('content_hash, processing_attempts')
+          .select('content_hash, processing_attempts, processing_status')
           .eq('id', result.sheetId)
           .single();
 
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
           );
         }
 
-        if (before.content_hash !== result.contentHash) {
+        if (before.content_hash !== result.contentHash || before.processing_status !== 'pending') {
           console.log(
             `[webhooks/pavilion-activities] PDF obsoleto ignorado: ${filename}`,
           );
@@ -95,21 +95,26 @@ export async function POST(request: Request) {
         }
 
         const attempts = Number(before.processing_attempts ?? 0) + 1;
-        const { error: processingError } = await supabase
+        const { data: claimed, error: processingError } = await supabase
           .from('pavilion_activity_sheets')
           .update({
             processing_status: 'processing',
             processing_error: null,
             processing_attempts: attempts,
+            updated_at: new Date().toISOString(),
           })
           .eq('id', result.sheetId)
-          .eq('content_hash', result.contentHash);
+          .eq('content_hash', result.contentHash)
+          .eq('processing_status', 'pending')
+          .select('id')
+          .maybeSingle();
 
         if (processingError) {
           throw new Error(
             `No se pudo marcar el PDF como processing: ${processingError.message}`,
           );
         }
+        if (!claimed) return;
 
         const { parsePdf } = await import('@/lib/pavilion/parser');
         const { importOccupations } = await import('@/lib/pavilion/importer');
@@ -149,13 +154,27 @@ export async function POST(request: Request) {
 
         // importOccupations elimina únicamente las ocurrencias PDF del día y las
         // sustituye por el resultado validado.
-        await importOccupations(
+        const imported = await importOccupations(
           supabase,
           occupationsWithDate,
           result.sheetId,
         );
+        if (imported.occurrencesInserted === 0) {
+          throw new Error('Mistral no generó ocupaciones válidas en P1-P4.');
+        }
 
-        const { error: completedError } = await supabase
+        const { count, error: verifyError } = await supabase
+          .from('activity_occurrences')
+          .select('id', { count: 'exact', head: true })
+          .eq('source_pdf_id', result.sheetId)
+          .eq('source_type', 'pdf')
+          .eq('activity_date', dateToUse);
+
+        if (verifyError || count !== imported.occurrencesInserted) {
+          throw new Error(`La importación no se confirmó: ${verifyError?.message ?? `${count}/${imported.occurrencesInserted}`}`);
+        }
+
+        const { data: completed, error: completedError } = await supabase
           .from('pavilion_activity_sheets')
           .update({
             processing_status: 'processed',
@@ -165,13 +184,17 @@ export async function POST(request: Request) {
               ? `REVISAR extracción parcial: ${warnings.join(' | ').slice(0, 3500)}`
               : null,
             processed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           })
           .eq('id', result.sheetId)
-          .eq('content_hash', result.contentHash);
+          .eq('content_hash', result.contentHash)
+          .eq('processing_status', 'processing')
+          .select('id')
+          .maybeSingle();
 
-        if (completedError) {
+        if (completedError || !completed) {
           throw new Error(
-            `OCR importado pero no se pudo guardar el estado final: ${completedError.message}`,
+            `OCR importado pero no se pudo guardar el estado final: ${completedError?.message ?? 'actualización no confirmada'}`,
           );
         }
 
@@ -192,9 +215,11 @@ export async function POST(request: Request) {
           .update({
             processing_status: 'error',
             processing_error: message.slice(0, 4000),
+            updated_at: new Date().toISOString(),
           })
           .eq('id', result.sheetId)
-          .eq('content_hash', result.contentHash);
+          .eq('content_hash', result.contentHash)
+          .eq('processing_status', 'processing');
       }
     });
 
