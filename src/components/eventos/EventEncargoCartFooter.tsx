@@ -132,9 +132,9 @@ export function EventEncargoCartFooter({
           </ul>
         ) : null}
 
-        <div className={cn('flex items-center gap-2', clientOrderMode && 'justify-center')}>
+        <div className={clientOrderMode ? 'grid grid-cols-2 items-center gap-2' : 'flex items-center gap-2'}>
           {clientOrderMode ? (
-            <div className="relative inline-flex shrink-0">
+            <div className="relative inline-flex shrink-0 justify-self-center">
               <Button
                 type="button"
                 variant="secondary"
@@ -169,7 +169,7 @@ export function EventEncargoCartFooter({
             type="button"
             variant="primary"
             instance="event-encargo-send"
-            className={clientOrderMode ? 'flex-none' : 'flex-1'}
+            className={clientOrderMode ? 'flex-none justify-self-center' : 'flex-1'}
             disabled={saveBlocked}
             loading={isPending}
             onClick={requestSave}
