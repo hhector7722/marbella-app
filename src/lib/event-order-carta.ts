@@ -12,6 +12,8 @@ export type EventOrderCartaControl = {
   ) => void
   /** Pulsa el producto para sumar 1 (sin +/− en la tarjeta). */
   tapToAdd?: boolean
+  /** `/pedido`: controles +/− sobre la foto sin alterar la carta original. */
+  photoControls?: boolean
 }
 
 /** Edición de encargo: activar productos/categorías y límites por categoría. */
