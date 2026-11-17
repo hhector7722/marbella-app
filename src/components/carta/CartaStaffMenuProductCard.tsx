@@ -504,10 +504,10 @@ export function CartaStaffMenuProductCard({
           <p className="text-center text-sm font-semibold text-zinc-600">
             {racionPickerAction === 'remove' ? 'Selecciona la ración que quieres quitar' : 'Selecciona la ración'}
           </p>
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-2 gap-2.5">
             <button
               type="button"
-              className="flex min-h-14 flex-col items-center justify-center rounded-xl bg-[#36606F] px-2 py-3 text-white active:scale-[0.98]"
+              className="flex min-h-[84px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border border-[#a6c8ef] bg-[#ecf4ff] px-2 py-3 text-[#1b4a82] transition-colors active:bg-[#ddeafa] disabled:opacity-40"
               disabled={racionPickerAction === 'remove' && eventQty <= 0}
               onClick={() => {
                 if (racionPickerAction === 'remove') removeEntero()
@@ -515,16 +515,16 @@ export function CartaStaffMenuProductCard({
                 setRacionPickerOpen(false)
               }}
             >
-              <span className="text-sm font-black">{dualLabels.racionEntero}</span>
+              <span className="max-w-full break-words text-center text-[13px] font-extrabold leading-snug">{dualLabels.racionEntero}</span>
               {priceEnteroLabel.trim() ? (
-                <span className="mt-0.5 text-xs font-bold tabular-nums opacity-90">
+                <span className="text-[12px] font-semibold tabular-nums">
                   {priceEnteroLabel}
                 </span>
               ) : null}
             </button>
             <button
               type="button"
-              className="flex min-h-14 flex-col items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-3 text-zinc-900 active:scale-[0.98]"
+              className="flex min-h-[84px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border border-[#a6c8ef] bg-[#ecf4ff] px-2 py-3 text-[#1b4a82] transition-colors active:bg-[#ddeafa] disabled:opacity-40"
               disabled={racionPickerAction === 'remove' && eventQtyMedio <= 0}
               onClick={() => {
                 if (racionPickerAction === 'remove') removeMedio()
@@ -532,9 +532,9 @@ export function CartaStaffMenuProductCard({
                 setRacionPickerOpen(false)
               }}
             >
-              <span className="text-sm font-black">{dualLabels.racionMedio}</span>
+              <span className="max-w-full break-words text-center text-[13px] font-extrabold leading-snug">{dualLabels.racionMedio}</span>
               {priceMedioLabel.trim() ? (
-                <span className="mt-0.5 text-xs font-bold tabular-nums text-zinc-700">
+                <span className="text-[12px] font-semibold tabular-nums">
                   {priceMedioLabel}
                 </span>
               ) : null}
