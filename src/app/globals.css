@@ -11613,20 +11613,6 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   padding: 0 2px;
 }
 [data-component='Modal'][data-instance='event-encargo-cart']
-  [data-client-order-list='true'] [data-component='Button'][data-instance='event-encargo-cart-add-line-note'] {
-  height: 24px !important;
-  min-height: 24px !important;
-  width: 24px !important;
-  min-width: 24px !important;
-  max-width: 24px;
-  padding: 0 !important;
-}
-[data-component='Modal'][data-instance='event-encargo-cart']
-  [data-client-order-list='true'] [data-component='Button'][data-instance='event-encargo-cart-add-line-note']::before {
-  box-shadow: none;
-  background: transparent;
-}
-[data-component='Modal'][data-instance='event-encargo-cart']
   [data-client-order-footer] [data-component='Button'][data-instance='event-encargo-cart-add-order-notes'] {
   width: auto !important;
   min-width: 0;
