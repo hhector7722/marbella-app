@@ -14,6 +14,7 @@ import {
   CARTA_PUBLIC_MENU_COLUMNS,
   CARTA_PUBLIC_MENU_COLUMNS_BASE,
   CARTA_PUBLIC_MENU_COLUMNS_WITH_SCALE,
+  CARTA_PUBLIC_MENU_COLUMNS_WITH_LIGHTBOX,
   isCartaPhotoScaleColumnError,
 } from '@/lib/carta-menu-select'
 import type { CartaPhotoScale } from '@/lib/carta-product-photo'
@@ -80,7 +81,11 @@ export async function loadEventCartaMenu(
       .order('sort_order', { ascending: true, nullsFirst: false })
       .order('carta_nombre', { ascending: true })
 
-  let { data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS_WITH_SCALE)
+  // Igual que /carta: cargar la fotografía alternativa al ampliar el producto.
+  let { data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS_WITH_LIGHTBOX)
+  if (error && /lightbox_photo_url/i.test(error.message)) {
+    ;({ data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS_WITH_SCALE))
+  }
   if (error && isCartaPhotoScaleColumnError(error.message)) {
     ;({ data, error } = await menuOrder(CARTA_PUBLIC_MENU_COLUMNS))
   }
