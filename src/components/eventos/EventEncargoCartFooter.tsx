@@ -43,6 +43,37 @@ function UnitsBadge({ count, compact = false }: { count: number; compact?: boole
   )
 }
 
+/** El mismo acceso compacto al carrito, tanto en la portada como en cada categoría. */
+export function EventEncargoViewOrderButton({
+  units,
+  onClick,
+  instance = 'event-encargo-ver-pedido',
+}: {
+  units: number
+  onClick: () => void
+  instance?: string
+}) {
+  return (
+    <div className="relative inline-flex shrink-0">
+      <Button
+        type="button"
+        variant="secondary"
+        instance={instance}
+        disabled={units <= 0}
+        onClick={onClick}
+        className="flex-none"
+      >
+        Ver pedido
+      </Button>
+      {units > 0 ? (
+        <span className="pointer-events-none absolute -right-2 top-[1px] z-10">
+          <UnitsBadge count={units} compact />
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
 export function EventEncargoCartFooter({
   lines,
   totalUnits = 0,
@@ -63,6 +94,8 @@ export function EventEncargoCartFooter({
   onLineNotesChange,
   onPlatoMarbellaAddRequest,
   onPlatoMarbellaRemove,
+  cartOpen: controlledCartOpen,
+  onCartOpenChange,
 }: {
   lines: EventEncargoCartLine[]
   /** Unidades totales para el badge (estilo notificación). */
@@ -85,8 +118,13 @@ export function EventEncargoCartFooter({
   onLineNotesChange?: (key: string, notes: string) => void
   onPlatoMarbellaAddRequest?: () => void
   onPlatoMarbellaRemove?: (key: string) => void
+  /** Controlado solo en /pedido para abrir exactamente este carrito desde las categorías. */
+  cartOpen?: boolean
+  onCartOpenChange?: (open: boolean) => void
 }) {
-  const [cartOpen, setCartOpen] = useState(false)
+  const [internalCartOpen, setInternalCartOpen] = useState(false)
+  const cartOpen = controlledCartOpen ?? internalCartOpen
+  const setCartOpen = onCartOpenChange ?? setInternalCartOpen
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [plateDetailsOpen, setPlateDetailsOpen] = useState(false)
   const [removalKey, setRemovalKey] = useState<string | null>(null)
@@ -148,23 +186,10 @@ export function EventEncargoCartFooter({
 
         <div className={clientOrderMode ? 'flex w-full items-center justify-center' : 'flex items-center gap-2'}>
           {clientOrderMode ? (
-            <div className="relative inline-flex shrink-0 justify-self-center">
-              <Button
-                type="button"
-                variant="secondary"
-                instance="event-encargo-ver-pedido"
-                disabled={!hasLines}
-                onClick={() => setCartOpen(true)}
-                className="flex-none"
-              >
-                Ver pedido
-              </Button>
-              {hasLines && units > 0 ? (
-                <span className="pointer-events-none absolute -right-2 top-[1px] z-10">
-                  <UnitsBadge count={units} compact />
-                </span>
-              ) : null}
-            </div>
+            <EventEncargoViewOrderButton
+              units={hasLines ? units : 0}
+              onClick={() => setCartOpen(true)}
+            />
           ) : (
             <Button
               type="button"
