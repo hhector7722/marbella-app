@@ -239,16 +239,29 @@ export function PlatoMarbellaMenuView({
 
   const onAddToOrder = useCallback(() => {
     if (!eventOrder || launcherArticuloId == null) return
-    eventOrder.onQuantityChange(launcherArticuloId, eventOrderQtyFor(eventOrder, launcherArticuloId) + 1)
+    if (eventOrder.onAddPlatoMarbella) {
+      if (!PLATO_MARBELLA_SLOTS.every((slot) => selections[slot]?.row)) return
+      eventOrder.onAddPlatoMarbella(launcherArticuloId, {
+        entrante: getCartaDisplayName(selections.entrante!.row, 'es'),
+        principal: getCartaDisplayName(selections.principal!.row, 'es'),
+        guarnicion: getCartaDisplayName(selections.guarnicion!.row, 'es'),
+      })
+      // El siguiente plato empieza vacío: nunca reutilizar elecciones anteriores.
+      setSelections({})
+      setPickerSlot(null)
+    } else {
+      eventOrder.onQuantityChange(launcherArticuloId, eventOrderQtyFor(eventOrder, launcherArticuloId) + 1)
+    }
     toast.success(ui.addedToOrder)
-  }, [eventOrder, launcherArticuloId, ui.addedToOrder])
+  }, [eventOrder, launcherArticuloId, selections, ui.addedToOrder])
 
   const requiredSlots = useMemo(
     () => PLATO_MARBELLA_SLOTS.filter((s) => (grouped.sections[s] ?? []).length > 0),
     [grouped]
   )
   const filledCount = PLATO_MARBELLA_SLOTS.filter((s) => selections[s]).length
-  const isComplete = requiredSlots.length > 0 && requiredSlots.every((s) => selections[s])
+  const isComplete = requiredSlots.length > 0 &&
+    (eventOrder?.onAddPlatoMarbella ? PLATO_MARBELLA_SLOTS.every((s) => selections[s]) : requiredSlots.every((s) => selections[s]))
   const showCta = isComplete && Boolean(eventOrder) && launcherArticuloId != null
   const progressStatus = isComplete
     ? ui.plateComplete
@@ -318,8 +331,8 @@ export function PlatoMarbellaMenuView({
             onClick={onAddToOrder}
           >
             {menuPrice != null
-              ? `${ui.addToOrder} · ${formatCartaPrice(menuPrice).trim()}`
-              : ui.addToOrder}
+              ? `${eventOrder?.onAddPlatoMarbella ? { es: 'Añadir', ca: 'Afegir', en: 'Add' }[lang] : ui.addToOrder} · ${formatCartaPrice(menuPrice).trim()}`
+              : (eventOrder?.onAddPlatoMarbella ? { es: 'Añadir', ca: 'Afegir', en: 'Add' }[lang] : ui.addToOrder)}
           </Button>
         </div>
       ) : null}
