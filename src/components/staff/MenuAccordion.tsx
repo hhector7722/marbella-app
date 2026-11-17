@@ -521,6 +521,8 @@ export function MenuAccordion({
     const [platoMarbellaReorderSection, setPlatoMarbellaReorderSection] =
         useState<PlatoMarbellaReorderSection>('entrante')
     const [platoMarbellaDetailOpen, setPlatoMarbellaDetailOpen] = useState(false)
+    const [pendingPlateBuilderGroup, setPendingPlateBuilderGroup] = useState<string | null>(null)
+    const lastPlateBuilderRequest = useRef(0)
     const [reorderPlatoMarbellaBundle, setReorderPlatoMarbellaBundle] = useState(false)
 
     const pmCategoryIdResolved =
@@ -660,6 +662,32 @@ export function MenuAccordion({
         platoMarbellaDetailOpen,
         reorderScope,
     ])
+
+    // «+» desde Ver pedido: vuelve al configurador, nunca suma un plato sin opciones.
+    useEffect(() => {
+        const request = eventOrder?.platoBuilderRequest ?? 0
+        if (!request || lastPlateBuilderRequest.current === request) return
+        lastPlateBuilderRequest.current = request
+        const group = (grouped as GroupedGroup[]).find(
+            (g) => (g._platoMarbellaBundleRows?.length ?? 0) > 0
+                && g._platoMarbellaLauncherArticuloId != null
+        )
+        if (!group) return
+        setOpenKey(group.key)
+        const visible = subsWithVisibleProducts(group._subList)
+        if (visible.length) {
+            setSelectedSubKeyByGroup((prev) => ({ ...prev, [group.key]: visible[0].key }))
+        }
+        setPendingPlateBuilderGroup(group.key)
+    }, [eventOrder?.platoBuilderRequest, grouped])
+
+    useEffect(() => {
+        if (!pendingPlateBuilderGroup ||
+            pendingPlateBuilderGroup !== openGroup?.key ||
+            openShowSubPicker) return
+        setPlatoMarbellaDetailOpen(true)
+        setPendingPlateBuilderGroup(null)
+    }, [pendingPlateBuilderGroup, openGroup?.key, openShowSubPicker])
 
     const openPlatoMarbella = Boolean(
         platoMarbellaDetailOpen && hasPlatoMarbellaBundle && !openShowSubPicker
