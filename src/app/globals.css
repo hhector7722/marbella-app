@@ -11512,6 +11512,51 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   object-fit: contain;
   object-position: center;
 }
+/* /pedido · modal de carrito: el footer tiene dos filas reales y nunca
+   comprime tres etiquetas largas en dos columnas ni deja texto fuera. */
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-element='footer'] [data-element='footer-actions']:has(> [data-client-order-footer]) {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  margin-inline: 0;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-element='footer'] [data-element='footer-actions'] > [data-client-order-footer] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 4px 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-footer] [data-component='Button'] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding-inline: 2px;
+  font-size: clamp(10px, 2.8vw, 12px);
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-footer] [data-component='Button'] [data-element='label'] {
+  max-width: 100%;
+  white-space: nowrap;
+  text-align: center;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-component='Button'][data-variant='tertiary'] {
+  color: #1b4a82;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-component='Button'][data-variant='tertiary']::before {
+  box-shadow: 0 0 0 1px rgb(55 119 192 / .38);
+}
+
 /* /pedido: controles discretos bajo la foto, dentro de su marco blanco.
    El área de la imagen y los botones son hermanos en flujo flex:
    nunca se superponen ni se tapa parte de la fotografía. */
