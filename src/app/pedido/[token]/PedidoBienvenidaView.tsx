@@ -115,8 +115,8 @@ export function PedidoBienvenidaView({
               onClick={onStart}
               className={cn(
                 'flex w-full min-h-14 items-center justify-center rounded-xl',
-                'bg-[#36606F] text-[13px] font-black uppercase tracking-widest text-white',
-                'active:opacity-90 hover:bg-[#2a4a56]'
+                'bg-[#1b4a82] text-[13px] font-black uppercase tracking-widest text-white',
+                'active:opacity-90 hover:bg-[#163d6c]'
               )}
             >
               Empezar pedido
