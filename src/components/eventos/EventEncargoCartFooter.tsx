@@ -339,6 +339,7 @@ export function EventEncargoCartFooter({
                 if (clientOrderMode) {
                   const plates = line.platoMarbellaItems
                   const isPlate = Boolean(plates?.length)
+                  const lineNote = line.notes?.trim() ?? ''
                   return (
                     <div key={line.key} className="flex h-[34px] min-w-0 items-center gap-1.5 px-1" role="listitem">
                       {isPlate ? (
@@ -362,15 +363,17 @@ export function EventEncargoCartFooter({
                       {isPlate ? null : (
                         <button
                           type="button"
-                          aria-label={line.notes?.trim() ? `Editar nota de ${line.name}` : `Añadir nota a ${line.name}`}
-                          title={line.notes?.trim() || 'Añadir nota'}
+                          aria-label={lineNote ? `Editar nota de ${line.name}` : `Añadir nota a ${line.name}`}
+                          title={lineNote || 'Añadir nota'}
                           onClick={() => openNoteEditor('line', line.key)}
-                          className="min-w-0 max-w-[28%] flex-[0_1_auto] truncate whitespace-nowrap border-0 bg-transparent p-0 text-left text-[9px] italic font-normal leading-none text-zinc-400 hover:text-zinc-600"
+                          className="min-w-0 max-w-[32%] flex-[0_1_auto] overflow-hidden border-0 bg-transparent p-0 text-left text-[9px] italic font-normal leading-none text-zinc-400 hover:text-zinc-600"
                         >
-                          {line.notes?.trim() || 'Añadir nota'}
+                          <span className="block w-full truncate whitespace-nowrap">
+                            {lineNote || 'Añadir nota'}
+                          </span>
                         </button>
                       )}
-                      <div className="h-[26px] w-[76px] shrink-0 overflow-hidden rounded-full border border-[#cbd9eb] bg-transparent text-[#1b4a82]">
+                      <div data-pedido-quantity-pill className="h-[26px] w-[76px] shrink-0 overflow-hidden rounded-full border border-[rgb(55_119_192_/_0.38)] bg-transparent text-[#1b4a82]">
                         <QuantityStepper
                           variant="bar"
                           value={line.quantity}
