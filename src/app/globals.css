@@ -11437,11 +11437,11 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   color: rgb(255 255 255 / .8);
 }
 
-/* Dimensiones estables desde el primer fotograma, aunque la imagen ampliada
-   aún no se haya descargado ni decodificado. Solo afecta al visor de fotos. */
+/* Visor de fotos de todas las cartas: menos alto y estable desde
+   el primer fotograma, sin recortar la imagen (object-contain). */
 [data-instance='carta-image-lightbox'] [data-element='container'] {
-  height: min(82svh, 780px);
-  min-height: min(82svh, 780px);
+  height: min(70svh, 640px);
+  min-height: min(70svh, 640px);
   max-height: 100%;
 }
 
