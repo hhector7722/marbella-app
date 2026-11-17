@@ -31,9 +31,11 @@ export function buildEventOrderProductColumns(orders: EventOrderMatrixRow[]): Ev
 }
 
 export function quantityForProduct(order: EventOrderMatrixRow, productId: string): number {
-  const item = (order.items ?? []).find((it) => String(it.product_id) === productId)
-  const qty = Number(item?.quantity) || 0
-  return qty > 0 ? qty : 0
+  // Platos configurados: un mismo product_id puede tener varias líneas diferentes.
+  return (order.items ?? []).reduce((sum, item) => {
+    if (String(item.product_id) !== productId) return sum
+    return sum + Math.max(0, Number(item.quantity) || 0)
+  }, 0)
 }
 
 /** Regla ZERO-DISPLAY: 0 → espacio vacío. */
