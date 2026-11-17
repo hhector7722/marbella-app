@@ -365,9 +365,9 @@ export function EventEncargoCartFooter({
                           aria-label={line.notes?.trim() ? `Editar nota de ${line.name}` : `Añadir nota a ${line.name}`}
                           title={line.notes?.trim() || 'Añadir nota'}
                           onClick={() => openNoteEditor('line', line.key)}
-                          className="shrink-0 whitespace-nowrap border-0 bg-transparent p-0 text-[9px] italic font-normal leading-none text-zinc-400 hover:text-zinc-600"
+                          className="min-w-0 max-w-[28%] flex-[0_1_auto] truncate whitespace-nowrap border-0 bg-transparent p-0 text-left text-[9px] italic font-normal leading-none text-zinc-400 hover:text-zinc-600"
                         >
-                          {line.notes?.trim() ? 'Editar nota' : 'Añadir nota'}
+                          {line.notes?.trim() || 'Añadir nota'}
                         </button>
                       )}
                       <div className="h-[26px] w-[76px] shrink-0 overflow-hidden rounded-full border border-[#cbd9eb] bg-transparent text-[#1b4a82]">
