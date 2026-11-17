@@ -11512,6 +11512,37 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   object-fit: contain;
   object-position: center;
 }
+/* /pedido: acceso persistente al carrito en el modal de categorías/subcategorías.
+   La carta pública no recibe este pie; solo existe cuando eventOrder.openCart. */
+[data-component='Modal'][data-instance='menu-accordion-section']
+  [data-element='footer']:has([data-pedido-section-footer]) {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 4px 0 7px;
+  border-top: 0;
+  background: transparent;
+}
+[data-component='Modal'][data-instance='menu-accordion-section']
+  [data-element='footer'] [data-element='footer-actions']:has(> [data-pedido-section-footer]) {
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+}
+[data-component='Modal'][data-instance='menu-accordion-section']
+  [data-element='footer'] [data-pedido-section-footer] {
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+}
+
 /* /pedido · modal de carrito: el footer tiene dos filas reales y nunca
    comprime tres etiquetas largas en dos columnas ni deja texto fuera. */
 [data-component='Modal'][data-instance='event-encargo-cart']
