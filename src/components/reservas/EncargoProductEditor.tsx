@@ -16,7 +16,7 @@ import {
   deleteEncargoStaffAction,
   updateStaffEventOrderAction,
 } from '@/app/dashboard/eventos/actions'
-import { eventOrderProductId } from '@/lib/event-order-carta'
+import { eventOrderProductId, parsePlatoMarbellaItemNotes } from '@/lib/event-order-carta'
 import { formatCartaOrderProductName } from '@/lib/carta-menu-i18n'
 import type { StaffEncargoLineItem } from '@/lib/encargo-staff-helpers'
 import {
@@ -375,17 +375,30 @@ function EncargoCartModal({
               {lines.map((line) => {
                 const productLabel = formatEncargoProductLabel(line.name ?? line.product_id, line.notes)
                 const note = formatEncargoProductNote(line.name ?? '', line.notes)
+                const plate = parsePlatoMarbellaItemNotes(line.notes)
                 return (
                   <div key={line.lineKey} className="flex min-h-12 flex-wrap items-center gap-[var(--espacio-2)] border-b border-zinc-100 py-[var(--espacio-2)] last:border-b-0">
                     <div className="min-w-24 flex-1">
                       <p className="line-clamp-2 break-words text-[11px] font-normal leading-tight text-zinc-900" title={productLabel}>
                         {formatCartaOrderProductName(productLabel)}
                       </p>
-                      {note ? (
+                      {plate ? (
+                        <div className="mt-1 space-y-0.5 text-[10px] leading-snug text-zinc-700">
+                          <p><strong>Entrante:</strong> {plate.choices.entrante}</p>
+                          <p><strong>Principal:</strong> {plate.choices.principal}</p>
+                          <p><strong>Guarnición:</strong> {plate.choices.guarnicion}</p>
+                          {plate.note ? <p><strong>Indicaciones:</strong> {plate.note}</p> : null}
+                        </div>
+                      ) : note ? (
                         <p className="text-[9px] font-medium text-zinc-500 lowercase truncate">{note}</p>
                       ) : null}
                     </div>
                     <div className="w-[calc(var(--tactil-minimo)*2+var(--espacio-8))] shrink-0">
+                      {plate ? (
+                        <span className="inline-flex min-h-12 w-full items-center justify-center text-sm font-bold text-zinc-700">
+                          1 plato
+                        </span>
+                      ) : (
                       <EncargoQtyStepper
                         quantity={line.quantity}
                         onQuantityChange={(qty) => {
@@ -400,13 +413,20 @@ function EncargoCartModal({
                           onUpdateLine(line.lineKey, { quantity: Math.min(999, line.quantity + 1) })
                         }
                       />
+                      )}
                     </div>
-                    <input
-                      value={line.notes}
-                      onChange={(e) => onUpdateLine(line.lineKey, { notes: e.target.value })}
-                      placeholder="Notas"
-                      className="min-h-12 min-w-24 flex-1 rounded border border-zinc-200 bg-zinc-50 px-[var(--espacio-2)] text-base font-normal"
-                    />
+                    {plate ? (
+                      <p className="min-w-24 flex-1 text-[11px] font-medium leading-snug text-zinc-500">
+                        Ingredientes registrados individualmente.
+                      </p>
+                    ) : (
+                      <input
+                        value={line.notes}
+                        onChange={(e) => onUpdateLine(line.lineKey, { notes: e.target.value })}
+                        placeholder="Notas"
+                        className="min-h-12 min-w-24 flex-1 rounded border border-zinc-200 bg-zinc-50 px-[var(--espacio-2)] text-base font-normal"
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={() => onRemoveLine(line.lineKey)}
