@@ -1,5 +1,6 @@
 'use client';
 
+import { formatParticipantCount } from '@/lib/schedule/format-participants';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
@@ -200,7 +201,7 @@ function formatDayEventDetailRows(acts: BarActivity[] | undefined): EventDetailR
         hours: `${formatEventClock(act.startTime)} - ${formatEventClock(act.endTime)}`,
         pax:
             act.totalParticipants != null && act.totalParticipants > 0
-                ? `${act.totalParticipants} pax`
+                ? `${formatParticipantCount(act.totalParticipants)} pax`
                 : null,
         categories: act.categories?.length ? act.categories.join(', ') : null,
     }));

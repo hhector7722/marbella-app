@@ -1,5 +1,6 @@
 'use client';
 
+import { formatParticipantCount } from '@/lib/schedule/format-participants';
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -202,7 +203,7 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
                 {/* Removed (Real: ...) display */}
                 {hasParticipants && (
                    <span className="tracking-tighter whitespace-nowrap opacity-80 mt-[1px]" style={{ fontSize: 'clamp(4px, min(11cqi, 12cqh), 9px)' }}>
-                     {act.totalParticipants ? `${act.totalParticipants} pax` : ''}
+                     {act.totalParticipants ? `${formatParticipantCount(act.totalParticipants)} pax` : ''}
                      {act.totalParticipants && act.categories?.length ? ' • ' : ''}
                      {act.categories?.join(', ')}
                    </span>

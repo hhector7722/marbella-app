@@ -1,5 +1,6 @@
 'use client';
 
+import { formatParticipantCount } from '@/lib/schedule/format-participants';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   addMonths,
@@ -208,7 +209,7 @@ function CalendarActivityChips({
               </span>
               {hasParticipants && (
                 <span className="break-keep font-medium leading-tight opacity-90 mt-[1px] text-[clamp(5px,11cqi,11px)] truncate">
-                  {act.totalParticipants ? `${act.totalParticipants} pax` : ''}
+                  {act.totalParticipants ? `${formatParticipantCount(act.totalParticipants)} pax` : ''}
                   {act.totalParticipants && act.categories?.length ? ' • ' : ''}
                   {act.categories?.join(', ')}
                 </span>
