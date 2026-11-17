@@ -11512,6 +11512,87 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   object-fit: contain;
   object-position: center;
 }
+/* /pedido: capa interactiva sobre la foto original, sin duplicar tarjetas.
+   Controles compactos, relleno suave y contorno; división central recta. */
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] {
+  position: absolute;
+  z-index: 35;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  width: min(78%, 120px);
+  height: clamp(25px, 7.5vw, 30px);
+  overflow: hidden;
+  border-radius: 999px;
+  filter: drop-shadow(0 1px 2px rgb(14 39 27 / .12));
+}
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 0;
+  font-weight: 800;
+  line-height: 1;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action="add"] {
+  border-color: #36764b;
+  border-radius: 999px;
+  background: #e1f1e5;
+  color: #245b36;
+  font-size: clamp(9px, 2.5vw, 11px);
+}
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action="remove"] {
+  border-color: #b4535a;
+  border-radius: 999px 0 0 999px;
+  background: #f8e7e8;
+  color: #a73f48;
+  font-size: 17px;
+  font-weight: 600;
+}
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action="increment"] {
+  border-color: #36764b;
+  border-radius: 0 999px 999px 0;
+  background: #e1f1e5;
+  color: #245b36;
+  font-size: 17px;
+  font-weight: 600;
+  margin-left: -1px;
+}
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button:active {
+  filter: brightness(.94);
+}
+/* Reservar la franja inferior para los controles, sin tapar la fotografía. */
+.carta-browse-modal .carta-square-product-card:has([data-carta-order-controls]:not([data-inline]))
+  > div:first-child > div > button:first-child {
+  height: calc(100% - 28px);
+}
+/* Un producto sin foto debe seguir pudiendo sumarse y restarse. */
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls][data-inline] {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+.carta-browse-modal .carta-square-product-card > div:nth-child(2):has([data-carta-order-controls][data-inline]) {
+  height: auto;
+  min-height: 70px;
+}
+
 /* Nombre y precio forman parte de la misma ficha pulsable, pero quedan fuera. */
 .carta-browse-modal .carta-square-product-card > div:nth-child(2) {
   box-sizing: border-box;
