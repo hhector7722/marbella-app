@@ -14,6 +14,7 @@ import { CartaSubcategoryPickerButton } from '@/components/carta/CartaSubcategor
 import { CartaSubcategoryPickerGrid } from '@/components/carta/CartaSubcategoryPickerGrid'
 import { CartaSubcategoryPickerModalShell } from '@/components/carta/CartaSubcategoryPickerModalShell'
 import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
+import { EventEncargoViewOrderButton } from '@/components/eventos/EventEncargoCartFooter'
 import { CartaWholeRowScroller } from '@/components/carta/CartaWholeRowScroller'
 import { StaffCartaModalEditToggle } from '@/components/carta/StaffCartaModalEditToggle'
 import { CartaActiveToggleButton } from '@/components/carta/CartaActiveToggleButton'
@@ -1146,6 +1147,17 @@ export function MenuAccordion({
                     catalogDisplay && (modalReady ? 'carta-catalog-modal-ready' : 'carta-catalog-modal-preparing')
                 )}
                 ariaLabel={openGroup?.title ?? 'Sección carta'}
+                footer={
+                    eventOrder?.openCart && !eventEncargoEdit && !reorderScope ? (
+                        <div data-pedido-section-footer className="flex w-full items-center justify-center">
+                            <EventEncargoViewOrderButton
+                                instance="menu-accordion-ver-pedido"
+                                units={eventOrder.totalUnits ?? 0}
+                                onClick={eventOrder.openCart}
+                            />
+                        </div>
+                    ) : undefined
+                }
             >
                     {openGroup == null ? null : openShowSubPicker ? (
                         <CartaSubcategoryPickerModalShell
