@@ -4,6 +4,7 @@ import {
   type UIMessage,
 } from "ai";
 import { createClient } from "@/utils/supabase/server";
+import { createCopilotWriteClient } from "@/lib/copilot/chat-write-client";
 import { ACTION_SCHEMA, type CopilotAction } from "@/lib/copilot/actions";
 import { canExecute, normalizeCopilotRole, type RoleName } from "@/lib/copilot/permissions";
 import {
@@ -187,6 +188,8 @@ export async function POST(req: Request) {
   }
   const role = normalizeCopilotRole(profile?.role);
   if (!role) return Response.json({ error: "Rol de usuario no autorizado." }, { status: 403 });
+  const chatWriter = createCopilotWriteClient();
+  if (!chatWriter) return Response.json({ error: "Historial de chat no disponible en el servidor." }, { status: 503 });
 
   let sessionId: string;
   if (body.sessionId) {
@@ -197,7 +200,7 @@ export async function POST(req: Request) {
     if (!owned) return Response.json({ error: "Sesión no encontrada." }, { status: 404 });
     sessionId = owned.id;
   } else {
-    const { data: created, error } = await supabase.from("ai_chat_sessions")
+    const { data: created, error } = await chatWriter.from("ai_chat_sessions")
       .insert({ user_id: user.id, status: "active" }).select("id").single();
     if (error || !created?.id) {
       return Response.json({ error: "No se pudo crear la sesión de chat." }, { status: 500 });
@@ -205,7 +208,7 @@ export async function POST(req: Request) {
     sessionId = created.id;
   }
 
-  const { error: insertError } = await supabase.from("ai_chat_messages").insert({
+  const { error: insertError } = await chatWriter.from("ai_chat_messages").insert({
     session_id: sessionId, user_id: user.id,
     role: "user", content_type: "text", text_content: userText,
   });
@@ -246,7 +249,7 @@ export async function POST(req: Request) {
         writer.write({ type: "text-start", id: "answer" });
         writer.write({ type: "text-delta", id: "answer", delta: answer });
         writer.write({ type: "text-end", id: "answer" });
-        const { error: saveError } = await supabase.from("ai_chat_messages").insert({
+        const { error: saveError } = await chatWriter.from("ai_chat_messages").insert({
           session_id: sessionId, user_id: user.id,
           role: "assistant", content_type: "text", text_content: answer,
         });
@@ -467,7 +470,7 @@ ${body.attachmentContext}`;
       writer.write({ type: "text-delta", id: "answer", delta: answer });
       writer.write({ type: "text-end", id: "answer" });
       // Persistir también la respuesta del asistente (antes solo se guardaba el usuario).
-      const { error: saveError } = await supabase.from("ai_chat_messages").insert({
+      const { error: saveError } = await chatWriter.from("ai_chat_messages").insert({
         session_id: sessionId, user_id: user.id,
         role: "assistant", content_type: "text", text_content: answer,
       });

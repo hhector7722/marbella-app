@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createCopilotWriteClient } from '@/lib/copilot/chat-write-client';
 import { normalizeCopilotRole } from '@/lib/copilot/permissions';
 import { usageDeviceFromUserAgent } from '@/lib/usage/device';
 import { recordAppUsageEventWithClient } from '@/lib/usage/record';
@@ -24,7 +25,9 @@ export async function POST(request: Request) {
   const path = typeof possiblePath === 'string' && possiblePath.startsWith('/')
     && possiblePath.length <= 512 ? possiblePath : '/dashboard';
 
-  const { data: session, error } = await supabase.from('ai_chat_sessions')
+  const chatWriter = createCopilotWriteClient();
+  if (!chatWriter) return NextResponse.json({ error: 'Historial de chat no disponible' }, { status: 503 });
+  const { data: session, error } = await chatWriter.from('ai_chat_sessions')
     .insert({ user_id: user.id, status: 'active' }).select('id').single();
   if (error || !session?.id) return NextResponse.json({ error: 'No se pudo abrir la sesión' }, { status: 500 });
 

@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { createCopilotWriteClient } from '@/lib/copilot/chat-write-client';
 import { normalizeCopilotRole } from '@/lib/copilot/permissions';
 import { KNOWLEDGE_TOOL_DEFS, madridDate, toolEnabled, type KnowledgeToolName } from '@/lib/copilot/knowledge-tools';
 import { appDataToolForRole } from '@/lib/copilot/app-data-catalog';
@@ -45,6 +46,8 @@ export async function POST(req: Request) {
   if (profileError || !role) return Response.json({ error: 'No se ha podido validar el perfil.' }, { status: 403 });
   // Limitar a administradores: el servicio de voz cobra por uso.
   if (role !== 'admin') return Response.json({ error: 'Las llamadas de pago están restringidas al administrador.' }, { status: 403 });
+  const chatWriter = createCopilotWriteClient();
+  if (!chatWriter) return Response.json({ error: 'Historial de chat no disponible en el servidor.' }, { status: 503 });
 
   const definitions = (Object.keys(KNOWLEDGE_TOOL_DEFS) as KnowledgeToolName[])
     .filter(name => toolEnabled(role, name))
@@ -100,7 +103,7 @@ export async function POST(req: Request) {
     const data = await response.json() as { value?: string };
     if (!data.value) return Response.json({ error: 'No se obtuvo una credencial efímera válida.' }, { status: 502 });
 
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await chatWriter
       .from('ai_chat_sessions').insert({ user_id: user.id, status: 'active' }).select('id').single();
     if (sessionError || !session?.id) {
       return Response.json({ error: 'No se pudo registrar la sesión de llamada.' }, { status: 500 });
