@@ -350,7 +350,7 @@ export function MenuAccordion({
     categoryCoverScaleById?: Record<string, CartaPhotoScale>
     /** Home staff/carta: grid más compacto sin scroll */
     homeCompact?: boolean
-    /** Únicamente carta pública y carta staff. */
+    /** Presentación de la carta pública, también para pedidos con selección de productos. */
     catalogDisplay?: boolean
     /** Pedido por evento: misma carta con +/− por producto */
     eventOrder?: EventOrderCartaControl
@@ -616,7 +616,7 @@ export function MenuAccordion({
     )
 
     const eventOrderGaplessGrid = Boolean(eventOrder?.tapToAdd && !encargoEditActive)
-    const pageWholeProductRows = catalogDisplay && !eventOrder && !eventEncargoEdit && !reorderScope
+    const pageWholeProductRows = catalogDisplay && !eventEncargoEdit && !reorderScope
 
     const homeCategoryCoverUrls = useMemo(
         () => homeCategoryGroups.map((g) => g.coverPhotoUrl),
@@ -898,7 +898,7 @@ export function MenuAccordion({
             const group = groupedRef.current.find((g) => g.key === groupKey)
             if (group && group._subList.length > 1) {
                 const visible = subsWithVisibleProducts(group._subList)
-                if (visible.length === 1 || (catalogDisplay && !eventOrder && !eventEncargoEdit && visible.length > 1)) {
+                if (visible.length === 1 || (catalogDisplay && !eventEncargoEdit && visible.length > 1)) {
                     // La carta navegable entra directamente en la primera subcategoría.
                     setSelectedSubKeyByGroup((p) => ({ ...p, [groupKey]: visible[0].key }))
                 } else {
@@ -1218,7 +1218,7 @@ export function MenuAccordion({
 
                                 <div className="flex shrink-0 items-center gap-0.5">
                                     {modalEditToggle}
-                                    {catalogDisplay && !eventOrder && !eventEncargoEdit ? null : (
+                                    {catalogDisplay && !eventEncargoEdit ? null : (
                                         <button
                                             type="button"
                                             className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
@@ -1241,7 +1241,7 @@ export function MenuAccordion({
                                       : 'items-center gap-1.5 py-2 sm:gap-2 sm:py-2.5'
                             )}
                         >
-                            {openShowSubTabs && catalogDisplay && !eventOrder && !eventEncargoEdit && !reorderScope ? (
+                            {openShowSubTabs && catalogDisplay && !eventEncargoEdit && !reorderScope ? (
                                 <div className="flex min-w-0 items-center justify-between gap-1.5">
                                     <div className="flex min-w-0 flex-1 items-center gap-1">
                                         <button
@@ -1329,7 +1329,7 @@ export function MenuAccordion({
                             {openShowSubTabs ? (
                                 <div className={cn(
                                     'flex min-w-0',
-                                    catalogDisplay && !eventOrder && !eventEncargoEdit
+                                    catalogDisplay && !eventEncargoEdit
                                         ? 'carta-catalog-subtabs overflow-visible'
                                         : 'overflow-x-auto pb-0.5'
                                 )} aria-label={catalogDisplay ? 'Cambiar subcategoría' : undefined}>
@@ -1446,7 +1446,7 @@ export function MenuAccordion({
                                 <span className="min-w-0 flex-1" aria-hidden />
                             ) : (
                                 <>
-                                {catalogDisplay && !eventOrder && !eventEncargoEdit ? (
+                                {catalogDisplay && !eventEncargoEdit ? (
                                     <button
                                         type="button"
                                         className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white active:bg-white/10"
@@ -1553,7 +1553,7 @@ export function MenuAccordion({
                             {!openShowSubTabs ? (
                                 <div className="flex shrink-0 items-center gap-0.5">
                                     {modalEditToggle}
-                                    {catalogDisplay && !eventOrder && !eventEncargoEdit ? null : (
+                                    {catalogDisplay && !eventEncargoEdit ? null : (
                                         <button
                                             type="button"
                                             className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100"
@@ -1836,7 +1836,7 @@ export function MenuAccordion({
                                                                     }
                                                                     onReorderTap={handleProductReorderTap}
                                                                     rowDensity={rowDensity}
-                                                                    squareLayout={catalogDisplay && !eventOrder && !eventEncargoEdit}
+                                                                    squareLayout={catalogDisplay && !eventEncargoEdit}
                                                                     photoFrameStyle={rowFrameStyle}
                                                                     isPlatoMarbellaLauncher={
                                                                         platoLauncherArticuloId != null &&
@@ -1897,7 +1897,7 @@ export function MenuAccordion({
                                                                 getCartaProductGridRowCellClass(
                                                                     cellIndex,
                                                                     itemsInRow,
-                                                                    { gaplessRow: eventOrderGaplessGrid || (catalogDisplay && !eventOrder && !eventEncargoEdit) }
+                                                                    { gaplessRow: eventOrderGaplessGrid || (catalogDisplay && !eventEncargoEdit) }
                                                                 ),
                                                                 'h-full'
                                                             )}
@@ -1914,7 +1914,7 @@ export function MenuAccordion({
                                                                         : productToggleBusyId
                                                                 }
                                                                 rowDensity={rowDensity}
-                                                                squareLayout={catalogDisplay && !eventOrder && !eventEncargoEdit}
+                                                                squareLayout={catalogDisplay && !eventEncargoEdit}
                                                                 photoFrameStyle={rowFrameStyle}
                                                                 isPlatoMarbellaLauncher={
                                                                     platoLauncherArticuloId != null &&
