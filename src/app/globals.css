@@ -11375,14 +11375,19 @@ body:has(.carta-shared-scene)
 
 /* Catálogo táctil: foto cuadrada completa, texto siempre debajo.
    Mismo tamaño por sección y filas completas; nunca aplicar en edición. */
-/* En todas las categorías: mantener el ancho íntegro de las tres tarjetas.
-   No encogerlas en móviles pequeños ni para intentar mostrar más filas. */
+/* Mantener exactamente el ancho original de cada tarjeta (88 % de su
+   columna): el mayor espacio vertical se consigue con gap, no con tamaño. */
 .carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row {
   gap: 6px;
 }
 .carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row > div {
-  width: 100%;
-  justify-self: stretch;
+  width: 88%;
+  justify-self: center;
+}
+@media (max-width: 359px) {
+  .carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row > div {
+    width: 94%;
+  }
 }
 body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal > div:first-child :is(h2, button, button span) {
   color: #fff;
