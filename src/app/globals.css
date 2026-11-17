@@ -11375,38 +11375,15 @@ body:has(.carta-shared-scene)
 
 /* Catálogo táctil: foto cuadrada completa, texto siempre debajo.
    Mismo tamaño por sección y filas completas; nunca aplicar en edición. */
+/* En todas las categorías: mantener el ancho íntegro de las tres tarjetas.
+   No encogerlas en móviles pequeños ni para intentar mostrar más filas. */
 .carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row {
   gap: 6px;
 }
 .carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row > div {
-  width: 88%;
-  justify-self: center;
+  width: 100%;
+  justify-self: stretch;
 }
-.carta-browse-modal.carta-browse-modal-compact .carta-square-product-card > div:nth-child(2) {
-  height: 42px;
-  padding-top: 3px;
-  gap: 1px;
-}
-.carta-browse-modal.carta-browse-modal-compact:has([data-carta-price-lines] > span:nth-child(2))
-  .carta-square-product-card > div:nth-child(2) {
-  height: clamp(50px, 14.5vw, 63px);
-}
-@media (max-height: 700px) {
-  /* En pantallas web bajas, un poco menos de imagen deja otra fila completa. */
-  .carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row > div {
-    width: 82%;
-  }
-}
-@media (max-width: 359px) {
-  /* En los móviles estrechos priorizar legibilidad: no reducir tanto la foto. */
-  .carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row > div {
-    width: 94%;
-  }
-  .carta-browse-modal.carta-browse-modal-compact .carta-square-product-card > div:nth-child(2) {
-    min-height: 45px;
-  }
-}
-
 body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-browse-modal > div:first-child :is(h2, button, button span) {
   color: #fff;
 }
@@ -11477,33 +11454,46 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   min-width: 0;
   align-items: stretch;
 }
-/* Solo la foto vive dentro del cuadrado blanco. */
-.carta-browse-modal .carta-square-product-card > div:first-child {
+/* La zona blanca conserva exactamente su formato cuadrado original.
+   La fotografía usa el espacio superior; los controles forman el borde inferior. */
+.carta-browse-modal .carta-square-product-card [data-carta-product-photo] {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 100%;
   height: auto;
   aspect-ratio: 1 / 1;
   min-height: 0;
   flex: none;
-  padding: clamp(3px, .9vw, 5px);
+  padding: 0;
   overflow: hidden;
   border-radius: clamp(13px, 4vw, 19px);
   background: #fff;
 }
-.carta-browse-modal .carta-square-product-card > div:first-child > div {
+.carta-browse-modal .carta-square-product-card [data-carta-product-photo] > div:first-child {
+  box-sizing: border-box;
+  position: relative;
   width: 100%;
-  height: 100%;
+  max-width: 100%;
+  min-height: 0;
+  height: auto;
+  flex: 1 1 0%;
+  overflow: hidden;
 }
-.carta-browse-modal .carta-square-product-card > div:first-child button,
-.carta-browse-modal .carta-square-product-card > div:first-child [aria-hidden] {
+.carta-browse-modal .carta-square-product-card [data-carta-product-photo] > div:first-child > button:first-child {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   max-width: 100%;
   height: 100%;
+  padding: clamp(3px, .9vw, 5px);
   aspect-ratio: auto;
   background: transparent;
 }
-.carta-browse-modal .carta-square-product-card > div:first-child img {
+.carta-browse-modal .carta-square-product-card [data-carta-product-photo] > div:first-child img {
   display: block;
   width: 100%;
   height: 100%;
@@ -11511,6 +11501,20 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   max-height: 100%;
   object-fit: contain;
   object-position: center;
+}
+/* Alineación de filas: cada tarjeta y cada precio empiezan a la misma altura. */
+.carta-browse-modal .carta-product-grid-row {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: stretch;
+  align-items: stretch;
+  column-gap: 10px;
+}
+.carta-browse-modal .carta-product-grid-row > div {
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
 }
 /* /pedido: acceso persistente al carrito en el modal de categorías/subcategorías.
    La carta pública no recibe este pie; solo existe cuando eventOrder.openCart. */
@@ -11649,163 +11653,163 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   text-overflow: ellipsis;
 }
 
-/* /pedido: controles discretos bajo la foto, dentro de su marco blanco.
-   El área de la imagen y los botones son hermanos en flujo flex:
-   nunca se superponen ni se tapa parte de la fotografía. */
-.carta-browse-modal .carta-square-product-card:has([data-carta-order-controls]:not([data-inline]))
-  > div:first-child > div {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-.carta-browse-modal .carta-square-product-card:has([data-carta-order-controls]:not([data-inline]))
-  > div:first-child > div > button:first-child {
-  flex: 1 1 0%;
-  height: auto;
-  min-height: 0;
-}
-.carta-browse-modal .carta-square-product-card [data-carta-order-controls] {
+/* Selector del catálogo: franja inferior integrada, sin márgenes ni
+   redondeo en sus esquinas superiores. Los inferiores los recorta la card. */
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls],
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls][data-inline] {
   position: static;
   z-index: 2;
   display: flex;
-  flex: 0 0 auto;
+  flex: 0 0 clamp(22px, 6vw, 29px);
   align-items: stretch;
-  width: min(70%, 94px);
-  height: 19px;
-  margin: 2px auto 0;
+  width: 100%;
+  max-width: 100%;
+  height: clamp(22px, 6vw, 29px);
+  min-height: 0;
+  padding: 0;
+  margin: 0;
   transform: none;
   overflow: hidden;
-  border-radius: 999px;
-  filter: drop-shadow(0 1px 1px rgb(14 39 27 / .10));
+  border: 0;
+  border-top: 1px solid #b7d5bc;
+  border-radius: 0;
+  background: transparent;
+  filter: none;
 }
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button {
   display: flex;
   flex: 1 1 0;
   align-items: center;
   justify-content: center;
-  width: auto;
+  width: 100%;
   min-width: 0;
   max-width: none;
   height: 100%;
-  padding: 0;
   margin: 0;
-  border-style: solid;
-  border-width: 1px;
+  padding: 0;
+  border: 0;
   border-radius: 0;
   font-weight: 800;
   line-height: 1;
   touch-action: manipulation;
   cursor: pointer;
 }
-.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action="add"] {
-  border-color: #36764b;
-  border-radius: 999px;
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action='add'] {
   background: #e1f1e5;
   color: #245b36;
-  font-size: 8px;
+  font-size: clamp(10px, 2.7vw, 12px);
 }
-.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action="remove"] {
-  border-color: #b4535a;
-  border-radius: 999px 0 0 999px;
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action='remove'] {
   background: #f8e7e8;
   color: #a73f48;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 650;
 }
-.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action="increment"] {
-  border-color: #36764b;
-  border-radius: 0 999px 999px 0;
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action='increment'] {
+  border-left: 1px solid #c6d4c9;
   background: #e1f1e5;
   color: #245b36;
   font-size: 13px;
-  font-weight: 600;
-  margin-left: -1px;
+  font-weight: 650;
 }
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button:active {
   filter: brightness(.94);
 }
-/* Sin foto: conservar el control debajo del nombre y precio. */
-.carta-browse-modal .carta-square-product-card [data-carta-order-controls][data-inline] {
-  position: static;
-  flex: 0 0 auto;
-  margin-top: 4px;
-}
-.carta-browse-modal .carta-square-product-card > div:nth-child(2):has([data-carta-order-controls][data-inline]) {
-  height: auto;
-  min-height: 70px;
-}
 
-/* Nombre y precio forman parte de la misma ficha pulsable, pero quedan fuera. */
-.carta-browse-modal .carta-square-product-card > div:nth-child(2) {
+/* Precio siempre sobre el nombre, ambos fuera de la tarjeta blanca.
+   La ficha reserva el mismo bloque de texto para toda la fila. */
+.carta-browse-modal .carta-square-product-card [data-carta-product-info] {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  flex: 0 0 auto;
-  height: clamp(50px, 14.5vw, 63px);
+  height: clamp(64px, 18vw, 78px);
   min-height: 0;
-  justify-content: flex-start;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 3px;
+  justify-content: flex-start;
+  gap: 2px;
   padding: 5px 0 0;
   background: transparent;
-  cursor: pointer;
-}
-.carta-browse-modal .carta-square-product-card > div:nth-child(2) > p:first-child {
-  display: -webkit-box;
-  width: 100%;
-  min-height: 0;
-  max-height: 2.26em;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  font-size: clamp(9px, 2.65vw, 12px);
-  font-weight: 800;
-  line-height: 1.13;
-  letter-spacing: -.02em;
-  text-align: center;
-  text-wrap: balance;
-  color: #fff;
-}
-.carta-browse-modal .carta-square-product-card > div:nth-child(2) > p:first-child.carta-catalog-long-name {
-  font-size: clamp(8px, 2.27vw, 10px);
 }
 .carta-browse-modal .carta-square-product-card [data-carta-price-lines] {
-  min-height: 0;
-  gap: 2px;
-  padding: 0;
+  display: flex;
+  flex: 0 0 20px;
+  width: 100%;
+  min-width: 0;
+  min-height: 20px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 3px;
   margin: 0;
+  padding: 0;
   background: transparent;
+  white-space: nowrap;
 }
 .carta-browse-modal .carta-square-product-card [data-carta-price-lines] > span {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
   font-family: inherit;
-  font-size: clamp(9px, 2.43vw, 11px);
-  font-weight: 550;
-  line-height: 1.17;
-  letter-spacing: 0;
+  font-size: clamp(13px, 3.45vw, 17px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.015em;
   color: #fff;
 }
 .carta-browse-modal .carta-square-product-card [data-carta-price-lines] > span > span {
   font-family: inherit;
   color: #fff;
 }
-.carta-browse-modal .carta-square-product-card [data-carta-price-lines] > span > span:first-child {
-  font-weight: 500;
+.carta-browse-modal .carta-square-product-card [data-carta-price-lines]:has(> span:nth-child(2)) > span {
+  font-size: clamp(7px, 1.95vw, 10px);
 }
-/* Lanzador Plato Marbella: respeta el precio de origen y la misma estructura. */
-.carta-browse-modal .carta-square-product-card > div:nth-child(2) > p:nth-child(2) {
+.carta-browse-modal .carta-square-product-card [data-carta-display-price],
+.carta-browse-modal .carta-square-product-card [data-carta-product-info] > span:first-child {
+  display: block;
+  flex: 0 0 20px;
+  min-height: 20px;
+  margin: 0;
+  white-space: nowrap;
   font-family: inherit;
-  font-size: clamp(9px, 2.43vw, 11px);
-  font-weight: 550;
-  line-height: 1.17;
+  font-size: clamp(13px, 3.45vw, 17px);
+  font-weight: 700;
+  line-height: 20px;
   color: #fff;
 }
-/* En móviles estrechos el texto reduce su tamaño, no las tres columnas. */
+.carta-browse-modal .carta-square-product-card [data-carta-display-name] {
+  display: -webkit-box;
+  width: 100%;
+  min-height: 0;
+  max-height: 3.48em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: clamp(10px, 2.8vw, 12px);
+  font-weight: 800;
+  line-height: 1.16;
+  letter-spacing: -.015em;
+  text-align: center;
+  text-wrap: balance;
+  text-transform: uppercase;
+  color: #fff;
+}
+.carta-browse-modal .carta-square-product-card [data-carta-display-name].carta-catalog-long-name {
+  font-size: clamp(9px, 2.48vw, 11px);
+}
+/* No se reduce la tarjeta para crear espacio; se aumenta la distancia
+   entre filas completas. */
+.carta-browse-modal.carta-browse-modal-compact .carta-product-grid-row + .carta-product-grid-row {
+  margin-top: clamp(13px, 4vw, 21px);
+}
 @media (max-width: 359px) {
-  .carta-browse-modal .carta-product-grid-row { gap: 7px; }
-  .carta-browse-modal .carta-square-product-card > div:first-child { padding: 3px; }
-  .carta-browse-modal .carta-square-product-card > div:nth-child(2) { padding-top: 4px; min-height: 45px; }
-  .carta-browse-modal .carta-square-product-card > div:nth-child(2) > p:first-child { font-size: 8px; }
-  .carta-browse-modal .carta-square-product-card > div:nth-child(2) > p:first-child.carta-catalog-long-name { font-size: 7.5px; }
-  .carta-browse-modal .carta-square-product-card [data-carta-price-lines] > span { font-size: 8px; }
+  .carta-browse-modal .carta-product-grid-row { column-gap: 7px; }
+  .carta-browse-modal .carta-square-product-card [data-carta-display-name] { font-size: 9px; }
+  .carta-browse-modal .carta-square-product-card [data-carta-display-name].carta-catalog-long-name { font-size: 8px; }
+  .carta-browse-modal .carta-square-product-card [data-carta-price-lines] > span { font-size: 11px; }
+  .carta-browse-modal .carta-square-product-card [data-carta-price-lines]:has(> span:nth-child(2)) > span { font-size: 7px; }
 }
 
 /* No mostrar media fila en reposo: viewport calculado con filas completas.
