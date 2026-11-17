@@ -30,11 +30,18 @@ export function detectOvertimeTotalIntent(
   previousUserMessages: string[] = [],
 ): OvertimeTotalIntent {
   const q = normalize(question);
-  const overtime = /\b(?:horas? extras?|horas? extraordinarias?)\b/.test(q);
+  const overtimeMatch = /\b(?:horas? extras?|horas? extraordinarias?)\b/.exec(q);
   const cost = /\b(?:coste|costo|costes|costos|importe|importes|total|gasto|euros|pagar|dinero|cuanto)\b/.test(q);
   const group = /\b(?:todos|todas|toda la plantilla|global|conjunto|plantilla|trabajadores|empleados|personal|equipo)\b/.test(q);
-  if (!overtime || !cost || !group) return { matched: false, period: null };
-  const period = explicitPeriod(question)
+  const currentWeek = explicitPeriod(question);
+  // «coste de horas extras de la semana pasada» sin nombre = total semanal;
+  // «coste de horas extras de Silvia de la semana pasada» no es un agregado.
+  const afterOvertime = overtimeMatch ? q.slice(overtimeMatch.index + overtimeMatch[0].length) : '';
+  const namedPerson = /\b(?:de|del|para|correspondientes a)\s+(?!(?:la semana|esta semana|semana pasada|semana anterior)\b)[a-z]+\b/.test(afterOvertime);
+  if (!overtimeMatch || !cost || !(group || (currentWeek && !namedPerson))) {
+    return { matched: false, period: null };
+  }
+  const period = currentWeek
     ?? [...previousUserMessages.slice(-4)].reverse()
       .filter(text => /\b(?:horas? extras?|horas? extraordinarias?)\b/.test(normalize(text)))
       .map(explicitPeriod)

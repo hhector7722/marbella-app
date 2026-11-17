@@ -52,6 +52,13 @@ test('detecta total de toda la plantilla y hereda solo contexto de horas extras'
   );
   assert.equal(detectOvertimeTotalIntent('horas extras de Silvia').matched, false);
   assert.equal(detectOvertimeTotalIntent('coste total horas extra de Silvia').matched, false);
+  assert.deepEqual(
+    detectOvertimeTotalIntent('cuanto es el coste de horas extras de la semana pasada'),
+    { matched: true, period: 'semana_pasada' },
+  );
+  assert.equal(detectOvertimeTotalIntent('coste de horas extras de Silvia de la semana pasada').matched, false);
+  assert.equal(detectOvertimeTotalIntent('coste de horas extras para Silvia esta semana').matched, false);
+
   assert.equal(detectOvertimeTotalIntent('total ventas de todos los trabajadores').matched, false);
 });
 
