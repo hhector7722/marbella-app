@@ -244,6 +244,18 @@ export function CartaStaffMenuProductCard({
   const isDrink = isCartaDrinksSection(row.category_parent_name)
   const layoutFactor = getCartaProductPhotoScaleFactor(row.carta_photo_scale, isDrink)
   const frameStyle = photoFrameStyle ?? getCartaProductPhotoFrameStyle(isDrink, layoutFactor)
+  // Regla común para /carta, /pedido y staff: solo ampliar con imagen secundaria.
+  // Excepción: todos los productos de la categoría padre «Platos» admiten ampliación.
+  const canEnlargePhoto =
+    Boolean(row.photo_url?.trim()) &&
+    (Boolean(row.lightbox_photo_url?.trim()) ||
+      row.category_parent_name?.trim().toLowerCase() === 'platos')
+  const photoHasAction =
+    canEnlargePhoto ||
+    eventTapToAdd ||
+    (productReorderMode && Boolean(onReorderTap)) ||
+    (isPlatoMarbellaLauncher && Boolean(onOpenPlatoMarbella)) ||
+    (editMode && Boolean(onEditProduct))
 
   return (
     <div
@@ -282,9 +294,12 @@ export function CartaStaffMenuProductCard({
                         ? 'cursor-default'
                         : eventTapToAdd
                           ? 'cursor-pointer'
-                          : 'cursor-zoom-in'
+                          : canEnlargePhoto
+                            ? 'cursor-zoom-in'
+                            : 'cursor-default'
                 )}
                 style={squareLayout ? undefined : frameStyle}
+                disabled={!photoHasAction}
                 aria-label={
                   eventTapToAdd
                     ? hasDualRacion
@@ -296,7 +311,9 @@ export function CartaStaffMenuProductCard({
                         ? 'Editar producto'
                         : editMode
                           ? 'Foto del producto'
-                          : 'Ver foto ampliada'
+                          : canEnlargePhoto
+                            ? 'Ver foto ampliada'
+                            : 'Foto del producto'
                 }
                 onClick={(e) => {
                   if (eventTapToAdd) {
@@ -321,7 +338,7 @@ export function CartaStaffMenuProductCard({
                     onEditProduct(row.articulo_id)
                     return
                   }
-                  setLightboxOpen(true)
+                  if (canEnlargePhoto) setLightboxOpen(true)
                 }}
               >
                 <CartaMenuProductPhoto
@@ -396,13 +413,13 @@ export function CartaStaffMenuProductCard({
         )}
         role={
           (editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher) ||
-          (squareLayout && !!row.photo_url && !editMode && !eventTapToAdd && !isPlatoMarbellaLauncher)
+          (squareLayout && canEnlargePhoto && !editMode && !eventTapToAdd && !isPlatoMarbellaLauncher)
             ? 'button'
             : undefined
         }
         tabIndex={
           (editMode && onEditProduct && !productReorderMode && !isPlatoMarbellaLauncher) ||
-          (squareLayout && !!row.photo_url && !editMode && !eventTapToAdd && !isPlatoMarbellaLauncher)
+          (squareLayout && canEnlargePhoto && !editMode && !eventTapToAdd && !isPlatoMarbellaLauncher)
             ? 0
             : undefined
         }
@@ -413,7 +430,7 @@ export function CartaStaffMenuProductCard({
               ? () => onOpenPlatoMarbella()
               : editMode && onEditProduct && !productReorderMode
                 ? () => onEditProduct(row.articulo_id)
-                : squareLayout && row.photo_url
+                : squareLayout && canEnlargePhoto
                   ? () => setLightboxOpen(true)
                   : undefined
         }
@@ -432,7 +449,7 @@ export function CartaStaffMenuProductCard({
                     onEditProduct(row.articulo_id)
                   }
                 }
-              : squareLayout && row.photo_url
+              : squareLayout && canEnlargePhoto
                 ? (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
@@ -489,7 +506,7 @@ export function CartaStaffMenuProductCard({
         title={displayName}
         open={
           lightboxOpen &&
-          !!row.photo_url &&
+          canEnlargePhoto &&
           !(productReorderMode && onReorderTap) &&
           !editMode &&
           !eventTapToAdd
