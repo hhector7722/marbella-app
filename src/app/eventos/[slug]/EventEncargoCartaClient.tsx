@@ -552,6 +552,7 @@ export default function EventEncargoCartaClient({
         eventOrder={eventOrder}
         eventEncargoEdit={eventEncargoEdit}
         hideEmptyMenuCategories
+        catalogDisplay={isClientToken}
         footer={footer}
       />
 
