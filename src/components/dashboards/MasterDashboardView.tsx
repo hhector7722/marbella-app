@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import matteStyles from './MasterDashboardMatte.module.css';
 import { addDays, addMonths, endOfMonth, format, getISOWeek, startOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
@@ -105,6 +106,7 @@ function MasterStaffOvertimeRow({
 
 export default function MasterDashboardView({ initialData, initialUserId }: MasterDashboardViewProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const supabase = createClient();
     const { actualBalance, boxes, loading: treasuryLoading, refresh } = useHomeTreasury({
         actualBalance: initialData?.actualBalance,
@@ -533,7 +535,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     };
 
     return (
-        <div className="home-mosaic-page">
+        <div className={cn("home-mosaic-page", pathname === "/master/dashboard" && matteStyles.masterSurface)}>
             <HomeScreen layout="master" className={attendanceExpanded ? 'asis-expanded' : undefined}>
                 <HomeScreenSlot size="wide" instance="dashboard-ventas">
                     <DashboardVentasSection
