@@ -84,6 +84,7 @@ export function CartaStaffMenuProductCard({
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [racionPickerOpen, setRacionPickerOpen] = useState(false)
+  const [racionPickerAction, setRacionPickerAction] = useState<'add' | 'remove'>('add')
   const displayName =
     isPlatoMarbellaLauncher && platoLauncherTitle?.trim()
       ? platoLauncherTitle.trim()
@@ -97,9 +98,10 @@ export function CartaStaffMenuProductCard({
       : null
   /** Tiene ración medio (mismo artículo TPV o par emparejado). */
   const hasDualRacion = Boolean(row.precio_medio_display)
-  /** Pedido = fotocopia de carta: tap añade (o abre picker si hay mitad). */
-  const eventTapToAdd = eventOrderActive && Boolean(eventOrder?.tapToAdd)
-  const eventStepper = eventOrderActive && !eventOrder?.tapToAdd
+  /** La carta original permanece pulsable para ampliar fotografías. */
+  const eventPhotoControls = eventOrderActive && Boolean(eventOrder?.photoControls)
+  const eventTapToAdd = eventOrderActive && Boolean(eventOrder?.tapToAdd) && !eventPhotoControls
+  const eventStepper = eventOrderActive && !eventOrder?.tapToAdd && !eventPhotoControls
   const eventQty = eventOrderQtyFor(eventOrder, row.articulo_id, 'entero')
   const eventQtyMedio = hasDualRacion
     ? medioArticuloId != null
@@ -132,15 +134,96 @@ export function CartaStaffMenuProductCard({
     }
   }
 
+  const removeEntero = () => {
+    if (!eventOrder || eventQty <= 0) return
+    eventOrder.onQuantityChange(row.articulo_id, Math.max(0, eventQty - 1), {
+      portion: 'entero',
+    })
+  }
+
+  const removeMedio = () => {
+    if (!eventOrder || eventQtyMedio <= 0) return
+    eventOrder.onQuantityChange(
+      medioArticuloId ?? row.articulo_id,
+      Math.max(0, eventQtyMedio - 1),
+      { portion: medioArticuloId != null ? 'entero' : 'medio' }
+    )
+  }
+
+  const requestAdd = () => {
+    if (hasDualRacion) {
+      setRacionPickerAction('add')
+      setRacionPickerOpen(true)
+    } else {
+      addEntero()
+    }
+  }
+
+  const requestRemove = () => {
+    if (eventQtyTotal <= 0) return
+    if (hasDualRacion && eventQty > 0 && eventQtyMedio > 0) {
+      setRacionPickerAction('remove')
+      setRacionPickerOpen(true)
+    } else if (eventQty > 0) {
+      removeEntero()
+    } else {
+      removeMedio()
+    }
+  }
+
+  const photoOrderControls = eventPhotoControls ? (
+    <div
+      data-carta-order-controls
+      {...(!row.photo_url ? { 'data-inline': true } : {})}
+      aria-label={`Unidades de ${displayName}: ${eventQtyTotal}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {eventQtyTotal === 0 ? (
+        <button
+          type="button"
+          data-action="add"
+          aria-label={`Añadir ${displayName} al pedido`}
+          onClick={(e) => {
+            e.stopPropagation()
+            requestAdd()
+          }}
+        >
+          AÑADIR
+        </button>
+      ) : (
+        <>
+          <button
+            type="button"
+            data-action="remove"
+            aria-label={`Quitar una unidad de ${displayName}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              requestRemove()
+            }}
+          >
+            −
+          </button>
+          <button
+            type="button"
+            data-action="increment"
+            aria-label={`Añadir una unidad de ${displayName}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              requestAdd()
+            }}
+          >
+            +
+          </button>
+        </>
+      )}
+    </div>
+  ) : null
+
   const handleTapAdd = (e: MouseEvent) => {
     if (!eventOrder || !eventTapToAdd) return
     e.preventDefault()
     e.stopPropagation()
-    if (hasDualRacion) {
-      setRacionPickerOpen(true)
-      return
-    }
-    addEntero()
+    requestAdd()
   }
 
   useEffect(() => {
@@ -241,7 +324,8 @@ export function CartaStaffMenuProductCard({
                   squareLayout={squareLayout}
                 />
               </button>
-              {eventTapToAdd && eventQtyTotal > 0 ? (
+              {eventPhotoControls ? photoOrderControls : null}
+              {(eventTapToAdd || eventPhotoControls) && eventQtyTotal > 0 ? (
                 <span
                   className={cn(
                     'pointer-events-none absolute right-1 top-1 z-30',
@@ -369,6 +453,7 @@ export function CartaStaffMenuProductCard({
             variant="staff"
           />
         )}
+        {eventPhotoControls && !row.photo_url ? photoOrderControls : null}
         {eventStepper && eventOrder ? (
           <EventCartaOrderControls
             className="mt-1"
@@ -416,13 +501,17 @@ export function CartaStaffMenuProductCard({
         {...(lightboxParentInstance ? { parentInstance: lightboxParentInstance } : {})}
       >
         <div className="space-y-3">
-          <p className="text-center text-sm font-semibold text-zinc-600">Selecciona la ración</p>
+          <p className="text-center text-sm font-semibold text-zinc-600">
+            {racionPickerAction === 'remove' ? 'Selecciona la ración que quieres quitar' : 'Selecciona la ración'}
+          </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <button
               type="button"
               className="flex min-h-14 flex-col items-center justify-center rounded-xl bg-[#36606F] px-2 py-3 text-white active:scale-[0.98]"
+              disabled={racionPickerAction === 'remove' && eventQty <= 0}
               onClick={() => {
-                addEntero()
+                if (racionPickerAction === 'remove') removeEntero()
+                else addEntero()
                 setRacionPickerOpen(false)
               }}
             >
@@ -436,8 +525,10 @@ export function CartaStaffMenuProductCard({
             <button
               type="button"
               className="flex min-h-14 flex-col items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-3 text-zinc-900 active:scale-[0.98]"
+              disabled={racionPickerAction === 'remove' && eventQtyMedio <= 0}
               onClick={() => {
-                addMedio()
+                if (racionPickerAction === 'remove') removeMedio()
+                else addMedio()
                 setRacionPickerOpen(false)
               }}
             >
