@@ -151,6 +151,10 @@ export function CartaStaffMenuProductCard({
   }
 
   const requestAdd = () => {
+    if (isPlatoMarbellaLauncher && eventOrder?.onAddPlatoMarbella && onOpenPlatoMarbella) {
+      onOpenPlatoMarbella()
+      return
+    }
     if (hasDualRacion) {
       setRacionPickerAction('add')
       setRacionPickerOpen(true)
@@ -161,6 +165,10 @@ export function CartaStaffMenuProductCard({
 
   const requestRemove = () => {
     if (eventQtyTotal <= 0) return
+    if (isPlatoMarbellaLauncher && eventOrder?.onRemoveLastPlatoMarbella) {
+      eventOrder.onRemoveLastPlatoMarbella(row.articulo_id)
+      return
+    }
     if (hasDualRacion && eventQty > 0 && eventQtyMedio > 0) {
       setRacionPickerAction('remove')
       setRacionPickerOpen(true)
