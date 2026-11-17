@@ -239,7 +239,7 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
     }
   };
 
-  const activityRow = (event: UsageSessionEvent, showUser: boolean) => {
+  const activityRow = (event: UsageSessionEvent) => {
     const isOpen = expanded === event.id;
     const chat = chatDetails[event.id];
     return (
@@ -252,10 +252,6 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
           </span>
           <span className="min-w-0 flex-1">
             <span className="block break-words text-[13px] font-medium leading-5 text-zinc-800">{event.title}</span>
-            <span className="mt-1 flex flex-wrap items-center gap-1.5">
-              {showUser ? <span className="text-[11px] font-semibold text-zinc-600">{event.displayName}</span> : null}
-              <DeviceChip device={deviceOf(event)} />
-            </span>
           </span>
           {isOpen ? <ChevronDown className="mt-1 shrink-0 text-[#36606F]" size={16} /> :
             <ChevronRight className="mt-1 shrink-0 text-zinc-400" size={16} />}
@@ -290,7 +286,6 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
   };
 
   const totals = counts ?? { total: 0, smartphone: 0, desktop: 0, tablet: 0, unknown: 0 };
-  const usersCount = new Set(events.map((event) => event.profileId)).size;
   const sessionEvents = activeSession
     ? (sessionDetails[activeSession.key]?.events ?? [...activeSession.events].reverse())
     : [];
@@ -359,15 +354,28 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
         <div className="border-t border-zinc-100 px-2 pb-1 sm:px-4">
           {events.map((event, index) => {
             const date = dayOf(event.createdAt);
-            const previous = index ? dayOf(events[index - 1].createdAt) : null;
+            const previousEvent = index > 0 ? events[index - 1] : null;
+            const previousDate = previousEvent ? dayOf(previousEvent.createdAt) : null;
+            const showGroupHeader = !previousEvent
+              || date !== previousDate
+              || event.profileId !== previousEvent.profileId
+              || deviceOf(event) !== deviceOf(previousEvent);
             return (
               <div key={event.id}>
-                {date !== previous ? (
+                {date !== previousDate ? (
                   <div className="sticky top-0 z-[1] border-b border-zinc-100 bg-white/95 px-2 py-3 text-xs font-bold capitalize text-[#36606F] backdrop-blur-sm">
                     {displayDate(event.createdAt)}
                   </div>
                 ) : null}
-                {activityRow(event, usersCount > 1)}
+                {showGroupHeader ? (
+                  <div className="flex items-center gap-2 border-b border-zinc-100 bg-zinc-50/80 px-3 py-2">
+                    <span className="min-w-0 truncate text-xs font-bold text-[#36606F]">
+                      {event.displayName}
+                    </span>
+                    <DeviceChip device={deviceOf(event)} />
+                  </div>
+                ) : null}
+                {activityRow(event)}
               </div>
             );
           })}
@@ -435,7 +443,7 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
                   <p className="flex items-center gap-2 p-3 text-xs text-zinc-500"><Loader2 className="animate-spin" size={14} /> Recuperando sesión completa…</p>
                 ) : null}
                 <div className="max-h-[560px] overflow-y-auto p-2 sm:p-3">
-                  {sessionEvents.map((event) => activityRow(event, false))}
+                  {sessionEvents.map((event) => activityRow(event))}
                 </div>
                 {sessionDetails[activeSession.key]?.truncated ? (
                   <p className="p-3 text-xs text-amber-700">Esta sesión supera 1.500 eventos; consulta la cronología para recorrerlos todos.</p>
