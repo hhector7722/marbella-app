@@ -132,24 +132,44 @@ export function EventEncargoCartFooter({
           </ul>
         ) : null}
 
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            instance="event-encargo-ver-pedido"
-            disabled={!hasLines}
-            onClick={() => setCartOpen(true)}
-            className="relative flex-1"
-          >
-            Ver pedido
-            {hasLines && units > 0 ? <UnitsBadge count={units} /> : null}
-          </Button>
+        <div className={cn('flex items-center gap-2', clientOrderMode && 'justify-center')}>
+          {clientOrderMode ? (
+            <div className="relative inline-flex shrink-0">
+              <Button
+                type="button"
+                variant="secondary"
+                instance="event-encargo-ver-pedido"
+                disabled={!hasLines}
+                onClick={() => setCartOpen(true)}
+                className="flex-none"
+              >
+                Ver pedido
+              </Button>
+              {hasLines && units > 0 ? (
+                <span className="pointer-events-none absolute -right-2 top-[5px] z-10">
+                  <UnitsBadge count={units} />
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              instance="event-encargo-ver-pedido"
+              disabled={!hasLines}
+              onClick={() => setCartOpen(true)}
+              className="relative flex-1"
+            >
+              Ver pedido
+              {hasLines && units > 0 ? <UnitsBadge count={units} /> : null}
+            </Button>
+          )}
 
           <Button
             type="button"
             variant="primary"
             instance="event-encargo-send"
-            className="flex-1"
+            className={clientOrderMode ? 'flex-none' : 'flex-1'}
             disabled={saveBlocked}
             loading={isPending}
             onClick={requestSave}
