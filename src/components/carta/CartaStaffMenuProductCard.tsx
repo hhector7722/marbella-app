@@ -474,6 +474,7 @@ export function CartaStaffMenuProductCard({
             precio={row.precio}
             precioMedio={row.precio_medio_display}
             variant="staff"
+            singleLine={squareLayout && !editMode}
           />
         )}
         <p
