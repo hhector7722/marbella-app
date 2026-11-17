@@ -8,7 +8,6 @@ import { Modal } from '@/components/ui/modal'
 import { cn } from '@/lib/utils'
 import { PlateBuilder, PlateZone, type PlateZoneItem } from '@/components/carta/PlateBuilder'
 import { useStudioCutout } from '@/components/carta/useStudioCutout'
-import { formatCartaPrice } from '@/lib/carta-price-display'
 import {
   chunkCartaProductGridRows,
   getCartaProductPhotoScaleFactor,
@@ -193,6 +192,7 @@ export function PlatoMarbellaMenuView({
   launcherArticuloId = null,
   eventOrder,
   className,
+  onAddedToOrder,
 }: {
   rows: OptionRow[]
   lang: CartaLang
@@ -201,10 +201,11 @@ export function PlatoMarbellaMenuView({
   /** Pedido por evento: permite «Afegeix al demanat» al completar el plato. */
   eventOrder?: EventOrderCartaControl
   className?: string
+  /** Tras registrar el plato, volver a la categoría Platos sin cerrar la carta. */
+  onAddedToOrder?: () => void
 }) {
   const ui = tPlatoMarbellaUi(lang)
   const grouped = useMemo(() => groupPlatoMarbellaItems(rows), [rows])
-  const menuPrice = grouped.menuPrice
   const slotLabels = platoMarbellaSlotsForLang(lang)
 
   const [selections, setSelections] = useState<Partial<Record<PlatoMarbellaSlot, Selection>>>({})
@@ -252,8 +253,9 @@ export function PlatoMarbellaMenuView({
     } else {
       eventOrder.onQuantityChange(launcherArticuloId, eventOrderQtyFor(eventOrder, launcherArticuloId) + 1)
     }
+    onAddedToOrder?.()
     toast.success(ui.addedToOrder)
-  }, [eventOrder, launcherArticuloId, selections, ui.addedToOrder])
+  }, [eventOrder, launcherArticuloId, selections, onAddedToOrder, ui.addedToOrder])
 
   const requiredSlots = useMemo(
     () => PLATO_MARBELLA_SLOTS.filter((s) => (grouped.sections[s] ?? []).length > 0),
@@ -330,9 +332,7 @@ export function PlatoMarbellaMenuView({
             instance="plat-marbella-afegir-al-demanat"
             onClick={onAddToOrder}
           >
-            {menuPrice != null
-              ? `${eventOrder?.onAddPlatoMarbella ? { es: 'Añadir', ca: 'Afegir', en: 'Add' }[lang] : ui.addToOrder} · ${formatCartaPrice(menuPrice).trim()}`
-              : (eventOrder?.onAddPlatoMarbella ? { es: 'Añadir', ca: 'Afegir', en: 'Add' }[lang] : ui.addToOrder)}
+            {{ es: 'Añadir', ca: 'Afegir', en: 'Add' }[lang]}
           </Button>
         </div>
       ) : null}
