@@ -168,8 +168,10 @@ export async function POST(req: Request) {
 
   // La agregación oficial se consulta por Supabase sin consumir una API LLM.
   // Así sigue funcionando aunque todos los proveedores gratuitos fallen.
-  if (!detectOvertimeTotalIntent(userText).matched
-    && !detectOvertimeBreakdownIntent(userText).matched
+  const previousUserTexts = body.messages.filter(message => message.role === 'user')
+    .slice(0, -1).map(uiMessageText).filter(Boolean);
+  if (!detectOvertimeTotalIntent(userText, previousUserTexts).matched
+    && !detectOvertimeBreakdownIntent(userText, previousUserTexts).matched
     && !matchesTodayPublishedScheduleIntent(userText)
     && configuredFreeProviders(freeKeys).length === 0) {
     return Response.json(
@@ -212,11 +214,7 @@ export async function POST(req: Request) {
   }
 
   const today = madridDate();
-  const earlierUserMessages = body.messages
-    .filter((message) => message.role === "user")
-    .slice(0, -1)
-    .map(uiMessageText)
-    .filter(Boolean);
+  const earlierUserMessages = previousUserTexts;
 
   const overtimeBreakdown = detectOvertimeBreakdownIntent(userText, earlierUserMessages);
   const overtimeTotal = overtimeBreakdown.matched

@@ -23,6 +23,29 @@ test('sin turnos publicados no afirma ausencia de trabajadores', async () => {
   assert.match(answer!, /no significa que no haya trabajadores presentes/);
 });
 
+test('los turnos publicados se formatean según hora de Madrid y no como fichajes', async () => {
+  const example = [{
+    user_id: 'u1', start_time: '2026-11-17T07:00:00.000Z',
+    end_time: '2026-11-17T15:00:00.000Z',
+  }];
+  const q = {
+    select: () => q, eq: () => q, gte: () => q, lte: () => q,
+    order: () => q, limit: async () => ({ data: example, error: null }),
+    in: () => q,
+  };
+  const supabase = { from: (table: string) => table === 'shifts'
+    ? q
+    : { select: () => ({ in: () => ({ limit: async () => ({
+      data: [{ id: 'u1', first_name: 'Alba', last_name: 'Prueba' }], error: null,
+    }) }) }) },
+  } as unknown as Client;
+  const answer = await tryDirectTodayScheduleAnswer('¿Quién trabaja hoy y en qué horario?', {
+    supabase, role: 'manager', today: '2026-11-17',
+  });
+  assert.match(answer!, /Alba Prueba: 08:00–16:00/);
+  assert.match(answer!, /horarios previstos, no fichajes/);
+});
+
 test('solo gerencia recibe el horario de toda la plantilla', async () => {
   const answer = await tryDirectTodayScheduleAnswer('Quién trabaja hoy y en qué horario?', {
     supabase: {} as Client, role: 'staff', today: '2026-11-17',
