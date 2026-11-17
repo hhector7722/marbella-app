@@ -23,7 +23,7 @@ export type EventEncargoCartLine = {
 }
 
 /** Badge rojo estilo campana de notificaciones. */
-function UnitsBadge({ count }: { count: number }) {
+function UnitsBadge({ count, compact = false }: { count: number; compact?: boolean }) {
   if (count < 1) return null
   const label = count > 99 ? '99+' : String(count)
   return (
@@ -31,7 +31,7 @@ function UnitsBadge({ count }: { count: number }) {
       className={cn(
         'inline-flex shrink-0 items-center justify-center rounded-full bg-[#FF3B30] text-white tabular-nums',
         'font-semibold leading-none',
-        'min-h-[18px] min-w-[18px] px-1 text-[11px]'
+        compact ? 'min-h-4 min-w-4 px-[3px] text-[10px]' : 'min-h-[18px] min-w-[18px] px-1 text-[11px]'
       )}
       aria-hidden
     >
@@ -146,8 +146,8 @@ export function EventEncargoCartFooter({
                 Ver pedido
               </Button>
               {hasLines && units > 0 ? (
-                <span className="pointer-events-none absolute -right-2 top-[5px] z-10">
-                  <UnitsBadge count={units} />
+                <span className="pointer-events-none absolute -right-2 top-[1px] z-10">
+                  <UnitsBadge count={units} compact />
                 </span>
               ) : null}
             </div>
