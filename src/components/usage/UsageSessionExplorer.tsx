@@ -8,6 +8,20 @@ import type { UsageDashboardFilters, UsageSessionEvent, UsageTimelineCounts, Usa
 
 type Device = 'all' | 'smartphone' | 'desktop' | 'tablet' | 'unknown';
 type View = 'timeline' | 'sessions';
+
+type TimelineGroup = {
+  key: string;
+  profileId: string;
+  name: string;
+  device: Device;
+  events: UsageSessionEvent[];
+};
+type TimelineDay = {
+  date: string;
+  firstEventAt: string;
+  count: number;
+  groups: TimelineGroup[];
+};
 type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string };
 type Chat = { messages: ChatMessage[]; truncated: boolean };
 type SessionGroup = {
@@ -47,6 +61,9 @@ const dateFormat = new Intl.DateTimeFormat('es-ES', {
 const shortDate = new Intl.DateTimeFormat('es-ES', {
   timeZone: 'Europe/Madrid', day: '2-digit', month: 'short',
 });
+const numericDateFormat = new Intl.DateTimeFormat('es-ES', {
+  timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric',
+});
 const hourFormat = new Intl.DateTimeFormat('es-ES', {
   timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
 });
@@ -57,7 +74,39 @@ const deviceOf = (event: UsageSessionEvent): Device => event.deviceType ?? 'unkn
 const dayOf = (iso: string) => dateKeyFormat.format(new Date(iso));
 const displayDate = (iso: string) => dateFormat.format(new Date(iso));
 const displayHour = (iso: string) => hourFormat.format(new Date(iso));
+const displayDateTime = (iso: string) =>
+  `${numericDateFormat.format(new Date(iso))} · ${displayHour(iso)}`;
 const compactNumber = (value: number) => new Intl.NumberFormat('es-ES').format(value);
+
+/**
+ * Agrupa únicamente filas contiguas. Un usuario que reaparece después de otro
+ * conserva un bloque nuevo y su posición cronológica.
+ * La clave del primer evento se mantiene estable al añadir páginas anteriores.
+ */
+function groupTimeline(events: UsageSessionEvent[]): TimelineDay[] {
+  const days: TimelineDay[] = [];
+  for (const event of events) {
+    const date = dayOf(event.createdAt);
+    let day = days[days.length - 1];
+    if (!day || day.date !== date) {
+      day = { date, firstEventAt: event.createdAt, count: 0, groups: [] };
+      days.push(day);
+    }
+    day.count += 1;
+
+    const device = deviceOf(event);
+    let group = day.groups[day.groups.length - 1];
+    if (!group || group.profileId !== event.profileId || group.device !== device) {
+      group = {
+        key: event.id, profileId: event.profileId, name: event.displayName,
+        device, events: [],
+      };
+      day.groups.push(group);
+    }
+    group.events.push(event);
+  }
+  return days;
+}
 
 function sessionGroups(events: UsageSessionEvent[]): SessionGroup[] {
   const groups = new Map<string, SessionGroup>();
@@ -116,6 +165,8 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
   const [error, setError] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [sessionDetails, setSessionDetails] = useState<Record<string, { events: UsageSessionEvent[]; truncated: boolean }>>({});
   const [sessionLoading, setSessionLoading] = useState<string | null>(null);
@@ -196,6 +247,7 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
   }, [cursor, loadMore, view, loading, moreLoading, error]);
 
   const groups = useMemo(() => sessionGroups(events), [events]);
+  const timelineDays = useMemo(() => groupTimeline(events), [events]);
   const activeSession = groups.find((group) => group.key === selectedSession) ?? groups[0] ?? null;
   const activeKey = activeSession?.key;
   const activeProfile = activeSession?.profileId;
@@ -247,8 +299,8 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
         <button type="button" aria-expanded={isOpen}
           onClick={() => void openEvent(event)}
           className={`flex min-h-14 w-full items-start gap-2 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-zinc-50 ${isOpen ? 'bg-zinc-50' : ''}`}>
-          <span className="w-[66px] shrink-0 pt-0.5 text-[11px] font-semibold tabular-nums text-zinc-500">
-            {displayHour(event.createdAt)}
+          <span className="w-[157px] shrink-0 whitespace-nowrap pt-0.5 text-[11px] font-semibold tabular-nums text-zinc-500">
+            {displayDateTime(event.createdAt)}
           </span>
           <span className="min-w-0 flex-1">
             <span className="block break-words text-[13px] font-medium leading-5 text-zinc-800">{event.title}</span>
@@ -352,31 +404,51 @@ export function UsageSessionExplorer({ filters }: { filters: UsageDashboardFilte
         <p className="border-t border-zinc-100 px-4 py-8 text-center text-sm text-zinc-500">No hay movimientos para este filtro.</p>
       ) : view === 'timeline' ? (
         <div className="border-t border-zinc-100 px-2 pb-1 sm:px-4">
-          {events.map((event, index) => {
-            const date = dayOf(event.createdAt);
-            const previousEvent = index > 0 ? events[index - 1] : null;
-            const previousDate = previousEvent ? dayOf(previousEvent.createdAt) : null;
-            const showGroupHeader = !previousEvent
-              || date !== previousDate
-              || event.profileId !== previousEvent.profileId
-              || deviceOf(event) !== deviceOf(previousEvent);
+          {timelineDays.map((day) => {
+            const dayCollapsed = collapsedDays[day.date] === true;
             return (
-              <div key={event.id}>
-                {date !== previousDate ? (
-                  <div className="sticky top-0 z-[1] border-b border-zinc-100 bg-white/95 px-2 py-3 text-xs font-bold capitalize text-[#36606F] backdrop-blur-sm">
-                    {displayDate(event.createdAt)}
-                  </div>
-                ) : null}
-                {showGroupHeader ? (
-                  <div className="flex items-center gap-2 border-b border-zinc-100 bg-zinc-50/80 px-3 py-2">
-                    <span className="min-w-0 truncate text-xs font-bold text-[#36606F]">
-                      {event.displayName}
-                    </span>
-                    <DeviceChip device={deviceOf(event)} />
-                  </div>
-                ) : null}
-                {activityRow(event)}
-              </div>
+              <section key={day.date}>
+                <button
+                  type="button"
+                  aria-expanded={!dayCollapsed}
+                  onClick={() => setCollapsedDays((prev) => ({
+                    ...prev, [day.date]: !prev[day.date],
+                  }))}
+                  className="sticky top-0 z-[1] flex w-full items-center gap-2 border-b border-zinc-100 bg-white/95 px-2 py-3 text-left text-xs font-bold capitalize text-[#36606F] backdrop-blur-sm hover:bg-zinc-50"
+                >
+                  {dayCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                  <span className="flex-1">{displayDate(day.firstEventAt)}</span>
+                  <span className="text-[11px] font-medium tabular-nums text-zinc-400">
+                    {compactNumber(day.count)}
+                  </span>
+                </button>
+                {!dayCollapsed ? day.groups.map((group) => {
+                  const groupCollapsed = collapsedGroups[group.key] === true;
+                  return (
+                    <div key={group.key}>
+                      <button
+                        type="button"
+                        aria-expanded={!groupCollapsed}
+                        onClick={() => setCollapsedGroups((prev) => ({
+                          ...prev, [group.key]: !prev[group.key],
+                        }))}
+                        className="flex w-full items-center gap-2 border-b border-zinc-100 bg-zinc-50/80 px-3 py-2 text-left hover:bg-zinc-100/80"
+                      >
+                        {groupCollapsed ? <ChevronRight size={15} className="shrink-0 text-[#36606F]" /> :
+                          <ChevronDown size={15} className="shrink-0 text-[#36606F]" />}
+                        <span className="min-w-0 truncate text-xs font-bold text-[#36606F]">
+                          {group.name}
+                        </span>
+                        <DeviceChip device={group.device} />
+                        <span className="ml-auto shrink-0 text-[11px] tabular-nums text-zinc-400">
+                          {compactNumber(group.events.length)}
+                        </span>
+                      </button>
+                      {!groupCollapsed ? group.events.map((event) => activityRow(event)) : null}
+                    </div>
+                  );
+                }) : null}
+              </section>
             );
           })}
         </div>
