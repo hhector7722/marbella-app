@@ -188,90 +188,141 @@ export function EventEncargoCartFooter({
         usageLabel="Ver pedido encargo"
         variant={clientOrderMode ? 'standard' : 'compact'}
         footer={
-          <div className="grid w-full grid-cols-2 items-center gap-2 sm:flex sm:justify-end">
-            {clientOrderMode ? (
+          clientOrderMode ? (
+            <div data-client-order-footer className="grid w-full min-w-0 grid-cols-2 gap-x-2 gap-y-1">
+              <div className="col-span-2 min-w-0">
+                <Button
+                  type="button"
+                  variant="tertiary"
+                  layout="fill"
+                  instance="event-encargo-cart-add-order-notes"
+                  onClick={() => openNoteEditor('order')}
+                >
+                  {orderNotes.trim() ? 'Editar indicaciones' : 'Añadir indicaciones'}
+                </Button>
+              </div>
+              <div className="min-w-0">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  layout="fill"
+                  instance="event-encargo-cart-continue"
+                  onClick={() => setCartOpen(false)}
+                >
+                  Seguir eligiendo
+                </Button>
+              </div>
+              <div className="min-w-0">
+                <Button
+                  type="button"
+                  variant="primary"
+                  layout="fill"
+                  instance="event-encargo-cart-send"
+                  disabled={saveBlocked}
+                  loading={isPending}
+                  onClick={requestSave}
+                >
+                  {saveLabel}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex w-full items-center justify-end gap-2">
               <Button
                 type="button"
-                variant="tertiary"
-                instance="event-encargo-cart-add-order-notes"
-                onClick={() => openNoteEditor('order')}
+                variant="secondary"
+                instance="event-encargo-cart-continue"
+                onClick={() => setCartOpen(false)}
               >
-                Añadir indicaciones
+                Seguir eligiendo
               </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="secondary"
-              instance="event-encargo-cart-continue"
-              onClick={() => setCartOpen(false)}
-              className={clientOrderMode ? 'justify-self-end' : undefined}
-            >
-              Seguir eligiendo
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              instance="event-encargo-cart-send"
-              disabled={saveBlocked}
-              loading={isPending}
-              onClick={requestSave}
-              className={clientOrderMode ? 'col-span-2 justify-self-end sm:col-span-1' : undefined}
-            >
-              {saveLabel}
-            </Button>
-          </div>
+              <Button
+                type="button"
+                variant="primary"
+                instance="event-encargo-cart-send"
+                disabled={saveBlocked}
+                loading={isPending}
+                onClick={requestSave}
+              >
+                {saveLabel}
+              </Button>
+            </div>
+          )
         }
       >
         <div className="space-y-3">
           {lines.length === 0 ? (
             <EmptyState instance="event-encargo-cart-none" variant="none" title="Aún no hay productos." />
           ) : (
-            <div className="flex max-h-[min(50vh,22rem)] flex-col gap-1 overflow-y-auto overscroll-contain rounded-xl border border-zinc-100 bg-zinc-50/60 px-1">
+            <div
+              className={clientOrderMode
+                ? 'space-y-2'
+                : 'flex max-h-[min(50vh,22rem)] flex-col gap-1 overflow-y-auto overscroll-contain rounded-xl border border-zinc-100 bg-zinc-50/60 px-1'}
+            >
               {lines.map((line) => {
                 const lineTotal = Math.max(0, line.unitPrice) * Math.max(0, line.quantity)
-                return (
-                  <div
-                    key={line.key}
-                    className="flex min-h-12 items-center gap-1 border-b border-zinc-100 py-1 last:border-b-0"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 break-words text-xs font-semibold text-zinc-900" title={line.name}>
-                        {clientOrderMode ? formatCartaOrderProductName(line.name) : line.name}
-                      </p>
-                    </div>
-                    {clientOrderMode ? (
-                      <div className="w-12 shrink-0 sm:w-auto">
+                const quantitySelector = (
+                  <QuantityStepper
+                    value={line.quantity}
+                    max={999}
+                    onDecrement={clientOrderMode && line.quantity === 1 ? () => setRemovalKey(line.key) : undefined}
+                    onChange={(n) => {
+                      const next = Math.max(0, Math.floor(n))
+                      const delta = next - line.quantity
+                      const portion = line.portion ?? 'entero'
+                      if (delta > 0) {
+                        for (let i = 0; i < delta; i++) onIncrement(line.articuloId, portion)
+                      } else if (delta < 0) {
+                        for (let i = 0; i < -delta; i++) onDecrement(line.articuloId, portion)
+                      }
+                    }}
+                    min={0}
+                    ariaLabel={`Cantidad de ${line.name}`}
+                  />
+                )
+
+                if (clientOrderMode) {
+                  return (
+                    <div key={line.key} className="min-w-0 rounded-xl border border-zinc-200/80 bg-white px-3 py-2.5">
+                      <div className="flex min-w-0 items-start justify-between gap-3">
+                        <p className="min-w-0 flex-1 break-words text-[13px] font-bold leading-snug text-zinc-900">
+                          {formatCartaOrderProductName(line.name)}
+                        </p>
+                        <p className="shrink-0 whitespace-nowrap text-[13px] font-bold tabular-nums text-zinc-900">
+                          {formatCartaPrice(lineTotal)}
+                        </p>
+                      </div>
+                      {line.notes?.trim() ? (
+                        <p className="mt-1 break-words text-[11px] leading-snug text-zinc-500">
+                          {line.notes}
+                        </p>
+                      ) : null}
+                      <div className="mt-2 flex min-w-0 items-center justify-between gap-2 border-t border-zinc-100 pt-1">
                         <Button
                           type="button"
                           variant="tertiary"
-                          layout="fill"
                           instance="event-encargo-cart-add-line-note"
                           onClick={() => openNoteEditor('line', line.key)}
-                          aria-label={`Añadir nota a ${line.name}${line.notes ? '. Nota actual: ' + line.notes : ''}`}
                         >
-                          <span className="sm:hidden">+ Nota</span>
-                          <span className="hidden sm:inline">Añadir nota</span>
+                          {line.notes?.trim() ? 'Editar nota' : 'Añadir nota'}
                         </Button>
+                        <div className="w-[calc(var(--tactil-minimo)*2+var(--espacio-8))] shrink-0">
+                          {quantitySelector}
+                        </div>
                       </div>
-                    ) : null}
+                    </div>
+                  )
+                }
+
+                return (
+                  <div key={line.key} className="flex min-h-12 items-center gap-1 border-b border-zinc-100 py-1 last:border-b-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 break-words text-xs font-semibold text-zinc-900" title={line.name}>
+                        {line.name}
+                      </p>
+                    </div>
                     <div className="w-[calc(var(--tactil-minimo)*2+var(--espacio-8))] shrink-0">
-                      <QuantityStepper
-                        value={line.quantity}
-                        max={999}
-                        onDecrement={clientOrderMode && line.quantity === 1 ? () => setRemovalKey(line.key) : undefined}
-                        onChange={(n) => {
-                          const next = Math.max(0, Math.floor(n))
-                          const delta = next - line.quantity
-                          const portion = line.portion ?? 'entero'
-                          if (delta > 0) {
-                            for (let i = 0; i < delta; i++) onIncrement(line.articuloId, portion)
-                          } else if (delta < 0) {
-                            for (let i = 0; i < -delta; i++) onDecrement(line.articuloId, portion)
-                          }
-                        }}
-                        min={0}
-                        ariaLabel={`Cantidad de ${line.name}`}
-                      />
+                      {quantitySelector}
                     </div>
                     <p
                       className="shrink-0 whitespace-nowrap text-xs font-semibold tabular-nums text-zinc-900"
@@ -285,10 +336,20 @@ export function EventEncargoCartFooter({
             </div>
           )}
 
+          {clientOrderMode && orderNotes.trim() ? (
+            <div className="rounded-lg bg-zinc-50 px-3 py-2">
+              <p className="text-[11px] font-bold text-zinc-700">Indicaciones del pedido</p>
+              <p className="mt-0.5 whitespace-pre-wrap break-words text-xs text-zinc-600">{orderNotes}</p>
+            </div>
+          ) : null}
+
           {hasLines ? (
-            <div className="mt-3 flex items-baseline justify-between gap-3">
+            <div className={cn(
+              'flex items-baseline justify-between gap-3',
+              clientOrderMode ? 'rounded-xl border border-[#d3e1f2] bg-[#eef4fc] px-3 py-3' : 'mt-3'
+            )}>
               <p className="text-sm font-bold text-zinc-500">{units > 0 ? `${units} uds.` : ' '}</p>
-              <p className="text-base font-black tabular-nums text-[#36606F]">
+              <p className={cn('text-base font-black tabular-nums', clientOrderMode ? 'text-[#1b4a82]' : 'text-[#36606F]')}>
                 Total {formatCartaPrice(totalPrice)}
               </p>
             </div>
