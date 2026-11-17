@@ -1,0 +1,38 @@
+/*
+ * Exclusivo de /master/dashboard. No se importará en otros dashboards.
+ * Dark Neumorphism mate: profundidad suave, sin brillos ni halos.
+ */
+.masterSurface :global([data-component='HomeScreen'][data-layout='master']) {
+  --home-widget-radius: 18px;
+  --home-widget-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .085),
+    0 5px 13px rgba(2, 11, 28, .20),
+    0 13px 25px rgba(2, 11, 28, .12);
+  --home-widget-blur: 10px;
+  --home-widget-saturate: 112%;
+}
+.masterSurface :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot']:not([data-slot='icon']):not([data-instance='master-asistencia'])::before) {
+  background: linear-gradient(155deg, rgba(42, 74, 113, .68), rgba(19, 43, 76, .78));
+  border: 1px solid rgba(190, 213, 238, .11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .075), 0 5px 14px rgba(0, 10, 29, .19), 0 12px 24px rgba(0, 10, 29, .10);
+}
+.masterSurface :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] > [data-element='body']) {
+  box-shadow: 0 5px 16px rgba(0, 10, 29, .16);
+}
+.masterSurface :global([data-component='HomeScreen'][data-layout='master'] [data-component='CajaInicialControl'] [data-element='rim']),
+.masterSurface :global([data-component='HomeScreen'][data-layout='master'] [data-component='MasterCajasCambioControl'] [data-element='rim']) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.20), inset 0 0 0 1px rgba(255,255,255,.12), 0 3px 8px rgba(0,9,25,.17);
+}
+.masterSurface :global([data-component='HomeScreen'][data-layout='master'] [data-component='CajaInicialControl'] [data-element='iconBox']),
+.masterSurface :global([data-component='HomeScreen'][data-layout='master'] [data-component='MasterCajasCambioControl'] [data-element='iconBox']) {
+  box-shadow: 0 3px 9px rgba(0, 8, 24, .20);
+}
+/* Cajas Cambio sin placa: los dos controles flotan como los de C Inicial. */
+.masterSurface :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='cajas-cambio'])::before {
+  display: none;
+}
+.masterSurface :global([data-component='HomeScreen'][data-layout='master'] [data-component='MasterCajasCambioControl']) {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+}
