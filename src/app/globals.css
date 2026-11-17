@@ -11604,6 +11604,25 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   min-height: 0;
   border: none;
   box-shadow: none;
+  /* El cromo global de QuantityStepper.bar es azul oscuro. Aquí debe
+     comportarse como el botón terciario «Añadir indicaciones». */
+  background-color: transparent;
+  color: #1b4a82;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-list='true'] [data-pedido-quantity-pill] {
+  background: transparent;
+  border-color: rgb(55 119 192 / 0.38);
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-list='true'] [data-pedido-quantity-pill]
+  :is(button, [data-element='qty-input']) {
+  background-color: transparent;
+  color: #1b4a82;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-list='true'] [data-pedido-quantity-pill] button:hover:not(:disabled) {
+  background-color: rgb(27 74 130 / 0.06);
 }
 [data-component='Modal'][data-instance='event-encargo-cart']
   [data-client-order-list='true'] [data-component='QuantityStepper'][data-variant='bar'] button {
