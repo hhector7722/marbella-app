@@ -306,6 +306,7 @@ export default function EventEncargoCartaClient({
         quantity,
         unitPrice: cartLineUnitPrice(row, portion),
         portion,
+        photoUrl: row.photo_url?.trim() || null,
         notes: lineNotesById[key] ?? '',
       })
     }
@@ -326,6 +327,7 @@ export default function EventEncargoCartaClient({
           quantity: entries.length,
           unitPrice: cartLineUnitPrice(product, 'entero'),
           portion: 'entero',
+          photoUrl: product.photo_url?.trim() || null,
           notes: '',
           platoMarbellaItems: entries,
         })
