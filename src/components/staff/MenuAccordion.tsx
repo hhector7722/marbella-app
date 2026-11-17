@@ -1768,6 +1768,7 @@ export function MenuAccordion({
                                         />
                                     ) : (
                                         <PlatoMarbellaMenuView
+                                            key={eventOrder?.platoBuilderRequest ?? 0}
                                             rows={platoBundleRows}
                                             lang={lang}
                                             launcherArticuloId={platoLauncherArticuloId ?? null}
