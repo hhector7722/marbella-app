@@ -1,0 +1,247 @@
+.page {
+  --sandbox-ink: #f3f7ff;
+  --sandbox-secondary: #afc1df;
+  --sandbox-panel: #192e59;
+  --sandbox-line: rgba(182,211,248,.24);
+  color: var(--sandbox-ink);
+  padding: 5px 20px 28px clamp(16px,4.25vw,82px);
+  isolation: isolate;
+}
+
+.stage {
+  width: min(1310px,100%);
+  pointer-events: none;
+  user-select: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(8,minmax(0,1fr));
+  grid-template-rows: repeat(5,minmax(0,1fr));
+  grid-template-areas:
+    "closings closings sales sales sales register ingredients initial"
+    "closings closings sales sales sales reservations recipes invoices"
+    "calendar calendar calendar calendar change staff stock menu"
+    "calendar calendar calendar calendar labor purchase closed cashchange"
+    "calendar calendar calendar calendar usage profitability info others";
+  gap: clamp(9px,.92vw,15px);
+  height: clamp(590px,calc(100dvh - 165px),735px);
+  align-items: stretch;
+  min-width: 0;
+}
+
+.closings {
+  display: grid;
+  grid-template-rows: repeat(2,minmax(0,1fr));
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+.closingCard,
+.salesPanel,
+.calendarPanel {
+  background: var(--sandbox-panel);
+  border: 1px solid var(--sandbox-line);
+  border-radius: 17px;
+  box-shadow: 0 2px 9px rgba(0,9,35,.13);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.closingCard {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 7px 7px;
+  gap: 4px;
+}
+.closingHeading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  min-height: 20px;
+  font-size: clamp(8px,.74vw,12px);
+  font-weight: 800;
+}
+.closingHeading:has(small) {justify-content:space-between;}
+.closingHeading small {font-size:8px;color:#c6d9ed;}
+.mutedArrow {font-size:16px;color:#bec7dd;}
+.miniMetrics {
+  display:grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap:4px;
+  height: min(46%,53px);
+  min-height: 35px;
+}
+.miniMetric {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  padding:3px 5px;
+  gap:2px;
+  border:1px solid rgba(224,238,255,.27);
+  border-radius:6px;
+  min-width:0;
+  overflow:hidden;
+}
+.miniMetric span {font-size:clamp(8px,.63vw,11px);color:rgba(255,255,255,.9);white-space:nowrap;}
+.miniMetric strong {font-size:clamp(9px,.88vw,15px);white-space:nowrap;letter-spacing:-.03em;}
+.blueMetric {background:linear-gradient(148deg,#2876a7,#1c5b85);}
+.greenMetric {background:linear-gradient(148deg,#208a73,#146d5c);}
+.plainMetric {background:linear-gradient(135deg,rgba(50,78,124,.45),rgba(31,58,101,.4));}
+.microStats {
+  display:grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap:4px;
+  flex:1;
+  align-items:start;
+  min-width:0;
+}
+.microStats div {display:flex; flex-direction:column; min-width:0; gap:2px;}
+.microStats small {font-size:clamp(8px,.7vw,11px);color:#e4eefb;}
+.microStats b {font-size:clamp(9px,.88vw,15px);white-space:nowrap;letter-spacing:-.03em;}
+
+.salesPanel {
+  padding: 6px 10px 8px;
+  background: linear-gradient(115deg,#224363,#163354);
+  display: grid;
+  grid-template-rows: 22px minmax(56px,.77fr) minmax(38px,.47fr) minmax(0,1.05fr);
+  gap: 5px;
+}
+.salesHeader {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:#d2e2f5;
+  font-size:11px;
+  min-width:0;
+}
+.salesHeader small {font-size:9px;color:#abc6dd;}
+.salesHeader b {display:flex;gap:13px;align-items:center;font-size:11px;white-space:nowrap;font-weight:600;}
+.salesHeader b span {font-size:19px;font-weight:400;color:#d8e5f6;}
+.salesTag {border:1px solid #839fb7;border-radius:7px;padding:2px 5px;font-size:10px;}
+.bigMetrics {display:flex;justify-content:space-around;gap:12px;align-items:center;}
+.bigSales,.bigNet {
+  display:flex;flex-direction:column;justify-content:center;
+  padding:9px 13px;min-height:62px;min-width:105px;
+  border-radius:8px; border:1px solid rgba(164,217,255,.15);
+  gap:1px;
+}
+.bigSales {background:linear-gradient(135deg,#2574a8,#1a6191);}
+.bigNet {background:linear-gradient(135deg,#238f74,#167760);}
+.bigMetrics span {font-size:13px;}
+.bigMetrics strong {font-size:clamp(20px,1.62vw,26px);font-weight:800;white-space:nowrap;}
+.chart {min-height:0;position:relative;display:flex;align-items:flex-end;}
+.chart svg {height:100%;width:100%;max-height:52px;}
+.chartHours {position:absolute;inset:auto 0 0;display:flex;justify-content:space-between;color:#daeafa;font-size:10px;border-bottom:1px solid rgba(144,192,230,.4);}
+.salesBottom {display:grid;grid-template-columns:1.15fr .85fr;gap:10px;min-height:0;}
+.productList,.hourList {display:flex;flex-direction:column;justify-content:space-evenly;border:1px solid rgba(150,197,231,.14);border-radius:9px;background:rgba(44,90,126,.2);padding:4px 8px;min-width:0;overflow:hidden;}
+.productList div,.hourList div {display:flex;align-items:center;justify-content:space-between;gap:5px;font-size:clamp(12px,1vw,18px);line-height:1.45;white-space:nowrap;min-width:0;}
+.productList div span {overflow:hidden;text-overflow:ellipsis;}
+.productList div strong,.hourList div strong {font-weight:800;white-space:nowrap;}
+.hourList div:first-child {color:#22d796;}
+.hourList div:nth-child(n+2) span {color:#e2f0fa;}
+
+.calendarPanel {padding:5px 6px 7px;display:flex;flex-direction:column;}
+.calendarTitle {display:flex;justify-content:center;align-items:center;gap:14px;min-height:35px;font-size:clamp(14px,1.33vw,21px);font-weight:900;letter-spacing:.045em;white-space:nowrap;}
+.calendarTitle span {font-size:23px;font-weight:400;}
+.weekLabels {display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) 74px;min-height:31px;align-items:center;text-align:center;gap:0;}
+.weekLabels b {font-size:clamp(10px,.82vw,13px);font-weight:500;}
+.calendarWeeks {display:grid;grid-template-rows:repeat(3,minmax(0,1fr)) minmax(0,2.08fr) minmax(0,1fr);flex:1;min-height:0;}
+.calendarWeek {min-height:0;position:relative;}
+.dateGrid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) 74px;align-items:center;justify-items:center;height:100%;min-height:0;}
+.expandedWeek .dateGrid {height:40px;}
+.date {display:flex;align-items:center;justify-content:center;min-width:30px;min-height:29px;font-size:clamp(14px,1.22vw,20px);font-weight:550;}
+.today {background:#10c494;color:white;border-radius:50%;font-weight:800;width:34px;height:34px;}
+.eventDay {background:#c66c18;color:white;border-radius:50%;font-weight:700;width:34px;height:34px;}
+.extra {font-size:clamp(12px,1.1vw,17px);font-weight:800;white-space:nowrap;}
+.greenDot,.redDot {display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px;}
+.greenDot {background:#08c687;}
+.redDot {background:#dc3b6b;}
+.eventsRow {display:grid;grid-template-columns:1fr 1fr;gap:7px;height:calc(100% - 45px);min-height:0;}
+.eventsRow>div {display:flex;flex-direction:column;justify-content:space-around;border-radius:11px;padding:5px 10px;min-width:0;background:#253e70;}
+.eventsRow strong {font-size:clamp(11px,.9vw,15px);text-align:center;}
+.eventsRow span {font-size:clamp(11px,.9vw,14px);border-left:2px solid #edc445;padding-left:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.eventsRow small {font-size:clamp(9px,.76vw,12px);color:#dbeafa;display:flex;justify-content:space-between;gap:4px;}
+.eventsRow em {font-style:normal;white-space:nowrap;}
+
+.iconItem,.pairSlot,.registerSlot {display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;min-width:0;min-height:0;}
+.iconTile {width:min(82px,76%);aspect-ratio:1;border-radius:17px;border:1px solid rgba(189,223,249,.27);box-shadow:0 3px 7px rgba(0,10,28,.20);overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(19,47,76,.3);}
+.iconTile img {width:100%;height:100%;object-fit:contain;display:block;}
+.iconLabel {font-size:clamp(8px,.62vw,11px);font-weight:750;text-align:center;white-space:nowrap;color:#f1f7fd;}
+.registerTile {width:min(82px,76%);aspect-ratio:1;overflow:hidden;border-radius:15px;background:#fff;color:#454e58;display:flex;flex-direction:column;gap:1px;box-shadow:0 2px 5px rgba(0,0,0,.16);}
+.registerTile>div {background:#c63941;color:#fff;font-size:10px;text-align:center;line-height:18px;white-space:nowrap;}
+.registerTile>span {display:flex;justify-content:space-between;padding:0 4px;gap:3px;font-size:8px;line-height:1.35;white-space:nowrap;}
+.registerTile b {color:#148f54;font-weight:750;}
+.twinPills {display:flex;flex-direction:column;width:min(82px,76%);gap:5px;justify-content:center;}
+.twinPills span {display:flex;align-items:center;justify-content:center;height:35px;border-radius:13px;font-weight:900;font-size:11px;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.16);}
+.greenPill {background:#0e9d73;}
+.orangePill {background:#f57517;}
+.goldPill {background:#dba843;}
+.purplePill {background:#a64cf2;}
+.pagination {display:flex;justify-content:center;gap:38px;padding:25px 0 5px;}
+.pagination>span {display:block;width:4px;height:4px;border-radius:50%;background:#456382;}
+.pagination>.activeDot {background:#fff;}
+.sandboxNote {max-width:1310px;text-align:center;color:#9eb6d2;font-size:11px;letter-spacing:.02em;padding:6px 8px 4px;}
+
+@media(max-width:1023px) {
+ .page {padding:6px 12px 28px;}
+ .stage {width:100%;}
+ .grid {
+  height:auto;max-height:none;min-height:0;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-rows:195px 160px 110px 110px 110px 110px;
+  grid-template-areas:
+    "sales sales sales sales"
+    "closings closings closings closings"
+    "calendar calendar calendar register"
+    "calendar calendar calendar initial"
+    "reservations ingredients recipes invoices"
+    "others cashchange staff change";
+  gap:10px;
+ }
+ .closings {grid-template-columns:1fr 1fr;grid-template-rows:1fr;}
+ .closingCard {padding:5px;}
+ .closingHeading {font-size:10px;}
+ .miniMetrics {height:50px;gap:2px;}
+ .miniMetric {padding:3px;}
+ .miniMetric span {font-size:7px;}
+ .miniMetric strong {font-size:8px;}
+ .microStats small {font-size:7px;}
+ .microStats b {font-size:9px;}
+ .salesPanel {grid-template-rows:18px 56px 30px 1fr;gap:2px;padding:4px 7px;}
+ .bigSales,.bigNet {min-height:47px;padding:4px 9px;min-width:90px;}
+ .bigMetrics span {font-size:10px;}
+ .bigMetrics strong {font-size:17px;}
+ .productList div,.hourList div {font-size:11px;}
+ .calendarTitle {font-size:11px;min-height:25px;}
+ .calendarTitle span {font-size:13px;}
+ .weekLabels {min-height:23px;grid-template-columns:repeat(7,minmax(0,1fr)) 24px;}
+ .weekLabels b {font-size:7px;}
+ .dateGrid {grid-template-columns:repeat(7,minmax(0,1fr)) 24px;}
+ .date {min-width:16px;min-height:18px;font-size:10px;}
+ .today,.eventDay {height:21px;width:21px;}
+ .extra {font-size:8px;}
+ .greenDot,.redDot {height:5px;width:5px;}
+ .expandedWeek .dateGrid {height:24px;}
+ .eventsRow {height:calc(100% - 26px);}
+ .eventsRow>div {padding:3px 4px;border-radius:5px;}
+ .eventsRow strong,.eventsRow span,.eventsRow small {font-size:6px;}
+ .iconTile,.registerTile {width:min(66px,92%);border-radius:13px;}
+ .twinPills {width:min(66px,92%);gap:3px;}
+ .twinPills span {height:26px;border-radius:10px;font-size:8px;}
+ .iconLabel {font-size:8px;}
+ .iconItem:where([style*="stock"],[style*="menu"],[style*="labor"],[style*="purchase"],[style*="closed"],[style*="usage"],[style*="profitability"],[style*="info"]) {display:none;}
+ .registerTile>div {font-size:8px;line-height:14px;}
+ .registerTile>span {font-size:6px;}
+ .pagination {padding:16px 0 6px;}
+}
+@media(max-width:430px) {
+ .grid {grid-template-rows:176px 158px 105px 105px 95px 95px;gap:7px;}
+ .closingCard {gap:2px;}
+ .microStats b {font-size:8px;}
+ .salesBottom {gap:3px;}
+ .productList,.hourList {padding:3px;}
+}
