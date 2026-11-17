@@ -114,7 +114,14 @@ export function EventEncargoCartFooter({
 
   return (
     <>
-      <div className="shrink-0 border-t border-zinc-200 bg-white px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_16px_rgba(0,0,0,0.04)] md:px-4">
+      <div
+        className={cn(
+          'shrink-0 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+          clientOrderMode
+            ? 'bg-transparent px-0 border-0 shadow-none'
+            : 'border-t border-zinc-200 bg-white px-3 shadow-[0_-8px_16px_rgba(0,0,0,0.04)] md:px-4'
+        )}
+      >
         {limitWarnings.length > 0 ? (
           <ul className="mb-1.5 space-y-0.5">
             {limitWarnings.map((w) => (
