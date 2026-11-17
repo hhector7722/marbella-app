@@ -168,6 +168,8 @@ export default function EventEncargoCartaClient({
   )
   const [platoBuilderRequest, setPlatoBuilderRequest] = useState(0)
   const [orderNotes, setOrderNotes] = useState(initialOrderNotes)
+  const [clientCartOpen, setClientCartOpen] = useState(false)
+  const openClientCart = useCallback(() => setClientCartOpen(true), [])
 
   const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [responsibleName, setResponsibleName] = useState('')
@@ -271,10 +273,12 @@ export default function EventEncargoCartaClient({
               onAddPlatoMarbella: addPlatoMarbella,
               onRemoveLastPlatoMarbella: removeLastPlatoMarbella,
               platoBuilderRequest,
+              openCart: openClientCart,
+              totalUnits: totalItems,
             } : {}),
           },
     [editMode, effectiveQtyById, onQuantityChange, isClientToken,
-      addPlatoMarbella, removeLastPlatoMarbella, platoBuilderRequest]
+      addPlatoMarbella, removeLastPlatoMarbella, platoBuilderRequest, openClientCart, totalItems]
   )
 
   const cartLines = useMemo((): EventEncargoCartLine[] => {
@@ -645,6 +649,8 @@ export default function EventEncargoCartaClient({
       confirmBody="¿Seguro que quieres enviar el pedido? Después no podrás modificarlo desde este enlace."
       confirmActionLabel="Sí, enviar"
       clientOrderMode={isClientToken}
+      cartOpen={isClientToken ? clientCartOpen : undefined}
+      onCartOpenChange={isClientToken ? setClientCartOpen : undefined}
       orderNotes={orderNotes}
       onOrderNotesChange={setOrderNotes}
       onLineNotesChange={(key, note) => {
