@@ -270,6 +270,7 @@ export function CartaStaffMenuProductCard({
     >
       {photoFrameStyle || row.photo_url ? (
         <div
+          data-carta-product-photo
           className={cn(
             CARTA_PRODUCT_PHOTO_CELL_CLASS,
             'shrink-0',
@@ -349,7 +350,6 @@ export function CartaStaffMenuProductCard({
                   squareLayout={squareLayout}
                 />
               </button>
-              {eventPhotoControls ? photoOrderControls : null}
               {(eventTapToAdd || eventPhotoControls) && eventQtyTotal > 0 ? (
                 <span
                   className={cn(
@@ -395,10 +395,12 @@ export function CartaStaffMenuProductCard({
               aria-hidden
             />
           )}
+          {eventPhotoControls ? photoOrderControls : null}
         </div>
       ) : null}
 
       <div
+        data-carta-product-info
         className={cn(
           'flex min-h-0 w-full shrink-0 flex-col items-center pt-0',
           rowDensity === 'compact' && 'gap-0.5 px-1.5 pb-1 sm:pb-1.5',
@@ -459,17 +461,13 @@ export function CartaStaffMenuProductCard({
                 : undefined
         }
       >
-        <p
-          className={cn(
-            'line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]',
-            squareLayout && displayName.length > 18 && 'carta-catalog-long-name'
-          )}
-          title={displayName}
-        >
-          {displayName}
-        </p>
         {isPlatoMarbellaLauncher && platoLauncherPriceLabel?.trim() ? (
-          <p className="text-center text-sm font-black text-[#36606F]">{platoLauncherPriceLabel}</p>
+          <p
+            data-carta-display-price
+            className="text-center text-sm font-black text-[#36606F]"
+          >
+            {platoLauncherPriceLabel}
+          </p>
         ) : (
           <CartaDualRacionPrices
             {...dualLabels}
@@ -478,7 +476,16 @@ export function CartaStaffMenuProductCard({
             variant="staff"
           />
         )}
-        {eventPhotoControls && !row.photo_url ? photoOrderControls : null}
+        <p
+          data-carta-display-name
+          className={cn(
+            'line-clamp-3 w-full max-w-full text-center text-[10px] font-black leading-tight text-zinc-900 sm:text-[11px]',
+            squareLayout && displayName.length > 18 && 'carta-catalog-long-name'
+          )}
+          title={displayName}
+        >
+          {displayName}
+        </p>
         {eventStepper && eventOrder ? (
           <EventCartaOrderControls
             className="mt-1"
