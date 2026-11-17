@@ -14,6 +14,7 @@ import {
 import { selectGroqTools, type GroqChatMessage, type GroqTool } from "@/lib/copilot/groq-chat";
 import { completeFreeChat, configuredFreeProviders, operationalFreeProviderKeys, FreeChatError, type FreeProviderKeys, type FreeProvider } from "@/lib/copilot/free-chat-router";
 import { resolveCopilotFollowup } from "@/lib/copilot/followup-context";
+import { detectOvertimeTotalIntent, queryOvertimeTotal, formatOvertimeTotalAnswer } from "@/lib/copilot/overtime-aggregate";
 import { tryDirectRecipeAnswer } from "@/lib/copilot/direct-recipes";
 import { tryDirectSalesAnswer } from "@/lib/copilot/direct-sales";
 import { tryDirectInventoryAnswer } from "@/lib/copilot/direct-inventory";
@@ -145,13 +146,6 @@ export async function POST(req: Request) {
     // El router bloquea el resto y prohíbe recolección de datos.
     openrouter: process.env.OPENROUTER_API_KEY ?? process.env.OPENROUTER,
   });
-  if (configuredFreeProviders(freeKeys).length === 0) {
-    return Response.json(
-      { error: "Falta configurar al menos una API gratuita para el copiloto." },
-      { status: 503 },
-    );
-  }
-
   const input: unknown = await req.json().catch(() => null);
   if (!input || typeof input !== "object") {
     return Response.json({ error: "Cuerpo JSON inválido" }, { status: 400 });
@@ -169,6 +163,15 @@ export async function POST(req: Request) {
   const userText = lastUser ? uiMessageText(lastUser) : "";
   if (!userText || userText.length > 2500) {
     return Response.json({ error: "Pregunta vacía o demasiado larga (máx. 2500 caracteres)." }, { status: 400 });
+  }
+
+  // La agregación oficial se consulta por Supabase sin consumir una API LLM.
+  // Así sigue funcionando aunque todos los proveedores gratuitos fallen.
+  if (!detectOvertimeTotalIntent(userText).matched && configuredFreeProviders(freeKeys).length === 0) {
+    return Response.json(
+      { error: "Falta configurar al menos una API gratuita para el copiloto." },
+      { status: 503 },
+    );
   }
 
   const { data: profile, error: profileError } = await supabase
@@ -210,6 +213,43 @@ export async function POST(req: Request) {
     .slice(0, -1)
     .map(uiMessageText)
     .filter(Boolean);
+
+  const overtimeTotal = detectOvertimeTotalIntent(userText, earlierUserMessages);
+  if (overtimeTotal.matched) {
+    const directStream = createUIMessageStream({
+      execute: async ({ writer }) => {
+        let answer: string;
+        try {
+          if (role !== "manager") {
+            answer = "No tienes permiso para consultar los costes de horas extras de toda la plantilla.";
+          } else if (!overtimeTotal.period) {
+            answer = "¿De qué semana quieres el coste total de horas extras de todos los trabajadores: esta semana o la semana pasada?";
+          } else {
+            const result = await queryOvertimeTotal(
+              { supabase, role, userId: user.id, today: madridDate() },
+              overtimeTotal.period,
+            );
+            answer = formatOvertimeTotalAnswer(result);
+          }
+        } catch {
+          answer = "No he podido leer el total oficial de horas extras. No voy a inventar una cifra.";
+          console.error("[copiloto-extras-total] query_failed");
+        }
+        writer.write({ type: "text-start", id: "answer" });
+        writer.write({ type: "text-delta", id: "answer", delta: answer });
+        writer.write({ type: "text-end", id: "answer" });
+        const { error: saveError } = await supabase.from("ai_chat_messages").insert({
+          session_id: sessionId, user_id: user.id,
+          role: "assistant", content_type: "text", text_content: answer,
+        });
+        if (saveError) console.error("[copiloto] assistant_persistence_failed");
+      },
+    });
+    const directResponse = createUIMessageStreamResponse({ stream: directStream });
+    directResponse.headers.set("X-Session-Id", sessionId);
+    return directResponse;
+  }
+
   // Resolver las repreguntas ANTES de elegir las herramientas. Por ejemplo:
   // «croissants el sábado» → «¿y el domingo?» conserva producto,
   // mientras «horas Fernando» → «¿y Silvia?» conserva periodo.
