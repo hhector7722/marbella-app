@@ -19,9 +19,33 @@ export type EventEncargoCartLine = {
   quantity: number
   /** Precio unitario (€) de la ración (entero o medio). */
   unitPrice: number
+  /** Imagen pequeña del catálogo (igual encuadre contain que Ventas). */
+  photoUrl?: string | null
   portion?: 'entero' | 'medio'
   notes?: string
   platoMarbellaItems?: PlatoMarbellaOrderEntry[]
+}
+
+/** Miniatura de Ventas: 22px exterior, 16px de imagen completa, sin ampliar ni recortar. */
+function CartProductThumbnail({ src }: { src?: string | null }) {
+  const [failed, setFailed] = useState(false)
+  return (
+    <span aria-hidden="true" className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden rounded-[5px] bg-slate-50 p-[2px]">
+      {src && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element -- foto de catálogo en Storage
+        <img
+          src={src}
+          alt=""
+          width={16}
+          height={16}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          className="block h-[16px] w-[16px] max-h-full max-w-full object-contain object-center"
+        />
+      ) : null}
+    </span>
+  )
 }
 
 /** Badge rojo estilo campana de notificaciones. */
@@ -142,7 +166,13 @@ export function EventEncargoCartFooter({
   }
 
   const openNoteEditor = (kind: 'line' | 'order', key?: string) => {
-    setNoteDraft(kind === 'order' ? orderNotes : lines.find((line) => line.key === key)?.notes ?? '')
+    setNoteDraft(
+      kind === 'order'
+        ? orderNotes
+        : (lines.find((line) => line.key === key)?.notes ??
+          plateDetails.find((plate) => plate.key === key)?.note ??
+          '')
+    )
     setNoteEditor({ kind, key })
   }
 
@@ -342,6 +372,7 @@ export function EventEncargoCartFooter({
                   const lineNote = line.notes?.trim() ?? ''
                   return (
                     <div key={line.key} className="flex h-[34px] min-w-0 items-center gap-1.5 px-1" role="listitem">
+                      <CartProductThumbnail key={line.photoUrl || line.key} src={line.photoUrl} />
                       {isPlate ? (
                         <button
                           type="button"
@@ -483,7 +514,15 @@ export function EventEncargoCartFooter({
                 <p className="text-xs text-zinc-800"><strong>Entrante:</strong> {plate.choices.entrante}</p>
                 <p className="text-xs text-zinc-800"><strong>Principal:</strong> {plate.choices.principal}</p>
                 <p className="text-xs text-zinc-800"><strong>Guarnición:</strong> {plate.choices.guarnicion}</p>
-                {plate.note ? <p className="text-xs text-zinc-500"><strong>Indicaciones:</strong> {plate.note}</p> : null}
+                <button
+                  type="button"
+                  aria-label={plate.note ? `Editar nota del Plato Marbella ${index + 1}` : `Añadir nota al Plato Marbella ${index + 1}`}
+                  title={plate.note || 'Añadir nota'}
+                  onClick={() => openNoteEditor('line', plate.key)}
+                  className="block max-w-full truncate border-0 bg-transparent p-0 text-left text-[11px] italic font-normal text-zinc-500 hover:text-zinc-700"
+                >
+                  {plate.note || 'Añadir nota'}
+                </button>
                 <div className="flex justify-end">
                   <Button
                     type="button"
@@ -518,8 +557,11 @@ export function EventEncargoCartFooter({
         onClose={() => setNoteEditor(null)}
         title={noteEditor?.kind === 'order' ? 'Indicaciones del pedido' : 'Nota del producto'}
         instance="event-encargo-cart-note"
-        parentInstance="event-encargo-cart"
+        parentInstance={noteEditor?.kind === 'line' && noteEditor.key?.startsWith('pm-')
+          ? 'event-encargo-cart-plate-details'
+          : 'event-encargo-cart'}
         layer="derived"
+        dismissScope="self"
         variant="compact"
         footer={
           <div className="flex w-full items-center justify-end gap-2">
