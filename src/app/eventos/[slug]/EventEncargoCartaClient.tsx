@@ -12,7 +12,16 @@ import {
 } from '@/components/eventos/EventEncargoCartFooter'
 import { PublicCarta, type PublicMenuRow } from '@/components/public/PublicCarta'
 import { DEFAULT_CARTA_LANG, getCartaDisplayName } from '@/lib/carta-menu-i18n'
-import { eventOrderProductId, eventOrderCartKey, parseEventOrderCartKey, qtyByIdToSubmitItems } from '@/lib/event-order-carta'
+import {
+  eventOrderProductId,
+  eventOrderCartKey,
+  parseEventOrderCartKey,
+  qtyByIdToSubmitItems,
+  parsePlatoMarbellaItemNotes,
+  formatPlatoMarbellaItemNotes,
+  type PlatoMarbellaOrderEntry,
+  type PlatoMarbellaChoices,
+} from '@/lib/event-order-carta'
 import type { EventOrderStartingPackItem } from '@/lib/event-order-carta'
 import type { EventEncargoEditControl, EventOrderCartaControl, EventOrderPortion } from '@/lib/event-order-carta'
 import {
@@ -127,7 +136,7 @@ export default function EventEncargoCartaClient({
     for (const it of startingPackItems ?? []) {
       const pid = String(it.product_id ?? '').trim()
       const qty = Number(it.quantity) || 0
-      if (!pid || qty <= 0) continue
+      if (!pid || qty <= 0 || (isClientToken && parsePlatoMarbellaItemNotes(it.notes))) continue
       out[pid] = (out[pid] ?? 0) + qty
     }
     return out
@@ -137,10 +146,27 @@ export default function EventEncargoCartaClient({
     for (const item of startingPackItems) {
       const key = String(item.product_id ?? '').trim()
       const note = String(item.notes ?? '').trim()
-      if (key && note) out[key] = note
+      if (key && note && !(isClientToken && parsePlatoMarbellaItemNotes(note))) out[key] = note
     }
     return out
   })
+  // Cada Plato Marbella es una línea de cantidad 1, no una cantidad compartida.
+  const [platoMarbellaItems, setPlatoMarbellaItems] = useState<PlatoMarbellaOrderEntry[]>(() =>
+    isClientToken
+      ? startingPackItems.flatMap((item, index) => {
+          const parsed = parsePlatoMarbellaItemNotes(item.notes)
+          const productId = Number(item.product_id)
+          if (!parsed || !Number.isSafeInteger(productId) || productId <= 0) return []
+          return [{
+            key: `pm-start-${index}`,
+            productId,
+            choices: parsed.choices,
+            note: parsed.note,
+          }]
+        })
+      : []
+  )
+  const [platoBuilderRequest, setPlatoBuilderRequest] = useState(0)
   const [orderNotes, setOrderNotes] = useState(initialOrderNotes)
 
   const [saveModalOpen, setSaveModalOpen] = useState(false)
@@ -173,7 +199,48 @@ export default function EventEncargoCartaClient({
     return clientMenuItems
   }, [editMode, allMenuItems, clientMenuItems, enabledSet])
 
-  const totalItems = useMemo(() => sumItems(qtyById), [qtyById])
+  const effectiveQtyById = useMemo(() => {
+    if (!isClientToken || !platoMarbellaItems.length) return qtyById
+    const next = { ...qtyById }
+    for (const plate of platoMarbellaItems) {
+      const key = eventOrderProductId(plate.productId)
+      next[key] = (next[key] ?? 0) + 1
+    }
+    return next
+  }, [isClientToken, qtyById, platoMarbellaItems])
+  const totalItems = useMemo(() => sumItems(effectiveQtyById), [effectiveQtyById])
+
+  const addPlatoMarbella = useCallback((productId: number, choices: PlatoMarbellaChoices) => {
+    if (!isClientToken) return
+    if (platoMarbellaItems.length >= 99) {
+      toast.error('Máximo de 99 platos por pedido.')
+      return
+    }
+    setPlatoMarbellaItems((current) => [...current, {
+      key: `pm-${crypto.randomUUID()}`,
+      productId,
+      choices,
+      note: '',
+    }])
+  }, [isClientToken, platoMarbellaItems.length])
+
+  const removeLastPlatoMarbella = useCallback((productId: number) => {
+    setPlatoMarbellaItems((current) => {
+      const index = current.findLastIndex((plate) => plate.productId === productId)
+      return index < 0 ? current : current.filter((_, i) => i !== index)
+    })
+  }, [])
+  const removePlatoMarbella = useCallback((key: string) => {
+    setPlatoMarbellaItems((current) => current.filter((plate) => plate.key !== key))
+  }, [])
+  const updatePlatoMarbellaNote = useCallback((key: string, note: string) => {
+    setPlatoMarbellaItems((current) =>
+      current.map((plate) => plate.key === key ? { ...plate, note } : plate)
+    )
+  }, [])
+  const requestAnotherPlatoMarbella = useCallback(() => {
+    setPlatoBuilderRequest((current) => current + 1)
+  }, [])
 
   const onQuantityChange = useCallback(
     (articuloId: number, quantity: number, opts?: { portion?: EventOrderPortion }) => {
@@ -195,8 +262,19 @@ export default function EventEncargoCartaClient({
     () =>
       editMode
         ? undefined
-        : { qtyByProductId: qtyById, onQuantityChange, tapToAdd: true, photoControls: isClientToken },
-    [editMode, qtyById, onQuantityChange, isClientToken]
+        : {
+            qtyByProductId: effectiveQtyById,
+            onQuantityChange,
+            tapToAdd: true,
+            photoControls: isClientToken,
+            ...(isClientToken ? {
+              onAddPlatoMarbella: addPlatoMarbella,
+              onRemoveLastPlatoMarbella: removeLastPlatoMarbella,
+              platoBuilderRequest,
+            } : {}),
+          },
+    [editMode, effectiveQtyById, onQuantityChange, isClientToken,
+      addPlatoMarbella, removeLastPlatoMarbella, platoBuilderRequest]
   )
 
   const cartLines = useMemo((): EventEncargoCartLine[] => {
@@ -227,9 +305,31 @@ export default function EventEncargoCartaClient({
         notes: lineNotesById[key] ?? '',
       })
     }
+    if (isClientToken && platoMarbellaItems.length) {
+      const byProductId = new Map<number, PlatoMarbellaOrderEntry[]>()
+      for (const item of platoMarbellaItems) {
+        const current = byProductId.get(item.productId) ?? []
+        current.push(item)
+        byProductId.set(item.productId, current)
+      }
+      for (const [productId, entries] of byProductId) {
+        const product = byArticulo.get(productId)
+        if (!product) continue
+        lines.push({
+          key: `plato-marbella-${productId}`,
+          articuloId: productId,
+          name: 'Plato Marbella',
+          quantity: entries.length,
+          unitPrice: cartLineUnitPrice(product, 'entero'),
+          portion: 'entero',
+          notes: '',
+          platoMarbellaItems: entries,
+        })
+      }
+    }
     lines.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
     return lines
-  }, [clientMenuItems, qtyById, lineNotesById])
+  }, [clientMenuItems, qtyById, lineNotesById, isClientToken, platoMarbellaItems])
 
   const addOneToCart = useCallback((articuloId: number, portion: EventOrderPortion = 'entero') => {
     const pid = eventOrderCartKey(articuloId, portion)
@@ -353,7 +453,7 @@ export default function EventEncargoCartaClient({
     'min-h-12 rounded-xl px-5 text-[12px] font-black uppercase tracking-wider transition-colors disabled:opacity-50'
 
   const openSaveModal = useCallback(() => {
-    const warnings = validateEventOrderLimits(qtyById, clientMenuItems, categoryLimits, enabledIdsForClient)
+    const warnings = validateEventOrderLimits(effectiveQtyById, clientMenuItems, categoryLimits, enabledIdsForClient)
     setLimitWarnings(warnings)
     if (isStaff) {
       startTransition(async () => {
@@ -387,7 +487,18 @@ export default function EventEncargoCartaClient({
           toast.error('Revisa los límites del pedido antes de guardar.')
           return
         }
-        const items = qtyByIdToSubmitItems(qtyById, lineNotesById)
+        const items = [
+          ...qtyByIdToSubmitItems(qtyById, lineNotesById),
+          ...platoMarbellaItems.map((plate) => ({
+            product_id: String(plate.productId),
+            quantity: 1,
+            notes: formatPlatoMarbellaItemNotes(plate.choices, plate.note),
+          })),
+        ]
+        if (items.some((item) => (item.notes?.length ?? 0) > 400)) {
+          toast.error('Las indicaciones de un Plato Marbella son demasiado largas.')
+          return
+        }
         if (items.length === 0) {
           toast.error('Añade al menos un producto.')
           return
@@ -411,6 +522,8 @@ export default function EventEncargoCartaClient({
     setSaveModalOpen(true)
   }, [
     qtyById,
+    effectiveQtyById,
+    platoMarbellaItems,
     lineNotesById,
     orderNotes,
     clientMenuItems,
@@ -534,7 +647,12 @@ export default function EventEncargoCartaClient({
       clientOrderMode={isClientToken}
       orderNotes={orderNotes}
       onOrderNotesChange={setOrderNotes}
-      onLineNotesChange={(key, note) => setLineNotesById((current) => ({ ...current, [key]: note }))}
+      onLineNotesChange={(key, note) => {
+        if (key.startsWith('pm-')) updatePlatoMarbellaNote(key, note)
+        else setLineNotesById((current) => ({ ...current, [key]: note }))
+      }}
+      onPlatoMarbellaAddRequest={requestAnotherPlatoMarbella}
+      onPlatoMarbellaRemove={removePlatoMarbella}
     />
   )
 
