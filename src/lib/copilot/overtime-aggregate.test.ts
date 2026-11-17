@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { createClient } from '@/utils/supabase/server';
-import { detectOvertimeTotalIntent, queryOvertimeTotal, formatOvertimeTotalAnswer } from './overtime-aggregate.ts';
+import { detectOvertimeTotalIntent, detectOvertimeBreakdownIntent, queryOvertimeTotal, formatOvertimeTotalAnswer } from './overtime-aggregate.ts';
 type Client = Awaited<ReturnType<typeof createClient>>;
 
 function fakeDb(rows: Array<Record<string, unknown>>, failure = false) {
@@ -118,4 +118,28 @@ test('maneja más de 500 registros sin truncar el total', async () => {
   assert.equal(result.summary.totalCostCents, 502 * 250);
   assert.equal(result.summary.employeesWithOvertime, 502);
   assert.equal(calls.filter(c => c.op === 'range').length, 2);
+});
+
+
+test('desglose del total de la plantilla y continuación sin repetir la pregunta', () => {
+  assert.deepEqual(detectOvertimeBreakdownIntent('desglósame las horas extras de esta última semana'), {
+    matched: true, period: 'semana_pasada',
+  });
+  assert.deepEqual(detectOvertimeBreakdownIntent('de todos los trabajadores', [
+    'desglósame las horas extras de esta última semana',
+  ]), { matched: true, period: 'semana_pasada' });
+  assert.equal(detectOvertimeBreakdownIntent('desglósame horas extras de Silvia esta semana').matched, false);
+  assert.deepEqual(detectOvertimeTotalIntent('de todos los trabajadores', [
+    'cuánto es el coste de horas extras de la semana pasada',
+  ]), { matched: true, period: 'semana_pasada' });
+});
+
+test('desglose sólo suma registros de origen y conserva la bolsa de horas', async () => {
+  const { supabase } = fakeDb(example);
+  const result = await queryOvertimeTotal({ supabase, role: 'manager', userId, today }, 'semana_pasada');
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.summary.totalExtraHours, 12.5);
+  assert.equal(result.summary.totalCostCents, 12000);
+  assert.equal(result.summary.bankHoursWithoutCost, 0.5);
 });

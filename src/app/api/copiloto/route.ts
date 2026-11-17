@@ -14,7 +14,8 @@ import {
 import { selectGroqTools, type GroqChatMessage, type GroqTool } from "@/lib/copilot/groq-chat";
 import { completeFreeChat, configuredFreeProviders, operationalFreeProviderKeys, FreeChatError, type FreeProviderKeys, type FreeProvider } from "@/lib/copilot/free-chat-router";
 import { resolveCopilotFollowup } from "@/lib/copilot/followup-context";
-import { detectOvertimeTotalIntent, queryOvertimeTotal, formatOvertimeTotalAnswer } from "@/lib/copilot/overtime-aggregate";
+import { detectOvertimeTotalIntent, detectOvertimeBreakdownIntent, queryOvertimeTotal, formatOvertimeTotalAnswer, formatOvertimeBreakdownAnswer } from "@/lib/copilot/overtime-aggregate";
+import { matchesTodayPublishedScheduleIntent, tryDirectTodayScheduleAnswer } from "@/lib/copilot/direct-schedule";
 import { tryDirectRecipeAnswer } from "@/lib/copilot/direct-recipes";
 import { tryDirectSalesAnswer } from "@/lib/copilot/direct-sales";
 import { tryDirectInventoryAnswer } from "@/lib/copilot/direct-inventory";
@@ -167,7 +168,10 @@ export async function POST(req: Request) {
 
   // La agregación oficial se consulta por Supabase sin consumir una API LLM.
   // Así sigue funcionando aunque todos los proveedores gratuitos fallen.
-  if (!detectOvertimeTotalIntent(userText).matched && configuredFreeProviders(freeKeys).length === 0) {
+  if (!detectOvertimeTotalIntent(userText).matched
+    && !detectOvertimeBreakdownIntent(userText).matched
+    && !matchesTodayPublishedScheduleIntent(userText)
+    && configuredFreeProviders(freeKeys).length === 0) {
     return Response.json(
       { error: "Falta configurar al menos una API gratuita para el copiloto." },
       { status: 503 },
@@ -214,22 +218,28 @@ export async function POST(req: Request) {
     .map(uiMessageText)
     .filter(Boolean);
 
-  const overtimeTotal = detectOvertimeTotalIntent(userText, earlierUserMessages);
-  if (overtimeTotal.matched) {
+  const overtimeBreakdown = detectOvertimeBreakdownIntent(userText, earlierUserMessages);
+  const overtimeTotal = overtimeBreakdown.matched
+    ? { matched: false, period: null }
+    : detectOvertimeTotalIntent(userText, earlierUserMessages);
+  if (overtimeTotal.matched || overtimeBreakdown.matched) {
     const directStream = createUIMessageStream({
       execute: async ({ writer }) => {
         let answer: string;
         try {
           if (role !== "manager") {
             answer = "No tienes permiso para consultar los costes de horas extras de toda la plantilla.";
-          } else if (!overtimeTotal.period) {
-            answer = "¿De qué semana quieres el coste total de horas extras de todos los trabajadores: esta semana o la semana pasada?";
+          } else if (!(overtimeBreakdown.period ?? overtimeTotal.period)) {
+            answer = "¿Qué semana quieres consultar: esta semana o la semana pasada?";
           } else {
             const result = await queryOvertimeTotal(
               { supabase, role, userId: user.id, today: madridDate() },
-              overtimeTotal.period,
+              (overtimeBreakdown.period ?? overtimeTotal.period)!,
+              overtimeBreakdown.matched,
             );
-            answer = formatOvertimeTotalAnswer(result);
+            answer = overtimeBreakdown.matched
+              ? formatOvertimeBreakdownAnswer(result)
+              : formatOvertimeTotalAnswer(result);
           }
         } catch {
           answer = "No he podido leer el total oficial de horas extras. No voy a inventar una cifra.";
@@ -359,6 +369,7 @@ ${body.attachmentContext}`;
           console.warn("[copiloto] direct_recipe_unavailable");
         }
         try {
+          if (!answer) answer = await tryDirectTodayScheduleAnswer(userText, { supabase, role, today }) ?? "";
           if (!answer) answer = await tryDirectTodayAttendanceAnswer(userText, { supabase, role, today }) ?? "";
         } catch {
           console.warn("[copiloto] direct_attendance_unavailable");
