@@ -11763,6 +11763,12 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   font-family: inherit;
   color: #fff;
 }
+/* Entero y medio conservan ambos importes en una única fila compacta. */
+.carta-browse-modal .carta-square-product-card [data-carta-price-lines][data-carta-price-compact='true'] > span {
+  font-size: clamp(8px, 2.05vw, 11px);
+  letter-spacing: -.035em;
+  white-space: nowrap;
+}
 .carta-browse-modal .carta-square-product-card [data-carta-price-lines]:has(> span:nth-child(2)) > span {
   font-size: clamp(7px, 1.95vw, 10px);
 }
