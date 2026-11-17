@@ -10,6 +10,7 @@ import { Field } from '@/components/ui/Field'
 import { formatCartaPrice } from '@/lib/carta-price-display'
 import { formatCartaOrderProductName } from '@/lib/carta-menu-i18n'
 import { cn } from '@/lib/utils'
+import type { PlatoMarbellaOrderEntry } from '@/lib/event-order-carta'
 
 export type EventEncargoCartLine = {
   key: string
@@ -20,6 +21,7 @@ export type EventEncargoCartLine = {
   unitPrice: number
   portion?: 'entero' | 'medio'
   notes?: string
+  platoMarbellaItems?: PlatoMarbellaOrderEntry[]
 }
 
 /** Badge rojo estilo campana de notificaciones. */
@@ -58,6 +60,8 @@ export function EventEncargoCartFooter({
   orderNotes = '',
   onOrderNotesChange,
   onLineNotesChange,
+  onPlatoMarbellaAddRequest,
+  onPlatoMarbellaRemove,
 }: {
   lines: EventEncargoCartLine[]
   /** Unidades totales para el badge (estilo notificación). */
@@ -78,9 +82,12 @@ export function EventEncargoCartFooter({
   orderNotes?: string
   onOrderNotesChange?: (notes: string) => void
   onLineNotesChange?: (key: string, notes: string) => void
+  onPlatoMarbellaAddRequest?: () => void
+  onPlatoMarbellaRemove?: (key: string) => void
 }) {
   const [cartOpen, setCartOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [plateDetailsOpen, setPlateDetailsOpen] = useState(false)
   const [removalKey, setRemovalKey] = useState<string | null>(null)
   const [noteEditor, setNoteEditor] = useState<{ kind: 'line' | 'order'; key?: string } | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
@@ -89,6 +96,12 @@ export function EventEncargoCartFooter({
   const totalPrice = lines.reduce((s, l) => s + Math.max(0, l.unitPrice) * Math.max(0, l.quantity), 0)
   const saveBlocked = saveDisabled || !hasLines || isPending
   const removalLine = lines.find((line) => line.key === removalKey)
+  const plateDetails = lines.flatMap((line) => line.platoMarbellaItems ?? [])
+  const requestAnotherPlate = () => {
+    setPlateDetailsOpen(false)
+    setCartOpen(false)
+    onPlatoMarbellaAddRequest?.()
+  }
 
   const openNoteEditor = (kind: 'line' | 'order', key?: string) => {
     setNoteDraft(kind === 'order' ? orderNotes : lines.find((line) => line.key === key)?.notes ?? '')
@@ -285,9 +298,21 @@ export function EventEncargoCartFooter({
                   return (
                     <div key={line.key} className="min-w-0 rounded-xl border border-zinc-200/80 bg-white px-3 py-2.5">
                       <div className="flex min-w-0 items-start justify-between gap-3">
-                        <p className="min-w-0 flex-1 break-words text-[13px] font-bold leading-snug text-zinc-900">
-                          {formatCartaOrderProductName(line.name)}
-                        </p>
+                        <div className="min-w-0 flex-1">
+                          {line.platoMarbellaItems ? (
+                            <button
+                              type="button"
+                              className="min-h-8 break-words text-left text-[13px] font-bold leading-snug text-[#1b4a82] underline decoration-[#a6c8ef] underline-offset-2"
+                              onClick={() => setPlateDetailsOpen(true)}
+                            >
+                              {formatCartaOrderProductName(line.name)} · Ver elecciones
+                            </button>
+                          ) : (
+                            <p className="break-words text-[13px] font-bold leading-snug text-zinc-900">
+                              {formatCartaOrderProductName(line.name)}
+                            </p>
+                          )}
+                        </div>
                         <p className="shrink-0 whitespace-nowrap text-[13px] font-bold tabular-nums text-zinc-900">
                           {formatCartaPrice(lineTotal)}
                         </p>
@@ -298,6 +323,27 @@ export function EventEncargoCartFooter({
                         </p>
                       ) : null}
                       <div className="mt-2 flex min-w-0 items-center justify-between gap-2 border-t border-zinc-100 pt-1">
+                        {line.platoMarbellaItems ? (
+                          <>
+                            <Button
+                              type="button"
+                              variant="tertiary"
+                              instance="event-encargo-cart-plate-detail"
+                              onClick={() => setPlateDetailsOpen(true)}
+                            >
+                              {line.quantity} {line.quantity === 1 ? 'plato' : 'platos'} · Detalle
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              instance="event-encargo-cart-plate-again"
+                              onClick={requestAnotherPlate}
+                            >
+                              + Otro plato
+                            </Button>
+                          </>
+                        ) : (
+                          <>
                         <Button
                           type="button"
                           variant="tertiary"
@@ -309,6 +355,8 @@ export function EventEncargoCartFooter({
                         <div className="w-[calc(var(--tactil-minimo)*2+var(--espacio-8))] shrink-0">
                           {quantitySelector}
                         </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   )
@@ -354,6 +402,60 @@ export function EventEncargoCartFooter({
               </p>
             </div>
           ) : null}
+        </div>
+      </Modal>
+
+      <Modal
+        open={plateDetailsOpen && plateDetails.length > 0}
+        onClose={() => setPlateDetailsOpen(false)}
+        title="Platos Marbella"
+        instance="event-encargo-cart-plate-details"
+        parentInstance="event-encargo-cart"
+        layer="derived"
+        variant="standard"
+      >
+        <div className="space-y-2 pb-2">
+          <p className="text-xs text-zinc-500">
+            Cada plato tiene sus propias elecciones. Pulsa uno para verlas.
+          </p>
+          {plateDetails.map((plate, index) => (
+            <details key={plate.key} className="group overflow-hidden rounded-xl border border-zinc-200 bg-white">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-3 text-sm font-bold text-zinc-900 marker:hidden">
+                <span>Plato Marbella {index + 1}</span>
+                <span className="text-xs text-[#1b4a82] group-open:hidden">Ver ingredientes</span>
+                <span className="hidden text-xs text-[#1b4a82] group-open:inline">Ocultar</span>
+              </summary>
+              <div className="space-y-2 border-t border-zinc-100 bg-zinc-50/60 px-3 py-3">
+                <p className="text-xs text-zinc-800"><strong>Entrante:</strong> {plate.choices.entrante}</p>
+                <p className="text-xs text-zinc-800"><strong>Principal:</strong> {plate.choices.principal}</p>
+                <p className="text-xs text-zinc-800"><strong>Guarnición:</strong> {plate.choices.guarnicion}</p>
+                {plate.note ? <p className="text-xs text-zinc-500"><strong>Indicaciones:</strong> {plate.note}</p> : null}
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    instance={`event-encargo-cart-remove-plate-${plate.key}`}
+                    onClick={() => {
+                      onPlatoMarbellaRemove?.(plate.key)
+                      if (plateDetails.length <= 1) setPlateDetailsOpen(false)
+                    }}
+                  >
+                    Quitar este plato
+                  </Button>
+                </div>
+              </div>
+            </details>
+          ))}
+          <div className="flex justify-end pt-1">
+            <Button
+              type="button"
+              variant="primary"
+              instance="event-encargo-cart-plate-add-another"
+              onClick={requestAnotherPlate}
+            >
+              + Añadir otro plato
+            </Button>
+          </div>
         </div>
       </Modal>
 
