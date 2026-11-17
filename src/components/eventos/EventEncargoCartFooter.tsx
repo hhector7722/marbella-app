@@ -391,7 +391,24 @@ export function EventEncargoCartFooter({
                           {formatCartaOrderProductName(line.name)}
                         </span>
                       )}
-                      {isPlate ? null : (
+                      {isPlate ? (
+                        <button
+                          type="button"
+                          aria-label={plates?.length === 1
+                            ? `Añadir o editar nota de ${line.name}`
+                            : `Elegir Plato Marbella para añadir una nota`}
+                          title={plates?.length === 1 ? (plates[0]?.note || 'Añadir nota') : 'Añadir nota a un plato'}
+                          onClick={() => {
+                            if (plates?.length === 1 && plates[0]) openNoteEditor('line', plates[0].key)
+                            else setPlateDetailsOpen(true)
+                          }}
+                          className="min-w-0 max-w-[32%] flex-[0_1_auto] overflow-hidden border-0 bg-transparent p-0 text-left text-[9px] italic font-normal leading-none text-zinc-400 hover:text-zinc-600"
+                        >
+                          <span className="block w-full truncate whitespace-nowrap">
+                            {plates?.length === 1 && plates[0]?.note?.trim() ? plates[0].note.trim() : 'Añadir nota'}
+                          </span>
+                        </button>
+                      ) : (
                         <button
                           type="button"
                           aria-label={lineNote ? `Editar nota de ${line.name}` : `Añadir nota a ${line.name}`}
@@ -557,7 +574,8 @@ export function EventEncargoCartFooter({
         onClose={() => setNoteEditor(null)}
         title={noteEditor?.kind === 'order' ? 'Indicaciones del pedido' : 'Nota del producto'}
         instance="event-encargo-cart-note"
-        parentInstance={noteEditor?.kind === 'line' && noteEditor.key?.startsWith('pm-')
+        parentInstance={plateDetailsOpen &&
+          noteEditor?.kind === 'line' && noteEditor.key?.startsWith('pm-')
           ? 'event-encargo-cart-plate-details'
           : 'event-encargo-cart'}
         layer="derived"
