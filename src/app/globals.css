@@ -11512,21 +11512,34 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   object-fit: contain;
   object-position: center;
 }
-/* /pedido: capa interactiva sobre la foto original, sin duplicar tarjetas.
-   Controles compactos, relleno suave y contorno; división central recta. */
-.carta-browse-modal .carta-square-product-card [data-carta-order-controls] {
-  position: absolute;
-  z-index: 35;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
+/* /pedido: controles discretos bajo la foto, dentro de su marco blanco.
+   El área de la imagen y los botones son hermanos en flujo flex:
+   nunca se superponen ni se tapa parte de la fotografía. */
+.carta-browse-modal .carta-square-product-card:has([data-carta-order-controls]:not([data-inline]))
+  > div:first-child > div {
   display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.carta-browse-modal .carta-square-product-card:has([data-carta-order-controls]:not([data-inline]))
+  > div:first-child > div > button:first-child {
+  flex: 1 1 0%;
+  height: auto;
+  min-height: 0;
+}
+.carta-browse-modal .carta-square-product-card [data-carta-order-controls] {
+  position: static;
+  z-index: 2;
+  display: flex;
+  flex: 0 0 auto;
   align-items: stretch;
-  width: min(78%, 120px);
-  height: clamp(25px, 7.5vw, 30px);
+  width: min(70%, 94px);
+  height: 19px;
+  margin: 2px auto 0;
+  transform: none;
   overflow: hidden;
   border-radius: 999px;
-  filter: drop-shadow(0 1px 2px rgb(14 39 27 / .12));
+  filter: drop-shadow(0 1px 1px rgb(14 39 27 / .10));
 }
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button {
   display: flex;
@@ -11552,14 +11565,14 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   border-radius: 999px;
   background: #e1f1e5;
   color: #245b36;
-  font-size: clamp(9px, 2.5vw, 11px);
+  font-size: 8px;
 }
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action="remove"] {
   border-color: #b4535a;
   border-radius: 999px 0 0 999px;
   background: #f8e7e8;
   color: #a73f48;
-  font-size: 17px;
+  font-size: 13px;
   font-weight: 600;
 }
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action="increment"] {
@@ -11567,24 +11580,16 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   border-radius: 0 999px 999px 0;
   background: #e1f1e5;
   color: #245b36;
-  font-size: 17px;
+  font-size: 13px;
   font-weight: 600;
   margin-left: -1px;
 }
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button:active {
   filter: brightness(.94);
 }
-/* Reservar la franja inferior para los controles, sin tapar la fotografía. */
-.carta-browse-modal .carta-square-product-card:has([data-carta-order-controls]:not([data-inline]))
-  > div:first-child > div > button:first-child {
-  height: calc(100% - 28px);
-}
-/* Un producto sin foto debe seguir pudiendo sumarse y restarse. */
+/* Sin foto: conservar el control debajo del nombre y precio. */
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls][data-inline] {
-  position: relative;
-  bottom: auto;
-  left: auto;
-  transform: none;
+  position: static;
   flex: 0 0 auto;
   margin-top: 4px;
 }
