@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageSquareText } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { Button } from '@/components/ui/button'
@@ -360,24 +359,18 @@ export function EventEncargoCartFooter({
                           {formatCartaOrderProductName(line.name)}
                         </span>
                       )}
-                      {isPlate ? (
-                        <span className="w-6 shrink-0" aria-hidden />
-                      ) : (
-                        <span className="relative flex h-7 w-6 shrink-0 items-center justify-center" title={line.notes?.trim() || 'Añadir nota'}>
-                          <Button
-                            type="button"
-                            variant="tertiary"
-                            instance="event-encargo-cart-add-line-note"
-                            aria-label={line.notes?.trim() ? `Editar nota de ${line.name}` : `Añadir nota a ${line.name}`}
-                            icon={<MessageSquareText className="h-3.5 w-3.5" strokeWidth={1.8} />}
-                            onClick={() => openNoteEditor('line', line.key)}
-                          />
-                          {line.notes?.trim() ? (
-                            <span className="pointer-events-none absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-[#1b4a82]" aria-hidden />
-                          ) : null}
-                        </span>
+                      {isPlate ? null : (
+                        <button
+                          type="button"
+                          aria-label={line.notes?.trim() ? `Editar nota de ${line.name}` : `Añadir nota a ${line.name}`}
+                          title={line.notes?.trim() || 'Añadir nota'}
+                          onClick={() => openNoteEditor('line', line.key)}
+                          className="shrink-0 whitespace-nowrap border-0 bg-transparent p-0 text-[9px] italic font-normal leading-none text-zinc-400 hover:text-zinc-600"
+                        >
+                          {line.notes?.trim() ? 'Editar nota' : 'Añadir nota'}
+                        </button>
                       )}
-                      <div className="h-[26px] w-[76px] shrink-0 overflow-hidden rounded-md border border-[#cbd9eb] bg-[#f2f6fc] text-[#1b4a82]">
+                      <div className="h-[26px] w-[76px] shrink-0 overflow-hidden rounded-full border border-[#cbd9eb] bg-transparent text-[#1b4a82]">
                         <QuantityStepper
                           variant="bar"
                           value={line.quantity}
