@@ -1786,6 +1786,11 @@ export function MenuAccordion({
                                             launcherArticuloId={platoLauncherArticuloId ?? null}
                                             className="min-h-0 flex-1"
                                             eventOrder={eventOrder}
+                                            onAddedToOrder={
+                                                eventOrder?.onAddPlatoMarbella
+                                                    ? () => setPlatoMarbellaDetailOpen(false)
+                                                    : undefined
+                                            }
                                         />
                                     )}
                                 </div>
