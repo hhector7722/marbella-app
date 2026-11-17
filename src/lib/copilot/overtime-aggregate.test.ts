@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { createClient } from '@/utils/supabase/server';
-import { detectOvertimeTotalIntent, queryOvertimeTotal, formatOvertimeTotalAnswer } from './overtime-aggregate.ts';
+import { detectOvertimeTotalIntent, detectOvertimeBreakdownIntent, queryOvertimeTotal, formatOvertimeTotalAnswer, formatOvertimeBreakdownAnswer } from './overtime-aggregate.ts';
 type Client = Awaited<ReturnType<typeof createClient>>;
 
 function fakeDb(rows: Array<Record<string, unknown>>, failure = false) {
@@ -9,6 +9,15 @@ function fakeDb(rows: Array<Record<string, unknown>>, failure = false) {
   const db = {
     from: (table: string) => {
       calls.push({ op: 'from', args: [table] });
+      if (table === 'profiles') return {
+        select: () => ({ in: () => ({ limit: async () => ({
+          data: [
+            { id: 'a', first_name: 'Alba', last_name: 'Prueba' },
+            { id: 'b', first_name: 'Bruno', last_name: 'Prueba' },
+          ],
+          error: null,
+        }) }) }),
+      };
       const q = {
         select: (...args: unknown[]) => { calls.push({ op: 'select', args }); return q; },
         gte: (...args: unknown[]) => { calls.push({ op: 'gte', args }); return q; },
@@ -118,4 +127,41 @@ test('maneja más de 500 registros sin truncar el total', async () => {
   assert.equal(result.summary.totalCostCents, 502 * 250);
   assert.equal(result.summary.employeesWithOvertime, 502);
   assert.equal(calls.filter(c => c.op === 'range').length, 2);
+});
+
+
+test('desglose del total de la plantilla y continuación sin repetir la pregunta', () => {
+  assert.deepEqual(detectOvertimeBreakdownIntent('desglósame las horas extras de esta última semana'), {
+    matched: true, period: 'semana_pasada',
+  });
+  assert.deepEqual(detectOvertimeBreakdownIntent('de todos los trabajadores', [
+    'desglósame las horas extras de esta última semana',
+  ]), { matched: true, period: 'semana_pasada' });
+  assert.equal(detectOvertimeBreakdownIntent('desglósame horas extras de Silvia esta semana').matched, false);
+  assert.deepEqual(detectOvertimeTotalIntent('de todos los trabajadores', [
+    'cuánto es el coste de horas extras de la semana pasada',
+  ]), { matched: true, period: 'semana_pasada' });
+});
+
+test('desglose sólo suma registros de origen y conserva la bolsa de horas', async () => {
+  const { supabase } = fakeDb(example);
+  const result = await queryOvertimeTotal({ supabase, role: 'manager', userId, today }, 'semana_pasada');
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.summary.totalExtraHours, 12.5);
+  assert.equal(result.summary.totalCostCents, 12000);
+  assert.equal(result.summary.bankHoursWithoutCost, 0.5);
+});
+
+test('el desglose por trabajador devuelve nombres, importes reales y horas en bolsa', async () => {
+  const { supabase } = fakeDb(example);
+  const result = await queryOvertimeTotal({ supabase, role: 'manager', userId, today }, 'semana_pasada', true);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.summary.workers?.length, 2);
+  assert.equal(result.summary.workers?.[0]?.name, 'Alba Prueba');
+  assert.equal(result.summary.workers?.[0]?.hours, 12);
+  assert.equal(result.summary.workers?.[0]?.costCents, 12000);
+  assert.equal(result.summary.workers?.[1]?.bankHours, 0.5);
+  assert.match(formatOvertimeBreakdownAnswer(result), /Alba Prueba.*12 h.*120,00 €|Alba Prueba.*12 h.*120.00 €/);
 });
