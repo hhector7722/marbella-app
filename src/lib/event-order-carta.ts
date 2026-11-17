@@ -61,6 +61,9 @@ export type EventOrderCartaControl = {
   tapToAdd?: boolean
   /** `/pedido`: controles +/− sobre la foto sin alterar la carta original. */
   photoControls?: boolean
+  /** /pedido: acceso al mismo carrito desde categorías y subcategorías. */
+  openCart?: () => void
+  totalUnits?: number
   /** Pedido cliente: cada plato nuevo requiere tres elecciones independientes. */
   onAddPlatoMarbella?: (productId: number, choices: PlatoMarbellaChoices) => void
   onRemoveLastPlatoMarbella?: (productId: number) => void
