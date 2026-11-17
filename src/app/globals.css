@@ -11557,6 +11557,62 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   box-shadow: 0 0 0 1px rgb(55 119 192 / .38);
 }
 
+/* /pedido · Ver mi pedido: comanda densa, filas de una sola línea.
+   El scroll pertenece exclusivamente al cuerpo; importe y acciones, al pie fijo. */
+[data-component='Modal'][data-instance='event-encargo-cart']:has([data-client-order-list='true'])
+  [data-element='container'] {
+  height: min(89svh, var(--modal-max-height));
+}
+[data-component='Modal'][data-instance='event-encargo-cart']:has([data-client-order-list='true'])
+  [data-element='body'] {
+  padding: 5px 6px 2px;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-list='true'] [data-component='QuantityStepper'][data-variant='bar'] {
+  height: 100%;
+  min-height: 0;
+  border: none;
+  box-shadow: none;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-list='true'] [data-component='QuantityStepper'][data-variant='bar'] button {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 0 2px;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-list='true'] [data-component='Button'][data-instance='event-encargo-cart-add-line-note'] {
+  height: 24px !important;
+  min-height: 24px !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  max-width: 24px;
+  padding: 0 !important;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-list='true'] [data-component='Button'][data-instance='event-encargo-cart-add-line-note']::before {
+  box-shadow: none;
+  background: transparent;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-footer] [data-component='Button'][data-instance='event-encargo-cart-add-order-notes'] {
+  width: auto !important;
+  min-width: 0;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px;
+  flex: 0 1 auto;
+  padding-inline: 4px;
+  font-size: 10px;
+}
+[data-component='Modal'][data-instance='event-encargo-cart']
+  [data-client-order-footer] [data-component='Button'][data-instance='event-encargo-cart-add-order-notes'] [data-element='label'] {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* /pedido: controles discretos bajo la foto, dentro de su marco blanco.
    El área de la imagen y los botones son hermanos en flujo flex:
    nunca se superponen ni se tapa parte de la fotografía. */
