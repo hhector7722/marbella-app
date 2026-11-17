@@ -195,8 +195,8 @@ export default function EventEncargoCartaClient({
     () =>
       editMode
         ? undefined
-        : { qtyByProductId: qtyById, onQuantityChange, tapToAdd: true },
-    [editMode, qtyById, onQuantityChange]
+        : { qtyByProductId: qtyById, onQuantityChange, tapToAdd: true, photoControls: isClientToken },
+    [editMode, qtyById, onQuantityChange, isClientToken]
   )
 
   const cartLines = useMemo((): EventEncargoCartLine[] => {
