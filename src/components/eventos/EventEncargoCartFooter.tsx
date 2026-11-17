@@ -26,11 +26,11 @@ export type EventEncargoCartLine = {
   platoMarbellaItems?: PlatoMarbellaOrderEntry[]
 }
 
-/** Miniatura de Ventas: 22px exterior, 16px de imagen completa, sin ampliar ni recortar. */
+/** Miniatura flotante: imagen completa y centrada, sin tarjeta ni fondo propio. */
 function CartProductThumbnail({ src }: { src?: string | null }) {
   const [failed, setFailed] = useState(false)
   return (
-    <span aria-hidden="true" className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden rounded-[5px] bg-slate-50 p-[2px]">
+    <span aria-hidden="true" className="flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-transparent">
       {src && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element -- foto de catálogo en Storage
         <img
