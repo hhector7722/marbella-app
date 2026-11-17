@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { MessageSquareText } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { Button } from '@/components/ui/button'
@@ -203,16 +204,28 @@ export function EventEncargoCartFooter({
         footer={
           clientOrderMode ? (
             <div data-client-order-footer className="grid w-full min-w-0 grid-cols-2 gap-x-2 gap-y-1">
-              <div className="col-span-2 min-w-0">
-                <Button
-                  type="button"
-                  variant="tertiary"
-                  layout="fill"
-                  instance="event-encargo-cart-add-order-notes"
-                  onClick={() => openNoteEditor('order')}
-                >
-                  {orderNotes.trim() ? 'Editar indicaciones' : 'Añadir indicaciones'}
-                </Button>
+              <div data-client-order-total className="col-span-2 min-w-0 border-b border-zinc-100 pb-1">
+                <div className="flex min-w-0 items-center justify-between gap-1.5">
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    instance="event-encargo-cart-add-order-notes"
+                    onClick={() => openNoteEditor('order')}
+                  >
+                    {orderNotes.trim() ? 'Editar indicaciones' : 'Añadir indicaciones'}
+                  </Button>
+                  <div className="flex shrink-0 items-baseline gap-2 whitespace-nowrap tabular-nums">
+                    <span className="text-[10px] font-semibold text-zinc-500">{units} uds.</span>
+                    <span className="text-[15px] font-extrabold text-[#1b4a82]">
+                      Total {formatCartaPrice(totalPrice)}
+                    </span>
+                  </div>
+                </div>
+                {orderNotes.trim() ? (
+                  <p title={orderNotes} className="mt-0.5 truncate text-[10px] leading-tight text-zinc-500">
+                    Indicaciones: {orderNotes}
+                  </p>
+                ) : null}
               </div>
               <div className="min-w-0">
                 <Button
@@ -263,13 +276,16 @@ export function EventEncargoCartFooter({
           )
         }
       >
-        <div className="space-y-3">
+        <div
+          data-client-order-list={clientOrderMode ? 'true' : undefined}
+          className={clientOrderMode ? 'min-w-0 px-1' : 'space-y-3'}
+        >
           {lines.length === 0 ? (
             <EmptyState instance="event-encargo-cart-none" variant="none" title="Aún no hay productos." />
           ) : (
             <div
               className={clientOrderMode
-                ? 'space-y-2'
+                ? 'min-w-0 divide-y divide-zinc-100'
                 : 'flex max-h-[min(50vh,22rem)] flex-col gap-1 overflow-y-auto overscroll-contain rounded-xl border border-zinc-100 bg-zinc-50/60 px-1'}
             >
               {lines.map((line) => {
@@ -295,69 +311,90 @@ export function EventEncargoCartFooter({
                 )
 
                 if (clientOrderMode) {
+                  const plates = line.platoMarbellaItems
+                  const isPlate = Boolean(plates?.length)
                   return (
-                    <div key={line.key} className="min-w-0 rounded-xl border border-zinc-200/80 bg-white px-3 py-2.5">
-                      <div className="flex min-w-0 items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          {line.platoMarbellaItems ? (
-                            <button
-                              type="button"
-                              className="min-h-8 break-words text-left text-[13px] font-bold leading-snug text-[#1b4a82] underline decoration-[#a6c8ef] underline-offset-2"
-                              onClick={() => setPlateDetailsOpen(true)}
-                            >
-                              {formatCartaOrderProductName(line.name)} · Ver elecciones
-                            </button>
-                          ) : (
-                            <p className="break-words text-[13px] font-bold leading-snug text-zinc-900">
-                              {formatCartaOrderProductName(line.name)}
-                            </p>
-                          )}
-                        </div>
-                        <p className="shrink-0 whitespace-nowrap text-[13px] font-bold tabular-nums text-zinc-900">
-                          {formatCartaPrice(lineTotal)}
-                        </p>
-                      </div>
-                      {line.notes?.trim() ? (
-                        <p className="mt-1 break-words text-[11px] leading-snug text-zinc-500">
-                          {line.notes}
-                        </p>
-                      ) : null}
-                      <div className="mt-2 flex min-w-0 items-center justify-between gap-2 border-t border-zinc-100 pt-1">
-                        {line.platoMarbellaItems ? (
-                          <>
-                            <Button
-                              type="button"
-                              variant="tertiary"
-                              instance="event-encargo-cart-plate-detail"
-                              onClick={() => setPlateDetailsOpen(true)}
-                            >
-                              {line.quantity} {line.quantity === 1 ? 'plato' : 'platos'} · Detalle
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              instance="event-encargo-cart-plate-again"
-                              onClick={requestAnotherPlate}
-                            >
-                              + Otro plato
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                        <Button
+                    <div key={line.key} className="flex h-[34px] min-w-0 items-center gap-1.5 px-1" role="listitem">
+                      {isPlate ? (
+                        <button
                           type="button"
-                          variant="tertiary"
-                          instance="event-encargo-cart-add-line-note"
-                          onClick={() => openNoteEditor('line', line.key)}
+                          title="Ver las elecciones de cada Plato Marbella"
+                          aria-label={`Ver ingredientes de ${line.name}`}
+                          onClick={() => setPlateDetailsOpen(true)}
+                          className="min-w-0 flex-1 truncate text-left text-[12px] font-bold leading-none text-[#1b4a82] underline decoration-[#b3cbea] underline-offset-2"
                         >
-                          {line.notes?.trim() ? 'Editar nota' : 'Añadir nota'}
-                        </Button>
-                        <div className="w-[calc(var(--tactil-minimo)*2+var(--espacio-8))] shrink-0">
-                          {quantitySelector}
-                        </div>
-                          </>
-                        )}
+                          {formatCartaOrderProductName(line.name)}
+                        </button>
+                      ) : (
+                        <span
+                          className="min-w-0 flex-1 truncate text-[12px] font-semibold leading-none text-zinc-900"
+                          title={line.name}
+                        >
+                          {formatCartaOrderProductName(line.name)}
+                        </span>
+                      )}
+                      {isPlate ? (
+                        <span className="w-6 shrink-0" aria-hidden />
+                      ) : (
+                        <span className="relative flex h-7 w-6 shrink-0 items-center justify-center" title={line.notes?.trim() || 'Añadir nota'}>
+                          <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="event-encargo-cart-add-line-note"
+                            aria-label={line.notes?.trim() ? `Editar nota de ${line.name}` : `Añadir nota a ${line.name}`}
+                            icon={<MessageSquareText className="h-3.5 w-3.5" strokeWidth={1.8} />}
+                            onClick={() => openNoteEditor('line', line.key)}
+                          />
+                          {line.notes?.trim() ? (
+                            <span className="pointer-events-none absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-[#1b4a82]" aria-hidden />
+                          ) : null}
+                        </span>
+                      )}
+                      <div className="h-[26px] w-[76px] shrink-0 overflow-hidden rounded-md border border-[#cbd9eb] bg-[#f2f6fc] text-[#1b4a82]">
+                        <QuantityStepper
+                          variant="bar"
+                          value={line.quantity}
+                          min={0}
+                          max={isPlate ? 99 : 999}
+                          ariaLabel={`Cantidad de ${line.name}`}
+                          className="h-full w-full"
+                          onDecrement={
+                            isPlate
+                              ? () => {
+                                  const last = plates?.[plates.length - 1]
+                                  if (last) onPlatoMarbellaRemove?.(last.key)
+                                }
+                              : line.quantity === 1 ? () => setRemovalKey(line.key) : undefined
+                          }
+                          onChange={(nextValue) => {
+                            const next = Math.max(0, Math.floor(nextValue))
+                            if (isPlate) {
+                              if (next > line.quantity) requestAnotherPlate()
+                              else if (next < line.quantity) {
+                                const last = plates?.[plates.length - 1]
+                                if (last) onPlatoMarbellaRemove?.(last.key)
+                              }
+                              return
+                            }
+                            const delta = next - line.quantity
+                            const portion = line.portion ?? 'entero'
+                            if (delta > 0) {
+                              for (let i = 0; i < delta; i++) onIncrement(line.articuloId, portion)
+                            } else if (delta < 0) {
+                              for (let i = 0; i < -delta; i++) {
+                                if (line.quantity - i === 1) setRemovalKey(line.key)
+                                else onDecrement(line.articuloId, portion)
+                              }
+                            }
+                          }}
+                        />
                       </div>
+                      <span
+                        className="w-[52px] shrink-0 whitespace-nowrap text-right text-[11px] font-bold tabular-nums text-zinc-900"
+                        title={formatCartaPrice(lineTotal).trim()}
+                      >
+                        {formatCartaPrice(lineTotal)}
+                      </span>
                     </div>
                   )
                 }
@@ -384,14 +421,7 @@ export function EventEncargoCartFooter({
             </div>
           )}
 
-          {clientOrderMode && orderNotes.trim() ? (
-            <div className="rounded-lg bg-zinc-50 px-3 py-2">
-              <p className="text-[11px] font-bold text-zinc-700">Indicaciones del pedido</p>
-              <p className="mt-0.5 whitespace-pre-wrap break-words text-xs text-zinc-600">{orderNotes}</p>
-            </div>
-          ) : null}
-
-          {hasLines ? (
+          {hasLines && !clientOrderMode ? (
             <div className={cn(
               'flex items-baseline justify-between gap-3',
               clientOrderMode ? 'rounded-xl border border-[#d3e1f2] bg-[#eef4fc] px-3 py-3' : 'mt-3'
