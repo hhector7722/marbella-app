@@ -9,6 +9,8 @@ type CartaDualRacionPricesProps = {
   precio: number | string | null | undefined
   precioMedio?: number | string | null | undefined
   variant?: 'public' | 'staff'
+  /** Fichas cuadradas: mostrar los precios de entero y medio en una sola fila. */
+  singleLine?: boolean
 }
 
 function buildDualRacionAriaLabel(
@@ -28,6 +30,7 @@ export function CartaDualRacionPrices({
   precio,
   precioMedio,
   variant = 'public',
+  singleLine = false,
 }: CartaDualRacionPricesProps) {
   const priceStr = formatCartaPrice(precio)
   const priceMedioStr = formatCartaPrice(precioMedio ?? null)
@@ -54,6 +57,23 @@ export function CartaDualRacionPrices({
       >
         {' '}
       </span>
+    )
+  }
+
+  if (showPrice && showMedio && singleLine) {
+    const ariaLabel = buildDualRacionAriaLabel({ racionEntero, racionMedio }, precio, precioMedio)
+    return (
+      <div
+        data-carta-price-lines
+        data-carta-price-compact="true"
+        role="group"
+        aria-label={ariaLabel || undefined}
+        className="flex w-full min-w-0 items-center justify-center whitespace-nowrap"
+      >
+        <span title={ariaLabel || undefined} className="whitespace-nowrap text-center font-bold tabular-nums">
+          {racionEntero.trim().charAt(0).toUpperCase()} {priceStr} · {racionMedio.trim().charAt(0).toUpperCase()} {priceMedioStr}
+        </span>
+      </div>
     )
   }
 
