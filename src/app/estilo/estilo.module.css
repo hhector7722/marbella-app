@@ -245,3 +245,219 @@
  .salesBottom {gap:3px;}
  .productList,.hourList {padding:3px;}
 }
+
+/* /estilo V1 — dark neumorphism matte / tactile Soft UI.
+   Everything below stays inside the page's CSS module.
+   The production dashboard and shared shell are untouched. */
+.page {
+  --sandbox-ink: #f1f7ff;
+  --sandbox-secondary: #b1c8e2;
+  --sandbox-panel: #1d3957;
+  --sandbox-line: rgba(197, 226, 251, .17);
+  --neu-raised:
+    inset 1px 1px 0 rgba(229, 244, 255, .13),
+    inset -1px -1px 0 rgba(4, 19, 39, .17),
+    11px 13px 25px rgba(2, 13, 31, .43),
+    -7px -7px 20px rgba(95, 152, 211, .12);
+  --neu-inset:
+    inset 4px 4px 10px rgba(1, 15, 33, .37),
+    inset -2px -2px 7px rgba(105, 160, 213, .09);
+  --neu-outline: 1px solid rgba(191, 222, 255, .16);
+  position: relative;
+  min-height: calc(100dvh - var(--estructura-cabecera, 78px));
+  padding-top: 17px;
+  padding-bottom: 18px;
+  background:
+    radial-gradient(ellipse 66% 59% at 31% -12%, rgba(83, 135, 191, .23), transparent 73%),
+    radial-gradient(ellipse 46% 74% at 108% 78%, rgba(33, 77, 119, .18), transparent 78%),
+    linear-gradient(152deg, #234365 0%, #172f4b 47%, #0e2138 100%);
+  box-shadow: inset 0 2px 0 rgba(211, 234, 255, .035);
+  color: var(--sandbox-ink);
+}
+.stage { position: relative; z-index: 1; }
+.grid { gap: clamp(12px, 1.15vw, 18px); }
+
+.closingCard,
+.salesPanel,
+.calendarPanel {
+  position: relative;
+  border: var(--neu-outline);
+  border-radius: 22px;
+  background: linear-gradient(143deg,
+    #2a4b70 0%,
+    #214062 23%,
+    #193653 59%,
+    #142c47 100%);
+  box-shadow: var(--neu-raised);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Individual relief: monthly and last closing remain two separate cards. */
+.closings { gap: 12px; }
+.closingCard { padding: clamp(7px, .7vw, 11px); gap: 5px; }
+.closingHeading {
+  min-height: 21px;
+  color: #f2f8ff;
+  text-shadow: 0 1px 1px rgba(0, 10, 30, .18);
+}
+.closingHeading small { color: #bdd0e6; }
+.mutedArrow { color: #c3d6ee; }
+.miniMetrics { gap: 5px; min-height: 39px; }
+.miniMetric {
+  border: 1px solid rgba(199, 226, 250, .16);
+  border-radius: 9px;
+  box-shadow: inset 0 1px 0 rgba(238, 247, 255, .12), 0 3px 7px rgba(0, 13, 34, .22);
+}
+.blueMetric { background: linear-gradient(145deg, #2a78aa, #1b5987); }
+.greenMetric { background: linear-gradient(145deg, #23947b, #126b58); }
+.plainMetric {
+  background: linear-gradient(143deg, rgba(44, 75, 113, .94), rgba(28, 54, 89, .98));
+  box-shadow: var(--neu-inset);
+}
+.microStats { align-items: center; }
+.microStats small { color: #bbd0e9; }
+.microStats b { color: #f4f8ff; }
+
+.salesPanel {
+  padding: clamp(8px, .8vw, 13px);
+  background: linear-gradient(142deg, #2c5074, #204062 43%, #17324f 100%);
+}
+.salesHeader { color: #dceaf9; }
+.salesHeader small { color: #c3d5e8; }
+.salesTag {
+  padding: 3px 8px;
+  border-radius: 9px;
+  border: 1px solid rgba(191, 220, 248, .16);
+  background: rgba(20, 44, 72, .5);
+  box-shadow: var(--neu-inset);
+}
+.bigMetrics { justify-content: space-evenly; }
+.bigSales, .bigNet {
+  border-radius: 13px;
+  border: 1px solid rgba(225, 247, 255, .14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .21),
+    inset -1px -1px 0 rgba(4, 19, 34, .18),
+    7px 8px 15px rgba(3, 20, 41, .31),
+    -3px -3px 10px rgba(113, 175, 223, .12);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .16);
+}
+.bigSales { background: linear-gradient(141deg, #2e80b3, #1a5989); }
+.bigNet { background: linear-gradient(141deg, #269b81, #166d58); }
+.chart {
+  border-radius: 11px;
+  padding: 5px 7px 2px;
+  background: rgba(9, 30, 53, .21);
+  box-shadow: inset 2px 3px 7px rgba(2, 17, 35, .22);
+}
+.chart svg path { stroke: #61b5f7; }
+.chartHours { inset-inline: 7px; }
+.productList, .hourList {
+  border-radius: 13px;
+  border: 1px solid rgba(160, 203, 239, .075);
+  background: linear-gradient(144deg, #193a59, #173450 70%, #17304a);
+  box-shadow: var(--neu-inset);
+  padding-inline: 10px;
+}
+
+.calendarPanel { padding: 9px 9px 11px; }
+.calendarTitle {
+  min-height: 39px;
+  color: #f6f9ff;
+  text-shadow: 0 1px 2px rgba(0, 10, 26, .22);
+}
+.weekLabels b { color: #cedbec; }
+.date { color: #f2f7ff; }
+.today, .eventDay {
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .27),
+    5px 6px 11px rgba(4, 20, 38, .33),
+    -2px -2px 5px rgba(112, 165, 205, .09);
+}
+.today { background: linear-gradient(140deg, #1ad3a5, #0ba680); }
+.eventDay { background: linear-gradient(140deg, #dc832d, #b75c10); }
+.eventsRow { gap: 10px; }
+.eventsRow > div {
+  border-radius: 14px;
+  border: 1px solid rgba(191, 221, 252, .10);
+  background: linear-gradient(145deg, #2a4b70, #223e65);
+  box-shadow:
+    inset 2px 3px 7px rgba(1, 15, 34, .20),
+    inset -1px -1px 5px rgba(130, 174, 216, .08);
+}
+.eventsRow span { border-left-color: #e5be55; }
+.eventsRow small { color: #c7d9ec; }
+
+.iconItem,.pairSlot,.registerSlot { gap: 8px; }
+.iconTile {
+  position: relative;
+  border-radius: 20px;
+  border: 1px solid rgba(191, 225, 255, .20);
+  background: linear-gradient(142deg, #315779, #1b3855 76%);
+  box-shadow:
+    inset 1px 1px 0 rgba(234, 247, 255, .23),
+    inset -1px -1px 0 rgba(0, 16, 32, .29),
+    8px 10px 17px rgba(2, 13, 30, .42),
+    -5px -5px 12px rgba(94, 151, 209, .15);
+}
+.iconTile img { filter: saturate(.94); }
+.iconLabel {
+  font-weight: 700;
+  color: #eaf3fc;
+  text-shadow: 0 2px 4px rgba(0, 12, 32, .30);
+}
+.registerTile {
+  border: 1px solid rgba(248, 252, 255, .77);
+  border-radius: 18px;
+  box-shadow:
+    8px 10px 18px rgba(3, 15, 34, .40),
+    -4px -4px 10px rgba(96, 143, 195, .12);
+}
+.registerTile > div { background: linear-gradient(140deg, #d04e52, #aa303d); }
+
+/* Cash actions remain floating: there is NO parent plate or card. */
+.twinPills { background: transparent; box-shadow: none; gap: 8px; }
+.twinPills span {
+  border-radius: 13px;
+  border: 1px solid rgba(237, 248, 255, .12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .23),
+    inset 0 -1px 0 rgba(3, 18, 38, .12),
+    7px 9px 14px rgba(2, 13, 32, .35),
+    -4px -4px 10px rgba(91, 150, 208, .11);
+}
+.greenPill { background: linear-gradient(137deg, #21ae89, #0b8c6e); }
+.orangePill { background: linear-gradient(137deg, #ed9137, #cb631b); }
+.goldPill { background: linear-gradient(137deg, #e3b65d, #c7963f); }
+.purplePill { background: linear-gradient(137deg, #ad66eb, #8741d4); }
+.pagination { gap: 32px; }
+.pagination > span { width: 5px; height: 5px; background: #52789d; }
+.pagination > .activeDot {
+  background: #e2f1ff;
+  box-shadow: 0 0 0 4px rgba(125, 184, 239, .13);
+}
+.sandboxNote { color: #a4bed7; letter-spacing: .035em; }
+
+@media(max-width:1023px) {
+  .page { padding: 9px 12px 23px; }
+  .grid { gap: 10px; }
+  .closingCard { padding: 6px; }
+  .closingHeading { min-height: 14px; }
+  .miniMetrics { min-height: 37px; gap: 3px; }
+  .salesPanel { padding: 6px 8px; }
+  .bigSales,.bigNet { min-width: 82px; }
+  .calendarPanel { padding: 5px; }
+  .calendarTitle { min-height: 26px; }
+  .eventsRow { gap: 6px; }
+  .eventsRow > div { border-radius: 9px; }
+  .iconItem,.pairSlot,.registerSlot { gap: 4px; }
+  .iconTile,.registerTile { border-radius: 15px; }
+  .twinPills { gap: 4px; }
+  .twinPills span { border-radius: 10px; }
+}
+
+@media(prefers-reduced-motion: reduce) {
+  .page *, .page *::before, .page *::after { transition: none !important; animation: none !important; }
+}
