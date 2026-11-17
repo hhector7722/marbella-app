@@ -412,6 +412,7 @@ export function EventEncargoCartFooter({
         instance="event-encargo-cart-plate-details"
         parentInstance="event-encargo-cart"
         layer="derived"
+        dismissScope="self"
         variant="standard"
       >
         <div className="space-y-2 pb-2">
