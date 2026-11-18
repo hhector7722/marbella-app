@@ -134,9 +134,18 @@
   box-shadow: 0 2px 6px rgba(2, 18, 35, .32) !important;
 }
 
-/* Modal de Horarios: tabla blanca y editor se mantienen intactos
-   para conservar legibilidad, gestos, ficha de empleado y edición. */
+/* Acabados de los modales en teléfono, sin alterar su contenido ni medidas. */
 @media (max-width: 640px) {
+  /* En teléfono, el menor tamaño de la tarjeta requiere un relieve más legible. */
+  [data-component='Modal'][data-instance='home-sales-preview']
+    [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+    [data-element='mobile-sales-hours-card'] {
+    background: #254669 linear-gradient(150deg, #3b6086 0%, #254568 39%, #173451 100%) !important;
+    border-color: rgba(194, 224, 252, .45) !important;
+    box-shadow: inset 0 1px 0 rgba(239, 250, 255, .21),
+                inset 0 -2px 3px rgba(3, 16, 40, .27),
+                0 7px 16px rgba(0, 13, 34, .28) !important;
+  }
   [data-component='Modal'][data-instance='home-sales-preview'] [data-element='container'],
   [data-component='Modal'][data-instance='staff-schedule'].schedule-widget-premium [data-element='container'] {
     border-radius: 15px;
