@@ -253,3 +253,54 @@
               inset 0 -2px 3px rgba(3, 16, 40, .22),
               0 7px 16px rgba(0, 13, 34, .25) !important;
 }
+
+
+/* Corrección final de los acentos violeta heredados del tema mensual antiguo:
+   la página /dashboard/ventas debe usar el MISMO azul del modal de resumen. */
+@media (min-width: 1024px) {
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+    .history-desktop-summary {
+    --ventas-tv-mensual-lavanda: #70b5ff;
+    --ventas-tv-mensual-texto: #f4f8ff;
+    --ventas-tv-mensual-tenue: #bbd1e9;
+    --ventas-tv-mensual-divisor: rgba(188, 220, 251, .2);
+    --ventas-inner-outline: rgba(190, 222, 253, .31);
+    --ventas-inner-top-light: rgba(239, 250, 255, .16);
+    --ventas-inner-shadow: rgba(2, 19, 41, .2);
+    color: #f4f8ff !important;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+    .history-desktop-summary [data-element='sales-desktop-header-left'] {
+    color: #f4f8ff !important;
+    text-shadow: none !important;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+    :is(.history-desktop-summary, .history-desktop-day)
+    :is([data-element='month-financials'], [data-element='day-financials'],
+        [data-element='products-section'], [data-element='hours-section']) {
+    outline: none !important;
+    border-color: rgba(190, 222, 252, .32) !important;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+    .history-desktop-summary [data-element='hours-plot'] svg {
+    color: #70b5ff !important;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+    .history-desktop-summary [data-element='hours-plot'] > span[aria-hidden='true'] {
+    background: #70b5ff !important;
+    box-shadow: none !important;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+    .history-desktop-summary [data-element='hours-details'] tr {
+    border-bottom-color: rgba(190, 222, 252, .12) !important;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+    .history-desktop-summary [data-element='hours-details'] td.text-teal-200 {
+    color: #65e5c5 !important;
+  }
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+    .history-desktop-summary [data-element='hours-details'] tr[class*='bg-sky-300'] {
+    background: rgba(84, 168, 245, .16) !important;
+    color: #e6f4ff !important;
+  }
+}
