@@ -2016,7 +2016,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 }
             </section>
             <div className="min-w-0">
-                <section className="flex h-[143px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 py-1.5">
+                <section data-element="mobile-sales-hours-card" className="flex h-[143px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 py-1.5">
                     <div className="mb-0.5 flex shrink-0 items-center justify-between">
                         <h2 className="text-[11px] font-bold uppercase">Horas</h2>
                         {mobileActiveSelection?.kind === 'hour' && (

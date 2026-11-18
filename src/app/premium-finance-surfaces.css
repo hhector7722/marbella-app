@@ -93,7 +93,10 @@
 [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
   > section,
 [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
-  [data-element='mobile-sales-detail-card'] {
+  [data-element='mobile-sales-detail-card'],
+[data-component='Modal'][data-instance='home-sales-preview']
+  [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+  [data-element='mobile-sales-hours-card'] {
   background-color: #254669 !important;
   background-image: linear-gradient(150deg, #355a80 0%, #254568 39%, #183654 100%) !important;
   border: 1px solid rgba(181, 214, 248, .38) !important;
