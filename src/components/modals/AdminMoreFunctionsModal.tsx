@@ -99,7 +99,7 @@ export function AdminMoreFunctionsModal({
         >
             <div className="relative overflow-y-auto">
                 <AccessShortcutGrid>
-                    {ADMIN_MORE_FUNCTIONS_ITEMS.map((item) => {
+                    {ADMIN_MORE_FUNCTIONS_ITEMS.filter((item) => item.instance !== 'asistente').map((item) => {
                         if ('href' in item) {
                             return (
                                 <DashboardShortcut
