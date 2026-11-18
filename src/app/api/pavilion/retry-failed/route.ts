@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient as createSessionClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import {
@@ -8,17 +8,7 @@ import {
 
 export const maxDuration = 300;
 
-async function authorizedMaster(request: NextRequest): Promise<boolean> {
-  // TEMPORARY one-time recovery of 2026-11-24..2026-12-06 PDF imports.
-  // Remove this service-role operator access immediately after verified backfill.
-  const operatorKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (
-    operatorKey &&
-    request.headers.get('x-pavilion-recovery') === '2026-11-18-gmail-backfill' &&
-    request.headers.get('authorization') === `Bearer ${operatorKey}`
-  ) {
-    return true;
-  }
+async function authorizedMaster(): Promise<boolean> {
   const supabase = await createSessionClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return false;
@@ -33,8 +23,8 @@ async function authorizedMaster(request: NextRequest): Promise<boolean> {
 }
 
 /** Recuperación manual; nunca modifica un día con ocupaciones ya importadas. */
-export async function POST(request: NextRequest) {
-  if (!(await authorizedMaster(request))) {
+export async function POST() {
+  if (!(await authorizedMaster())) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
 
