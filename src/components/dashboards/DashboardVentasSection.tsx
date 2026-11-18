@@ -25,6 +25,7 @@ import { liveNetSales } from '@/lib/live-sales-net';
 import { SalesPreviewModal, type SalesPreview } from './SalesPreviewModal';
 import { HomeSalesMobileSummary, type HomeWidgetTopProduct } from './HomeSalesMobileSummary';
 import { HomeTopProducts } from './HomeSalesWidgetDetails';
+import visualStyles from './DashboardVentasVisualAdjustments.module.css';
 
 function hourToSlotLabel(h: number): string | null {
     if (h >= 7 && h <= 22) {
@@ -470,7 +471,7 @@ export default function DashboardVentasSection({ initialData, fullWidget = false
 
     return (
         <>
-            <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
+            <Surface variant="page" instance="dashboard-ventas" className={cn("flex h-full min-h-0 flex-col overflow-hidden", visualStyles.salesWidget)}>
                 <div data-element="header" data-tone="plain" className="relative flex h-8 w-full shrink-0 items-center justify-end">
                     <div data-element="mobile-sales-clock" className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--home-widget-ink-secondary)]" aria-label="Hora actual">
                         <LiveClock display="time" />
