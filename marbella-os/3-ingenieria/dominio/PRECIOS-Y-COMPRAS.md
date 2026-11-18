@@ -319,3 +319,29 @@ Lo produce `get_ingredient_activity`, una lectura agregada. La pantalla no recal
 8. Un cambio confirmado conserva el documento, la evidencia y la versión de mapeo que lo justifican.
 9. Un pedido a proveedor no está tramitado hasta Descargar, Enviar o Proveedor.
 10. Solo K4 y la operación manual canónica pueden escribir el precio actual; ambas registran origen y actor.
+
+## 9. Vista «Control compras»
+
+La ruta `/dashboard/control-compras` es una superficie de análisis para gerencia
+(`manager`/`admin`), accesible desde «Otros» de los dashboards Admin y Master.
+
+- **Autoridad de precios:** `ingredient_price_history` registra los cambios y su
+  origen. Solo se comparan magnitudes homogéneas (euros por unidad de compra).
+- **Autoridad de compras confirmadas:** `purchase_receipt_confirmations` aporta
+  cantidad física normalizada y precio confirmado. El valor mostrado es la suma
+  de cantidades por precios unitarios confirmados de esas recepciones, no la suma
+  de facturas: la entrega y su factura mensual no se duplican como gasto.
+- **Revisión:** las líneas `pending` y propuestas de revisión aún sin confirmación
+  aparecen como tareas. La pantalla abre `LineMappingModal` y las operaciones
+  de revisión/confirmación ya autorizadas por K4; no añade un escritor económico.
+- **Anomalías:** subida o bajada de al menos el 12 % entre precios registrados;
+  cantidad de última compra al menos 2,5 veces la mediana de cuatro compras
+  anteriores del mismo ingrediente y proveedor, en la unidad de compra. Se
+  señala un proveedor nuevo solo cuando existe suficiente histórico reciente.
+  También se señalan coincidencias exactas de nombre, cantidad y precio dentro
+  de un mismo albarán como posibles duplicados, sin descartarlos automáticamente.
+  Son señales para inspección, no hechos contables ni bloqueos de recepción.
+- **Alcance:** periodos de 7, 30, 90 y 365 días para precios y recepciones;
+  cola de líneas pendientes histórica, independiente del periodo. Consultas
+  desde una sesión autorizada, sin `service_role` en navegador. Actualización
+  en sesión cada 60 segundos, al recuperar visibilidad o al pulsar Actualizar.

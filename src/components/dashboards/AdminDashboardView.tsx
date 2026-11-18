@@ -731,7 +731,7 @@ const AdminDashboardView = ({
             desktopMoreShortcuts={
                 <DesktopMoreShortcuts
                     namespace="admin"
-                    items={ADMIN_MORE_FUNCTIONS_ITEMS}
+                    items={ADMIN_MORE_FUNCTIONS_ITEMS.filter(item => item.instance !== 'control-compras')}
                     onAction={(action) => {
                         switch (action) {
                             case 'pedidos': setIsSupplierModalOpen(true); break;

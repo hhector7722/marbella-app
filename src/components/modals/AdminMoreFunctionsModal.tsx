@@ -43,6 +43,7 @@ export const ADMIN_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Propinas', instance: 'propinas', href: '/dashboard/propinas', img: '/icons/tip.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Rentabilidad', instance: 'rentabilidad', href: '/dashboard/insights', img: '/icons/rent.png' },
+    { label: 'Control compras', instance: 'control-compras', href: '/dashboard/control-compras', img: '/icons/control-compras.webp' },
     { label: 'Info', instance: 'staff-info', action: 'info', img: '/icons/information.png' },
     { label: 'Compra', instance: 'staff-compra', action: 'compra', img: '/icons/shop.png' },
 ];
