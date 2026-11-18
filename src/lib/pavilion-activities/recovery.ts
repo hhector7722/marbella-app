@@ -37,7 +37,7 @@ export function getPavilionAdminClient(): SupabaseClient {
 
 function isEligible(sheet: ActivitySheet, now: number, forceErrors: boolean): boolean {
   if (!sheet.content_hash || Number(sheet.processing_attempts) >= MAX_ATTEMPTS) return false;
-  if (sheet.processing_status === 'error' && forceErrors) return true;
+  if (forceErrors && (sheet.processing_status === 'error' || sheet.processing_status === 'pending')) return true;
 
   const updatedAt = Date.parse(sheet.updated_at);
   return Number.isFinite(updatedAt) && updatedAt <= now - STALE_AFTER_MS;
