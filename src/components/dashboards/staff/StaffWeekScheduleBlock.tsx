@@ -127,6 +127,7 @@ export function StaffWeekScheduleBlock({
                 refreshKey={scheduleRefreshKey}
             />
             <StaffScheduleModal
+                openedFromWidget
                 isOpen={isOpen}
                 onClose={handleClose}
                 shifts={monthShifts}

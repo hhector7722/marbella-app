@@ -181,6 +181,7 @@ interface Props {
     /** Actividades del widget para pintar el día mientras se consulta el dato actual. */
     initialActivities?: BarActivity[];
     userEmail?: string;
+    openedFromWidget?: boolean;
 }
 
 /* ─── Modal ─────────────────────────────────────────────── */
@@ -192,6 +193,7 @@ export const StaffScheduleModal = ({
     initialFocusDate,
     initialActivities,
     userEmail,
+    openedFromWidget = false,
 }: Props) => {
     const router = useRouter();
     const pathname = usePathname();
@@ -639,6 +641,7 @@ export const StaffScheduleModal = ({
                     </span>
                 }
                 instance="staff-schedule"
+                containerClassName={openedFromWidget ? "schedule-widget-premium" : undefined}
                 variant="day"
                 layer="base"
                 scheme="dark"

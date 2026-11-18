@@ -1,0 +1,138 @@
+/*
+ * Glossy/Soft-UI satinado aprobado en los cuatro widgets de inicio.
+ * Alcance exclusivo:
+ *  - tres resúmenes SalesPreviewModal [home-sales-preview];
+ *  - página /dashboard/ventas y contenido compartido de los resúmenes;
+ *  - StaffScheduleModal SOLO cuando se abre desde StaffWeekScheduleBlock.
+ * Nunca se modifican rejillas, medidas, datos, acciones ni otros modales.
+ */
+:where(
+  [data-component='Modal'][data-instance='home-sales-preview'] > [data-element='frame']
+    [role='dialog'] > [data-element='container'],
+  [data-component='Modal'][data-instance='staff-schedule'].schedule-widget-premium > [data-element='frame']
+    [role='dialog'] > [data-element='container']
+) {
+  background-color: #1d385b !important;
+  background-image: linear-gradient(153deg, #33587e 0%, #274669 27%, #193859 66%, #142d4a 100%) !important;
+  border: 1px solid rgba(182, 218, 252, .46) !important;
+  border-radius: 20px;
+  box-shadow:
+    inset 0 1px 0 rgba(248, 251, 255, .23),
+    inset 0 -2px 4px rgba(3, 15, 34, .28),
+    0 16px 34px rgba(0, 9, 28, .43),
+    -4px -4px 15px rgba(102, 163, 224, .08) !important;
+}
+[data-component='Modal'][data-instance='home-sales-preview'] [data-element='container'] > [data-element='header'],
+[data-component='Modal'][data-instance='staff-schedule'].schedule-widget-premium [data-element='container'] > [data-element='header'] {
+  background: linear-gradient(150deg, rgba(83, 130, 177, .16), rgba(24, 55, 86, .06)) !important;
+  border-bottom-color: rgba(201, 225, 250, .17) !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-widget-premium [data-element='container'] > [data-element='footer'] {
+  background: linear-gradient(152deg, #2b4a6e, #1b3859) !important;
+  border-top-color: rgba(194, 221, 246, .19) !important;
+}
+
+/* Los tres modales incrustan el mismo workspace de Ventas:
+   estilizarlo una sola vez también cubre la página sin duplicar lógica. */
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+  :is(.history-desktop-summary, .history-desktop-day) {
+  background-color: #214365 !important;
+  background-image: linear-gradient(150deg, #335980 0%, #27496d 30%, #1c395a 75%, #172f50 100%) !important;
+  border: 1px solid rgba(181, 215, 246, .45) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(240, 250, 255, .19),
+    inset 0 -2px 3px rgba(2, 16, 37, .22),
+    0 8px 20px rgba(1, 14, 35, .27) !important;
+  --ventas-superficie-resumen: #294a6e;
+  --ventas-superficie-productos: #213e61;
+  --ventas-superficie-horas: #1a3657;
+}
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+  :is([data-element='month-financials'], [data-element='day-financials'],
+       [data-element='products-section'], [data-element='hours-section']) {
+  background-color: #1d3a5d !important;
+  background-image: linear-gradient(151deg, rgba(65, 104, 145, .37), rgba(24, 49, 81, .3)) !important;
+  border: 1px solid rgba(186, 219, 247, .15) !important;
+  box-shadow: inset 0 1px 0 rgba(221, 243, 255, .08),
+              inset 0 -2px 5px rgba(4, 18, 40, .18),
+              0 4px 10px rgba(1, 13, 33, .12) !important;
+}
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated']
+  :is([data-element='hours-details'], [data-element='financial-settlement-card']) {
+  background: rgba(15, 37, 65, .35) !important;
+  border-color: rgba(184, 218, 250, .16) !important;
+}
+
+/* Importes principales: SATINADO azul/verde, mismo acabado de /estilo. */
+:is(
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'],
+  [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+) [data-kpi-tone='sales'] {
+  background: linear-gradient(153deg, #3783b6 0%, #245f91 75%, #205381 100%) !important;
+  border: 1px solid rgba(217, 241, 255, .22) !important;
+  box-shadow: inset 0 1px 0 rgba(247, 253, 255, .19),
+              inset 0 -1px 2px rgba(5, 24, 41, .23),
+              0 5px 10px rgba(0, 13, 35, .24) !important;
+}
+:is(
+  [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'],
+  [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+) [data-kpi-tone='net'] {
+  background: linear-gradient(151deg, #37a27f 0%, #1e7e61 76%, #17664f 100%) !important;
+  border: 1px solid rgba(217, 241, 255, .22) !important;
+  box-shadow: inset 0 1px 0 rgba(247, 253, 255, .19),
+              inset 0 -1px 2px rgba(5, 24, 41, .23),
+              0 5px 10px rgba(0, 13, 35, .24) !important;
+}
+
+/* Vista Ventas en móvil y contenido del modal en móvil:
+   fondos solo en cards ya existentes, sin variar el layout. */
+[data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+  > section,
+[data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+  [data-element='mobile-sales-detail-card'] {
+  background-color: #254669 !important;
+  background-image: linear-gradient(150deg, #355a80 0%, #254568 39%, #183654 100%) !important;
+  border: 1px solid rgba(181, 214, 248, .38) !important;
+  box-shadow: inset 0 1px 0 rgba(239, 250, 255, .16),
+              inset 0 -2px 3px rgba(3, 16, 40, .22),
+              0 7px 16px rgba(0, 13, 34, .25) !important;
+}
+[data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated']
+  :is([data-element='financial-kpi-grid'] > :is(button, div):not([data-element='financial-settlement-card']),
+      [data-element='financial-settlement-card']) {
+  border-color: rgba(198, 224, 247, .16) !important;
+  background-color: rgba(16, 42, 70, .30);
+  box-shadow: inset 0 1px 0 rgba(220, 242, 255, .07);
+}
+
+/* Calendario abierto desde widget Horarios, nunca editor independiente. */
+[data-component='Modal'][data-instance='staff-schedule'].schedule-widget-premium
+  [data-element='schedule-summary-card'] {
+  background: linear-gradient(148deg, #365b81, #264768 66%, #1d3958) !important;
+  border: 1px solid rgba(188, 225, 250, .30) !important;
+  box-shadow: inset 0 1px 0 rgba(246, 252, 255, .18),
+              inset 0 -1px 2px rgba(0, 18, 39, .22),
+              0 4px 9px rgba(0, 16, 38, .22) !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-widget-premium
+  .day-modal-body > div.flex-1.overflow-y-auto > div.flex.flex-col > div {
+  background: linear-gradient(145deg, #355b80, #234669) !important;
+  border: 1px solid rgba(183, 217, 250, .25) !important;
+  box-shadow: inset 0 1px 0 rgba(240, 249, 255, .13), 0 5px 11px rgba(3, 17, 40, .18) !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-widget-premium
+  .day-modal-body button > span.bg-emerald-500 {
+  background: linear-gradient(145deg, #21c99c, #0c9d74) !important;
+  border: 0 !important;
+  box-shadow: 0 2px 6px rgba(2, 18, 35, .32) !important;
+}
+
+/* Modal de Horarios: tabla blanca y editor se mantienen intactos
+   para conservar legibilidad, gestos, ficha de empleado y edición. */
+@media (max-width: 640px) {
+  [data-component='Modal'][data-instance='home-sales-preview'] [data-element='container'],
+  [data-component='Modal'][data-instance='staff-schedule'].schedule-widget-premium [data-element='container'] {
+    border-radius: 15px;
+  }
+}
