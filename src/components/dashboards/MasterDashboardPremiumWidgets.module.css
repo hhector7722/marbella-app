@@ -1,0 +1,68 @@
+/* Solo /master/dashboard y únicamente Ventas, Último cierre, Mensuales y Horarios.
+   La clase de ámbito se aplica sobre el contenedor existente, sin modificar el grid. */
+.premiumMasterWidgets :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas'] > [data-element='body']),
+.premiumMasterWidgets :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body']) {
+  background-color: #244567 !important;
+  background-image: linear-gradient(154deg, #35597f 0%, #294a6f 25%, #1b3a60 64%, #162d50 100%) !important;
+  border: 1px solid rgba(182, 216, 249, .48) !important;
+  border-radius: var(--home-widget-radius);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 251, 255, .22),
+    inset 0 -2px 4px rgba(0, 10, 30, .18),
+    0 9px 19px rgba(0, 11, 30, .32),
+    -3px -3px 11px rgba(94, 148, 205, .08) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* El componente Surface de Ventas es una capa interior opaca.
+   Volverla transparente permite ver el degradado de la superficie exterior. */
+.premiumMasterWidgets :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-component='Surface'][data-instance='dashboard-ventas']) {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* El contenedor de cierre alberga DOS tarjetas independientes.
+   El fondo se aplica sobre cada mitad visible, no detrás de ambas. */
+.premiumMasterWidgets :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-ultimo-cierre'] [data-element='home-closing-monthly-pair'] > :is([data-element='closing-half'], [data-element='monthly-container'])) {
+  background-color: #244567 !important;
+  background-image: linear-gradient(154deg, #35597f 0%, #294a6f 25%, #1b3a60 64%, #162d50 100%) !important;
+  border: 1px solid rgba(182, 216, 249, .48) !important;
+  border-radius: var(--home-widget-radius);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 251, 255, .22),
+    inset 0 -2px 4px rgba(0, 10, 30, .18),
+    0 9px 19px rgba(0, 11, 30, .32),
+    -3px -3px 11px rgba(94, 148, 205, .08) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Los tres resúmenes de venta usan el mismo acabado satinado,
+   sin tocar su tipografía, ancho, alto, orden ni acciones. */
+.premiumMasterWidgets :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot']:is([data-instance='dashboard-ventas'], [data-instance='master-ultimo-cierre']) [data-kpi-tone='sales']) {
+  background: linear-gradient(153deg, #3783b6 0%, #245f91 75%, #205381 100%) !important;
+  border: 1px solid rgba(217, 241, 255, .22) !important;
+  border-radius: 9px;
+  box-shadow:
+    inset 0 1px 0 rgba(247, 253, 255, .19),
+    inset 0 -1px 2px rgba(5, 24, 41, .23),
+    0 5px 10px rgba(0, 13, 35, .24) !important;
+}
+.premiumMasterWidgets :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot']:is([data-instance='dashboard-ventas'], [data-instance='master-ultimo-cierre']) [data-kpi-tone='net']) {
+  background: linear-gradient(151deg, #37a27f 0%, #1e7e61 76%, #17664f 100%) !important;
+  border: 1px solid rgba(217, 241, 255, .22) !important;
+  border-radius: 9px;
+  box-shadow:
+    inset 0 1px 0 rgba(247, 253, 255, .19),
+    inset 0 -1px 2px rgba(5, 24, 41, .23),
+    0 5px 10px rgba(0, 13, 35, .24) !important;
+}
+
+/* Únicamente las tarjetas de eventos DENTRO del widget Horarios. */
+.premiumMasterWidgets :global([data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] [data-element='weekend-card']) {
+  background: linear-gradient(155deg, #35587d, #25446d) !important;
+  border: 1px solid rgba(172, 211, 252, .21) !important;
+  border-radius: 11px;
+  box-shadow: 0 3px 8px rgba(0, 15, 36, .16) !important;
+}
