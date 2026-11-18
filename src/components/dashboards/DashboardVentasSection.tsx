@@ -471,7 +471,7 @@ export default function DashboardVentasSection({ initialData, fullWidget = false
 
     return (
         <>
-            <Surface variant="page" instance="dashboard-ventas" className={cn("flex h-full min-h-0 flex-col overflow-hidden", visualStyles.salesWidget)}>
+            <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
                 <div data-element="header" data-tone="plain" className="relative flex h-8 w-full shrink-0 items-center justify-end">
                     <div data-element="mobile-sales-clock" className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--home-widget-ink-secondary)]" aria-label="Hora actual">
                         <LiveClock display="time" />
@@ -531,7 +531,7 @@ export default function DashboardVentasSection({ initialData, fullWidget = false
                     </Link>
                 </div>
 
-                <div data-element="sales-widget-content" className="min-h-0 flex-1 cursor-pointer lg:cursor-auto" onClick={(event) => {
+                <div data-element="sales-widget-content" className={cn("min-h-0 flex-1 cursor-pointer lg:cursor-auto", visualStyles.salesWidget)} onClick={(event) => {
                     const target = event.target as HTMLElement;
                     // La tarjeta Venta neta no abre modal en smartphone.
                     if (window.matchMedia('(max-width: 1023px)').matches &&
