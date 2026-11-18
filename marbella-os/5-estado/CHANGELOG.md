@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-11-18
+
+- **Control compras con datos reales y revisión de albaranes.** Nuevo acceso «Control compras» en «Otros» de Admin y Master, con icono realista. Analiza las recepciones confirmadas, el histórico canónico de precios y las cantidades inusuales en una pantalla compacta de fondo azul Marbella; muestra líneas pendientes y abre la revisión existente que valida K4 antes de escribir precio o stock. Las señales no ejecutan cambios contables y se actualizan al volver a la página, manualmente o mientras permanece abierta.
+
 ## 2026-11-02
 
 - **Calibración de posiciones en cámara para Coca-Cola.** El piloto proyecta el mapa fijo de 48 pilas tras marcar cuatro esquinas, permite seleccionar una pila tocando su punto en el visor y seguir desplazamientos pequeños mediante textura local entre fotogramas. Si pierde la referencia visual, detiene la atribución de posiciones hasta recalibrar. Las marcas «observadas» no equivalen a cantidades confirmadas ni generan faltantes automáticamente; se mantiene la revisión por pila, el máximo de cuatro unidades y la ausencia de movimientos contables. Requiere pruebas con vídeos reales para verificar comportamiento con giros, perspectiva, reflejos y huecos.

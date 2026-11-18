@@ -161,6 +161,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Proveedor** | Empresa que suministra mercancía. | `suppliers` |
 | **Albarán** | Documento de entrega de mercancía. Es el documento que se escanea. | `purchase_invoices` |
 | **Línea de albarán** | Artículo concreto de un albarán, con cantidad y precio. | — |
+| **Control compras** | Pantalla de análisis de recepciones confirmadas, cambios de precio y excepciones de albaranes; no es una segunda fuente contable ni confirma movimientos por sí misma. | `/dashboard/control-compras` |
 | **Evidencia documental** | Extracción versionada de un documento: texto, tablas, filas, celdas y layout observados. No contiene una decisión económica. | `document_evidence_extractions`, `document_evidence_*` |
 | **Observación canónica** | JSON tipado que conserva lo leído en el albarán sin decidir todavía el ingrediente ni la recepción. | `document_extractions.raw_json_artifact.canonical` |
 | **Extracción en sombra** | Versión OCR comparativa que no alimenta propuestas ni efectos económicos. | `document_shadow_extractions` |
