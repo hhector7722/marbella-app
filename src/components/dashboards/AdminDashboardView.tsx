@@ -241,6 +241,41 @@ const AdminDashboardView = ({
     const supabase = createClient();
     const router = useRouter();
     const pathname = usePathname();
+    const homePageRef = React.useRef<HTMLDivElement>(null);
+
+    // /dashboard: las KPI de cierre y mensual deben medir exactamente lo mismo
+    // que las de ventas del día, incluso con zoom, responsive o cambios de escala.
+    useEffect(() => {
+        if (pathname !== '/dashboard') return;
+        const root = homePageRef.current;
+        if (!root) return;
+
+        let observed: HTMLElement | null = null;
+        let resizeObserver: ResizeObserver | null = null;
+        const attach = () => {
+            const next = root.querySelector<HTMLElement>(
+                "[data-instance='dashboard-ventas'] [data-cards-chart-only='true'] [data-element='mobile-sales-kpis'] > div"
+            );
+            if (observed === next) return;
+            resizeObserver?.disconnect();
+            observed = next;
+            if (!next) return;
+            resizeObserver = new ResizeObserver(([entry]) => {
+                const measured = entry.borderBoxSize?.[0]?.blockSize ?? entry.target.getBoundingClientRect().height;
+                if (measured > 0) root.style.setProperty('--admin-daily-sales-kpi-height', `${measured}px`);
+            });
+            resizeObserver.observe(next);
+        };
+        const mutationObserver = new MutationObserver(attach);
+        mutationObserver.observe(root, { childList: true, subtree: true });
+        attach();
+        return () => {
+            mutationObserver.disconnect();
+            resizeObserver?.disconnect();
+            root.style.removeProperty('--admin-daily-sales-kpi-height');
+        };
+    }, [pathname]);
+
     const { actualBalance, boxes, loading: treasuryLoading, refresh } = useHomeTreasury({
         actualBalance: initialData?.actualBalance,
         boxes: initialData?.boxes,
@@ -716,7 +751,7 @@ const AdminDashboardView = ({
     );
 
     return (
-        <div className={cn('home-mosaic-page', pathname === '/dashboard' && premiumStyles.premiumAdminWidgets)}>
+        <div ref={homePageRef} className={cn('home-mosaic-page', pathname === '/dashboard' && premiumStyles.premiumAdminWidgets)}>
             {dashboardHome}
 
             {cashModalMode !== 'none' && (

@@ -124,3 +124,22 @@
   border: 0 !important;
   box-shadow: 0 2px 6px rgba(2, 18, 35, .32) !important;
 }
+
+/* /dashboard — Último cierre y Ventas mensuales: las dos KPI internas
+   igualan la altura REAL de las KPI del widget Ventas, que varía por viewport.
+   El valor lo comunica un ResizeObserver exclusivo de la página Admin. */
+.premiumAdminWidgets :global([data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='home-closing-monthly-pair'] :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards'])) {
+  grid-template-rows: var(--admin-daily-sales-kpi-height, 46px) !important;
+  align-content: center !important;
+}
+
+.premiumAdminWidgets :global([data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-ultimo-cierre']
+  [data-element='home-closing-monthly-pair'] :is([data-element='closing-primary-cards'], [data-element='monthly-primary-cards']) > :is(button, div)) {
+  box-sizing: border-box;
+  height: var(--admin-daily-sales-kpi-height, 46px) !important;
+  min-height: 0 !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  padding-block: 3px !important;
+}
