@@ -22,7 +22,7 @@ var CONFIG_ACTIVIDADES = {
   BUSQUEDA_DIAS: 90,
   MAX_HILOS: 200,
   HILOS_POR_PAGINA: 30,
-  MAX_ENVIOS_POR_EJECUCION: 8,
+  MAX_ENVIOS_POR_EJECUCION: 25,
   REINTENTO_MINUTOS: 60
 };
 
@@ -216,6 +216,13 @@ function _procesarActividades() {
     }
   }
 
+  if (limite) {
+    avisos.push(
+      'Quedan PDFs pendientes por el límite de envíos de la ejecución. ' +
+      'El activador periódico debe continuar procesándolos.'
+    );
+  }
+
   Logger.log('RESUMEN: aceptados=' + enviados +
     ', ya reconocidos=' + reconocidos +
     ', fallidos=' + errores.length +
@@ -266,4 +273,19 @@ function diagnosticarActividades() {
 
   Logger.log('PDF candidatos desde ' +
     CONFIG_ACTIVIDADES.FECHA_INICIO + ': ' + candidatos);
+}
+
+/**
+ * Ejecutar manualmente UNA VEZ en Google Apps Script tras pegar la versión
+ * actualizada. Es idempotente y garantiza el activador recurrente.
+ */
+function instalarActivadorActividades() {
+  var handler = 'procesarActividadesEntrantes';
+  var already = ScriptApp.getProjectTriggers().some(function(trigger) {
+    return trigger.getHandlerFunction() === handler &&
+      trigger.getEventType() === ScriptApp.EventType.CLOCK;
+  });
+  if (!already) {
+    ScriptApp.newTrigger(handler).timeBased().everyMinutes(10).create();
+  }
 }
