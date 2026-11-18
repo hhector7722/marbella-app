@@ -12,7 +12,7 @@ type HourProductResponse = { products?: { nombre_articulo: string | null; cantid
 
 export function HomeSalesMobileSummary({
     sales, net, date, hours, products, hasSales, isDayClosed = false,
-    productsLoading = false, productsError = false, cardsAndChartOnly = false, hideHourChart = false, compactDesktopRankings = false,
+    productsLoading = false, productsError = false, cardsAndChartOnly = false, hideHourChart = false, compactDesktopRankings = false, plainHourAxis = false,
 }: {
     sales: string;
     net: string;
@@ -26,6 +26,7 @@ export function HomeSalesMobileSummary({
     cardsAndChartOnly?: boolean;
     hideHourChart?: boolean;
     compactDesktopRankings?: boolean;
+    plainHourAxis?: boolean;
 }) {
     const supabase = useMemo(() => createClient(), []);
     const chartRef = useRef<HTMLDivElement>(null);
@@ -307,8 +308,8 @@ export function HomeSalesMobileSummary({
                                 <div data-element="mobile-sales-hour-axis" aria-hidden="true"
                                     style={{ bottom: 'calc(13.64% + 3px)' }}
                                     className="pointer-events-none absolute inset-x-0 z-[2] flex items-center justify-between text-[7px] leading-none text-white/65 lg:text-[10px]">
-                                    <span className="rounded-sm bg-[#10294a]/80 px-0.5">{BUSINESS_HOURS.start}h</span>
-                                    <span className="rounded-sm bg-[#10294a]/80 px-0.5">{BUSINESS_HOURS.end}h</span>
+                                    <span className={plainHourAxis ? "bg-transparent p-0 shadow-none" : "rounded-sm bg-[#10294a]/80 px-0.5"}>{BUSINESS_HOURS.start}h</span>
+                                    <span className={plainHourAxis ? "bg-transparent p-0 shadow-none" : "rounded-sm bg-[#10294a]/80 px-0.5"}>{BUSINESS_HOURS.end}h</span>
                                 </div>
                                 {dotPosition && (
                                     <span data-element="mobile-sales-selected-overlay" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[17px] lg:h-full">
