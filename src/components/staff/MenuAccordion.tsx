@@ -37,6 +37,7 @@ import {
 } from '@/lib/carta-menu-i18n'
 import { postCartaNavigation } from '@/lib/carta-iframe-bridge'
 import { mergeEnteroMedioForCartaDisplay } from '@/lib/carta-medio-merge'
+import { formatCartaPrice } from '@/lib/carta-price-display'
 import { PlatoMarbellaMenuView } from '@/components/carta/PlatoMarbellaMenuView'
 import { PlatoMarbellaModalSubheader } from '@/components/carta/PlatoMarbellaModalChrome'
 import { PlatoMarbellaStaffGridView } from '@/components/carta/PlatoMarbellaStaffGridView'
@@ -151,6 +152,20 @@ function subPickerButtonLabel(sub: GroupedSub, lang: CartaLang, parentTitleRaw: 
         if (only) return only
     }
     return sub.title.trim() || uncategorized
+}
+
+const DUAL_PORTION_PRICE_NOTE: Record<CartaLang, string> = {
+    es: 'Disponible en ración entera o media ración. Precios: entero / medio.',
+    ca: 'Disponible en ració sencera o mitja ració. Preus: sencera / mitja.',
+    en: 'Available as a full or half portion. Prices: full / half.',
+}
+
+function hasDualPortionPrices(rows: DigitalMenuRow[]): boolean {
+    return mergeEnteroMedioForCartaDisplay(rows).some(
+        (row) =>
+            Boolean(formatCartaPrice(row.precio).trim()) &&
+            Boolean(formatCartaPrice(row.precio_medio_display).trim())
+    )
 }
 
 const SPECIAL_SANDWICHES_FOOTER: Record<CartaLang, string> = {
@@ -1812,6 +1827,14 @@ export function MenuAccordion({
                                         : openGroup._subList
                                     ).map((sub) => (
                                         <section key={sub.key} className="space-y-3">
+                                            {!reorderScope && hasDualPortionPrices(sub.rows) ? (
+                                                <p
+                                                    role="note"
+                                                    className="carta-dual-portion-note text-center text-[10px] font-medium leading-snug text-white/85 sm:text-[11px]"
+                                                >
+                                                    {DUAL_PORTION_PRICE_NOTE[lang]}
+                                                </p>
+                                            ) : null}
                                             {reorderScope === 'products' &&
                                             !reorderPlatoMarbellaBundle &&
                                             sub.key ===
