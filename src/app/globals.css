@@ -11700,19 +11700,19 @@ body:has(.carta-shared-scene) [data-instance='menu-accordion-section'] .carta-br
   cursor: pointer;
 }
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action='add'] {
-  background: #e1f1e5;
+  background: #c9e9d1;
   color: #245b36;
   font-size: clamp(10px, 2.7vw, 12px);
 }
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action='remove'] {
-  background: #f8e7e8;
+  background: #f2ced2;
   color: #a73f48;
   font-size: 13px;
   font-weight: 650;
 }
 .carta-browse-modal .carta-square-product-card [data-carta-order-controls] > button[data-action='increment'] {
   border-left: 1px solid #c6d4c9;
-  background: #e1f1e5;
+  background: #c9e9d1;
   color: #245b36;
   font-size: 13px;
   font-weight: 650;
