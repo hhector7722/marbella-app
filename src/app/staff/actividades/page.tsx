@@ -244,32 +244,56 @@ export default function ActividadesPage() {
   const retryFailedPdf = async () => {
     if (retryingFailedPdf) return;
     setRetryingFailedPdf(true);
+    let totalQueued = 0;
+    let totalRecovered = 0;
+    let totalFailed = 0;
+    let totalSkipped = 0;
+
     try {
-      const response = await fetch('/api/pavilion/retry-failed', {
-        method: 'POST',
-        credentials: 'same-origin',
-      });
-      const data = await response.json() as {
-        success?: boolean;
-        queued?: number;
-        recovered?: number;
-        failed?: number;
-        skipped?: number;
-        error?: string;
-      };
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'No se pudo iniciar la recuperación.');
+      // El servidor procesa lotes pequeños para respetar el límite de
+      // duración de Vercel. Una sola pulsación debe vaciar la cola pendiente.
+      for (let batch = 0; batch < 12; batch += 1) {
+        const response = await fetch('/api/pavilion/retry-failed', {
+          method: 'POST',
+          credentials: 'same-origin',
+        });
+        const data = await response.json() as {
+          success?: boolean;
+          queued?: number;
+          recovered?: number;
+          failed?: number;
+          skipped?: number;
+          error?: string;
+        };
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'No se pudo completar la recuperación.');
+        }
+
+        const queued = data.queued ?? 0;
+        if (queued === 0) break;
+        totalQueued += queued;
+        totalRecovered += data.recovered ?? 0;
+        totalFailed += data.failed ?? 0;
+        totalSkipped += data.skipped ?? 0;
+
+        // Una cola compuesta únicamente por registros protegidos no debe
+        // repetirse indefinidamente en una única pulsación.
+        if (queued === (data.skipped ?? 0)) break;
       }
-      if (!data.queued) {
-        toast.success('No hay PDF fallidos que se puedan recuperar ahora.');
+
+      if (!totalQueued) {
+        toast.success('No hay PDF pendientes que se puedan recuperar ahora.');
       } else {
         toast.success(
-          `PDF recuperados: ${data.recovered ?? 0}. Fallidos: ${data.failed ?? 0}. Protegidos: ${data.skipped ?? 0}.`,
+          `PDF recuperados: ${totalRecovered}. Fallidos: ${totalFailed}. Protegidos: ${totalSkipped}.`,
           { duration: 6500 },
         );
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error iniciando OCR.');
+      toast.error(
+        error instanceof Error ? error.message : 'Error iniciando OCR.',
+      );
     } finally {
       setRetryingFailedPdf(false);
       void loadProcessingIssues();
