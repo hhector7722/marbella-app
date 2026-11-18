@@ -32,6 +32,7 @@ type MoreFunctionsItem = {
 );
 
 export const ADMIN_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
+    { label: 'Control compras', instance: 'control-compras', href: '/dashboard/control-compras', img: '/icons/control-compras.webp' },
     { label: 'Agente IA', instance: 'asistente', action: 'asistente', icon: BotMessageSquare },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
     { label: 'Pedidos', instance: 'staff-pedidos', action: 'pedidos', img: '/icons/shipment.png' },
@@ -43,7 +44,6 @@ export const ADMIN_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Propinas', instance: 'propinas', href: '/dashboard/propinas', img: '/icons/tip.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Rentabilidad', instance: 'rentabilidad', href: '/dashboard/insights', img: '/icons/rent.png' },
-    { label: 'Control compras', instance: 'control-compras', href: '/dashboard/control-compras', img: '/icons/control-compras.webp' },
     { label: 'Info', instance: 'staff-info', action: 'info', img: '/icons/information.png' },
     { label: 'Compra', instance: 'staff-compra', action: 'compra', img: '/icons/shop.png' },
 ];

@@ -37,6 +37,7 @@ type MoreFunctionsItem = {
 );
 
 export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
+    { label: 'Control compras', instance: 'control-compras', href: '/dashboard/control-compras', img: '/icons/control-compras.webp' },
     { label: 'Agente IA', instance: 'asistente', action: 'asistente', icon: BotMessageSquare },
     { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/suplier.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
@@ -50,7 +51,6 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Calendario', instance: 'calendario', href: '/horario', img: '/icons/calendario-premium.webp' },
     { label: 'Uso app', instance: 'uso-app', href: '/dashboard/uso', img: '/icons/uso.png' },
     { label: 'Rentabilidad', instance: 'rentabilidad', href: '/dashboard/insights', img: '/icons/rent.png' },
-    { label: 'Control compras', instance: 'control-compras', href: '/dashboard/control-compras', img: '/icons/control-compras.webp' },
     { label: 'Info', instance: 'info', action: 'info', img: '/icons/information.png' },
     { label: 'Altas', instance: 'altas', href: '/dashboard/altas', img: '/icons/staff-card.png' },
     { label: 'Vitrina', instance: 'vitrina', href: '/master/carta', img: '/icons/menu2.png' },
