@@ -1865,7 +1865,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
     );
     return (
         <>
-        <div data-component="HistoryMobileWorkspace" data-page="ventas-consolidated"
+        <div data-component="HistoryMobileWorkspace" data-page="ventas-consolidated" data-presentation={embeddedMode ? 'modal' : 'page'}
             className={cn("mx-auto flex w-full max-w-[640px] min-w-0 flex-col gap-3 px-2 pb-8 pt-2 text-white lg:hidden", previewMode && "!flex !max-w-none !px-2 !pb-3")}>
             {!previewMode && <header className="flex min-w-0 items-center justify-between gap-2 px-1">
                 <h1 className="text-lg font-extrabold">Ventas y cierres</h1>
@@ -2145,7 +2145,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
         </div>
 
 
-        <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" className={cn("history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex", previewMode && "!hidden")}>
+        <div data-component="HistoryDesktopWorkspace" data-page="ventas-consolidated" data-presentation={embeddedMode ? 'modal' : 'page'} className={cn("history-desktop-workspace mx-auto hidden w-full min-w-0 flex-col px-3 pb-3 pt-1 lg:flex", previewMode && "!hidden")}>
             <div className="mb-3 flex shrink-0 items-baseline justify-between gap-4 text-white">
                 <div className="flex min-w-0 items-baseline gap-4">
                     <h1 className="text-xl font-black">Ventas y cierres</h1>

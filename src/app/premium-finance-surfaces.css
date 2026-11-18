@@ -151,3 +151,105 @@
     border-radius: 15px;
   }
 }
+
+
+/*
+ * /dashboard/ventas — paridad visual con Resumen de ventas.
+ * El modal y la página comparten datos y lógica, pero NO DOM de presentación:
+ * modal = HistoryMobileWorkspace; escritorio = HistoryDesktopWorkspace.
+ * La marca data-presentation="page" restringe el acabado a la ruta de Ventas
+ * sin alterar el modal ni las vistas de cierres u otros dashboards.
+ * Solo pintura (fondos, bordes, sombras, colores), nunca geometría o interacción.
+ */
+
+/* Las superficies exteriores mensuales, diarias y de facturas adoptan
+   exactamente la familia cromática y el bisel del resumen en modal. */
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  :is(.history-desktop-summary, .history-desktop-day, [data-element='invoices']) {
+  background-color: #214365 !important;
+  background-image: linear-gradient(153deg, #33587e 0%, #274669 27%, #193859 66%, #142d4a 100%) !important;
+  border: 1px solid rgba(182, 218, 252, .46) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(248, 251, 255, .23),
+    inset 0 -2px 4px rgba(3, 15, 34, .24),
+    0 9px 22px rgba(0, 9, 28, .26) !important;
+}
+
+/* El cuerpo del resumen (mismo azul del bloque financiero en el modal).
+   Los tonos violeta/cian previos no se conservan en la página. */
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  :is([data-element='month-financials'], [data-element='day-financials']) {
+  background-color: #27486c !important;
+  background-image: linear-gradient(150deg, rgba(69, 112, 157, .43), rgba(25, 54, 88, .35)) !important;
+  border: 1px solid rgba(190, 222, 251, .26) !important;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(240, 250, 255, .13),
+    inset 0 -2px 4px rgba(1, 13, 31, .16) !important;
+}
+
+/* Indicadores secundarios: azul oscuro homogéneo como Rendimiento,
+   Tarjeta y Efectivo en el modal, conservando su respuesta a clic y foco. */
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  [data-element='financial-kpi-grid'] > :is(button, div):not([data-element='financial-settlement-card']) {
+  background: linear-gradient(153deg, rgba(34, 68, 108, .96), rgba(21, 48, 84, .95)) !important;
+  border-color: rgba(181, 215, 247, .2) !important;
+  box-shadow: inset 0 1px 0 rgba(243, 250, 255, .08) !important;
+}
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  [data-element='financial-settlement-card'] {
+  background: rgba(17, 42, 74, .32) !important;
+  border-color: rgba(182, 214, 247, .2) !important;
+  box-shadow: inset 0 1px 0 rgba(220, 242, 255, .04) !important;
+}
+
+/* Productos y Horas: misma tarjeta azul con relieve que los paneles
+   internos del modal. No modificar jerarquía, alto, scroll ni rangos. */
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  [data-element='sales-breakdown'] > :is([data-element='products-section'], [data-element='hours-section']) {
+  background-color: #254669 !important;
+  background-image: linear-gradient(150deg, #355a80 0%, #254568 39%, #183654 100%) !important;
+  border: 1px solid rgba(181, 214, 248, .38) !important;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(239, 250, 255, .16),
+    inset 0 -2px 3px rgba(3, 16, 40, .22),
+    0 6px 14px rgba(0, 13, 34, .22) !important;
+}
+
+/* Gráfica y filas horarias flotan sobre la misma tarjeta, como en el modal:
+   retirar el segundo rectángulo negro de las tres mejores horas. */
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  [data-element='hours-details'] {
+  background: transparent !important;
+  border-color: rgba(195, 226, 254, .13) !important;
+  box-shadow: none !important;
+}
+
+/* Color de barras homogéneo (el resumen mensual seguía usando magenta). */
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  [data-element='sales-breakdown'] [role='img'] > div {
+  background-color: #64a4ff !important;
+  background-image: none !important;
+}
+
+/* En teléfono se usa HistoryMobileWorkspace, el mismo árbol visual del modal.
+   Igualamos sus superficies exteriores e interiores sin tocar las rejillas. */
+[data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  > section {
+  background-color: #254669 !important;
+  background-image: linear-gradient(150deg, #355a80 0%, #254568 39%, #183654 100%) !important;
+  border-color: rgba(181, 214, 248, .38) !important;
+  box-shadow: inset 0 1px 0 rgba(239, 250, 255, .16),
+              inset 0 -2px 3px rgba(3, 16, 40, .22),
+              0 7px 16px rgba(0, 13, 34, .25) !important;
+}
+[data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  :is([data-element='mobile-sales-hours-card'], [data-element='mobile-sales-detail-card']) {
+  background-color: #254669 !important;
+  background-image: linear-gradient(150deg, #355a80 0%, #254568 39%, #183654 100%) !important;
+  border-color: rgba(181, 214, 248, .38) !important;
+  box-shadow: inset 0 1px 0 rgba(239, 250, 255, .16),
+              inset 0 -2px 3px rgba(3, 16, 40, .22),
+              0 7px 16px rgba(0, 13, 34, .25) !important;
+}
