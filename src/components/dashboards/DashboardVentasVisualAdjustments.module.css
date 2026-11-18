@@ -1,0 +1,15 @@
+/* Solo el componente DashboardVentasSection en todas sus variantes.
+   No afecta a Último cierre ni a las vistas de detalle. */
+.salesWidget :global([data-element='mobile-sales-hour-axis'] > span) {
+  background: none !important;
+  box-shadow: none !important;
+  padding-inline: 0 !important;
+}
+
+/* El ranking del widget en escritorio mantiene el nombre y las cifras,
+   pero no muestra miniaturas de los productos. */
+@media (min-width: 1024px) {
+  .salesWidget :global([data-element='mobile-sales-product-label'] > span:nth-child(2)) {
+    display: none !important;
+  }
+}
