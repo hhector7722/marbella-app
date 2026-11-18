@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { addDays, addMonths, endOfMonth, format, getISOWeek, startOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
@@ -11,6 +11,7 @@ import { togglePaidStatus } from '@/app/actions/overtime';
 import { invalidateHomeOvertimeCache, useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
 import { invalidateHomeHistoryWeekCache } from '@/hooks/useEmployeeHistoryWeek';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
+import premiumStyles from './MasterDashboardPremiumWidgets.module.css';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
@@ -105,6 +106,7 @@ function MasterStaffOvertimeRow({
 
 export default function MasterDashboardView({ initialData, initialUserId }: MasterDashboardViewProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const supabase = createClient();
     const { actualBalance, boxes, loading: treasuryLoading, refresh } = useHomeTreasury({
         actualBalance: initialData?.actualBalance,
@@ -533,7 +535,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     };
 
     return (
-        <div className="home-mosaic-page">
+        <div className={cn('home-mosaic-page', pathname === '/master/dashboard' && premiumStyles.premiumMasterWidgets)}>
             <HomeScreen layout="master" className={attendanceExpanded ? 'asis-expanded' : undefined}>
                 <HomeScreenSlot size="wide" instance="dashboard-ventas">
                     <DashboardVentasSection
