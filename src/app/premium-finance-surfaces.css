@@ -306,12 +306,14 @@
 }
 
 
-/* /dashboard/ventas: igual que en el modal Resumen de ventas, la tabla
-   de productos no pinta un segundo fondo dentro de su tarjeta. Se conserva
-   íntegramente la card exterior (borde, radio, sombra, disposición y scroll). */
+/* /dashboard/ventas — La TABLA de productos debe pintar la misma
+   superficie que el listado del modal Detalle de ventas. El intento anterior
+   la dejó transparente y dejaba ver el fondo (más oscuro) de cada columna.
+   Reutilizamos aquí el degradado exacto de mobile-sales-detail-card, sin
+   modificar geometría, filas, barras, paginación, hover ni scroll. */
 [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
   [data-element='sales-breakdown'] > [data-element='products-section'] {
-  background: transparent !important;
+  background: linear-gradient(150deg, #355a80 0%, #254568 39%, #183654 100%) !important;
 }
 [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
   [data-element='products-section'] > div.min-h-0,
