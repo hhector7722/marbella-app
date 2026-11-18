@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, memo, useSyncExternalStore } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     History, Users, TrendingUp, ChevronDown, Wallet, CloudSun, Calendar, Search, Receipt,
     ArrowRight, ArrowUpRight, ArrowDownLeft, Clock, UserCircle, FileText,
@@ -27,6 +27,7 @@ import { QuickCashTools } from '@/components/ui/QuickCalculatorModal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { useAIStore } from '@/store/aiStore';
 import { OpsHomeScreen } from '@/components/dashboards/OpsHomeScreen';
+import premiumStyles from './DashboardPremiumWidgets.module.css';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
 import { HomeClosingMonthlyPair } from '@/components/dashboards/HomeClosingMonthlyPair';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
@@ -239,6 +240,7 @@ const AdminDashboardView = ({
 }) => {
     const supabase = createClient();
     const router = useRouter();
+    const pathname = usePathname();
     const { actualBalance, boxes, loading: treasuryLoading, refresh } = useHomeTreasury({
         actualBalance: initialData?.actualBalance,
         boxes: initialData?.boxes,
@@ -714,7 +716,7 @@ const AdminDashboardView = ({
     );
 
     return (
-        <div className="home-mosaic-page">
+        <div className={cn('home-mosaic-page', pathname === '/dashboard' && premiumStyles.premiumAdminWidgets)}>
             {dashboardHome}
 
             {cashModalMode !== 'none' && (

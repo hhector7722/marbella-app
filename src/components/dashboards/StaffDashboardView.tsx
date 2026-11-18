@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, ArrowLeft,
@@ -62,6 +62,7 @@ import {
     shouldShowCameraFovNotice,
 } from '@/lib/staff/camera-fov-notice';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
+import premiumStyles from './DashboardPremiumWidgets.module.css';
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import {
@@ -320,6 +321,7 @@ export default function StaffDashboardView({
 }: StaffDashboardViewProps = {}) {
     const supabase = createClient();
     const router = useRouter();
+    const pathname = usePathname();
     const { identity, isMaster } = useMasterViewAs();
     const [clockLoading, setClockLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
@@ -997,7 +999,7 @@ export default function StaffDashboardView({
     }, [handleStaffManualItem, requestedManual, router]);
 
     return (
-        <div className="home-mosaic-page">
+        <div className={cn('home-mosaic-page', pathname === '/staff/dashboard' && premiumStyles.premiumStaffSchedule)}>
             <HomeScreen layout="staff">
                 <HomeScreenSlot size="wide" instance="staff-semana">
                     <StaffAttendanceSummaryWidget
