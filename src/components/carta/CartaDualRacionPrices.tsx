@@ -60,57 +60,21 @@ export function CartaDualRacionPrices({
     )
   }
 
-  if (showPrice && showMedio && singleLine) {
-    const ariaLabel = buildDualRacionAriaLabel({ racionEntero, racionMedio }, precio, precioMedio)
-    return (
-      <div
-        data-carta-price-lines
-        data-carta-price-compact="true"
-        role="group"
-        aria-label={ariaLabel || undefined}
-        className="flex w-full min-w-0 items-center justify-center whitespace-nowrap"
-      >
-        <span title={ariaLabel || undefined} className="whitespace-nowrap text-center font-bold tabular-nums">
-          {racionEntero.trim().charAt(0).toUpperCase()} {priceStr} · {racionMedio.trim().charAt(0).toUpperCase()} {priceMedioStr}
-        </span>
-      </div>
-    )
-  }
-
   if (showPrice && showMedio) {
     const ariaLabel = buildDualRacionAriaLabel({ racionEntero, racionMedio }, precio, precioMedio)
     return (
       <div
-        role="group"
         data-carta-price-lines
-        className="flex min-h-0 w-full shrink-0 flex-col items-center justify-center gap-1 py-0"
+        data-carta-price-compact={singleLine ? 'true' : undefined}
+        role="group"
         aria-label={ariaLabel || undefined}
+        className="flex w-full min-w-0 items-center justify-center whitespace-nowrap"
       >
         <span
-          className={cn(
-            'text-center font-black tabular-nums leading-tight text-[#36606F]',
-            variant === 'staff' && 'font-mono leading-none',
-            enteroSizeClass
-          )}
+          title={ariaLabel || undefined}
+          className="whitespace-nowrap text-center font-bold tabular-nums leading-tight text-[#36606F]"
         >
-          <span className="font-bold">{racionEntero}</span>
-          <span className="mx-0.5 font-normal opacity-70" aria-hidden>
-            ·
-          </span>
-          {priceStr}
-        </span>
-        <span
-          className={cn(
-            'text-center font-black tabular-nums leading-tight text-[#36606F]/90',
-            variant === 'staff' && 'font-mono leading-none',
-            medioSizeClass
-          )}
-        >
-          <span className="font-bold">{racionMedio}</span>
-          <span className="mx-0.5 font-normal opacity-70" aria-hidden>
-            ·
-          </span>
-          {priceMedioStr}
+          {priceStr} / {priceMedioStr}
         </span>
       </div>
     )
