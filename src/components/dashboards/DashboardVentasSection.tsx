@@ -557,6 +557,7 @@ export default function DashboardVentasSection({ initialData, fullWidget = false
                     cardsAndChartOnly={!fullWidget}
                     hideHourChart={!fullWidget}
                     compactDesktopRankings={fullWidget}
+                    plainHourAxis
                     isDayClosed={salesClosure?.date === salesViewDate && salesClosure.closed}
                 />
                 </div>
