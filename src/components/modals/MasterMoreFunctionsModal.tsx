@@ -9,8 +9,8 @@ import { AccessShortcutGrid } from '@/components/dashboards/AccessShortcutGrid';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { useAIStore } from '@/store/aiStore';
 
-/** 4 columnas × 3 filas: lo que cabe en el modal sin scroll. */
-const PAGE_SIZE = 12;
+/** 4 columnas × 4 filas: todos los accesos visibles en una sola página. */
+const PAGE_SIZE = 16;
 const SWIPE_THRESHOLD_PX = 48;
 
 const WEB_URL = 'https://marbella-web.vercel.app';
@@ -22,8 +22,6 @@ interface MasterMoreFunctionsModalProps {
     onOpenStock: () => void;
     onOpenCompra: () => void;
     onOpenInfo: () => void;
-    /** En escritorio, el botón Otros solo agrupa accesos retirados del mosaico. */
-    desktopShortlist?: boolean;
 }
 
 type MoreFunctionsItem = {
@@ -56,7 +54,7 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Vitrina', instance: 'vitrina', href: '/master/carta', img: '/icons/menu2.png' },
 ];
 
-/** Accesos exclusivos del modal Otros en /master/dashboard escritorio. */
+/** Accesos sin posición directa en el mosaico de escritorio; el modal muestra el catálogo completo. */
 export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas', 'asistente', 'asistencia', 'calendario', 'propinas', 'control-compras'] as const;
 
 const desktopOtherIds = new Set<string>(MASTER_DESKTOP_OTHER_INSTANCES);
@@ -74,7 +72,6 @@ export function MasterMoreFunctionsModal({
     onOpenStock,
     onOpenCompra,
     onOpenInfo,
-    desktopShortlist = false,
 }: MasterMoreFunctionsModalProps) {
     const router = useRouter();
     const openChat = useAIStore((state) => state.openChat);
@@ -84,7 +81,7 @@ export function MasterMoreFunctionsModal({
     const gesture = useRef<{ x: number; y: number; axis: 'x' | 'y' | null } | null>(null);
     const suppressClick = useRef(false);
 
-    const availableItems = desktopShortlist ? MASTER_DESKTOP_OTHER_ITEMS : MASTER_MORE_FUNCTIONS_ITEMS;
+    const availableItems = MASTER_MORE_FUNCTIONS_ITEMS.filter((item) => item.instance !== 'asistente');
     const pages: MoreFunctionsItem[][] = [];
     for (let index = 0; index < availableItems.length; index += PAGE_SIZE) {
         pages.push(availableItems.slice(index, index + PAGE_SIZE));

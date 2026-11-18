@@ -186,7 +186,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [userEmail, setUserEmail] = useState('');
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
     const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
-    const [desktopOtherShortlist, setDesktopOtherShortlist] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [attendanceExpanded, setAttendanceExpanded] = useState(false);
@@ -588,7 +587,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                     onOpenReservas={() => router.push('/staff/reservas')}
                     onOpenCajaInicialAcciones={openCajaInicialActions}
                     onOpenOtros={() => {
-                        setDesktopOtherShortlist(window.matchMedia('(min-width: 1024px)').matches);
                         setIsMoreFunctionsModalOpen(true);
                     }}
                     onOpenPlantilla={() => {
@@ -714,7 +712,6 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
 
             <MasterMoreFunctionsModal
                 isOpen={isMoreFunctionsModalOpen}
-                desktopShortlist={desktopOtherShortlist}
                 onClose={() => setIsMoreFunctionsModalOpen(false)}
                 onOpenCierre={() => {
                     setClosingFromOtros(true);
