@@ -304,3 +304,18 @@
     color: #e6f4ff !important;
   }
 }
+
+
+/* /dashboard/ventas: igual que en el modal Resumen de ventas, la tabla
+   de productos no pinta un segundo fondo dentro de su tarjeta. Se conserva
+   íntegramente la card exterior (borde, radio, sombra, disposición y scroll). */
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  [data-element='sales-breakdown'] > [data-element='products-section'] {
+  background: transparent !important;
+}
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  [data-element='products-section'] > div.min-h-0,
+[data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+  [data-element='products-section'] > div.min-h-0 > .custom-scrollbar {
+  background: transparent !important;
+}
