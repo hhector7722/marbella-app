@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, memo, useSyncExternalStore } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
     History, Users, TrendingUp, ChevronDown, Wallet, CloudSun, Calendar, Search, Receipt,
     ArrowRight, ArrowUpRight, ArrowDownLeft, Clock, UserCircle, FileText,
@@ -240,13 +240,11 @@ const AdminDashboardView = ({
 }) => {
     const supabase = createClient();
     const router = useRouter();
-    const pathname = usePathname();
     const homePageRef = React.useRef<HTMLDivElement>(null);
 
     // /dashboard: las KPI de cierre y mensual deben medir exactamente lo mismo
     // que las de ventas del día, incluso con zoom, responsive o cambios de escala.
     useEffect(() => {
-        if (pathname !== '/dashboard') return;
         const root = homePageRef.current;
         if (!root) return;
 
@@ -274,7 +272,7 @@ const AdminDashboardView = ({
             resizeObserver?.disconnect();
             root.style.removeProperty('--admin-daily-sales-kpi-height');
         };
-    }, [pathname]);
+    }, []);
 
     const { actualBalance, boxes, loading: treasuryLoading, refresh } = useHomeTreasury({
         actualBalance: initialData?.actualBalance,
@@ -751,7 +749,7 @@ const AdminDashboardView = ({
     );
 
     return (
-        <div ref={homePageRef} className={cn('home-mosaic-page', pathname === '/dashboard' && premiumStyles.premiumAdminWidgets)}>
+        <div ref={homePageRef} className={cn('home-mosaic-page', premiumStyles.premiumAdminWidgets)}>
             {dashboardHome}
 
             {cashModalMode !== 'none' && (

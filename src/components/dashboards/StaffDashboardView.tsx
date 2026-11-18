@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, ArrowLeft,
@@ -319,7 +319,6 @@ export default function StaffDashboardView({
 }: StaffDashboardViewProps = {}) {
     const supabase = createClient();
     const router = useRouter();
-    const pathname = usePathname();
     const { identity, isMaster } = useMasterViewAs();
     const [clockLoading, setClockLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
@@ -996,7 +995,7 @@ export default function StaffDashboardView({
     }, [handleStaffManualItem, requestedManual, router]);
 
     return (
-        <div className={cn('home-mosaic-page', pathname === '/staff/dashboard' && premiumStyles.premiumStaffSchedule)}>
+        <div className={cn('home-mosaic-page', premiumStyles.premiumStaffSchedule)}>
             <HomeScreen layout="staff">
                 <HomeScreenSlot size="wide" instance="staff-semana">
                     <StaffAttendanceSummaryWidget
