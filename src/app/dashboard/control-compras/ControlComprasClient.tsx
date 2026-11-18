@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { AlertTriangle, ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, ClipboardCheck, FileSearch, Loader2, RefreshCw } from 'lucide-react'
 import { PageScreen } from '@/components/dashboard/DashboardDetailLayout'
 import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
+import { IngredientCreateForm } from '@/components/ingredients/IngredientCreateForm'
+import { Modal } from '@/components/ui/modal'
 import { getPurchaseInvoiceDetailAction, getInvoiceStockStatusesAction, type PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import { getControlComprasDataAction, type ControlComprasData, type PurchaseObservation, type PurchasePriceEvent, type PurchaseReview } from './actions'
 
@@ -66,6 +68,8 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
   const [editorInvoice, setEditorInvoice] = useState<string | null>(null)
   const [editorSupplier, setEditorSupplier] = useState<number | null>(null)
   const [stockApplied, setStockApplied] = useState(false)
+  const [reviewForEditor, setReviewForEditor] = useState<PurchaseReview | null>(null)
+  const [creatingIngredientFor, setCreatingIngredientFor] = useState<PurchaseReview | null>(null)
   const [focusedIngredient, setFocusedIngredient] = useState<string | null>(null)
 
   const refresh = useCallback(async (days: number, silent = false) => {
@@ -214,6 +218,7 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
       setEditorLine(actualLine)
       setEditorInvoice(detail.detail.id)
       setEditorSupplier(detail.detail.supplier_id)
+      setReviewForEditor(line)
       setError('')
     } catch { setError('No se ha podido abrir la revisión de esta línea.') }
     finally { setEditorBusy(false) }
@@ -396,7 +401,31 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
         onClose={() => { setEditorLine(null); setEditorInvoice(null) }}
         onSuccess={async () => { await refresh(period, true) }}
         onCompleted={async () => { setEditorLine(null); setEditorInvoice(null); await refresh(period, true) }}
-        onCreateIngredient={() => router.push('/ingredients')} />
+        onCreateIngredient={() => {
+          if (!reviewForEditor) return
+          setEditorLine(null)
+          setEditorInvoice(null)
+          setCreatingIngredientFor(reviewForEditor)
+        }} />
+      <Modal open={creatingIngredientFor !== null}
+        onClose={() => {
+          const returnToLine = creatingIngredientFor
+          setCreatingIngredientFor(null)
+          if (returnToLine) void openReview(returnToLine)
+        }}
+        variant="compact" layer="base" instance="control-compras-ingredient-create"
+        usageId="control-compras-ingredient-create" usageLabel="Crear ingrediente"
+        title="Nuevo ingrediente" ariaLabel="Crear ingrediente">
+        {creatingIngredientFor ? <IngredientCreateForm
+          initialName={creatingIngredientFor.name}
+          context={{ lineLabel: creatingIngredientFor.name }}
+          onCreated={async () => { await refresh(period, true) }}
+          onClose={() => {
+            const returnToLine = creatingIngredientFor
+            setCreatingIngredientFor(null)
+            if (returnToLine) void openReview(returnToLine)
+          }} /> : null}
+      </Modal>
     </PageScreen>
   )
 }
