@@ -27,9 +27,12 @@
   background: linear-gradient(150deg, rgba(83, 130, 177, .16), rgba(24, 55, 86, .06)) !important;
   border-bottom-color: rgba(201, 225, 250, .17) !important;
 }
+/* Mismo degradado continuo del contenedor desde la tabla hasta las notas:
+   el footer no debe pintar una segunda capa ni una línea de separación. */
 [data-component='Modal'][data-instance='staff-schedule'].schedule-widget-premium [data-element='container'] > [data-element='footer'] {
-  background: linear-gradient(152deg, #2b4a6e, #1b3859) !important;
-  border-top-color: rgba(194, 221, 246, .19) !important;
+  background: transparent !important;
+  border-top: 0 !important;
+  box-shadow: none !important;
 }
 
 /* Los tres modales incrustan el mismo workspace de Ventas:
