@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Download, Edit2, Plus } from 'lucide-react';
@@ -21,6 +21,8 @@ import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { getScheduleLaborCostContext } from '@/app/actions/schedule-labor-cost';
+import { computeScheduleDayLaborCost, computeRequiredBilling, formatScheduleEuro, type ScheduleLaborCostContext } from '@/lib/schedule-day-profitability';
 import { countWorkersByHour } from '@/lib/schedule/hourly-coverage';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { fetchBarActivitiesForRangeClient, type BarActivity } from '@/lib/pavilion/bar-activities-range';
@@ -215,6 +217,7 @@ export const StaffScheduleModal = ({
     const scheduleEditorRef = useRef<ScheduleDayEditorHandle>(null);
     const [editModeForDate, setEditModeForDate] = useState<string | null>(null);
     const [dayShifts, setDayShifts] = useState<DayShiftRow[]>([]);
+    const [dayLaborContext, setDayLaborContext] = useState<{ key: string; data: ScheduleLaborCostContext } | null>(null);
     const [expandedAvatar, setExpandedAvatar] = useState<DayShiftRow | null>(null);
     const [closingAvatar, setClosingAvatar] = useState(false);
     const [dayActivity, setDayActivity] = useState('');
@@ -235,6 +238,9 @@ export const StaffScheduleModal = ({
     const [dayLoadError, setDayLoadError] = useState<string | null>(null);
 
     const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);
+    const showLaborCosts = isMasterDashboardUser(userEmail);
+    const laborDay = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
+    const laborEmployeeKey = [...new Set(dayShifts.map(shift => shift.userId))].sort().join(',');
 
     const clearActivityFields = () => {
         setDayActivity('');
@@ -421,6 +427,43 @@ export const StaffScheduleModal = ({
         const timeout = window.setTimeout(() => setNavigatingToActividades(false), 15000);
         return () => window.clearTimeout(timeout);
     }, [navigatingToActividades]);
+
+    // La tabla de solo lectura utiliza los mismos costes que el editor.
+    // La acción de servidor vuelve a verificar la identidad antes de leer datos salariales.
+    useEffect(() => {
+        if (!isOpen || !showLaborCosts || !laborDay || !laborEmployeeKey || loadingDay || editModeForDate) return;
+        const requestKey = `${laborDay}:${laborEmployeeKey}`;
+        let cancelled = false;
+        void getScheduleLaborCostContext(laborDay, laborEmployeeKey.split(','))
+            .then(result => {
+                if (!cancelled) setDayLaborContext(result.success ? { key: requestKey, data: result.data } : null);
+            })
+            .catch(() => {
+                if (!cancelled) setDayLaborContext(null);
+            });
+        return () => { cancelled = true; };
+    }, [isOpen, showLaborCosts, laborDay, laborEmployeeKey, loadingDay, editModeForDate]);
+
+    const dayLaborPreview = useMemo(() => {
+        if (!showLaborCosts || !laborDay || !dayLaborContext ||
+            dayLaborContext.key !== `${laborDay}:${laborEmployeeKey}`) return null;
+        const cost = computeScheduleDayLaborCost(
+            laborDay,
+            dayShifts.map(shift => ({
+                employeeId: shift.userId,
+                start: shift.startTime,
+                end: shift.endTime,
+                active: true,
+            })),
+            dayLaborContext.data,
+        );
+        return {
+            cost: cost.totalCost,
+            overtimeCost: cost.overtimeCost,
+            requiredBilling: computeRequiredBilling(cost.totalCost),
+            missingRateEmployeeIds: cost.missingRateEmployeeIds,
+        };
+    }, [showLaborCosts, laborDay, laborEmployeeKey, dayShifts, dayLaborContext]);
 
     const openEmployeeAvatar = (shift: DayShiftRow) => {
         setClosingAvatar(false);
@@ -902,7 +945,7 @@ export const StaffScheduleModal = ({
 
                                     {/* Totales visibles solo para el usuario master. */}
                                     {isMasterDashboardUser(userEmail) ? (
-                                    <div data-element="schedule-hour-totals" className="relative z-[1] flex w-full shrink-0 border-t border-slate-300 bg-[#f1f5f9] shadow-[0_-2px_8px_rgba(10,29,47,0.08)] rounded-b-2xl">
+                                    <div data-element="schedule-hour-totals" className="relative z-[1] flex w-full shrink-0 border-t border-slate-300 bg-[#f1f5f9] shadow-[0_-2px_8px_rgba(10,29,47,0.08)]">
                                         <div className="w-24 md:w-28 h-9 md:h-10 shrink-0 flex items-center justify-start pl-3 text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-700">
                                             Total
                                         </div>
@@ -921,6 +964,32 @@ export const StaffScheduleModal = ({
                                             ))}
                                         </div>
                                     </div>
+                                    ) : null}
+
+                                    {/* Costes del día visibles para Héctor también fuera del modo edición. */}
+                                    {showLaborCosts ? (
+                                        <div
+                                            data-element="schedule-labor-summary"
+                                            role="group"
+                                            aria-label="Previsión de coste de personal y ventas"
+                                            className="grid w-full shrink-0 grid-cols-3 rounded-b-2xl border-t border-gray-100 bg-white"
+                                            title={dayLaborPreview?.missingRateEmployeeIds.length
+                                                ? 'Hay trabajadores sin tarifa verificable. Revisar la tarifa de extras individual y las nóminas.'
+                                                : 'Previsión laboral por empleado: nómina individual, referencia empresarial si hace falta y extras a tarifa individual.'}
+                                        >
+                                            <div data-element="schedule-labor-total" className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 py-1.5">
+                                                <span className="text-[9px] font-semibold uppercase tracking-tight text-slate-500 sm:text-[10px]">Coste total</span>
+                                                <span className="max-w-full text-center text-[clamp(9px,2.6vw,14px)] font-bold leading-tight tabular-nums text-gray-900">{formatScheduleEuro(dayLaborPreview?.cost ?? null)}</span>
+                                            </div>
+                                            <div data-element="schedule-labor-overtime" className="flex min-w-0 flex-col items-center justify-center gap-0.5 border-l border-gray-100 px-0.5 py-1.5">
+                                                <span className="text-[9px] font-semibold uppercase tracking-tight text-slate-500 sm:text-[10px]">Coste extras</span>
+                                                <span className="max-w-full text-center text-[clamp(9px,2.6vw,14px)] font-bold leading-tight tabular-nums text-gray-900">{formatScheduleEuro(dayLaborPreview?.overtimeCost ?? null)}</span>
+                                            </div>
+                                            <div data-element="schedule-labor-required-sales" className="flex min-w-0 flex-col items-center justify-center gap-0.5 border-l border-gray-100 px-0.5 py-1.5">
+                                                <span className="text-[9px] font-semibold uppercase tracking-tight text-slate-500 sm:text-[10px]">Ventas 30 %</span>
+                                                <span className="max-w-full text-center text-[clamp(9px,2.6vw,14px)] font-bold leading-tight tabular-nums text-emerald-700">{formatScheduleEuro(dayLaborPreview?.requiredBilling ?? null)}</span>
+                                            </div>
+                                        </div>
                                     ) : null}
                                 </div>
                                 )}
