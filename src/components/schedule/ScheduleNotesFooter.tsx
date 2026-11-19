@@ -122,9 +122,11 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
     const mayReply = authEmail?.trim().toLowerCase() === NOTIFICATION_HECTOR_EMAIL
         && !identity?.isViewingAs;
     const maySaveGeneral = mayReply && authUserId === HECTOR_ID && isWeekend(date);
+    // La vista «Ver como» debe reproducir exactamente el aviso visible
+    // para el empleado. Los avisos push siguen usando SOLO la sesión real.
     const showUsageGuidance = effectiveUserId === HECTOR_ID
-        || (!identity?.isViewingAs && isScheduleGuidanceDate(date)
-            && Boolean(scheduleGuidanceStaffName(authUserId)));
+        || (isScheduleGuidanceDate(date)
+            && Boolean(scheduleGuidanceStaffName(effectiveUserId)));
 
     useEffect(() => {
         // La fecha es la del horario abierto, no la fecha actual.

@@ -22,6 +22,15 @@ describe('Aviso de uso de notas del 21 y 22 de noviembre de 2026', () => {
         assert.equal(scheduleGuidanceStaffName(null), null);
     });
 
+    it('Ver como Bali, Martí o Pau muestra el comunicado sin generar push de prueba', () => {
+        const root = resolve(import.meta.dirname, '..');
+        const notes = readFileSync(resolve(root, 'components/schedule/ScheduleNotesFooter.tsx'), 'utf8');
+        assert.match(notes, /const effectiveUserId = identity\?\.isViewingAs \? identity\.effectiveUserId : authUserId/);
+        assert.match(notes, /const showUsageGuidance = effectiveUserId === HECTOR_ID[\s\S]*?scheduleGuidanceStaffName\(effectiveUserId\)/);
+        assert.doesNotMatch(notes, /!identity\?\.isViewingAs && isScheduleGuidanceDate\(date\)/);
+        assert.match(notes, /if \(!date \|\| !authUserId \|\| identity\?\.isViewingAs/);
+    });
+
     it('la push sale de la apertura del modal de día y se protege con la sesión real', () => {
         const root = resolve(import.meta.dirname, '..');
         const notes = readFileSync(resolve(root, 'components/schedule/ScheduleNotesFooter.tsx'), 'utf8');
