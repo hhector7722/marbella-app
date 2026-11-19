@@ -306,17 +306,13 @@
 }
 
 
-/* /dashboard/ventas — La TABLA de productos debe pintar la misma
-   superficie que el listado del modal Detalle de ventas. El intento anterior
-   la dejó transparente y dejaba ver el fondo (más oscuro) de cada columna.
-   Reutilizamos aquí el degradado exacto de mobile-sales-detail-card, sin
-   modificar geometría, filas, barras, paginación, hover ni scroll. */
+/* /dashboard/ventas: el ranking de productos usa una única tonalidad azul
+   continua, sin degradado más oscuro en las filas. No modifica geometría,
+   filas, barras, paginación, hover ni scroll. */
 [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
   [data-element='sales-breakdown'] > [data-element='products-section'] {
-  /* Tonalidad continua del área de productos del modal: no volver al azul 
-     muy oscuro #183654 en las filas inferiores de la tabla. */
   background-color: #2b4e74 !important;
-  background-image: linear-gradient(150deg, #355a80 0%, #2b4e74 100%) !important;
+  background-image: none !important;
 }
 [data-component='HistoryDesktopWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
   [data-element='products-section'] > div.min-h-0,
