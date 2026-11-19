@@ -274,12 +274,14 @@ const FloatingShiftEditor = ({
     shift,
     onUpdate,
     onClose,
-    onDelete
+    onDelete,
+    dockedDesktop = false,
 }: {
     shift: ScheduleShift,
     onUpdate: (s: ScheduleShift) => void,
     onClose: () => void,
-    onDelete: () => void
+    onDelete: () => void,
+    dockedDesktop?: boolean,
 }) => {
     const step = SNAP_MINUTES;
     const barRef = useRef<HTMLDivElement>(null);
@@ -346,22 +348,33 @@ const FloatingShiftEditor = ({
 
     return (
         <div
-            className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up"
+            className={cn(
+                "fixed bottom-0 left-0 right-0 z-50 animate-slide-up",
+                dockedDesktop && "lg:relative lg:inset-auto lg:z-10 lg:w-full lg:shrink-0 lg:animate-none",
+            )}
+            onClick={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
         >
-            <div className="bg-zinc-900/95 backdrop-blur-md rounded-t-2xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
-                {/* Handle de arrastre */}
-                <div className="w-10 h-1.5 mx-auto mt-3 mb-2 rounded-full bg-white/20" />
-                
-                {/* Nombre del trabajador */}
-                <div className="px-4 pb-2 text-center">
+            <div className={cn(
+                "bg-zinc-900/95 backdrop-blur-md rounded-t-2xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]",
+                dockedDesktop && "lg:rounded-xl lg:border lg:border-white/15 lg:shadow-none",
+            )}>
+                {/* La barra de arrastre y el título apilado permanecen solo en móvil. */}
+                <div className={cn("w-10 h-1.5 mx-auto mt-3 mb-2 rounded-full bg-white/20", dockedDesktop && "lg:hidden")} />
+                <div className={cn("px-4 pb-2 text-center", dockedDesktop && "lg:hidden")}>
                     <h3 className="text-white font-semibold text-sm">{shift.name}</h3>
                 </div>
 
+                <div className={cn(dockedDesktop && "lg:flex lg:items-center lg:gap-3 lg:px-3 lg:py-2")}>
                 {/* Controles de Tiempo */}
-                <div className="px-4 pb-4">
-                    <div className="h-14 flex items-center gap-2">
+                <div className={cn("px-4 pb-4", dockedDesktop && "lg:min-w-0 lg:flex-1 lg:p-0")}>
+                    <div className={cn("h-14 flex items-center gap-2", dockedDesktop && "lg:h-12")}>
+                        {dockedDesktop ? (
+                            <span className="hidden lg:block w-28 shrink-0 truncate text-sm font-semibold text-white" title={shift.name ?? undefined}>
+                                {shift.name}
+                            </span>
+                        ) : null}
                         <div className="flex flex-col gap-0.5 shrink-0">
                             <button 
                                 type="button" 
@@ -423,7 +436,10 @@ const FloatingShiftEditor = ({
                 </div>
 
                 {/* Botones de acción */}
-                <div className="px-4 pb-4 flex items-center justify-between">
+                <div className={cn(
+                    "px-4 pb-4 flex items-center justify-between",
+                    dockedDesktop && "lg:shrink-0 lg:gap-2 lg:p-0",
+                )}>
                     <button
                         data-design-exception="native-business-button:schedule-editor-action"
                         type="button"
@@ -441,6 +457,7 @@ const FloatingShiftEditor = ({
                     >
                         <span>Cerrar</span>
                     </button>
+                </div>
                 </div>
             </div>
         </div>
@@ -1422,7 +1439,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                     <button
                                         type="button"
                                         onClick={() => setSecondSlotExpanded(true)}
-                                        className="relative shrink-0 self-center rounded-xl text-[10px] font-normal py-3 text-white/80 hover:bg-white/10 transition-colors active:scale-[0.99] before:absolute before:inset-0 before:min-h-[var(--tactil-minimo)] before:content-['']"
+                                        className="relative shrink-0 self-center rounded-xl text-[10px] font-normal py-3 lg:py-1.5 text-white/80 hover:bg-white/10 transition-colors active:scale-[0.99] before:absolute before:inset-0 before:min-h-[var(--tactil-minimo)] before:content-['']"
                                     >
                                         + Segunda actividad
                                     </button>
@@ -1458,7 +1475,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                     <button
                                         type="button"
                                         onClick={() => setSecondSlotExpanded(true)}
-                                        className="shrink-0 self-center rounded-xl text-[10px] font-normal py-3 text-white/80 hover:bg-white/10 transition-colors active:scale-[0.99] before:absolute before:inset-0 before:min-h-[var(--tactil-minimo)] before:content-[''] relative"
+                                        className="shrink-0 self-center rounded-xl text-[10px] font-normal py-3 lg:py-1.5 text-white/80 hover:bg-white/10 transition-colors active:scale-[0.99] before:absolute before:inset-0 before:min-h-[var(--tactil-minimo)] before:content-[''] relative"
                                     >
                                         + Segunda actividad
                                     </button>
@@ -1622,6 +1639,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 return (
                     <FloatingShiftEditor
                         shift={s}
+                        dockedDesktop={embedded}
                         onUpdate={upd}
                         onClose={() => setEditingIndex(null)}
                         onDelete={() => handleRemoveEmployee(editingIndex!)}

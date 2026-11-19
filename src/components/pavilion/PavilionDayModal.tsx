@@ -161,6 +161,7 @@ export function PavilionDayModal({
       layer={parentInstance ? 'derived' : 'base'}
       instance="pavilion-day"
       parentInstance={parentInstance}
+      containerClassName={showPdf ? "pavilion-day-pdf-fit" : undefined}
       dismissScope={parentInstance ? 'self' : 'chain'}
       headerCompact
       usageId="pavilion-day"
@@ -215,7 +216,7 @@ export function PavilionDayModal({
           ) : null}
         </>
       }
-      footer={
+      footer={showPdf ? undefined : (
         onOpenNote && date ? (
           <div className="flex w-full items-center justify-center">
             <Button
@@ -234,7 +235,7 @@ export function PavilionDayModal({
             <div className="h-[7px] w-[7px] rounded-full bg-zinc-300" />
           </div>
         )
-      }
+      )}
     >
       <div
         className="flex min-h-0 flex-1 flex-col overflow-hidden day-modal-body"
@@ -253,7 +254,7 @@ export function PavilionDayModal({
           </div>
         ) : showPdf ? (
           <div className="min-h-0 flex-1 overflow-hidden">
-            <PdfTab filePath={dayDetail?.pdfFilePath ?? null} />
+            <PdfTab filePath={dayDetail?.pdfFilePath ?? null} fitPage />
           </div>
         ) : (
           <ActivitiesTab

@@ -14607,3 +14607,32 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     max-width: calc(100% - var(--espacio-2));
   }
 }
+
+/* Editor de turnos: más superficie útil en escritorio, sin afectar la vista de lectura. */
+@media (min-width: 1024px) {
+  [data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+    [data-element='container'] {
+    height: min(850px, var(--modal-max-height)) !important;
+  }
+  [data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+    .day-modal-body {
+    gap: var(--espacio-1);
+    padding-bottom: 0;
+  }
+  [data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+    .day-modal-shift-row {
+    --schedule-shift-row-h: 2.75rem;
+  }
+}
+
+/* Vista PDF del calendario del pabellón: encuadre completo en escritorio. */
+@media (min-width: 1024px) {
+  [data-component='Modal'][data-instance='pavilion-day'].pavilion-day-pdf-fit
+    > [data-element='frame'] {
+    max-width: min(96vw, 90rem) !important;
+  }
+  [data-component='Modal'][data-instance='pavilion-day'].pavilion-day-pdf-fit
+    [data-element='container'] {
+    height: min(92dvh, var(--modal-max-height)) !important;
+  }
+}

@@ -684,7 +684,7 @@ export const StaffScheduleModal = ({
                     </span>
                 }
                 instance="staff-schedule"
-                containerClassName={openedFromWidget ? "schedule-widget-premium" : undefined}
+                containerClassName={cn(openedFromWidget && "schedule-widget-premium", editModeForDate && "schedule-editing-mode")}
                 variant="day"
                 layer="base"
                 scheme="dark"
@@ -722,7 +722,7 @@ export const StaffScheduleModal = ({
                     )
                 }
                 footer={
-                    selectedDate ? (
+                    selectedDate && !editModeForDate ? (
                         <ScheduleNotesFooter
                             key={format(selectedDate, 'yyyy-MM-dd')}
                             date={format(selectedDate, 'yyyy-MM-dd')}

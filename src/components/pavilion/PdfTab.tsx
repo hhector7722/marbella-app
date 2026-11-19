@@ -7,9 +7,10 @@ import { getPavilionActivitySignedUrlAction } from '@/app/staff/actividades/acti
 
 interface Props {
   filePath: string | null;
+  fitPage?: boolean;
 }
 
-export function PdfTab({ filePath }: Props) {
+export function PdfTab({ filePath, fitPage = false }: Props) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,9 +66,9 @@ export function PdfTab({ filePath }: Props) {
   }
 
   return (
-    <div className="flex flex-col min-h-0 w-full overflow-hidden">
+    <div className={fitPage ? "flex flex-1 flex-col min-h-0 w-full overflow-hidden" : "flex flex-col min-h-0 w-full overflow-hidden"}>
       {pdfUrl && (
-        <PavilionActivityPdfViewer url={pdfUrl} className="min-w-0 w-full" />
+        <PavilionActivityPdfViewer url={pdfUrl} fitPage={fitPage} className="min-w-0 w-full" />
       )}
     </div>
   );
