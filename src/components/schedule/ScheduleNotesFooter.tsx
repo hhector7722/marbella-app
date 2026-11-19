@@ -408,7 +408,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                     ) : null}
                 </div>
             ) : null}
-            {showWeekendHint && !composing && !myNote ? (
+            {showWeekendHint && effectiveUserId !== HECTOR_ID && !composing && !myNote ? (
                 <div className="mb-3 flex w-full justify-center px-3">
                     <div className="relative z-10 flex w-fit max-w-full flex-col items-center rounded-lg border border-ds-positivo bg-white px-2.5 py-1.5 shadow-sm">
                         <p className="text-center text-[11px] leading-tight text-zinc-800 sm:text-xs">
@@ -607,6 +607,18 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                         );
                     })}
                 </div>
+            ) : null}
+            {effectiveUserId === HECTOR_ID ? (
+                <section
+                    data-element="schedule-note-usage-guidance"
+                    aria-label="Uso de Añadir nota"
+                    className="mx-auto mt-2 w-full max-w-xl border-t border-white/15 px-3 pt-2 text-center text-[11px] leading-relaxed text-white/75"
+                >
+                    <p className="mb-1 font-semibold text-white">Uso de «Añadir nota»</p>
+                    <p>Usar para comunicar situaciones excepcionales y justificadas que impidan trabajar un día o turno en concreto.</p>
+                    <p>No para elegir turnos ni indicar preferencias personales de forma habitual.</p>
+                    <p className="font-semibold text-white">Su uso debe ser puntual y excepcional, no semanal.</p>
+                </section>
             ) : null}
         </div>
     );
