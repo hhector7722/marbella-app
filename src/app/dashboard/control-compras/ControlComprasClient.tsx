@@ -366,7 +366,7 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-zinc-600">Antes: {euro(currentFocus.oldPrice)}/{currentFocus.unit} · Ahora: {euro(currentFocus.newPrice)}/{currentFocus.unit}</p>
-                    <p className="mt-1 text-[10px] text-zinc-500">Origen: {currentFocus.source === 'manual' ? 'Cambio manual' : 'Histórico de precios confirmado'}</p>
+                    <p className="mt-1 text-[10px] text-zinc-500">Origen: {currentFocus.source === 'receipt_confirmation' ? 'Recepción confirmada' : 'Histórico sin origen identificado'}</p>
                   </div>
                   <button type="button" onClick={() => router.push('/dashboard/albaranes')}
                     className="flex h-9 items-center justify-center gap-2 rounded-lg bg-[#286B9D] text-xs font-bold text-white">
