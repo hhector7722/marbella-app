@@ -684,7 +684,7 @@ export const StaffScheduleModal = ({
                     </span>
                 }
                 instance="staff-schedule"
-                containerClassName={cn(openedFromWidget && "schedule-widget-premium", editModeForDate && "schedule-editing-mode")}
+                containerClassName={cn(openedFromWidget && "schedule-widget-premium", editModeForDate && "schedule-editing-mode", selectedDate && !editModeForDate && "schedule-day-readonly")}
                 variant="day"
                 layer="base"
                 scheme="dark"
@@ -733,7 +733,7 @@ export const StaffScheduleModal = ({
                         />
                     ) : undefined
                 }
-                scrollContent={false}
+                scrollContent={Boolean(selectedDate) && !editModeForDate}
             >
 
                 {/* ── MODO EDICIÓN: editor embebido (reutiliza su cabecera, sin cabecera extra) ── */}
@@ -829,7 +829,7 @@ export const StaffScheduleModal = ({
                     </div>
                 ) : (
                     // VISTA B: TABLA IDÉNTICA AL EDITOR — SÓLO LECTURA
-                    <div className="flex flex-col flex-1 overflow-hidden min-h-0 day-modal-body">
+                    <div className="flex w-full flex-col flex-none min-h-0 day-modal-body day-modal-readonly">
                         {!dayShellReady ? (
                             <div className="flex-1 flex items-center justify-center py-20">
                                 <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
@@ -900,7 +900,7 @@ export const StaffScheduleModal = ({
                                         <p className="text-xs font-medium text-white/60">Sin turno</p>
                                     </div>
                                 ) : (
-                                <div data-element="schedule-shift-table" className="rounded-2xl border border-zinc-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.16)] overflow-hidden flex flex-col flex-1 min-h-0">
+                                <div data-element="schedule-shift-table" className="rounded-2xl border border-zinc-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.16)] overflow-hidden flex flex-col flex-none">
                                     {/* Encabezado rojo */}
                                     <div data-element="schedule-hour-scale" className="flex w-full bg-[#E55353] text-white shrink-0">
                                         <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-5 md:h-6" />
@@ -914,7 +914,7 @@ export const StaffScheduleModal = ({
                                     </div>
 
                                     {/* Filas de empleados — altura igual en escritorio */}
-                                    <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto min-h-0 day-modal-shift-rows">
+                                    <div className="flex w-full flex-col flex-none bg-white day-modal-shift-rows">
                                         {dayShifts.map((shift, idx) => (
                                             <div key={idx} className="flex w-full h-9 md:h-10 shrink-0 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
                                                 <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">

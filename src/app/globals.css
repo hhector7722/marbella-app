@@ -557,6 +557,31 @@ html[data-quick-fab='open'] main {
   height: min(680px, var(--modal-max-height)) !important;
 }
 
+/* Consulta de día: panel y tabla terminan tras el contenido.
+ * Si se supera el viewport, se desplaza el body del modal, nunca sus filas.
+ * Calendario mensual y editor permanecen sin cambios. */
+[data-component='Modal'][data-instance='staff-schedule'].schedule-day-readonly [data-element='container'] {
+  height: auto !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-day-readonly .day-modal-readonly {
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  padding-bottom: 0 !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-day-readonly [data-element='schedule-shift-table'] {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-day-readonly .day-modal-shift-rows {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
 /*
  * Cabecera del horario: la fecha y sus dos flechas forman una unidad de
  * anchura intrínseca. Evita el recorte de descendentes (g, p, j, q, y)

@@ -19,9 +19,17 @@ describe('Horario: tamaño constante del modal', () => {
         assert.match(modal, /editModeForDate \? \(/);
     });
 
-    it('mantiene altura limitada por viewport y contenido interior flexible', () => {
+    it('limita la altura por viewport y conserva calendario y editor', () => {
         assert.match(css, /--modal-max-height:\s*calc\(/);
-        assert.match(modal, /scrollContent=\{false\}/);
-        assert.match(modal, /flex flex-col flex-1 overflow-hidden min-h-0 day-modal-body/);
+        assert.match(modal, /scrollContent=\{Boolean\(selectedDate\) && !editModeForDate\}/);
+        assert.match(modal, /editModeForDate && "schedule-editing-mode"/);
+    });
+
+    it('la vista diaria muestra todas las filas y desplaza el cuerpo del modal', () => {
+        assert.match(modal, /selectedDate && !editModeForDate && "schedule-day-readonly"/);
+        assert.match(modal, /day-modal-body day-modal-readonly/);
+        assert.match(modal, /flex w-full flex-col flex-none bg-white day-modal-shift-rows/);
+        assert.match(css, /\.schedule-day-readonly \[data-element='container'\] \{\s*height: auto !important;/);
+        assert.match(css, /\.schedule-day-readonly \.day-modal-shift-rows \{[\s\S]*?overflow-y: visible !important;/);
     });
 });
