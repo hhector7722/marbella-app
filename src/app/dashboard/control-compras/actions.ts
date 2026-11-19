@@ -176,6 +176,9 @@ export async function getControlComprasDataAction(requestedDays = 90): Promise<R
       if (offset >= 2500) return { success: false, message: 'Histórico de precios demasiado extenso.' }
     }
     const priceEvents: PurchasePriceEvent[] = events.flatMap(r => {
+      // Las correcciones manuales no representan variaciones de compra.
+      // Excluirlas aquí las retira de alertas, contadores y tablas a la vez.
+      if (String(r.source ?? '').trim().toLowerCase() === 'manual') return []
       const ingredient = ingredientMap.get(String(r.ingredient_id))
       const oldPrice = num(r.old_price), newPrice = num(r.new_price)
       if (!ingredient || oldPrice === null || newPrice === null || oldPrice <= 0 || newPrice < 0) return []
@@ -186,7 +189,7 @@ export async function getControlComprasDataAction(requestedDays = 90): Promise<R
         date: date(r.changed_at), oldPrice, newPrice,
         variation: (newPrice / oldPrice - 1) * 100, source: String(r.source ?? ''),
         supplierId: invoice ? num(invoice.supplier_id) : null,
-        supplier: invoice ? supplier(num(invoice.supplier_id)) : 'Cambio manual',
+        supplier: invoice ? supplier(num(invoice.supplier_id)) : 'Sin albarán vinculado',
         invoiceId: r.purchase_invoice_id ?? null,
       }]
     })

@@ -327,6 +327,10 @@ La ruta `/dashboard/control-compras` es una superficie de análisis para gerenci
 
 - **Autoridad de precios:** `ingredient_price_history` registra los cambios y su
   origen. Solo se comparan magnitudes homogéneas (euros por unidad de compra).
+  Los eventos con `source = 'manual'` son correcciones administrativas y se
+  excluyen de todos los avisos, alertas, contadores y tablas de cambios de
+  precio de Control compras. Los eventos históricos sin origen (`NULL`) no
+  se presumen manuales y permanecen disponibles. No se modifica el histórico.
 - **Autoridad de compras confirmadas:** `purchase_receipt_confirmations` aporta
   cantidad física normalizada y precio confirmado. El valor mostrado es la suma
   de cantidades por precios unitarios confirmados de esas recepciones, no la suma
