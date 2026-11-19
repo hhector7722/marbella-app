@@ -606,36 +606,36 @@ html[data-quick-fab='open'] main {
   border-top: 0;
 }
 /* «Añadir nota» del pie: relleno verde y aro blanco premium (como Entrada del mosaico Staff). */
-[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-toggle'] {
+[data-component='Modal'][data-instance='staff-schedule'] :is([data-element='footer'], [data-element='schedule-notes-inline']) [data-component='Button'][data-instance='schedule-note-toggle'] {
   color: var(--color-texto-invertido);
 }
-[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-toggle']::before {
+[data-component='Modal'][data-instance='staff-schedule'] :is([data-element='footer'], [data-element='schedule-notes-inline']) [data-component='Button'][data-instance='schedule-note-toggle']::before {
   background-color: var(--color-positivo);
   box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.9);
 }
-[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-toggle']:hover:not(:disabled)::before {
+[data-component='Modal'][data-instance='staff-schedule'] :is([data-element='footer'], [data-element='schedule-notes-inline']) [data-component='Button'][data-instance='schedule-note-toggle']:hover:not(:disabled)::before {
   background-color: color-mix(in srgb, var(--color-positivo) 82%, var(--color-texto-fuerte));
 }
 /* «Editar» de la fila de la nota: relleno blanco y texto negro. */
-[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-row-edit'] {
+[data-component='Modal'][data-instance='staff-schedule'] :is([data-element='footer'], [data-element='schedule-notes-inline']) [data-component='Button'][data-instance='schedule-note-row-edit'] {
   color: var(--color-texto-fuerte);
 }
-[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-row-edit']::before {
+[data-component='Modal'][data-instance='staff-schedule'] :is([data-element='footer'], [data-element='schedule-notes-inline']) [data-component='Button'][data-instance='schedule-note-row-edit']::before {
   background-color: #ffffff;
   box-shadow: 0 0 0 1px rgba(24, 24, 27, 0.25);
 }
-[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-row-edit']:hover:not(:disabled)::before {
+[data-component='Modal'][data-instance='staff-schedule'] :is([data-element='footer'], [data-element='schedule-notes-inline']) [data-component='Button'][data-instance='schedule-note-row-edit']:hover:not(:disabled)::before {
   background-color: color-mix(in srgb, #ffffff 80%, var(--color-texto-fuerte));
 }
 /* «Eliminar» de la fila de la nota: relleno rojo, contorno blanco y texto blanco. */
-[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-row-delete'] {
+[data-component='Modal'][data-instance='staff-schedule'] :is([data-element='footer'], [data-element='schedule-notes-inline']) [data-component='Button'][data-instance='schedule-note-row-delete'] {
   color: var(--color-texto-invertido);
 }
-[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-row-delete']::before {
+[data-component='Modal'][data-instance='staff-schedule'] :is([data-element='footer'], [data-element='schedule-notes-inline']) [data-component='Button'][data-instance='schedule-note-row-delete']::before {
   background-color: var(--color-negativo);
   box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.9);
 }
-[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-row-delete']:hover:not(:disabled)::before {
+[data-component='Modal'][data-instance='staff-schedule'] :is([data-element='footer'], [data-element='schedule-notes-inline']) [data-component='Button'][data-instance='schedule-note-row-delete']:hover:not(:disabled)::before {
   background-color: color-mix(in srgb, var(--color-negativo) 82%, var(--color-texto-fuerte));
 }
 /* Detalle de proveedor: contorno blanco en los botones del footer. */

@@ -721,18 +721,6 @@ export const StaffScheduleModal = ({
                         ) : null
                     )
                 }
-                footer={
-                    selectedDate && !editModeForDate ? (
-                        <ScheduleNotesFooter
-                            key={format(selectedDate, 'yyyy-MM-dd')}
-                            date={format(selectedDate, 'yyyy-MM-dd')}
-                            isManager={
-                                userRole === 'manager' ||
-                                userRole === 'admin'
-                            }
-                        />
-                    ) : undefined
-                }
                 scrollContent={Boolean(selectedDate) && !editModeForDate}
             >
 
@@ -995,6 +983,15 @@ export const StaffScheduleModal = ({
                                 )}
                             </>
                         )}
+                        {/* Las notas forman parte del flujo del día: siempre después de la tabla,
+                            sin pie fijo que reduzca el espacio ni recorte filas. */}
+                        <div data-element="schedule-notes-inline" className="w-full shrink-0 px-2 pb-3 pt-2">
+                            <ScheduleNotesFooter
+                                key={format(selectedDate, 'yyyy-MM-dd')}
+                                date={format(selectedDate, 'yyyy-MM-dd')}
+                                isManager={userRole === 'manager' || userRole === 'admin'}
+                            />
+                        </div>
                     </div>
                 )}
                 </>

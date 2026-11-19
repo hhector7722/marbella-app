@@ -14,7 +14,8 @@ describe('Fin de semana: notas integradas y navegación entre modales', () => {
 
     it('Nota general no ocupa el cuerpo superior del horario del día', () => {
         assert.doesNotMatch(modal, /<WeekendPublicScheduleNote/);
-        assert.match(modal, /footer=\{[\s\S]*?<ScheduleNotesFooter/);
+        assert.match(modal, /data-element="schedule-notes-inline"[\s\S]*?<ScheduleNotesFooter/);
+        assert.doesNotMatch(modal, /footer=\{[\s\S]*?<ScheduleNotesFooter/);
         assert.match(notes, /data-element="schedule-general-note"/);
         assert.doesNotMatch(notes, /<span[^>]*>General<\/span>/, 'la nota general muestra el contenido sin la etiqueta General');
         assert.match(notes, /data-element="schedule-general-note"[\s\S]*?\{generalNote\}/, 'se conserva el mensaje de la nota');

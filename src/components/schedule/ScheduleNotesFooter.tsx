@@ -612,7 +612,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                 <section
                     data-element="schedule-note-usage-guidance"
                     aria-label="Uso de Añadir nota"
-                    className="mx-auto mt-2 w-[calc(100%-3rem)] max-w-lg space-y-1 rounded-xl border border-amber-300/70 bg-amber-100 px-3 py-2.5 text-left text-[11px] leading-relaxed text-amber-950 shadow-sm"
+                    className="mx-auto mt-2 w-[calc(100%-3rem)] max-w-lg space-y-1 rounded-xl border border-amber-300/70 bg-amber-100 px-3 py-2.5 text-left text-[9px] min-[390px]:text-[10px] sm:text-[11px] leading-relaxed text-amber-950 shadow-sm"
                 >
                     <p className="font-semibold text-amber-950">Uso de «Añadir nota»</p>
                     <p>Usar para comunicar situaciones excepcionales y justificadas que impidan trabajar un día o turno en concreto.</p>

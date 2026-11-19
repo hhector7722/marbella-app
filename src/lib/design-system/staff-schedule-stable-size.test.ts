@@ -29,6 +29,8 @@ describe('Horario: tamaño constante del modal', () => {
         assert.match(modal, /selectedDate && !editModeForDate && "schedule-day-readonly"/);
         assert.match(modal, /day-modal-body day-modal-readonly/);
         assert.match(modal, /flex w-full flex-col flex-none bg-white day-modal-shift-rows/);
+        assert.match(modal, /data-element="schedule-notes-inline"[\s\S]*?<ScheduleNotesFooter/);
+        assert.doesNotMatch(modal, /footer=\{[\s\S]*?<ScheduleNotesFooter/);
         assert.match(css, /\.schedule-day-readonly \[data-element='container'\] \{\s*height: auto !important;/);
         assert.match(css, /\.schedule-day-readonly \.day-modal-shift-rows \{[\s\S]*?overflow-y: visible !important;/);
     });
