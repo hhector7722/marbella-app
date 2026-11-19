@@ -1,9 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { sendScheduleNoteNotification } from '@/app/actions/notifications';
 import { createPrivateScheduleNoteReply } from '@/app/actions/schedule-note-replies';
+import { notifyScheduleGuidanceOpen } from '@/app/actions/schedule-guidance-open';
+import { isScheduleGuidanceDate, scheduleGuidanceStaffName } from '@/lib/schedule-guidance-campaign';
 import { NOTIFICATION_HECTOR_EMAIL } from '@/lib/notification-recipients';
 import {
     saveWeekendPublicScheduleNote,
@@ -78,6 +80,9 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
     const supabase = createClient();
     const { identity } = useMasterViewAs();
     const [authUserId, setAuthUserId] = useState<string | null>(null);
+    // El componente se monta al abrir un día y cambia de key al navegar de fecha.
+    // Un solo aviso por apertura real; no por cada render o actualización de notas.
+    const notifiedOpeningRef = useRef<string | null>(null);
     const [authEmail, setAuthEmail] = useState<string | null>(null);
     const [replyingToId, setReplyingToId] = useState<string | null>(null);
     const [replyDraft, setReplyDraft] = useState('');
@@ -117,6 +122,22 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
     const mayReply = authEmail?.trim().toLowerCase() === NOTIFICATION_HECTOR_EMAIL
         && !identity?.isViewingAs;
     const maySaveGeneral = mayReply && authUserId === HECTOR_ID && isWeekend(date);
+    const showUsageGuidance = effectiveUserId === HECTOR_ID
+        || (!identity?.isViewingAs && isScheduleGuidanceDate(date)
+            && Boolean(scheduleGuidanceStaffName(authUserId)));
+
+    useEffect(() => {
+        // La fecha es la del horario abierto, no la fecha actual.
+        // Se usa siempre la sesión REAL, nunca el usuario simulado por "Ver como".
+        if (!date || !authUserId || identity?.isViewingAs
+            || !isScheduleGuidanceDate(date) || !scheduleGuidanceStaffName(authUserId)) return;
+        const openingKey = `${authUserId}:${date}`;
+        if (notifiedOpeningRef.current === openingKey) return;
+        notifiedOpeningRef.current = openingKey;
+        void notifyScheduleGuidanceOpen(date).catch((error) => {
+            console.error('Schedule guidance opening push failed:', error);
+        });
+    }, [date, authUserId, identity?.isViewingAs]);
 
     useEffect(() => {
         let cancelled = false;
@@ -408,7 +429,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                     ) : null}
                 </div>
             ) : null}
-            {showWeekendHint && effectiveUserId !== HECTOR_ID && !composing && !myNote ? (
+            {showWeekendHint && !showUsageGuidance && !composing && !myNote ? (
                 <div className="mb-3 flex w-full justify-center px-3">
                     <div className="relative z-10 flex w-fit max-w-full flex-col items-center rounded-lg border border-ds-positivo bg-white px-2.5 py-1.5 shadow-sm">
                         <p className="text-center text-[11px] leading-tight text-zinc-800 sm:text-xs">
@@ -608,7 +629,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                     })}
                 </div>
             ) : null}
-            {effectiveUserId === HECTOR_ID ? (
+            {showUsageGuidance ? (
                 <section
                     data-element="schedule-note-usage-guidance"
                     aria-label="Uso de Añadir nota"
