@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, ClipboardCheck, FileSearch, Loader2, RefreshCw } from 'lucide-react'
+import { AlertTriangle, ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, ClipboardCheck, FileSearch, Loader2, RefreshCw, ChevronDown } from 'lucide-react'
 import { PageScreen } from '@/components/dashboard/DashboardDetailLayout'
 import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
 import { IngredientCreateForm } from '@/components/ingredients/IngredientCreateForm'
@@ -24,7 +24,7 @@ const median = (arr: number[]) => {
   const sorted = [...arr].sort((a, b) => a - b)
   return sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2] + sorted[sorted.length / 2 - 1]) / 2
 }
-const PAGE_SIZE = 5
+const PAGE_SIZE = 3
 
 function Pager({ total, page, onChange }: { total: number; page: number; onChange: (next: number) => void }) {
   const count = Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -32,15 +32,15 @@ function Pager({ total, page, onChange }: { total: number; page: number; onChang
     <div className="flex items-center justify-end gap-2 text-xs text-zinc-500">
       <span className="tabular-nums">{page + 1} / {count}</span>
       <button type="button" disabled={page === 0} onClick={() => onChange(page - 1)}
-        className="flex h-8 w-8 items-center justify-center rounded-lg disabled:opacity-25" aria-label="Página anterior"><ChevronLeft size={18} /></button>
+        className="flex h-7 w-7 items-center justify-center rounded-lg disabled:opacity-25" aria-label="Página anterior"><ChevronLeft size={18} /></button>
       <button type="button" disabled={page + 1 >= count} onClick={() => onChange(page + 1)}
-        className="flex h-8 w-8 items-center justify-center rounded-lg disabled:opacity-25" aria-label="Página siguiente"><ChevronRight size={18} /></button>
+        className="flex h-7 w-7 items-center justify-center rounded-lg disabled:opacity-25" aria-label="Página siguiente"><ChevronRight size={18} /></button>
     </div>
   )
 }
 function Panel({ title, detail, children, footer }: { title: string; detail?: string; children: React.ReactNode; footer?: React.ReactNode }) {
   return (
-    <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/65 bg-white/95 p-3 shadow-[0_8px_30px_rgba(7,32,58,0.11)]">
+    <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/65 bg-white/95 p-2.5 shadow-[0_8px_30px_rgba(7,32,58,0.11)]">
       <div className="mb-2 shrink-0">
         <h2 className="text-sm font-bold text-[#173C56]">{title}</h2>
         {detail ? <p className="text-[10px] text-zinc-500">{detail}</p> : null}
@@ -61,6 +61,7 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
   const [alertFilter, setAlertFilter] = useState('Todos')
   const [alertPage, setAlertPage] = useState(0)
   const [reviewPage, setReviewPage] = useState(0)
+  const [reviewExpanded, setReviewExpanded] = useState(false)
   const [pricePage, setPricePage] = useState(0)
   const [loading, setLoading] = useState(false)
   const [editorBusy, setEditorBusy] = useState(false)
@@ -227,10 +228,10 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
   return (
     <PageScreen title="Control compras" subtitle="Costes de producto y revisión de albaranes"
       backHref="/dashboard" maxWidthClass="max-w-[1600px]" template="list" work="catalog"
-      className="min-h-0 lg:h-[calc(100dvh-8rem)] lg:overflow-hidden"
-      cardClassName="!min-h-0 lg:!flex-1 !bg-transparent !border-0 !shadow-none"
-      contentClassName="min-h-0 lg:flex-1 lg:overflow-hidden !p-0">
-      <div className="flex min-h-0 flex-col gap-2 text-[#173C56] lg:h-full lg:overflow-hidden">
+      className="min-h-0"
+      cardClassName="!min-h-0 !bg-transparent !border-0 !shadow-none !overflow-visible"
+      contentClassName="min-h-0 !p-0">
+      <div className="flex min-h-0 flex-col gap-2 text-[#173C56]">
         <div className="flex shrink-0 items-center justify-between gap-2">
           <div className="flex min-w-0 gap-2">
             <select aria-label="Periodo" className="h-9 rounded-lg bg-white/90 px-2 text-xs shadow-sm"
@@ -276,9 +277,46 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
           </div>
         </div>
 
-        <div className="grid min-h-0 grid-cols-1 gap-2 lg:flex-1 lg:grid-cols-12 lg:grid-rows-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <div className="min-h-0 lg:col-span-5">
-            <Panel title="Alertas detectadas" detail="Variaciones reales; umbral de precio ±12 %"
+        <section className="shrink-0 overflow-hidden rounded-xl border border-white/65 bg-white/90 shadow-[0_4px_18px_rgba(7,32,58,0.08)]">
+          <button type="button" aria-expanded={reviewExpanded} aria-controls="control-compras-revision"
+            onClick={() => setReviewExpanded(value => !value)}
+            className="flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left">
+            <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-[#173C56]">
+              <FileSearch size={17} className="shrink-0 text-[#286B9D]" />
+              Revisión de albaranes
+            </span>
+            <span className="flex shrink-0 items-center gap-2 text-xs text-slate-600">
+              {filteredReviews.length} pendientes
+              <ChevronDown size={17} className={`transition-transform ${reviewExpanded ? 'rotate-180' : ''}`} />
+            </span>
+          </button>
+          {reviewExpanded ? (
+            <div id="control-compras-revision" className="border-t border-slate-200/70 px-3 pb-2 pt-1">
+              {filteredReviews.length === 0 ? (
+                <p className="py-3 text-center text-xs text-green-700"><Check size={15} className="mr-1 inline" /> Sin líneas pendientes</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-x-3 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredReviews.slice(reviewPage * PAGE_SIZE, (reviewPage + 1) * PAGE_SIZE).map(r =>
+                    <button key={r.id} type="button" disabled={editorBusy} onClick={() => void openReview(r)}
+                      className="flex min-w-0 items-center justify-between gap-2 border-b border-slate-200/70 py-1.5 text-left disabled:opacity-50">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[11px] font-semibold text-[#173C56]">{r.name}</span>
+                        <span className="block truncate text-[10px] text-zinc-500">{r.supplier} · {shortDate(r.date)}</span>
+                        <span className="block truncate text-[10px] text-amber-700">{r.reason}</span>
+                      </span>
+                      <FileSearch size={16} className="shrink-0 text-[#286B9D]" />
+                    </button>)}
+                </div>
+              )}
+              <Pager total={filteredReviews.length} page={Math.min(reviewPage, Math.max(0, Math.ceil(filteredReviews.length / PAGE_SIZE) - 1))}
+                onChange={setReviewPage} />
+            </div>
+          ) : null}
+        </section>
+
+        <div className="grid min-h-0 grid-cols-1 gap-2 lg:h-[min(60dvh,530px)] lg:min-h-[480px] lg:grid-cols-12 lg:grid-rows-2">
+          <div className="min-h-[260px] lg:col-span-7 lg:min-h-0">
+            <Panel title="Alertas detectadas" detail="Compras confirmadas; umbral de precio ±12 %"
               footer={<Pager total={shownAlerts.length} page={Math.min(alertPage, Math.max(0, Math.ceil(shownAlerts.length / PAGE_SIZE) - 1))} onChange={setAlertPage} />}>
               <div className="mb-1 flex gap-1">
                 {[['Todos', 'Todas'], ['price', 'Precio'], ['quantity', 'Cantidad'], ['supplier', 'Proveedor'], ['duplicate', 'Duplicados']].map(([key, label]) =>
@@ -288,7 +326,7 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
               {shownAlerts.length === 0 ? <p className="py-5 text-center text-xs text-zinc-500">Sin alertas que cumplan los criterios.</p> :
                 shownAlerts.slice(alertPage * PAGE_SIZE, (alertPage + 1) * PAGE_SIZE).map(alert =>
                   <button key={alert.id} type="button" onClick={() => alert.type === 'duplicate' ? router.push('/dashboard/albaranes') : setFocusedIngredient(alert.ingredientId)}
-                    className="flex w-full items-center gap-2 border-b border-slate-100 py-1.5 text-left last:border-0">
+                    className="flex w-full items-center gap-2 border-b border-slate-100 py-1 text-left last:border-0">
                     <span className={`h-7 w-7 shrink-0 rounded-lg p-1.5 ${alert.severity === 'high' ? 'bg-red-50 text-red-600' : alert.severity === 'opportunity' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-700'}`}>
                       {alert.severity === 'opportunity' ? <ArrowDown size={16} /> : <AlertTriangle size={16} />}
                     </span>
@@ -300,26 +338,10 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
                   </button>)}
             </Panel>
           </div>
-          <div className="min-h-0 lg:col-span-4">
-            <Panel title="Revisión de albaranes" detail="Completar desde aquí · cola global"
-              footer={<Pager total={filteredReviews.length} page={Math.min(reviewPage, Math.max(0, Math.ceil(filteredReviews.length / PAGE_SIZE) - 1))} onChange={setReviewPage} />}>
-              {filteredReviews.length === 0 ? <div className="flex h-full items-center justify-center gap-2 text-xs text-green-700"><Check size={17} /> Sin líneas pendientes</div> :
-                filteredReviews.slice(reviewPage * PAGE_SIZE, (reviewPage + 1) * PAGE_SIZE).map(r =>
-                  <button key={r.id} type="button" disabled={editorBusy} onClick={() => void openReview(r)}
-                    className="flex w-full items-center justify-between gap-2 border-b border-slate-100 py-1.5 text-left last:border-0 disabled:opacity-50">
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[11px] font-bold">{r.name}</span>
-                      <span className="block truncate text-[10px] text-zinc-500">{r.supplier} · {shortDate(r.date)}</span>
-                      <span className="block truncate text-[10px] text-amber-700">{r.reason}</span>
-                    </span>
-                    <FileSearch size={17} className="shrink-0 text-[#286B9D]" />
-                  </button>)}
-            </Panel>
-          </div>
-          <div className="min-h-0 lg:col-span-3">
+          <div className="min-h-[240px] lg:col-span-5 lg:min-h-0">
             <Panel title="Evolución de compras" detail="Recepciones confirmadas; sin duplicar facturas">
               <div className="flex h-full flex-col justify-between">
-                <div className="flex min-h-0 flex-1 items-end gap-1 border-b border-slate-200 py-2">
+                <div className="flex min-h-[90px] flex-1 items-end gap-1 border-b border-slate-200 py-2">
                   {chart.map(row =>
                     <div key={row.index} title={euro(row.amount, 0)} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
                       <div className="w-full rounded-t bg-[#347FA5]" style={{ height: `${Math.max(2, row.amount / maxChart * 100)}%` }} />
@@ -334,8 +356,8 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
               </div>
             </Panel>
           </div>
-          <div className="min-h-0 lg:col-span-7">
-            <Panel title="Control de precios por ingrediente" detail="Última modificación por producto; € por unidad de compra"
+          <div className="min-h-[260px] lg:col-span-7 lg:min-h-0">
+            <Panel title="Control de precios por ingrediente" detail="Último cambio entre recepciones confirmadas; € por unidad de compra"
               footer={<Pager total={priceItems.length} page={Math.min(pricePage, Math.max(0, Math.ceil(priceItems.length / PAGE_SIZE) - 1))} onChange={setPricePage} />}>
               <div className="grid grid-cols-[minmax(0,1fr)_70px_70px_66px] border-b border-slate-200 pb-1 text-[9px] font-bold uppercase text-zinc-500">
                 <span>Ingrediente</span><span className="text-right">Anterior</span><span className="text-right">Actual</span><span className="text-right">Cambio</span>
@@ -351,7 +373,7 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
               {priceItems.length === 0 ? <p className="pt-5 text-center text-xs text-zinc-500">Sin cambios de precio en este periodo.</p> : null}
             </Panel>
           </div>
-          <div className="min-h-0 lg:col-span-5">
+          <div className="min-h-[245px] lg:col-span-5 lg:min-h-0">
             <Panel title="Detalle de variación" detail="Dato económico trazable al histórico">
               {currentFocus ? (
                 <div className="flex h-full flex-col justify-between gap-2">
@@ -366,7 +388,7 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-zinc-600">Antes: {euro(currentFocus.oldPrice)}/{currentFocus.unit} · Ahora: {euro(currentFocus.newPrice)}/{currentFocus.unit}</p>
-                    <p className="mt-1 text-[10px] text-zinc-500">Origen: {currentFocus.source === 'receipt_confirmation' ? 'Recepción confirmada' : 'Histórico sin origen identificado'}</p>
+                    <p className="mt-1 text-[10px] text-zinc-500">Origen: dos recepciones confirmadas</p>
                   </div>
                   <button type="button" onClick={() => router.push('/dashboard/albaranes')}
                     className="flex h-9 items-center justify-center gap-2 rounded-lg bg-[#286B9D] text-xs font-bold text-white">
