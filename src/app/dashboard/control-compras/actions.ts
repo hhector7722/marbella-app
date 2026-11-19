@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { verifiedReceiptPriceVariations, type ReceiptPriceRow } from '@/lib/purchasing/verified-receipt-price-variations'
 
 export type PurchaseObservation = {
   id: string; invoiceId: string; date: string; supplierId: number | null; supplier: string
@@ -164,35 +165,38 @@ export async function getControlComprasDataAction(requestedDays = 90): Promise<R
       }]
     }).sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name))
 
-    const events: Row[] = []
+    // Comparar SOLO recepciones confirmadas entre sí. Una corrección manual
+    // reinicia la referencia para evitar alertas derivadas de un precio erróneo.
+    // Leemos también eventos anteriores al periodo para encontrar la referencia.
+    const events: ReceiptPriceRow[] = []
     for (let offset = 0; offset < 3000; offset += 500) {
       const { data, error } = await supabase.from('ingredient_price_history')
-        .select('id,ingredient_id,old_price,new_price,changed_at,source,purchase_invoice_id')
-        .gte('changed_at', since + 'T00:00:00').order('changed_at', { ascending: false })
+        .select('id,ingredient_id,new_price,changed_at,source,purchase_invoice_id')
+        .in('source', ['receipt_confirmation', 'manual'])
+        .order('changed_at', { ascending: true })
+        .order('id', { ascending: true })
         .range(offset, offset + 499)
       if (error) return { success: false, message: error.message }
-      events.push(...(data ?? []))
+      events.push(...((data ?? []) as ReceiptPriceRow[]))
       if ((data ?? []).length < 500) break
-      if (offset >= 2500) return { success: false, message: 'Histórico de precios demasiado extenso.' }
+      if (offset >= 2500) return { success: false, message: 'Histórico de recepciones demasiado extenso.' }
     }
-    const priceEvents: PurchasePriceEvent[] = events.flatMap(r => {
-      // Las correcciones manuales no representan variaciones de compra.
-      // Excluirlas aquí las retira de alertas, contadores y tablas a la vez.
-      if (String(r.source ?? '').trim().toLowerCase() === 'manual') return []
-      const ingredient = ingredientMap.get(String(r.ingredient_id))
-      const oldPrice = num(r.old_price), newPrice = num(r.new_price)
-      if (!ingredient || oldPrice === null || newPrice === null || oldPrice <= 0 || newPrice < 0) return []
-      const invoice = invoiceMap.get(String(r.purchase_invoice_id))
-      return [{
-        id: String(r.id), ingredientId: String(ingredient.id), ingredient: String(ingredient.name),
-        category: String(ingredient.category), unit: String(ingredient.purchase_unit),
-        date: date(r.changed_at), oldPrice, newPrice,
-        variation: (newPrice / oldPrice - 1) * 100, source: String(r.source ?? ''),
-        supplierId: invoice ? num(invoice.supplier_id) : null,
-        supplier: invoice ? supplier(num(invoice.supplier_id)) : 'Sin albarán vinculado',
-        invoiceId: r.purchase_invoice_id ?? null,
-      }]
-    })
+    const priceEvents: PurchasePriceEvent[] = verifiedReceiptPriceVariations(events, since)
+      .flatMap(({ receipt, previousPrice, currentPrice, variation }) => {
+        const ingredient = ingredientMap.get(String(receipt.ingredient_id))
+        if (!ingredient) return []
+        const invoiceId = String(receipt.purchase_invoice_id)
+        const invoice = invoiceMap.get(invoiceId)
+        return [{
+          id: String(receipt.id), ingredientId: String(ingredient.id),
+          ingredient: String(ingredient.name), category: String(ingredient.category),
+          unit: String(ingredient.purchase_unit), date: date(receipt.changed_at),
+          oldPrice: previousPrice, newPrice: currentPrice, variation,
+          source: 'receipt_confirmation', invoiceId,
+          supplierId: invoice ? num(invoice.supplier_id) : null,
+          supplier: invoice ? supplier(num(invoice.supplier_id)) : 'Proveedor sin identificar',
+        }]
+      })
     return { success: true, data: {
       refreshedAt: new Date().toISOString(), periodDays: days, observations,
       priceEvents, reviews, duplicates, suppliers,

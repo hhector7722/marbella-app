@@ -327,10 +327,15 @@ La ruta `/dashboard/control-compras` es una superficie de análisis para gerenci
 
 - **Autoridad de precios:** `ingredient_price_history` registra los cambios y su
   origen. Solo se comparan magnitudes homogéneas (euros por unidad de compra).
-  Los eventos con `source = 'manual'` son correcciones administrativas y se
-  excluyen de todos los avisos, alertas, contadores y tablas de cambios de
-  precio de Control compras. Los eventos históricos sin origen (`NULL`) no
-  se presumen manuales y permanecen disponibles. No se modifica el histórico.
+  En Control compras solo se comparan eventos `source = 'receipt_confirmation'`
+  con albarán vinculado, entre dos recepciones confirmadas de documentos
+  diferentes del mismo ingrediente. La referencia puede ser anterior al periodo.
+  `old_price` no se usa como base porque puede venir de un alta/corrección manual.
+  El primer albarán sin compra previa comparable no origina variación.
+  Toda corrección `manual` reinicia la referencia; solo se comparan dos nuevas
+  recepciones confirmadas posteriores a esa corrección.
+  Los eventos `manual` y los heredados con `source = NULL` permanecen en
+  la base de datos pero no participan en alertas, métricas ni tablas de variación.
 - **Autoridad de compras confirmadas:** `purchase_receipt_confirmations` aporta
   cantidad física normalizada y precio confirmado. El valor mostrado es la suma
   de cantidades por precios unitarios confirmados de esas recepciones, no la suma
@@ -338,7 +343,7 @@ La ruta `/dashboard/control-compras` es una superficie de análisis para gerenci
 - **Revisión:** las líneas `pending` y propuestas de revisión aún sin confirmación
   aparecen como tareas. La pantalla abre `LineMappingModal` y las operaciones
   de revisión/confirmación ya autorizadas por K4; no añade un escritor económico.
-- **Anomalías:** subida o bajada de al menos el 12 % entre precios registrados;
+- **Anomalías:** subida o bajada de al menos el 12 % entre dos recepciones confirmadas;
   cantidad de última compra al menos 2,5 veces la mediana de cuatro compras
   anteriores del mismo ingrediente y proveedor, en la unidad de compra. Se
   señala un proveedor nuevo solo cuando existe suficiente histórico reciente.
