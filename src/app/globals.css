@@ -14661,3 +14661,41 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
     height: min(92dvh, var(--modal-max-height)) !important;
   }
 }
+
+/* Horario (lectura y edición): filas de totales y costes compactas.
+   La tabla conserva todas sus filas; el scroll sigue perteneciendo al modal. */
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-hour-totals'] > * {
+  height: 1.5rem !important;
+  min-height: 1.5rem !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-hour-totals'] > div,
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-hour-totals'] > div > div {
+  font-size: 9px !important;
+  line-height: 1.1 !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-labor-summary'] > div {
+  row-gap: 1px !important;
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-labor-summary'] > div > span:first-child {
+  font-size: 9px !important;
+  line-height: 10px !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-labor-summary'] > div > span:last-child {
+  font-size: 10px !important;
+  line-height: 11px !important;
+}
+
+/* Avatar de la tabla de lectura: igual a la altura de línea del nombre.
+   Móvil: 11px; escritorio (12px × 1.2): 14.4px. */
+[data-component='Modal'][data-instance='staff-schedule'] .day-modal-readonly .schedule-employee-avatar {
+  width: 11px !important;
+  height: 11px !important;
+}
+@media (min-width: 768px) {
+  [data-component='Modal'][data-instance='staff-schedule'] .day-modal-readonly .schedule-employee-avatar {
+    width: 14.4px !important;
+    height: 14.4px !important;
+  }
+}

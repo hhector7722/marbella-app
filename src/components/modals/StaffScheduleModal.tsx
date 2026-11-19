@@ -907,7 +907,7 @@ export const StaffScheduleModal = ({
                                             <div key={idx} className="flex w-full h-9 md:h-10 shrink-0 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
                                                 <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
                                                     <button type="button" onClick={() => openEmployeeAvatar(shift)} className="flex min-w-0 items-center gap-2 text-left" aria-label={`Ampliar avatar de ${shift.name}`}>
-                                                        <Avatar src={shift.avatar_url ?? undefined} alt={shift.name} size="sm" className="shrink-0" />
+                                                        <Avatar src={shift.avatar_url ?? undefined} alt={shift.name} size="sm" className="shrink-0 schedule-employee-avatar" />
                                                         <span data-element="employee-name" className="min-w-0 truncate text-[11px] font-medium leading-none text-zinc-800 select-none">{shift.name}</span>
                                                     </button>
                                                     {shift.isDraft ? (

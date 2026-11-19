@@ -34,4 +34,10 @@ describe('Horario: tamaño constante del modal', () => {
         assert.match(css, /\.schedule-day-readonly \[data-element='container'\] \{\s*height: auto !important;/);
         assert.match(css, /\.schedule-day-readonly \.day-modal-shift-rows \{[\s\S]*?overflow-y: visible !important;/);
     });
+    it('compacta totales/costes y ajusta el avatar a la línea del nombre', () => {
+        assert.match(modal, /schedule-employee-avatar/);
+        assert.match(css, /schedule-hour-totals'\] > \* \{\s*height: 1\.5rem !important;/);
+        assert.match(css, /schedule-labor-summary'\] > div \{[\s\S]*?padding-bottom: 3px !important;/);
+        assert.match(css, /\.day-modal-readonly \.schedule-employee-avatar \{\s*width: 11px !important;\s*height: 11px !important;/);
+    });
 });
