@@ -694,7 +694,7 @@ export const StaffScheduleModal = ({
                             <button
                                 type="button"
                                 onClick={() => scheduleEditorRef.current?.openAddEmployee()}
-                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                 aria-label="Añadir empleado"
                             >
                                 <Plus size={18} strokeWidth={2.5} />
@@ -702,7 +702,7 @@ export const StaffScheduleModal = ({
                             <button
                                 type="button"
                                 onClick={() => scheduleEditorRef.current?.openShare()}
-                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                 aria-label="Guardar horario"
                             >
                                 <Download size={18} strokeWidth={2.5} />
@@ -713,7 +713,7 @@ export const StaffScheduleModal = ({
                             <button
                                 type="button"
                                 onClick={() => setEditModeForDate(format(selectedDate, 'yyyy-MM-dd'))}
-                                className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                 aria-label="Editar este día"
                             >
                                 <Edit2 size={18} strokeWidth={2.5} />
@@ -721,12 +721,12 @@ export const StaffScheduleModal = ({
                         ) : null
                     )
                 }
-                scrollContent={Boolean(selectedDate) && !editModeForDate}
+                scrollContent={Boolean(selectedDate || editModeForDate)}
             >
 
                 {/* ── MODO EDICIÓN: editor embebido (reutiliza su cabecera, sin cabecera extra) ── */}
                 {editModeForDate ? (
-                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden day-modal-body">
+                    <div className="flex w-full flex-none flex-col min-h-0 day-modal-body">
                         <ScheduleDayEditor
                             ref={scheduleEditorRef}
                             initialDate={editModeForDate}

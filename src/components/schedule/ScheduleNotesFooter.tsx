@@ -615,8 +615,8 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                     className="mx-auto mt-2 w-[calc(100%-1.25rem)] max-w-lg space-y-1.5 rounded-xl border border-amber-300/70 bg-amber-100 px-3 py-2.5 text-left text-[8.5px] leading-[1.35] sm:text-[11px] sm:leading-relaxed text-amber-950 shadow-sm"
                 >
                     <p className="font-semibold text-amber-950">Uso de «Añadir nota»</p>
-                    <p>Usar para comunicar situaciones excepcionales y justificadas que impidan trabajar un día o turno en concreto.</p>
-                    <p>No para elegir turnos ni indicar preferencias personales de forma habitual.</p>
+                    <p>Usar para comunicar situaciones <strong className="font-bold">excepcionales y justificadas</strong> que impidan trabajar un día o turno en concreto.</p>
+                    <p><strong className="font-bold">No para elegir</strong> turnos ni indicar preferencias personales de forma habitual.</p>
                     <p className="font-semibold text-amber-950">Su uso debe ser puntual y excepcional, no semanal.</p>
                 </section>
             ) : null}

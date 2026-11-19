@@ -14633,12 +14633,40 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   }
 }
 
-/* Editor de turnos: más superficie útil en escritorio, sin afectar la vista de lectura. */
+/* Editor de horarios: altura de contenido, sin filas en blanco.
+   La única zona que desplaza verticalmente es el body del modal.
+   El calendario mensual, la consulta y el editor standalone no cambian. */
+[data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+  [data-element='container'] {
+  height: auto !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+  [data-element='body'] {
+  overflow-y: auto !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+  .day-modal-body,
+[data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+  [data-editor-embedded='true'] {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+  [data-element='schedule-shift-table'],
+[data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+  .day-modal-shift-rows {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+[data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
+  .day-modal-shift-rows {
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+}
 @media (min-width: 1024px) {
-  [data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
-    [data-element='container'] {
-    height: min(850px, var(--modal-max-height)) !important;
-  }
   [data-component='Modal'][data-instance='staff-schedule'].schedule-editing-mode
     .day-modal-body {
     gap: var(--espacio-1);
