@@ -390,7 +390,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                 que reduzca el espacio disponible para el horario del día. */}
             {isWeekend(date) && generalNote ? (
                 <div data-element="schedule-general-note"
-                    className="mx-auto mt-1 flex w-fit max-w-[94%] items-center gap-2 rounded-lg bg-white/10 px-2.5 py-1.5 text-white">
+                    className="mx-auto mt-1 flex w-fit max-w-[calc(100%-1rem)] items-center gap-2 rounded-lg bg-white/10 px-2.5 py-1.5 text-white">
                     <button type="button" onClick={() => setGeneralExpanded((prev) => !prev)}
                         aria-label={generalExpanded ? 'Contraer nota general' : 'Ver nota general completa'}
                         className={`min-w-0 break-words text-left text-[11px] leading-snug ${generalExpanded ? 'whitespace-pre-wrap' : 'line-clamp-1'}`}>
@@ -507,7 +507,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                             <div key={note.id} className="mx-auto flex w-full min-w-0 flex-col items-center gap-1">
                                 <div
                                     className={cn(
-                                        "mx-auto flex w-fit max-w-[85%] min-w-0 items-center gap-2 rounded-xl bg-white/10 px-3 py-1 text-left",
+                                        "mx-auto flex w-fit max-w-[calc(100%-1rem)] min-w-0 items-center gap-2 rounded-xl bg-white/10 px-3 py-1 text-left",
                                         canRespond && replyingToId !== note.id && "cursor-pointer transition-colors hover:bg-white/15 active:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300",
                                     )}
                                     role={canRespond && replyingToId !== note.id ? 'button' : undefined}
@@ -556,7 +556,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                                 {note.reply ? (
                                     <div
                                         data-element="schedule-note-private-reply"
-                                        className="ml-auto mr-[6%] flex max-w-[80%] flex-col gap-1 rounded-xl border border-white/20 bg-white/15 px-3 py-2 text-left text-white"
+                                        className="ml-auto mr-2 flex max-w-[calc(100%-1rem)] flex-col gap-1 rounded-xl border border-white/20 bg-white/15 px-3 py-2 text-left text-white"
                                     >
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className="text-[10px] font-semibold text-white/80">Respuesta de Héctor</span>
@@ -566,7 +566,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                                     </div>
                                 ) : null}
                                 {canRespond && replyingToId === note.id ? (
-                                    <div className="flex w-full max-w-[85%] flex-col gap-2 py-2">
+                                    <div className="flex w-full max-w-[calc(100%-1rem)] flex-col gap-2 py-2">
                                         <textarea
                                             aria-label="Respuesta privada al autor de la nota"
                                             value={replyDraft}

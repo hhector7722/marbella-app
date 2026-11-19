@@ -14679,8 +14679,8 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   padding-bottom: 3px !important;
 }
 [data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-labor-summary'] > div > span:first-child {
-  font-size: 9px !important;
-  line-height: 10px !important;
+  font-size: 8px !important;
+  line-height: 9px !important;
 }
 [data-component='Modal'][data-instance='staff-schedule'] [data-element='schedule-labor-summary'] > div > span:last-child {
   font-size: 10px !important;
