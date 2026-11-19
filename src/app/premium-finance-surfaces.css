@@ -320,3 +320,18 @@
   [data-element='products-section'] > div.min-h-0 > .custom-scrollbar {
   background: transparent !important;
 }
+
+/* Smartphone de /dashboard/ventas: el ranking de productos hereda el
+   marino antiguo de una regla global aplicada a todos los <section>.
+   El modal Detalle de ventas ya anula ese fondo; reproducimos exactamente
+   el mismo tratamiento SOLO en la página móvil, sin alterar la tarjeta
+   exterior, el scroll, las filas, los valores ni los componentes de escritorio.
+   Verificado sobre el DOM y visualmente en navegador a ancho smartphone. */
+@media (max-width: 1023px) {
+  [data-component='HistoryMobileWorkspace'][data-page='ventas-consolidated'][data-presentation='page']
+    [data-element='mobile-sales-detail-card'] [data-element='products-section'] {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+}
