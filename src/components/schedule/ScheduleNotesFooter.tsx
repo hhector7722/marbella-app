@@ -507,7 +507,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                             <div key={note.id} className="mx-auto flex w-full min-w-0 flex-col items-center gap-1">
                                 <div
                                     className={cn(
-                                        "mx-auto flex w-fit max-w-[calc(100%-1rem)] min-w-0 items-center gap-2 rounded-xl bg-white/10 px-3 py-1 text-left",
+                                        "mx-auto flex w-[calc(100%-0.75rem)] max-w-[calc(100%-0.75rem)] min-w-0 items-center gap-1.5 rounded-xl bg-white/10 px-2.5 py-1 text-left",
                                         canRespond && replyingToId !== note.id && "cursor-pointer transition-colors hover:bg-white/15 active:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300",
                                     )}
                                     role={canRespond && replyingToId !== note.id ? 'button' : undefined}
@@ -522,14 +522,14 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                                     } : undefined}
                                 >
                                     {isManager ? (
-                                        <span className="shrink-0 text-[11px] font-normal leading-none text-white/70">
+                                        <span className="shrink-0 text-[10px] font-normal leading-none text-white/70">
                                             {firstNameOnly(note.authorName)}
                                         </span>
                                     ) : null}
-                                    <span className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[12px] leading-snug text-white">
+                                    <span className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[11px] leading-snug text-white">
                                         {note.content}
                                     </span>
-                                    <span className="shrink-0 text-[9px] font-medium text-white/40 tabular-nums">
+                                    <span className="shrink-0 text-[8px] font-medium text-white/40 tabular-nums">
                                         {formatNoteTime(note.created_at)}
                                     </span>
                                     {isOwn ? (
