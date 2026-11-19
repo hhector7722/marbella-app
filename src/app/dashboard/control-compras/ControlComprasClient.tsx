@@ -228,7 +228,7 @@ export default function ControlComprasClient({ initial }: { initial: Result }) {
   return (
     <PageScreen title="Control compras" subtitle="Costes de producto y revisión de albaranes"
       backHref="/dashboard" maxWidthClass="max-w-[1600px]" template="list" work="catalog"
-      className="min-h-0"
+      className="min-h-0 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto"
       cardClassName="!min-h-0 !bg-transparent !border-0 !shadow-none !overflow-visible"
       contentClassName="min-h-0 !p-0">
       <div className="flex min-h-0 flex-col gap-2 text-[#173C56]">
