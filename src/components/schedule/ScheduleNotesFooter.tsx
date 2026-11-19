@@ -612,12 +612,12 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                 <section
                     data-element="schedule-note-usage-guidance"
                     aria-label="Uso de Añadir nota"
-                    className="mx-auto mt-2 w-full max-w-xl border-t border-white/15 px-3 pt-2 text-center text-[11px] leading-relaxed text-white/75"
+                    className="mx-auto mt-2 w-full max-w-xl space-y-1 rounded-xl border border-amber-300/70 bg-amber-100 px-3 py-2.5 text-left text-[11px] leading-relaxed text-amber-950 shadow-sm"
                 >
-                    <p className="mb-1 font-semibold text-white">Uso de «Añadir nota»</p>
+                    <p className="font-semibold text-amber-950">Uso de «Añadir nota»</p>
                     <p>Usar para comunicar situaciones excepcionales y justificadas que impidan trabajar un día o turno en concreto.</p>
                     <p>No para elegir turnos ni indicar preferencias personales de forma habitual.</p>
-                    <p className="font-semibold text-white">Su uso debe ser puntual y excepcional, no semanal.</p>
+                    <p className="font-semibold text-amber-950">Su uso debe ser puntual y excepcional, no semanal.</p>
                 </section>
             ) : null}
         </div>
