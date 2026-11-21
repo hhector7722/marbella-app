@@ -733,6 +733,95 @@ describe('Saldo de fin de contrato — la bolsa se salda a cero', () => {
     assert.equal(r.settledAtContractEnd, false);
   });
 
+  it('Pau: finiquito de julio corta la deuda aunque haya nuevo contrato en noviembre', () => {
+    const pau = employeeBase({
+      joiningDate: '2026-02-08',
+      endDate: '2026-07-31', // Perfil histórico; contrato abierto nuevo manda.
+      terms: [
+        {
+          effectiveFrom: '2026-02-08',
+          effectiveTo: '2026-07-31',
+          weeklyHours: 8,
+          bagMode: false,
+          regime: 'staff',
+          overtimeRatePerHour: 10,
+        },
+        {
+          effectiveFrom: '2026-11-09',
+          effectiveTo: null,
+          weeklyHours: 8,
+          bagMode: false,
+          regime: 'staff',
+          overtimeRatePerHour: 10,
+        },
+      ],
+    });
+
+    const cierre = liquidateWeek(input({
+      employee: pau,
+      weekStart: '2026-07-27',
+      carryIn: -56.5,
+    }));
+    assert.equal(cierre.balanceFinal, -62);
+    assert.equal(cierre.carryOut, 0);
+    assert.equal(cierre.settledAtContractEnd, true);
+
+    const sinTrabajar = liquidateWeek(input({
+      employee: pau,
+      weekStart: '2026-08-03',
+      carryIn: cierre.carryOut,
+    }));
+    assert.equal(sinTrabajar.weeklyBalance, 0);
+    assert.equal(sinTrabajar.carryIn, 0);
+    assert.equal(sinTrabajar.carryOut, 0);
+
+    const extras = liquidateWeek(input({
+      employee: pau,
+      weekStart: '2026-08-31',
+      carryIn: sinTrabajar.carryOut,
+      isPaid: true,
+      logs: [
+        { clockInIso: '2026-09-01T08:00:00.000Z', totalHours: 21 },
+      ],
+    }));
+    assert.equal(extras.ordinaryHours, 0);
+    assert.equal(extras.overtimeHours, 21);
+    assert.equal(extras.carryIn, 0);
+    assert.equal(extras.carryOut, 0);
+
+    const nuevaAlta = liquidateWeek(input({
+      employee: pau,
+      weekStart: '2026-11-09',
+      carryIn: extras.carryOut,
+      logs: [
+        { clockInIso: '2026-11-09T08:00:00.000Z', totalHours: 8 },
+      ],
+    }));
+    assert.equal(nuevaAlta.carryIn, 0);
+    assert.equal(nuevaAlta.weeklyBalance, 0);
+    assert.equal(nuevaAlta.carryOut, 0);
+    assert.equal(nuevaAlta.settledAtContractEnd, false);
+  });
+
+  it('no salda al cambiar de tramo sin interrupción de contrato', () => {
+    const emp = employeeBase({
+      terms: [
+        { effectiveFrom: '2026-07-01', effectiveTo: '2026-07-31',
+          weeklyHours: 8, bagMode: true, regime: 'staff' },
+        { effectiveFrom: '2026-08-01', effectiveTo: null,
+          weeklyHours: 8, bagMode: true, regime: 'staff' },
+      ],
+    });
+    const week = liquidateWeek(input({
+      employee: emp,
+      weekStart: '2026-07-27',
+      carryIn: 4,
+      logs: [{ clockInIso: '2026-07-27T08:00:00.000Z', totalHours: 8 }],
+    }));
+    assert.equal(week.settledAtContractEnd, false);
+    assert.equal(week.carryOut > 0, true);
+  });
+
   it('semana posterior a la baja: no reaparecen pendientes', () => {
     const r = liquidateWeek(
       input({
