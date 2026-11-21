@@ -10,6 +10,7 @@ import type {
 } from './types.ts';
 import { roundMarbellaHours } from './marbella-round.ts';
 import {
+  addCivilDays,
   compareCivilDate,
   isAugustCivilDate,
   isCivilDateInRange,
@@ -62,6 +63,45 @@ export function relationshipEndDate(
     }
   }
   return end;
+}
+
+/**
+ * Una baja contractual salda el arrastre si el siguiente contrato comienza
+ * después de al menos un día sin contrato (o si no existe siguiente contrato).
+ *
+ * Se aplica en la semana de la baja y durante las semanas completas del hueco.
+ * Un cambio de condiciones en tramos contiguos NO es baja ni finiquito.
+ * Nunca se borra el balance histórico de la semana liquidada.
+ *
+ * No sella una semana que ya contiene el inicio del siguiente contrato:
+ * el saldo de ese nuevo contrato no debe perderse por un cierre anterior.
+ */
+export function settledAtContractEndForWeek(
+  employee: EmployeeBoundaryFacts,
+  weekStart: CivilDate,
+): boolean {
+  const { weekEnd } = weekBounds(weekStart);
+  const ordered = [...employee.terms].sort((a, b) =>
+    compareCivilDate(a.effectiveFrom, b.effectiveFrom),
+  );
+  for (let i = 0; i < ordered.length; i++) {
+    const term = ordered[i]!;
+    if (term.effectiveTo == null) continue;
+    const next = ordered[i + 1] ?? null;
+    if (
+      next != null &&
+      compareCivilDate(next.effectiveFrom, addCivilDays(term.effectiveTo, 1)) <= 0
+    ) {
+      continue; // Tramos contiguos: sigue la misma relación.
+    }
+    if (
+      compareCivilDate(weekEnd, term.effectiveTo) >= 0 &&
+      (next == null || compareCivilDate(weekEnd, next.effectiveFrom) < 0)
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta' | 'gap'): string {
