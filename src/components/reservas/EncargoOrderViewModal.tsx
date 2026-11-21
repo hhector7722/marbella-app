@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
-import { ChefHat, Loader2, Pencil, Printer, Receipt } from 'lucide-react'
+import { Loader2, Pencil, Printer, Receipt } from 'lucide-react'
 import { toast } from 'sonner'
 
 import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/PedidosEventoClient'
@@ -42,31 +42,42 @@ function formatEncargoPrintDate(ymd: string) {
   return `${d}/${String(m).padStart(2, '0')}/${String(y % 100).padStart(2, '0')}`
 }
 
+type ComandaSelection = 'food' | 'drink' | 'all'
+
 /**
- * La comanda de cocina solo lleva comida: descarta los productos de bebidas
- * (categorías «Bebidas», «Cafetería»…) según el catálogo de productos de evento.
- * Si no se puede resolver la categoría, se mantiene la línea.
+ * Clasifica cada línea con el catálogo real para imprimir exclusivamente la
+ * comida o la bebida solicitada. «Todo» conserva el pedido original sin consulta.
+ * Si falla el catálogo, no se imprime por error una comanda mezclada.
  */
-async function filterKitchenItems(items: EventOrderItem[]): Promise<EventOrderItem[]> {
-  if (items.length === 0) return items
-  const productIds = Array.from(new Set(items.map((it) => it.product_id)))
-  try {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('event_products')
-      .select('product_id, name, category')
-      .in('product_id', productIds)
-    if (error || !data) return items
-    const drinkIds = new Set(
-      data
-        .filter((row) => isDrinkConsumptionRecipe({ name: row.name, category: row.category }))
-        .map((row) => row.product_id),
-    )
-    if (drinkIds.size === 0) return items
-    return items.filter((it) => !drinkIds.has(it.product_id))
-  } catch {
-    return items
+async function filterComandaItems(
+  items: EventOrderItem[],
+  selection: ComandaSelection,
+): Promise<EventOrderItem[]> {
+  if (selection === 'all' || items.length === 0) return items
+
+  const productIds = Array.from(new Set(items.map((item) => item.product_id)))
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('event_products')
+    .select('product_id, name, category')
+    .in('product_id', productIds)
+
+  if (error || !data) {
+    throw new Error('No se pudieron consultar las categorías de los productos.')
   }
+
+  const catalog = new Map(data.map((row) => [row.product_id, row]))
+  if (productIds.some((id) => !catalog.has(id))) {
+    throw new Error('Hay productos sin categoría de catálogo. No se puede separar la comanda.')
+  }
+
+  return items.filter((item) => {
+    const row = catalog.get(item.product_id)!
+    const name = row.name || item.name
+    const isDrink = isDrinkConsumptionRecipe({ name, category: row.category })
+      || /\b(aquarius|juver|bitter|schweppes|trina|pepsi|monster|gaseosa|batido|granini)\b/i.test(name)
+    return isDrink === (selection === 'drink')
+  })
 }
 
 type InvoiceStep = 'question' | 'number' | 'customer' | null
@@ -126,6 +137,9 @@ export function EncargoOrderViewModal({
   const [invoiceCustomer, setInvoiceCustomer] = useState<EncargoInvoiceCustomer>(emptyInvoiceCustomer)
   const [comandaLanguage, setComandaLanguage] = useState<EncargoDocumentLanguage | null>(null)
   const [comandaObservations, setComandaObservations] = useState('')
+  const [documentTypeOpen, setDocumentTypeOpen] = useState(false)
+  const [comandaTypeOpen, setComandaTypeOpen] = useState(false)
+  const [comandaSelection, setComandaSelection] = useState<ComandaSelection>('all')
 
   const alreadySubmitted = isClientOrderSubmitted(localSubmittedAt)
   const linkOpen = localEnabled && !alreadySubmitted
@@ -235,14 +249,16 @@ export function EncargoOrderViewModal({
     if (comandaBusy || items.length === 0) return
     setComandaBusy(true)
     try {
-      const kitchenItems = await filterKitchenItems(items)
-      if (kitchenItems.length === 0) {
+      const comandaItems = await filterComandaItems(items, comandaSelection)
+      if (comandaItems.length === 0) {
         try {
           previewWindow?.close()
         } catch {
           // La pestaña puede haber sido cerrada por el usuario.
         }
-        toast.error('No hay comida en este pedido: la comanda quedaría vacía.')
+        toast.error(comandaSelection === 'drink'
+          ? 'No hay bebidas en este pedido.'
+          : 'No hay comida en este pedido.')
         return
       }
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
@@ -258,7 +274,7 @@ export function EncargoOrderViewModal({
           language,
           observations: observations.trim() || null,
         },
-        kitchenItems
+        comandaItems
       )
       openEncargoPdf(pdf, previewWindow)
     } catch (error) {
@@ -268,11 +284,15 @@ export function EncargoOrderViewModal({
         // La pestaña puede haber sido cerrada por el usuario.
       }
       console.error('encargo comanda pdf failed', error)
-      toast.error('No se pudo generar la comanda PDF.')
+      toast.error(error instanceof Error && error.message.startsWith('No se ')
+        ? error.message
+        : error instanceof Error && error.message.startsWith('Hay productos ')
+          ? error.message
+          : 'No se pudo generar la comanda PDF.')
     } finally {
       setComandaBusy(false)
     }
-  }, [comandaBusy, encargoName, encargoDate, encargoTime, contactPhone, guestCount, items])
+  }, [comandaBusy, comandaSelection, encargoName, encargoDate, encargoTime, contactPhone, guestCount, items])
 
   const handlePrintLanguage = useCallback(
     (language: EncargoDocumentLanguage) => {
@@ -423,15 +443,28 @@ export function EncargoOrderViewModal({
           <>
             <button
               type="button"
-              onClick={() => setPrintLanguageFor('quote')}
-              disabled={items.length === 0 || printBusy}
+              onClick={() => setComandaTypeOpen(true)}
+              disabled={items.length === 0 || comandaBusy}
               className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-              aria-label="Generar presupuesto PDF"
+              aria-label="Imprimir comanda PDF"
             >
-              {printBusy ? (
+              {comandaBusy ? (
                 <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
               ) : (
                 <Printer size={18} strokeWidth={2.5} />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDocumentTypeOpen(true)}
+              disabled={items.length === 0 || printBusy || invoiceBusy}
+              className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+              aria-label="Generar presupuesto o factura PDF"
+            >
+              {printBusy || invoiceBusy ? (
+                <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+              ) : (
+                <Receipt size={18} strokeWidth={2.5} />
               )}
             </button>
             <button
@@ -441,32 +474,6 @@ export function EncargoOrderViewModal({
               aria-label="Editar encargo"
             >
               <Pencil size={18} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setPrintLanguageFor('invoice')}
-              disabled={items.length === 0 || invoiceBusy}
-              className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-              aria-label="Generar factura PDF"
-            >
-              {invoiceBusy ? (
-                <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
-              ) : (
-                <Receipt size={18} strokeWidth={2.5} />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setPrintLanguageFor('comanda')}
-              disabled={items.length === 0 || comandaBusy}
-              className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-              aria-label="Generar comanda de cocina PDF"
-            >
-              {comandaBusy ? (
-                <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
-              ) : (
-                <ChefHat size={18} strokeWidth={2.5} />
-              )}
             </button>
           </>
         }
@@ -562,6 +569,66 @@ export function EncargoOrderViewModal({
               editarlo.
             </p>
           ) : null}
+        </div>
+      </Modal>
+
+      <Modal
+        open={comandaTypeOpen}
+        onClose={() => setComandaTypeOpen(false)}
+        variant="compact"
+        layer="derived"
+        instance="encargo-comanda-type"
+        parentInstance="encargo-order-view"
+        title="¿Qué comanda quieres imprimir?"
+      >
+        <div className="grid gap-2 py-1">
+          {([
+            ['food', 'Comida'],
+            ['drink', 'Bebida'],
+            ['all', 'Todo'],
+          ] as const).map(([selection, label]) => (
+            <button
+              key={selection}
+              type="button"
+              onClick={() => {
+                setComandaSelection(selection)
+                setComandaTypeOpen(false)
+                setPrintLanguageFor('comanda')
+              }}
+              className="min-h-12 w-full rounded-xl border border-zinc-100 bg-white px-4 text-left text-sm font-bold text-zinc-800 transition-colors hover:bg-zinc-50 active:bg-zinc-100"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </Modal>
+
+      <Modal
+        open={documentTypeOpen}
+        onClose={() => setDocumentTypeOpen(false)}
+        variant="compact"
+        layer="derived"
+        instance="encargo-document-type"
+        parentInstance="encargo-order-view"
+        title="¿Qué documento quieres generar?"
+      >
+        <div className="grid gap-2 py-1">
+          {([
+            ['quote', 'Presupuesto'],
+            ['invoice', 'Factura'],
+          ] as const).map(([kind, label]) => (
+            <button
+              key={kind}
+              type="button"
+              onClick={() => {
+                setDocumentTypeOpen(false)
+                setPrintLanguageFor(kind)
+              }}
+              className="min-h-12 w-full rounded-xl border border-zinc-100 bg-white px-4 text-left text-sm font-bold text-zinc-800 transition-colors hover:bg-zinc-50 active:bg-zinc-100"
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </Modal>
 
@@ -812,7 +879,7 @@ export function EncargoOrderViewModal({
         layer="derived"
         instance="encargo-comanda-observations"
         parentInstance="encargo-order-view"
-        title="Comanda de cocina"
+        title={comandaSelection === 'food' ? 'Comanda de comida' : comandaSelection === 'drink' ? 'Comanda de bebida' : 'Comanda completa'}
         closeOnBackdrop={!comandaBusy}
         footer={
           <>

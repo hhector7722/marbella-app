@@ -35,6 +35,7 @@ type PdfDoc = import('jspdf').jsPDF
 const IVA_RATE = 0.1
 const BRAND: [number, number, number] = [54, 96, 111]
 const BRAND_DARK: [number, number, number] = [42, 74, 86]
+const KITCHEN_TABLE_HEADER: [number, number, number] = [52, 65, 87]
 const TEXT: [number, number, number] = [47, 58, 69]
 const MUTED: [number, number, number] = [107, 114, 128]
 const LINE: [number, number, number] = [217, 226, 236]
@@ -665,13 +666,18 @@ export async function generateEncargoPdf(
     autoTable(doc, {
       startY: tableStartY,
       margin: { left: margin, right: margin, top: 15, bottom: 15 },
-      head: [[copy.product, copy.note, copy.qty]],
+      head: [[
+        copy.product.toUpperCase(),
+        '',
+        (meta.language === 'en' ? 'QUANTITY' : meta.language === 'es' ? 'CANTIDAD' : 'QUANTITAT'),
+      ]],
       body,
       theme: 'plain',
       styles: {
         font: 'helvetica',
         fontSize: 9,
         textColor: TEXT,
+        fillColor: WHITE,
         cellPadding: { top: 3.6, bottom: 3.6, left: 3, right: 3 },
         valign: 'middle',
         lineWidth: 0,
@@ -680,15 +686,14 @@ export async function generateEncargoPdf(
         fillColor: false as unknown as [number, number, number],
         textColor: WHITE,
         fontStyle: 'bold',
-        fontSize: 6.8,
-        cellPadding: { top: 3.1, bottom: 3.1, left: 3, right: 3 },
+        fontSize: 9,
+        cellPadding: { top: 3.4, bottom: 3.4, left: 4, right: 4 },
         lineWidth: 0,
       },
-      alternateRowStyles: { fillColor: SOFT },
       columnStyles: {
-        0: { cellWidth: 'auto', fontStyle: 'bold' },
-        1: { cellWidth: 72, textColor: MUTED, fontSize: 8 },
-        2: { cellWidth: 20, halign: 'right', fontStyle: 'bold' },
+        0: { cellWidth: 'auto', fontStyle: 'normal' },
+        1: { cellWidth: 62, textColor: MUTED, fontSize: 8 },
+        2: { cellWidth: 27, halign: 'center', fontStyle: 'bold', fontSize: 11 },
       },
       willDrawCell: (data) => {
         if (data.section !== 'head' || data.column.index !== 0) return
@@ -699,9 +704,15 @@ export async function generateEncargoPdf(
         const x = data.cell.x
         const y = data.cell.y
         const h = data.cell.height
-        doc.setFillColor(...BRAND)
+        doc.setFillColor(...KITCHEN_TABLE_HEADER)
         doc.roundedRect(x, y, contentWidth, h, 2.8, 2.8, 'F')
         doc.rect(x, y + h / 2, contentWidth, h / 2, 'F')
+      },
+      didDrawCell: (data) => {
+        if (data.section !== 'body' || data.column.index !== 2) return
+        doc.setDrawColor(234, 236, 239)
+        doc.setLineWidth(0.2)
+        doc.line(margin, data.cell.y + data.cell.height, margin + contentWidth, data.cell.y + data.cell.height)
       },
     })
 
