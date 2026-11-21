@@ -75,7 +75,8 @@ async function filterComandaItems(
     const row = catalog.get(item.product_id)!
     const name = row.name || item.name
     const isDrink = isDrinkConsumptionRecipe({ name, category: row.category })
-      || /\b(aquarius|juver|bitter|schweppes|trina|pepsi|monster|gaseosa|batido|granini)\b/i.test(name)
+      || /begud|cafeter|còctel|coctel|cocktail|licor/i.test(row.category ?? '')
+      || /\b(aigua|aquarius|juver|bitter|schweppes|trina|pepsi|monster|gaseosa|batido|granini|cava|vermut)\b/i.test(name)
     return isDrink === (selection === 'drink')
   })
 }
