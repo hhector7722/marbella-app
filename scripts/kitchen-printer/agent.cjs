@@ -257,7 +257,7 @@ async function main() {
       }
     })
   setInterval(() => void drain(), 60000).unref()
-  console.log('MarbellaPrint activo: cocina, TPV1 y TPV2 configuradas')
+  console.log('MarbellaPrint activo: ' + Object.keys(cfg.printers).join(', '))
 }
 module.exports = { buildTicket, buildTicketFromLayout, wrap, printerForJob }
 if (require.main === module) {
