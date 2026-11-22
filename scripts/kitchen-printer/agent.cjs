@@ -7,6 +7,7 @@ const { execFile } = require('node:child_process')
 const { promisify } = require('node:util')
 const { sign } = require('node:crypto')
 const iconv = require('iconv-lite')
+const { brandRaster } = require('./brand-raster.cjs')
 const TOPIC = 'marbella-kitchen-print'
 
 function clean(value) {
@@ -47,6 +48,21 @@ function buildTicketFromLayout(layout) {
   for (const line of layout) {
     if (!line || typeof line.text !== 'string' || line.text.length > 300) {
       throw new Error('Línea de impresión inválida')
+    }
+    if (line.kind === 'brand') {
+      // Imagen del negocio y título, rasterizados juntos en la cabecera.
+      command(0x1b, 0x61, 0x00, 0x1b, 0x21, 0x00, 0x1b, 0x45, 0x00)
+      output.push(brandRaster(line.text))
+      command(0x0a)
+      continue
+    }
+    if (line.kind === 'rule') {
+      // Línea negra continua: 576 puntos de ancho, 2 de alto.
+      command(0x1b, 0x61, 0x00, 0x1b, 0x21, 0x00, 0x1b, 0x45, 0x00)
+      output.push(Buffer.from([0x1d, 0x76, 0x30, 0x00, 72, 0, 2, 0]))
+      output.push(Buffer.alloc(72 * 2, 0xff))
+      command(0x0a)
+      continue
     }
     command(0x1b, 0x61, line.align === 'center' ? 1 : 0)
     command(0x1b, 0x21, line.doubleHeight ? 0x10 : 0)

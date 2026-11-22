@@ -1,6 +1,6 @@
 /** Formato lógico único: sirve tanto a la previsualización como a ESC/POS. */
 export type TicketPrintLine = {
-  kind: 'text' | 'item'
+  kind: 'text' | 'item' | 'brand' | 'rule' | 'meta'
   text: string
   align?: 'left' | 'center'
   bold?: boolean
@@ -55,6 +55,31 @@ export function wrapKitchenTicket(value: unknown, width: number): string[] {
   return lines
 }
 
+/**
+ * Cabecera de 42 caracteres térmicos:
+ * fecha al extremo izquierdo, hora centrada y comensales al extremo derecho.
+ */
+export function formatKitchenTicketMeta(
+  date: unknown, time: unknown, guests: unknown,
+): string {
+  const width = 42
+  const left = normalize(date).slice(0, 12)
+  const middle = normalize(time).slice(0, 8)
+  const number = Number(guests)
+  const right = Number.isFinite(number) && number > 0
+    ? String(Math.trunc(number)) + ' PAX' : ''
+  const cells = Array<string>(width).fill(' ')
+  const centerStart = Math.floor((width - middle.length) / 2)
+  const rightStart = width - right.length
+  if (left.length >= centerStart || (right && centerStart + middle.length >= rightStart)) {
+    throw new Error('Cabecera de fecha, hora y comensales demasiado larga')
+  }
+  for (let i = 0; i < left.length; i++) cells[i] = left[i]
+  for (let i = 0; i < middle.length; i++) cells[centerStart + i] = middle[i]
+  for (let i = 0; i < right.length; i++) cells[rightStart + i] = right[i]
+  return cells.join('')
+}
+
 export function buildKitchenTicketLayout(order: KitchenTicketPayload): TicketPrintLine[] {
   if (!order.items?.length) throw new Error('Comanda vacía')
   const lang = {
@@ -62,26 +87,20 @@ export function buildKitchenTicketLayout(order: KitchenTicketPayload): TicketPri
     es: ['COMANDA', 'CLIENTE', 'OBSERVACIONES', 'COMIDA', 'BEBIDA', 'TODO', 'FIN COMANDA'],
     en: ['KITCHEN ORDER', 'CUSTOMER', 'NOTES', 'FOOD', 'DRINKS', 'ALL', 'END ORDER'],
   }[order.language]
-  const section = { food: lang[3], drink: lang[4], all: lang[5] }[order.selection]
   const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(order.date ?? ''))
   const date = dateParts
     ? dateParts[3] + '/' + dateParts[2] + '/' + dateParts[1].slice(2)
     : normalize(order.date)
   const separator = '-'.repeat(42)
   const lines: TicketPrintLine[] = [
-    { kind: 'text', text: 'BAR LA MARBELLA', align: 'center', bold: true },
-    { kind: 'text', text: lang[0], align: 'center', bold: true, doubleHeight: true },
-    { kind: 'text', text: section, align: 'center' },
-    { kind: 'text', text: separator },
-    {
-      kind: 'text',
-      text: [date, normalize(order.time), Number(order.guests) > 0 ? order.guests + ' PAX' : '']
-        .filter(Boolean).join('  '),
-    },
-    ...wrapKitchenTicket(lang[1] + ': ' + (order.name || '-'), 42).map((text) => ({
-      kind: 'text' as const, text,
+    // La misma cabecera se rasteriza con el logo a la izquierda en ESC/POS.
+    { kind: 'brand', text: lang[0] },
+    ...wrapKitchenTicket(order.name || '-', 42).map((text) => ({
+      kind: 'text' as const, text, align: 'center' as const, bold: true, doubleHeight: true,
     })),
-    { kind: 'text', text: separator },
+    { kind: 'rule', text: '' },
+    { kind: 'meta', text: formatKitchenTicketMeta(date, order.time, order.guests) },
+    { kind: 'rule', text: '' },
   ]
 
   for (const item of order.items) {

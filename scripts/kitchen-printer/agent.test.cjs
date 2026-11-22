@@ -58,3 +58,32 @@ test('Destino de impresora limitado a la configuración local', () => {
   assert.throws(() => printerForJob(cfg, 'tpv2'), /no autorizada/)
   assert.throws(() => printerForJob(cfg, '192.168.1.2'), /no autorizada/)
 })
+
+test('Logo monocromo y dos líneas negras rodean fecha, hora y pax', () => {
+  const meta = '22/11/26' + ' '.repeat(10) + '14:00' + ' '.repeat(13) + '50 PAX'
+  assert.equal(meta.length, 42)
+  const layout = [
+    { kind: 'brand', text: 'COMANDA' },
+    { kind: 'text', text: 'AFAC', align: 'center', bold: true, doubleHeight: true },
+    { kind: 'rule', text: '' },
+    { kind: 'meta', text: meta },
+    { kind: 'rule', text: '' },
+    { kind: 'item', text: 'PATATES BRAVES', quantity: 5, bold: true },
+  ]
+  const result = buildTicket({ layout })
+  const raster = Buffer.from([0x1d, 0x76, 0x30, 0x00, 72, 0, 118, 0])
+  const rule = Buffer.concat([
+    Buffer.from([0x1d, 0x76, 0x30, 0x00, 72, 0, 2, 0]),
+    Buffer.alloc(72 * 2, 0xff),
+  ])
+  assert.ok(result.includes(raster), 'Cabecera gráfica con logo')
+  const first = result.indexOf(rule)
+  assert.ok(first > 0, 'Primera línea negra')
+  const second = result.indexOf(rule, first + rule.length)
+  assert.ok(second > first, 'Segunda línea negra')
+  const metaAt = result.indexOf(Buffer.from(meta, 'ascii'))
+  assert.ok(metaAt > first && metaAt < second, 'Fecha/hora/pax entre ambas líneas')
+  assert.ok(result.includes(Buffer.from('AFAC', 'ascii')))
+  assert.ok(!result.includes(Buffer.from('COMIDA', 'ascii')))
+  assert.ok(result.includes(Buffer.from([0x1d, 0x56, 0x00])), 'Corte final')
+})

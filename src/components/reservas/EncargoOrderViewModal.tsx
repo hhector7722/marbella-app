@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
+import Image from 'next/image'
 import { Loader2, Pencil, Printer, Receipt } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -1101,10 +1102,29 @@ export function EncargoOrderViewModal({
                     line.align === 'center' ? 'text-center' : 'text-left',
                     line.bold ? 'font-bold' : 'font-normal',
                     line.doubleHeight ? 'text-[20px] leading-[24px]' : '',
-                    line.text === '' ? 'min-h-[14px]' : '',
+                    line.kind === 'text' && line.text === '' ? 'min-h-[14px]' : '',
                   ].join(' ')}
                 >
-                  {line.kind === 'item' ? (
+                  {line.kind === 'brand' ? (
+                    <div className="flex min-h-[62px] items-center gap-2">
+                      <Image
+                        src="/icons/logo-white.png"
+                        alt="Bar La Marbella"
+                        width={58}
+                        height={60}
+                        className="h-[60px] w-[58px] shrink-0 object-contain"
+                      />
+                      <span className="min-w-0 flex-1 text-center text-[18px] font-extrabold tracking-tight">
+                        {line.text}
+                      </span>
+                    </div>
+                  ) : line.kind === 'rule' ? (
+                    <div className="my-1.5 h-[2px] w-full bg-zinc-950" />
+                  ) : line.kind === 'meta' ? (
+                    <span className="block whitespace-pre font-mono text-[11px] leading-[16px] tracking-tight">
+                      {line.text}
+                    </span>
+                  ) : line.kind === 'item' ? (
                     <div className="flex items-start gap-1">
                       <span className="shrink-0 text-[19px] font-bold leading-5 tabular-nums">{line.quantity}</span>
                       <span className="min-w-0 break-words pt-0.5">{line.text}</span>
