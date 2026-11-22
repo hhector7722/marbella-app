@@ -117,6 +117,7 @@ export function EncargoOrderViewModal({
   onClientLinkReady?: (token: string) => void
 }) {
   const tableRef = useRef<HTMLDivElement>(null)
+  const thermalRequestKeyRef = useRef<string | null>(null)
   const invoicePreviewUrlRef = useRef<string | null>(null)
   const [invoicePreview, setInvoicePreview] = useState<{ url: string; filename: string } | null>(null)
   useEffect(() => () => {
@@ -367,6 +368,65 @@ export function EncargoOrderViewModal({
     setComandaObservations('')
     void handlePrintComanda(language, observations, previewWindow)
   }, [comandaLanguage, comandaObservations, comandaBusy, handlePrintComanda])
+
+  const handleSendThermalComanda = useCallback(async () => {
+    if (!comandaLanguage || comandaBusy || !items.length) return
+    setComandaBusy(true)
+    try {
+      // Mantener la misma clave si falló la respuesta HTTP, evitando duplicados.
+      const requestKey = thermalRequestKeyRef.current ?? crypto.randomUUID()
+      thermalRequestKeyRef.current = requestKey
+      const response = await fetch('/api/reservas/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId,
+          requestKey,
+          selection: comandaSelection,
+          language: comandaLanguage,
+          observations: comandaObservations,
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok || !result?.job?.id) {
+        throw new Error(result?.error || 'No se pudo enviar la comanda a cocina')
+      }
+      thermalRequestKeyRef.current = null
+      setComandaLanguage(null)
+      setComandaObservations('')
+      toast.message('Comanda en cola de impresión')
+      const id = String(result.job.id)
+
+      // Esperar la confirmación del agente local, sin bloquear el resto de la app.
+      void (async () => {
+        for (let attempt = 0; attempt < 24; attempt++) {
+          await new Promise<void>((resolve) => window.setTimeout(resolve, 3000))
+          try {
+            const statusResponse = await fetch('/api/reservas/print?id=' + encodeURIComponent(id), {
+              cache: 'no-store',
+            })
+            if (!statusResponse.ok) continue
+            const status = await statusResponse.json()
+            if (status.status === 'sent') {
+              toast.success('Comanda enviada a la impresora de cocina')
+              return
+            }
+            if (status.status === 'failed') {
+              toast.error('No se imprimió la comanda: ' + (status.error || 'impresora no disponible'))
+              return
+            }
+          } catch {
+            // La petición puede fallar de forma temporal; el trabajo no se pierde.
+          }
+        }
+        toast.warning('No hay confirmación de impresión. Revisa cocina antes de reenviar.')
+      })()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo enviar la comanda a cocina')
+    } finally {
+      setComandaBusy(false)
+    }
+  }, [comandaLanguage, comandaBusy, items.length, eventId, comandaSelection, comandaObservations])
 
   const handleEnableClientEdit = useCallback(() => {
     startTransition(async () => {
@@ -887,25 +947,22 @@ export function EncargoOrderViewModal({
             <Button
               type="button"
               variant="secondary"
-              instance="encargo-comanda-observations-cancel"
+              instance="encargo-comanda-observations-generate"
               disabled={comandaBusy}
-              onClick={() => {
-                setComandaLanguage(null)
-                setComandaObservations('')
-              }}
+              onClick={handleGenerateComanda}
             >
-              Cancelar
+              PDF A4
             </Button>
             <Button
               type="button"
               variant="primary"
-              instance="encargo-comanda-observations-generate"
+              instance="encargo-comanda-observations-thermal"
               disabled={comandaBusy}
               loading={comandaBusy}
-              loadingLabel="Generando comanda"
-              onClick={handleGenerateComanda}
+              loadingLabel="Enviando a cocina"
+              onClick={() => void handleSendThermalComanda()}
             >
-              Generar comanda
+              Ticket cocina
             </Button>
           </>
         }
@@ -923,6 +980,7 @@ export function EncargoOrderViewModal({
               onChange={(event) => setComandaObservations(event.target.value)}
               placeholder="Alergias, indicaciones de montaje, tiempos…"
               rows={3}
+              maxLength={1200}
               disabled={comandaBusy}
               autoFocus
             />
@@ -940,44 +998,3 @@ export function EncargoOrderViewModal({
         title="Reabrir pedido al cliente"
         closeOnBackdrop={!isPending}
         footer={
-          <>
-            <Button
-              type="button"
-              variant="secondary"
-              instance="encargo-order-reopen-cancelar"
-              disabled={isPending}
-              onClick={() => setReopenConfirmOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              instance="encargo-order-reopen-confirmar"
-              disabled={isPending}
-              loading={isPending}
-              loadingLabel="Reabrir pedido"
-              onClick={handleConfirmReopen}
-            >
-              Reabrir pedido
-            </Button>
-          </>
-        }
-      >
-        <div className="mt-3 space-y-2 text-[13px] font-semibold leading-snug text-zinc-600">
-          <p>El cliente ya ha enviado un pedido.</p>
-          <p>Al reabrir el pedido:</p>
-          <ul className="list-disc pl-5 space-y-1.5">
-            <li>volverá a poder acceder a la carta mediante el mismo enlace</li>
-            <li>podrá preparar un nuevo pedido</li>
-            <li>
-              cuando vuelva a pulsar &quot;Enviar pedido&quot;, el pedido actual será
-              sustituido completamente por el nuevo
-            </li>
-          </ul>
-          <p className="pt-1 text-zinc-800">Esta acción no puede deshacerse.</p>
-        </div>
-      </Modal>
-    </>
-  )
-}

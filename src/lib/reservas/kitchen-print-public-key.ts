@@ -1,0 +1,2 @@
+// Clave pública de TPV1. La clave privada correspondiente no sale del terminal.
+export const KITCHEN_PRINT_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAyUwmQPpC4MVnvE99IJAxOwGFMRytxDpn9pv/QwuAenI=\n-----END PUBLIC KEY-----"

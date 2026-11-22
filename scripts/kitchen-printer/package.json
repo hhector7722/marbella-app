@@ -1,0 +1,13 @@
+{
+  "name": "marbella-kitchen-printer",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test agent.test.cjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.2",
+    "iconv-lite": "0.7.3"
+  }
+}
