@@ -998,3 +998,44 @@ export function EncargoOrderViewModal({
         title="Reabrir pedido al cliente"
         closeOnBackdrop={!isPending}
         footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              instance="encargo-order-reopen-cancelar"
+              disabled={isPending}
+              onClick={() => setReopenConfirmOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="encargo-order-reopen-confirmar"
+              disabled={isPending}
+              loading={isPending}
+              loadingLabel="Reabrir pedido"
+              onClick={handleConfirmReopen}
+            >
+              Reabrir pedido
+            </Button>
+          </>
+        }
+      >
+        <div className="mt-3 space-y-2 text-[13px] font-semibold leading-snug text-zinc-600">
+          <p>El cliente ya ha enviado un pedido.</p>
+          <p>Al reabrir el pedido:</p>
+          <ul className="list-disc pl-5 space-y-1.5">
+            <li>volverá a poder acceder a la carta mediante el mismo enlace</li>
+            <li>podrá preparar un nuevo pedido</li>
+            <li>
+              cuando vuelva a pulsar &quot;Enviar pedido&quot;, el pedido actual será
+              sustituido completamente por el nuevo
+            </li>
+          </ul>
+          <p className="pt-1 text-zinc-800">Esta acción no puede deshacerse.</p>
+        </div>
+      </Modal>
+    </>
+  )
+}
