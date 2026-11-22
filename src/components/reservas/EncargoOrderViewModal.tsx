@@ -21,6 +21,7 @@ import {
   formatEncargoProductNote,
 } from '@/lib/encargo-staff-helpers'
 import { isDrinkConsumptionRecipe } from '@/lib/staff-consumption-display'
+import { KITCHEN_PRINTERS, type KitchenPrinterId, type TicketPrintLine } from '@/lib/reservas/kitchen-ticket-layout'
 import { createClient } from '@/utils/supabase/client'
 import {
   createEncargoPdfPreviewWindow,
@@ -139,6 +140,13 @@ export function EncargoOrderViewModal({
   const [invoiceCustomer, setInvoiceCustomer] = useState<EncargoInvoiceCustomer>(emptyInvoiceCustomer)
   const [comandaLanguage, setComandaLanguage] = useState<EncargoDocumentLanguage | null>(null)
   const [comandaObservations, setComandaObservations] = useState('')
+  const [thermalPrinter, setThermalPrinter] = useState<KitchenPrinterId>('kitchen')
+  const [thermalPreview, setThermalPreview] = useState<{
+    layout: TicketPrintLine[]
+    previewHash: string
+    language: EncargoDocumentLanguage
+    observations: string
+  } | null>(null)
   const [documentTypeOpen, setDocumentTypeOpen] = useState(false)
   const [comandaTypeOpen, setComandaTypeOpen] = useState(false)
   const [comandaSelection, setComandaSelection] = useState<ComandaSelection>('all')
@@ -369,11 +377,46 @@ export function EncargoOrderViewModal({
     void handlePrintComanda(language, observations, previewWindow)
   }, [comandaLanguage, comandaObservations, comandaBusy, handlePrintComanda])
 
-  const handleSendThermalComanda = useCallback(async () => {
+  const handlePreviewThermalComanda = useCallback(async () => {
     if (!comandaLanguage || comandaBusy || !items.length) return
     setComandaBusy(true)
     try {
-      // Mantener la misma clave si falló la respuesta HTTP, evitando duplicados.
+      const response = await fetch('/api/reservas/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId,
+          requestKey: crypto.randomUUID(),
+          selection: comandaSelection,
+          language: comandaLanguage,
+          observations: comandaObservations,
+          previewOnly: true,
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok || !Array.isArray(result.layout) || !result.previewHash) {
+        throw new Error(result?.error || 'No se pudo previsualizar la comanda')
+      }
+      setThermalPreview({
+        layout: result.layout as TicketPrintLine[],
+        previewHash: String(result.previewHash),
+        language: comandaLanguage,
+        observations: comandaObservations,
+      })
+      setComandaLanguage(null)
+      thermalRequestKeyRef.current = null
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo generar la previsualización')
+    } finally {
+      setComandaBusy(false)
+    }
+  }, [comandaLanguage, comandaBusy, items.length, eventId, comandaSelection, comandaObservations])
+
+  const handleSendThermalComanda = useCallback(async () => {
+    if (!thermalPreview || comandaBusy) return
+    setComandaBusy(true)
+    const printerLabel = KITCHEN_PRINTERS.find((printer) => printer.id === thermalPrinter)?.label ?? 'impresora'
+    try {
       const requestKey = thermalRequestKeyRef.current ?? crypto.randomUUID()
       thermalRequestKeyRef.current = requestKey
       const response = await fetch('/api/reservas/print', {
@@ -383,21 +426,21 @@ export function EncargoOrderViewModal({
           eventId,
           requestKey,
           selection: comandaSelection,
-          language: comandaLanguage,
-          observations: comandaObservations,
+          language: thermalPreview.language,
+          observations: thermalPreview.observations,
+          expectedPreviewHash: thermalPreview.previewHash,
+          printerId: thermalPrinter,
         }),
       })
       const result = await response.json()
       if (!response.ok || !result?.job?.id) {
-        throw new Error(result?.error || 'No se pudo enviar la comanda a cocina')
+        throw new Error(result?.error || 'No se pudo enviar la comanda a la impresora')
       }
       thermalRequestKeyRef.current = null
-      setComandaLanguage(null)
+      setThermalPreview(null)
       setComandaObservations('')
-      toast.message('Comanda en cola de impresión')
+      toast.message('Comanda en cola: ' + printerLabel)
       const id = String(result.job.id)
-
-      // Esperar la confirmación del agente local, sin bloquear el resto de la app.
       void (async () => {
         for (let attempt = 0; attempt < 24; attempt++) {
           await new Promise<void>((resolve) => window.setTimeout(resolve, 3000))
@@ -408,25 +451,25 @@ export function EncargoOrderViewModal({
             if (!statusResponse.ok) continue
             const status = await statusResponse.json()
             if (status.status === 'sent') {
-              toast.success('Comanda enviada a la impresora de cocina')
+              toast.success('Comanda enviada a ' + printerLabel)
               return
             }
             if (status.status === 'failed') {
-              toast.error('No se imprimió la comanda: ' + (status.error || 'impresora no disponible'))
+              toast.error('No se pudo enviar a ' + printerLabel + ': ' + (status.error || 'impresora no disponible'))
               return
             }
           } catch {
-            // La petición puede fallar de forma temporal; el trabajo no se pierde.
+            // La conexión puede fallar temporalmente sin perder el trabajo.
           }
         }
-        toast.warning('No hay confirmación de impresión. Revisa cocina antes de reenviar.')
+        toast.warning('Sin confirmación de ' + printerLabel + '. Revisa el ticket antes de reenviar.')
       })()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo enviar la comanda a cocina')
+      toast.error(error instanceof Error ? error.message : 'No se pudo enviar la comanda')
     } finally {
       setComandaBusy(false)
     }
-  }, [comandaLanguage, comandaBusy, items.length, eventId, comandaSelection, comandaObservations])
+  }, [thermalPreview, comandaBusy, thermalPrinter, eventId, comandaSelection])
 
   const handleEnableClientEdit = useCallback(() => {
     startTransition(async () => {
@@ -959,10 +1002,10 @@ export function EncargoOrderViewModal({
               instance="encargo-comanda-observations-thermal"
               disabled={comandaBusy}
               loading={comandaBusy}
-              loadingLabel="Enviando a cocina"
-              onClick={() => void handleSendThermalComanda()}
+              loadingLabel="Preparando ticket"
+              onClick={() => void handlePreviewThermalComanda()}
             >
-              Ticket cocina
+              Previsualizar ticket
             </Button>
           </>
         }
@@ -985,6 +1028,97 @@ export function EncargoOrderViewModal({
               autoFocus
             />
           </Field>
+        </div>
+      </Modal>
+
+      <Modal
+        open={thermalPreview !== null}
+        onClose={() => { if (!comandaBusy) setThermalPreview(null) }}
+        variant="compact"
+        layer="derived"
+        instance="encargo-comanda-thermal-preview"
+        parentInstance="encargo-order-view"
+        title="Previsualización del ticket"
+        closeOnBackdrop={!comandaBusy}
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              instance="encargo-comanda-preview-back"
+              disabled={comandaBusy}
+              onClick={() => {
+                if (!thermalPreview) return
+                setComandaLanguage(thermalPreview.language)
+                setComandaObservations(thermalPreview.observations)
+                setThermalPreview(null)
+              }}
+            >
+              Volver
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="encargo-comanda-preview-confirm"
+              disabled={comandaBusy || !thermalPreview}
+              loading={comandaBusy}
+              loadingLabel="Enviando"
+              onClick={() => void handleSendThermalComanda()}
+            >
+              Enviar a impresora
+            </Button>
+          </>
+        }
+      >
+        <div className="flex min-h-0 flex-col gap-3 py-2">
+          <Field
+            instance="encargo-comanda-printer"
+            label="Impresora de destino"
+            htmlFor="encargo-comanda-printer-select"
+          >
+            <select
+              id="encargo-comanda-printer-select"
+              value={thermalPrinter}
+              onChange={(event) => setThermalPrinter(event.target.value as KitchenPrinterId)}
+              disabled={comandaBusy}
+              className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-zinc-500 disabled:opacity-50"
+            >
+              {KITCHEN_PRINTERS.map((printer) => (
+                <option key={printer.id} value={printer.id}>{printer.label}</option>
+              ))}
+            </select>
+          </Field>
+          <div className="min-h-0 max-h-[55dvh] overflow-y-auto rounded-xl border border-zinc-200 bg-zinc-100 p-3">
+            <div
+              className="mx-auto w-[310px] max-w-full bg-white px-3 py-4 text-zinc-950 shadow-md"
+              aria-label="Contenido del ticket térmico"
+            >
+              {thermalPreview?.layout.map((line, index) => (
+                <div
+                  key={index}
+                  className={[
+                    'font-mono text-[11px] leading-[14px]',
+                    line.align === 'center' ? 'text-center' : 'text-left',
+                    line.bold ? 'font-bold' : 'font-normal',
+                    line.doubleHeight ? 'text-[20px] leading-[24px]' : '',
+                    line.text === '' ? 'min-h-[14px]' : '',
+                  ].join(' ')}
+                >
+                  {line.kind === 'item' ? (
+                    <div className="flex items-start gap-1">
+                      <span className="shrink-0 text-[19px] font-bold leading-5 tabular-nums">{line.quantity}</span>
+                      <span className="min-w-0 break-words pt-0.5">{line.text}</span>
+                    </div>
+                  ) : (
+                    <span className="whitespace-pre-wrap break-words">{line.text || ' '}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="text-center text-[11px] text-zinc-500">
+            Simulación de ticket de 80 mm. La tipografía puede variar según la impresora.
+          </p>
         </div>
       </Modal>
 

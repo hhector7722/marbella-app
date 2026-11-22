@@ -1,10 +1,11 @@
-import { createPublicKey, verify } from 'node:crypto'
+import { createHash, createPublicKey, verify } from 'node:crypto'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { createClient as createSessionClient } from '@/utils/supabase/server'
 import { formatEncargoProductLabel, formatEncargoProductNote } from '@/lib/encargo-staff-helpers'
 import { isDrinkConsumptionRecipe } from '@/lib/staff-consumption-display'
 import { KITCHEN_PRINT_PUBLIC_KEY } from '@/lib/reservas/kitchen-print-public-key'
+import { buildKitchenTicketLayout, KITCHEN_PRINTERS, type KitchenPrinterId } from '@/lib/reservas/kitchen-ticket-layout'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -136,6 +137,7 @@ export async function POST(req: Request) {
     const input = await req.json() as {
       eventId?: unknown; requestKey?: unknown; selection?: unknown;
       language?: unknown; observations?: unknown
+      previewOnly?: unknown; printerId?: unknown; expectedPreviewHash?: unknown
     }
     if (!UUID.test(String(input.eventId ?? '')) || !UUID.test(String(input.requestKey ?? ''))
       || !['food', 'drink', 'all'].includes(String(input.selection))
@@ -210,9 +212,22 @@ export async function POST(req: Request) {
         note: formatEncargoProductNote(item.name, item.notes),
       })),
     }
+    const layout = buildKitchenTicketLayout(payload)
+    const previewHash = createHash('sha256').update(JSON.stringify(payload)).digest('hex')
+    if (input.previewOnly === true) {
+      // La previsualización no crea ningún trabajo de impresión.
+      return respond({ layout, previewHash })
+    }
+    const printerId = String(input.printerId ?? '') as KitchenPrinterId
+    if (!KITCHEN_PRINTERS.some((p) => p.id === printerId)) {
+      return respond({ error: 'Selecciona una impresora válida' }, 400)
+    }
+    if (input.expectedPreviewHash !== previewHash) {
+      return respond({ error: 'El pedido ha cambiado desde la previsualización. Vuelve a revisarlo.' }, 409)
+    }
     const { data, error: insertErr } = await db.from('kitchen_print_jobs').insert({
       request_key: input.requestKey, event_id: eventId, created_by: owner,
-      selection, language, payload,
+      selection, language, payload: { ...payload, printerId, layout },
     }).select('id,status').single()
     if (insertErr?.code === '23505') {
       const { data: existing } = await db.from('kitchen_print_jobs')

@@ -2,6 +2,9 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const net = require('node:net')
+const os = require('node:os')
+const { execFile } = require('node:child_process')
+const { promisify } = require('node:util')
 const { sign } = require('node:crypto')
 const iconv = require('iconv-lite')
 const TOPIC = 'marbella-kitchen-print'
@@ -33,7 +36,35 @@ function wrap(value, width) {
   if (current) lines.push(current)
   return lines
 }
+function buildTicketFromLayout(layout) {
+  if (!Array.isArray(layout) || !layout.length || layout.length > 1500) {
+    throw new Error('Diseño de ticket inválido')
+  }
+  const output = []
+  const command = (...bytes) => output.push(Buffer.from(bytes))
+  const print = (value) => output.push(iconv.encode(String(value), 'cp858'))
+  command(0x1b, 0x40, 0x1b, 0x74, 0x13, 0x1b, 0x4d, 0x00)
+  for (const line of layout) {
+    if (!line || typeof line.text !== 'string' || line.text.length > 300) {
+      throw new Error('Línea de impresión inválida')
+    }
+    command(0x1b, 0x61, line.align === 'center' ? 1 : 0)
+    command(0x1b, 0x21, line.doubleHeight ? 0x10 : 0)
+    command(0x1b, 0x45, line.bold ? 1 : 0)
+    if (line.kind === 'item') {
+      command(0x1d, 0x21, 0x10)
+      print(String(line.quantity) + ' ')
+      command(0x1d, 0x21, 0)
+      print(line.text + '\n')
+    } else {
+      print(line.text + '\n')
+    }
+  }
+  command(0x1b, 0x61, 0, 0x1b, 0x21, 0, 0x1b, 0x45, 0, 0x1d, 0x56, 0)
+  return Buffer.concat(output)
+}
 function buildTicket(order) {
+  if (Array.isArray(order?.layout)) return buildTicketFromLayout(order.layout)
   if (!order || !Array.isArray(order.items) || order.items.length === 0) {
     throw new Error('Comanda vacía')
   }
@@ -115,11 +146,38 @@ function sendToPrinter(host, port, bytes) {
     })
   })
 }
+async function sendToWindowsPrinter(queue, bytes) {
+  const run = promisify(execFile)
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'marbella-print-'))
+  const file = path.join(dir, 'ticket.bin')
+  try {
+    await fs.promises.writeFile(file, bytes, { flag: 'wx' })
+    await run('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+      '-File', path.join(__dirname, 'raw-print.ps1'),
+      '-PrinterName', queue, '-FilePath', file,
+    ], { timeout: 15000, windowsHide: true, maxBuffer: 128 * 1024 })
+  } finally {
+    await fs.promises.rm(dir, { recursive: true, force: true })
+  }
+}
+
+function printerForJob(config, printerId) {
+  const id = printerId || 'kitchen' // Compatibilidad con trabajos anteriores.
+  if (!['kitchen','tpv1'].includes(id)) throw new Error('Impresora no autorizada')
+  const printer = config.printers?.[id]
+  if (!printer) throw new Error('La impresora seleccionada no está configurada')
+  if (printer.type === 'tcp' && typeof printer.host === 'string'
+    && Number.isInteger(printer.port)) return printer
+  if (printer.type === 'windows' && typeof printer.queue === 'string'
+    && printer.queue.length > 0) return printer
+  throw new Error('Configuración de impresora inválida')
+}
 async function main() {
   const configPath = path.join(__dirname, 'print-config.json')
   const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'))
   if (!/^https:\/\//.test(cfg.apiUrl) || !cfg.supabaseUrl
-    || !cfg.publishableKey || !cfg.printerHost || !Number.isInteger(cfg.printerPort)) {
+    || !cfg.publishableKey || !cfg.printers || !cfg.printers.kitchen) {
     throw new Error('Falta configuración de impresión')
   }
   // Clave privada generada y almacenada únicamente en TPV1.
@@ -161,7 +219,13 @@ async function main() {
         let status = 'sent'
         let error = ''
         try {
-          await sendToPrinter(cfg.printerHost, cfg.printerPort, buildTicket(job.payload))
+          const destination = printerForJob(cfg, job.payload.printerId)
+          const bytes = buildTicket(job.payload)
+          if (destination.type === 'tcp') {
+            await sendToPrinter(destination.host, destination.port, bytes)
+          } else {
+            await sendToWindowsPrinter(destination.queue, bytes)
+          }
         } catch (err) {
           status = 'failed'
           error = err instanceof Error ? err.message : String(err)
@@ -193,9 +257,9 @@ async function main() {
       }
     })
   setInterval(() => void drain(), 60000).unref()
-  console.log('MarbellaPrint activo: ' + cfg.printerHost + ':' + cfg.printerPort)
+  console.log('MarbellaPrint activo: cocina, TPV1 y TPV2 configuradas')
 }
-module.exports = { buildTicket, wrap }
+module.exports = { buildTicket, buildTicketFromLayout, wrap, printerForJob }
 if (require.main === module) {
   main().catch((err) => { console.error(err); process.exitCode = 1 })
 }
