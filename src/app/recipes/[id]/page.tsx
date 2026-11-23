@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, useRef, useMemo, useCallback } from 'rea
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from "@/utils/supabase/client";
-import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Pencil, PlayCircle, AlertCircle, Check, Layers3, ChefHat } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, ChevronDown, Pencil, PlayCircle, AlertCircle, Check, Layers3, ChefHat } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ import {
 import { SubRecipesPanel } from '@/components/recipes/SubRecipesPanel';
 import { PlatoMarbellaEscandalloPanel } from '@/components/recipes/PlatoMarbellaEscandalloPanel';
 import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEditModal';
+import { TortillaUnitsBreakdown } from '@/components/recipes/TortillaUnitsBreakdown';
 import { IngredientCreateForm } from '@/components/ingredients/IngredientCreateForm';
 import { IngredientCanonicalEditModal, type Ingredient } from '@/components/ingredients/IngredientCanonicalEditModal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
@@ -206,6 +207,7 @@ function RecipeDetailContent() {
     }, []);
     const [subrecipes, setSubrecipes] = useState<RecipeSubrecipeLine[]>([]);
     const [consumptionFormats, setConsumptionFormats] = useState<RecipeConsumptionFormat[]>([]);
+    const [tortillaUnitsExpanded, setTortillaUnitsExpanded] = useState(false);
     const [subrecipesLoaded, setSubrecipesLoaded] = useState(false);
     const [componentKind, setComponentKind] = useState<'ingredient' | 'elaboration'>('ingredient');
     const [recipeCandidates, setRecipeCandidates] = useState<RecipeComponentChild[]>([]);
@@ -541,6 +543,10 @@ function RecipeDetailContent() {
         };
         checkRole();
     }, [recipeId, catFilter, foodCostFilter, menuCategoryRows]);
+
+    useEffect(() => {
+        setTortillaUnitsExpanded(false);
+    }, [recipeId]);
 
     const [simulatorRecipeId, setSimulatorRecipeId] = useState(recipeId);
     if (recipeId !== simulatorRecipeId) {
@@ -1146,6 +1152,11 @@ function RecipeDetailContent() {
     if (!recipe) return <div className="min-h-screen flex items-center justify-center text-white">No encontrada</div>;
 
     const internalRecipe = isInternalRecipe(recipe.is_sellable);
+    const isTortillaProduction = internalRecipe && recipe.name.trim().toLocaleLowerCase('es') === 'tortilla'
+        && recipe.yield_unit === 'ud' && Number(recipe.yield_quantity) === 1;
+    const tortillaFormats = isTortillaProduction
+        ? consumptionFormats.filter((format) => format.recipe_id === recipe.id)
+        : [];
     const productionLinks = productionLinksForRecipe(!internalRecipe, subrecipes);
     const yieldLabel =
         recipe.yield_quantity != null && recipe.yield_unit
@@ -1279,6 +1290,26 @@ function RecipeDetailContent() {
                     {!isStaffView && (userRole === 'manager' || userRole === 'supervisor') && (
                         <PlatoMarbellaEscandalloPanel recipeId={recipeId} onResolved={onMarbellaCostResolved} />
                     )}
+                    {isRestricted && isTortillaProduction && tortillaFormats.length > 0 ? (
+                        <div data-element="recipe-panel" className="flex h-fit flex-col">
+                            <div data-element="block-header">
+                                <h2 data-element="title">Unidades</h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setTortillaUnitsExpanded((open) => !open)}
+                                aria-expanded={tortillaUnitsExpanded}
+                                aria-label="Ver equivalencias de una tortilla"
+                                className="flex w-full items-center justify-center gap-2 p-3 text-lg font-black tabular-nums text-gray-800"
+                            >
+                                {yieldLabel}
+                                <ChevronDown size={17} className={cn('transition-transform', tortillaUnitsExpanded && 'rotate-180')} aria-hidden="true" />
+                            </button>
+                            {tortillaUnitsExpanded ? (
+                                <TortillaUnitsBreakdown key={recipe.id} formats={tortillaFormats} />
+                            ) : null}
+                        </div>
+                    ) : null}
                     {/* Misma puerta que el panel Precio: la vista restringida no ve importes. No se abre el coste a staff. */}
                     {!isRestricted && internalRecipe && (
                         <div data-element="recipe-panel" className="h-full flex flex-col">
@@ -1293,7 +1324,20 @@ function RecipeDetailContent() {
                                     <div data-element="field-label">Coste del lote</div>
                                 </div>
                                 <div>
-                                    <div className="text-lg font-black tabular-nums text-gray-800">{yieldLabel}</div>
+                                    {isTortillaProduction && tortillaFormats.length > 0 ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setTortillaUnitsExpanded((open) => !open)}
+                                            aria-expanded={tortillaUnitsExpanded}
+                                            aria-label="Ver equivalencias de una tortilla"
+                                            className="inline-flex items-center justify-center gap-1 text-lg font-black tabular-nums text-gray-800"
+                                        >
+                                            {yieldLabel}
+                                            <ChevronDown size={15} className={cn('transition-transform', tortillaUnitsExpanded && 'rotate-180')} aria-hidden="true" />
+                                        </button>
+                                    ) : (
+                                        <div className="text-lg font-black tabular-nums text-gray-800">{yieldLabel}</div>
+                                    )}
                                     <div data-element="field-label">Rendimiento</div>
                                 </div>
                                 <div>
@@ -1305,6 +1349,9 @@ function RecipeDetailContent() {
                                     </div>
                                 </div>
                             </div>
+                            {isTortillaProduction && tortillaUnitsExpanded && tortillaFormats.length > 0 ? (
+                                <TortillaUnitsBreakdown key={recipe.id} formats={tortillaFormats} />
+                            ) : null}
                             {elaborationCost && !elaborationOk ? (
                                 <div
                                     className="mx-3 mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900"
