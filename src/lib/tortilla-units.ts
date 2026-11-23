@@ -11,7 +11,7 @@ export type TortillaConsumptionUnit = {
 };
 
 function gcd(a: bigint, b: bigint): bigint {
-    while (b !== 0n) {
+    while (b !== BigInt(0)) {
         const next = a % b;
         a = b;
         b = next;
@@ -39,21 +39,21 @@ export function calculateTortillaUnits(
     );
     const capacity = usable.reduce(
         (denominator, format) => lcm(denominator, BigInt(format.portions_per_batch)),
-        1n,
+        BigInt(1),
     );
     const allocated = usable.reduce((sum, format) => {
         const count = quantities[format.code] ?? 0;
         const safeCount = Number.isSafeInteger(count) && count > 0 ? count : 0;
         return sum + BigInt(safeCount) * (capacity / BigInt(format.portions_per_batch));
-    }, 0n);
-    const remaining = allocated < capacity ? capacity - allocated : 0n;
+    }, BigInt(0));
+    const remaining = allocated < capacity ? capacity - allocated : BigInt(0);
 
     return {
         valid: allocated <= capacity,
         allocated,
         capacity,
         remaining,
-        remainingPercent: Number((remaining * 1000n + capacity / 2n) / capacity) / 10,
+        remainingPercent: Number((remaining * BigInt(1000) + capacity / BigInt(2)) / capacity) / 10,
         available: Object.fromEntries(usable.map((format) => [
             format.code,
             Number(remaining / (capacity / BigInt(format.portions_per_batch))),
