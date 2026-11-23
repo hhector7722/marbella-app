@@ -122,7 +122,7 @@ export function TortillaUnitsBreakdown({
                 <div className="h-2 overflow-hidden rounded-full bg-zinc-300" aria-hidden="true">
                     <div className="h-full rounded-full bg-emerald-600 transition-[width]" style={{ width: `${100 - allocation.remainingPercent}%` }} />
                 </div>
-                {hasSelection && allocation.remaining === 0n ? (
+                {hasSelection && allocation.remaining === BigInt(0) ? (
                     <p className="mt-2 text-[11px] font-semibold text-zinc-700">Tortilla completamente repartida.</p>
                 ) : null}
             </div>
