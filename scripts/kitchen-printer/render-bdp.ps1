@@ -31,6 +31,7 @@ $fontDefault = New-Object System.Drawing.Font('Arial',26,[System.Drawing.FontSty
 $left = 22
 $right = $width - 22
 $cursor = 8
+$ruleCount = 0
 
 function Text-Width([string]$value,[System.Drawing.Font]$font) {
   return $graphics.MeasureString($value,$font,[int]10000,[System.Drawing.StringFormat]::GenericTypographic).Width
@@ -110,9 +111,10 @@ try {
         continue
       }
       'rule' {
+        $ruleCount++
         $cursor += 3
         $graphics.FillRectangle($brush,$left,$cursor,$right-$left,2)
-        $cursor += 7
+        $cursor += if ($ruleCount -eq 2) { 24 } else { 7 }
         continue
       }
       'meta' {
@@ -132,11 +134,11 @@ try {
       'item' {
         $qty = [string]$line.quantity
         if ($qty -notmatch '^[0-9]+(\.[0-9]+)?$') { throw 'Cantidad inválida' }
-        $qtyX = 44
+        $qtyX = 94
         $qtyWidth = Text-Width $qty $fontItem
         Put-Text $qty $fontItem $qtyX $cursor
-        $nameX = [Math]::Max(84,[Math]::Ceiling($qtyX+$qtyWidth+14))
-        $cursor = Put-Wrapped $value $fontItem $nameX $cursor ($right-$nameX) 37
+        $nameX = [Math]::Max(130,[Math]::Ceiling($qtyX+$qtyWidth+14))
+        $cursor = Put-Wrapped $value $fontItem $nameX $cursor ($right-$nameX) 44
         continue
       }
       'text' {
@@ -150,7 +152,7 @@ try {
           Put-Text $value $fontClient $x $cursor
           $cursor += 71
         } elseif ($value.StartsWith('    ')) {
-          $cursor = Put-Wrapped $value.Trim() $fontNote 84 $cursor ($right-84) 30
+          $cursor = Put-Wrapped $value.Trim() $fontNote 130 $cursor ($right-130) 32
         } else {
           $f = if ($line.bold) { $fontNoteBold } else { $fontDefault }
           $x = if ($line.align -eq 'center') {

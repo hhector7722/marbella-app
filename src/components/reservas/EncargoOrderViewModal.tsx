@@ -1132,7 +1132,7 @@ export function EncargoOrderViewModal({
                       />
                     </div>
                   ) : line.kind === 'rule' ? (
-                    <div className="my-[4px] h-px w-full bg-zinc-950" />
+                    <div className={thermalPreview?.layout[index - 1]?.kind === 'meta' ? "mt-[4px] mb-[12px] h-px w-full bg-zinc-950" : "my-[4px] h-px w-full bg-zinc-950"} />
                   ) : line.kind === 'meta' ? (
                     <div className="grid grid-cols-3 items-center text-[12px] leading-[18px]">
                       <span className="text-left">{line.text.trim().split(/\s{2,}/)[0] || ''}</span>
@@ -1140,13 +1140,13 @@ export function EncargoOrderViewModal({
                       <span className="text-right">{line.text.trim().split(/\s{2,}/)[2] || ''}</span>
                     </div>
                   ) : line.kind === 'item' ? (
-                    <div className="relative min-h-[19px] text-[14px] leading-[19px]">
-                      <span className="absolute left-[20px] top-0 font-normal tabular-nums">{line.quantity}</span>
-                      <span className="block min-w-0 break-words pl-[42px] font-normal">{line.text}</span>
+                    <div className="relative min-h-[22px] text-[14px] leading-[22px]">
+                      <span className="absolute left-[47px] top-0 font-normal tabular-nums">{line.quantity}</span>
+                      <span className="block min-w-0 break-words pl-[65px] font-normal">{line.text}</span>
                     </div>
                   ) : (
                     line.text.startsWith('    ') ? (
-                    <span className="block break-words pl-[42px] text-[12px] leading-[15px]">{line.text.trimStart()}</span>
+                    <span className="block break-words pl-[65px] text-[12px] leading-[16px]">{line.text.trimStart()}</span>
                   ) : (
                     <span className="whitespace-pre-wrap break-words">{line.text || ' '}</span>
                   )
