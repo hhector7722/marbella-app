@@ -13,7 +13,12 @@
 - Tras esa prueba se retiró `IP_Handy5`, se restauró la pantalla de ventas y se compararon **los 34 campos** de `Config_Android` con un respaldo previo: `changedFields: []`. La configuración quedó idéntica a la original.
 - Marbella Server (`192.168.1.200`) y TPV1 (`192.168.1.100`) usan redes locales físicamente separadas pese a compartir rango de direcciones; no pueden conectarse directamente. La integración prevista continúa siendo Marbella App → Supabase → agente de TPV1 → BDP.
 - **Inspección del 23/11/2026 a última hora**: el agente Remote Desktop Commander de TPV1 aparece **offline**. Por tanto, no se ha podido verificar una sesión real de uno de los Handy autorizados ni inspeccionar el cierre inmediato durante esa sesión.
-- **Hipótesis pendientes**: handshake de cliente, identidad/licencia, orden o codificación de mensajes, respuesta de error que el cliente experimental no detecta. No elegir ninguna explicación sin capturar/interpretrar un intercambio válido.
+- **Hipótesis pendientes**: identidad/licencia, protocolo de capa superior, codificación o framing, respuesta de error no interpretada por el cliente experimental. No elegir ninguna explicación sin capturar/interpretrar un intercambio válido.
+- **Nueva inspección al reconectar TPV1 el 23/11/2026**: BDP estaba en menú general y por tanto los puertos Handy no escuchaban. Se reabrió el turno existente en `TPV Táctil`, sin generar otro turno ni operaciones de venta. Los puertos `50000` y `55000` volvieron a quedar en LISTEN.
+- Las IP `192.168.1.109` y `192.168.1.110` respondieron a una comprobación de red; `.107` y `.108` no respondieron. **No se ha identificado el modelo ni confirmado que los dos dispositivos que responden estuvieran ejecutando Handy en ese momento**.
+- Durante una observación pasiva de 12 segundos, **cero conexiones TCP establecidas** en los puertos Handy. No había tráfico que comparar y no se enviaron mensajes de prueba a BDP.
+- La inspección de bytecode de `ConexionSocket` muestra que cada `Send` obtiene un socket TCP, escribe la trama y espera una respuesta; `IniciarComunicacionInternal` no envía un saludo por sí mismo. Esto **no descarta** identificación previa desde otra parte de la aplicación.
+- Intentar consultar el estado de `pktmon` devolvió acceso denegado. No se elevaron privilegios ni se alteraron filtros, firewall, controladores o captura de red.
 
 - Solo se identificó una base de datos SQL Server, la de producción. No se han creado mesas, líneas, documentos ni cobros.
 
