@@ -210,6 +210,7 @@ export function InventoryClient({
   const [numericByIdCamara, setNumericByIdCamara] = useState<Record<string, number>>({})
   const [locationMode, setLocationMode] = useState<'BARRA' | 'CAMARA'>('BARRA')
   const [draftVisibility, setDraftVisibility] = useState<Record<string, boolean>>({})
+  const [visibilityListFilter, setVisibilityListFilter] = useState<'active' | 'all'>('active')
 
   const [ingredientQuery, setIngredientQuery] = useState('')
   const [ingredientCategory, setIngredientCategory] = useState<string | null>(null)
@@ -382,10 +383,17 @@ export function InventoryClient({
 
   const sourceList: Ingredient[] = useMemo(() => {
     if (visibilityEditMode && managerFullList && managerFullList.length > 0) {
-      return managerFullList
+      return visibilityListFilter === 'active'
+        ? managerFullList.filter((item) => item.inventory_visible)
+        : managerFullList
     }
     return initialIngredients
-  }, [visibilityEditMode, managerFullList, initialIngredients])
+  }, [visibilityEditMode, visibilityListFilter, managerFullList, initialIngredients])
+
+  // Cada vez que se abandona la edición, la próxima apertura vuelve a «Activos».
+  useEffect(() => {
+    if (!visibilityEditMode) setVisibilityListFilter('active')
+  }, [visibilityEditMode])
 
   useEffect(() => {
     if (!visibilityEditMode || !managerFullList?.length) return
@@ -796,6 +804,22 @@ export function InventoryClient({
         </Button>
       ) : null}
       </div>
+
+      {visibilityEditMode && managerFullList?.length ? (
+        <div className="flex w-full justify-center">
+          <PetroleumSegmented
+            instance="inventory-visible-products-filter"
+            density="compact"
+            aria-label="Filtrar artículos de inventario por estado"
+            value={visibilityListFilter}
+            onChange={(next) => setVisibilityListFilter(next as 'active' | 'all')}
+            options={[
+              { value: 'active', label: 'Activos' },
+              { value: 'all', label: 'Todos' },
+            ]}
+          />
+        </div>
+      ) : null}
 
       {!visibilityEditMode ? (
         <div className="flex w-full flex-col items-center gap-1">
