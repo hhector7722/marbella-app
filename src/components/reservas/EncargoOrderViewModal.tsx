@@ -1106,17 +1106,14 @@ export function EncargoOrderViewModal({
                   ].join(' ')}
                 >
                   {line.kind === 'brand' ? (
-                    <div className="flex min-h-[62px] items-center gap-2">
+                    <div className="flex min-h-[62px] items-center">
                       <Image
                         src="/icons/logo-white.png"
                         alt="Bar La Marbella"
                         width={58}
                         height={60}
-                        className="h-[60px] w-[58px] shrink-0 object-contain"
+                        className="h-[60px] w-[58px] shrink-0 object-contain brightness-0"
                       />
-                      <span className="min-w-0 flex-1 text-center text-[18px] font-extrabold tracking-tight">
-                        {line.text}
-                      </span>
                     </div>
                   ) : line.kind === 'rule' ? (
                     <div className="my-1.5 h-[2px] w-full bg-zinc-950" />
@@ -1126,7 +1123,7 @@ export function EncargoOrderViewModal({
                     </span>
                   ) : line.kind === 'item' ? (
                     <div className="flex items-start gap-1">
-                      <span className="shrink-0 text-[19px] font-bold leading-5 tabular-nums">{line.quantity}</span>
+                      <span className="shrink-0 text-[11px] font-bold leading-[14px] tabular-nums">{line.quantity}</span>
                       <span className="min-w-0 break-words pt-0.5">{line.text}</span>
                     </div>
                   ) : (

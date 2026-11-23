@@ -2,6 +2,7 @@ const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const iconv = require('iconv-lite')
 const { buildTicket, wrap, printerForJob } = require('./agent.cjs')
+const { brandRaster } = require('./brand-raster.cjs')
 test('El ticket térmico contiene cantidad, productos y corte, sin importes', () => {
   const result = buildTicket({
     name: 'AFAC', date: '2026-11-22', time: '14:00',
@@ -63,7 +64,7 @@ test('Logo monocromo y dos líneas negras rodean fecha, hora y pax', () => {
   const meta = '22/11/26' + ' '.repeat(10) + '14:00' + ' '.repeat(13) + '50 PAX'
   assert.equal(meta.length, 42)
   const layout = [
-    { kind: 'brand', text: 'COMANDA' },
+    { kind: 'brand', text: '' },
     { kind: 'text', text: 'AFAC', align: 'center', bold: true, doubleHeight: true },
     { kind: 'rule', text: '' },
     { kind: 'meta', text: meta },
@@ -86,4 +87,27 @@ test('Logo monocromo y dos líneas negras rodean fecha, hora y pax', () => {
   assert.ok(result.includes(Buffer.from('AFAC', 'ascii')))
   assert.ok(!result.includes(Buffer.from('COMIDA', 'ascii')))
   assert.ok(result.includes(Buffer.from([0x1d, 0x56, 0x00])), 'Corte final')
+})
+test('La cabecera solo conserva el logo y cantidades/productos tienen el mismo tamaño', () => {
+  const logo = brandRaster('')
+  const stride = logo[4] + (logo[5] << 8)
+  const height = logo[6] + (logo[7] << 8)
+  assert.equal(stride, 72)
+  assert.ok(height > 0)
+  let logoBytes = 0
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < stride; x++) {
+      if (logo[8 + y * stride + x] !== 0) {
+        assert.ok(x < 16, 'No debe quedar texto rasterizado a la derecha del logo')
+        logoBytes++
+      }
+    }
+  }
+  assert.ok(logoBytes > 0)
+  const ticket = buildTicket({ layout: [
+    { kind: 'brand', text: '' },
+    { kind: 'item', quantity: 8, text: 'PATATES BRAVES' },
+  ] })
+  assert.ok(!ticket.includes(Buffer.from([0x1d, 0x21, 0x10])), 'Cantidad sin doble altura')
+  assert.ok(iconv.decode(ticket, 'cp858').includes('8 PATATES BRAVES'))
 })

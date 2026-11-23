@@ -50,7 +50,7 @@ function buildTicketFromLayout(layout) {
       throw new Error('Línea de impresión inválida')
     }
     if (line.kind === 'brand') {
-      // Imagen del negocio y título, rasterizados juntos en la cabecera.
+      // Logo original en monocromo; si la cabecera no tiene título, solo logo.
       command(0x1b, 0x61, 0x00, 0x1b, 0x21, 0x00, 0x1b, 0x45, 0x00)
       output.push(brandRaster(line.text))
       command(0x0a)
@@ -68,9 +68,10 @@ function buildTicketFromLayout(layout) {
     command(0x1b, 0x21, line.doubleHeight ? 0x10 : 0)
     command(0x1b, 0x45, line.bold ? 1 : 0)
     if (line.kind === 'item') {
-      command(0x1d, 0x21, 0x10)
+      // Estilo BDP: cantidad en negrita, producto normal y mismo tamaño.
+      command(0x1b, 0x45, 1)
       print(String(line.quantity) + ' ')
-      command(0x1d, 0x21, 0)
+      command(0x1b, 0x45, 0)
       print(line.text + '\n')
     } else {
       print(line.text + '\n')
