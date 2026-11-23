@@ -8,7 +8,13 @@
 - La APK local `BDP_AndroidHandy.apk` contiene el cliente de comunicaciones y mensajes Protobuf; no se incluye la APK ni ninguna DLL del fabricante en este repositorio.
 - El cliente construye las consultas de estado de mesas con un byte de correlación, el comando `CmdPpalConsultaEstadoMesas = 19`, el número de salón en ASCII y un byte nulo.
 - La respuesta se correlaciona mediante el primer byte y la lista de mesas llega como Protobuf delimitado por longitud.
-- `Config_Android` tiene cuatro posiciones con IP asignada, pero ni la IP del ordenador TPV1 (`192.168.1.100`) ni la del servidor (`192.168.1.200`) están registradas como Handy. La consulta real desde TPV1 aceptó la conexión TCP, pero expiró sin respuesta. La relación con la autorización de IP es probable, no demostrada.
+- `Config_Android` tiene cuatro posiciones originales de Handy con IP asignada. La quinta posición estaba inicialmente vacía.
+- **Prueba temporal autorizada del 23/11/2026**: desde la configuración oficial de BDP en TPV1 se añadió `192.168.1.100` exclusivamente en `IP_Handy5`, sin alterar las IP existentes. Al estar BDP en su pantalla de ventas, el puerto TCP `50000` estaba escuchando; una única consulta de mesas del cliente experimental fue aceptada en TCP pero el servidor **cerró la conexión antes de entregar respuesta**. La consulta no demostró un protocolo de aplicación válido.
+- Tras esa prueba se retiró `IP_Handy5`, se restauró la pantalla de ventas y se compararon **los 34 campos** de `Config_Android` con un respaldo previo: `changedFields: []`. La configuración quedó idéntica a la original.
+- Marbella Server (`192.168.1.200`) y TPV1 (`192.168.1.100`) usan redes locales físicamente separadas pese a compartir rango de direcciones; no pueden conectarse directamente. La integración prevista continúa siendo Marbella App → Supabase → agente de TPV1 → BDP.
+- **Inspección del 23/11/2026 a última hora**: el agente Remote Desktop Commander de TPV1 aparece **offline**. Por tanto, no se ha podido verificar una sesión real de uno de los Handy autorizados ni inspeccionar el cierre inmediato durante esa sesión.
+- **Hipótesis pendientes**: handshake de cliente, identidad/licencia, orden o codificación de mensajes, respuesta de error que el cliente experimental no detecta. No elegir ninguna explicación sin capturar/interpretrar un intercambio válido.
+
 - Solo se identificó una base de datos SQL Server, la de producción. No se han creado mesas, líneas, documentos ni cobros.
 
 ## Contenido
@@ -28,9 +34,10 @@ El comando sin argumentos solamente muestra la trama que se enviaría. La ejecuc
 
 ## Pendiente antes de conectar Marbella App
 
-1. Disponer de un entorno de pruebas autorizado sin mesas ni operaciones fiscales reales.
-2. Verificar inicio de sesión, permisos, identidad del dispositivo y posible límite de licencia Handy.
-3. Verificar la respuesta Protobuf real y confirmar que la descodificación reproduce los estados y las mesas del TPV. El esquema de los campos se ha extraído de la APK y se ha probado con respuestas sintéticas.
-4. Implementar comandos mutadores únicamente después de contar con confirmaciones, deduplicación y pruebas sobre un entorno aislado.
+1. Recuperar la conectividad de TPV1 a través de Remote Desktop Commander. No se requiere cambiar configuración ni reiniciar BDP para este paso.
+2. Con BDP operativo, comprobar **pasivamente** si los Handy existentes (`192.168.1.107` a `.110`) mantienen conexiones al puerto `50000`. No capturar contenido sensible ni interferir con pedidos o pagos.
+3. Si se observa una sesión legítima, analizar solo su **inicio de conexión y framing**, con captura acotada de forma temporal y acceso restringido, para distinguir entre autenticación, handshake y errores de formato. Los datos reales de comandas no deben incorporarse al repositorio.
+4. Comparar un mensaje real de consulta de mesas y su respuesta con la trama experimental `[token, 19, salón ASCII, 0]`, **sin asumir que sea correcta** hasta comprobarlo en tráfico real. Verificar que el decodificador Protobuf reproduce las mesas vistas en el TPV.
+5. Mantener **bloqueados** los comandos mutadores y no desplegar el cliente a Marbella App hasta disponer de autorización/licencia válida, control de duplicados, confirmación de persistencia y un entorno de pruebas aislado.
 
 **Sin cambios a la configuración, al servicio BDP ni al flujo de ventas.**
