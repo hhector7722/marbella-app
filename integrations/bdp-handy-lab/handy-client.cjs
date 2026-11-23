@@ -54,6 +54,90 @@ function validateProtobuf(bytes) {
   return { fieldCount: count, fieldNumbers }
 }
 
+
+/**
+ * Campos extraídos de bdpProtos$ProtoMesaEstado en la APK original.
+ * La ocupación se devuelve como código bruto: sin suponer equivalencias
+ * con las etiquetas que presenta BDP al usuario.
+ */
+function decodeEstadoMesa(bytes) {
+  validateProtobuf(bytes)
+  const mesa = {
+    numero: null,
+    ocupacionCodigo: null,
+    mesaPrincipal: null,
+    juntada: null,
+    reservada: null,
+  }
+  let pos = 0
+  while (pos < bytes.length) {
+    const tag = readVarint(bytes, pos)
+    if (!tag) throw Error('Campo de mesa incompleto')
+    pos = tag.next
+    const number = Math.floor(tag.value / 8)
+    const wire = tag.value % 8
+    if (wire === 0) {
+      const n = readVarint(bytes, pos)
+      if (!n) throw Error('Valor de mesa incompleto')
+      pos = n.next
+      if (number === 1) mesa.numero = n.value
+      else if (number === 2) mesa.ocupacionCodigo = n.value
+      else if (number === 3) mesa.mesaPrincipal = n.value
+      else if (number === 4) mesa.juntada = Boolean(n.value)
+      else if (number === 5) mesa.reservada = Boolean(n.value)
+    } else if (wire === 1) pos += 8
+    else if (wire === 5) pos += 4
+    else if (wire === 2) {
+      const len = readVarint(bytes, pos)
+      if (!len) throw Error('Longitud de campo de mesa incompleta')
+      pos = len.next + len.value
+    } else throw Error('Tipo de campo de mesa desconocido')
+    if (pos > bytes.length) throw Error('Campo de mesa truncado')
+    if (number >= 1 && number <= 5 && wire !== 0) {
+      throw Error('Campo conocido de mesa con tipo Protobuf inesperado')
+    }
+  }
+  return mesa
+}
+
+/**
+ * bdpProtos$ProtoSalonEstadoMesas:
+ * campo 1 = estadomesas (repeated ProtoMesaEstado).
+ */
+function decodeEstadoSalon(bytes) {
+  validateProtobuf(bytes)
+  const mesas = []
+  let pos = 0
+  while (pos < bytes.length) {
+    const tag = readVarint(bytes, pos)
+    if (!tag) throw Error('Campo de salón incompleto')
+    pos = tag.next
+    const number = Math.floor(tag.value / 8)
+    const wire = tag.value % 8
+    if (wire === 2) {
+      const len = readVarint(bytes, pos)
+      if (!len) throw Error('Longitud de salón incompleta')
+      pos = len.next
+      const end = pos + len.value
+      if (end > bytes.length) throw Error('Mensaje de mesa truncado')
+      if (number === 1) {
+        if (mesas.length >= 2048) throw Error('Demasiadas mesas en respuesta')
+        mesas.push(decodeEstadoMesa(bytes.subarray(pos, end)))
+      }
+      pos = end
+    } else if (wire === 0) {
+      const val = readVarint(bytes, pos)
+      if (!val) throw Error('Campo de salón incompleto')
+      pos = val.next
+    } else if (wire === 1) pos += 8
+    else if (wire === 5) pos += 4
+    else throw Error('Tipo de campo de salón desconocido')
+    if (number === 1 && wire !== 2) throw Error('Lista de mesas mal formada')
+    if (pos > bytes.length) throw Error('Campo de salón truncado')
+  }
+  return mesas
+}
+
 function queryTableStates({ host, port = 50000, salon = 1, token = 1, timeoutMs = 4000 }) {
   if (typeof host !== 'string' || !host.trim()) throw Error('Falta host')
   const frame = queryTablesFrame(salon, token)
@@ -95,7 +179,7 @@ function queryTableStates({ host, port = 50000, salon = 1, token = 1, timeoutMs 
       const body = inbound.subarray(header.next, end)
       try {
         const verified = validateProtobuf(body)
-        finish(null, { matchedToken: true, responseBytes: body.length, ...verified })
+        finish(null, { matchedToken: true, responseBytes: body.length, ...verified, mesas: decodeEstadoSalon(body) })
       } catch (err) {
         finish(err)
       }
@@ -122,4 +206,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { COMMAND_QUERY_TABLES, queryTablesFrame, readVarint, validateProtobuf, queryTableStates }
+module.exports = { COMMAND_QUERY_TABLES, queryTablesFrame, readVarint, validateProtobuf, decodeEstadoMesa, decodeEstadoSalon, queryTableStates }

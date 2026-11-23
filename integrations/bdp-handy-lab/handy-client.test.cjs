@@ -66,3 +66,33 @@ test('Conexión cerrada antes de responder produce error explícito', async () =
     await assert.rejects(queryTableStates({host:'127.0.0.1', port, timeoutMs:1000}), /Conexión cerrada/)
   } finally { await new Promise(resolve => server.close(resolve)) }
 })
+
+test('Descodifica estados de mesas según el esquema Protobuf real de BDP Handy', () => {
+  const { decodeEstadoSalon } = require('./handy-client.cjs')
+  const salon = Buffer.from([
+    0x0a, 0x08, 0x08, 12, 0x10, 2, 0x18, 12, 0x28, 1,
+    0x0a, 0x06, 0x08, 7, 0x10, 1, 0x20, 1,
+  ])
+  assert.deepEqual(decodeEstadoSalon(salon), [
+    {numero:12, ocupacionCodigo:2, mesaPrincipal:12, juntada:null, reservada:true},
+    {numero:7, ocupacionCodigo:1, mesaPrincipal:null, juntada:true, reservada:null},
+  ])
+})
+
+test('Protobuf mal formado no se acepta como mesa válida', () => {
+  const { decodeEstadoSalon } = require('./handy-client.cjs')
+  assert.throws(()=>decodeEstadoSalon(Buffer.from([0x0a,5,0x08])), /truncado/)
+  assert.throws(()=>decodeEstadoSalon(Buffer.from([0x08,0x02])), /Lista de mesas mal formada/)
+})
+
+test('La respuesta del servidor simulado incluye mesas ya descodificadas', async () => {
+  const {server,port}=await mockServer(socket => {
+    socket.end(Buffer.from([1,10,0x0a,8,0x08,12,0x10,2,0x18,12,0x28,1]))
+  })
+  try {
+    const res=await queryTableStates({host:'127.0.0.1',port,timeoutMs:1000})
+    assert.deepEqual(res.mesas,[{
+      numero:12, ocupacionCodigo:2, mesaPrincipal:12, juntada:null, reservada:true,
+    }])
+  } finally { await new Promise(resolve=>server.close(resolve)) }
+})
