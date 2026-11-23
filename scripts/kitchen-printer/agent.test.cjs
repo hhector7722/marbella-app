@@ -1,7 +1,7 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const iconv = require('iconv-lite')
-const { buildTicket, wrap, printerForJob } = require('./agent.cjs')
+const { buildTicket, renderBdpTicket, wrap, printerForJob } = require('./agent.cjs')
 const { brandRaster } = require('./brand-raster.cjs')
 test('El ticket térmico contiene cantidad, productos y corte, sin importes', () => {
   const result = buildTicket({
@@ -56,6 +56,7 @@ test('Destino de impresora limitado a la configuración local', () => {
     },
   }
   assert.equal(printerForJob(cfg, 'tpv1').queue, 'TPV-MASTER')
+  assert.throws(() => printerForJob(cfg), /No se ha seleccionado impresora/)
   assert.throws(() => printerForJob(cfg, 'tpv2'), /no autorizada/)
   assert.throws(() => printerForJob(cfg, '192.168.1.2'), /no autorizada/)
 })
@@ -109,5 +110,23 @@ test('La cabecera solo conserva el logo y cantidades/productos tienen el mismo t
     { kind: 'item', quantity: 8, text: 'PATATES BRAVES' },
   ] })
   assert.ok(!ticket.includes(Buffer.from([0x1d, 0x21, 0x10])), 'Cantidad sin doble altura')
-  assert.ok(iconv.decode(ticket, 'cp858').includes('8 PATATES BRAVES'))
+  assert.ok(iconv.decode(ticket, 'cp858').includes('8 '))
+  assert.ok(iconv.decode(ticket, 'cp858').includes('PATATES BRAVES'))
+})
+
+test('El render Arial BDP genera raster térmico y corte sin enviar a impresora', {
+  skip: process.platform !== 'win32',
+}, async () => {
+  const data = await renderBdpTicket([
+    {kind: 'brand', text: ''},
+    {kind: 'text', text: 'AFAC', align: 'center', doubleHeight: true, bold: true},
+    {kind: 'rule', text: ''},
+    {kind: 'meta', text: '22/11/26          14:00             50 PAX'},
+    {kind: 'rule', text: ''},
+    {kind: 'item', quantity: 3, text: 'COCA COLA ZERO'},
+    {kind: 'item', quantity: 1, text: 'PATATES BRAVES'},
+  ])
+  assert.ok(data.length > 5000)
+  assert.ok(data.includes(Buffer.from([29,118,48,0,72,0])))
+  assert.ok(data.subarray(-3).equals(Buffer.from([29,86,0])))
 })

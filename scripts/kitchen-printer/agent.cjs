@@ -163,6 +163,35 @@ function sendToPrinter(host, port, bytes) {
     })
   })
 }
+// Los textos se rasterizan con Arial de Windows, igual que la tipografía
+// de los comprobantes BDP. No se envía ninguna orden de impresión aquí.
+async function renderBdpTicket(layout) {
+  if (!Array.isArray(layout) || layout.length < 1 || layout.length > 1500) {
+    throw new Error('Diseño del ticket inválido')
+  }
+  const run = promisify(execFile)
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'marbella-bdp-raster-'))
+  const jsonPath = path.join(dir, 'layout.json')
+  const logoPath = path.join(dir, 'brand.bin')
+  const outputPath = path.join(dir, 'ticket.bin')
+  try {
+    await fs.promises.writeFile(jsonPath, JSON.stringify(layout), 'utf8')
+    await fs.promises.writeFile(logoPath, brandRaster(''))
+    await run('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+      '-File', path.join(__dirname, 'render-bdp.ps1'),
+      '-LayoutFile', jsonPath, '-LogoFile', logoPath, '-OutputFile', outputPath,
+    ], { timeout: 45000, windowsHide: true, maxBuffer: 128 * 1024 })
+    const bytes = await fs.promises.readFile(outputPath)
+    if (bytes.length < 1000 || !bytes.subarray(-3).equals(Buffer.from([0x1d, 0x56, 0x00]))) {
+      throw new Error('El raster térmico no se ha generado correctamente')
+    }
+    return bytes
+  } finally {
+    await fs.promises.rm(dir, { recursive: true, force: true })
+  }
+}
+
 async function sendToWindowsPrinter(queue, bytes) {
   const run = promisify(execFile)
   const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'marbella-print-'))
@@ -180,7 +209,9 @@ async function sendToWindowsPrinter(queue, bytes) {
 }
 
 function printerForJob(config, printerId) {
-  const id = printerId || 'kitchen' // Compatibilidad con trabajos anteriores.
+  // La impresora se elige explícitamente; jamás asignar cocina por defecto.
+  const id = printerId
+  if (!id) throw new Error('No se ha seleccionado impresora')
   if (!['kitchen','tpv1'].includes(id)) throw new Error('Impresora no autorizada')
   const printer = config.printers?.[id]
   if (!printer) throw new Error('La impresora seleccionada no está configurada')
@@ -237,7 +268,9 @@ async function main() {
         let error = ''
         try {
           const destination = printerForJob(cfg, job.payload.printerId)
-          const bytes = buildTicket(job.payload)
+          const bytes = Array.isArray(job.payload.layout)
+            ? await renderBdpTicket(job.payload.layout)
+            : buildTicket(job.payload)
           if (destination.type === 'tcp') {
             await sendToPrinter(destination.host, destination.port, bytes)
           } else {
@@ -276,7 +309,7 @@ async function main() {
   setInterval(() => void drain(), 60000).unref()
   console.log('MarbellaPrint activo: ' + Object.keys(cfg.printers).join(', '))
 }
-module.exports = { buildTicket, buildTicketFromLayout, wrap, printerForJob }
+module.exports = { buildTicket, buildTicketFromLayout, renderBdpTicket, wrap, printerForJob }
 if (require.main === module) {
   main().catch((err) => { console.error(err); process.exitCode = 1 })
 }

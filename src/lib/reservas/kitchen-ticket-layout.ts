@@ -112,7 +112,6 @@ export function buildKitchenTicketLayout(order: KitchenTicketPayload): TicketPri
     for (const note of wrapKitchenTicket(item.note, 36)) {
       lines.push({ kind: 'text', text: '    ' + note })
     }
-    lines.push({ kind: 'text', text: '' })
   }
   if (normalize(order.observations)) {
     lines.push({ kind: 'text', text: separator })
