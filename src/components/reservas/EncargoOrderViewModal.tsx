@@ -141,7 +141,7 @@ export function EncargoOrderViewModal({
   const [invoiceCustomer, setInvoiceCustomer] = useState<EncargoInvoiceCustomer>(emptyInvoiceCustomer)
   const [comandaLanguage, setComandaLanguage] = useState<EncargoDocumentLanguage | null>(null)
   const [comandaObservations, setComandaObservations] = useState('')
-  const [thermalPrinter, setThermalPrinter] = useState<KitchenPrinterId>('kitchen')
+  const [thermalPrinter, setThermalPrinter] = useState<KitchenPrinterId | null>(null)
   const [thermalPreview, setThermalPreview] = useState<{
     layout: TicketPrintLine[]
     previewHash: string
@@ -398,6 +398,8 @@ export function EncargoOrderViewModal({
       if (!response.ok || !Array.isArray(result.layout) || !result.previewHash) {
         throw new Error(result?.error || 'No se pudo previsualizar la comanda')
       }
+      // Una impresión nueva exige elegir impresora: nunca cocina por defecto.
+      setThermalPrinter(null)
       setThermalPreview({
         layout: result.layout as TicketPrintLine[],
         previewHash: String(result.previewHash),
@@ -415,6 +417,10 @@ export function EncargoOrderViewModal({
 
   const handleSendThermalComanda = useCallback(async () => {
     if (!thermalPreview || comandaBusy) return
+    if (!thermalPrinter) {
+      toast.error('Selecciona Cocina o TPV1 antes de enviar')
+      return
+    }
     setComandaBusy(true)
     const printerLabel = KITCHEN_PRINTERS.find((printer) => printer.id === thermalPrinter)?.label ?? 'impresora'
     try {
@@ -1034,7 +1040,12 @@ export function EncargoOrderViewModal({
 
       <Modal
         open={thermalPreview !== null}
-        onClose={() => { if (!comandaBusy) setThermalPreview(null) }}
+        onClose={() => {
+          if (!comandaBusy) {
+            setThermalPreview(null)
+            setThermalPrinter(null)
+          }
+        }}
         variant="compact"
         layer="derived"
         instance="encargo-comanda-thermal-preview"
@@ -1053,6 +1064,7 @@ export function EncargoOrderViewModal({
                 setComandaLanguage(thermalPreview.language)
                 setComandaObservations(thermalPreview.observations)
                 setThermalPreview(null)
+                setThermalPrinter(null)
               }}
             >
               Volver
@@ -1061,80 +1073,90 @@ export function EncargoOrderViewModal({
               type="button"
               variant="primary"
               instance="encargo-comanda-preview-confirm"
-              disabled={comandaBusy || !thermalPreview}
+              disabled={comandaBusy || !thermalPreview || !thermalPrinter}
               loading={comandaBusy}
               loadingLabel="Enviando"
               onClick={() => void handleSendThermalComanda()}
             >
-              Enviar a impresora
+              {thermalPrinter === 'kitchen' ? 'Enviar a Cocina' : thermalPrinter === 'tpv1' ? 'Enviar a TPV1' : 'Elige impresora'}
             </Button>
           </>
         }
       >
         <div className="flex min-h-0 flex-col gap-3 py-2">
-          <Field
-            instance="encargo-comanda-printer"
-            label="Impresora de destino"
-            htmlFor="encargo-comanda-printer-select"
-          >
-            <select
-              id="encargo-comanda-printer-select"
-              value={thermalPrinter}
-              onChange={(event) => setThermalPrinter(event.target.value as KitchenPrinterId)}
-              disabled={comandaBusy}
-              className="min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-zinc-500 disabled:opacity-50"
-            >
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-semibold text-zinc-800">Selecciona la impresora</p>
+            <div role="group" aria-label="Impresora de destino" className="grid grid-cols-2 gap-2">
               {KITCHEN_PRINTERS.map((printer) => (
-                <option key={printer.id} value={printer.id}>{printer.label}</option>
+                <Button
+                  key={printer.id}
+                  type="button"
+                  instance={`encargo-comanda-printer-${printer.id}`}
+                  variant={thermalPrinter === printer.id ? 'primary' : 'secondary'}
+                  disabled={comandaBusy}
+                  onClick={() => setThermalPrinter(printer.id)}
+                >
+                  {thermalPrinter === printer.id ? '✓ ' : ''}{printer.label}
+                </Button>
               ))}
-            </select>
-          </Field>
+            </div>
+            {!thermalPrinter ? (
+              <p className="text-xs text-zinc-600">Elige Cocina o TPV1 para habilitar el envío.</p>
+            ) : null}
+          </div>
           <div className="min-h-0 max-h-[55dvh] overflow-y-auto rounded-xl border border-zinc-200 bg-zinc-100 p-3">
             <div
-              className="mx-auto w-[310px] max-w-full bg-white px-3 py-4 text-zinc-950 shadow-md"
+              className="mx-auto w-[310px] max-w-full bg-white px-3 py-3 text-zinc-950 shadow-md"
+              style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
               aria-label="Contenido del ticket térmico"
             >
               {thermalPreview?.layout.map((line, index) => (
                 <div
                   key={index}
                   className={[
-                    'font-mono text-[11px] leading-[14px]',
+                    'text-[13px] leading-[19px]',
                     line.align === 'center' ? 'text-center' : 'text-left',
                     line.bold ? 'font-bold' : 'font-normal',
-                    line.doubleHeight ? 'text-[20px] leading-[24px]' : '',
-                    line.kind === 'text' && line.text === '' ? 'min-h-[14px]' : '',
+                    line.doubleHeight ? 'text-[31px] leading-[37px] font-bold' : '',
+                    line.kind === 'text' && line.text === '' ? 'min-h-[8px]' : '',
                   ].join(' ')}
                 >
                   {line.kind === 'brand' ? (
-                    <div className="flex min-h-[62px] items-center">
+                    <div className="flex min-h-[47px] items-center">
                       <Image
                         src="/icons/logo-white.png"
                         alt="Bar La Marbella"
-                        width={58}
-                        height={60}
-                        className="h-[60px] w-[58px] shrink-0 object-contain brightness-0"
+                        width={46}
+                        height={44}
+                        className="h-[44px] w-[46px] shrink-0 object-contain brightness-0"
                       />
                     </div>
                   ) : line.kind === 'rule' ? (
-                    <div className="my-1.5 h-[2px] w-full bg-zinc-950" />
+                    <div className={thermalPreview?.layout[index - 1]?.kind === 'meta' ? "mt-[4px] mb-[12px] h-px w-full bg-zinc-950" : "my-[4px] h-px w-full bg-zinc-950"} />
                   ) : line.kind === 'meta' ? (
-                    <span className="block whitespace-pre font-mono text-[11px] leading-[16px] tracking-tight">
-                      {line.text}
-                    </span>
+                    <div className="grid grid-cols-3 items-center text-[12px] leading-[18px]">
+                      <span className="text-left">{line.text.trim().split(/\s{2,}/)[0] || ''}</span>
+                      <span className="text-center">{line.text.trim().split(/\s{2,}/)[1] || ''}</span>
+                      <span className="text-right">{line.text.trim().split(/\s{2,}/)[2] || ''}</span>
+                    </div>
                   ) : line.kind === 'item' ? (
-                    <div className="flex items-start gap-1">
-                      <span className="shrink-0 text-[11px] font-bold leading-[14px] tabular-nums">{line.quantity}</span>
-                      <span className="min-w-0 break-words pt-0.5">{line.text}</span>
+                    <div className="relative min-h-[22px] text-[14px] leading-[22px]">
+                      <span className="absolute left-[47px] top-0 font-normal tabular-nums">{line.quantity}</span>
+                      <span className="block min-w-0 break-words pl-[65px] font-normal">{line.text}</span>
                     </div>
                   ) : (
+                    line.text.startsWith('    ') ? (
+                    <span className="block break-words pl-[65px] text-[12px] leading-[16px]">{line.text.trimStart()}</span>
+                  ) : (
                     <span className="whitespace-pre-wrap break-words">{line.text || ' '}</span>
+                  )
                   )}
                 </div>
               ))}
             </div>
           </div>
           <p className="text-center text-[11px] text-zinc-500">
-            Simulación de ticket de 80 mm. La tipografía puede variar según la impresora.
+            Previsualización de 80 mm con tipografía estilo BDP. El resultado físico puede variar ligeramente.
           </p>
         </div>
       </Modal>
