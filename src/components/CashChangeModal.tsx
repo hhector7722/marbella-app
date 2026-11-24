@@ -793,7 +793,6 @@ export const CashChangeModal = ({
                         <Eye size={20} strokeWidth={2.4} className="stroke-current fill-none" />
                     </button>
                 ) : undefined}
-                scrollContent={false}
                 fullBleedBody
                 footer={
                     <>
@@ -820,7 +819,7 @@ export const CashChangeModal = ({
             >
                 <div
                     data-design-exception="modal-root-padding:cambio-plano-con-margen-de-8px"
-                    className="relative flex h-full min-h-0 w-full flex-col px-ds-2 pb-ds-2"
+                    className="relative flex w-full shrink-0 flex-col px-ds-2 pb-ds-2"
                 >
                     <div
                         data-element="cash-change-summary"
@@ -941,12 +940,12 @@ export const CashChangeModal = ({
                         </div>
                     </div>
 
-                    <div className="grid min-h-0 flex-1 place-items-center [container-type:size]">
+                    <div className="flex w-full shrink-0 justify-center">
                         <div
                             ref={planViewportRef}
                             data-element="cash-change-plan"
                             data-design-exception="cash-change-plan-radius:igual-al-contorno-del-modal"
-                            className="relative mx-auto aspect-[2048/1084] w-full max-w-[min(1136px,calc(100cqh*2048/1084))] touch-none overflow-hidden rounded-ds-superficie border border-white/70 bg-zinc-100"
+                            className="relative mx-auto aspect-[2048/1084] w-full max-w-[min(1136px,max(240px,calc((var(--modal-max-height)_-_19rem)*1.889)))] shrink-0 touch-none overflow-hidden rounded-ds-superficie border border-white/70 bg-zinc-100"
                             tabIndex={0}
                             role="region"
                             aria-label="Plano de cajas: usa la rueda o pellizca para ampliar y arrastra para desplazarte"
