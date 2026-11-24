@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
-import { Filter, Package, Trash2 } from 'lucide-react'
+import { Check, Filter, Package, Trash2 } from 'lucide-react'
 import { QuickCashTools } from '@/components/ui/QuickCalculatorModal'
 import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -97,6 +97,9 @@ function InventoryProductCard({
   onNumericChange,
   onClear,
   numeric,
+  confirmedAt,
+  soldUnits,
+  onConfirm,
   visibilityMode,
   visibilityOn,
   onVisibilityToggle,
@@ -108,6 +111,9 @@ function InventoryProductCard({
   onNumericChange: (n: number) => void
   onClear: () => void
   numeric: number
+  confirmedAt?: string
+  soldUnits: number
+  onConfirm: () => void
   visibilityMode: boolean
   visibilityOn: boolean
   onVisibilityToggle: () => void
@@ -174,6 +180,23 @@ function InventoryProductCard({
         />
       ) : null}
 
+      {!visibilityMode ? (
+        <div className="flex items-center justify-between px-1">
+          <span className="min-w-0 flex-1 text-center text-[10px] font-semibold text-zinc-500" aria-live="polite">
+            {confirmedAt ? (soldUnits !== 0 ? `${numeric - soldUnits} actual · −${soldUnits}` : new Date(confirmedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })) : 'Sin confirmar'}
+          </span>
+          <Button
+            type="button"
+            variant={confirmedAt ? 'primary' : 'tertiary'}
+            instance={`inventory-confirm-${item.id}`}
+            className="min-h-[48px] min-w-[48px] shrink-0"
+            icon={<Check size={18} />}
+            aria-label={confirmedAt ? `Volver a confirmar ${item.name}` : `Confirmar recuento de ${item.name}`}
+            onClick={onConfirm}
+          />
+        </div>
+      ) : null}
+
       {!visibilityMode && numeric > 0 ? (
         <button
           type="button"
@@ -210,6 +233,11 @@ export function InventoryClient({
   const [numericByIdBarra, setNumericByIdBarra] = useState<Record<string, number>>({})
   const [physicalCountsCamara, setPhysicalCountsCamara] = useState<Record<string, string>>({})
   const [numericByIdCamara, setNumericByIdCamara] = useState<Record<string, number>>({})
+  const [confirmedBarra, setConfirmedBarra] = useState<Record<string, string>>({})
+  const [confirmedCamara, setConfirmedCamara] = useState<Record<string, string>>({})
+  const [soldById, setSoldById] = useState<Record<string, number>>({})
+  const [draftReady, setDraftReady] = useState(false)
+  const [draftError, setDraftError] = useState(false)
   const [locationMode, setLocationMode] = useState<'BARRA' | 'CAMARA'>('BARRA')
   const [draftVisibility, setDraftVisibility] = useState<Record<string, boolean>>({})
   const [visibilityListFilter, setVisibilityListFilter] = useState<'active' | 'all'>('active')
@@ -218,170 +246,129 @@ export function InventoryClient({
   const [ingredientCategory, setIngredientCategory] = useState<string | null>(null)
   const [ingredientFilterOpen, setIngredientFilterOpen] = useState(false)
 
-  // Borrador compartido en servidor (como pedidos): lo que apunta cualquiera lo
-  // ven los demás en vivo y persiste aunque se salga de la pantalla. Se vacía
-  // al guardar o al pulsar «Nuevo».
-  const lastSeenRef = useRef<{ barra: Record<string, number>; camara: Record<string, number> }>({
-    barra: {},
-    camara: {},
-  })
-  const dirtyIdsRef = useRef<Set<string>>(new Set())
-  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const draftReadyRef = useRef(false)
-  const remoteApplyRef = useRef(false)
+  // Escrituras serializadas por ubicación: una edición en Cámara no pisa Barra.
+  type DraftLocation = 'BARRA' | 'CAMARA'
+  type DraftEdit = { id: string; location: DraftLocation; quantity: number | null; confirm: boolean }
+  const pendingRef = useRef(new Map<string, DraftEdit>())
+  const writingRef = useRef<Promise<boolean> | null>(null)
+  const busyDraftRef = useRef(false)
+  const loadSequenceRef = useRef(0)
+  const failedRef = useRef(false)
 
-  const flushDrafts = useCallback(async () => {
-    if (!userId || dirtyIdsRef.current.size === 0) return
-    const ids = Array.from(dirtyIdsRef.current)
-    dirtyIdsRef.current.clear()
-    const { barra, camara } = lastSeenRef.current
-    const upserts: {
-      ingredient_id: string
-      quantity_barra: number
-      quantity_camara: number
-      updated_by: string
-      updated_at: string
-    }[] = []
-    const deletes: string[] = []
-    for (const id of ids) {
-      const b = barra[id] ?? 0
-      const c = camara[id] ?? 0
-      if (b === 0 && c === 0) {
-        deletes.push(id)
-      } else {
-        upserts.push({
-          ingredient_id: id,
-          quantity_barra: b,
-          quantity_camara: c,
-          updated_by: userId,
-          updated_at: new Date().toISOString(),
-        })
-      }
-    }
-    try {
-      if (upserts.length > 0) {
-        await supabase.from('inventory_count_drafts').upsert(upserts)
-      }
-      if (deletes.length > 0) {
-        await supabase.from('inventory_count_drafts').delete().in('ingredient_id', deletes)
-      }
-    } catch (error) {
-      console.error('No se pudo guardar el borrador de inventario', error)
-    }
-  }, [supabase, userId])
-
-  // Detecta cambios locales (nunca los aplicados por realtime) y los sincroniza
-  // al servidor con retardo, como el borrador de pedidos.
-  useEffect(() => {
-    const prev = lastSeenRef.current
-    const next = { barra: numericByIdBarra, camara: numericByIdCamara }
-    lastSeenRef.current = next
-    if (remoteApplyRef.current) {
-      remoteApplyRef.current = false
+  const refreshDraft = useCallback(async () => {
+    if (!userId || busyDraftRef.current || pendingRef.current.size || writingRef.current) return
+    const sequence = ++loadSequenceRef.current
+    const [draft, sales] = await Promise.all([
+      supabase.from('inventory_count_drafts').select('ingredient_id, quantity_barra, quantity_camara, has_barra, has_camara, barra_counted_at, camara_counted_at'),
+      supabase.rpc('get_inventory_draft_sales'),
+    ])
+    if (sequence !== loadSequenceRef.current || busyDraftRef.current || pendingRef.current.size || writingRef.current) return
+    if (draft.error || sales.error) {
+      setDraftError(true)
       return
     }
-    if (!draftReadyRef.current) return
-    const changed = new Set<string>()
-    for (const id of new Set([...Object.keys(prev.barra), ...Object.keys(next.barra)])) {
-      if ((prev.barra[id] ?? 0) !== (next.barra[id] ?? 0)) changed.add(id)
+    const barra: Record<string, number> = {}
+    const camara: Record<string, number> = {}
+    const cb: Record<string, string> = {}
+    const cc: Record<string, string> = {}
+    for (const row of draft.data ?? []) {
+      if (row.has_barra || Number(row.quantity_barra) !== 0) barra[row.ingredient_id] = Number(row.quantity_barra)
+      if (row.has_camara || Number(row.quantity_camara) !== 0) camara[row.ingredient_id] = Number(row.quantity_camara)
+      if (row.barra_counted_at) cb[row.ingredient_id] = row.barra_counted_at
+      if (row.camara_counted_at) cc[row.ingredient_id] = row.camara_counted_at
     }
-    for (const id of new Set([...Object.keys(prev.camara), ...Object.keys(next.camara)])) {
-      if ((prev.camara[id] ?? 0) !== (next.camara[id] ?? 0)) changed.add(id)
-    }
-    if (changed.size === 0) return
-    changed.forEach((id) => dirtyIdsRef.current.add(id))
-    if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
-    syncTimerRef.current = setTimeout(() => {
-      void flushDrafts()
-    }, 600)
-  }, [numericByIdBarra, numericByIdCamara, flushDrafts])
+    setNumericByIdBarra(barra)
+    setNumericByIdCamara(camara)
+    setConfirmedBarra(cb)
+    setConfirmedCamara(cc)
+    setSoldById(Object.fromEntries((sales.data ?? []).map((row: { ingredient_id: string; sold_units: number }) => [row.ingredient_id, Number(row.sold_units)])))
+    setDraftReady(true)
+    if (!failedRef.current) setDraftError(false)
+  }, [supabase, userId])
 
-  const clearSharedDraft = useCallback(async () => {
-    dirtyIdsRef.current.clear()
-    if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+  const flushDrafts = useCallback(async (): Promise<boolean> => {
+    if (writingRef.current) return writingRef.current
+    const run = async () => {
+      while (pendingRef.current.size) {
+        const entry = pendingRef.current.entries().next().value as [string, DraftEdit] | undefined
+        if (!entry) break
+        const [key, edit] = entry
+        pendingRef.current.delete(key)
+        try {
+          const { error } = await supabase.rpc('set_inventory_draft_location', {
+            p_ingredient_id: edit.id,
+            p_location: edit.location,
+            p_quantity: edit.quantity,
+            p_confirm: edit.confirm,
+          })
+          if (error) throw error
+        } catch {
+          if (!pendingRef.current.has(key)) pendingRef.current.set(key, edit)
+          failedRef.current = true
+          setDraftError(true)
+          return false
+        }
+      }
+      failedRef.current = false
+      setDraftError(false)
+      return true
+    }
+    const promise = run()
+    writingRef.current = promise
     try {
-      await supabase
-        .from('inventory_count_drafts')
-        .delete()
-        .neq('ingredient_id', '00000000-0000-0000-0000-000000000000')
-    } catch (error) {
-      console.error('No se pudo vaciar el borrador de inventario', error)
+      return await promise
+    } finally {
+      writingRef.current = null
     }
   }, [supabase])
 
-  // Carga inicial del borrador compartido.
-  useEffect(() => {
-    if (!userId) return
-    let cancelled = false
-    const load = async () => {
-      const { data } = await supabase
-        .from('inventory_count_drafts')
-        .select('ingredient_id, quantity_barra, quantity_camara')
-      if (cancelled) return
-      const barra: Record<string, number> = {}
-      const camara: Record<string, number> = {}
-      for (const row of data ?? []) {
-        const b = Number(row.quantity_barra) || 0
-        const c = Number(row.quantity_camara) || 0
-        if (b !== 0) barra[row.ingredient_id] = b
-        if (c !== 0) camara[row.ingredient_id] = c
-      }
-      remoteApplyRef.current = true
-      setNumericByIdBarra(barra)
-      setNumericByIdCamara(camara)
-      draftReadyRef.current = true
-    }
-    void load()
-    return () => {
-      cancelled = true
-    }
-  }, [supabase, userId])
-
-  // Realtime: el borrador es compartido, cualquiera ve lo que apuntan los demás.
-  useEffect(() => {
-    if (!userId) return
-    const removeKey = (prev: Record<string, number>, id: string) => {
-      if (!(id in prev)) return prev
+  const queueDraftEdit = useCallback((id: string, location: DraftLocation, quantity: number | null, confirm = false) => {
+    if (!draftReady || busyDraftRef.current) return
+    ++loadSequenceRef.current
+    const setNumeric = location === 'BARRA' ? setNumericByIdBarra : setNumericByIdCamara
+    const setConfirmed = location === 'BARRA' ? setConfirmedBarra : setConfirmedCamara
+    setNumeric((prev) => {
+      const next = { ...prev }
+      if (quantity === null && !confirm) delete next[id]
+      else next[id] = quantity ?? 0
+      return next
+    })
+    setConfirmed((prev) => {
       const next = { ...prev }
       delete next[id]
       return next
-    }
-    const applyValue = (prev: Record<string, number>, id: string, value: number) => {
-      if (value === 0) return removeKey(prev, id)
-      if (prev[id] === value) return prev
-      return { ...prev, [id]: value }
-    }
-    const channel = supabase
-      .channel('inventory_count_drafts_realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'inventory_count_drafts' },
-        (payload) => {
-          if (payload.eventType === 'DELETE') {
-            const id = (payload.old as { ingredient_id?: string }).ingredient_id
-            if (!id) return
-            remoteApplyRef.current = true
-            setNumericByIdBarra((prev) => removeKey(prev, id))
-            setNumericByIdCamara((prev) => removeKey(prev, id))
-            return
-          }
-          const row = payload.new as {
-            ingredient_id: string
-            quantity_barra: number | string
-            quantity_camara: number | string
-          }
-          const b = Number(row.quantity_barra) || 0
-          const c = Number(row.quantity_camara) || 0
-          remoteApplyRef.current = true
-          setNumericByIdBarra((prev) => applyValue(prev, row.ingredient_id, b))
-          setNumericByIdCamara((prev) => applyValue(prev, row.ingredient_id, c))
-        },
-      )
+    })
+    pendingRef.current.set(`${location}:${id}`, { id, location, quantity, confirm })
+    void flushDrafts().then((ok) => {
+      if (ok) void refreshDraft()
+      else toast.error('No se pudo guardar el borrador. Vuelve a intentarlo.')
+    })
+  }, [draftReady, flushDrafts, refreshDraft])
+
+  const clearSharedDraft = useCallback(async () => {
+    const { error } = await supabase.from('inventory_count_drafts').delete().neq('ingredient_id', '00000000-0000-0000-0000-000000000000')
+    if (error) throw error
+    setConfirmedBarra({})
+    setConfirmedCamara({})
+    setSoldById({})
+  }, [supabase])
+
+  useEffect(() => {
+    if (!userId) return
+    void refreshDraft()
+    const channel = supabase.channel('inventory_count_drafts_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_count_drafts' }, () => { void refreshDraft() })
       .subscribe()
+    const timer = setInterval(() => {
+      if (failedRef.current) void flushDrafts().then((ok) => { if (ok) void refreshDraft() })
+      else void refreshDraft()
+    }, 5000)
     return () => {
+      ++loadSequenceRef.current
+      clearInterval(timer)
       void supabase.removeChannel(channel)
     }
-  }, [supabase, userId])
+  }, [supabase, userId, refreshDraft, flushDrafts])
 
   const sourceList: Ingredient[] = useMemo(() => {
     if (visibilityEditMode && managerFullList && managerFullList.length > 0) {
@@ -453,11 +440,8 @@ export function InventoryClient({
   const setQty = (id: string, item: Ingredient, n: number) => {
     const u = normalizeUnit(item.unit)
     const rounded = roundQty(n, u)
-    if (locationMode === 'BARRA') {
-      setNumericByIdBarra((prev) => ({ ...prev, [id]: rounded }))
-    } else {
-      setNumericByIdCamara((prev) => ({ ...prev, [id]: rounded }))
-    }
+    const current = locationMode === 'BARRA' ? numericByIdBarra[id] : numericByIdCamara[id]
+    if (current !== rounded) queueDraftEdit(id, locationMode, rounded)
   }
 
   const toggleDraftVisibility = (id: string) => {
@@ -496,9 +480,12 @@ export function InventoryClient({
   }
 
   const handleSubmit = async () => {
-    if (isSubmitting || initialIngredients.length === 0) return
+    if (isSubmitting || !draftReady || initialIngredients.length === 0) return
+    busyDraftRef.current = true
+    ++loadSequenceRef.current
     setIsSubmitting(true)
     try {
+      if (!(await flushDrafts())) throw new Error('No se pudo sincronizar el borrador. Vuelve a intentarlo.')
       const payload = initialIngredients
         .map((item) => {
           const u = normalizeUnit(item.unit)
@@ -529,17 +516,30 @@ export function InventoryClient({
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Error al procesar el recuento.')
     } finally {
+      busyDraftRef.current = false
       setIsSubmitting(false)
+      void refreshDraft()
     }
   }
 
   const handleNew = async () => {
-    setPhysicalCountsBarra({})
-    setNumericByIdBarra({})
-    setPhysicalCountsCamara({})
-    setNumericByIdCamara({})
-    await clearSharedDraft()
-    toast.success('Recuento vaciado.')
+    if (!draftReady || busyDraftRef.current) return
+    busyDraftRef.current = true
+    ++loadSequenceRef.current
+    try {
+      if (!(await flushDrafts())) throw new Error('No se pudo sincronizar el borrador.')
+      await clearSharedDraft()
+      setPhysicalCountsBarra({})
+      setNumericByIdBarra({})
+      setPhysicalCountsCamara({})
+      setNumericByIdCamara({})
+      toast.success('Recuento vaciado.')
+    } catch {
+      toast.error('No se pudo vaciar el borrador.')
+    } finally {
+      busyDraftRef.current = false
+      void refreshDraft()
+    }
   }
 
   const emptyLocations = [
@@ -547,7 +547,7 @@ export function InventoryClient({
     !initialIngredients.some((item) => numericByIdCamara[item.id] !== undefined && physicalCountsCamara[item.id] !== '') ? 'Cámara' : null,
   ].filter((location): location is string => location !== null)
 
-  const submitDisabled = isSubmitting || initialIngredients.length === 0
+  const submitDisabled = isSubmitting || !draftReady || draftError || initialIngredients.length === 0
 
   const handleSaveClick = () => {
     if (submitDisabled) return
@@ -605,58 +605,38 @@ export function InventoryClient({
                     item={item}
                     numeric={numeric}
                     raw={raw}
-                    visibilityMode={Boolean(visibilityEditMode && managerFullList?.length)}
-                    visibilityOn={visibilityOn}
-                    onVisibilityToggle={() => toggleDraftVisibility(item.id)}
-                    onClear={() => {
+                    confirmedAt={(isBarra ? confirmedBarra : confirmedCamara)[item.id]}
+                    soldUnits={isBarra && confirmedBarra[item.id] ? (soldById[item.id] ?? 0) : 0}
+                    onConfirm={() => {
+                      if (!draftReady || isSubmitting) return
                       const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
-                      const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
-                      setNumeric((prev) => {
-                        const next = { ...prev }
-                        delete next[item.id]
-                        return next
-                      })
                       setPhysical((prev) => {
                         const next = { ...prev }
                         delete next[item.id]
                         return next
                       })
+                      queueDraftEdit(item.id, locationMode, counted ?? 0, true)
+                    }}
+                    visibilityMode={Boolean(visibilityEditMode && managerFullList?.length)}
+                    visibilityOn={visibilityOn}
+                    onVisibilityToggle={() => toggleDraftVisibility(item.id)}
+                    onClear={() => {
+                      const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
+                      setPhysical((prev) => {
+                        const next = { ...prev }
+                        delete next[item.id]
+                        return next
+                      })
+                      queueDraftEdit(item.id, locationMode, null)
                     }}
                     onRawChange={(s) => {
                       const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
-                      const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
                       setPhysical((prev) => ({ ...prev, [item.id]: s }))
-                      if (s.trim() === '') {
-                        setNumeric((prev) => {
-                          const next = { ...prev }
-                          delete next[item.id]
-                          return next
-                        })
-                      } else {
-                        setQty(item.id, item, parseQuantity(s, u))
-                      }
+                      if (s.trim() === '') queueDraftEdit(item.id, locationMode, null)
+                      else setQty(item.id, item, parseQuantity(s, u))
                     }}
                     onBlur={() => {
-                      const rawCountsRef = isBarra ? physicalCountsBarra : physicalCountsCamara
                       const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
-                      const setNumeric = isBarra ? setNumericByIdBarra : setNumericByIdCamara
-
-                      const rawStr = rawCountsRef[item.id] ?? ''
-                      if (rawStr.trim() === '') {
-                        setNumeric((prev) => {
-                          const next = { ...prev }
-                          delete next[item.id]
-                          return next
-                        })
-                        setPhysical((prev) => {
-                          const next = { ...prev }
-                          delete next[item.id]
-                          return next
-                        })
-                        return
-                      }
-                      const parsed = parseQuantity(rawStr, u)
-                      setQty(item.id, item, parsed)
                       setPhysical((prev) => {
                         const next = { ...prev }
                         delete next[item.id]
@@ -814,7 +794,7 @@ export function InventoryClient({
       {!visibilityEditMode ? (
         <div className="flex w-full flex-col items-center gap-1">
           <p className="text-[11px] font-bold tabular-nums text-zinc-500">
-            Los campos vacíos cuentan como 0.
+            {draftError ? 'Error de sincronización del recuento.' : !draftReady ? 'Cargando recuento…' : 'Los campos vacíos cuentan como 0. Confirma cada producto para registrar su hora.'}
           </p>
           <PetroleumSegmented
             instance="inventory-location"
