@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
@@ -17,6 +18,7 @@ export type TipOverrideDraft = {
   isSanctioned: boolean;
   overrideAmount: number | null;
   notes: string;
+  distributionId?: string;
 };
 
 function firstNameOnly(fullName: string): string {
@@ -31,6 +33,9 @@ export function TipOverrideModal({
   poolType,
   poolId,
   initial,
+  currentStartDate,
+  currentEndDate,
+  initialDistributionId,
   onSave,
 }: {
   isOpen: boolean;
@@ -40,65 +45,77 @@ export function TipOverrideModal({
   poolType: PoolType;
   poolId: string | null;
   initial?: TipOverrideDraft;
+  currentStartDate?: string;
+  currentEndDate?: string;
+  initialDistributionId?: string;
   onSave: (draft: TipOverrideDraft) => Promise<void> | void;
 }) {
   const [isSanctioned, setIsSanctioned] = useState(false);
   const [overrideAmountText, setOverrideAmountText] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [distributionId, setDistributionId] = useState(initialDistributionId ?? '');
+  const [periods, setPeriods] = useState<{ id: string; label: string; excluded: boolean }[]>([]);
+  const [loadingPeriod, setLoadingPeriod] = useState(true);
+  const [periodError, setPeriodError] = useState(false);
+  const historic = Boolean(distributionId);
   const [profile, setProfile] = useState<{ first_name: string; avatar_url: string | null } | null>(null);
 
   const trackTipOverrideSave = useTrackModalApply('tip-override', 'Ajuste propina');
 
-  const loadKey = useMemo(
-    () => (isOpen ? { staffId, poolId, initial } : null),
-    [isOpen, staffId, poolId, initial]
-  );
-  const [prevLoadKey, setPrevLoadKey] = useState<typeof loadKey>(null);
-  if (loadKey !== prevLoadKey) {
-    setPrevLoadKey(loadKey);
-    if (loadKey) {
-      setIsSanctioned(initial?.isSanctioned ?? false);
-      setNotes(initial?.notes ?? '');
-      setOverrideAmountText(
-        initial?.overrideAmount != null && Number.isFinite(initial.overrideAmount)
-          ? String(initial.overrideAmount)
-          : ''
-      );
-      setProfile(null);
-    }
-  }
-
   useEffect(() => {
     if (!isOpen) return;
-
+    let cancelled = false;
     const supabase = createClient();
-    if (staffId) {
-      supabase
-        .from('profiles')
-        .select('first_name, avatar_url')
-        .eq('id', staffId)
-        .single()
-        .then(({ data }) => setProfile(data || null));
-    }
-
-    if (staffId && poolId) {
-      supabase
-        .from('tip_pool_overrides')
-        .select('override_amount, notes, is_sanctioned')
-        .eq('pool_id', poolId)
-        .eq('user_id', staffId)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (!data) return;
-          if (data.is_sanctioned != null) setIsSanctioned(Boolean(data.is_sanctioned));
-          if (data.notes) setNotes(String(data.notes));
-          if (data.override_amount != null) {
-            setOverrideAmountText(String(data.override_amount));
-          }
-        });
-    }
-  }, [isOpen, staffId, poolId, initial]);
+    setLoadingPeriod(true);
+    setPeriodError(false);
+    const load = async () => {
+      const { data: person } = await supabase.from('profiles').select('first_name, avatar_url').eq('id', staffId).single();
+      if (!cancelled) setProfile(person || null);
+      const { data: lines, error: historyError } = await supabase.from('tip_distribution_lines')
+        .select('distribution_id, is_sanctioned, tip_distribution_history(period_start, period_end)')
+        .eq('user_id', staffId);
+      if (historyError) throw historyError;
+      const options = (lines ?? []).flatMap(row => {
+        const history = Array.isArray(row.tip_distribution_history) ? row.tip_distribution_history[0] : row.tip_distribution_history;
+        return history ? [{ id: row.distribution_id, label: history.period_start + ' → ' + history.period_end, excluded: Boolean(row.is_sanctioned) }] : [];
+      }).sort((a,b) => b.label.localeCompare(a.label));
+      if (cancelled) return;
+      setPeriods(options);
+      if (distributionId) {
+        const selected = options.find(p => p.id === distributionId);
+        if (!selected) throw new Error('Reparto no disponible');
+        setIsSanctioned(selected.excluded);
+        setOverrideAmountText('');
+        setNotes('');
+      } else {
+        let excluded = initial?.isSanctioned ?? false;
+        if (currentStartDate && currentEndDate) {
+          const { data, error } = await supabase.rpc('get_tip_pool_preview', {p_start_date:currentStartDate,p_end_date:currentEndDate});
+          if (error) throw error;
+          const current = data as unknown as { staff?: {id:string;isSanctioned:boolean}[] };
+          excluded = current.staff?.find(s=>s.id===staffId)?.isSanctioned ?? false;
+        }
+        let amount = initial?.overrideAmount ?? null;
+        let currentNotes = initial?.notes ?? '';
+        if (poolId) {
+          const { data, error } = await supabase.from('tip_pool_overrides').select('override_amount, notes').eq('pool_id',poolId).eq('user_id',staffId).maybeSingle();
+          if (error) throw error;
+          amount = data?.override_amount ?? null;
+          currentNotes = data?.notes ?? '';
+        }
+        if (cancelled) return;
+        setIsSanctioned(excluded);
+        setOverrideAmountText(amount == null ? '' : String(amount));
+        setNotes(currentNotes);
+      }
+    };
+    void load().catch(e => { if (!cancelled) { console.error(e); setPeriodError(true); toast.error('No se pudo cargar el reparto'); } })
+      .finally(() => { if (!cancelled) setLoadingPeriod(false); });
+    return () => { cancelled = true; };
+    // initial is a fallback only; refreshing parent must not discard unsaved edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, staffId, poolId, distributionId, currentStartDate, currentEndDate]);
 
   const profileFirstName = profile?.first_name;
   const displayName = useMemo(
@@ -118,7 +135,7 @@ export function TipOverrideModal({
   const amountInvalid =
     overrideAmountText.trim() !== '' && parsedOverrideAmount === null;
 
-  const canSave = !amountInvalid;
+  const canSave = !amountInvalid && !loadingPeriod && !periodError;
 
   const handleClose = () => {
     if (saving) return;
@@ -133,12 +150,15 @@ export function TipOverrideModal({
         isSanctioned,
         overrideAmount: parsedOverrideAmount,
         notes: (notes || '').trim(),
+        distributionId: distributionId || undefined,
       });
       trackTipOverrideSave(
         `${namedEntitySummary(displayName)} · ${isSanctioned ? 'Sin propina' : 'Con propina'}`,
         { staffId, poolType }
       );
       onClose();
+    } catch (error) {
+      console.error(error);
     } finally {
       setSaving(false);
     }
@@ -181,6 +201,15 @@ export function TipOverrideModal({
         }
       >
         <div className="flex min-w-0 max-w-full flex-col gap-3">
+          <label className="text-xs font-bold text-zinc-600">
+            Reparto
+            <select className="mt-1 h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold" value={distributionId} onChange={e => { setLoadingPeriod(true); setDistributionId(e.target.value); }} disabled={saving}>
+              <option value="">Actual{currentStartDate ? ' · Desde ' + currentStartDate : ''}</option>
+              {periods.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </select>
+          </label>
+          {historic && <p className="text-xs text-zinc-500">Se recalculará solo este reparto. Los pagos ya realizados no se modifican.</p>}
+          {loadingPeriod && <p className="text-xs text-zinc-500">Cargando reparto…</p>}
           <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm md:rounded-2xl">
             <div className="flex items-center gap-3 min-w-0">
               <Avatar
@@ -193,6 +222,7 @@ export function TipOverrideModal({
                 <div className="relative flex h-6 w-6 items-center justify-center rounded-lg border-2 border-zinc-300 bg-zinc-50 transition-all group-hover:border-rose-400 md:h-8 md:w-8">
                   <input
                     type="checkbox"
+                    disabled={loadingPeriod || periodError || saving}
                     checked={isSanctioned}
                     onChange={(e) => setIsSanctioned(e.target.checked)}
                     className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -216,14 +246,14 @@ export function TipOverrideModal({
                     Sin propina
                   </span>
                   <span className="text-[9px] font-bold leading-tight text-zinc-400 md:text-[11px]">
-                    Excluye a este empleado del reparto y su parte se distribuye equitativamente.
+                    Excluye al empleado solo del reparto seleccionado y redistribuye su parte equitativamente.
                   </span>
                 </div>
               </label>
             </div>
           </div>
 
-          <div className="rounded-xl border border-zinc-100 bg-white p-2 shadow-sm md:rounded-2xl md:p-3">
+          {!historic && <div className="rounded-xl border border-zinc-100 bg-white p-2 shadow-sm md:rounded-2xl md:p-3">
             <label
               htmlFor="tip-override-amount"
               className="mb-1 block text-[7px] font-black uppercase tracking-widest text-zinc-400 md:mb-2 md:text-[9px]"
@@ -249,7 +279,7 @@ export function TipOverrideModal({
                 €
               </span>
             </div>
-          </div>
+          </div>}
 
           <div className="rounded-xl border border-zinc-100 bg-white p-2 shadow-sm md:rounded-2xl md:p-3">
             <label className="mb-1 block text-[7px] font-black uppercase tracking-widest text-zinc-400 md:mb-2 md:text-[9px]">

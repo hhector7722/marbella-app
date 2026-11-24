@@ -199,6 +199,7 @@ export default function TipsDashboardView({
     poolType: PoolType;
     staffId: string;
     staffName: string;
+    distributionId?: string;
   } | null>(null);
 
   const [showHoursDetail, setShowHoursDetail] = useState(false);
@@ -347,29 +348,37 @@ export default function TipsDashboardView({
   };
 
   const handleSaveOverride = async (draft: TipOverrideDraft) => {
-    if (!preview || !overrideModal) return;
-    const poolId =
-      overrideModal.poolType === 'weekday' ? preview.pools.weekday.id : preview.pools.weekend.id;
-
-    if (!poolId) {
-      toast.error('BLOQUEO: No existe el bote en BD para este rango.');
-      return;
-    }
-
+    if (!overrideModal) throw new Error('No hay trabajador seleccionado');
     try {
-      await supabase.rpc('upsert_tip_override', {
-        p_pool_id: poolId,
-        p_user_id: overrideModal.staffId,
-        p_override_hours: null,
-        p_override_amount: draft.overrideAmount,
-        p_is_sanctioned: draft.isSanctioned,
-        p_notes: draft.notes || null,
-      });
-      toast.success('Override guardado');
-      await fetchPreview();
+      if (draft.distributionId) {
+        const { error } = await supabase.rpc('set_tip_history_exclusion', {
+          p_distribution_id: draft.distributionId,
+          p_user_id: overrideModal.staffId,
+          p_excluded: draft.isSanctioned,
+          p_notes: draft.notes || null,
+        });
+        if (error) throw error;
+        setHistoryRefreshToken(t => t + 1);
+        router.refresh();
+      } else {
+        const poolId = overrideModal.poolType === 'weekday' ? preview?.pools.weekday.id : preview?.pools.weekend.id;
+        if (!poolId) throw new Error('No existe el bote');
+        const { error } = await supabase.rpc('save_tip_period_adjustment', {
+          p_period_start: initialStartDate,
+          p_pool_id: poolId,
+          p_user_id: overrideModal.staffId,
+          p_excluded: draft.isSanctioned,
+          p_override_amount: draft.overrideAmount,
+          p_notes: draft.notes || null,
+        });
+        if (error) throw error;
+        await fetchPreview();
+      }
+      toast.success('Ajuste guardado en el reparto seleccionado');
     } catch (e: unknown) {
       console.error(e);
-      toast.error('Error crítico guardando override en BD (permiso o validación).');
+      toast.error('No se pudo guardar el ajuste de propina.');
+      throw e;
     }
   };
 
@@ -884,7 +893,7 @@ export default function TipsDashboardView({
               </div>
             </Surface>
 
-        <TipDistributionHistorySection refreshToken={historyRefreshToken} />
+        <TipDistributionHistorySection refreshToken={historyRefreshToken} onEdit={canEditOverrides ? (distributionId, staffId, staffName) => setOverrideModal({ open: true, poolType: 'weekday', staffId, staffName, distributionId }) : undefined} />
         <div className="scroll-end-touch" aria-hidden />
     </DashboardDetailLayout>
 
@@ -910,6 +919,9 @@ export default function TipsDashboardView({
           isOpen={overrideModal.open}
           onClose={() => setOverrideModal(null)}
           staffId={overrideModal.staffId}
+          currentStartDate={initialStartDate}
+          currentEndDate={initialEndDate}
+          initialDistributionId={overrideModal.distributionId}
           employeeName={overrideModal.staffName}
           poolType={overrideModal.poolType}
           poolId={

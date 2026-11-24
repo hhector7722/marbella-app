@@ -39,9 +39,10 @@ const fmtMoney = (val: number) => (Math.abs(val) < 0.005 ? ' ' : `${Number(val).
 
 type Props = {
   refreshToken?: number;
+  onEdit?: (distributionId: string, staffId: string, staffName: string) => void;
 };
 
-export function TipDistributionHistorySection({ refreshToken = 0 }: Props) {
+export function TipDistributionHistorySection({ refreshToken = 0, onEdit }: Props) {
   const supabase = createClient();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -72,6 +73,8 @@ export function TipDistributionHistorySection({ refreshToken = 0 }: Props) {
 
   useEffect(() => {
     if (open) void loadHistories();
+    setLinesByDistribution({});
+    setExpandedId(null);
   }, [open, loadHistories, refreshToken]);
 
   const loadLines = useCallback(
@@ -208,6 +211,7 @@ export function TipDistributionHistorySection({ refreshToken = 0 }: Props) {
                               <WorkerPersonRow
                                 key={l.id}
                                 name={name}
+                                onClick={onEdit ? () => onEdit(h.id, l.user_id, fullName) : undefined}
                                 muted={l.is_sanctioned}
                                 subtitle={
                                   <>
