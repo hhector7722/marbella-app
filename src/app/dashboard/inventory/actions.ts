@@ -101,8 +101,8 @@ export async function processInventoryCounts(counts: CountPayload[]) {
     throw new Error(profileError.message)
   }
 
-  // Stock 2.0: el primer recuento unitario debe ser completo e incluir
-  // explícitamente las unidades a cero. No consumir ajustes del stock antiguo.
+  // Stock 2.0: el recuento unitario debe incluir todos los productos activos.
+  // Los campos vacíos se envían como cero. No consumir ajustes del stock antiguo.
   const { data: activeUnits, error: unitsError } = await supabase
     .from('ingredients')
     .select('id')
@@ -114,7 +114,7 @@ export async function processInventoryCounts(counts: CountPayload[]) {
   const supplied = new Set(counts.map((item) => item.ingredient_id))
   const missing = (activeUnits ?? []).filter((item) => !supplied.has(item.id))
   if (missing.length) {
-    throw new Error(`Faltan ${missing.length} productos por contar. Indica también 0 en los que no tengas existencias.`)
+    throw new Error(`Faltan ${missing.length} productos activos en el recuento. Actualiza la página y vuelve a guardar.`)
   }
 
   // Guardar siempre una captura auditada, tanto para gerencia como para personal.
