@@ -100,6 +100,7 @@ function InventoryProductCard({
   confirmedAt,
   soldUnits,
   onConfirm,
+  disabled,
   visibilityMode,
   visibilityOn,
   onVisibilityToggle,
@@ -114,6 +115,7 @@ function InventoryProductCard({
   confirmedAt?: string
   soldUnits: number
   onConfirm: () => void
+  disabled: boolean
   visibilityMode: boolean
   visibilityOn: boolean
   onVisibilityToggle: () => void
@@ -177,6 +179,7 @@ function InventoryProductCard({
           step={getStep(u)}
           inputMode={isCountUnit(u) ? 'numeric' : 'decimal'}
           ariaLabel={`Cantidad contada ${item.name}`}
+          disabled={disabled}
         />
       ) : null}
 
@@ -191,7 +194,9 @@ function InventoryProductCard({
             instance={`inventory-confirm-${item.id}`}
             className="min-h-[48px] min-w-[48px] shrink-0"
             icon={<Check size={18} />}
-            aria-label={confirmedAt ? `Volver a confirmar ${item.name}` : `Confirmar recuento de ${item.name}`}
+            aria-label={confirmedAt ? `Recontar ${item.name}` : `Confirmar recuento de ${item.name}`}
+            title={confirmedAt ? 'Recontar' : 'Confirmar'}
+            disabled={disabled}
             onClick={onConfirm}
           />
         </div>
@@ -201,6 +206,7 @@ function InventoryProductCard({
         <button
           type="button"
           onClick={onClear}
+          disabled={disabled}
           aria-label={`Quitar ${item.name} del recuento`}
           className="absolute right-1.5 top-1.5 z-30 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-sm backdrop-blur transition-all hover:bg-rose-50 sm:h-7 sm:w-7"
         >
@@ -441,7 +447,7 @@ export function InventoryClient({
     const u = normalizeUnit(item.unit)
     const rounded = roundQty(n, u)
     const current = locationMode === 'BARRA' ? numericByIdBarra[id] : numericByIdCamara[id]
-    if (current !== rounded) queueDraftEdit(id, locationMode, rounded)
+    if (current !== rounded || (locationMode === 'BARRA' ? confirmedBarra[id] : confirmedCamara[id])) queueDraftEdit(id, locationMode, rounded)
   }
 
   const toggleDraftVisibility = (id: string) => {
@@ -511,7 +517,9 @@ export function InventoryClient({
         setNumericByIdBarra({})
         setPhysicalCountsCamara({})
         setNumericByIdCamara({})
-        await clearSharedDraft()
+        setConfirmedBarra({})
+        setConfirmedCamara({})
+        setSoldById({})
       }
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'Error al procesar el recuento.')
@@ -607,6 +615,7 @@ export function InventoryClient({
                     raw={raw}
                     confirmedAt={(isBarra ? confirmedBarra : confirmedCamara)[item.id]}
                     soldUnits={isBarra && confirmedBarra[item.id] ? (soldById[item.id] ?? 0) : 0}
+                    disabled={!draftReady || isSubmitting}
                     onConfirm={() => {
                       if (!draftReady || isSubmitting) return
                       const setPhysical = isBarra ? setPhysicalCountsBarra : setPhysicalCountsCamara
@@ -615,7 +624,9 @@ export function InventoryClient({
                         delete next[item.id]
                         return next
                       })
-                      queueDraftEdit(item.id, locationMode, counted ?? 0, true)
+                      const alreadyConfirmed = (isBarra ? confirmedBarra : confirmedCamara)[item.id]
+                      if (alreadyConfirmed) queueDraftEdit(item.id, locationMode, null)
+                      else queueDraftEdit(item.id, locationMode, counted ?? 0, true)
                     }}
                     visibilityMode={Boolean(visibilityEditMode && managerFullList?.length)}
                     visibilityOn={visibilityOn}
@@ -643,7 +654,7 @@ export function InventoryClient({
                         return next
                       })
                     }}
-                    onNumericChange={(n) => setQty(item.id, item, n)}
+                    onNumericChange={() => { /* QuantityStepper also emits onRawChange for +/- and typing. */ }}
                   />
                 )
               })}
