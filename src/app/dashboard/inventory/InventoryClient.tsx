@@ -195,7 +195,6 @@ function InventoryProductCard({
             className="min-h-[48px] min-w-[48px] shrink-0"
             icon={<Check size={18} />}
             aria-label={confirmedAt ? `Recontar ${item.name}` : `Confirmar recuento de ${item.name}`}
-            title={confirmedAt ? 'Recontar' : 'Confirmar'}
             disabled={disabled}
             onClick={onConfirm}
           />
