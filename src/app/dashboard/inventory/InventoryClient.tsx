@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { Filter, Package, Trash2 } from 'lucide-react'
 import { QuickCashTools } from '@/components/ui/QuickCalculatorModal'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -203,6 +204,7 @@ export function InventoryClient({
   const router = useRouter()
   const supabase = createClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [emptyLocationConfirmOpen, setEmptyLocationConfirmOpen] = useState(false)
   const [savingVisibility, setSavingVisibility] = useState(false)
   const [physicalCountsBarra, setPhysicalCountsBarra] = useState<Record<string, string>>({})
   const [numericByIdBarra, setNumericByIdBarra] = useState<Record<string, number>>({})
@@ -494,6 +496,7 @@ export function InventoryClient({
   }
 
   const handleSubmit = async () => {
+    if (isSubmitting || initialIngredients.length === 0) return
     setIsSubmitting(true)
     try {
       const payload = initialIngredients
@@ -501,7 +504,6 @@ export function InventoryClient({
           const u = normalizeUnit(item.unit)
           const valBarra = physicalCountsBarra[item.id] === '' ? undefined : numericByIdBarra[item.id]
           const valCamara = physicalCountsCamara[item.id] === '' ? undefined : numericByIdCamara[item.id]
-          if (valBarra === undefined && valCamara === undefined) return null
 
           const total = (valBarra ?? 0) + (valCamara ?? 0)
           const safePhysical = roundQty(Number.isFinite(total) ? total : 0, u)
@@ -514,23 +516,10 @@ export function InventoryClient({
             unit: item.unit || 'ud',
           }
         })
-        .filter(Boolean) as {
-          ingredient_id: string
-          physical_stock: number
-          theoretical_stock: number
-          quantity_barra: number
-          quantity_camara: number
-          unit: string
-        }[]
-
-      if (payload.length === 0) {
-        toast.error('Indica al menos una cantidad contada.')
-        return
-      }
-
       const res = await processInventoryCounts(payload)
       if (res.success) {
         toast.success(res.message)
+        setEmptyLocationConfirmOpen(false)
         setPhysicalCountsBarra({})
         setNumericByIdBarra({})
         setPhysicalCountsCamara({})
@@ -553,20 +542,21 @@ export function InventoryClient({
     toast.success('Recuento vaciado.')
   }
 
-  const hasAnyCount = useMemo(
-    () => Object.keys(numericByIdBarra).length > 0 || Object.keys(numericByIdCamara).length > 0,
-    [numericByIdBarra, numericByIdCamara],
-  )
+  const emptyLocations = [
+    !initialIngredients.some((item) => numericByIdBarra[item.id] !== undefined && physicalCountsBarra[item.id] !== '') ? 'Barra' : null,
+    !initialIngredients.some((item) => numericByIdCamara[item.id] !== undefined && physicalCountsCamara[item.id] !== '') ? 'Cámara' : null,
+  ].filter((location): location is string => location !== null)
 
-  // Un campo que se dejó vacío NO equivale a haber contado cero. El cero
-  // válido debe introducirse expresamente como "0" en alguna ubicación.
-  const countedIds = new Set([
-    ...Object.keys(numericByIdBarra).filter((id) => physicalCountsBarra[id] !== ''),
-    ...Object.keys(numericByIdCamara).filter((id) => physicalCountsCamara[id] !== ''),
-  ])
-  const countedProducts = initialIngredients.filter((item) => countedIds.has(item.id)).length
-  // Nunca interpretar un producto sin contar como 0 unidades.
-  const submitDisabled = isSubmitting || !hasAnyCount || countedProducts !== initialIngredients.length
+  const submitDisabled = isSubmitting || initialIngredients.length === 0
+
+  const handleSaveClick = () => {
+    if (submitDisabled) return
+    if (emptyLocations.length > 0) {
+      setEmptyLocationConfirmOpen(true)
+    } else {
+      void handleSubmit()
+    }
+  }
 
   const catalog = (
     <div className="flex flex-col gap-5">
@@ -795,7 +785,7 @@ export function InventoryClient({
           type="button"
           variant="primary"
           instance="inventory-save-count"
-          onClick={handleSubmit}
+          onClick={handleSaveClick}
           disabled={submitDisabled}
           loading={isSubmitting}
           className="shrink-0"
@@ -824,7 +814,7 @@ export function InventoryClient({
       {!visibilityEditMode ? (
         <div className="flex w-full flex-col items-center gap-1">
           <p className="text-[11px] font-bold tabular-nums text-zinc-500">
-            {countedProducts} de {initialIngredients.length} productos contados · introduce 0 si no quedan unidades
+            Los campos vacíos cuentan como 0.
           </p>
           <PetroleumSegmented
             instance="inventory-location"
@@ -882,6 +872,23 @@ export function InventoryClient({
     >
       {catalog}
       {!visibilityEditMode ? <QuickCashTools calculator /> : null}
+      <ConfirmModal
+        open={emptyLocationConfirmOpen}
+        onClose={() => setEmptyLocationConfirmOpen(false)}
+        title="Recuento con ubicaciones vacías"
+        confirmLabel="Guardar igualmente"
+        cancelLabel="Volver al recuento"
+        confirmVariant="primary"
+        instance="inventory-empty-location-confirm"
+        usageLabel="Confirmar recuento con ubicaciones vacías"
+        layer="base"
+        confirming={isSubmitting}
+        onConfirm={() => void handleSubmit()}
+      >
+        {emptyLocations.length === 2
+          ? 'Barra y Cámara están completamente vacías. Se guardarán todos los productos con 0 unidades. ¿Quieres continuar?'
+          : `${emptyLocations[0] ?? 'La ubicación'} está completamente vacía. Se guardará con 0 unidades de cada producto. ¿Quieres continuar?`}
+      </ConfirmModal>
     </DashboardDetailLayout>
   )
 }
