@@ -48,26 +48,22 @@ export async function getIngredientMovements(ingredientId: string) {
   }> = []
 
   for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
-    let query = supabase
-      .from('stock_movements')
-      .select('id, movement_type, quantity, unit, movement_date, reference_doc, original_description, processed_by, origin')
-      .eq('ingredient_id', ingredientId)
-
-    if (!isMeters) {
-      query = query
-        .gt('movement_date', baseline!.baseline_at!)
-        .in('movement_type', ['PURCHASE', 'SALE', 'WASTE', 'ADJUSTMENT'])
-        .in('unit', ['ud', 'u', 'un'])
-        .in('origin', ['legacy', 'receipt_confirmation', 'sale_webhook', 'staff_consumption', 'manager_adjustment'])
-    }
-
-    const { data, error } = await query
-      .order('movement_date', { ascending: false })
-      .order('id', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1)
+    const { data, error } = isMeters
+      ? await supabase
+          .from('stock_movements')
+          .select('id, movement_type, quantity, unit, movement_date, reference_doc, original_description, processed_by, origin')
+          .eq('ingredient_id', ingredientId)
+          .order('movement_date', { ascending: false })
+          .order('id', { ascending: false })
+          .range(offset, offset + PAGE_SIZE - 1)
+      : await supabase.rpc('get_unit_stock_movement_history' as never, {
+          p_ingredient_id: ingredientId,
+          p_offset: offset,
+          p_limit: PAGE_SIZE,
+        } as never)
 
     if (error) throw new Error('No se pudieron cargar los movimientos de stock: ' + error.message)
-    accumulated.push(...(data ?? []))
+    accumulated.push(...((data ?? []) as typeof accumulated))
     if ((data?.length ?? 0) < PAGE_SIZE) return accumulated
   }
   // Nunca mostrar agregados de días incompletos como si fueran totales.
