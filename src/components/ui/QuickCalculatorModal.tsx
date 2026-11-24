@@ -402,12 +402,21 @@ export function QuickCalculatorModal({
         }
         const el = panelRef.current;
         if (!el) return;
-        const sync = () => applyToolInset(el.getBoundingClientRect().height);
+        const desktop = window.matchMedia('(min-width: 1024px)');
+        const sync = () => {
+            if (resolvedTab === 'calculator' && desktop.matches) {
+                clearToolInset();
+                return;
+            }
+            applyToolInset(el.getBoundingClientRect().height);
+        };
         sync();
         const observer = new ResizeObserver(sync);
         observer.observe(el);
+        desktop.addEventListener('change', sync);
         return () => {
             observer.disconnect();
+            desktop.removeEventListener('change', sync);
             clearToolInset();
         };
     }, [isOpen, resolvedTab, mounted]);
@@ -440,12 +449,11 @@ export function QuickCalculatorModal({
             data-component="QuickCashToolsPanel"
             data-tab={resolvedTab}
             className={cn(
-                'fixed inset-x-0 z-[var(--z-modal-sheet)] select-none',
+                'fixed inset-x-0 bottom-0 z-[var(--z-modal-sheet)] select-none',
                 overlayClassName,
             )}
             style={{
                 background: resolvedTab === 'calculator' ? CALC.bg : '#ffffff',
-                bottom: 0,
             }}
         >
             {resolvedTab === 'calculator' && allowCalculator ? (

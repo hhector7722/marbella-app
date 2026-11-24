@@ -351,6 +351,30 @@ html[data-quick-fab='open'] main {
   padding-right: calc(var(--quick-fab-dock, 0px) + env(safe-area-inset-right, 0px));
 }
 
+/* Escritorio: la calculadora es un panel lateral simultáneo, no un sheet inferior.
+ * El espacio reservado se libera al cerrar o cambiar a Desglose. */
+@media (min-width: 1024px) {
+  html:has([data-component='QuickCashToolsPanel'][data-tab='calculator']) {
+    --quick-calculator-width: 22rem;
+    --quick-calculator-side-inset: calc(var(--quick-calculator-width) + 1rem);
+  }
+  [data-component='QuickCashToolsPanel'][data-tab='calculator'] {
+    left: auto;
+    right: max(1rem, env(safe-area-inset-right, 0px));
+    top: 50%;
+    bottom: auto;
+    width: var(--quick-calculator-width);
+    max-height: calc(100dvh - 2rem);
+    transform: translateY(-50%);
+    overflow-y: auto;
+    border-radius: var(--radio-superficie);
+    box-shadow: var(--elevacion-modal);
+  }
+  html:has([data-component='QuickCashToolsPanel'][data-tab='calculator']):not(:has([data-component='Modal'])) main {
+    padding-right: calc(var(--quick-calculator-side-inset) + max(1rem, env(safe-area-inset-right, 0px)));
+  }
+}
+
 /*
  * Cero scroll horizontal en superficies del contrato Modal / BottomSheet.
  * El Body puede hacer scroll vertical; nunca horizontal.

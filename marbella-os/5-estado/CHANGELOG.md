@@ -15,6 +15,8 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 ## 2026-11-24
 
+- **Calculadora rápida lateral en escritorio.** Desde 1024 px, se abre a la derecha en un panel compacto de 22 rem, reserva espacio horizontal y deja intacto el alto del modal o la página de trabajo. En móvil y en Desglose se conserva el panel inferior. No cambian teclado, operaciones, historial, copia ni cierre.
+
 - **Cambio recupera el plano de cajas y el resumen superior.** El plano usa su proporción original y una anchura acotada por el alto visible, sin depender de un contenedor con tamaño intrínseco nulo. El cuerpo conserva el resumen de las dos direcciones y permite desplazamiento vertical si la pantalla es excepcionalmente baja; cabecera y acciones permanecen fijas. No cambia el flujo contable ni el selector de Compra.
 
 ## 2026-11-18

@@ -1779,6 +1779,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tools, /Mostrar historial/);
         assert.match(tools, /Copiar valor/);
         assert.match(tools, /--quick-tool-inset/);
+        assert.match(tools, /matchMedia\('\(min-width: 1024px\)'\)/);
+        assert.match(tools, /resolvedTab === 'calculator' && desktop\.matches[\s\S]*?clearToolInset\(\)/);
+        assert.match(tools, /desktop\.removeEventListener\('change', sync\)/);
         assert.doesNotMatch(tools, /fixed inset-0/);
         assert.doesNotMatch(tools, /html-to-image|toPng|WhatsApp/);
         assert.doesNotMatch(tools, /registerModalSurface/);
@@ -1817,6 +1820,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
 
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(css, /--quick-fab-lift:/, 'el sistema reserva el lift de los flotantes');
+        assert.match(css, /@media \(min-width: 1024px\) \{\s*html:has\(\[data-component='QuickCashToolsPanel'\]\[data-tab='calculator'\]\)/, 'solo la calculadora usa el lateral de escritorio');
+        assert.match(css, /--quick-calculator-side-inset: calc\(var\(--quick-calculator-width\) \+ 1rem\)/);
+        assert.match(modal, /paddingRight:[^\n]*--quick-calculator-side-inset/, 'el modal reserva el lateral sin perder altura');
         assert.match(
             css,
             /html:has\(\[data-component='TabBar'\]:not\(\[data-hidden='true'\]\)\)/,
