@@ -126,6 +126,7 @@ export async function processInventoryCounts(counts: CountPayload[]) {
       theoretical_stock: count.theoretical_stock,
       quantity_barra: count.quantity_barra,
       quantity_camara: count.quantity_camara,
+      progressive: true,
       unit: count.unit,
     })),
   })
