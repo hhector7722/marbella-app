@@ -52,7 +52,7 @@ function TableFurniture({ table, editing, selected, onPointerDown, onPointerMove
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      onClick={onClick}
+      onClick={(event)=>{event.stopPropagation();onClick()}}
       aria-label={furnitureLabel(table)}
       title={furnitureLabel(table)}
       className={'absolute z-10 flex items-center justify-center overflow-visible transition-[filter] ' +
