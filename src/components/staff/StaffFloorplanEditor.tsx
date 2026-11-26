@@ -14,6 +14,7 @@ import {
   type FloorplanTable, type FloorplanZone,
 } from '@/lib/staff/floorplan'
 import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
+import { FloorplanScene } from '@/components/staff/FloorplanScene'
 
 type Props = {
   record: FloorplanRecord
@@ -40,6 +41,8 @@ function TableFurniture({ table, editing, selected, onPointerDown, onPointerMove
   onPointerUp: (event: PointerEvent<HTMLButtonElement>) => void
   onClick: () => void
 }) {
+  const indoor = table.zone === 'interior' || table.zone === 'individuales'
+  const elongated = table.zone === 'alargadas' || table.shape === 'alargada'
   const double = table.shape === 'doble'
   const sideways = table.rotation === 90 || table.rotation === 270
   return (
@@ -52,54 +55,72 @@ function TableFurniture({ table, editing, selected, onPointerDown, onPointerMove
       onClick={onClick}
       aria-label={furnitureLabel(table)}
       title={furnitureLabel(table)}
-      className={'group absolute flex items-center justify-center overflow-visible rounded-[5px] transition-shadow ' +
-        (selected ? 'z-20 ring-2 ring-[#2478a9] ring-offset-1' : 'z-10') +
-        (editing ? ' cursor-grab active:cursor-grabbing' : ' cursor-pointer active:scale-[.97]')}
+      className={'absolute z-10 flex items-center justify-center overflow-visible transition-[filter] ' +
+        (selected && editing ? 'z-30 drop-shadow-[0_0_6px_rgba(0,108,197,.85)]' : '') +
+        (editing ? ' cursor-grab active:cursor-grabbing' : ' cursor-pointer')}
       style={{
         left: table.x + '%', top: table.y + '%',
         width: table.width + '%', height: table.height + '%',
         touchAction: editing ? 'none' : 'manipulation',
       }}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[4px] bg-[#e2c6a5] shadow-[0_1px_5px_rgba(31,43,53,.3)] ring-1 ring-[#bd9e80]/70" aria-hidden>
-        <span className={'absolute inset-1 rounded-[2px] border border-[#ecd8bc]/85 ' +
-          (double ? 'bg-[linear-gradient(to_bottom,transparent_49%,#b99168_49%,#b99168_51%,transparent_51%)]' : '')}
-          style={{ transform: 'rotate(' + table.rotation + 'deg)' }} />
-      </span>
-      <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white shadow-sm ' +
-        (sideways ? '-top-[7%] left-[24%] h-[9%] w-[23%] rounded-t-sm' : '-left-[7%] top-[24%] h-[23%] w-[9%] rounded-l-sm')} aria-hidden />
-      <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white shadow-sm ' +
-        (sideways ? '-bottom-[7%] right-[24%] h-[9%] w-[23%] rounded-b-sm' : '-right-[7%] bottom-[24%] h-[23%] w-[9%] rounded-r-sm')} aria-hidden />
-      {double && (
-        <>
-          <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white ' +
-            (sideways ? '-top-[7%] right-[15%] h-[9%] w-[21%] rounded-t-sm' : '-left-[7%] bottom-[15%] h-[21%] w-[9%] rounded-l-sm')} aria-hidden />
-          <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white ' +
-            (sideways ? '-bottom-[7%] left-[15%] h-[9%] w-[21%] rounded-b-sm' : '-right-[7%] top-[15%] h-[21%] w-[9%] rounded-r-sm')} aria-hidden />
-        </>
-      )}
-      <span className={'relative z-10 flex h-[min(80%,34px)] min-h-[18px] min-w-[20px] items-center justify-center rounded-md px-1 text-[clamp(10px,1.8vw,17px)] font-bold shadow-sm ' +
-        (table.number === null ? 'bg-white/95 text-slate-500' : 'bg-white/95 text-slate-900')}>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+        aria-hidden="true">
+        <defs>
+          <linearGradient id={'surface-' + table.id} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor={indoor ? '#ffffff' : '#ead0ad'}/>
+            <stop offset=".55" stopColor={indoor ? '#e3e6e8' : '#d9b790'}/>
+            <stop offset="1" stopColor={indoor ? '#bfc5c8' : '#c69f74'}/>
+          </linearGradient>
+        </defs>
+        {elongated ? <>
+          <rect x="3" y="9" width="11" height="82" rx="3" fill="#c6a078"/>
+          <rect x="86" y="9" width="11" height="82" rx="3" fill="#c6a078"/>
+          <rect x="18" y="5" width="64" height="90" rx="2" fill={'url(#surface-' + table.id + ')'} stroke="#b18b68" strokeWidth="2"/>
+          <path d="M18 50H82M50 5V95" stroke="#c49d70" strokeWidth="1.1" opacity=".7"/>
+        </> : indoor ? <>
+          {[18,60].map((x,i) => <g key={i}>
+            <rect x={x} y="0" width="24" height="16" rx="4" fill="#b52e30" stroke="#e4827a" strokeWidth="2.5"/>
+            <rect x={x} y="84" width="24" height="16" rx="4" fill="#b52e30" stroke="#e4827a" strokeWidth="2.5"/>
+          </g>)}
+          {double ? <>
+            <rect x="12" y="17" width="39" height="65" rx="4" fill={'url(#surface-' + table.id + ')'} stroke="#858e91" strokeWidth="2.5"/>
+            <rect x="51" y="17" width="39" height="65" rx="4" fill={'url(#surface-' + table.id + ')'} stroke="#858e91" strokeWidth="2.5"/>
+          </> : <rect x="16" y="17" width="68" height="65" rx="3" fill={'url(#surface-' + table.id + ')'} stroke="#858e91" strokeWidth="2.5"/>}
+        </> : <>
+          {(sideways ? [20,64] : [16,62]).map((pos, index) =>
+            <g key={index}>
+              <rect x="0" y={pos} width="13" height="23" rx="5" fill="#f3f3ef" stroke="#b7bec1" strokeWidth="2"/>
+              <rect x="87" y={pos} width="13" height="23" rx="5" fill="#f3f3ef" stroke="#b7bec1" strokeWidth="2"/>
+            </g>)}
+          {double ? <>
+            <rect x="20" y="6" width="60" height="44" rx="2" fill={'url(#surface-' + table.id + ')'} stroke="#c99f71" strokeWidth="1.6"/>
+            <rect x="20" y="50" width="60" height="44" rx="2" fill={'url(#surface-' + table.id + ')'} stroke="#c99f71" strokeWidth="1.6"/>
+          </> : <rect x="19" y="15" width="62" height="70" rx="2" fill={'url(#surface-' + table.id + ')'} stroke="#c99f71" strokeWidth="1.6"/>}
+        </>}
+      </svg>
+      <span className={'pointer-events-none relative z-10 rounded-[4px] border border-slate-600/20 px-1 text-center text-[clamp(10px,1.5vw,16px)] font-black leading-5 shadow-sm ' +
+        (selected && editing ? 'bg-[#136b96] text-white' : 'bg-white/95 text-slate-900')}>
         {table.number ?? (editing ? '·' : '—')}
       </span>
     </button>
   )
 }
 
-function ZoneCanvas({ zone, layout, editing, selectedId, focusZone, onFocus, onSelect, onMove }: {
+function ZoneCanvas({ zone, layout, editing, selectedId, active, onActivate, onSelect, onMove }: {
   zone: FloorplanZone
   layout: FloorplanLayout
   editing: boolean
   selectedId: string | null
-  focusZone: FloorplanZone | null
-  onFocus: (zone: FloorplanZone) => void
+  active: boolean
+  onActivate: (zone: FloorplanZone) => void
   onSelect: (id: string) => void
   onMove: (id: string, x: number, y: number) => void
 }) {
   const drag = useRef<{ id: string; pointerId: number; startX: number; startY: number; originalX: number; originalY: number; bounds: DOMRect; moved: boolean } | null>(null)
   const suppressClick = useRef(false)
   const tables = layout.tables.filter((item) => item.zone === zone)
-  const isIndividuals = zone === 'individuales'
 
   const handleDown = (event: PointerEvent<HTMLButtonElement>, item: FloorplanTable) => {
     if (!editing) return
@@ -107,27 +128,22 @@ function ZoneCanvas({ zone, layout, editing, selectedId, focusZone, onFocus, onS
     event.currentTarget.setPointerCapture(event.pointerId)
     const rect = event.currentTarget.parentElement?.getBoundingClientRect()
     if (!rect) return
-    drag.current = {
-      id: item.id, pointerId: event.pointerId, startX: event.clientX,
-      startY: event.clientY, originalX: item.x, originalY: item.y,
-      bounds: rect, moved: false,
-    }
+    drag.current = { id: item.id, pointerId: event.pointerId,
+      startX: event.clientX, startY: event.clientY, originalX: item.x,
+      originalY: item.y, bounds: rect, moved: false }
+    onActivate(zone)
     onSelect(item.id)
   }
-
   const handleMove = (event: PointerEvent<HTMLButtonElement>, item: FloorplanTable) => {
     const state = drag.current
     if (!state || state.pointerId !== event.pointerId || state.id !== item.id) return
-    const dx = event.clientX - state.startX
-    const dy = event.clientY - state.startY
+    const dx = event.clientX - state.startX, dy = event.clientY - state.startY
     if (Math.abs(dx) + Math.abs(dy) > 3) state.moved = true
     if (!state.moved) return
     onMove(item.id,
       clamp(Math.round((state.originalX + dx / state.bounds.width * 100) * 10) / 10, 0, 100 - item.width),
-      clamp(Math.round((state.originalY + dy / state.bounds.height * 100) * 10) / 10, 0, 100 - item.height),
-    )
+      clamp(Math.round((state.originalY + dy / state.bounds.height * 100) * 10) / 10, 0, 100 - item.height))
   }
-
   const handleUp = (event: PointerEvent<HTMLButtonElement>) => {
     if (drag.current?.pointerId === event.pointerId) {
       suppressClick.current = drag.current.moved
@@ -137,41 +153,27 @@ function ZoneCanvas({ zone, layout, editing, selectedId, focusZone, onFocus, onS
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
   }
-
   return (
-    <section className="relative min-h-0 overflow-hidden rounded-xl border border-[#b8c8cd] bg-[#dae1e0] shadow-[inset_0_1px_3px_rgba(0,0,0,.09)]" aria-label={ZONE_LABELS[zone]}>
-      <div className="absolute inset-0 opacity-35" aria-hidden
-        style={{ backgroundImage: 'linear-gradient(#c2cbca 1px,transparent 1px),linear-gradient(90deg,#c2cbca 1px,transparent 1px)', backgroundSize: '21px 21px' }} />
-      <div className="absolute left-2 top-2 z-30 flex items-center gap-2">
-        <span className="rounded-md bg-white/90 px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-sm">
-          {ZONE_LABELS[zone]}
-        </span>
-        {editing && <span className="rounded-md bg-white/80 px-1.5 py-1 text-[10px] text-slate-500">{tables.length} mesas</span>}
+    <section aria-label={ZONE_LABELS[zone]}
+      onClick={() => editing && onActivate(zone)}
+      className="relative min-h-0 min-w-0 overflow-hidden bg-[#aeb4b5]">
+      <FloorplanScene zone={zone}/>
+      {editing && active && <div className="pointer-events-none absolute inset-0 z-20 border-2 border-[#2d739e]" />}
+      <div className="pointer-events-none absolute bottom-1 left-2 z-30 rounded bg-slate-900/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+        {ZONE_LABELS[zone]}
       </div>
-      <button type="button" onClick={() => onFocus(zone)}
-        className="absolute right-2 top-2 z-30 rounded-md bg-white/90 p-1.5 text-slate-700 shadow-sm"
-        aria-label={(focusZone ? 'Volver al plano' : 'Ampliar') + ': ' + ZONE_LABELS[zone]}>
-        {focusZone ? <Shrink size={16} /> : <Expand size={16} />}
-      </button>
-      <div className={'absolute inset-x-[3%] bottom-[4%] top-[13%] ' +
-        (isIndividuals ? 'rounded-md border border-dashed border-slate-400/60 bg-white/15' : '')}>
-        {isIndividuals && <div className="pointer-events-none absolute inset-0 opacity-20" aria-hidden
-          style={{ backgroundImage: 'linear-gradient(90deg,transparent 32.8%,#64748b 33%,transparent 33.2%,transparent 65.8%,#64748b 66%,transparent 66.2%),linear-gradient(transparent 32.8%,#64748b 33%,transparent 33.2%,transparent 65.8%,#64748b 66%,transparent 66.2%)' }} />}
-        {tables.map((item) => (
-          <TableFurniture
-            key={item.id}
-            table={item}
-            editing={editing}
-            selected={selectedId === item.id}
-            onPointerDown={(e) => handleDown(e, item)}
-            onPointerMove={(e) => handleMove(e, item)}
-            onPointerUp={handleUp}
-            onClick={() => {
-              if (suppressClick.current) { suppressClick.current = false; return }
-              onSelect(item.id)
-            }}
-          />
-        ))}
+      <div className="absolute inset-0">
+        {tables.map((item) => <TableFurniture
+          key={item.id} table={item} editing={editing} selected={selectedId===item.id}
+          onPointerDown={(e)=>handleDown(e,item)}
+          onPointerMove={(e)=>handleMove(e,item)}
+          onPointerUp={handleUp}
+          onClick={()=>{
+            if(suppressClick.current) { suppressClick.current=false; return }
+            onActivate(zone)
+            onSelect(item.id)
+          }}
+        />)}
       </div>
     </section>
   )
