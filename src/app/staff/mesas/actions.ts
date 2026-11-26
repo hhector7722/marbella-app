@@ -7,6 +7,7 @@ import {
   type FloorplanLayout,
   type FloorplanRecord,
   validateFloorplanLayout,
+  hasFixedFloorplanGeometry,
 } from '@/lib/staff/floorplan'
 
 type SaveResult =
@@ -46,6 +47,9 @@ export async function saveStaffFloorplanAction(
   const requireComplete = publish || current.published !== null
   const problems = validateFloorplanLayout(layout, requireComplete)
   if (problems.length) return { ok: false, error: problems[0] }
+  if (!hasFixedFloorplanGeometry(layout)) {
+    return { ok: false, error: 'No se permite modificar la posición del mobiliario de los planos originales.' }
+  }
 
   // En ninguna actualización se permite reutilizar o quitar la numeración
   // de una mesa activa. La radiografía de sala es una salvaguarda conservadora,
