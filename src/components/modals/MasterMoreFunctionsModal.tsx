@@ -40,6 +40,7 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/suplier.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
+    { label: 'Mesas', instance: 'mesas', href: '/staff/mesas', icon: LayoutGrid },
     { label: 'Consumo', instance: 'consumo', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },
     { label: 'M obra', instance: 'm-obra', href: '/dashboard/labor', img: '/icons/overtime.png' },
     { label: 'Compra', instance: 'compra', action: 'compra', img: '/icons/shop.png' },
@@ -52,7 +53,6 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Info', instance: 'info', action: 'info', img: '/icons/information.png' },
     { label: 'Altas', instance: 'altas', href: '/dashboard/altas', img: '/icons/staff-card.png' },
     { label: 'Vitrina', instance: 'vitrina', href: '/master/carta', img: '/icons/menu2.png' },
-    { label: 'Mesas', instance: 'mesas', href: '/staff/mesas', icon: LayoutGrid },
 ];
 
 /** Accesos sin posición directa en el mosaico de escritorio; el modal muestra el catálogo completo. */
