@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   cloneFloorplan, initialFloorplanLayout, validateFloorplanLayout,
+  hasFixedFloorplanGeometry, fixedIndividualTable,
 } from './floorplan.ts'
 
 function numbered() {
@@ -48,7 +49,7 @@ test('el mismo número sí puede pertenecer a dos salones diferentes', () => {
 test('tras publicar, añadir una mesa sin número impide guardar el nuevo plano', () => {
   const layout = numbered()
   const first = layout.tables[0]
-  layout.tables.push({ ...first, id: 'nueva-individual', zone: 'individuales', number: null })
+  layout.tables.push(fixedIndividualTable(0,null))
   assert.ok(validateFloorplanLayout(layout, true).some((x) => x.includes('numerar')))
 })
 
@@ -58,11 +59,34 @@ test('las mesas deben mantenerse dentro de su zona', () => {
   assert.ok(validateFloorplanLayout(layout, true).some((x) => x.includes('fuera')))
 })
 
-test('la identidad y el número persisten al mover una mesa', () => {
+test('el número puede cambiar sin modificar la posición fija', () => {
   const layout = numbered()
-  const stored = cloneFloorplan(layout)
-  stored.tables[0].x = 27
-  assert.equal(stored.tables[0].number, layout.tables[0].number)
-  assert.equal(stored.tables[0].id, layout.tables[0].id)
-  assert.equal(layout.tables[0].x, 12)
+  const original = cloneFloorplan(layout)
+  layout.tables[0].number = 91
+  assert.ok(hasFixedFloorplanGeometry(layout))
+  assert.equal(layout.tables[0].x, original.tables[0].x)
+  assert.equal(layout.tables[0].y, original.tables[0].y)
+})
+
+test('rechaza mover, girar, cambiar la forma o retirar mesas fotografiadas', () => {
+  const original = numbered()
+  assert.equal(hasFixedFloorplanGeometry(original), true)
+  const moved = cloneFloorplan(original)
+  moved.tables[0].x += 1
+  assert.equal(hasFixedFloorplanGeometry(moved), false)
+  const rotated = cloneFloorplan(original)
+  rotated.tables[0].rotation = 90
+  assert.equal(hasFixedFloorplanGeometry(rotated), false)
+  const deleted = cloneFloorplan(original)
+  deleted.tables.shift()
+  assert.equal(hasFixedFloorplanGeometry(deleted), false)
+})
+
+test('mesas individuales adicionales usan exclusivamente casillas fijas', () => {
+  const layout = numbered()
+  layout.tables.push(fixedIndividualTable(0,55))
+  assert.equal(hasFixedFloorplanGeometry(layout), true)
+  const manipulated = cloneFloorplan(layout)
+  manipulated.tables[manipulated.tables.length - 1].x += 3
+  assert.equal(hasFixedFloorplanGeometry(manipulated), false)
 })
