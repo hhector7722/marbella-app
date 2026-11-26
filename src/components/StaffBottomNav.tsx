@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
-import { Calendar, Clock, Home, Package, User, type LucideIcon } from 'lucide-react';
+import { Calendar, Clock, Home, Package, User, LayoutGrid, type LucideIcon } from 'lucide-react';
 import { trackUsageTabSwitch } from '@/lib/usage/client';
 import { createClient } from '@/utils/supabase/client';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
@@ -28,6 +28,7 @@ const STAFF_NAV_ITEMS: StaffNavItem[] = [
   { name: 'Calendario', href: '#horarios', icon: Calendar, action: 'scheduleModal' },
   { name: 'Asistencia', href: '/staff/history', icon: Clock },
   { name: 'Inicio', href: '/staff/dashboard', icon: Home, action: 'home' },
+  { name: 'Mesas', href: '/staff/mesas', icon: LayoutGrid },
   { name: 'Pedidos', href: '/orders/new', icon: Package, action: 'supplierModal' },
   { name: 'Perfil', href: '/profile', icon: User },
 ];
