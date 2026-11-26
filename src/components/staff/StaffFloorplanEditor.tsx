@@ -286,26 +286,26 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
         <div className="min-h-0 border-b border-[#34383b]">
           <ZoneCanvas zone="alargadas" layout={displayed ?? layout} editing={editing}
             selectedId={selectedId} active={selectedZone==='alargadas'}
-            onActivate={(z)=>{setSelectedZone(z);setSelectedId(null);setAdding(false)}}
+            onActivate={(z)=>{setSelectedZone(z);setSelectedId(null)}}
             onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
         </div>
         <div className="min-h-0 border-b border-[#34383b]">
           <ZoneCanvas zone="terraza" layout={displayed ?? layout} editing={editing}
             selectedId={selectedId} active={selectedZone==='terraza'}
-            onActivate={(z)=>{setSelectedZone(z);setSelectedId(null);setAdding(false)}}
+            onActivate={(z)=>{setSelectedZone(z);setSelectedId(null)}}
             onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
         </div>
         <div className="grid min-h-0 grid-cols-2 gap-0">
           <div className="min-h-0 min-w-0 border-r border-[#34383b]">
             <ZoneCanvas zone="interior" layout={displayed ?? layout} editing={editing}
               selectedId={selectedId} active={selectedZone==='interior'}
-              onActivate={(z)=>{setSelectedZone(z);setSelectedId(null);setAdding(false)}}
+              onActivate={(z)=>{setSelectedZone(z);setSelectedId(null)}}
               onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
           </div>
           <div className="min-h-0 min-w-0">
             <ZoneCanvas zone="individuales" layout={displayed ?? layout} editing={editing}
               selectedId={selectedId} active={selectedZone==='individuales'}
-              onActivate={(z)=>{setSelectedZone(z);setSelectedId(null);setAdding(false)}}
+              onActivate={(z)=>{setSelectedZone(z);setSelectedId(null)}}
               onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
           </div>
         </div>
