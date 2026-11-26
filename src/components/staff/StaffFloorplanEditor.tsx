@@ -90,7 +90,6 @@ function ZonePhoto({
           }}
         />
         {tables.map((table) => {
-          const active = table.id === selectedId
           return (
             <button
               key={table.id}
@@ -98,6 +97,7 @@ function ZonePhoto({
               aria-label={table.number === null ? 'Mesa pendiente de numerar' : 'Mesa ' + table.number}
               title={table.number === null ? 'Asignar número' : 'Mesa ' + table.number}
               onClick={() => onSelect(table)}
+              aria-pressed={editing && table.id === selectedId}
               className="absolute z-10 flex items-center justify-center rounded-md outline-offset-2 focus-visible:outline-2 focus-visible:outline-sky-700"
               style={{
                 left: table.x + '%', top: table.y + '%',
@@ -106,8 +106,7 @@ function ZonePhoto({
             >
               {table.number !== null && (
                 <span className={'pointer-events-none flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white bg-[#1e729b] text-center font-extrabold text-white shadow-[0_2px_6px_rgba(0,0,0,.38)] ' +
-                  (table.number >= 1000 ? 'text-[9px]' : table.number >= 100 ? 'text-[10px]' : 'text-xs') +
-                  (active && editing ? ' ring-2 ring-[#0d557e] ring-offset-1' : '')}>
+                  (table.number >= 1000 ? 'text-[9px]' : table.number >= 100 ? 'text-[10px]' : 'text-xs')}>
                   {table.number}
                 </span>
               )}
