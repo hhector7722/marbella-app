@@ -13,6 +13,10 @@ supersede: PROJECT_STATUS.md (función de historial)
 
 # CHANGELOG
 
+## 2026-11-26
+
+- **Calculadora lateral completa sin scroll.** El panel de escritorio ajusta su altura al visor y a las cuatro filas de teclas; en ventanas de altura reducida, las teclas se ajustan al espacio disponible. Se conserva el desplazamiento únicamente dentro de la lista de historial y no cambia el diseño móvil ni Desglose.
+
 ## 2026-11-24
 
 - **Calculadora rápida lateral en escritorio.** Desde 1024 px, se abre a la derecha en un panel compacto de 22 rem, reserva espacio horizontal y deja intacto el alto del modal o la página de trabajo. En móvil y en Desglose se conserva el panel inferior. No cambian teclado, operaciones, historial, copia ni cierre.

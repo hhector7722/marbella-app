@@ -1822,6 +1822,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /--quick-fab-lift:/, 'el sistema reserva el lift de los flotantes');
         assert.match(css, /@media \(min-width: 1024px\) \{\s*html:has\(\[data-component='QuickCashToolsPanel'\]\[data-tab='calculator'\]\)/, 'solo la calculadora usa el lateral de escritorio');
         assert.match(css, /--quick-calculator-side-inset: calc\(var\(--quick-calculator-width\) \+ 1rem\)/);
+        assert.match(css, /\[data-component='QuickCashToolsPanel'\]\[data-tab='calculator'\] \{[^}]*overflow: hidden;/, 'el panel lateral no tiene scroll');
+        assert.match(css, /\[data-element='calculator-body'\] \{\s*height: auto;/, 'el cuerpo lateral no hereda la altura fija de móvil');
+        assert.match(css, /height: calc\(4 \* var\(--quick-calculator-key-height\) \+ 1\.125rem\)/, 'se reservan las cuatro filas y sus tres separaciones');
+        assert.match(css, /\[data-element='calculator-key'\] \{\s*height: 100%;\s*min-height: 0;/, 'las teclas se ajustan a su fila');
         assert.match(modal, /paddingRight:[^\n]*--quick-calculator-side-inset/, 'el modal reserva el lateral sin perder altura');
         assert.match(
             css,

@@ -145,6 +145,7 @@ function IosCalcKey({
     return (
         <button
             type="button"
+            data-element="calculator-key"
             aria-label={ariaLabel}
             aria-pressed={active || undefined}
             onClick={onClick}
@@ -209,7 +210,7 @@ function IosCalculator({
 
     return (
         <div className="pb-[env(safe-area-inset-bottom,0px)]">
-        <div className={cn('flex flex-col gap-1.5 px-2 pt-0.5', QUICK_PANEL_H)}>
+        <div data-element="calculator-body" className={cn('flex flex-col gap-1.5 px-2 pt-0.5', QUICK_PANEL_H)}>
             <div className="relative flex items-end gap-2">
                 <div className="flex shrink-0 items-center gap-0.5">
                     <button
@@ -248,7 +249,7 @@ function IosCalculator({
                 </div>
             </div>
 
-            <div className="h-[13.125rem]">
+            <div data-element="calculator-keypad" className="h-[13.125rem]">
                 {historyOpen ? (
                     <div className="flex h-full flex-col overflow-y-auto px-1">
                         {history.map((entry, i) => (
