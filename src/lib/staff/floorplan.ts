@@ -106,7 +106,7 @@ export function hasFixedFloorplanGeometry(layout: FloorplanLayout): boolean {
   }
   for(const current of layout.tables){
     if(originals.has(current.id))continue
-    const match=/^individual-(\\d{1,2})$/.exec(current.id)
+    const match=/^individual-(\d{1,2})$/.exec(current.id)
     if(!match||!samePosition(current,fixedIndividualTable(Number(match[1]),current.number)))return false
   }
   return actual.size===layout.tables.length
