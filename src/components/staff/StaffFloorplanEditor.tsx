@@ -13,11 +13,42 @@ import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
 
 type Props = { record: FloorplanRecord; canEdit: boolean }
 
-const PHOTOS: Record<FloorplanZone, string> = {
-  alargadas: '/images/mesas/original-alargadas.webp',
-  terraza: '/images/mesas/original-terraza.webp',
-  interior: '/images/mesas/original-interior.webp',
-  individuales: '/images/mesas/original-suelo-interior.webp',
+type PhotoCrop = {
+  src: string
+  sourceWidth: number
+  sourceHeight: number
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/**
+ * Los dos originales se conservan en JPEG a su resolución nativa
+ * (1536 × 778 y 1254 × 1254). Los recortes son virtuales:
+ * el navegador no distorsiona ni recomprime las mesas.
+ */
+const PHOTO_CROPS: Record<FloorplanZone, PhotoCrop> = {
+  alargadas: {
+    src: '/images/mesas/terraza-original-1536.jpeg',
+    sourceWidth: 1536, sourceHeight: 778,
+    x: 0, y: 0, width: 550, height: 450,
+  },
+  terraza: {
+    src: '/images/mesas/terraza-original-1536.jpeg',
+    sourceWidth: 1536, sourceHeight: 778,
+    x: 542, y: 0, width: 994, height: 778,
+  },
+  interior: {
+    src: '/images/mesas/interior-original-1254.jpeg',
+    sourceWidth: 1254, sourceHeight: 1254,
+    x: 0, y: 0, width: 1254, height: 1254,
+  },
+  individuales: {
+    src: '/images/mesas/interior-original-1254.jpeg',
+    sourceWidth: 1254, sourceHeight: 1254,
+    x: 540, y: 355, width: 280, height: 340,
+  },
 }
 
 function ZonePhoto({
@@ -30,48 +61,66 @@ function ZonePhoto({
   onSelect: (table: FloorplanTable) => void
 }) {
   const tables = layout.tables.filter((t) => t.zone === zone)
+  const photo = PHOTO_CROPS[zone]
+  const responsiveWidthDvh = (100 / 3 * photo.width / photo.height).toFixed(5)
   return (
     <section
       aria-label={ZONE_LABELS[zone]}
-      className="relative h-full w-full min-h-0 min-w-0 overflow-hidden bg-[#a7a9a8]"
-      style={{
-        backgroundImage: `url("${PHOTOS[zone]}")`,
-        backgroundSize: '100% 100%',
-        backgroundPosition: 'center center',
-        backgroundRepeat: 'no-repeat',
-      }}
+      className="relative flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden bg-[#a8abad]"
     >
-      {tables.map((table) => {
-        const active = table.id === selectedId
-        return (
-          <button
-            key={table.id}
-            type="button"
-            aria-label={table.number === null ? 'Mesa pendiente de numerar' : 'Mesa ' + table.number}
-            title={table.number === null ? 'Asignar número' : 'Mesa ' + table.number}
-            onClick={() => onSelect(table)}
-            className="absolute z-10 flex items-center justify-center rounded-md outline-offset-2 focus-visible:outline-2 focus-visible:outline-sky-700"
-            style={{
-              left: table.x + '%', top: table.y + '%',
-              width: table.width + '%', height: table.height + '%',
-            }}
-          >
-            <span className={'pointer-events-none flex min-h-[21px] min-w-[23px] items-center justify-center rounded-[5px] border px-1 text-center text-[clamp(11px,1.5vw,18px)] font-extrabold leading-5 shadow-[0_1px_5px_rgba(0,0,0,.42)] ' +
-              (active && editing
-                ? 'border-white bg-[#1e729b] text-white ring-2 ring-[#1e729b]'
-                : table.number === null
-                  ? 'border-slate-300 bg-white/85 text-slate-500'
-                  : 'border-white/80 bg-white/95 text-slate-950')}>
-              {table.number ?? (editing ? '·' : '—')}
-            </span>
-          </button>
-        )
-      })}
-      {editing && (
-        <span className="pointer-events-none absolute bottom-1 left-2 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-          {ZONE_LABELS[zone]}
-        </span>
-      )}
+      <div
+        className="relative max-h-full shrink-0 overflow-hidden"
+        style={{
+          aspectRatio: `${photo.width} / ${photo.height}`,
+          width: `min(100%, ${responsiveWidthDvh}dvh)`,
+        }}
+      >
+        <img
+          src={photo.src}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          decoding="async"
+          className="pointer-events-none absolute block max-w-none select-none"
+          style={{
+            width: `${photo.sourceWidth / photo.width * 100}%`,
+            height: `${photo.sourceHeight / photo.height * 100}%`,
+            left: `-${photo.x / photo.width * 100}%`,
+            top: `-${photo.y / photo.height * 100}%`,
+          }}
+        />
+        {tables.map((table) => {
+          const active = table.id === selectedId
+          return (
+            <button
+              key={table.id}
+              type="button"
+              aria-label={table.number === null ? 'Mesa pendiente de numerar' : 'Mesa ' + table.number}
+              title={table.number === null ? 'Asignar número' : 'Mesa ' + table.number}
+              onClick={() => onSelect(table)}
+              className="absolute z-10 flex items-center justify-center rounded-md outline-offset-2 focus-visible:outline-2 focus-visible:outline-sky-700"
+              style={{
+                left: table.x + '%', top: table.y + '%',
+                width: table.width + '%', height: table.height + '%',
+              }}
+            >
+              <span className={'pointer-events-none flex min-h-[21px] min-w-[23px] items-center justify-center rounded-[5px] border px-1 text-center text-[clamp(11px,1.5vw,18px)] font-extrabold leading-5 shadow-[0_1px_5px_rgba(0,0,0,.42)] ' +
+                (active && editing
+                  ? 'border-white bg-[#1e729b] text-white ring-2 ring-[#1e729b]'
+                  : table.number === null
+                    ? 'border-slate-300 bg-white/85 text-slate-500'
+                    : 'border-white/80 bg-white/95 text-slate-950')}>
+                {table.number ?? (editing ? '·' : '—')}
+              </span>
+            </button>
+          )
+        })}
+        {editing && (
+          <span className="pointer-events-none absolute bottom-1 left-2 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+            {ZONE_LABELS[zone]}
+          </span>
+        )}
+      </div>
     </section>
   )
 }
