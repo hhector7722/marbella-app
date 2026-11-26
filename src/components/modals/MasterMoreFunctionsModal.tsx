@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BotMessageSquare, Loader2, type LucideIcon } from 'lucide-react';
+import { BotMessageSquare, LayoutGrid, Loader2, type LucideIcon } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { AccessShortcutGrid } from '@/components/dashboards/AccessShortcutGrid';
@@ -52,10 +52,11 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Info', instance: 'info', action: 'info', img: '/icons/information.png' },
     { label: 'Altas', instance: 'altas', href: '/dashboard/altas', img: '/icons/staff-card.png' },
     { label: 'Vitrina', instance: 'vitrina', href: '/master/carta', img: '/icons/menu2.png' },
+    { label: 'Mesas', instance: 'mesas', href: '/staff/mesas', icon: LayoutGrid },
 ];
 
 /** Accesos sin posición directa en el mosaico de escritorio; el modal muestra el catálogo completo. */
-export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas', 'asistente', 'asistencia', 'calendario', 'propinas', 'control-compras'] as const;
+export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas', 'asistente', 'asistencia', 'calendario', 'propinas', 'control-compras', 'mesas'] as const;
 
 const desktopOtherIds = new Set<string>(MASTER_DESKTOP_OTHER_INSTANCES);
 export const MASTER_DESKTOP_OTHER_ITEMS = MASTER_MORE_FUNCTIONS_ITEMS.filter(
