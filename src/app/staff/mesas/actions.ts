@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
+import { isMasterDashboardUser } from '@/lib/master-dashboard'
 import {
   type FloorplanLayout,
   type FloorplanRecord,
@@ -24,14 +25,8 @@ export async function saveStaffFloorplanAction(
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return { ok: false, error: 'Inicia sesión de nuevo.' }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (profileError || !['admin', 'manager', 'supervisor'].includes(profile?.role ?? '')) {
-    return { ok: false, error: 'No tienes permiso para modificar planos.' }
+  if (!isMasterDashboardUser(user.email)) {
+    return { ok: false, error: 'Acceso exclusivo de la cuenta master.' }
   }
 
   const { data, error } = await supabase

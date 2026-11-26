@@ -14,6 +14,7 @@ import {
   type FloorplanTable, type FloorplanZone,
 } from '@/lib/staff/floorplan'
 import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
+import { FloorplanScene } from '@/components/staff/FloorplanScene'
 
 type Props = {
   record: FloorplanRecord
@@ -40,6 +41,8 @@ function TableFurniture({ table, editing, selected, onPointerDown, onPointerMove
   onPointerUp: (event: PointerEvent<HTMLButtonElement>) => void
   onClick: () => void
 }) {
+  const indoor = table.zone === 'interior' || table.zone === 'individuales'
+  const elongated = table.zone === 'alargadas' || table.shape === 'alargada'
   const double = table.shape === 'doble'
   const sideways = table.rotation === 90 || table.rotation === 270
   return (
@@ -49,57 +52,75 @@ function TableFurniture({ table, editing, selected, onPointerDown, onPointerMove
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      onClick={onClick}
+      onClick={(event)=>{event.stopPropagation();onClick()}}
       aria-label={furnitureLabel(table)}
       title={furnitureLabel(table)}
-      className={'group absolute flex items-center justify-center overflow-visible rounded-[5px] transition-shadow ' +
-        (selected ? 'z-20 ring-2 ring-[#2478a9] ring-offset-1' : 'z-10') +
-        (editing ? ' cursor-grab active:cursor-grabbing' : ' cursor-pointer active:scale-[.97]')}
+      className={'absolute z-10 flex items-center justify-center overflow-visible transition-[filter] ' +
+        (selected && editing ? 'z-30 drop-shadow-[0_0_6px_rgba(0,108,197,.85)]' : '') +
+        (editing ? ' cursor-grab active:cursor-grabbing' : ' cursor-pointer')}
       style={{
         left: table.x + '%', top: table.y + '%',
         width: table.width + '%', height: table.height + '%',
         touchAction: editing ? 'none' : 'manipulation',
       }}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[4px] bg-[#e2c6a5] shadow-[0_1px_5px_rgba(31,43,53,.3)] ring-1 ring-[#bd9e80]/70" aria-hidden>
-        <span className={'absolute inset-1 rounded-[2px] border border-[#ecd8bc]/85 ' +
-          (double ? 'bg-[linear-gradient(to_bottom,transparent_49%,#b99168_49%,#b99168_51%,transparent_51%)]' : '')}
-          style={{ transform: 'rotate(' + table.rotation + 'deg)' }} />
-      </span>
-      <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white shadow-sm ' +
-        (sideways ? '-top-[7%] left-[24%] h-[9%] w-[23%] rounded-t-sm' : '-left-[7%] top-[24%] h-[23%] w-[9%] rounded-l-sm')} aria-hidden />
-      <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white shadow-sm ' +
-        (sideways ? '-bottom-[7%] right-[24%] h-[9%] w-[23%] rounded-b-sm' : '-right-[7%] bottom-[24%] h-[23%] w-[9%] rounded-r-sm')} aria-hidden />
-      {double && (
-        <>
-          <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white ' +
-            (sideways ? '-top-[7%] right-[15%] h-[9%] w-[21%] rounded-t-sm' : '-left-[7%] bottom-[15%] h-[21%] w-[9%] rounded-l-sm')} aria-hidden />
-          <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white ' +
-            (sideways ? '-bottom-[7%] left-[15%] h-[9%] w-[21%] rounded-b-sm' : '-right-[7%] top-[15%] h-[21%] w-[9%] rounded-r-sm')} aria-hidden />
-        </>
-      )}
-      <span className={'relative z-10 flex h-[min(80%,34px)] min-h-[18px] min-w-[20px] items-center justify-center rounded-md px-1 text-[clamp(10px,1.8vw,17px)] font-bold shadow-sm ' +
-        (table.number === null ? 'bg-white/95 text-slate-500' : 'bg-white/95 text-slate-900')}>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+        aria-hidden="true">
+        <defs>
+          <linearGradient id={'surface-' + table.id} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor={indoor ? '#ffffff' : '#ead0ad'}/>
+            <stop offset=".55" stopColor={indoor ? '#e3e6e8' : '#d9b790'}/>
+            <stop offset="1" stopColor={indoor ? '#bfc5c8' : '#c69f74'}/>
+          </linearGradient>
+        </defs>
+        {elongated ? <>
+          <rect x="3" y="9" width="11" height="82" rx="3" fill="#c6a078"/>
+          <rect x="86" y="9" width="11" height="82" rx="3" fill="#c6a078"/>
+          <rect x="18" y="5" width="64" height="90" rx="2" fill={'url(#surface-' + table.id + ')'} stroke="#b18b68" strokeWidth="2"/>
+          <path d="M18 50H82M50 5V95" stroke="#c49d70" strokeWidth="1.1" opacity=".7"/>
+        </> : indoor ? <>
+          {[18,60].map((x,i) => <g key={i}>
+            <rect x={x} y="0" width="24" height="16" rx="4" fill="#b52e30" stroke="#e4827a" strokeWidth="2.5"/>
+            <rect x={x} y="84" width="24" height="16" rx="4" fill="#b52e30" stroke="#e4827a" strokeWidth="2.5"/>
+          </g>)}
+          {double ? <>
+            <rect x="12" y="17" width="39" height="65" rx="4" fill={'url(#surface-' + table.id + ')'} stroke="#858e91" strokeWidth="2.5"/>
+            <rect x="51" y="17" width="39" height="65" rx="4" fill={'url(#surface-' + table.id + ')'} stroke="#858e91" strokeWidth="2.5"/>
+          </> : <rect x="16" y="17" width="68" height="65" rx="3" fill={'url(#surface-' + table.id + ')'} stroke="#858e91" strokeWidth="2.5"/>}
+        </> : <>
+          {(sideways ? [20,64] : [16,62]).map((pos, index) =>
+            <g key={index}>
+              <rect x="0" y={pos} width="13" height="23" rx="5" fill="#f3f3ef" stroke="#b7bec1" strokeWidth="2"/>
+              <rect x="87" y={pos} width="13" height="23" rx="5" fill="#f3f3ef" stroke="#b7bec1" strokeWidth="2"/>
+            </g>)}
+          {double ? <>
+            <rect x="20" y="6" width="60" height="44" rx="2" fill={'url(#surface-' + table.id + ')'} stroke="#c99f71" strokeWidth="1.6"/>
+            <rect x="20" y="50" width="60" height="44" rx="2" fill={'url(#surface-' + table.id + ')'} stroke="#c99f71" strokeWidth="1.6"/>
+          </> : <rect x="19" y="15" width="62" height="70" rx="2" fill={'url(#surface-' + table.id + ')'} stroke="#c99f71" strokeWidth="1.6"/>}
+        </>}
+      </svg>
+      <span className={'pointer-events-none relative z-10 rounded-[4px] border border-slate-600/20 px-1 text-center text-[clamp(10px,1.5vw,16px)] font-black leading-5 shadow-sm ' +
+        (selected && editing ? 'bg-[#136b96] text-white' : 'bg-white/95 text-slate-900')}>
         {table.number ?? (editing ? '·' : '—')}
       </span>
     </button>
   )
 }
 
-function ZoneCanvas({ zone, layout, editing, selectedId, focusZone, onFocus, onSelect, onMove }: {
+function ZoneCanvas({ zone, layout, editing, selectedId, active, onActivate, onSelect, onMove }: {
   zone: FloorplanZone
   layout: FloorplanLayout
   editing: boolean
   selectedId: string | null
-  focusZone: FloorplanZone | null
-  onFocus: (zone: FloorplanZone) => void
+  active: boolean
+  onActivate: (zone: FloorplanZone) => void
   onSelect: (id: string) => void
   onMove: (id: string, x: number, y: number) => void
 }) {
   const drag = useRef<{ id: string; pointerId: number; startX: number; startY: number; originalX: number; originalY: number; bounds: DOMRect; moved: boolean } | null>(null)
   const suppressClick = useRef(false)
   const tables = layout.tables.filter((item) => item.zone === zone)
-  const isIndividuals = zone === 'individuales'
 
   const handleDown = (event: PointerEvent<HTMLButtonElement>, item: FloorplanTable) => {
     if (!editing) return
@@ -107,27 +128,22 @@ function ZoneCanvas({ zone, layout, editing, selectedId, focusZone, onFocus, onS
     event.currentTarget.setPointerCapture(event.pointerId)
     const rect = event.currentTarget.parentElement?.getBoundingClientRect()
     if (!rect) return
-    drag.current = {
-      id: item.id, pointerId: event.pointerId, startX: event.clientX,
-      startY: event.clientY, originalX: item.x, originalY: item.y,
-      bounds: rect, moved: false,
-    }
+    drag.current = { id: item.id, pointerId: event.pointerId,
+      startX: event.clientX, startY: event.clientY, originalX: item.x,
+      originalY: item.y, bounds: rect, moved: false }
+    onActivate(zone)
     onSelect(item.id)
   }
-
   const handleMove = (event: PointerEvent<HTMLButtonElement>, item: FloorplanTable) => {
     const state = drag.current
     if (!state || state.pointerId !== event.pointerId || state.id !== item.id) return
-    const dx = event.clientX - state.startX
-    const dy = event.clientY - state.startY
+    const dx = event.clientX - state.startX, dy = event.clientY - state.startY
     if (Math.abs(dx) + Math.abs(dy) > 3) state.moved = true
     if (!state.moved) return
     onMove(item.id,
       clamp(Math.round((state.originalX + dx / state.bounds.width * 100) * 10) / 10, 0, 100 - item.width),
-      clamp(Math.round((state.originalY + dy / state.bounds.height * 100) * 10) / 10, 0, 100 - item.height),
-    )
+      clamp(Math.round((state.originalY + dy / state.bounds.height * 100) * 10) / 10, 0, 100 - item.height))
   }
-
   const handleUp = (event: PointerEvent<HTMLButtonElement>) => {
     if (drag.current?.pointerId === event.pointerId) {
       suppressClick.current = drag.current.moved
@@ -137,41 +153,27 @@ function ZoneCanvas({ zone, layout, editing, selectedId, focusZone, onFocus, onS
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
   }
-
   return (
-    <section className="relative min-h-0 overflow-hidden rounded-xl border border-[#b8c8cd] bg-[#dae1e0] shadow-[inset_0_1px_3px_rgba(0,0,0,.09)]" aria-label={ZONE_LABELS[zone]}>
-      <div className="absolute inset-0 opacity-35" aria-hidden
-        style={{ backgroundImage: 'linear-gradient(#c2cbca 1px,transparent 1px),linear-gradient(90deg,#c2cbca 1px,transparent 1px)', backgroundSize: '21px 21px' }} />
-      <div className="absolute left-2 top-2 z-30 flex items-center gap-2">
-        <span className="rounded-md bg-white/90 px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-sm">
-          {ZONE_LABELS[zone]}
-        </span>
-        {editing && <span className="rounded-md bg-white/80 px-1.5 py-1 text-[10px] text-slate-500">{tables.length} mesas</span>}
+    <section aria-label={ZONE_LABELS[zone]}
+      onClick={() => editing && onActivate(zone)}
+      className="relative h-full w-full min-h-0 min-w-0 overflow-hidden bg-[#aeb4b5]">
+      <FloorplanScene zone={zone}/>
+      {editing && active && <div className="pointer-events-none absolute inset-0 z-20 border-2 border-[#2d739e]" />}
+      <div className="pointer-events-none absolute bottom-1 left-2 z-30 rounded bg-slate-900/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+        {ZONE_LABELS[zone]}
       </div>
-      <button type="button" onClick={() => onFocus(zone)}
-        className="absolute right-2 top-2 z-30 rounded-md bg-white/90 p-1.5 text-slate-700 shadow-sm"
-        aria-label={(focusZone ? 'Volver al plano' : 'Ampliar') + ': ' + ZONE_LABELS[zone]}>
-        {focusZone ? <Shrink size={16} /> : <Expand size={16} />}
-      </button>
-      <div className={'absolute inset-x-[3%] bottom-[4%] top-[13%] ' +
-        (isIndividuals ? 'rounded-md border border-dashed border-slate-400/60 bg-white/15' : '')}>
-        {isIndividuals && <div className="pointer-events-none absolute inset-0 opacity-20" aria-hidden
-          style={{ backgroundImage: 'linear-gradient(90deg,transparent 32.8%,#64748b 33%,transparent 33.2%,transparent 65.8%,#64748b 66%,transparent 66.2%),linear-gradient(transparent 32.8%,#64748b 33%,transparent 33.2%,transparent 65.8%,#64748b 66%,transparent 66.2%)' }} />}
-        {tables.map((item) => (
-          <TableFurniture
-            key={item.id}
-            table={item}
-            editing={editing}
-            selected={selectedId === item.id}
-            onPointerDown={(e) => handleDown(e, item)}
-            onPointerMove={(e) => handleMove(e, item)}
-            onPointerUp={handleUp}
-            onClick={() => {
-              if (suppressClick.current) { suppressClick.current = false; return }
-              onSelect(item.id)
-            }}
-          />
-        ))}
+      <div className="absolute inset-0">
+        {tables.map((item) => <TableFurniture
+          key={item.id} table={item} editing={editing} selected={selectedId===item.id}
+          onPointerDown={(e)=>handleDown(e,item)}
+          onPointerMove={(e)=>handleMove(e,item)}
+          onPointerUp={handleUp}
+          onClick={()=>{
+            if(suppressClick.current) { suppressClick.current=false; return }
+            onActivate(zone)
+            onSelect(item.id)
+          }}
+        />)}
       </div>
     </section>
   )
@@ -279,180 +281,190 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   }
 
   return (
-    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#edf1f2] text-slate-900">
-      <header className="flex h-[60px] shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 sm:px-5">
-        <div className="flex min-w-0 items-center gap-2">
-          <Link href="/staff/dashboard" aria-label="Volver a inicio"
-            className="rounded-lg p-2 text-slate-700 hover:bg-slate-100"><ArrowLeft size={20} /></Link>
-          <div>
-            <h1 className="text-[17px] font-semibold leading-tight">Mesas</h1>
-            <p className="text-[10px] text-slate-500">{editing ? (needsFirstPublish ? 'Configuración inicial' : 'Editar distribución') : 'Plano del establecimiento'}</p>
+    <div data-component="MarbellaFloorplan" className="fixed inset-0 z-[120] isolate overflow-hidden bg-[#9ea6a9] text-slate-900">
+      <div className="absolute inset-0 grid min-h-0 w-full grid-rows-3 gap-0">
+        <div className="min-h-0 border-b border-[#34383b]">
+          <ZoneCanvas zone="alargadas" layout={displayed ?? layout} editing={editing}
+            selectedId={selectedId} active={selectedZone==='alargadas'}
+            onActivate={(z)=>{setSelectedZone(z);setSelectedId(null);setAdding(false)}}
+            onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
+        </div>
+        <div className="min-h-0 border-b border-[#34383b]">
+          <ZoneCanvas zone="terraza" layout={displayed ?? layout} editing={editing}
+            selectedId={selectedId} active={selectedZone==='terraza'}
+            onActivate={(z)=>{setSelectedZone(z);setSelectedId(null);setAdding(false)}}
+            onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
+        </div>
+        <div className="grid min-h-0 grid-cols-2 gap-0">
+          <div className="min-h-0 min-w-0 border-r border-[#34383b]">
+            <ZoneCanvas zone="interior" layout={displayed ?? layout} editing={editing}
+              selectedId={selectedId} active={selectedZone==='interior'}
+              onActivate={(z)=>{setSelectedZone(z);setSelectedId(null);setAdding(false)}}
+              onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
+          </div>
+          <div className="min-h-0 min-w-0">
+            <ZoneCanvas zone="individuales" layout={displayed ?? layout} editing={editing}
+              selectedId={selectedId} active={selectedZone==='individuales'}
+              onActivate={(z)=>{setSelectedZone(z);setSelectedId(null);setAdding(false)}}
+              onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+      </div>
+
+      {!editing && !published && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-950/65 p-5 text-center text-sm font-medium text-white">
+          El plano aún no está publicado. Falta completar la numeración.
+        </div>
+      )}
+
+      <div className="absolute left-2 top-[max(8px,env(safe-area-inset-top))] z-50 flex items-center gap-2">
+        <Link href="/master/dashboard" aria-label="Volver a master"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/70 bg-white/95 text-slate-800 shadow">
+          <ArrowLeft size={19}/>
+        </Link>
+        <span className="rounded-lg border border-white/60 bg-white/90 px-2.5 py-2 text-xs font-semibold shadow">
+          Mesas{editing ? ' · Editar' : ''}
+        </span>
+      </div>
+
+      {canEdit && (
+        <div className="absolute right-2 top-[max(8px,env(safe-area-inset-top))] z-50 flex items-center gap-1.5">
           {editing ? (
             <>
-              {!needsFirstPublish && <button type="button" disabled={busy}
-                className="rounded-lg px-2 py-2 text-sm text-slate-600"
-                onClick={() => {
-                  setLayout(cloneFloorplan(published!))
-                  setEditing(false); setSelectedId(null); setAdding(false)
-                }}><X size={19}/></button>}
+              <button type="button" onClick={()=>{setAdding(!adding);setSelectedId(null);setShowSettings(false)}}
+                title="Añadir mesa a la zona seleccionada" aria-label="Añadir mesa"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/70 bg-white/95 shadow">
+                <Plus size={18}/>
+              </button>
+              <button type="button" onClick={()=>{setShowSettings(!showSettings);setAdding(false);setSelectedId(null)}}
+                title="Salones BDP" aria-label="Configurar salones"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/70 bg-white/95 shadow">
+                <Pencil size={17}/>
+              </button>
               {needsFirstPublish && (
-                <button type="button" disabled={busy} onClick={() => void save(false)}
-                  className="rounded-lg border border-slate-300 px-2.5 py-2 text-xs font-medium disabled:opacity-50">Borrador</button>
+                <button type="button" disabled={busy} onClick={()=>void save(false)}
+                  className="rounded-lg border border-white/70 bg-white/95 px-2.5 py-2.5 text-xs font-semibold shadow disabled:opacity-50">
+                  Borrador
+                </button>
               )}
-              <button type="button" disabled={busy} onClick={() => void save(true)}
-                className="flex items-center gap-1.5 rounded-lg bg-[#1f627f] px-3 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50">
+              {!needsFirstPublish && (
+                <button type="button" disabled={busy}
+                  title="Descartar edición" aria-label="Descartar cambios"
+                  onClick={()=>{setLayout(cloneFloorplan(published!));setEditing(false);setSelectedId(null);setAdding(false);setShowSettings(false)}}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/70 bg-white/95 shadow">
+                  <X size={17}/>
+                </button>
+              )}
+              <button type="button" disabled={busy} onClick={()=>void save(true)}
+                className="flex h-9 items-center gap-1.5 rounded-lg bg-[#1e6988] px-3 text-xs font-semibold text-white shadow-lg disabled:opacity-50">
                 <Save size={15}/>{needsFirstPublish ? 'Publicar' : 'Guardar'}
               </button>
             </>
-          ) : canEdit ? (
-            <button type="button" onClick={() => {setEditing(true);setFocusZone(null)}}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold">
-              <Pencil size={15}/> Editar
+          ) : (
+            <button type="button" onClick={()=>{setEditing(true);setSelectedId(null);setAdding(false)}}
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-white/80 bg-white/95 px-3 text-xs font-semibold shadow">
+              <Pencil size={16}/>Editar
             </button>
-          ) : null}
-        </div>
-      </header>
-
-      {!displayed && !editing ? (
-        <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-slate-600">
-          El plano todavía no está publicado. Se mostrará cuando se hayan numerado todas las mesas.
-        </div>
-      ) : (
-        <div className="grid min-h-0 flex-1 grid-rows-3 gap-2 p-2 sm:gap-3 sm:p-3" style={focusZone ? {gridTemplateRows:'minmax(0,1fr)'}:undefined}>
-          {(!focusZone || focusZone === 'alargadas') && (
-            <ZoneCanvas zone="alargadas" layout={displayed ?? layout} editing={editing}
-              selectedId={selectedId} focusZone={focusZone} onFocus={(z)=>setFocusZone(focusZone ? null:z)}
-              onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
-          )}
-          {(!focusZone || focusZone === 'terraza') && (
-            <ZoneCanvas zone="terraza" layout={displayed ?? layout} editing={editing}
-              selectedId={selectedId} focusZone={focusZone} onFocus={(z)=>setFocusZone(focusZone ? null:z)}
-              onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>
-          )}
-          {(!focusZone || focusZone === 'interior' || focusZone === 'individuales') && (
-            <div className={'grid min-h-0 gap-2 ' + (focusZone ? 'grid-cols-1' : 'grid-cols-2')} >
-              {(!focusZone || focusZone === 'interior') &&
-                <ZoneCanvas zone="interior" layout={displayed ?? layout} editing={editing}
-                  selectedId={selectedId} focusZone={focusZone} onFocus={(z)=>setFocusZone(focusZone ? null:z)}
-                  onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>}
-              {(!focusZone || focusZone === 'individuales') &&
-                <ZoneCanvas zone="individuales" layout={displayed ?? layout} editing={editing}
-                  selectedId={selectedId} focusZone={focusZone} onFocus={(z)=>setFocusZone(focusZone ? null:z)}
-                  onSelect={selectTable} onMove={(id,x,y)=>updateTable(id,{x,y})}/>}
-            </div>
           )}
         </div>
       )}
 
-      {editing && (
-        <div className="z-40 shrink-0 border-t border-slate-200 bg-white px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-3px_12px_rgba(15,23,42,.08)]">
-          <div className="flex items-center gap-2">
-            <select aria-label="Zona en edición" value={selectedZone}
-              onChange={(e)=>{setSelectedZone(e.target.value as FloorplanZone);setSelectedId(null)}}
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-semibold">
-              {FLOORPLAN_ZONES.map((z)=><option value={z} key={z}>{ZONE_LABELS[z]}</option>)}
-            </select>
-            <button type="button" onClick={()=>{setAdding((old)=>!old);setSelectedId(null)}}
-              className="flex items-center gap-1 rounded-lg border border-[#96bdcd] bg-[#e9f3f8] px-3 py-2 text-xs font-semibold text-[#185977]">
-              <Plus size={16}/> Mesa
-            </button>
-            <button type="button" onClick={()=>setShowSettings((v)=>!v)}
-              className="rounded-lg border border-slate-200 p-2 text-slate-600" aria-label="Salones BDP">
-              <ChevronDown size={16} className={showSettings ? 'rotate-180' : ''}/>
-            </button>
+      {editing && (adding || showSettings || selected) && (
+        <div className="absolute right-2 top-[calc(max(8px,env(safe-area-inset-top))+44px)] z-[65] max-h-[min(65dvh,410px)] w-[min(340px,calc(100vw-16px))] overflow-y-auto rounded-xl border border-white/80 bg-white/95 p-3 shadow-[0_12px_44px_rgba(14,30,43,.30)] backdrop-blur">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <strong className="text-xs">
+              {adding ? 'Nueva mesa · ' + ZONE_LABELS[selectedZone] :
+                showSettings ? 'Salones BDP' :
+                  selected ? 'Editar ' + furnitureLabel(selected) : ''}
+            </strong>
+            <button type="button" aria-label="Cerrar edición de mesa" className="rounded p-1 text-slate-500"
+              onClick={()=>{setAdding(false);setShowSettings(false);setSelectedId(null)}}><X size={17}/></button>
           </div>
 
+          {adding && (
+            <div className="grid grid-cols-[1fr_100px] gap-2">
+              <label className="text-[11px] text-slate-600">Forma
+                <select value={newShape} onChange={(e)=>setNewShape(e.target.value as FloorplanShape)}
+                  className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-2 text-sm">
+                  {SHAPES.map((sh)=><option key={sh.id} value={sh.id}>{sh.name}</option>)}
+                </select>
+              </label>
+              <label className="text-[11px] text-slate-600">Número
+                <input type="number" inputMode="numeric" min={1} max={9999}
+                  value={newNumber} onChange={(e)=>setNewNumber(e.target.value)}
+                  placeholder={needsFirstPublish ? 'Inicial' : 'Obligatorio'}
+                  className="mt-1 w-full rounded-md border border-slate-200 px-2 py-2 text-sm"/>
+              </label>
+              <button type="button" onClick={insertTable}
+                className="col-span-2 rounded-md bg-[#1e6988] px-3 py-2 text-sm font-semibold text-white">Añadir en {ZONE_LABELS[selectedZone]}</button>
+              <span className="col-span-2 text-[11px] text-slate-500">Toca otra zona del plano para cambiar el lugar donde añades la mesa.</span>
+            </div>
+          )}
+
           {showSettings && (
-            <div className="mt-2 grid grid-cols-2 gap-2 border-t pt-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2">
               {FLOORPLAN_ZONES.map((z)=>(
-                <label className="text-[11px] text-slate-600" key={z}>
-                  Salón BDP · {ZONE_LABELS[z]}
-                  <input type="number" inputMode="numeric" min={1} max={99}
+                <label key={z} className="text-[11px] text-slate-600">
+                  {ZONE_LABELS[z]}
+                  <input type="number" min={1} max={99} inputMode="numeric"
                     value={layout.salons[z] ?? ''}
                     onChange={(e)=>{
                       const n=e.target.value.trim()===''?null:Number(e.target.value)
                       if(n!==null && (!Number.isSafeInteger(n)||n<1||n>99))return
                       setLayout((old)=>({...old,salons:{...old.salons,[z]:n}}))
                     }}
-                    className="mt-0.5 w-full rounded-md border border-slate-200 p-1.5 text-sm" />
+                    className="mt-1 w-full rounded-md border border-slate-200 px-2 py-2 text-sm"/>
                 </label>
               ))}
-              <p className="col-span-2 text-[10px] text-slate-500 sm:col-span-4">
-                Las zonas pueden compartir salón. La correspondencia BDP se confirma antes de enviar comandas.
-              </p>
+              <p className="col-span-2 text-[11px] text-slate-500">Configura la correspondencia con BDP antes de publicar.</p>
             </div>
           )}
 
-          {adding && (
-            <div className="mt-2 flex flex-wrap items-end gap-2 border-t pt-2">
-              <label className="min-w-[115px] flex-1 text-[11px] text-slate-600">Tipo de mesa
-                <select className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"
-                  value={newShape} onChange={(e)=>setNewShape(e.target.value as FloorplanShape)}>
-                  {SHAPES.map((s)=><option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </label>
-              <label className="w-28 text-[11px] text-slate-600">Número {needsFirstPublish ? '(opcional)' : ''}
-                <input type="number" min={1} max={9999} inputMode="numeric" value={newNumber}
-                  onChange={(e)=>setNewNumber(e.target.value)}
-                  placeholder="N.º"
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" />
-              </label>
-              <button type="button" onClick={insertTable}
-                className="rounded-lg bg-[#1f627f] px-3 py-2 text-sm font-semibold text-white">Añadir</button>
-            </div>
-          )}
-
-          {selected && !adding && (
-            <div className="mt-2 flex flex-wrap items-end gap-2 border-t pt-2">
-              <label className="w-24 text-[11px] text-slate-600">N.º mesa
-                <input type="number" inputMode="numeric" min={1} max={9999}
-                  value={editNumber}
-                  onChange={(e)=>{
-                    setEditNumber(e.target.value)
-                    if (e.target.value.trim() === '' && needsFirstPublish) {
-                      updateTable(selected.id, { number: null })
-                    } else {
-                      const n=Number(e.target.value)
-                      if (Number.isSafeInteger(n) && n>=1 && n<=9999) updateTable(selected.id,{number:n})
+          {selected && !adding && !showSettings && (
+            <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-[100px_1fr] gap-2">
+                <label className="text-[11px] text-slate-600">N.º mesa
+                  <input type="number" min={1} max={9999} inputMode="numeric"
+                    value={editNumber}
+                    onChange={(e)=>{
+                      setEditNumber(e.target.value)
+                      if(e.target.value.trim()==='' && needsFirstPublish) {
+                        updateTable(selected.id,{number:null})
+                      } else {
+                        const n=Number(e.target.value)
+                        if(e.target.value.trim()!=='' && Number.isSafeInteger(n) && n>0 && n<=9999)
+                          updateTable(selected.id,{number:n})
+                      }
+                    }}
+                    className="mt-1 w-full rounded-md border border-slate-200 px-2 py-2 text-sm"/>
+                </label>
+                <label className="text-[11px] text-slate-600">Forma
+                  <select value={selected.shape}
+                    onChange={(e)=>updateTable(selected.id,{shape:e.target.value as FloorplanShape})}
+                    className="mt-1 w-full rounded-md border border-slate-200 px-2 py-2 text-sm">
+                    {SHAPES.map((sh)=><option key={sh.id} value={sh.id}>{sh.name}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="flex items-center justify-between gap-1">
+                <button type="button" onClick={()=>updateTable(selected.id,{rotation:((selected.rotation+90)%360) as FloorplanTable['rotation'],width:selected.height,height:selected.width})}
+                  className="flex items-center gap-1 rounded-md border border-slate-200 p-2 text-xs"><RotateCw size={16}/>Girar</button>
+                <button type="button" onClick={()=>updateTable(selected.id,{width:clamp(selected.width-2,4,60),height:clamp(selected.height-2,4,60)})}
+                  aria-label="Reducir mesa" className="rounded-md border border-slate-200 p-2"><Minus size={16}/></button>
+                <button type="button" onClick={()=>updateTable(selected.id,{width:clamp(selected.width+2,4,60),height:clamp(selected.height+2,4,60)})}
+                  aria-label="Ampliar mesa" className="rounded-md border border-slate-200 p-2"><Plus size={16}/></button>
+                <button type="button" aria-label="Eliminar mesa"
+                  onClick={()=>{
+                    if(window.confirm('¿Eliminar esta mesa del plano?')){
+                      setLayout((old)=>({...old,tables:old.tables.filter((t)=>t.id!==selected.id)}))
+                      setSelectedId(null)
                     }
                   }}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" />
-              </label>
-              <label className="min-w-[112px] flex-1 text-[11px] text-slate-600">Forma
-                <select value={selected.shape} onChange={(e)=>updateTable(selected.id,{shape:e.target.value as FloorplanShape})}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm">
-                  {SHAPES.map((s)=><option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </label>
-              <button type="button" onClick={()=>updateTable(selected.id,{rotation:((selected.rotation+90)%360) as FloorplanTable['rotation'],width:selected.height,height:selected.width})}
-                className="rounded-lg border border-slate-200 p-2 text-slate-600" aria-label="Girar mesa 90 grados">
-                <RotateCw size={19}/>
-              </button>
-              <button type="button" onClick={()=>updateTable(selected.id,{width:clamp(selected.width-2,4,60),height:clamp(selected.height-2,4,60)})}
-                className="rounded-lg border border-slate-200 p-2 text-slate-600" aria-label="Reducir tamaño">
-                <Minus size={19}/>
-              </button>
-              <button type="button" onClick={()=>updateTable(selected.id,{width:clamp(selected.width+2,4,60),height:clamp(selected.height+2,4,60)})}
-                className="rounded-lg border border-slate-200 p-2 text-slate-600" aria-label="Aumentar tamaño">
-                <Plus size={19}/>
-              </button>
-              <button type="button" onClick={()=>{
-                if(window.confirm('¿Eliminar la mesa del plano? No se alterará su comanda en BDP.')){
-                  setLayout((old)=>({...old,tables:old.tables.filter((t)=>t.id!==selected.id)}))
-                  setSelectedId(null)
-                }
-              }} className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-700" aria-label="Eliminar mesa">
-                <Trash2 size={19}/>
-              </button>
+                  className="rounded-md border border-red-200 bg-red-50 p-2 text-red-700"><Trash2 size={16}/></button>
+              </div>
+              <p className="text-[11px] text-slate-500">Arrastra la mesa para moverla. El número se conserva al cambiar su posición.</p>
             </div>
           )}
-
-          <p className="mt-1 flex items-center gap-1 text-[10px] text-slate-500">
-            <Grip size={12}/> Arrastra las mesas para moverlas. Los cambios solo se aplican al pulsar Guardar.
-          </p>
         </div>
       )}
     </div>
