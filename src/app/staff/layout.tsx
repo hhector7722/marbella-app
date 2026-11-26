@@ -11,18 +11,20 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     const isStaffCartaFullscreen = pathname === '/staff/carta';
     /** Mismo shell que `/dashboard` y `/master/dashboard` (padding en `MainWrapper`, sin wrapper extra). */
     const isStaffDashboard = pathname === '/staff/dashboard';
+    const isStaffMesasFullscreen = pathname === '/staff/mesas';
+    const isFullscreen = isStaffCartaFullscreen || isStaffMesasFullscreen;
 
     return (
         <>
             <Toaster position="top-center" richColors />
-            {isStaffDashboard || isStaffCartaFullscreen ? (
+            {isStaffDashboard || isFullscreen ? (
                 children
             ) : (
                 <div className="staff-shell-pad pb-[calc(var(--shell-bottom-inset)+var(--espacio-2))]">
                     {children}
                 </div>
             )}
-            {!isStaffCartaFullscreen ? <StaffBottomNav /> : null}
+            {!isFullscreen ? <StaffBottomNav /> : null}
         </>
     );
 }
