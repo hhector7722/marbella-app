@@ -41,6 +41,7 @@ function TableFurniture({ table, editing, selected, onPointerDown, onPointerMove
   onClick: () => void
 }) {
   const double = table.shape === 'doble'
+  const sideways = table.rotation === 90 || table.rotation === 270
   return (
     <button
       type="button"
@@ -65,12 +66,16 @@ function TableFurniture({ table, editing, selected, onPointerDown, onPointerMove
           (double ? 'bg-[linear-gradient(to_bottom,transparent_49%,#b99168_49%,#b99168_51%,transparent_51%)]' : '')}
           style={{ transform: 'rotate(' + table.rotation + 'deg)' }} />
       </span>
-      <span className="pointer-events-none absolute -left-[7%] top-[24%] h-[23%] w-[9%] rounded-l-sm border border-[#aeb5b8] bg-white shadow-sm" aria-hidden />
-      <span className="pointer-events-none absolute -right-[7%] bottom-[24%] h-[23%] w-[9%] rounded-r-sm border border-[#aeb5b8] bg-white shadow-sm" aria-hidden />
+      <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white shadow-sm ' +
+        (sideways ? '-top-[7%] left-[24%] h-[9%] w-[23%] rounded-t-sm' : '-left-[7%] top-[24%] h-[23%] w-[9%] rounded-l-sm')} aria-hidden />
+      <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white shadow-sm ' +
+        (sideways ? '-bottom-[7%] right-[24%] h-[9%] w-[23%] rounded-b-sm' : '-right-[7%] bottom-[24%] h-[23%] w-[9%] rounded-r-sm')} aria-hidden />
       {double && (
         <>
-          <span className="pointer-events-none absolute -left-[7%] bottom-[15%] h-[21%] w-[9%] rounded-l-sm border border-[#aeb5b8] bg-white" aria-hidden />
-          <span className="pointer-events-none absolute -right-[7%] top-[15%] h-[21%] w-[9%] rounded-r-sm border border-[#aeb5b8] bg-white" aria-hidden />
+          <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white ' +
+            (sideways ? '-top-[7%] right-[15%] h-[9%] w-[21%] rounded-t-sm' : '-left-[7%] bottom-[15%] h-[21%] w-[9%] rounded-l-sm')} aria-hidden />
+          <span className={'pointer-events-none absolute border border-[#aeb5b8] bg-white ' +
+            (sideways ? '-bottom-[7%] left-[15%] h-[9%] w-[21%] rounded-b-sm' : '-right-[7%] top-[15%] h-[21%] w-[9%] rounded-r-sm')} aria-hidden />
         </>
       )}
       <span className={'relative z-10 flex h-[min(80%,34px)] min-h-[18px] min-w-[20px] items-center justify-center rounded-md px-1 text-[clamp(10px,1.8vw,17px)] font-bold shadow-sm ' +
@@ -422,7 +427,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
                   {SHAPES.map((s)=><option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </label>
-              <button type="button" onClick={()=>updateTable(selected.id,{rotation:((selected.rotation+90)%360) as FloorplanTable['rotation']})}
+              <button type="button" onClick={()=>updateTable(selected.id,{rotation:((selected.rotation+90)%360) as FloorplanTable['rotation'],width:selected.height,height:selected.width})}
                 className="rounded-lg border border-slate-200 p-2 text-slate-600" aria-label="Girar mesa 90 grados">
                 <RotateCw size={19}/>
               </button>
