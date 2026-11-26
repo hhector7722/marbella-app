@@ -44,16 +44,21 @@ export const ZONE_LABELS: Record<FloorplanZone, string> = {
  */
 const fixedCenters: Record<Exclude<FloorplanZone,'individuales'>, Array<[string, number, number, FloorplanShape]>> = {
   alargadas: [
-    ['al-1',17.5,30,'alargada'],['al-2',40,30,'alargada'],['al-3',63,30,'alargada'],['al-4',85.5,30,'alargada'],
-    ['al-5',17.5,74,'alargada'],['al-6',40,74,'alargada'],['al-7',63,74,'alargada'],['al-8',85.5,74,'alargada'],
+    ['al-1',36.7,44.2,'alargada'],['al-2',53.3,44.2,'alargada'],
+    ['al-3',70.1,44.2,'alargada'],['al-4',87.1,44.2,'alargada'],
+    ['al-5',36.7,65.2,'alargada'],['al-6',53.3,65.2,'alargada'],
+    ['al-7',70.1,65.2,'alargada'],['al-8',87.1,65.2,'alargada'],
   ],
   terraza: [
-    ['te-s-1',5.4,15,'cuadrada'],['te-s-2',22.5,15,'cuadrada'],['te-s-3',39.6,15,'cuadrada'],
-    ['te-s-4',57,15,'cuadrada'],['te-s-5',74.2,15,'cuadrada'],['te-s-6',93.5,15,'cuadrada'],
-    ['te-m-1',13.4,36,'cuadrada'],['te-m-2',30.6,36,'cuadrada'],['te-m-3',48,36,'cuadrada'],
-    ['te-m-4',65.3,36,'cuadrada'],['te-m-5',82.5,36,'cuadrada'],
-    ['te-d-1',5.4,77,'doble'],['te-d-2',22.5,77,'doble'],['te-d-3',39.6,77,'doble'],
-    ['te-d-4',57,77,'doble'],['te-d-5',74.2,77,'doble'],['te-d-6',93.5,77,'doble'],
+    ['te-s-1',5.2,22.9,'cuadrada'],['te-s-2',21.9,22.9,'cuadrada'],
+    ['te-s-3',38.6,22.9,'cuadrada'],['te-s-4',55.1,22.9,'cuadrada'],
+    ['te-s-5',71.7,22.9,'cuadrada'],['te-s-6',90.3,22.9,'cuadrada'],
+    ['te-m-1',13.6,31.1,'cuadrada'],['te-m-2',30.3,31.1,'cuadrada'],
+    ['te-m-3',46.8,31.1,'cuadrada'],['te-m-4',63.5,31.1,'cuadrada'],
+    ['te-m-5',80.3,31.1,'cuadrada'],
+    ['te-d-1',5.2,46.1,'doble'],['te-d-2',21.9,46.1,'doble'],
+    ['te-d-3',38.6,46.1,'doble'],['te-d-4',55.1,46.1,'doble'],
+    ['te-d-5',71.7,46.1,'doble'],['te-d-6',90.3,46.1,'doble'],
   ],
   interior: [
     ['in-d-1',75.2,20.5,'doble'],['in-d-2',75.2,41.5,'doble'],['in-d-3',75.2,62,'doble'],
@@ -65,8 +70,8 @@ const individualSlots: Array<[number,number]> =
   Array.from({length:12},(_,index) => [18+(index%3)*32, 15+Math.floor(index/3)*23])
 
 function fixedTable(id:string,zone:FloorplanZone,number:number|null,x:number,y:number,shape:FloorplanShape):FloorplanTable {
-  const width=zone==='interior'?13:zone==='alargadas'?14:7
-  const height=zone==='interior'?10:zone==='alargadas'?18:zone==='individuales'?16:18
+  const width=zone==='interior'?13:zone==='alargadas'?12:zone==='individuales'?7:6.5
+  const height=zone==='interior'?10:zone==='alargadas'?13:zone==='individuales'?16:7.5
   return {
     id, zone, number,
     x:Math.max(0,Math.min(100-width,x-width/2)),
