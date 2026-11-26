@@ -156,7 +156,7 @@ function ZoneCanvas({ zone, layout, editing, selectedId, active, onActivate, onS
   return (
     <section aria-label={ZONE_LABELS[zone]}
       onClick={() => editing && onActivate(zone)}
-      className="relative min-h-0 min-w-0 overflow-hidden bg-[#aeb4b5]">
+      className="relative h-full w-full min-h-0 min-w-0 overflow-hidden bg-[#aeb4b5]">
       <FloorplanScene zone={zone}/>
       {editing && active && <div className="pointer-events-none absolute inset-0 z-20 border-2 border-[#2d739e]" />}
       <div className="pointer-events-none absolute bottom-1 left-2 z-30 rounded bg-slate-900/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
