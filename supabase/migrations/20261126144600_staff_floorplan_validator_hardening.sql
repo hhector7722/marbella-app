@@ -46,7 +46,8 @@ begin
   for t in select value from jsonb_array_elements(payload->'tables') loop
     if jsonb_typeof(t) is distinct from 'object'
       or jsonb_typeof(t->'id') is distinct from 'string'
-      or coalesce(t->>'id','') !~ '^[A-Za-z0-9_-]{1,64}      or coalesce(t->>'zone','') not in ('alargadas','terraza','interior','individuales')
+      or coalesce(t->>'id','') !~ '^[A-Za-z0-9_-]{1,64}$'
+      or coalesce(t->>'zone','') not in ('alargadas','terraza','interior','individuales')
       or coalesce(t->>'shape','') not in ('alargada','cuadrada','doble')
       or coalesce(t->>'rotation','') not in ('0','90','180','270')
     then return false; end if;
