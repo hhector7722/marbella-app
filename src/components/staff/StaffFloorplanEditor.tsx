@@ -24,20 +24,20 @@ type PhotoCrop = {
 }
 
 /**
- * Los dos originales se conservan en JPEG a su resolución nativa
- * (1536 × 778 y 1254 × 1254). Los recortes son virtuales:
- * el navegador no distorsiona ni recomprime las mesas.
+ * Imágenes originales del usuario a resolución íntegra. Las zonas
+ * alargadas y terraza muestran la imagen completa, sin recorte ni zoom;
+ * los números son la única capa superpuesta.
  */
 const PHOTO_CROPS: Record<FloorplanZone, PhotoCrop> = {
   alargadas: {
-    src: '/images/mesas/terraza-original-1536.jpeg',
-    sourceWidth: 1536, sourceHeight: 778,
-    x: 0, y: 0, width: 550, height: 450,
+    src: '/images/mesas/alargadas-nueva-2594x1140.jpeg',
+    sourceWidth: 2594, sourceHeight: 1140,
+    x: 0, y: 0, width: 2594, height: 1140,
   },
   terraza: {
-    src: '/images/mesas/terraza-original-1536.jpeg',
-    sourceWidth: 1536, sourceHeight: 778,
-    x: 542, y: 0, width: 994, height: 778,
+    src: '/images/mesas/terraza-nueva-1536x735.jpeg',
+    sourceWidth: 1536, sourceHeight: 735,
+    x: 0, y: 0, width: 1536, height: 735,
   },
   interior: {
     src: '/images/mesas/interior-original-1254.jpeg',
@@ -104,14 +104,13 @@ function ZonePhoto({
                 width: table.width + '%', height: table.height + '%',
               }}
             >
-              <span className={'pointer-events-none flex min-h-[21px] min-w-[23px] items-center justify-center rounded-[5px] border px-1 text-center text-[clamp(11px,1.5vw,18px)] font-extrabold leading-5 shadow-[0_1px_5px_rgba(0,0,0,.42)] ' +
-                (active && editing
-                  ? 'border-white bg-[#1e729b] text-white ring-2 ring-[#1e729b]'
-                  : table.number === null
-                    ? 'border-slate-300 bg-white/85 text-slate-500'
-                    : 'border-white/80 bg-white/95 text-slate-950')}>
-                {table.number ?? (editing ? '·' : '—')}
-              </span>
+              {table.number !== null && (
+                <span className={'pointer-events-none flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white bg-[#1e729b] text-center font-extrabold text-white shadow-[0_2px_6px_rgba(0,0,0,.38)] ' +
+                  (table.number >= 1000 ? 'text-[9px]' : table.number >= 100 ? 'text-[10px]' : 'text-xs') +
+                  (active && editing ? ' ring-2 ring-[#0d557e] ring-offset-1' : '')}>
+                  {table.number}
+                </span>
+              )}
             </button>
           )
         })}
