@@ -37,55 +37,83 @@ export const ZONE_LABELS: Record<FloorplanZone, string> = {
   individuales: 'Individuales',
 }
 
-const table = (
-  id: string, zone: FloorplanZone, x: number, y: number,
-  width: number, height: number, shape: FloorplanShape,
-  rotation: FloorplanRotation = 0,
-): FloorplanTable => ({ id, zone, number: null, x, y, width, height, shape, rotation })
-
 /**
- * Reproducción editable de los grupos de mesas de los dos planos aportados.
- * No se asignan números BDP de manera ficticia: la primera publicación exige
- * introducirlos todos. "Individuales" nace vacío para agregar mesas a voluntad.
+ * Centros fijos de las mesas fotografiadas. Coordenadas porcentuales
+ * relativas a cada recorte de las DOS fotografías originales del usuario.
+ * Las imágenes contienen el mobiliario real; la UI solo añade números.
  */
-export function initialFloorplanLayout(): FloorplanLayout {
-  const tables: FloorplanTable[] = []
+const fixedCenters: Record<Exclude<FloorplanZone,'individuales'>, Array<[string, number, number, FloorplanShape]>> = {
+  alargadas: [
+    ['al-1',17.5,30,'alargada'],['al-2',40,30,'alargada'],['al-3',63,30,'alargada'],['al-4',85.5,30,'alargada'],
+    ['al-5',17.5,74,'alargada'],['al-6',40,74,'alargada'],['al-7',63,74,'alargada'],['al-8',85.5,74,'alargada'],
+  ],
+  terraza: [
+    ['te-s-1',5.4,15,'cuadrada'],['te-s-2',22.5,15,'cuadrada'],['te-s-3',39.6,15,'cuadrada'],
+    ['te-s-4',57,15,'cuadrada'],['te-s-5',74.2,15,'cuadrada'],['te-s-6',93.5,15,'cuadrada'],
+    ['te-m-1',13.4,36,'cuadrada'],['te-m-2',30.6,36,'cuadrada'],['te-m-3',48,36,'cuadrada'],
+    ['te-m-4',65.3,36,'cuadrada'],['te-m-5',82.5,36,'cuadrada'],
+    ['te-d-1',5.4,77,'doble'],['te-d-2',22.5,77,'doble'],['te-d-3',39.6,77,'doble'],
+    ['te-d-4',57,77,'doble'],['te-d-5',74.2,77,'doble'],['te-d-6',93.5,77,'doble'],
+  ],
+  interior: [
+    ['in-d-1',75.2,20.5,'doble'],['in-d-2',75.2,41.5,'doble'],['in-d-3',75.2,62,'doble'],
+    ['in-b-1',23.9,83.1,'doble'],['in-b-2',44.6,83.1,'cuadrada'],['in-b-3',62.8,83.1,'cuadrada'],
+  ],
+}
 
-  // Plano de terraza: bloque izquierdo, dos filas de cuatro alargadas.
-  for (const [row, y] of [17, 56].entries()) {
-    for (const [col, x] of [12, 33, 54, 75].entries()) {
-      tables.push(table('al-' + (row * 4 + col + 1), 'alargadas', x, y, 12, 27, 'alargada'))
+const individualSlots: Array<[number,number]> =
+  Array.from({length:12},(_,index) => [18+(index%3)*32, 15+Math.floor(index/3)*23])
+
+function fixedTable(id:string,zone:FloorplanZone,number:number|null,x:number,y:number,shape:FloorplanShape):FloorplanTable {
+  const width=zone==='interior'?13:zone==='alargadas'?14:7
+  const height=zone==='interior'?10:zone==='alargadas'?18:zone==='individuales'?16:18
+  return {
+    id, zone, number,
+    x:Math.max(0,Math.min(100-width,x-width/2)),
+    y:Math.max(0,Math.min(100-height,y-height/2)),
+    width,height,shape,rotation:0,
+  }
+}
+
+export function fixedIndividualTable(slot:number,number:number|null):FloorplanTable {
+  if(!Number.isSafeInteger(slot)||slot<0||slot>=individualSlots.length)throw new Error('Posición de mesa individual inválida.')
+  const [x,y]=individualSlots[slot]
+  return fixedTable('individual-'+slot,'individuales',number,x,y,'cuadrada')
+}
+
+export function initialFloorplanLayout(): FloorplanLayout {
+  const tables:FloorplanTable[]=[]
+  for(const zone of ['alargadas','terraza','interior'] as const){
+    for(const [id,x,y,shape] of fixedCenters[zone]){
+      tables.push(fixedTable(id,zone,null,x,y,shape))
     }
   }
-
-  // Terraza derecha: fila superior de seis cuadrados y fila intermedia
-  // desplazada de cinco; fila inferior de seis parejas, como en el plano.
-  for (const [i, x] of [5, 22, 39, 56, 73, 90].entries()) {
-    tables.push(table('te-s-' + (i + 1), 'terraza', x, 11, 8, 16, 'cuadrada'))
-  }
-  for (const [i, x] of [13, 30, 47, 64, 81].entries()) {
-    tables.push(table('te-m-' + (i + 1), 'terraza', x, 37, 8, 16, 'cuadrada'))
-  }
-  for (const [i, x] of [5, 22, 39, 56, 73, 90].entries()) {
-    tables.push(table('te-d-' + (i + 1), 'terraza', x, 65, 8, 27, 'doble'))
-  }
-
-  // Plano interior: tres parejas verticales en el lateral derecho.
-  for (const [i, y] of [10, 34, 58].entries()) {
-    tables.push(table('in-d-' + (i + 1), 'interior', 72, y, 19, 19, 'doble', 90))
-  }
-  // Fila inferior: pareja izquierda y dos mesas individuales.
-  tables.push(table('in-b-1', 'interior', 12, 78, 22, 14, 'doble', 90))
-  tables.push(table('in-b-2', 'interior', 43, 78, 12, 14, 'cuadrada'))
-  tables.push(table('in-b-3', 'interior', 62, 78, 12, 14, 'cuadrada'))
-
   return {
-    schema: 1,
-    // La única correspondencia confirmada por BDP es Terrassa = salón 1.
-    // El salón interior y el de mesas sueltas se asignan en configuración.
-    salons: { alargadas: 1, terraza: 1, interior: null, individuales: null },
+    schema:1,
+    salons:{alargadas:1,terraza:1,interior:null,individuales:null},
     tables,
   }
+}
+
+/** Nunca se publica una posición diferente de la marcada por la fotografía. */
+export function hasFixedFloorplanGeometry(layout: FloorplanLayout): boolean {
+  const defaults=initialFloorplanLayout().tables
+  const originals=new Map(defaults.map(t=>[t.id,t]))
+  const actual=new Map(layout.tables.map(t=>[t.id,t]))
+  for(const [id,position] of originals){
+    const current=actual.get(id)
+    if(!current||!samePosition(current,position))return false
+  }
+  for(const current of layout.tables){
+    if(originals.has(current.id))continue
+    const match=/^individual-(\\d{1,2})$/.exec(current.id)
+    if(!match||!samePosition(current,fixedIndividualTable(Number(match[1]),current.number)))return false
+  }
+  return actual.size===layout.tables.length
+}
+function samePosition(a:FloorplanTable,b:FloorplanTable):boolean {
+  return a.id===b.id&&a.zone===b.zone&&a.x===b.x&&a.y===b.y&&
+    a.width===b.width&&a.height===b.height&&a.shape===b.shape&&a.rotation===b.rotation
 }
 
 export function cloneFloorplan(layout: FloorplanLayout): FloorplanLayout {
