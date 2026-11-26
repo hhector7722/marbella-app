@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { StaffFloorplanEditor } from '@/components/staff/StaffFloorplanEditor'
+import { isMasterDashboardUser } from '@/lib/master-dashboard'
 import type { FloorplanRecord } from '@/lib/staff/floorplan'
 
 export const dynamic = 'force-dynamic'
@@ -9,14 +10,13 @@ export default async function StaffMesasPage() {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) redirect('/login')
+  if (!isMasterDashboardUser(user.email)) redirect('/dashboard')
 
-  const [{ data: profile }, { data: floorplan, error: layoutError }] = await Promise.all([
-    supabase.from('profiles').select('role').eq('id', user.id).maybeSingle(),
-    supabase.from('staff_floorplans')
-      .select('id, draft, published, revision, updated_at')
-      .eq('id', 'principal')
-      .maybeSingle(),
-  ])
+  const { data: floorplan, error: layoutError } = await supabase
+    .from('staff_floorplans')
+    .select('id, draft, published, revision, updated_at')
+    .eq('id', 'principal')
+    .maybeSingle()
 
   if (layoutError || !floorplan) {
     return (
@@ -32,7 +32,7 @@ export default async function StaffMesasPage() {
     )
   }
 
-  const canEdit = ['admin', 'manager', 'supervisor'].includes(profile?.role ?? '')
+  const canEdit = true
   return (
     <StaffFloorplanEditor
       key={floorplan.revision}
