@@ -180,6 +180,18 @@ async function signed(body){
   if(!res.ok)throw Error('BDP queue HTTP '+res.status)
   return res.json()
 }
+// Retry transport and result acknowledgements only, never a Handy operation.
+async function retryTransport(body){
+  let delay=2000
+  for(;;){
+    try{return await signed(body)}
+    catch(e){
+      console.error(new Date().toISOString(),'Transport:',e instanceof Error?e.message:'Unknown error')
+      await sleep(delay)
+      delay=Math.min(delay*2,30000)
+    }
+  }
+}
 async function loop(){
   const lock=path.join(__dirname,'handy-agent.lock')
   const fd=fs.openSync(lock,'wx')
@@ -188,16 +200,24 @@ async function loop(){
     for(;;){
       if(fs.existsSync(journal)){
         const body=JSON.parse(fs.readFileSync(journal,'utf8'))
-        await signed(body)
+        await retryTransport(body)
         fs.unlinkSync(journal)
+        if(body.status==='uncertain')return
       }
       const status=readiness()
-      const {job}=await signed({action:'poll',...status})
+      let response
+      try{response=await signed({action:'poll',...status})}
+      catch(e){
+        console.error(new Date().toISOString(),'Poll:',e instanceof Error?e.message:'Unknown error')
+        await sleep(5000)
+        continue // A lost claim remains executing on the server; never reclaim it.
+      }
+      const {job}=response
       if(job){
         const result=await execute(job)
         const body={action:'result',id:job.id,...result}
         fs.writeFileSync(journal,JSON.stringify(body),{flag:'wx'})
-        await signed(body)
+        await retryTransport(body)
         fs.unlinkSync(journal)
         if(result.status==='uncertain')return
       }
@@ -209,7 +229,7 @@ if(require.main===module){
   if(process.argv.includes('--live')) {
     // No unattended live startup until supervised end-to-end verification.
     if(process.env.BDP_HANDY_SUPERVISED_PILOT!=='1'){console.error('Live mode requires supervised pilot authorization');process.exitCode=2}
-    else loop().catch(()=>{console.error('Handy agent stopped; inspect queue and local journal');process.exitCode=1})
+    else loop().catch(e=>{console.error(new Date().toISOString(),'Handy agent stopped; inspect queue and local journal:',e instanceof Error?e.message:'Unknown error');process.exitCode=1})
   }else console.log(JSON.stringify({mode:'probe',...readiness(),writes:false}))
 }
 module.exports={nodes,cents,verifyDelta,checkedJob,readiness}
