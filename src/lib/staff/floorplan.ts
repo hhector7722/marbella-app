@@ -40,14 +40,14 @@ export const ZONE_LABELS: Record<FloorplanZone, string> = {
 /** Centros medidos sobre las cuatro fotografías originales, sin recortar. */
 const fixedCenters: Record<Exclude<FloorplanZone,'individuales'>, Array<[string, number, number, FloorplanShape]>> = {
   alargadas: [
-    ["al-1",14.142857,25.451264,"alargada"],
-    ["al-2",38.5,25.451264,"alargada"],
-    ["al-3",62.714286,25.451264,"alargada"],
-    ["al-4",87.071429,25.451264,"alargada"],
-    ["al-5",14.142857,72.021661,"alargada"],
-    ["al-6",38.5,72.021661,"alargada"],
-    ["al-7",62.714286,72.021661,"alargada"],
-    ["al-8",87.071429,72.021661,"alargada"],
+    ["al-1",13.151042,26.509186,"alargada"],
+    ["al-2",36.328125,26.509186,"alargada"],
+    ["al-3",60.611979,26.509186,"alargada"],
+    ["al-4",85.286458,26.509186,"alargada"],
+    ["al-5",13.151042,72.047244,"alargada"],
+    ["al-6",36.328125,72.047244,"alargada"],
+    ["al-7",60.611979,72.047244,"alargada"],
+    ["al-8",85.286458,72.047244,"alargada"],
   ],
   terraza: [
     ["te-s-1",10.091146,15.769231,"cuadrada"],
