@@ -171,7 +171,7 @@ export function validateFloorplanLayout(raw: unknown, requireComplete: boolean):
   if (layout.tables.length > 160) errors.push('El plano supera el límite de 160 mesas.')
   if (requireComplete && layout.tables.length === 0) errors.push('Añade al menos una mesa.')
   const seenIds = new Set<string>()
-  const seenNumbers = new Set<string>()
+  const seenNumbers = new Set<number>()
   for (const z of FLOORPLAN_ZONES) {
     const salon = layout.salons[z]
     if (salon !== null && salon !== undefined && (!Number.isSafeInteger(salon) || salon < 1 || salon > 99)) {
@@ -200,7 +200,6 @@ export function validateFloorplanLayout(raw: unknown, requireComplete: boolean):
       }
     }
     const n = item.number
-    const salon = layout.salons[item.zone]
     if (n === null || n === undefined) {
       if (requireComplete) errors.push('Falta numerar una o más mesas.')
       continue
@@ -209,20 +208,14 @@ export function validateFloorplanLayout(raw: unknown, requireComplete: boolean):
       errors.push('Cada mesa debe tener un número entero entre 1 y 9999.')
       continue
     }
-    if (salon === null || salon === undefined) {
-      if (requireComplete) errors.push('Configura el salón BDP de ' + ZONE_LABELS[item.zone] + '.')
-      continue
-    }
-    const key = salon + ':' + n
-    if (seenNumbers.has(key)) errors.push('El número ' + n + ' está duplicado en el salón BDP ' + salon + '.')
-    seenNumbers.add(key)
+    if (seenNumbers.has(n)) errors.push('El número ' + n + ' está duplicado en el plano.')
+    seenNumbers.add(n)
   }
   return [...new Set(errors)]
 }
 
-export function nextAvailableNumber(layout: FloorplanLayout, zone: FloorplanZone): number {
-  const salon = layout.salons[zone]
-  const used = new Set(layout.tables.filter((t) => layout.salons[t.zone] === salon).map((t) => t.number))
+export function nextAvailableNumber(layout: FloorplanLayout, _zone: FloorplanZone): number {
+  const used = new Set(layout.tables.map((t) => t.number))
   for (let i = 1; i <= 9999; i++) if (!used.has(i)) return i
   throw new Error('No hay números disponibles.')
 }
