@@ -2,6 +2,7 @@ export type MarbellaCartaNavigationMessage = {
   type: 'marbella:carta:navigation'
   pathname: string
   isCategoriesRoot: boolean
+  webControls: boolean
 }
 
 /** Ruta de la rejilla principal de categorías (la URL no cambia al abrir modales). */
@@ -39,6 +40,8 @@ export function postCartaNavigation(pathname: string, isCategoriesRoot: boolean)
     type: 'marbella:carta:navigation',
     pathname,
     isCategoriesRoot,
+    webControls: new URLSearchParams(window.location.search).get('embed') === '1' &&
+      new URLSearchParams(window.location.search).get('web_controls') === '1',
   }
 
   window.parent.postMessage(message, resolveTargetOrigin())
