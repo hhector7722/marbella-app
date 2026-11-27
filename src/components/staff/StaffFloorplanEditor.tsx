@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Pencil, Plus, Save, Settings2, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Check, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
-  FLOORPLAN_ZONES, ZONE_LABELS, INDIVIDUAL_SLOT_COUNT, cloneFloorplan, initialFloorplanLayout, alignFloorplanToPhotos,
+  ZONE_LABELS, INDIVIDUAL_SLOT_COUNT, cloneFloorplan, initialFloorplanLayout, alignFloorplanToPhotos,
   fixedIndividualTable, validateFloorplanLayout, type FloorplanLayout,
   type FloorplanRecord, type FloorplanTable, type FloorplanZone,
 } from '@/lib/staff/floorplan'
@@ -95,7 +95,6 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   const [editing, setEditing] = useState(!record.published && canEdit)
   const [selectedId, setSelectedId] = useState<string|null>(null)
   const [numberInput, setNumberInput] = useState('')
-  const [settings, setSettings] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const firstSetup = !published
@@ -110,16 +109,13 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
     }
     setSelectedId(table.id)
     setNumberInput(table.number === null ? '' : String(table.number))
-    setSettings(false)
   }
 
   const setNumber = () => {
     if (!selected) return
     const value = numberInput.trim()
     if (!value) {
-      if (!firstSetup) {toast.error('Todas las mesas deben tener número.');return}
-      setLayout(prev=>({...prev,tables:prev.tables.map(t=>t.id===selected.id?{...t,number:null}:t)}))
-      setSelectedId(null)
+      clearNumber()
       return
     }
     const num = Number(value)
@@ -140,15 +136,17 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
     setLayout(prev=>({...prev,tables:[...prev.tables,newTable]}))
     setSelectedId(newTable.id)
     setNumberInput('')
-    setSettings(false)
     toast.info('Asigna un número a la nueva mesa antes de guardar.')
   }
 
-  const removeIndividual = () => {
-    if (!selected || selected.zone!=='individuales') return
-    if (!window.confirm('¿Eliminar la mesa individual del plano? No modifica BDP.')) return
-    setLayout(prev=>({...prev,tables:prev.tables.filter(t=>t.id!==selected.id)}))
+  const clearNumber = () => {
+    if (!selected) return
+    // Las posiciones fotografiadas se conservan. Una plaza individual vuelve a estar disponible.
+    setLayout(prev=>({...prev,tables:selected.zone==='individuales'
+      ? prev.tables.filter(t=>t.id!==selected.id)
+      : prev.tables.map(t=>t.id===selected.id?{...t,number:null}:t)}))
     setSelectedId(null)
+    setNumberInput('')
   }
 
   const save = async (publishNow:boolean) => {
@@ -164,8 +162,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
         setPublished(cloneFloorplan(layout))
         setEditing(false)
         setSelectedId(null)
-        setSettings(false)
-        toast.success('Numeración publicada.')
+            toast.success('Numeración publicada.')
       }else toast.success('Borrador guardado.')
     }catch{toast.error('Error al guardar el plano.')}
     finally{setBusy(false)}
@@ -197,17 +194,13 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
                 <Plus size={19}/>
               </button>
-              <button type="button" onClick={()=>{setSettings(!settings);setSelectedId(null)}} aria-label="Configurar salones BDP"
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
-                <Settings2 size={19}/>
-              </button>
               {firstSetup && (
                 <button type="button" disabled={busy} onClick={()=>void save(false)}
                   className="h-9 rounded-lg bg-white/15 px-2 text-xs font-bold text-white shadow-md disabled:opacity-50">Borrador</button>
               )}
               {!firstSetup && (
                 <button type="button" onClick={()=>{
-                  setLayout(cloneFloorplan(published!));setEditing(false);setSelectedId(null);setSettings(false)
+                  setLayout(cloneFloorplan(published!));setEditing(false);setSelectedId(null)
                 }} aria-label="Cancelar edición"
                   className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
                   <X size={19}/>
@@ -244,34 +237,16 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
         </div>
       </div>
 
-      {editing && (selected || settings) && (
+      {editing && selected && (
         <div className="absolute right-2 top-[calc(env(safe-area-inset-top)+56px)] z-50
           w-[min(325px,calc(100vw-16px))] rounded-xl border border-white/80 bg-white/95 p-3
           shadow-[0_8px_30px_rgba(0,0,0,.32)] backdrop-blur-sm">
           <div className="mb-2 flex items-center justify-between text-xs font-bold">
-            {settings ? 'Salones BDP' : 'Número de mesa · ' + ZONE_LABELS[selected!.zone]}
-            <button type="button" aria-label="Cerrar" onClick={()=>{setSelectedId(null);setSettings(false)}}>
+            {(selected.number === null ? 'Asignar número' : 'Editar mesa ' + selected.number) + ' · ' + ZONE_LABELS[selected.zone]}
+            <button type="button" aria-label="Cerrar" onClick={()=>{setSelectedId(null)}}>
               <X size={17}/>
             </button>
           </div>
-          {settings ? (
-            <div className="grid grid-cols-2 gap-2">
-              {FLOORPLAN_ZONES.map(zone=>(
-                <label key={zone} className="text-[11px] text-slate-600">
-                  {ZONE_LABELS[zone]}
-                  <input type="number" min={1} max={99} inputMode="numeric" value={layout.salons[zone]??''}
-                    onChange={(e)=>{
-                      const value=e.target.value.trim()===''?null:Number(e.target.value)
-                      if(value!==null&&(!Number.isSafeInteger(value)||value<1||value>99))return
-                      setLayout(prev=>({...prev,salons:{...prev.salons,[zone]:value}}))
-                    }}
-                    className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm"/>
-                </label>
-              ))}
-              <p className="col-span-2 text-[11px] text-slate-500">El número del salón debe corresponder al de BDP.</p>
-            </div>
-          ) : (
-            <>
               <div className="flex items-center gap-2">
                 <input type="number" min={1} max={9999} inputMode="numeric" autoFocus
                   aria-label="Número de mesa" value={numberInput}
@@ -282,9 +257,9 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
                   className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0755f5] text-white">
                   <Check size={20}/>
                 </button>
-                {selected?.zone==='individuales' && (
-                  <button type="button" aria-label="Eliminar mesa individual" onClick={removeIndividual}
-                    className="flex h-11 w-11 items-center justify-center rounded-lg bg-red-50 text-red-700">
+                {selected.number !== null && (
+                  <button type="button" aria-label="Quitar número de mesa" title="Quitar número" onClick={clearNumber}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-700">
                     <Trash2 size={18}/>
                   </button>
                 )}
@@ -292,8 +267,6 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
               {firstSetup && <p className="mt-2 text-[11px] text-slate-500">
                 Puedes guardar el borrador sin terminar, pero no publicar con mesas sin número.
               </p>}
-            </>
-          )}
         </div>
       )}
 
