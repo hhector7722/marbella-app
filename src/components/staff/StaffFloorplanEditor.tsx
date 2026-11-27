@@ -40,7 +40,7 @@ function ZonePhoto({
 }) {
   const tables = layout.tables.filter((t) => t.zone === zone)
   return (
-    <section aria-label={ZONE_LABELS[zone]} className="relative w-full min-h-0 min-w-0 overflow-hidden rounded-[14px] bg-[#85888a] ring-1 ring-sky-100 shadow-[0_0_8px_rgba(130,203,255,.65)]" style={{aspectRatio: ZONE_ASPECT[zone]}}>
+    <section aria-label={ZONE_LABELS[zone]} className="relative w-full min-h-0 min-w-0 overflow-hidden rounded-[14px] bg-[#85888a]" style={{aspectRatio: ZONE_ASPECT[zone]}}>
       <div className="relative h-full w-full overflow-hidden">
         <img src={ZONE_IMAGES[zone]} alt="" aria-hidden="true" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"/>
         {editing && zone === 'individuales' && Array.from({length: INDIVIDUAL_SLOT_COUNT}, (_, slot) => {
