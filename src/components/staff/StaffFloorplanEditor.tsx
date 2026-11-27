@@ -13,17 +13,18 @@ import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
 
 type Props = { record: FloorplanRecord; canEdit: boolean }
 
-// Diseño aprobado para la numeración. El borrador nunca simula ocupación BDP.
-const TABLE_MARKER_STYLE = {
-  width: 28, height: 28, border: '1px solid #FFFFFF',
-  backgroundColor: '#2563EB', color: '#FFFFFF', fontSize: 15, fontWeight: 600,
-} as const
-
-function TableMarker({ number }: { number: number | null }) {
+// El tamaño visual se calcula sobre el ancho de la fotografía, no sobre
+// el área táctil (que también abarca las sillas). Conserva margen sobre el tablero.
+function TableMarker({ number, zone }: { number: number | null; zone: FloorplanZone }) {
+  const relativeDiameter = zone === 'interior' || zone === 'individuales' ? 8 : 4.5
+  const diameter = `min(20px, ${relativeDiameter}cqw)`
+  const digits = number === null ? 1 : String(number).length
+  const fontRatio = digits >= 4 ? 0.34 : digits === 3 ? 0.43 : 0.58
   return (
-    <span aria-hidden="true" className="pointer-events-none flex shrink-0 items-center justify-center rounded-full tabular-nums leading-none" style={{
-      ...TABLE_MARKER_STYLE,
-      ...(number !== null && number >= 1000 ? {fontSize: 11} : number !== null && number >= 100 ? {fontSize: 12} : {}),
+    <span aria-hidden="true" className="pointer-events-none box-border flex shrink-0 items-center justify-center rounded-full tabular-nums leading-none" style={{
+      width: diameter, height: diameter, border: '1px solid #FFFFFF',
+      backgroundColor: '#2563EB', color: '#FFFFFF', fontWeight: 600,
+      fontSize: `min(${20 * fontRatio}px, ${relativeDiameter * fontRatio}cqw)`,
     }}>{number ?? ''}</span>
   )
 }
@@ -55,13 +56,13 @@ function ZonePhoto({
 }) {
   const tables = layout.tables.filter((t) => t.zone === zone)
   return (
-    <section aria-label={ZONE_LABELS[zone]} className="relative w-full min-h-0 min-w-0 overflow-hidden rounded-[14px] bg-[#85888a]" style={{aspectRatio: ZONE_ASPECT[zone]}}>
+    <section aria-label={ZONE_LABELS[zone]} className="relative w-full min-h-0 min-w-0 overflow-hidden rounded-[14px] bg-[#85888a]" style={{aspectRatio: ZONE_ASPECT[zone], containerType: 'inline-size'}}>
       <div className="relative h-full w-full overflow-hidden">
         <img src={ZONE_IMAGES[zone]} alt="" aria-hidden="true" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"/>
         {editing && zone === 'individuales' && Array.from({length: INDIVIDUAL_SLOT_COUNT}, (_, slot) => {
           const t = fixedIndividualTable(slot, null)
           if (tables.some(item => item.id === t.id)) return null
-          return <button key={t.id} type="button" aria-label="Añadir número a esta posición" onClick={() => onEmptySlot?.(slot)} className="absolute z-10 rounded-lg focus-visible:outline-2 focus-visible:outline-white" style={{left:t.x+'%',top:t.y+'%',width:t.width+'%',height:t.height+'%'}}><span className="flex h-full w-full items-center justify-center"><TableMarker number={null}/></span></button>
+          return <button key={t.id} type="button" aria-label="Añadir número a esta posición" onClick={() => onEmptySlot?.(slot)} className="absolute z-10 rounded-lg focus-visible:outline-2 focus-visible:outline-white" style={{left:t.x+'%',top:t.y+'%',width:t.width+'%',height:t.height+'%'}}><span className="flex h-full w-full items-center justify-center"><TableMarker number={null} zone={zone}/></span></button>
         })}
         {tables.map((table) => {
           return (
@@ -78,7 +79,7 @@ function ZonePhoto({
                 width: table.width + '%', height: table.height + '%',
               }}
             >
-              {(editing || table.number !== null) && <TableMarker number={table.number}/>}
+              {(editing || table.number !== null) && <TableMarker number={table.number} zone={zone}/>}
             </button>
           )
         })}
