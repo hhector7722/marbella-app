@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BotMessageSquare, LayoutGrid, Loader2, type LucideIcon } from 'lucide-react';
+import { BotMessageSquare, Loader2, type LucideIcon } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { AccessShortcutGrid } from '@/components/dashboards/AccessShortcutGrid';
@@ -40,7 +40,7 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Stock', instance: 'stock', action: 'stock', img: '/icons/suplier.png' },
     { label: 'Web', instance: 'web', action: 'web', img: '/icons/web.png' },
     { label: 'Carta', instance: 'carta', href: '/staff/carta', img: '/icons/menu.png' },
-    { label: 'Mesas', instance: 'mesas', href: '/staff/mesas', icon: LayoutGrid },
+    { label: 'Bdp', instance: 'mesas', href: '/staff/mesas', img: '/icons/bdp.svg' },
     { label: 'Consumo', instance: 'consumo', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },
     { label: 'M obra', instance: 'm-obra', href: '/dashboard/labor', img: '/icons/overtime.png' },
     { label: 'Compra', instance: 'compra', action: 'compra', img: '/icons/shop.png' },
