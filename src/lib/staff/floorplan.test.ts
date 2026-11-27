@@ -121,9 +121,9 @@ test('los centros se corresponden con las fotos originales', () => {
     assert.ok(Math.abs(t.y+t.height/2-y)<0.001)
   }
   check('al-1',198/1400*100,141/554*100)
-  check('te-d-6',755/820*100,298/417*100)
+  check('te-d-6',1413/1536*100,557/780*100)
   check('in-b-3',706/1104*100,931/1104*100)
   const slot = fixedIndividualTable(8,null)
-  assert.ok(Math.abs(slot.x+slot.width/2-1117/1387*100)<0.001)
-  assert.ok(Math.abs(slot.y+slot.height/2-801/1011*100)<0.001)
+  assert.ok(Math.abs(slot.x+slot.width/2-1002/1248*100)<0.001)
+  assert.ok(Math.abs(slot.y+slot.height/2-947/1248*100)<0.001)
 })
