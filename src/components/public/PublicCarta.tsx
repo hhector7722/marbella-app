@@ -122,6 +122,7 @@ export function PublicCarta({
   footer,
   hideEmptyMenuCategories = false,
   catalogDisplay = false,
+  webControls = false,
 }: {
   items: PublicMenuRow[]
   menuCategories?: MenuCategoryCatalogEntry[]
@@ -141,6 +142,8 @@ export function PublicCarta({
   hideEmptyMenuCategories?: boolean
   /** Vista de carta completa; no activar para encargos/eventos. */
   catalogDisplay?: boolean
+  /** Espacio para los controles superpuestos de la web pública. */
+  webControls?: boolean
 }) {
   const [lang, setLang] = useState<CartaLang>(DEFAULT_CARTA_LANG)
   const digitalItems = publicMenuRowsToDigitalMenu(items)
@@ -150,6 +153,7 @@ export function PublicCarta({
     <main className="carta-shared-scene flex h-[100svh] max-h-[100svh] flex-col bg-white text-zinc-900">
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-5 pb-safe pt-safe md:px-8">
         <header className="shrink-0 bg-white pb-1 pt-1">
+          {webControls ? <div aria-hidden="true" className="h-[48px] shrink-0" /> : null}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-0.5">
             <div className="flex min-h-[52px] items-center justify-start">
               {backHref ? (
