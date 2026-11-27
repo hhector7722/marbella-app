@@ -32,7 +32,12 @@ type CartaMenuCategoryRow = {
   cover_photo_scale: string | null
 }
 
-export default async function PublicCartaPage() {
+export default async function PublicCartaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ embed?: string; web_controls?: string }>
+}) {
+  const { embed, web_controls } = await searchParams
   const supabase = await createClient()
 
   const {
@@ -177,6 +182,7 @@ export default async function PublicCartaPage() {
       backHref={backHref}
       cartaEditHref={cartaEditHref}
       catalogDisplay
+      webControls={embed === '1' && web_controls === '1'}
     />
   )
 }
