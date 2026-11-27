@@ -13,19 +13,36 @@ import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
 
 type Props = { record: FloorplanRecord; canEdit: boolean }
 
-// El tamaño visual se calcula sobre el ancho de la fotografía, no sobre
-// el área táctil (que también abarca las sillas). Conserva margen sobre el tablero.
-function TableMarker({ number, zone }: { number: number | null; zone: FloorplanZone }) {
-  const relativeDiameter = zone === 'interior' || zone === 'individuales' ? 8 : 4.5
-  const diameter = `min(20px, ${relativeDiameter}cqw)`
-  const digits = number === null ? 1 : String(number).length
-  const fontRatio = digits >= 4 ? 0.34 : digits === 3 ? 0.43 : 0.58
+// Diámetro máximo inscrito en cada tablero, medido en píxeles de la foto
+// original desde el centro de la mesa. No incluye sillas ni área táctil.
+const TABLETOP_DIAMETER: Record<string, number> = {
+  'al-1': 180, 'al-2': 180, 'al-3': 184, 'al-4': 194,
+  'al-5': 180, 'al-6': 180, 'al-7': 184, 'al-8': 194,
+  'te-s-1': 88, 'te-s-2': 88, 'te-s-3': 88, 'te-s-4': 90, 'te-s-5': 90, 'te-s-6': 90,
+  'te-m-1': 88, 'te-m-2': 86, 'te-m-3': 88, 'te-m-4': 88, 'te-m-5': 88,
+  'te-d-1': 92, 'te-d-2': 94, 'te-d-3': 94, 'te-d-4': 94, 'te-d-5': 94, 'te-d-6': 94,
+  'in-d-1': 104, 'in-d-2': 104, 'in-d-3': 106,
+  'in-b-1': 118, 'in-b-2': 116, 'in-b-3': 118,
+}
+const PHOTO_WIDTH: Record<FloorplanZone, number> = {
+  alargadas: 1536, terraza: 1536, interior: 1104, individuales: 1248,
+}
+
+function TableMarker({ table }: { table: FloorplanTable }) {
+  const tabletop = table.zone === 'individuales' ? 246 : TABLETOP_DIAMETER[table.id]
+  const relativeDiameter = tabletop ? tabletop / PHOTO_WIDTH[table.zone] * 100 : 0
+  // Un píxel libre a cada lado del tablero, sin un máximo fijo en pantalla.
+  const diameter = `max(0px, calc(${relativeDiameter}cqw - 2px))`
+  const digits = table.number === null ? 1 : String(table.number).length
+  // El texto deja aire también dentro del contorno blanco de 1 px.
+  const fontRatio = digits >= 4 ? 0.26 : digits === 3 ? 0.34 : 0.5
+  const fontSize = `max(0px, calc(${relativeDiameter * fontRatio}cqw - ${4 * fontRatio}px))`
   return (
     <span aria-hidden="true" className="pointer-events-none box-border flex shrink-0 items-center justify-center rounded-full tabular-nums leading-none" style={{
       width: diameter, height: diameter, border: '1px solid #FFFFFF',
       backgroundColor: '#2563EB', color: '#FFFFFF', fontWeight: 600,
-      fontSize: `min(${20 * fontRatio}px, ${relativeDiameter * fontRatio}cqw)`,
-    }}>{number ?? ''}</span>
+      fontSize,
+    }}>{table.number ?? ''}</span>
   )
 }
 
@@ -62,7 +79,7 @@ function ZonePhoto({
         {editing && zone === 'individuales' && Array.from({length: INDIVIDUAL_SLOT_COUNT}, (_, slot) => {
           const t = fixedIndividualTable(slot, null)
           if (tables.some(item => item.id === t.id)) return null
-          return <button key={t.id} type="button" aria-label="Añadir número a esta posición" onClick={() => onEmptySlot?.(slot)} className="absolute z-10 rounded-lg focus-visible:outline-2 focus-visible:outline-white" style={{left:t.x+'%',top:t.y+'%',width:t.width+'%',height:t.height+'%'}}><span className="flex h-full w-full items-center justify-center"><TableMarker number={null} zone={zone}/></span></button>
+          return <button key={t.id} type="button" aria-label="Añadir número a esta posición" onClick={() => onEmptySlot?.(slot)} className="absolute z-10 rounded-lg focus-visible:outline-2 focus-visible:outline-white" style={{left:t.x+'%',top:t.y+'%',width:t.width+'%',height:t.height+'%'}}><span className="flex h-full w-full items-center justify-center"><TableMarker table={t}/></span></button>
         })}
         {tables.map((table) => {
           return (
@@ -79,7 +96,7 @@ function ZonePhoto({
                 width: table.width + '%', height: table.height + '%',
               }}
             >
-              {(editing || table.number !== null) && <TableMarker number={table.number} zone={zone}/>}
+              {(editing || table.number !== null) && <TableMarker table={table}/>}
             </button>
           )
         })}
