@@ -14,16 +14,16 @@ import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
 type Props = { record: FloorplanRecord; canEdit: boolean }
 
 const ZONE_IMAGES: Record<FloorplanZone, string> = {
-  alargadas: '/images/mesas/original-final-alargadas.jpeg',
-  terraza: '/images/mesas/original-final-terraza-v2.jpeg',
+  alargadas: '/images/mesas/original-final-alargadas-v3.jpeg',
+  terraza: '/images/mesas/original-final-terraza-v3.jpeg',
   interior: '/images/mesas/original-final-interior.jpeg',
-  individuales: '/images/mesas/original-final-individuales-v2.jpeg',
+  individuales: '/images/mesas/original-final-individuales-v3.jpeg',
 }
 
 // Keep the artwork and interactive coordinates in the same intrinsic frame.
 const ZONE_ASPECT: Record<FloorplanZone, string> = {
-  alargadas: '1400 / 554',
-  terraza: '1536 / 780',
+  alargadas: '1536 / 762',
+  terraza: '1536 / 762',
   interior: '1104 / 1104',
   individuales: '1254 / 1254',
 }
@@ -229,7 +229,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
           Width is bounded by the intrinsic artwork height, so no zone gets cropped. */}
       <div className="flex min-h-0 flex-1 items-center justify-center py-3">
         <div className="flex h-full w-full items-center justify-center" style={{containerType: 'size'}}>
-          <div className="flex shrink-0 flex-col gap-4" style={{width: 'min(100cqw, calc((100cqh - 32px) * 0.70))'}}>
+          <div className="flex shrink-0 flex-col gap-4" style={{width: 'min(100cqw, calc((100cqh - 32px) * 0.67))'}}>
             <ZonePhoto zone="alargadas" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
             <ZonePhoto zone="terraza" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
             <div className="grid min-h-0 grid-cols-2 items-center gap-2">

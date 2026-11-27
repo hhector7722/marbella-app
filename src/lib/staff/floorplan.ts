@@ -40,33 +40,33 @@ export const ZONE_LABELS: Record<FloorplanZone, string> = {
 /** Centros medidos sobre las cuatro fotografías originales, sin recortar. */
 const fixedCenters: Record<Exclude<FloorplanZone,'individuales'>, Array<[string, number, number, FloorplanShape]>> = {
   alargadas: [
-    ["al-1",14.142857,25.451264,"alargada"],
-    ["al-2",38.5,25.451264,"alargada"],
-    ["al-3",62.714286,25.451264,"alargada"],
-    ["al-4",87.071429,25.451264,"alargada"],
-    ["al-5",14.142857,72.021661,"alargada"],
-    ["al-6",38.5,72.021661,"alargada"],
-    ["al-7",62.714286,72.021661,"alargada"],
-    ["al-8",87.071429,72.021661,"alargada"],
+    ["al-1",13.151042,26.509186,"alargada"],
+    ["al-2",36.328125,26.509186,"alargada"],
+    ["al-3",60.611979,26.509186,"alargada"],
+    ["al-4",85.286458,26.509186,"alargada"],
+    ["al-5",13.151042,72.178478,"alargada"],
+    ["al-6",36.328125,72.178478,"alargada"],
+    ["al-7",60.611979,72.178478,"alargada"],
+    ["al-8",85.286458,72.178478,"alargada"],
   ],
   terraza: [
-    ["te-s-1",10.091146,15.769231,"cuadrada"],
-    ["te-s-2",26.302083,15.769231,"cuadrada"],
-    ["te-s-3",42.447917,15.769231,"cuadrada"],
-    ["te-s-4",58.658854,15.769231,"cuadrada"],
-    ["te-s-5",74.739583,15.769231,"cuadrada"],
-    ["te-s-6",91.666667,15.769231,"cuadrada"],
-    ["te-m-1",13.346354,36.666667,"cuadrada"],
-    ["te-m-2",29.817708,36.666667,"cuadrada"],
-    ["te-m-3",45.833333,36.666667,"cuadrada"],
-    ["te-m-4",62.109375,36.666667,"cuadrada"],
-    ["te-m-5",78.059896,36.666667,"cuadrada"],
-    ["te-d-1",10.677083,71.410256,"doble"],
-    ["te-d-2",27.148438,71.410256,"doble"],
-    ["te-d-3",43.294271,71.410256,"doble"],
-    ["te-d-4",59.505208,71.410256,"doble"],
-    ["te-d-5",75.585938,71.410256,"doble"],
-    ["te-d-6",91.992188,71.410256,"doble"],
+    ["te-s-1",10.091146,18.372703,"cuadrada"],
+    ["te-s-2",25.78125,18.372703,"cuadrada"],
+    ["te-s-3",41.731771,18.372703,"cuadrada"],
+    ["te-s-4",57.877604,18.372703,"cuadrada"],
+    ["te-s-5",73.632813,18.372703,"cuadrada"],
+    ["te-s-6",91.145833,18.372703,"cuadrada"],
+    ["te-m-1",12.369792,40.682415,"cuadrada"],
+    ["te-m-2",28.515625,40.682415,"cuadrada"],
+    ["te-m-3",44.466146,40.682415,"cuadrada"],
+    ["te-m-4",60.481771,40.682415,"cuadrada"],
+    ["te-m-5",76.5625,40.682415,"cuadrada"],
+    ["te-d-1",11.263021,72.965879,"doble"],
+    ["te-d-2",27.213542,72.965879,"doble"],
+    ["te-d-3",43.359375,72.965879,"doble"],
+    ["te-d-4",59.505208,72.965879,"doble"],
+    ["te-d-5",75.455729,72.965879,"doble"],
+    ["te-d-6",91.861979,72.965879,"doble"],
   ],
   interior: [
     ["in-d-1",78.17029,13.043478,"doble"],
@@ -79,7 +79,7 @@ const fixedCenters: Record<Exclude<FloorplanZone,'individuales'>, Array<[string,
 }
 
 export const INDIVIDUAL_SLOT_COUNT = 9
-const individualSlots: Array<[number,number]> = [[19.791667,24.278846],[50,24.278846],[80.288462,24.278846],[19.791667,50.080128],[50,50.080128],[80.288462,50.080128],[19.791667,75.88141],[50,75.88141],[80.288462,75.88141]]
+const individualSlots: Array<[number,number]> = [[19.69697,24.082935],[49.760766,24.082935],[79.984051,24.082935],[19.69697,49.920255],[49.760766,49.920255],[79.984051,49.920255],[19.69697,75.598086],[49.760766,75.598086],[79.984051,75.598086]]
 
 function fixedTable(id:string,zone:FloorplanZone,number:number|null,x:number,y:number,shape:FloorplanShape):FloorplanTable {
   const width=zone==='interior'?(shape==='doble'?21:12):zone==='alargadas'?19:zone==='individuales'?21:11
