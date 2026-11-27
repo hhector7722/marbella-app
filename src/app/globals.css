@@ -14775,7 +14775,7 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
 @supports (-webkit-touch-callout: none) {
   @media (display-mode: standalone) and (orientation: portrait) and (max-width: 767px) {
     :root {
-      --shell-safe-top: calc(env(safe-area-inset-top, 0px) + 32px);
+      --shell-safe-top: calc(env(safe-area-inset-top, 0px) + 16px);
     }
   }
 }
