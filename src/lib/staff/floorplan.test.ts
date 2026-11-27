@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   cloneFloorplan, initialFloorplanLayout, validateFloorplanLayout,
-  hasFixedFloorplanGeometry, fixedIndividualTable,
+  hasFixedFloorplanGeometry, fixedIndividualTable, INDIVIDUAL_SLOT_COUNT,
 } from './floorplan.ts'
 
 function numbered() {
@@ -89,4 +89,16 @@ test('mesas individuales adicionales usan exclusivamente casillas fijas', () => 
   const manipulated = cloneFloorplan(layout)
   manipulated.tables[manipulated.tables.length - 1].x += 3
   assert.equal(hasFixedFloorplanGeometry(manipulated), false)
+})
+
+test('el plano definitivo tiene nueve posiciones individuales y todas se pueden añadir', () => {
+  assert.equal(INDIVIDUAL_SLOT_COUNT, 9)
+  const layout = numbered()
+  for(let i=0;i<INDIVIDUAL_SLOT_COUNT;i++) layout.tables.push(fixedIndividualTable(i,100+i))
+  assert.equal(layout.tables.length,40)
+  assert.equal(hasFixedFloorplanGeometry(layout),true)
+  assert.deepEqual(validateFloorplanLayout(layout,true),[])
+  assert.throws(()=>fixedIndividualTable(9,null))
+  layout.tables.push({...fixedIndividualTable(0,200),id:'individual-9'})
+  assert.equal(hasFixedFloorplanGeometry(layout),false)
 })

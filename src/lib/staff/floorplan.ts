@@ -37,41 +37,53 @@ export const ZONE_LABELS: Record<FloorplanZone, string> = {
   individuales: 'Individuales',
 }
 
-/**
- * Centros fijos de las mesas fotografiadas. Coordenadas porcentuales
- * relativas a cada recorte de las DOS fotografías originales del usuario.
- * Las imágenes contienen el mobiliario real; la UI solo añade números.
- */
+/** Centros de los muebles en el plano definitivo de noviembre, en porcentajes de cada zona. */
 const fixedCenters: Record<Exclude<FloorplanZone,'individuales'>, Array<[string, number, number, FloorplanShape]>> = {
   alargadas: [
-    ['al-1',36.0,26.0,'alargada'],['al-2',53.4,26.0,'alargada'],
-    ['al-3',71.3,26.0,'alargada'],['al-4',89.1,26.0,'alargada'],
-    ['al-5',36.0,68.5,'alargada'],['al-6',53.4,68.5,'alargada'],
-    ['al-7',71.3,68.5,'alargada'],['al-8',89.1,68.5,'alargada'],
+    ["al-1",14.7795,26.74419,"alargada"],
+    ["al-2",38.37902,26.74419,"alargada"],
+    ["al-3",61.97855,26.74419,"alargada"],
+    ["al-4",86.05483,26.74419,"alargada"],
+    ["al-5",14.7795,70.34884,"alargada"],
+    ["al-6",38.37902,70.34884,"alargada"],
+    ["al-7",61.97855,70.34884,"alargada"],
+    ["al-8",86.05483,70.34884,"alargada"],
   ],
   terraza: [
-    ['te-s-1',6.3,19.0,'cuadrada'],['te-s-2',23.6,19.0,'cuadrada'],
-    ['te-s-3',40.9,19.0,'cuadrada'],['te-s-4',58.2,19.0,'cuadrada'],
-    ['te-s-5',75.5,19.0,'cuadrada'],['te-s-6',93.7,19.0,'cuadrada'],
-    ['te-m-1',15.0,32.4,'cuadrada'],['te-m-2',32.2,32.4,'cuadrada'],
-    ['te-m-3',49.5,32.4,'cuadrada'],['te-m-4',66.8,32.4,'cuadrada'],
-    ['te-m-5',84.1,32.4,'cuadrada'],
-    ['te-d-1',6.3,58.1,'doble'],['te-d-2',23.6,58.1,'doble'],
-    ['te-d-3',40.9,58.1,'doble'],['te-d-4',58.2,58.1,'doble'],
-    ['te-d-5',75.5,58.1,'doble'],['te-d-6',93.7,58.1,'doble'],
+    ["te-s-1",11.323,17.05069,"cuadrada"],
+    ["te-s-2",27.17521,17.05069,"cuadrada"],
+    ["te-s-3",42.90822,17.05069,"cuadrada"],
+    ["te-s-4",58.76043,17.05069,"cuadrada"],
+    ["te-s-5",74.49344,17.05069,"cuadrada"],
+    ["te-s-6",90.9416,17.05069,"cuadrada"],
+    ["te-m-1",14.42193,37.32719,"cuadrada"],
+    ["te-m-2",30.51251,37.32719,"cuadrada"],
+    ["te-m-3",46.36472,37.32719,"cuadrada"],
+    ["te-m-4",61.97855,37.32719,"cuadrada"],
+    ["te-m-5",77.83075,37.32719,"cuadrada"],
+    ["te-d-1",11.91895,70.50691,"doble"],
+    ["te-d-2",27.89035,70.50691,"doble"],
+    ["te-d-3",43.62336,70.50691,"doble"],
+    ["te-d-4",59.47557,70.50691,"doble"],
+    ["te-d-5",75.32777,70.50691,"doble"],
+    ["te-d-6",91.29917,70.50691,"doble"],
   ],
   interior: [
-    ['in-d-1',75.2,20.5,'doble'],['in-d-2',75.2,41.5,'doble'],['in-d-3',75.2,62,'doble'],
-    ['in-b-1',23.9,83.1,'doble'],['in-b-2',44.6,83.1,'cuadrada'],['in-b-3',62.8,83.1,'cuadrada'],
+    ["in-d-1",73.26969,12.5261,"doble"],
+    ["in-d-2",73.26969,35.90814,"doble"],
+    ["in-d-3",73.26969,59.70772,"doble"],
+    ["in-b-1",19.57041,82.67223,"doble"],
+    ["in-b-2",51.07399,82.67223,"cuadrada"],
+    ["in-b-3",78.52029,82.67223,"cuadrada"],
   ],
 }
 
-const individualSlots: Array<[number,number]> =
-  Array.from({length:12},(_,index) => [18+(index%3)*32, 15+Math.floor(index/3)*23])
+export const INDIVIDUAL_SLOT_COUNT = 9
+const individualSlots: Array<[number,number]> = [[19.7561,21.7119],[50.2439,21.7119],[80.73171,21.7119],[19.7561,48.85177],[50.2439,48.85177],[80.73171,48.85177],[19.7561,75.99165],[50.2439,75.99165],[80.73171,75.99165]]
 
 function fixedTable(id:string,zone:FloorplanZone,number:number|null,x:number,y:number,shape:FloorplanShape):FloorplanTable {
-  const width=zone==='interior'?13:zone==='alargadas'?12:zone==='individuales'?7:6.5
-  const height=zone==='interior'?10:zone==='alargadas'?13:zone==='individuales'?16:7.5
+  const width=zone==='interior'?(shape==='doble'?28:15):zone==='alargadas'?19:zone==='individuales'?22:12
+  const height=zone==='interior'?17:zone==='alargadas'?39:zone==='individuales'?19:shape==='doble'?35:17
   return {
     id, zone, number,
     x:Math.max(0,Math.min(100-width,x-width/2)),
@@ -112,7 +124,7 @@ export function hasFixedFloorplanGeometry(layout: FloorplanLayout): boolean {
   for(const current of layout.tables){
     if(originals.has(current.id))continue
     const match=/^individual-(\d{1,2})$/.exec(current.id)
-    if(!match||!samePosition(current,fixedIndividualTable(Number(match[1]),current.number)))return false
+    if(!match||Number(match[1])>=INDIVIDUAL_SLOT_COUNT||!samePosition(current,fixedIndividualTable(Number(match[1]),current.number)))return false
   }
   return actual.size===layout.tables.length
 }

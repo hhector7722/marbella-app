@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Check, Pencil, Plus, Save, Settings2, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
-  FLOORPLAN_ZONES, ZONE_LABELS, cloneFloorplan, initialFloorplanLayout,
+  FLOORPLAN_ZONES, ZONE_LABELS, INDIVIDUAL_SLOT_COUNT, cloneFloorplan, initialFloorplanLayout,
   fixedIndividualTable, validateFloorplanLayout, type FloorplanLayout,
   type FloorplanRecord, type FloorplanTable, type FloorplanZone,
 } from '@/lib/staff/floorplan'
@@ -13,82 +13,33 @@ import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
 
 type Props = { record: FloorplanRecord; canEdit: boolean }
 
-type PhotoCrop = {
-  src: string
-  sourceWidth: number
-  sourceHeight: number
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-/**
- * Imágenes originales del usuario a resolución íntegra. Las zonas
- * alargadas y terraza muestran la imagen completa, sin recorte ni zoom;
- * los números son la única capa superpuesta.
- */
-const PHOTO_CROPS: Record<FloorplanZone, PhotoCrop> = {
-  alargadas: {
-    src: '/images/mesas/alargadas-nueva-2594x1140.jpeg',
-    sourceWidth: 2594, sourceHeight: 1140,
-    x: 0, y: 0, width: 2594, height: 1140,
-  },
-  terraza: {
-    src: '/images/mesas/terraza-nueva-1536x735.jpeg',
-    sourceWidth: 1536, sourceHeight: 735,
-    x: 0, y: 0, width: 1536, height: 735,
-  },
-  interior: {
-    src: '/images/mesas/interior-original-1254.jpeg',
-    sourceWidth: 1254, sourceHeight: 1254,
-    x: 0, y: 0, width: 1254, height: 1254,
-  },
-  individuales: {
-    src: '/images/mesas/interior-original-1254.jpeg',
-    sourceWidth: 1254, sourceHeight: 1254,
-    x: 540, y: 355, width: 280, height: 340,
-  },
+const ZONE_IMAGES: Record<FloorplanZone, string> = {
+  alargadas: '/images/mesas/definitivo-alargadas.svg',
+  terraza: '/images/mesas/definitivo-terraza.svg',
+  interior: '/images/mesas/definitivo-interior.svg',
+  individuales: '/images/mesas/definitivo-individuales.svg',
 }
 
 function ZonePhoto({
-  zone, layout, editing, selectedId, onSelect,
+  zone, layout, editing, selectedId, onSelect, onEmptySlot,
 }: {
   zone: FloorplanZone
   layout: FloorplanLayout
   editing: boolean
   selectedId: string | null
   onSelect: (table: FloorplanTable) => void
+  onEmptySlot?: (slot: number) => void
 }) {
   const tables = layout.tables.filter((t) => t.zone === zone)
-  const photo = PHOTO_CROPS[zone]
-  const responsiveWidthDvh = (100 / 3 * photo.width / photo.height).toFixed(5)
   return (
-    <section
-      aria-label={ZONE_LABELS[zone]}
-      className="relative flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-hidden bg-[#a8abad]"
-    >
-      <div
-        className="relative max-h-full shrink-0 overflow-hidden"
-        style={{
-          aspectRatio: `${photo.width} / ${photo.height}`,
-          width: `min(100%, ${responsiveWidthDvh}dvh)`,
-        }}
-      >
-        <img
-          src={photo.src}
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-          decoding="async"
-          className="pointer-events-none absolute block max-w-none select-none"
-          style={{
-            width: `${photo.sourceWidth / photo.width * 100}%`,
-            height: `${photo.sourceHeight / photo.height * 100}%`,
-            left: `-${photo.x / photo.width * 100}%`,
-            top: `-${photo.y / photo.height * 100}%`,
-          }}
-        />
+    <section aria-label={ZONE_LABELS[zone]} className="relative h-full w-full min-h-0 min-w-0 overflow-hidden rounded-[14px] border border-sky-100 bg-[#85888a] shadow-[0_0_8px_rgba(130,203,255,.65)]">
+      <div className="relative h-full w-full overflow-hidden">
+        <img src={ZONE_IMAGES[zone]} alt="" aria-hidden="true" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"/>
+        {editing && zone === 'individuales' && Array.from({length: INDIVIDUAL_SLOT_COUNT}, (_, slot) => {
+          const t = fixedIndividualTable(slot, null)
+          if (tables.some(item => item.id === t.id)) return null
+          return <button key={t.id} type="button" aria-label="Añadir número a esta posición" onClick={() => onEmptySlot?.(slot)} className="absolute z-10 rounded-lg focus-visible:outline-2 focus-visible:outline-white" style={{left:t.x+'%',top:t.y+'%',width:t.width+'%',height:t.height+'%'}} />
+        })}
         {tables.map((table) => {
           return (
             <button
@@ -105,7 +56,7 @@ function ZonePhoto({
               }}
             >
               {table.number !== null && (
-                <span className={'pointer-events-none flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white bg-[#1e729b] text-center font-extrabold text-white shadow-[0_2px_6px_rgba(0,0,0,.38)] ' +
+                <span className={'pointer-events-none flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white bg-[#064b96] text-center font-extrabold text-white shadow-[0_2px_6px_rgba(0,0,0,.38)] ' +
                   (table.number >= 1000 ? 'text-[9px]' : table.number >= 100 ? 'text-[10px]' : 'text-xs')}>
                   {table.number}
                 </span>
@@ -169,10 +120,10 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
     setSelectedId(null)
   }
 
-  const addIndividual = () => {
+  const addIndividual = (requestedSlot?: number) => {
     const used = new Set(layout.tables.filter(t=>t.zone==='individuales').map(t=>t.id))
-    const slot = Array.from({length:12},(_,i)=>i).find(i=>!used.has('individual-'+i))
-    if (slot === undefined) {toast.error('No quedan posiciones individuales disponibles.');return}
+    const slot = requestedSlot ?? Array.from({length:INDIVIDUAL_SLOT_COUNT},(_,i)=>i).find(i=>!used.has('individual-'+i))
+    if (slot === undefined || slot < 0 || slot >= INDIVIDUAL_SLOT_COUNT || used.has('individual-'+slot)) {toast.error('No quedan posiciones individuales disponibles.');return}
     const newTable = fixedIndividualTable(slot,null)
     setLayout(prev=>({...prev,tables:[...prev.tables,newTable]}))
     setSelectedId(newTable.id)
@@ -214,23 +165,23 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   },[selectedId,selected])
 
   return (
-    <main className="fixed inset-0 z-[120] isolate h-[100dvh] w-full overflow-hidden bg-[#a7a9a8]">
-      <div className="absolute inset-0 grid h-full w-full grid-rows-3 gap-0">
+    <main className="fixed inset-0 z-[120] isolate h-[100dvh] w-full overflow-hidden bg-[radial-gradient(ellipse_at_top,#153c65_0%,#06264c_45%,#031a39_100%)]">
+      <div className="absolute inset-x-0 bottom-[max(10px,env(safe-area-inset-bottom))] top-[calc(max(8px,env(safe-area-inset-top))+49px)] mx-auto grid w-full max-w-[min(100%,62dvh)] grid-rows-[344fr_434fr_479fr] gap-1.5 px-1.5 pb-1">
         <ZonePhoto zone="alargadas" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
         <ZonePhoto zone="terraza" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
-        <div className="grid min-h-0 grid-cols-2 gap-0">
+        <div className="grid min-h-0 grid-cols-[419fr_410fr] gap-1.5">
           <ZonePhoto zone="interior" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
-          <ZonePhoto zone="individuales" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
+          <ZonePhoto zone="individuales" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose} onEmptySlot={addIndividual}/>
         </div>
       </div>
 
       <div className="absolute left-2 top-[max(8px,env(safe-area-inset-top))] z-40 flex items-center gap-1.5">
         <Link href="/master/dashboard" aria-label="Volver a Master"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/70 bg-white/95 text-slate-800 shadow-md">
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
           <ArrowLeft size={18}/>
         </Link>
-        <span className="rounded-lg border border-white/70 bg-white/95 px-2 py-2 text-xs font-bold shadow-md">
-          Mesas{editing ? ' · Numerar' : ''}
+        <span className="max-w-[105px] truncate rounded-lg px-1 py-2 text-xs font-semibold text-white">
+          Mesas{editing ? ' · Numeración' : ''}
         </span>
       </div>
 
@@ -238,28 +189,28 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
         <div className="absolute right-2 top-[max(8px,env(safe-area-inset-top))] z-40 flex items-center gap-1.5">
           {editing ? (
             <>
-              <button type="button" onClick={addIndividual} aria-label="Añadir mesa individual"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/70 bg-white/95 shadow-md">
+              <button type="button" onClick={()=>addIndividual()} aria-label="Añadir mesa individual"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
                 <Plus size={19}/>
               </button>
               <button type="button" onClick={()=>{setSettings(!settings);setSelectedId(null)}} aria-label="Configurar salones BDP"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/70 bg-white/95 shadow-md">
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
                 <Settings2 size={19}/>
               </button>
               {firstSetup && (
                 <button type="button" disabled={busy} onClick={()=>void save(false)}
-                  className="h-9 rounded-lg border border-white/70 bg-white/95 px-2 text-xs font-bold shadow-md disabled:opacity-50">Borrador</button>
+                  className="h-9 rounded-lg bg-white/15 px-2 text-xs font-bold text-white shadow-md disabled:opacity-50">Borrador</button>
               )}
               {!firstSetup && (
                 <button type="button" onClick={()=>{
                   setLayout(cloneFloorplan(published!));setEditing(false);setSelectedId(null);setSettings(false)
                 }} aria-label="Cancelar edición"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/70 bg-white/95 shadow-md">
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
                   <X size={19}/>
                 </button>
               )}
               <button type="button" disabled={busy} onClick={()=>void save(true)}
-                className="flex h-9 items-center gap-1 rounded-lg bg-[#1d6688] px-3 text-xs font-bold text-white shadow-lg disabled:opacity-50">
+                className="flex h-9 items-center gap-1 rounded-lg bg-[#0755f5] px-3 text-xs font-bold text-white shadow-lg disabled:opacity-50">
                 <Save size={15}/>{firstSetup?'Publicar':'Guardar'}
               </button>
             </>
@@ -307,7 +258,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
                   onKeyDown={e=>{if(e.key==='Enter')setNumber()}}
                   className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-lg font-bold"/>
                 <button type="button" onClick={setNumber} aria-label="Confirmar número"
-                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#1d6688] text-white">
+                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0755f5] text-white">
                   <Check size={20}/>
                 </button>
                 {selected?.zone==='individuales' && (
