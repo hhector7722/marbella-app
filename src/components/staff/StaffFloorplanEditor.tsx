@@ -10,6 +10,7 @@ import {
   type FloorplanRecord, type FloorplanTable, type FloorplanZone,
 } from '@/lib/staff/floorplan'
 import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
+import { BdpOrderView } from '@/components/staff/BdpOrderView'
 
 type Props = { record: FloorplanRecord; canEdit: boolean }
 
@@ -116,6 +117,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   const [selectedId, setSelectedId] = useState<string|null>(null)
   const [numberInput, setNumberInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [orderTable, setOrderTable] = useState<number|null>(null)
 
   const firstSetup = !published
   const displayed = editing ? layout : (published ?? layout)
@@ -124,7 +126,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
 
   const choose = (table: FloorplanTable) => {
     if (!editing) {
-      if (table.number !== null) toast.info('Mesa ' + table.number + ': comandas todavía no habilitadas.')
+      if (table.number !== null) setOrderTable(table.number)
       return
     }
     setSelectedId(table.id)
@@ -195,14 +197,15 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
 
   return (
     <main className="fixed inset-0 z-[120] isolate flex h-[100dvh] w-full flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top,#153c65_0%,#06264c_45%,#031a39_100%)] px-2.5 pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      {orderTable !== null && !editing ? <BdpOrderView key={orderTable} tableNumber={orderTable} onBack={()=>setOrderTable(null)}/> : <>
       <header className="relative z-40 flex w-full shrink-0 items-center justify-between gap-1">
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <Link href="/master/dashboard" aria-label="Volver a Master"
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
           <ArrowLeft size={18}/>
         </Link>
-        <span className="min-w-0 truncate rounded-lg px-1 py-2 text-xs font-semibold text-white" title={editing ? 'Mesas · Numeración' : 'Mesas'}>
-          Mesas<span className="hidden sm:inline">{editing ? ' · Numeración' : ''}</span>
+        <span className="min-w-0 truncate rounded-lg px-1 py-2 text-xs font-semibold text-white" title={editing ? 'Bdp · Numeración' : 'Bdp'}>
+          Bdp<span className="hidden sm:inline">{editing ? ' · Numeración' : ''}</span>
         </span>
       </div>
 
@@ -297,6 +300,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
           </span>
         )}
       </footer>
+      </>}
     </main>
   )
 }
