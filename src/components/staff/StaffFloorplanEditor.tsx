@@ -20,6 +20,14 @@ const ZONE_IMAGES: Record<FloorplanZone, string> = {
   individuales: '/images/mesas/definitivo-individuales.svg',
 }
 
+// Keep the artwork and interactive coordinates in the same intrinsic frame.
+const ZONE_ASPECT: Record<FloorplanZone, string> = {
+  alargadas: '839 / 344',
+  terraza: '839 / 434',
+  interior: '419 / 479',
+  individuales: '410 / 479',
+}
+
 function ZonePhoto({
   zone, layout, editing, selectedId, onSelect, onEmptySlot,
 }: {
@@ -32,9 +40,9 @@ function ZonePhoto({
 }) {
   const tables = layout.tables.filter((t) => t.zone === zone)
   return (
-    <section aria-label={ZONE_LABELS[zone]} className="relative h-full w-full min-h-0 min-w-0 overflow-hidden rounded-[14px] border border-sky-100 bg-[#85888a] shadow-[0_0_8px_rgba(130,203,255,.65)]">
+    <section aria-label={ZONE_LABELS[zone]} className="relative w-full min-h-0 min-w-0 overflow-hidden rounded-[14px] bg-[#85888a] ring-1 ring-sky-100 shadow-[0_0_8px_rgba(130,203,255,.65)]" style={{aspectRatio: ZONE_ASPECT[zone]}}>
       <div className="relative h-full w-full overflow-hidden">
-        <img src={ZONE_IMAGES[zone]} alt="" aria-hidden="true" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"/>
+        <img src={ZONE_IMAGES[zone]} alt="" aria-hidden="true" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"/>
         {editing && zone === 'individuales' && Array.from({length: INDIVIDUAL_SLOT_COUNT}, (_, slot) => {
           const t = fixedIndividualTable(slot, null)
           if (tables.some(item => item.id === t.id)) return null
@@ -165,28 +173,20 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   },[selectedId,selected])
 
   return (
-    <main className="fixed inset-0 z-[120] isolate h-[100dvh] w-full overflow-hidden bg-[radial-gradient(ellipse_at_top,#153c65_0%,#06264c_45%,#031a39_100%)]">
-      <div className="absolute inset-x-0 bottom-[max(10px,env(safe-area-inset-bottom))] top-[calc(max(8px,env(safe-area-inset-top))+49px)] mx-auto grid w-full max-w-[min(100%,62dvh)] grid-rows-[344fr_434fr_479fr] gap-1.5 px-1.5 pb-1">
-        <ZonePhoto zone="alargadas" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
-        <ZonePhoto zone="terraza" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
-        <div className="grid min-h-0 grid-cols-[419fr_410fr] gap-1.5">
-          <ZonePhoto zone="interior" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
-          <ZonePhoto zone="individuales" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose} onEmptySlot={addIndividual}/>
-        </div>
-      </div>
-
-      <div className="absolute left-2 top-[max(8px,env(safe-area-inset-top))] z-40 flex items-center gap-1.5">
+    <main className="fixed inset-0 z-[120] isolate flex h-[100dvh] w-full flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top,#153c65_0%,#06264c_45%,#031a39_100%)] px-2.5 pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      <header className="relative z-40 flex w-full shrink-0 items-center justify-between gap-1">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <Link href="/master/dashboard" aria-label="Volver a Master"
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
           <ArrowLeft size={18}/>
         </Link>
-        <span className="max-w-[105px] truncate rounded-lg px-1 py-2 text-xs font-semibold text-white">
-          Mesas{editing ? ' · Numeración' : ''}
+        <span className="min-w-0 truncate rounded-lg px-1 py-2 text-xs font-semibold text-white" title={editing ? 'Mesas · Numeración' : 'Mesas'}>
+          Mesas<span className="hidden sm:inline">{editing ? ' · Numeración' : ''}</span>
         </span>
       </div>
 
       {canEdit && (
-        <div className="absolute right-2 top-[max(8px,env(safe-area-inset-top))] z-40 flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {editing ? (
             <>
               <button type="button" onClick={()=>addIndividual()} aria-label="Añadir mesa individual"
@@ -223,8 +223,25 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
         </div>
       )}
 
+      </header>
+
+      {/* The available area excludes the toolbar, status and both safe-area margins.
+          Width is bounded by the intrinsic artwork height, so no zone gets cropped. */}
+      <div className="flex min-h-0 flex-1 items-center justify-center py-3">
+        <div className="flex h-full w-full items-center justify-center" style={{containerType: 'size'}}>
+          <div className="flex shrink-0 flex-col gap-2" style={{width: 'min(100cqw, calc((100cqh - 16px) * 0.66))'}}>
+            <ZonePhoto zone="alargadas" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
+            <ZonePhoto zone="terraza" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
+            <div className="grid min-h-0 grid-cols-[419fr_410fr] items-start gap-2">
+              <ZonePhoto zone="interior" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
+              <ZonePhoto zone="individuales" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose} onEmptySlot={addIndividual}/>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {editing && (selected || settings) && (
-        <div className="absolute right-2 top-[calc(max(8px,env(safe-area-inset-top))+44px)] z-50
+        <div className="absolute right-2 top-[calc(env(safe-area-inset-top)+56px)] z-50
           w-[min(325px,calc(100vw-16px))] rounded-xl border border-white/80 bg-white/95 p-3
           shadow-[0_8px_30px_rgba(0,0,0,.32)] backdrop-blur-sm">
           <div className="mb-2 flex items-center justify-between text-xs font-bold">
@@ -276,11 +293,13 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
         </div>
       )}
 
-      {editing && missing>0 && (
-        <div className="pointer-events-none absolute bottom-[max(6px,env(safe-area-inset-bottom))] left-1/2 z-30 -translate-x-1/2 rounded-lg bg-slate-900/80 px-3 py-1.5 text-[11px] font-semibold text-white">
-          {missing} mesas por numerar
-        </div>
-      )}
+      <footer className="flex h-7 shrink-0 items-center justify-center">
+        {editing && missing>0 && (
+          <span className="rounded-lg bg-slate-900/80 px-3 py-1.5 text-[11px] font-semibold text-white">
+            {missing} mesas por numerar
+          </span>
+        )}
+      </footer>
     </main>
   )
 }
