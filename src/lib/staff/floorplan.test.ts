@@ -39,11 +39,12 @@ test('el mismo número no puede repetirse dentro del mismo salón', () => {
   assert.ok(validateFloorplanLayout(layout, true).some((x) => x.includes('duplicado')))
 })
 
-test('el mismo número sí puede pertenecer a dos salones diferentes', () => {
+test('el mismo número no puede pertenecer a dos secciones diferentes', () => {
   const layout = numbered()
   const interior = layout.tables.find((t) => t.zone === 'interior')!
   interior.number = layout.tables[0].number
-  assert.deepEqual(validateFloorplanLayout(layout, true), [])
+  assert.ok(validateFloorplanLayout(layout, true).some((x) => x.includes('duplicado')))
+  assert.ok(validateFloorplanLayout(layout, false).some((x) => x.includes('duplicado')))
 })
 
 test('tras publicar, añadir una mesa sin número impide guardar el nuevo plano', () => {
@@ -127,4 +128,20 @@ test('los centros se corresponden con las fotos originales', () => {
   const slot = fixedIndividualTable(8,null)
   assert.ok(Math.abs(slot.x+slot.width/2-1002/1248*100)<0.001)
   assert.ok(Math.abs(slot.y+slot.height/2-947/1248*100)<0.001)
+})
+
+test('puede quitar y reutilizar un número en el borrador sin mover mobiliario', () => {
+  const layout = numbered()
+  const n = layout.tables[0].number
+  layout.tables[0].number = null
+  layout.tables[1].number = n
+  assert.deepEqual(validateFloorplanLayout(layout, false), [])
+  assert.ok(hasFixedFloorplanGeometry(layout))
+  assert.ok(validateFloorplanLayout(layout, true).some(x=>x.includes('numerar')))
+})
+
+test('publicación no requiere configurar salones', () => {
+  const layout = numbered()
+  layout.salons = {alargadas:null,terraza:null,interior:null,individuales:null}
+  assert.deepEqual(validateFloorplanLayout(layout,true),[])
 })
