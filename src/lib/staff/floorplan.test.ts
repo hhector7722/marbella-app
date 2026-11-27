@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   cloneFloorplan, initialFloorplanLayout, validateFloorplanLayout,
-  hasFixedFloorplanGeometry, fixedIndividualTable, INDIVIDUAL_SLOT_COUNT,
+  hasFixedFloorplanGeometry, fixedIndividualTable, INDIVIDUAL_SLOT_COUNT, alignFloorplanToPhotos,
 } from './floorplan.ts'
 
 function numbered() {
@@ -101,4 +101,29 @@ test('el plano definitivo tiene nueve posiciones individuales y todas se pueden 
   assert.throws(()=>fixedIndividualTable(9,null))
   layout.tables.push({...fixedIndividualTable(0,200),id:'individual-9'})
   assert.equal(hasFixedFloorplanGeometry(layout),false)
+})
+
+test('reencaja la geometría anterior sin perder números ni salones', () => {
+  const old = numbered()
+  old.tables.push(fixedIndividualTable(3,55))
+  const expected = cloneFloorplan(old)
+  old.tables.forEach(t => { t.x = 1; t.y = 1 })
+  const aligned = alignFloorplanToPhotos(old)
+  assert.deepEqual(aligned,expected)
+  assert.ok(hasFixedFloorplanGeometry(aligned))
+  assert.equal(old.tables[0].x,1)
+})
+test('los centros se corresponden con las fotos originales', () => {
+  const layout = initialFloorplanLayout()
+  const check = (id:string,x:number,y:number) => {
+    const t = layout.tables.find(t => t.id === id)!
+    assert.ok(Math.abs(t.x+t.width/2-x)<0.001)
+    assert.ok(Math.abs(t.y+t.height/2-y)<0.001)
+  }
+  check('al-1',198/1400*100,141/554*100)
+  check('te-d-6',755/820*100,298/417*100)
+  check('in-b-3',706/1104*100,931/1104*100)
+  const slot = fixedIndividualTable(8,null)
+  assert.ok(Math.abs(slot.x+slot.width/2-1117/1387*100)<0.001)
+  assert.ok(Math.abs(slot.y+slot.height/2-801/1011*100)<0.001)
 })

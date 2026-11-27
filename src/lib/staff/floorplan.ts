@@ -37,53 +37,53 @@ export const ZONE_LABELS: Record<FloorplanZone, string> = {
   individuales: 'Individuales',
 }
 
-/** Centros de los muebles en el plano definitivo de noviembre, en porcentajes de cada zona. */
+/** Centros medidos sobre las cuatro fotografías originales, sin recortar. */
 const fixedCenters: Record<Exclude<FloorplanZone,'individuales'>, Array<[string, number, number, FloorplanShape]>> = {
   alargadas: [
-    ["al-1",14.7795,26.74419,"alargada"],
-    ["al-2",38.37902,26.74419,"alargada"],
-    ["al-3",61.97855,26.74419,"alargada"],
-    ["al-4",86.05483,26.74419,"alargada"],
-    ["al-5",14.7795,70.34884,"alargada"],
-    ["al-6",38.37902,70.34884,"alargada"],
-    ["al-7",61.97855,70.34884,"alargada"],
-    ["al-8",86.05483,70.34884,"alargada"],
+    ["al-1",14.142857,25.451264,"alargada"],
+    ["al-2",38.5,25.451264,"alargada"],
+    ["al-3",62.714286,25.451264,"alargada"],
+    ["al-4",87.071429,25.451264,"alargada"],
+    ["al-5",14.142857,72.021661,"alargada"],
+    ["al-6",38.5,72.021661,"alargada"],
+    ["al-7",62.714286,72.021661,"alargada"],
+    ["al-8",87.071429,72.021661,"alargada"],
   ],
   terraza: [
-    ["te-s-1",11.323,17.05069,"cuadrada"],
-    ["te-s-2",27.17521,17.05069,"cuadrada"],
-    ["te-s-3",42.90822,17.05069,"cuadrada"],
-    ["te-s-4",58.76043,17.05069,"cuadrada"],
-    ["te-s-5",74.49344,17.05069,"cuadrada"],
-    ["te-s-6",90.9416,17.05069,"cuadrada"],
-    ["te-m-1",14.42193,37.32719,"cuadrada"],
-    ["te-m-2",30.51251,37.32719,"cuadrada"],
-    ["te-m-3",46.36472,37.32719,"cuadrada"],
-    ["te-m-4",61.97855,37.32719,"cuadrada"],
-    ["te-m-5",77.83075,37.32719,"cuadrada"],
-    ["te-d-1",11.91895,70.50691,"doble"],
-    ["te-d-2",27.89035,70.50691,"doble"],
-    ["te-d-3",43.62336,70.50691,"doble"],
-    ["te-d-4",59.47557,70.50691,"doble"],
-    ["te-d-5",75.32777,70.50691,"doble"],
-    ["te-d-6",91.29917,70.50691,"doble"],
+    ["te-s-1",10.121951,15.827338,"cuadrada"],
+    ["te-s-2",26.219512,15.827338,"cuadrada"],
+    ["te-s-3",42.439024,15.827338,"cuadrada"],
+    ["te-s-4",58.658537,15.827338,"cuadrada"],
+    ["te-s-5",74.756098,15.827338,"cuadrada"],
+    ["te-s-6",91.707317,15.827338,"cuadrada"],
+    ["te-m-1",13.292683,36.930456,"cuadrada"],
+    ["te-m-2",29.756098,36.930456,"cuadrada"],
+    ["te-m-3",45.853659,36.930456,"cuadrada"],
+    ["te-m-4",61.95122,36.930456,"cuadrada"],
+    ["te-m-5",78.04878,36.930456,"cuadrada"],
+    ["te-d-1",10.609756,71.46283,"doble"],
+    ["te-d-2",27.073171,71.46283,"doble"],
+    ["te-d-3",43.292683,71.46283,"doble"],
+    ["te-d-4",59.634146,71.46283,"doble"],
+    ["te-d-5",75.731707,71.46283,"doble"],
+    ["te-d-6",92.073171,71.46283,"doble"],
   ],
   interior: [
-    ["in-d-1",73.26969,12.5261,"doble"],
-    ["in-d-2",73.26969,35.90814,"doble"],
-    ["in-d-3",73.26969,59.70772,"doble"],
-    ["in-b-1",19.57041,82.67223,"doble"],
-    ["in-b-2",51.07399,82.67223,"cuadrada"],
-    ["in-b-3",78.52029,82.67223,"cuadrada"],
+    ["in-d-1",78.17029,13.043478,"doble"],
+    ["in-d-2",78.17029,36.503623,"doble"],
+    ["in-d-3",78.17029,59.692029,"doble"],
+    ["in-b-1",19.474638,84.32971,"doble"],
+    ["in-b-2",43.387681,84.32971,"cuadrada"],
+    ["in-b-3",63.949275,84.32971,"cuadrada"],
   ],
 }
 
 export const INDIVIDUAL_SLOT_COUNT = 9
-const individualSlots: Array<[number,number]> = [[19.7561,21.7119],[50.2439,21.7119],[80.73171,21.7119],[19.7561,48.85177],[50.2439,48.85177],[80.73171,48.85177],[19.7561,75.99165],[50.2439,75.99165],[80.73171,75.99165]]
+const individualSlots: Array<[number,number]> = [[19.682769,20.276954],[50.108147,20.276954],[80.533526,20.276954],[19.682769,49.75272],[50.108147,49.75272],[80.533526,49.75272],[19.682769,79.228487],[50.108147,79.228487],[80.533526,79.228487]]
 
 function fixedTable(id:string,zone:FloorplanZone,number:number|null,x:number,y:number,shape:FloorplanShape):FloorplanTable {
-  const width=zone==='interior'?(shape==='doble'?28:15):zone==='alargadas'?19:zone==='individuales'?22:12
-  const height=zone==='interior'?17:zone==='alargadas'?39:zone==='individuales'?19:shape==='doble'?35:17
+  const width=zone==='interior'?(shape==='doble'?21:12):zone==='alargadas'?19:zone==='individuales'?17:11
+  const height=zone==='interior'?20:zone==='alargadas'?39:zone==='individuales'?22:shape==='doble'?35:17
   return {
     id, zone, number,
     x:Math.max(0,Math.min(100-width,x-width/2)),
@@ -138,6 +138,23 @@ export function cloneFloorplan(layout: FloorplanLayout): FloorplanLayout {
     schema: 1,
     salons: { ...layout.salons },
     tables: layout.tables.map((item) => ({ ...item })),
+  }
+}
+
+/** Reencaja las posiciones antiguas sin cambiar números, salones ni IDs. */
+export function alignFloorplanToPhotos(layout: FloorplanLayout): FloorplanLayout {
+  const positions = new Map(initialFloorplanLayout().tables.map(t => [t.id,t]))
+  return {
+    ...cloneFloorplan(layout),
+    tables: layout.tables.map(t => {
+      const fixed = positions.get(t.id)
+      if (fixed && fixed.zone === t.zone) return {...fixed, number:t.number}
+      const match = /^individual-(\d{1,2})$/.exec(t.id)
+      if (t.zone === 'individuales' && match && Number(match[1]) < INDIVIDUAL_SLOT_COUNT) {
+        return fixedIndividualTable(Number(match[1]),t.number)
+      }
+      return {...t}
+    }),
   }
 }
 

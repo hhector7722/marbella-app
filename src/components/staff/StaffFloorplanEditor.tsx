@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Check, Pencil, Plus, Save, Settings2, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
-  FLOORPLAN_ZONES, ZONE_LABELS, INDIVIDUAL_SLOT_COUNT, cloneFloorplan, initialFloorplanLayout,
+  FLOORPLAN_ZONES, ZONE_LABELS, INDIVIDUAL_SLOT_COUNT, cloneFloorplan, initialFloorplanLayout, alignFloorplanToPhotos,
   fixedIndividualTable, validateFloorplanLayout, type FloorplanLayout,
   type FloorplanRecord, type FloorplanTable, type FloorplanZone,
 } from '@/lib/staff/floorplan'
@@ -14,18 +14,18 @@ import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
 type Props = { record: FloorplanRecord; canEdit: boolean }
 
 const ZONE_IMAGES: Record<FloorplanZone, string> = {
-  alargadas: '/images/mesas/definitivo-alargadas.svg',
-  terraza: '/images/mesas/definitivo-terraza.svg',
-  interior: '/images/mesas/definitivo-interior.svg',
-  individuales: '/images/mesas/definitivo-individuales.svg',
+  alargadas: '/images/mesas/original-final-alargadas.jpeg',
+  terraza: '/images/mesas/original-final-terraza.jpeg',
+  interior: '/images/mesas/original-final-interior.jpeg',
+  individuales: '/images/mesas/original-final-individuales.jpeg',
 }
 
 // Keep the artwork and interactive coordinates in the same intrinsic frame.
 const ZONE_ASPECT: Record<FloorplanZone, string> = {
-  alargadas: '839 / 344',
-  terraza: '839 / 434',
-  interior: '419 / 479',
-  individuales: '410 / 479',
+  alargadas: '1400 / 554',
+  terraza: '820 / 417',
+  interior: '1104 / 1104',
+  individuales: '1387 / 1011',
 }
 
 function ZonePhoto({
@@ -84,8 +84,8 @@ function ZonePhoto({
 
 export function StaffFloorplanEditor({ record, canEdit }: Props) {
   const [layout, setLayout] = useState<FloorplanLayout>(() =>
-    cloneFloorplan(record.draft ?? record.published ?? initialFloorplanLayout()))
-  const [published, setPublished] = useState<FloorplanLayout|null>(record.published)
+    alignFloorplanToPhotos(record.draft ?? record.published ?? initialFloorplanLayout()))
+  const [published, setPublished] = useState<FloorplanLayout|null>(() => record.published ? alignFloorplanToPhotos(record.published) : null)
   const [revision, setRevision] = useState(record.revision)
   const [editing, setEditing] = useState(!record.published && canEdit)
   const [selectedId, setSelectedId] = useState<string|null>(null)
@@ -229,10 +229,10 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
           Width is bounded by the intrinsic artwork height, so no zone gets cropped. */}
       <div className="flex min-h-0 flex-1 items-center justify-center py-3">
         <div className="flex h-full w-full items-center justify-center" style={{containerType: 'size'}}>
-          <div className="flex shrink-0 flex-col gap-2" style={{width: 'min(100cqw, calc((100cqh - 16px) * 0.66))'}}>
+          <div className="flex shrink-0 flex-col gap-2" style={{width: 'min(100cqw, calc((100cqh - 16px) * 0.70))'}}>
             <ZonePhoto zone="alargadas" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
             <ZonePhoto zone="terraza" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
-            <div className="grid min-h-0 grid-cols-[419fr_410fr] items-start gap-2">
+            <div className="grid min-h-0 grid-cols-2 items-center gap-2">
               <ZonePhoto zone="interior" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
               <ZonePhoto zone="individuales" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose} onEmptySlot={addIndividual}/>
             </div>
