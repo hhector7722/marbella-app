@@ -30,8 +30,10 @@ const PHOTO_WIDTH: Record<FloorplanZone, number> = {
 
 function TableMarker({ table }: { table: FloorplanTable }) {
   const tabletop = table.zone === 'individuales' ? 246 : TABLETOP_DIAMETER[table.id]
-  const relativeDiameter = tabletop ? tabletop / PHOTO_WIDTH[table.zone] * 100 : 0
-  // Un píxel libre a cada lado del tablero, sin un máximo fijo en pantalla.
+  // Las secciones superior e inferior derecha necesitan más espacio visual.
+  const markerScale = table.zone === 'alargadas' || table.zone === 'individuales' ? 0.65 : 1
+  const relativeDiameter = tabletop ? tabletop / PHOTO_WIDTH[table.zone] * 100 * markerScale : 0
+  // Un píxel libre a cada lado del diámetro calculado, sin máximo fijo.
   const diameter = `max(0px, calc(${relativeDiameter}cqw - 2px))`
   const digits = table.number === null ? 1 : String(table.number).length
   // El texto deja aire también dentro del contorno blanco de 1 px.
