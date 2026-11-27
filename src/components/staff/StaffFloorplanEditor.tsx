@@ -13,6 +13,21 @@ import { saveStaffFloorplanAction } from '@/app/staff/mesas/actions'
 
 type Props = { record: FloorplanRecord; canEdit: boolean }
 
+// Diseño aprobado para la numeración. El borrador nunca simula ocupación BDP.
+const TABLE_MARKER_STYLE = {
+  width: 28, height: 28, border: '1px solid #FFFFFF',
+  backgroundColor: '#2563EB', color: '#FFFFFF', fontSize: 15, fontWeight: 600,
+} as const
+
+function TableMarker({ number }: { number: number | null }) {
+  return (
+    <span aria-hidden="true" className="pointer-events-none flex shrink-0 items-center justify-center rounded-full tabular-nums leading-none" style={{
+      ...TABLE_MARKER_STYLE,
+      ...(number !== null && number >= 1000 ? {fontSize: 11} : number !== null && number >= 100 ? {fontSize: 12} : {}),
+    }}>{number ?? ''}</span>
+  )
+}
+
 const ZONE_IMAGES: Record<FloorplanZone, string> = {
   alargadas: '/images/mesas/original-final-alargadas-v3.jpeg',
   terraza: '/images/mesas/original-final-terraza-v2.jpeg',
@@ -46,7 +61,7 @@ function ZonePhoto({
         {editing && zone === 'individuales' && Array.from({length: INDIVIDUAL_SLOT_COUNT}, (_, slot) => {
           const t = fixedIndividualTable(slot, null)
           if (tables.some(item => item.id === t.id)) return null
-          return <button key={t.id} type="button" aria-label="Añadir número a esta posición" onClick={() => onEmptySlot?.(slot)} className="absolute z-10 rounded-lg focus-visible:outline-2 focus-visible:outline-white" style={{left:t.x+'%',top:t.y+'%',width:t.width+'%',height:t.height+'%'}} />
+          return <button key={t.id} type="button" aria-label="Añadir número a esta posición" onClick={() => onEmptySlot?.(slot)} className="absolute z-10 rounded-lg focus-visible:outline-2 focus-visible:outline-white" style={{left:t.x+'%',top:t.y+'%',width:t.width+'%',height:t.height+'%'}}><span className="flex h-full w-full items-center justify-center"><TableMarker number={null}/></span></button>
         })}
         {tables.map((table) => {
           return (
@@ -63,12 +78,7 @@ function ZonePhoto({
                 width: table.width + '%', height: table.height + '%',
               }}
             >
-              {table.number !== null && (
-                <span className={'pointer-events-none flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white bg-[#064b96] text-center font-extrabold text-white shadow-[0_2px_6px_rgba(0,0,0,.38)] ' +
-                  (table.number >= 1000 ? 'text-[9px]' : table.number >= 100 ? 'text-[10px]' : 'text-xs')}>
-                  {table.number}
-                </span>
-              )}
+              {(editing || table.number !== null) && <TableMarker number={table.number}/>}
             </button>
           )
         })}
@@ -114,9 +124,8 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
     }
     const num = Number(value)
     if (!Number.isSafeInteger(num) || num < 1 || num > 9999) {toast.error('Introduce un número entre 1 y 9999.');return}
-    const salon = layout.salons[selected.zone]
-    if (layout.tables.some(t=>t.id!==selected.id&&t.number===num&&layout.salons[t.zone]===salon)) {
-      toast.error('El número ya existe en el mismo salón BDP.')
+    if (layout.tables.some(t=>t.id!==selected.id&&t.number===num)) {
+      toast.error('El número de mesa ya existe en el plano.')
       return
     }
     setLayout(prev=>({...prev,tables:prev.tables.map(t=>t.id===selected.id?{...t,number:num}:t)}))
