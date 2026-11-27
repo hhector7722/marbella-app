@@ -72,11 +72,6 @@ function ZonePhoto({
             </button>
           )
         })}
-        {editing && (
-          <span className="pointer-events-none absolute bottom-1 left-2 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-            {ZONE_LABELS[zone]}
-          </span>
-        )}
       </div>
     </section>
   )
