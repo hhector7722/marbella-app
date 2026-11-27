@@ -89,6 +89,7 @@
   --elevacion-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   --elevacion-pagina: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   /* TOKENS estructura.cabecera — offset del contenido bajo la barra */
+  --shell-safe-top: env(safe-area-inset-top, 0px);
   --app-navbar-height: 40px;
   --estructura-cabecera: 48px;
   /* TOKENS estructura.cabecera-modal — altura fija global */
@@ -1274,7 +1275,7 @@ html[data-quick-fab='open'] main {
 }
 [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
   position: fixed;
-  top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px) + var(--espacio-2));
+  top: calc(var(--estructura-cabecera) + var(--shell-safe-top) + var(--espacio-2));
   left: calc(var(--shell-sidebar-width) + var(--espacio-4));
   right: var(--espacio-4);
   z-index: 90;
@@ -5068,26 +5069,26 @@ button[data-element='catalog-filter'] {
   }
 
   .h-header-safe {
-    height: calc(var(--app-navbar-height) + env(safe-area-inset-top, 0px));
+    height: calc(var(--app-navbar-height) + var(--shell-safe-top));
   }
 
   .mt-header-safe {
-    margin-top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px));
+    margin-top: calc(var(--estructura-cabecera) + var(--shell-safe-top));
   }
 
   .pt-header-safe {
-    padding-top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px));
+    padding-top: calc(var(--estructura-cabecera) + var(--shell-safe-top));
   }
 
   /* Mosaicos de inicio (/dashboard, /master/dashboard, /staff/dashboard): cabecera + aire. */
   .pt-header-safe-tight {
     padding-top: calc(
-      var(--estructura-cabecera) + var(--espacio-2) + env(safe-area-inset-top, 0px)
+      var(--estructura-cabecera) + var(--espacio-2) + var(--shell-safe-top)
     );
   }
 
   .top-header-safe {
-    top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px));
+    top: calc(var(--estructura-cabecera) + var(--shell-safe-top));
   }
 
   /** Hueco al final de listas táctiles (grids de tarjetas). */
@@ -6312,6 +6313,7 @@ html:has(.dashboard-mosaic-switcher) {
 }
 
 .marbella-fixed-topbar {
+  padding-top: var(--shell-safe-top);
   --app-navbar-scale: calc(var(--app-navbar-height) / var(--tactil-minimo));
   box-sizing: border-box;
   overflow: visible;
@@ -14764,5 +14766,16 @@ body:has(.carta-shared-scene) [data-instance="menu-accordion-section"].carta-cat
   [data-component='Modal'][data-instance='staff-schedule'] .day-modal-readonly .schedule-employee-avatar {
     width: 14.4px !important;
     height: 14.4px !important;
+  }
+}
+
+/* iPhone PWA: la transición difuminada del sistema se extiende por debajo
+ * del área segura física. Reservar también esa franja en la cabecera del
+ * shell, sin cambiar la altura de sus controles ni el fondo. */
+@supports (-webkit-touch-callout: none) {
+  @media (display-mode: standalone) and (orientation: portrait) and (max-width: 767px) {
+    :root {
+      --shell-safe-top: calc(env(safe-area-inset-top, 0px) + 40px);
+    }
   }
 }
