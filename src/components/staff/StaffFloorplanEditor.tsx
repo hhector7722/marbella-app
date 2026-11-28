@@ -122,21 +122,30 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   const [busy, setBusy] = useState(false)
   const [orderTable, setOrderTable] = useState<number|null>(null)
   const [tableSearch, setTableSearch] = useState('')
+  const [tableSearchFocused, setTableSearchFocused] = useState(false)
   const [salesPreview, setSalesPreview] = useState<SalesPreview|null>(null)
-
-  const openSearchedTable = () => {
-    if (!/^[0-9]{1,4}$/.test(tableSearch)) return
-    const number = Number(tableSearch)
-    if (!Number.isSafeInteger(number) || number < 1 || number > 9999) {
-      toast.error('Introduce un número de mesa entre 1 y 9999.')
-      return
-    }
-    setTableSearch('')
-    setOrderTable(number)
-  }
 
   const firstSetup = !published
   const displayed = editing ? layout : (published ?? layout)
+  const query = tableSearch.replace(/^0+(?=\d)/, '')
+  const publishedNumbers = [...new Set((published?.tables ?? []).flatMap(t=>t.number === null ? [] : [t.number]))].sort((a,b)=>a-b)
+  const matchingNumbers = query ? publishedNumbers.filter(n=>String(n).startsWith(query)) : []
+  const exactNumber = Number(query)
+  // BDP's actual configured Terrassa range is 1..999; it accepts numeric
+  // tables without a graphical position. Do not suggest arbitrary prefixes.
+  const outsideNumber = query && Number.isSafeInteger(exactNumber) && exactNumber>=1 && exactNumber<=999 && !publishedNumbers.includes(exactNumber) ? exactNumber : null
+  const openSearchedTable = (number:number) => {
+    if(!publishedNumbers.includes(number) && number!==outsideNumber)return
+    setTableSearch('')
+    setTableSearchFocused(false)
+    setOrderTable(number)
+  }
+  const submitTableSearch = () => {
+    if(matchingNumbers.includes(exactNumber))openSearchedTable(exactNumber)
+    else if(outsideNumber!==null)openSearchedTable(outsideNumber)
+    else toast.error('No existe una mesa con ese número.')
+  }
+
   const selected = layout.tables.find(t=>t.id === selectedId) ?? null
   const missing = layout.tables.filter(t=>t.number === null).length
 
@@ -224,15 +233,32 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
 
       {!editing ? (
         <>
-          <form onSubmit={event=>{event.preventDefault();openSearchedTable()}} className="flex min-w-0 items-center justify-center">
+          <form onSubmit={event=>{event.preventDefault();submitTableSearch()}} className="relative flex min-w-0 items-center justify-center">
             <div className="flex h-[var(--espacio-8)] w-full min-w-0 items-center gap-2 rounded-full border border-white/15 bg-[var(--buscador-global-fondo)] px-3 text-white/60 focus-within:ring-1 focus-within:ring-white/50">
               <Search aria-hidden size={14} className="shrink-0"/>
               <input type="text" inputMode="numeric" pattern="[0-9]*" enterKeyHint="go" autoComplete="off" maxLength={4}
                 aria-label="Buscar mesa" placeholder="Buscar mesa..." value={tableSearch}
-                onChange={event=>setTableSearch(event.target.value.replace(/[^0-9]/g,'').slice(0,4))}
+                onFocus={()=>setTableSearchFocused(true)}
+                onBlur={()=>setTableSearchFocused(false)}
+                onChange={event=>{setTableSearch(event.target.value.replace(/[^0-9]/g,'').slice(0,4));setTableSearchFocused(true)}}
                 className="h-full w-full min-w-0 bg-transparent text-xs text-white outline-none placeholder:text-white/60"/>
               {tableSearch && <button type="submit" aria-label="Abrir mesa" className="flex h-12 w-8 shrink-0 items-center justify-center text-white"><Check size={16}/></button>}
             </div>
+            {tableSearchFocused && query && (
+              <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[min(36dvh,240px)] overflow-y-auto rounded-xl border border-white/20 bg-[var(--color-envolvente-bajo)] p-1 text-white shadow-lg">
+                {matchingNumbers.map(number=>(
+                  <button key={number} type="button" onPointerDown={event=>event.preventDefault()} onClick={()=>openSearchedTable(number)} className="flex min-h-12 w-full items-center justify-between rounded-lg px-3 text-left text-sm hover:bg-white/10">
+                    <span>Mesa {number}</span><span className="text-xs text-white/60">Abrir ›</span>
+                  </button>
+                ))}
+                {outsideNumber!==null && (
+                  <button type="button" onPointerDown={event=>event.preventDefault()} onClick={()=>openSearchedTable(outsideNumber)} className="flex min-h-12 w-full flex-col items-start justify-center rounded-lg px-3 text-left hover:bg-white/10">
+                    <span className="text-sm">Mesa {outsideNumber} ›</span><span className="text-[10px] text-white/65">Fuera del plano · admitida por BDP</span>
+                  </button>
+                )}
+                {matchingNumbers.length===0 && outsideNumber===null && <p className="px-3 py-3 text-xs text-white/70">No existe esa mesa.</p>}
+              </div>
+            )}
           </form>
           <div className="flex justify-end">
             <Button variant="primary" instance="bdp-ventas" onClick={()=>setSalesPreview({mode:'current',date:formatYmdInMadrid(new Date())})}>Ventas</Button>
