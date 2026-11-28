@@ -244,6 +244,7 @@ export default function LaborHistoryPage() {
 
     const [detailOpen, setDetailOpen] = useState(false);
     const [showDayCostBreakdown, setShowDayCostBreakdown] = useState(false);
+    const dayCostDropdownRef = useRef<HTMLDivElement>(null);
     const detailRequestId = useRef(0);
     const [showNoActivity, setShowNoActivity] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -261,6 +262,17 @@ export default function LaborHistoryPage() {
         operationalMissingWorkers: number;
         workers: WorkerRow[];
     } | null>(null);
+
+    useEffect(() => {
+        if (!showDayCostBreakdown) return;
+        const dismissOutside = (event: PointerEvent) => {
+            if (!dayCostDropdownRef.current?.contains(event.target as Node)) {
+                setShowDayCostBreakdown(false);
+            }
+        };
+        document.addEventListener('pointerdown', dismissOutside, true);
+        return () => document.removeEventListener('pointerdown', dismissOutside, true);
+    }, [showDayCostBreakdown]);
 
     const calendarDays = useMemo(() => {
         const startVisible = startOfWeek(startOfMonth(viewMonth), { weekStartsOn: 1 });
@@ -459,6 +471,7 @@ export default function LaborHistoryPage() {
                 format(day, 'd MMM yyyy', { locale: es }),
                 { selectedDate: key, includeAllContracted: String(showAll) }
             );
+            setShowDayCostBreakdown(false);
             setSelectedDayStr(key);
             setDetailOpen(true);
             setDetailLoading(true);
@@ -806,12 +819,18 @@ export default function LaborHistoryPage() {
 
                                 <section aria-label="Resumen diario de costes y ventas" className="flex min-w-0 flex-col gap-2">
                                     <div className="grid min-w-0 grid-cols-3 gap-1.5 sm:gap-2">
+                                        <div ref={dayCostDropdownRef} className="relative flex min-w-0 flex-col" onKeyDown={event => {
+                                            if (event.key === 'Escape' && showDayCostBreakdown) {
+                                                event.stopPropagation();
+                                                setShowDayCostBreakdown(false);
+                                            }
+                                        }}>
                                         <button
                                             type="button"
                                             aria-expanded={showDayCostBreakdown}
-                                            aria-controls="labor-day-cost-breakdown"
+                                            aria-controls={showDayCostBreakdown ? "labor-day-cost-breakdown" : undefined}
                                             onClick={() => setShowDayCostBreakdown(v => !v)}
-                                            className="flex min-w-0 flex-col justify-center rounded-lg border border-white/15 bg-gradient-to-b from-[#92545e] to-[#793f4d] px-2 py-2 text-left hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/70 sm:px-3"
+                                            className="flex h-full w-full min-w-0 flex-col justify-center rounded-lg border border-white/15 bg-gradient-to-b from-[#92545e] to-[#793f4d] px-2 py-2 text-left hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/70 sm:px-3"
                                         >
                                             <span className="flex items-center justify-between gap-1 text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]">
                                                 Coste
@@ -821,6 +840,19 @@ export default function LaborHistoryPage() {
                                                 {incomplete ? '—' : formatLaborEuro(dayDetail.totalCost)}
                                             </strong>
                                         </button>
+                                        {showDayCostBreakdown && (
+                                            <div id="labor-day-cost-breakdown" className="absolute left-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-lg border border-white/20 bg-[#25334e] text-white shadow-xl">
+                                                <div className="flex items-center justify-between gap-3 px-3 py-2.5 text-[11px]">
+                                                    <span className="text-white/75">Horas ordinarias</span>
+                                                    <strong className="shrink-0 tabular-nums">{incomplete ? '—' : formatLaborEuro(dayDetail.totalFixed)}</strong>
+                                                </div>
+                                                <div className="flex items-center justify-between gap-3 border-t border-white/10 px-3 py-2.5 text-[11px]">
+                                                    <span className="text-white/75">Horas extras</span>
+                                                    <strong className="shrink-0 tabular-nums">{incomplete ? '—' : formatLaborEuro(dayDetail.totalOvertime)}</strong>
+                                                </div>
+                                            </div>
+                                        )}
+                                        </div>
                                         <div data-kpi-tone="net" className="ventas-kpi-primary flex min-w-0 flex-col justify-center rounded-lg border px-2 py-2 sm:px-3">
                                             <span className="text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]">Venta neta</span>
                                             <strong className="mt-1 block text-[clamp(12px,3.6vw,20px)] font-bold leading-tight tabular-nums text-white">
@@ -834,19 +866,6 @@ export default function LaborHistoryPage() {
                                             </strong>
                                         </div>
                                     </div>
-                                    {showDayCostBreakdown && (
-                                        <div id="labor-day-cost-breakdown" className="grid min-w-0 grid-cols-2 gap-2">
-                                            {([
-                                                { label: 'Horas ordinarias', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalFixed) },
-                                                { label: 'Horas extras', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalOvertime) },
-                                            ] as const).map(metric => (
-                                                <div key={metric.label} className="min-w-0 rounded-lg border border-white/15 bg-[#304b70] px-3 py-2">
-                                                    <span className="block text-[10px] font-medium text-white/65">{metric.label}</span>
-                                                    <strong className="mt-0.5 block text-[15px] font-semibold tabular-nums text-white sm:text-[17px]">{metric.value}</strong>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
                                 </section>
 
                                 <section className="min-w-0">
