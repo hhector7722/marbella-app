@@ -34,13 +34,14 @@ type InputLine={plu:number;quantity:number;portion?:'entero'|'medio'}
 const verifiedHalfPrices:Readonly<Record<number,number>>={79:3.4,80:3.4,81:4.2,83:4,84:3.4,94:3.5,95:7.3,96:3.5,97:3.5,98:4.4,99:3.2,100:3.4,101:4.6,102:3.4,103:4,104:4,215:4.2}
 type CatalogLine={id:number;nombre:string;precio_base:number;departamento_id:number|null}
 async function catalog(database:ReturnType<typeof db>) {
-  const [a,config]=await Promise.all([
+  // The visual catalogue and the BDP articles are independent reads.
+  const [a,config,carta]=await Promise.all([
     database.from('bdp_articulos').select('id,nombre,precio_base,departamento_id').gt('id',0).order('nombre'),
     database.from('bdp_mobile_catalog').select('revision,categories').eq('id','principal').single(),
+    loadEventCartaMenu(database,[]).catch(()=>null),
   ])
   if(a.error||config.error||!config.data) throw new Error('BDP catalog unavailable')
   // Read the exact same image catalogue as /pedido; BDP still owns PLUs and prices.
-  const carta=await loadEventCartaMenu(database,[]).catch(()=>null)
   const menu=carta?.ok?carta.data:null
   const rows=menu?.items??[]
   const byPlu=new Map(rows.map(row=>[row.articulo_id,row]))
@@ -63,7 +64,9 @@ export async function GET(req:Request) {
     const user=await master()
     if(!user) return response({error:'No autorizado'},401)
     const database=db()
-    const key=new URL(req.url).searchParams.get('requestKey')
+    const params=new URL(req.url).searchParams
+    if(params.get('catalog')==='1'&&!params.has('requestKey'))return response(await catalog(database))
+    const key=params.get('requestKey')
     if(key && !UUID.test(key))return response({error:'Petición inválida'},400)
     const [state,active,job]=await Promise.all([
       database.from('bdp_handy_agent_state').select('ready,checked_at,detail').eq('id',true).maybeSingle(),
