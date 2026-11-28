@@ -989,7 +989,7 @@ function SummaryCard({ title, dateText, report, extras, dailyAverage, ticketPerc
     );
 }
 
-export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, embeddedShowLive }: { embeddedMode?: 'day' | 'month'; embeddedDate?: string; embeddedShowLive?: boolean } = {}) {
+export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, embeddedShowLive, embeddedSalesOnly = false }: { embeddedMode?: 'day' | 'month'; embeddedDate?: string; embeddedShowLive?: boolean; embeddedSalesOnly?: boolean } = {}) {
     const preview = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('preview') : null;
     const previewMode = embeddedMode ?? (preview === 'day' || preview === 'month' ? preview : null);
     const previewDate = embeddedDate ?? (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('date') : null);
@@ -1897,6 +1897,14 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                         className="rounded-md border border-white/20 p-2"><X size={17}/></button>}
                 </div>
             </header>}
+            {embeddedSalesOnly ? (
+                <section aria-label="Ventas" className="ventas-kpi-primary flex min-h-[61px] min-w-0 flex-col items-center justify-center rounded-lg border px-2.5 py-1.5" data-kpi-tone="sales">
+                    <span className="text-[11px] font-medium text-white/75">Ventas</span>
+                    <strong className="text-[clamp(16px,4.8vw,23px)] font-bold leading-tight tabular-nums">
+                        {mobileKpisLoading ? <LoadingSpinner size="sm" className="text-white/85"/> : euroNonZero(displayedDaySales) || ' '}
+                    </strong>
+                </section>
+            ) : (
             <section className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-3 pb-2 pt-2">
                 <div className="flex min-w-0 items-center justify-between gap-2 border-b border-white/15 pb-2">
                     <div className="flex min-w-0 items-center gap-0.5">
@@ -2015,6 +2023,7 @@ export default function VentasDesktopWorkspace({ embeddedMode, embeddedDate, emb
                 </div>
                 }
             </section>
+            )}
             <div className="min-w-0">
                 <section data-element="mobile-sales-hours-card" className="flex h-[143px] min-w-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-2 py-1.5">
                     <div className="mb-0.5 flex shrink-0 items-center justify-between">
