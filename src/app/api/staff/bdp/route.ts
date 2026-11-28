@@ -26,7 +26,11 @@ function isFresh(state: {ready?:boolean;checked_at?:string}|null) {
   const age=Date.now()-Date.parse(state?.checked_at??'')
   return state?.ready===true && Number.isFinite(age) && age>=-5000 && age<15000
 }
-type InputLine={plu:number;quantity:number}
+type InputLine={plu:number;quantity:number;portion?:'entero'|'medio'}
+// Verified against BDP Articulos.PVP1_Proporcion_2 on 2026-11-28.
+// Preview-only snapshot: half-portion submission stays disabled until the
+// official Handy proportion selection and live price reconciliation are verified.
+const verifiedHalfPrices:Readonly<Record<number,number>>={79:3.4,80:3.4,81:4.2,83:4,84:3.4,94:3.5,95:7.3,96:3.5,97:3.5,98:4.4,99:3.2,100:3.4,101:4.6,102:3.4,103:4,104:4,215:4.2}
 type CatalogLine={id:number;nombre:string;precio_base:number;departamento_id:number|null}
 async function catalog(database:ReturnType<typeof db>) {
   const [a,d]=await Promise.all([
@@ -42,7 +46,8 @@ async function catalog(database:ReturnType<typeof db>) {
   const products=((a.data??[]) as CatalogLine[]).map(p=>{
     const row=byPlu.get(p.id)
     return {...p,photo_url:row?.photo_url??null,carta_photo_scale:row?.carta_photo_scale??null,
-      category_parent_name:row?.category_parent_name??null,sort_order:row?.sort_order??null}
+      category_parent_name:row?.category_parent_name??null,sort_order:row?.sort_order??null,
+      medio_price:verifiedHalfPrices[p.id]??null}
   })
   // Explicit matches verified against the existing BDP department and carta catalogues.
   const covers:Record<number,string>={
@@ -90,6 +95,7 @@ export async function POST(req:Request) {
     const lines=new Map<number,number>()
     for(const row of input.items as InputLine[]) {
       if(!row||typeof row.plu!=='number'||!Number.isSafeInteger(row.plu)||row.plu<1||typeof row.quantity!=='number'||!Number.isSafeInteger(row.quantity)||row.quantity<1||row.quantity>20)return response({error:'Producto o cantidad inválidos'},400)
+      if(row.portion!==undefined&&row.portion!=='entero')return response({error:'El envío de medias raciones aún no está validado en Handy. No se ha enviado la comanda.'},400)
       lines.set(row.plu,(lines.get(row.plu)??0)+row.quantity)
     }
     if([...lines.values()].reduce((a,b)=>a+b,0)>20)return response({error:'Máximo 20 unidades por comanda durante la fase inicial'},400)
