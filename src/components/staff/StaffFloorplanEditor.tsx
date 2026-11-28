@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Check, Plus, Save, Search, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -123,6 +123,16 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   const [orderTable, setOrderTable] = useState<number|null>(null)
   const [tableSearch, setTableSearch] = useState('')
   const [tableSearchFocused, setTableSearchFocused] = useState(false)
+  const tableSearchRef = useRef<HTMLFormElement>(null)
+
+  useEffect(()=>{
+    if(!tableSearchFocused)return
+    const dismissOutside = (event:PointerEvent) => {
+      if(event.target instanceof Node && !tableSearchRef.current?.contains(event.target))setTableSearchFocused(false)
+    }
+    document.addEventListener('pointerdown',dismissOutside)
+    return ()=>document.removeEventListener('pointerdown',dismissOutside)
+  },[tableSearchFocused])
   const [salesPreview, setSalesPreview] = useState<SalesPreview|null>(null)
 
   const firstSetup = !published
@@ -233,13 +243,12 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
 
       {!editing ? (
         <>
-          <form onSubmit={event=>{event.preventDefault();submitTableSearch()}} className="relative flex min-w-0 items-center justify-center">
+          <form ref={tableSearchRef} onSubmit={event=>{event.preventDefault();submitTableSearch()}} className="relative flex min-w-0 items-center justify-center">
             <div className="flex h-[var(--espacio-8)] w-full min-w-0 items-center gap-2 rounded-full border border-white/15 bg-[var(--buscador-global-fondo)] px-3 text-white/60 focus-within:ring-1 focus-within:ring-white/50">
               <Search aria-hidden size={14} className="shrink-0"/>
               <input type="text" inputMode="numeric" pattern="[0-9]*" enterKeyHint="go" autoComplete="off" maxLength={4}
                 aria-label="Buscar mesa" placeholder="Buscar mesa..." value={tableSearch}
                 onFocus={()=>setTableSearchFocused(true)}
-                onBlur={()=>setTableSearchFocused(false)}
                 onChange={event=>{setTableSearch(event.target.value.replace(/[^0-9]/g,'').slice(0,4));setTableSearchFocused(true)}}
                 className="h-full w-full min-w-0 bg-transparent text-xs text-white outline-none placeholder:text-white/60"/>
               {tableSearch && <button type="submit" aria-label="Abrir mesa" className="flex h-12 w-8 shrink-0 items-center justify-center text-white"><Check size={16}/></button>}
@@ -247,13 +256,13 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
             {tableSearchFocused && query && (
               <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[min(36dvh,240px)] overflow-y-auto rounded-xl border border-white/20 bg-[var(--color-envolvente-bajo)] p-1 text-white shadow-lg">
                 {matchingNumbers.map(number=>(
-                  <button key={number} type="button" onPointerDown={event=>event.preventDefault()} onClick={()=>openSearchedTable(number)} className="flex min-h-12 w-full items-center justify-between rounded-lg px-3 text-left text-sm hover:bg-white/10">
-                    <span>Mesa {number}</span><span className="text-xs text-white/60">Abrir ›</span>
+                  <button key={number} type="button" onClick={()=>openSearchedTable(number)} className="flex min-h-12 w-full items-center rounded-lg px-3 text-left text-sm hover:bg-white/10">
+                    Mesa {number}
                   </button>
                 ))}
                 {outsideNumber!==null && (
-                  <button type="button" onPointerDown={event=>event.preventDefault()} onClick={()=>openSearchedTable(outsideNumber)} className="flex min-h-12 w-full flex-col items-start justify-center rounded-lg px-3 text-left hover:bg-white/10">
-                    <span className="text-sm">Mesa {outsideNumber} ›</span><span className="text-[10px] text-white/65">Fuera del plano · admitida por BDP</span>
+                  <button type="button" onClick={()=>openSearchedTable(outsideNumber)} className="flex min-h-12 w-full items-center rounded-lg px-3 text-left text-sm hover:bg-white/10">
+                    Mesa {outsideNumber}
                   </button>
                 )}
                 {matchingNumbers.length===0 && outsideNumber===null && <p className="px-3 py-3 text-xs text-white/70">No existe esa mesa.</p>}
