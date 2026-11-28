@@ -17,7 +17,7 @@ export function calculateBdpGrid(count:number,width:number,height:number,hasDual
   let best:BdpGridLayout|undefined
   let bestArea=-1
   for(let columns=minColumns;columns<=Math.min(maxColumns,Math.max(minColumns,n));columns++){
-    const gap=columns>=4?6:8
+    const gap=columns>=4?4:8
     const cellWidth=Math.floor((w-(columns-1)*gap)/columns)
     if(cellWidth<82&&columns>1)continue
     const dense=cellWidth<108
@@ -28,7 +28,7 @@ export function calculateBdpGrid(count:number,width:number,height:number,hasDual
     const nameLines=dense?2:3
     const priceHeight=hasDual?Math.max(priceSize+3,dualPriceSize*2+3):priceSize+3
     const infoHeight=priceHeight+Math.ceil(nameSize*1.15*nameLines)+4
-    const minHeight=controlsHeight+22+infoHeight
+    const minHeight=controlsHeight+(dense?20:22)+infoHeight
     const idealHeight=Math.max(minHeight,Math.min(cellWidth,220)+infoHeight)
     const rows=Math.ceil(n/columns)
     const completeRows=Math.max(0,Math.floor((h+gap)/(minHeight+gap)))
