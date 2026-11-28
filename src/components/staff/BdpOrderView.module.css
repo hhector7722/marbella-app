@@ -1,0 +1,54 @@
+/* BDP only. The public carta and reservations keep their existing sizing. */
+.grid {
+  display: grid;
+  align-content: start;
+}
+.grid[data-design-exception] :global(.carta-square-product-card) {
+  min-height: 0;
+  height: 100%;
+}
+.grid[data-design-exception] :global(.carta-square-product-card) :global([data-carta-product-photo]) {
+  height: var(--bdp-photo-height);
+  flex: 0 0 var(--bdp-photo-height);
+  aspect-ratio: auto;
+  border-radius: clamp(8px, 2.8vw, 16px);
+}
+.grid[data-design-exception] :global(.carta-square-product-card) :global([data-carta-order-controls]) {
+  height: var(--bdp-controls-height);
+  flex: 0 0 var(--bdp-controls-height);
+}
+.grid[data-design-exception] :global(.carta-square-product-card) :global([data-carta-order-controls]) > button {
+  font-size: var(--bdp-name-size);
+}
+.grid[data-design-exception] :global(.carta-square-product-card) :global([data-carta-product-info]) {
+  height: var(--bdp-info-height);
+  flex: 0 0 var(--bdp-info-height);
+  padding: 2px 0 0;
+  gap: 1px;
+}
+.grid[data-design-exception] :global(.carta-square-product-card) :global([data-carta-display-price]) {
+  flex: 0 0 auto;
+  min-height: 0;
+  font-size: var(--bdp-price-size);
+  line-height: 1.15;
+}
+.grid[data-design-exception] :global(.carta-square-product-card) :global([data-carta-price-lines]) {
+  flex: 0 0 auto;
+  min-height: 0;
+  white-space: normal;
+}
+.grid[data-design-exception] :global(.carta-square-product-card) :global([data-carta-price-lines][data-carta-price-compact='true']) > span {
+  font-size: var(--bdp-dual-price-size);
+  white-space: normal;
+  line-height: 1.12;
+  overflow-wrap: normal;
+}
+.grid[data-design-exception] :global(.carta-square-product-card) :global([data-carta-display-name]),
+.grid[data-design-exception] :global(.carta-square-product-card) :global([data-carta-display-name].carta-catalog-long-name) {
+  flex: 0 1 auto;
+  font-size: var(--bdp-name-size);
+  line-height: 1.15;
+  max-height: calc(var(--bdp-name-size) * 1.15 * var(--bdp-name-lines));
+  -webkit-line-clamp: var(--bdp-name-lines);
+  overflow-wrap: anywhere;
+}

@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { calculateBdpGrid } from '@/lib/staff/bdp-product-grid'
+import styles from './BdpOrderView.module.css'
 import { ArrowLeft, Check, Search, X } from 'lucide-react'
 import { CartaMenuCoverPhoto } from '@/components/carta/CartaMenuCoverPhoto'
 import { UNASSIGNED, unassignedIds, visibleIds, searchableIds, type MobileCategoryDisplay, type MobileCatalogProduct } from '@/lib/staff/bdp-mobile-catalog'
@@ -34,6 +36,19 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const [error,setError]=useState('')
   const submitting=useRef(false)
   const productViewport=useRef<HTMLDivElement>(null)
+  const [viewport,setViewport]=useState({width:0,height:0})
+  useLayoutEffect(()=>{
+    const element=productViewport.current
+    if(!element)return
+    const measure=()=>{
+      const width=element.clientWidth,height=element.clientHeight
+      setViewport(old=>old.width===width&&old.height===height?old:{width,height})
+    }
+    measure()
+    const observer=new ResizeObserver(measure)
+    observer.observe(element)
+    return()=>observer.disconnect()
+  },[])
 
   useEffect(()=>{
     try{
@@ -91,6 +106,18 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
     return p&&(!term||normalize(p.display_name??p.nombre).includes(term)||normalize(p.nombre).includes(term)||String(p.id)===term)?[p]:[]
   })
   useEffect(()=>{productViewport.current?.scrollTo({top:0,behavior:'auto'})},[active,activeChild,term])
+  const grid=calculateBdpGrid(filtered.length,viewport.width||360,viewport.height||540,filtered.some(p=>Number(p.medio_price)>0))
+  const gridStyle:CSSProperties={
+    gridTemplateColumns:'repeat('+grid.columns+',minmax(0,1fr))',
+    gridAutoRows:grid.rowHeight+'px',gap:grid.gap+'px',
+    '--bdp-photo-height':grid.photoHeight+'px',
+    '--bdp-controls-height':grid.controlsHeight+'px',
+    '--bdp-info-height':grid.infoHeight+'px',
+    '--bdp-name-size':grid.nameSize+'px',
+    '--bdp-price-size':grid.priceSize+'px',
+    '--bdp-dual-price-size':grid.dualPriceSize+'px',
+    '--bdp-name-lines':grid.nameLines,
+  } as CSSProperties
   const displayName=(p:Product)=>p.display_name??p.nombre
   const current=status?.job
   const finished=current&&['confirmed','rejected','expired'].includes(current.status)
@@ -182,7 +209,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
         </nav>}
         <div ref={productViewport} className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
           <div className="carta-browse-modal">
-              <div className="grid grid-cols-3 gap-x-2.5 gap-y-4">
+              <div className={styles.grid} style={gridStyle} data-design-exception="product-grid:densidad adaptativa del comandero según productos y viewport">
                 {filtered.map(p=>{
                   const quantity=quantityOf(p.id,'entero')+quantityOf(p.id,'medio')
                   const unavailable=!(Number(p.precio_base)>0)
@@ -194,7 +221,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
                         </div>
                         {quantity>0&&<span className="pointer-events-none absolute right-1 top-1 z-10 inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF3B30] px-1 text-[10px] font-semibold tabular-nums leading-none text-white" aria-label={quantity+' unidades seleccionadas'}>{quantity}</span>}
                       </div>
-                      <div data-carta-order-controls className={locked?'opacity-60':undefined} aria-label={'Unidades de '+p.nombre}>
+                      <div data-carta-order-controls data-design-exception="tactil:botonera compacta integrada de TPV; conserva zona de toque de 40 a 48 px" className={locked?'opacity-60':undefined} aria-label={'Unidades de '+p.nombre}>
                         {quantity===0?<button type="button" data-action="add" disabled={locked||unavailable} onClick={()=>selectPortion(p,1)} aria-label={'Añadir '+p.nombre}>{unavailable?'NO DISPONIBLE':'AÑADIR'}</button>:<>
                           <button type="button" data-action="remove" disabled={locked||unavailable} onClick={()=>selectPortion(p,-1)} aria-label={'Quitar una unidad de '+p.nombre}>−</button>
                           <button type="button" data-action="increment" disabled={locked||unavailable} onClick={()=>selectPortion(p,1)} aria-label={'Añadir una unidad de '+p.nombre}>+</button>
