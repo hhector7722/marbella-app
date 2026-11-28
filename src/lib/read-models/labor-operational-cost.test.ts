@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Dobles tipados mínimos para lectura del read model. */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { allocateOperationalMonth, actualHours, expectedContractHours } from './labor-operational-cost.ts';
+import { allocateOperationalMonth, actualHours, expectedContractHours, FIXED_OWNER_ID, ownerOrdinaryHours } from './labor-operational-cost.ts';
 
 const days = ['2026-09-01','2026-09-02','2026-09-03'];
 const facts: any[] = [
@@ -238,4 +238,40 @@ test('mes pendiente mantiene nómina oficial separada sin bloquear un día con t
   });
   assert.equal(result[days[0]!]!.total,0);
   assert.equal(result[days[0]!]!.incomplete,false);
+});
+
+test('propietario: 8 horas ordinarias laborables, festivos locales y fines de semana excluidos, extras intactas', () => {
+  const dates = ['2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27'];
+  const ownTerms = [{user_id:FIXED_OWNER_ID,effective_from:'2025-12-29',effective_to:null,weekly_hours:0,overtime_rate_per_hour:12}];
+  const projection = allocateOperationalMonth({
+    days: dates, periodStart: dates[0]!, periodEnd: dates[4]!,
+    facts: [{user_id:FIXED_OWNER_ID,total_company_cost:160}],
+    terms: ownTerms, logs:[log(FIXED_OWNER_ID,dates[2]!,2),log(FIXED_OWNER_ID,dates[3]!,3)],
+    extraHours:[{user_id:FIXED_OWNER_ID,day:dates[2]!,overtime_hours:2,overtime_cost:24},
+      {user_id:FIXED_OWNER_ID,day:dates[3]!,overtime_hours:3,overtime_cost:36}],
+    payrollPending:false,
+  });
+  assert.equal(expectedContractHours(dates,ownTerms,FIXED_OWNER_ID),16);
+  assert.equal(projection[dates[0]!]!.workers[0]!.hours,8);
+  assert.equal(projection[dates[0]!]!.fixed,80);
+  assert.equal(projection[dates[1]!]!.hasWorked,false);
+  assert.equal(projection[dates[2]!]!.workers[0]!.hours,10);
+  assert.equal(projection[dates[2]!]!.total,104);
+  assert.equal(projection[dates[3]!]!.total,36);
+  assert.equal(projection[dates[4]!]!.hasWorked,false);
+  assert.equal(ownerOrdinaryHours('2026-10-12',ownTerms),0);
+  assert.equal(ownerOrdinaryHours('2026-09-11',ownTerms),0);
+  assert.equal(ownerOrdinaryHours('2027-05-17',ownTerms),0);
+  assert.equal(ownerOrdinaryHours('2027-05-18',ownTerms),8);
+  assert.equal(ownerOrdinaryHours('2028-01-03',ownTerms),0);
+  const filtered = allocateOperationalMonth({
+    days: dates,periodStart:dates[0]!,periodEnd:dates[4]!,facts:[],terms:ownTerms,
+    logs:[],extraHours:[],payrollPending:true,workerFilter:'another-user',
+  });
+  assert.equal(filtered[dates[0]!]!.hasWorked,false);
+  const partial = allocateOperationalMonth({
+    days: dates,periodStart:dates[0]!,periodEnd:dates[4]!,facts:[{user_id:FIXED_OWNER_ID,total_company_cost:160}],
+    terms:ownTerms,logs:[],extraHours:[],payrollPending:false,throughDay:dates[0]!,
+  });
+  assert.equal(partial[dates[2]!]!.hasWorked,false);
 });

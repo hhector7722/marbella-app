@@ -1,5 +1,5 @@
 /**
- * Reparto OPERATIVO de la nómina oficial: solo se genera coste en jornadas fichadas.
+ * Reparto OPERATIVO de la nómina oficial: jornadas fichadas y jornada ordinaria fija del propietario.
  *
  * Las horas ordinarias se valoran con la nómina individual de empresa dividida
  * entre las horas contractuales del periodo. Las horas extra usan exclusivamente
@@ -58,7 +58,30 @@ export type OperationalMonth = Record<string, OperationalDay>;
 
 const cents = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 
+// Identidad estable del propietario, cuyo contrato de 0 h conserva el tratamiento de fichajes como extras.
+export const FIXED_OWNER_ID = 'baacc78a-b7da-438e-8ea4-c9f3ce6f90e6';
+
+// Calendarios laborales oficiales de Barcelona (estatales, autonómicos y locales).
+// https://guia.barcelona.cat/detall/festes-estatals-i-autonomiques-a-catalunya-i-locals-a-barcelona-al-2026_99400735671.html
+// https://guia.barcelona.cat/detall/festes-estatals-i-autonomiques-a-catalunya-i-locals-a-barcelona-al-2027_99400777767.html
+// Los años no publicados no se presuponen laborables.
+const OWNER_HOLIDAYS: Record<string, ReadonlySet<string>> = {
+  '2026': new Set(['01-01','01-06','04-03','04-06','05-01','05-25','06-24','08-15','09-11','09-24','10-12','12-08','12-25','12-26']),
+  '2027': new Set(['01-01','01-06','03-26','03-29','05-01','05-17','06-24','09-11','09-24','10-12','11-01','12-06','12-08','12-25']),
+};
+
+export function ownerOrdinaryHours(day: string, terms: readonly Term[]): number {
+  const holidays = OWNER_HOLIDAYS[day.slice(0, 4)];
+  if (!holidays || holidays.has(day.slice(5))) return 0;
+  const weekday = new Date(day + 'T00:00:00Z').getUTCDay();
+  if (weekday < 1 || weekday > 5) return 0;
+  return terms.some(t => t.user_id === FIXED_OWNER_ID &&
+    String(t.effective_from).slice(0, 10) <= day &&
+    String(t.effective_to ?? '9999-12-31').slice(0, 10) >= day) ? 8 : 0;
+}
+
 export function expectedContractHours(days: readonly string[], terms: readonly Term[], userId: string): number {
+  if (userId === FIXED_OWNER_ID) return days.reduce((sum, day) => sum + ownerOrdinaryHours(day, terms), 0);
   let total = 0;
   const own = terms.filter(t => t.user_id === userId);
   for (const date of days) {
@@ -92,6 +115,7 @@ export function allocateOperationalMonth(input: {
   missingRateWeeks?: ReadonlySet<string>;
   payrollPending: boolean;
   workerFilter?: string | null;
+  throughDay?: string;
 }): OperationalMonth {
   const byUserCost = new Map<string, number>();
   for (const fact of input.facts) {
@@ -114,6 +138,18 @@ export function allocateOperationalMonth(input: {
     if (!hoursByDay.has(day)) hoursByDay.set(day, new Map());
     const byUser = hoursByDay.get(day)!;
     byUser.set(log.user_id, (byUser.get(log.user_id) ?? 0) + hours);
+  }
+  // Incorporar jornada ordinaria sin fabricar fichajes. Las horas reales del
+  // propietario siguen siendo adicionales y su importe extra viene del Writer.
+  if (!input.workerFilter || input.workerFilter === FIXED_OWNER_ID) {
+    for (const day of relevantDays) {
+      if (input.throughDay && day > input.throughDay) continue;
+      const base = ownerOrdinaryHours(day, input.terms);
+      if (base === 0) continue;
+      if (!hoursByDay.has(day)) hoursByDay.set(day, new Map());
+      const byUser = hoursByDay.get(day)!;
+      byUser.set(FIXED_OWNER_ID, (byUser.get(FIXED_OWNER_ID) ?? 0) + base);
+    }
   }
   // La proyección persistida del motor de horas es la única fuente del coste
   // de extras. Un coste cero es válido si la semana no tiene tarifa pendiente.
@@ -155,8 +191,10 @@ export function allocateOperationalMonth(input: {
     for (const [userId, hours] of hoursByDay.get(day) ?? []) {
       const hourly = hourlyCost.get(userId);
       const extra = overtimeByDay.get(day)?.get(userId);
-      const extraH = Math.min(hours, extra?.hours ?? 0);
-      const ordinaryH = Math.max(0, hours - extraH);
+      const ownerBase = userId === FIXED_OWNER_ID && relevantDays.includes(day) &&
+        (!input.throughDay || day <= input.throughDay) ? ownerOrdinaryHours(day, input.terms) : 0;
+      const extraH = Math.min(Math.max(0, hours - ownerBase), extra?.hours ?? 0);
+      const ordinaryH = userId === FIXED_OWNER_ID ? ownerBase : Math.max(0, hours - extraH);
       const ordinaryKnown = ordinaryH < 0.001 || hourly !== undefined;
       const overtimeKnown = extraH < 0.001 || extra?.known === true;
       // Es suficiente UNA tarifa positiva: nómina ordinaria o extras vigente.
@@ -235,5 +273,6 @@ export async function loadOperationalMonth(
     missingRateWeeks,
     payrollPending,
     workerFilter,
+    throughDay: formatYmdInMadrid(new Date()) ?? undefined,
   });
 }

@@ -555,15 +555,17 @@ export default function LaborHistoryPage() {
                                 {
                                     label: 'Ventas netas',
                                     value: periodNetSales === null ? '—' : formatLaborEuro(periodNetSales),
-                                    tone: 'border-sky-400/35 bg-sky-500/10',
+                                    tone: 'ventas-kpi-primary',
+                                    kpiTone: 'net',
                                 },
                                 {
                                     label: 'Coste laboral',
                                     value: summary && !ordinaryUnknown ? formatLaborEuro(summary.totalCost) : '—',
-                                    tone: 'border-rose-400/35 bg-rose-500/10',
+                                    tone: 'border-white/15 bg-gradient-to-b from-[#92545e] to-[#793f4d]',
+                                    kpiTone: undefined,
                                 },
                             ] as const).map(item => (
-                                <div key={item.label} className={cn('flex min-w-0 flex-col justify-center rounded-lg border px-2.5 py-2', item.tone)}>
+                                <div key={item.label} data-kpi-tone={item.kpiTone} className={cn('flex min-h-[61px] min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
                                     <span className="block truncate text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]">{item.label}</span>
                                     <strong className="mt-0.5 block truncate text-[clamp(13px,2vw,19px)] font-bold leading-tight tabular-nums text-white" title={item.value}>
                                         {item.value}
@@ -576,17 +578,17 @@ export default function LaborHistoryPage() {
                                 {
                                     label: 'Nóminas',
                                     value: summary && !ordinaryUnknown ? formatLaborEuro(summary.totalFixed) : '—',
-                                    tone: 'border-white/15 bg-white/[0.045]',
+                                    tone: 'border-white/15 bg-[#304b70]',
                                 },
                                 {
                                     label: 'Extras',
                                     value: summary ? formatLaborEuro(summary.totalOvertime) : '—',
-                                    tone: 'border-amber-400/30 bg-amber-500/10',
+                                    tone: 'border-white/15 bg-[#806443]',
                                 },
                                 {
                                     label: 'Coste / ventas',
                                     value: laborPctOfPeriod === null ? '—' : formatLaborPercent(laborPctOfPeriod),
-                                    tone: 'border-violet-400/35 bg-violet-500/10',
+                                    tone: 'border-white/15 bg-[#61577e]',
                                 },
                             ] as const).map(item => {
                                 const breakdown = item.label === 'Nóminas' ? 'payroll'
@@ -600,7 +602,7 @@ export default function LaborHistoryPage() {
                                     </>
                                 );
                                 const cardClass = cn(
-                                    'flex min-w-0 flex-col justify-center rounded-md border px-2 py-2',
+                                    'flex min-h-[57px] min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5',
                                     item.tone,
                                 );
                                 return breakdown ? (
@@ -703,9 +705,9 @@ export default function LaborHistoryPage() {
                                                                 ratioTone.chip,
                                                             )}
                                                             title={cell?.operationalIncomplete
-                                                                    ? 'Coste operativo incompleto: falta alguna de las dos tarifas positivas para un trabajador, o no hay fichajes válidos'
+                                                                    ? 'Coste operativo incompleto: falta alguna de las dos tarifas positivas para un trabajador, o no hay actividad laboral válida'
                                                                     : (ratio === null ? 'Sin venta neta positiva' : 'Coste operativo / ventas: ' + formatLaborPercent(ratio)) +
-                                                                        ' · Coste del personal fichado: ' + formatLaborEuro(cell?.total ?? 0) +
+                                                                        ' · Coste operativo del personal: ' + formatLaborEuro(cell?.total ?? 0) +
                                                                         (dayOrdinaryUnknown
                                                                             ? (summary?.estimatedPayrollMonths.includes(key.slice(0, 7))
                                                                                 ? ' · Nómina pendiente, costes aproximados'
@@ -738,7 +740,7 @@ export default function LaborHistoryPage() {
             <Modal
                 open={detailOpen}
                 onClose={closeDetail}
-                variant="standard"
+                variant="amplify"
                 scheme="dark"
                 layer="base"
                 instance="labor-cost-day-detail"
@@ -775,7 +777,7 @@ export default function LaborHistoryPage() {
                                     </p>
                                 )}
 
-                                <section aria-label="Porcentaje de coste sobre ventas" className="rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3.5">
+                                <section aria-label="Porcentaje de coste sobre ventas" className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-4 py-3.5">
                                     <div className="flex items-center justify-between gap-3">
                                         <span className="text-[10px] font-semibold uppercase tracking-[0.09em] text-white/65">Coste laboral / ventas netas</span>
                                         <span className={cn('inline-flex shrink-0 rounded-md border px-2 py-1 text-[10px] font-semibold', tone.chip)}>
@@ -789,11 +791,11 @@ export default function LaborHistoryPage() {
                                         {ratio === null ? '—' : formatLaborPercent(ratio)}
                                     </strong>
                                     <p className="mt-2 text-[11px] leading-relaxed text-white/60">
-                                        {incomplete ? 'Hay trabajadores sin ninguna de las dos tarifas positivas, o faltan fichajes válidos.' :
+                                        {incomplete ? 'Hay trabajadores sin ninguna de las dos tarifas positivas, o falta actividad laboral válida.' :
                                             estimated ? 'Nómina pendiente, costes aproximados: coste ordinario estimado con las nóminas individuales del mes anterior y jornada contractual actual. Las extras conservan su importe calculado.' :
                                             pending ? 'Nómina oficial mensual pendiente. El coste operativo del día se calcula con las tarifas disponibles; cualquier parte sin tarifa ordinaria se contabiliza a 0 €.' :
                                             ratio === null ? 'No hay venta neta positiva con la que comparar este día.' :
-                                            'Coste de quienes ficharon ese día, valorado según nómina oficial, jornada contratada y extras proyectadas. Sin tarifa verificable, esa parte se computa a 0 €.'}
+                                            'Coste de las jornadas fichadas y la jornada ordinaria fija del propietario, valorado según nómina oficial y extras proyectadas. Sin tarifa verificable, esa parte se computa a 0 €.'}
                                     </p>
                                     <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden="true">
                                         {ratio !== null && (
@@ -810,7 +812,7 @@ export default function LaborHistoryPage() {
                                         { label: 'Horas ordinarias', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalFixed), emphasized: false },
                                         { label: 'Horas extra', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalOvertime), emphasized: false },
                                     ] as const).map(metric => (
-                                        <div key={metric.label} className="min-w-0 rounded-lg border border-white/10 bg-white/[0.045] p-3">
+                                        <div key={metric.label} className="min-w-0 rounded-lg border border-white/15 bg-[#304b70] px-3 py-2.5">
                                             <span className="block text-[10px] font-medium text-white/60">{metric.label}</span>
                                             <strong className={cn('mt-1 block truncate text-[17px] font-semibold tabular-nums sm:text-[20px]',
                                                 metric.emphasized ? 'text-white' : 'text-white/90')}>
@@ -828,7 +830,7 @@ export default function LaborHistoryPage() {
                                             {showNoActivity ? 'Ocultar inactivos' : 'Mostrar todos'}
                                         </button>
                                     </div>
-                                    <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.035]">
+                                    <div className="overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)]">
                                         {shownWorkers.length ? shownWorkers.map(w => {
                                             const workerRatio = incomplete || dayDetail.dayNetSales <= 0 ? null : w.laborPctOfSales;
                                             const workerBand = laborRatioBand(workerRatio);
@@ -865,7 +867,7 @@ export default function LaborHistoryPage() {
 
                                 {!pending && (
                                     <p className="text-center text-[10px] leading-relaxed text-white/50">
-                                        El coste operativo usa solo las horas realmente fichadas, con una tarifa
+                                        El coste operativo usa las horas fichadas y la jornada ordinaria fija del propietario, con una tarifa
                                         empresarial estimada de la nómina y la jornada contratada; las extras se toman del motor de horas.
                                         Si falta una tarifa, esa parte se imputa a 0 €, siempre que alguna de las dos tarifas sea positiva.
                                         El coste mensual oficial permanece independiente del cálculo diario.
@@ -882,7 +884,7 @@ export default function LaborHistoryPage() {
             <Modal
                 open={summaryDetail !== null}
                 onClose={() => setSummaryDetail(null)}
-                variant="standard"
+                variant="amplify"
                 scheme="dark"
                 layer="base"
                 instance="labor-summary-breakdown"
@@ -894,7 +896,7 @@ export default function LaborHistoryPage() {
                     {summaryDetail === 'payroll' ? (
                         <>
                             {(summary?.payrollBreakdown ?? []).length > 0 ? (
-                                <div className="overflow-hidden rounded-xl border border-white/15 bg-white/[0.035]">
+                                <div className="overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)]">
                                     {summary?.payrollBreakdown.map(worker => (
                                         <div key={worker.userId} className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-3 last:border-b-0">
                                             <span className="min-w-0 truncate text-[12px] text-white/85">{worker.name}</span>
@@ -912,7 +914,7 @@ export default function LaborHistoryPage() {
                     ) : (
                         <>
                             {(summary?.overtimeWeeks ?? []).length > 0 ? (
-                                <div className="overflow-hidden rounded-xl border border-white/15 bg-white/[0.035]">
+                                <div className="overflow-hidden rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)]">
                                     {summary?.overtimeWeeks.map(week => (
                                         <details key={week.weekStart} className="group border-b border-white/10 last:border-b-0">
                                             <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-3 hover:bg-white/[0.06] [&::-webkit-details-marker]:hidden">
