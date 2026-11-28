@@ -2,15 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Check, Search, X } from 'lucide-react'
-import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
+import { CartaMenuCoverPhoto } from '@/components/carta/CartaMenuCoverPhoto'
+import { UNASSIGNED, unassignedIds, visibleIds, searchableIds, type MobileCategoryDisplay, type MobileCatalogProduct } from '@/lib/staff/bdp-mobile-catalog'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
 import { toast } from 'sonner'
 
-type Product={id:number;nombre:string;precio_base:number;departamento_id:number|null;photo_url?:string|null;carta_photo_scale?:string|null;category_parent_name?:string|null;sort_order?:number|null;medio_price?:number|null}
-type Department={id:number;nombre:string;coverPhotoUrl?:string|null;coverPhotoScale?:string|null}
+type Product=MobileCatalogProduct
 type Portion='entero'|'medio'
 type Line={plu:number;quantity:number;portion?:Portion}
 type Job={id:string;status:'queued'|'executing'|'confirmed'|'rejected'|'uncertain'|'expired';table_number:number;result?:{detail?:string}}
@@ -22,9 +22,10 @@ const labels:Record<Job['status'],string>={queued:'En cola',executing:'Ejecutand
 export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=>void}){
   const storageKey='marbella-bdp-order-'+tableNumber
   const [products,setProducts]=useState<Product[]>([])
-  const [departments,setDepartments]=useState<Department[]>([])
+  const [categories,setCategories]=useState<MobileCategoryDisplay[]>([])
   const [search,setSearch]=useState('')
-  const [department,setDepartment]=useState<number|null>(null)
+  const [category,setCategory]=useState<string|null>(null)
+  const [child,setChild]=useState<string|null>(null)
   const [items,setItems]=useState<Line[]>([])
   const [portionPicker,setPortionPicker]=useState<{product:Product;delta:1|-1}|null>(null)
   const [requestKey,setRequestKey]=useState<string|null>(null)
@@ -45,7 +46,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
     fetch('/api/staff/bdp',{cache:'no-store'}).then(async r=>{
       const data=await r.json()
       if(!r.ok)throw Error(data.error??'No se pudo cargar el catálogo')
-      if(!cancelled){setProducts(data.products??[]);setDepartments(data.departments??[]);setStatus(data)}
+      if(!cancelled){setProducts(data.products??[]);setCategories(data.categories??[]);setStatus(data)}
     }).catch(e=>{if(!cancelled)setError(e.message)})
     return()=>{cancelled=true}
   },[storageKey])
@@ -75,18 +76,25 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const quantityOf=(plu:number,portion:Portion)=>items.find(x=>x.plu===plu&&(x.portion??'entero')===portion)?.quantity??0
   const hasHalf=items.some(x=>x.portion==='medio')
   const total=items.reduce((sum,x)=>sum+(Number(x.portion==='medio'?byId.get(x.plu)?.medio_price:byId.get(x.plu)?.precio_base)||0)*x.quantity,0)
-  const categoryList=departments.filter(d=>products.some(p=>p.departamento_id===d.id))
-  const orphaned=products.filter(p=>!categoryList.some(d=>d.id===p.departamento_id))
-  const categories=orphaned.length?[...categoryList,{id:-1,nombre:'Otros',coverPhotoUrl:'/icons/bdp.svg',coverPhotoScale:'m'}]:categoryList
-  const activeCategory=categories.find(d=>d.id===department)
-  const filtered=products.filter(p=>(department===null||p.departamento_id===department||(department===-1&&orphaned.includes(p)))&&(!search.trim()||p.nombre.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())||String(p.id)===search.trim()))
-    .sort((a,b)=>(a.sort_order??Number.MAX_SAFE_INTEGER)-(b.sort_order??Number.MAX_SAFE_INTEGER)||a.nombre.localeCompare(b.nombre,'es'))
-  const showProducts=department!==null||Boolean(search.trim())
+  const roots=categories.filter(c=>c.parentId===null&&!c.hidden)
+  const unassigned=unassignedIds(categories,products)
+  const tabs=unassigned.length?[...roots,{id:UNASSIGNED,parentId:null,sourceId:null,name:'Sin clasificar',hidden:false,products:unassigned,coverPhotoUrl:null,coverPhotoScale:null}]:roots
+  const active= tabs.find(c=>c.id===category)?.id??tabs[0]?.id??null
+  const children=categories.filter(c=>c.parentId===active&&!c.hidden)
+  const activeChild=children.some(c=>c.id===child)?child:null
+  const term=search.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  const normalize=(s:string)=>s.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  const ids=term?[...searchableIds(categories,products)]:active?visibleIds(categories,products,active,activeChild):[]
+  const filtered=ids.flatMap(id=>{
+    const p=byId.get(id)
+    return p&&(!term||normalize(p.display_name??p.nombre).includes(term)||normalize(p.nombre).includes(term)||String(p.id)===term)?[p]:[]
+  })
+  const displayName=(p:Product)=>p.display_name??p.nombre
   const current=status?.job
   const finished=current&&['confirmed','rejected','expired'].includes(current.status)
   const canSend=!!status?.ready&&!status.active&&units>0&&units<=20&&!busy&&!current&&!hasHalf
   const change=(plu:number,delta:number,portion:Portion='entero')=>{
-    if(requestKey||busy)return
+    if(requestKey||busy||!(Number(byId.get(plu)?.precio_base)>0))return
     if(portion==='medio'&&!(Number(byId.get(plu)?.medio_price)>0))return
     if(delta>0&&units>=20){toast.error('Máximo 20 unidades en el piloto');return}
     setItems(old=>{
@@ -127,7 +135,6 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
     setStatus(old=>old?{...old,job:null}:null)
   }
   const goBack=()=>{
-    if(showProducts){setDepartment(null);setSearch('');return}
     onBack()
   }
   const handyLabel=status?.ready?'Handy conectado':'Handy no disponible'
@@ -162,17 +169,21 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
             {error&&<p className="text-rose-200" role="alert">{error}</p>}
           </div>
         )}
-        {activeCategory&&<h2 className="shrink-0 text-center text-sm font-semibold">{activeCategory.nombre}</h2>}
+        <nav aria-label="Categorías" className="flex shrink-0 gap-2 overflow-x-auto overscroll-x-contain pb-1 custom-scrollbar">
+          {tabs.map(tab=><button key={tab.id} type="button" aria-pressed={active===tab.id&&!term} onClick={()=>{setCategory(tab.id);setChild(null);setSearch('')}} className={'flex min-h-12 min-w-[76px] max-w-[120px] shrink-0 items-center justify-center gap-1 rounded-lg border px-2 py-1 text-xs font-semibold '+(active===tab.id&&!term?'border-white bg-white/20 text-white':'border-white/15 bg-white/5 text-white/75')}>
+            {tab.coverPhotoUrl&&<span className="relative size-8 shrink-0"><CartaMenuCoverPhoto src={tab.coverPhotoUrl} scale={tab.coverPhotoScale}/></span>}
+            <span className="line-clamp-2 text-left">{tab.name}</span>
+          </button>)}
+        </nav>
+        {children.length>0&&!term&&<nav aria-label="Subcategorías" className="flex shrink-0 gap-2 overflow-x-auto overscroll-x-contain pb-1 custom-scrollbar">
+          {[{id:null,name:'Todos'},...children].map(tab=><button type="button" key={tab.id??'all'} aria-pressed={activeChild===tab.id} onClick={()=>setChild(tab.id)} className={'min-h-12 shrink-0 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold '+(activeChild===tab.id?'border-white bg-white/20 text-white':'border-white/15 text-white/75')}>{tab.name}</button>)}
+        </nav>}
         <div className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
-          {!showProducts?(
-            <CartaCategoryGrid compact layoutClassName="grid-cols-3">
-              {categories.map(d=><CartaCategoryCard key={d.id} title={d.nombre||'Otros'} coverPhotoUrl={d.coverPhotoUrl??'/icons/bdp.svg'} coverPhotoScale={d.coverPhotoScale} compact nativeImg onClick={()=>setDepartment(d.id)}/>)}
-            </CartaCategoryGrid>
-          ):(
-            <div className="carta-browse-modal">
+          <div className="carta-browse-modal">
               <div className="grid grid-cols-3 gap-x-2.5 gap-y-4">
                 {filtered.map(p=>{
                   const quantity=quantityOf(p.id,'entero')+quantityOf(p.id,'medio')
+                  const unavailable=!(Number(p.precio_base)>0)
                   return <div key={p.id} className="carta-square-product-card flex min-w-0 flex-col">
                     <div data-carta-product-photo>
                       <div className="relative min-h-0 w-full flex-1 overflow-hidden">
@@ -182,22 +193,21 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
                         {quantity>0&&<span className="pointer-events-none absolute right-1 top-1 z-10 inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF3B30] px-1 text-[10px] font-semibold tabular-nums leading-none text-white" aria-label={quantity+' unidades seleccionadas'}>{quantity}</span>}
                       </div>
                       <div data-carta-order-controls className={locked?'opacity-60':undefined} aria-label={'Unidades de '+p.nombre}>
-                        {quantity===0?<button type="button" data-action="add" disabled={locked} onClick={()=>selectPortion(p,1)} aria-label={'Añadir '+p.nombre}>AÑADIR</button>:<>
-                          <button type="button" data-action="remove" disabled={locked} onClick={()=>selectPortion(p,-1)} aria-label={'Quitar una unidad de '+p.nombre}>−</button>
-                          <button type="button" data-action="increment" disabled={locked} onClick={()=>selectPortion(p,1)} aria-label={'Añadir una unidad de '+p.nombre}>+</button>
+                        {quantity===0?<button type="button" data-action="add" disabled={locked||unavailable} onClick={()=>selectPortion(p,1)} aria-label={'Añadir '+p.nombre}>{unavailable?'NO DISPONIBLE':'AÑADIR'}</button>:<>
+                          <button type="button" data-action="remove" disabled={locked||unavailable} onClick={()=>selectPortion(p,-1)} aria-label={'Quitar una unidad de '+p.nombre}>−</button>
+                          <button type="button" data-action="increment" disabled={locked||unavailable} onClick={()=>selectPortion(p,1)} aria-label={'Añadir una unidad de '+p.nombre}>+</button>
                         </>}
                       </div>
                     </div>
                     <div data-carta-product-info>
                       {Number(p.medio_price)>0?<CartaDualRacionPrices racionEntero="Entero" racionMedio="Medio" precio={p.precio_base} precioMedio={p.medio_price} variant="staff" singleLine/>:<p data-carta-display-price>{money(Number(p.precio_base))}</p>}
-                      <p data-carta-display-name className={p.nombre.length>18?'carta-catalog-long-name':undefined} title={p.nombre}>{p.nombre}</p>
+                      <p data-carta-display-name className={displayName(p).length>18?'carta-catalog-long-name':undefined} title={displayName(p)}>{displayName(p)}</p>
                     </div>
                   </div>
                 })}
               </div>
               {!filtered.length&&<p className="py-6 text-center text-sm text-white/70">No hay productos.</p>}
-            </div>
-          )}
+          </div>
         </div>
         {hasHalf&&<p role="status" className="shrink-0 text-center text-xs text-amber-200">Envío de medias raciones pendiente de validar en Handy. No se enviará como entero.</p>}
         {(units>0||requestKey)&&(
@@ -207,7 +217,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
           </footer>
         )}
       </div>
-      <Modal open={portionPicker!==null} onClose={()=>setPortionPicker(null)} title={portionPicker?.product.nombre??''} variant="compact" instance="bdp-portion-picker">
+      <Modal open={portionPicker!==null} onClose={()=>setPortionPicker(null)} title={portionPicker?displayName(portionPicker.product):''} variant="compact" instance="bdp-portion-picker">
         {portionPicker&&<div className="grid grid-cols-2 gap-2">
           {(['entero','medio'] as const).map(portion=>{
             const p=portionPicker.product
