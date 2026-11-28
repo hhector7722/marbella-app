@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { MobileCatalog } from '@/lib/staff/bdp-mobile-catalog'
 import Link from 'next/link'
 import { ArrowLeft, Check, Plus, Save, Search, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -121,6 +122,32 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   const [numberInput, setNumberInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [orderTable, setOrderTable] = useState<number|null>(null)
+  const [catalog,setCatalog]=useState<MobileCatalog|null>(null)
+  const [catalogError,setCatalogError]=useState('')
+  const [catalogLoading,setCatalogLoading]=useState(true)
+  const catalogFetchedAt=useRef(0)
+  const catalogInFlight=useRef(false)
+  const loadCatalog=useCallback(async(force=false)=>{
+    if(catalogInFlight.current||(!force&&Date.now()-catalogFetchedAt.current<30000))return
+    catalogInFlight.current=true
+    setCatalogLoading(true)
+    setCatalogError('')
+    try{
+      const res=await fetch('/api/staff/bdp?catalog=1',{cache:'no-store'})
+      const data=await res.json()
+      if(!res.ok||!Array.isArray(data.products)||!Array.isArray(data.categories))throw Error(data.error??'No se pudo cargar el catálogo')
+      setCatalog(data as MobileCatalog)
+      catalogFetchedAt.current=Date.now()
+    }catch(e){
+      setCatalogError(e instanceof Error?e.message:'No se pudo cargar el catálogo')
+    }finally{
+      catalogInFlight.current=false
+      setCatalogLoading(false)
+    }
+  },[])
+  // Start while the floorplan is visible; share one request and one snapshot
+  // across table changes instead of mounting a separate fetch per table.
+  useEffect(()=>{if(!editing)void loadCatalog()},[editing,orderTable,loadCatalog])
   const [tableSearch, setTableSearch] = useState('')
   const [tableSearchFocused, setTableSearchFocused] = useState(false)
   const tableSearchRef = useRef<HTMLFormElement>(null)
@@ -232,7 +259,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
 
   return (
     <main className="fixed inset-0 z-[120] isolate flex h-[100dvh] w-full flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top,#153c65_0%,#06264c_45%,#031a39_100%)] px-2.5 pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(env(safe-area-inset-bottom)+12px)]">
-      {orderTable !== null && !editing ? <BdpOrderView key={orderTable} tableNumber={orderTable} onBack={()=>setOrderTable(null)}/> : <>
+      {orderTable !== null && !editing ? <BdpOrderView key={orderTable} tableNumber={orderTable} onBack={()=>setOrderTable(null)} catalog={catalog} catalogLoading={catalogLoading} catalogError={catalogError} onRetryCatalog={()=>void loadCatalog(true)}/> : <>
       <header className="relative z-40 grid w-full shrink-0 grid-cols-[80px_minmax(0,1fr)_80px] items-center gap-1">
       <div className="flex min-w-0 items-center justify-start">
         <Link href="/master/dashboard" aria-label="Volver a Master" className="flex h-12 w-10 shrink-0 items-center justify-center text-white">
