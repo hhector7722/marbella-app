@@ -26,13 +26,13 @@ type PreviewHeader = {
     avgTicket: number | null;
 };
 
-export function SalesPreviewModal({ preview, onClose, source = 'sales' }: { preview: SalesPreview | null; onClose: () => void; source?: 'sales' | 'closing' | 'monthly' }) {
+export function SalesPreviewModal({ preview, onClose, source = 'sales', salesOnly = false }: { preview: SalesPreview | null; onClose: () => void; source?: 'sales' | 'closing' | 'monthly'; salesOnly?: boolean }) {
     const supabase = useMemo(() => createClient(), []);
     const [facts, setFacts] = useState<PreviewHeader | null>(null);
     const previewKey = preview ? preview.mode + ':' + preview.date : '';
 
     useEffect(() => {
-        if (!preview) return;
+        if (!preview || salesOnly) return;
         const mode = preview.mode;
         const date = preview.date;
         const key = mode + ':' + date;
@@ -64,16 +64,16 @@ export function SalesPreviewModal({ preview, onClose, source = 'sales' }: { prev
         };
         void fetchHeader();
         return () => { mounted = false; };
-    }, [supabase, preview]);
+    }, [supabase, preview, salesOnly]);
 
     if (!preview) return null;
-    const title = preview.mode === 'month' ? 'Ventas mensuales' : 'Detalle de ventas';
+    const title = salesOnly ? 'Ventas' : preview.mode === 'month' ? 'Ventas mensuales' : 'Detalle de ventas';
     const currentFacts = facts?.key === previewKey ? facts : null;
     return (
         <Modal open onClose={onClose} title={title} scheme="dark" variant="amplify"
             containerClassName={`home-sales-preview--${source}`}
             instance="home-sales-preview" scrollContent={false}
-            headerTrailing={
+            headerTrailing={salesOnly ? undefined : (
                 <div className="flex max-w-[66vw] min-w-0 items-center gap-2 pr-1 text-[10px] text-white/75 tabular-nums sm:gap-3 sm:text-[11px]">
                     {currentFacts?.weather && (
                         <span className="inline-flex min-w-0 items-center gap-1" title={currentFacts.weather}>
@@ -90,10 +90,10 @@ export function SalesPreviewModal({ preview, onClose, source = 'sales' }: { prev
                             currentFacts.avgTicket.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', useGrouping: 'always' })}</strong> medio
                     </span>
                 </div>
-            }>
+            )}>
             <div data-element="sales-preview-viewport" className="flex h-[min(68dvh,670px)] min-h-0 w-full flex-col overflow-hidden">
                 <EmbeddedSales key={previewKey} embeddedMode={preview.mode === 'current' ? 'day' : preview.mode}
-                    embeddedDate={preview.date} embeddedShowLive={preview.mode === 'current'}/>
+                    embeddedDate={preview.date} embeddedShowLive={salesOnly || preview.mode === 'current'} embeddedSalesOnly={salesOnly}/>
             </div>
         </Modal>
     );
