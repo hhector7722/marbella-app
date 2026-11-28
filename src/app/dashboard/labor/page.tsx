@@ -243,6 +243,7 @@ export default function LaborHistoryPage() {
     const [employees, setEmployees] = useState<ProfileOption[]>([]);
 
     const [detailOpen, setDetailOpen] = useState(false);
+    const [showDayCostBreakdown, setShowDayCostBreakdown] = useState(false);
     const detailRequestId = useRef(0);
     const [showNoActivity, setShowNoActivity] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -512,6 +513,7 @@ export default function LaborHistoryPage() {
     const closeDetail = useCallback(() => {
         detailRequestId.current++;
         setDetailOpen(false);
+        setShowDayCostBreakdown(false);
         setShowNoActivity(false);
         setDayDetail(null);
         setSelectedDayStr(null);
@@ -781,8 +783,6 @@ export default function LaborHistoryPage() {
                             <LoadingSpinner size="lg" className="text-white" />
                         </div>
                     ) : dayDetail ? (() => {
-                        const pending = dayDetail.payrollPending;
-                        const estimated = dayDetail.payrollEstimated;
                         const incomplete = dayDetail.operationalIncomplete;
                         const ratio = incomplete || dayDetail.dayNetSales <= 0 ? null : dayDetail.laborPctOfSales;
                         const tone = ratioStyles[laborRatioBand(ratio)];
@@ -804,43 +804,50 @@ export default function LaborHistoryPage() {
                                     </p>
                                 )}
 
-                                <section aria-label="Porcentaje de coste sobre ventas" className="rounded-xl border border-white/25 bg-[var(--color-envolvente-bajo)] px-4 py-3.5">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="text-[10px] font-semibold uppercase tracking-[0.09em] text-white/65">Coste laboral / ventas netas</span>
-                                        <span className={cn('inline-flex shrink-0 rounded-md border px-2 py-1 text-[10px] font-semibold', tone.chip)}>
-                                            {incomplete ? 'Datos incompletos' : ratio === null ? 'Sin ventas' : estimated ? 'Costes aproximados' : pending ? 'Nómina pendiente' :
-                                                laborRatioBand(ratio) === 'good' ? '≤55%' :
-                                                laborRatioBand(ratio) === 'attention' ? '55–70%' :
-                                                laborRatioBand(ratio) === 'high' ? '70–90%' : '>90%'}
-                                        </span>
-                                    </div>
-                                    <strong className={cn('mt-2 block text-[32px] font-bold leading-none tracking-tight tabular-nums sm:text-[38px]', tone.text)}>
-                                        {ratio === null ? '—' : formatLaborPercent(ratio)}
-                                    </strong>
-                                                                        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden="true">
-                                        {ratio !== null && (
-                                            <div className={cn('h-full rounded-full transition-[width]', tone.bar)}
-                                                style={{ width: Math.min(100, Math.max(0, ratio)) + '%' }} />
-                                        )}
-                                    </div>
-                                </section>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    {([
-                                        { label: 'Coste operativo', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalCost), emphasized: true },
-                                        { label: 'Venta neta', value: formatLaborEuro(dayDetail.dayNetSales), emphasized: false },
-                                        { label: 'Horas ordinarias', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalFixed), emphasized: false },
-                                        { label: 'Horas extra', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalOvertime), emphasized: false },
-                                    ] as const).map(metric => (
-                                        <div key={metric.label} className="min-w-0 rounded-lg border border-white/15 bg-[#304b70] px-3 py-2.5">
-                                            <span className="block text-[10px] font-medium text-white/60">{metric.label}</span>
-                                            <strong className={cn('mt-1 block truncate text-[17px] font-semibold tabular-nums sm:text-[20px]',
-                                                metric.emphasized ? 'text-white' : 'text-white/90')}>
-                                                {metric.value}
+                                <section aria-label="Resumen diario de costes y ventas" className="flex min-w-0 flex-col gap-2">
+                                    <div className="grid min-w-0 grid-cols-3 gap-1.5 sm:gap-2">
+                                        <button
+                                            type="button"
+                                            aria-expanded={showDayCostBreakdown}
+                                            aria-controls="labor-day-cost-breakdown"
+                                            onClick={() => setShowDayCostBreakdown(v => !v)}
+                                            className="flex min-w-0 flex-col justify-center rounded-lg border border-white/15 bg-gradient-to-b from-[#92545e] to-[#793f4d] px-2 py-2 text-left hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/70 sm:px-3"
+                                        >
+                                            <span className="flex items-center justify-between gap-1 text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]">
+                                                Coste
+                                                <ChevronDown size={13} className={cn('shrink-0 transition-transform', showDayCostBreakdown && 'rotate-180')} />
+                                            </span>
+                                            <strong className="mt-1 block text-[clamp(12px,3.6vw,20px)] font-bold leading-tight tabular-nums text-white">
+                                                {incomplete ? '—' : formatLaborEuro(dayDetail.totalCost)}
+                                            </strong>
+                                        </button>
+                                        <div data-kpi-tone="net" className="ventas-kpi-primary flex min-w-0 flex-col justify-center rounded-lg border px-2 py-2 sm:px-3">
+                                            <span className="text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]">Venta neta</span>
+                                            <strong className="mt-1 block text-[clamp(12px,3.6vw,20px)] font-bold leading-tight tabular-nums text-white">
+                                                {formatLaborEuro(dayDetail.dayNetSales)}
                                             </strong>
                                         </div>
-                                    ))}
-                                </div>
+                                        <div className="flex min-w-0 flex-col justify-center rounded-lg border border-white/15 bg-[#61577e] px-2 py-2 sm:px-3">
+                                            <span className="text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]">Coste/Ventas</span>
+                                            <strong className={cn('mt-1 block text-[clamp(12px,3.6vw,20px)] font-bold leading-tight tabular-nums', tone.text)}>
+                                                {ratio === null ? '—' : formatLaborPercent(ratio)}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                    {showDayCostBreakdown && (
+                                        <div id="labor-day-cost-breakdown" className="grid min-w-0 grid-cols-2 gap-2">
+                                            {([
+                                                { label: 'Horas ordinarias', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalFixed) },
+                                                { label: 'Horas extras', value: incomplete ? '—' : formatLaborEuro(dayDetail.totalOvertime) },
+                                            ] as const).map(metric => (
+                                                <div key={metric.label} className="min-w-0 rounded-lg border border-white/15 bg-[#304b70] px-3 py-2">
+                                                    <span className="block text-[10px] font-medium text-white/65">{metric.label}</span>
+                                                    <strong className="mt-0.5 block text-[15px] font-semibold tabular-nums text-white sm:text-[17px]">{metric.value}</strong>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </section>
 
                                 <section className="min-w-0">
                                     <div className="mb-2 flex items-center justify-between gap-2">
