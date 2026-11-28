@@ -235,7 +235,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
             </div>
           </form>
           <div className="flex justify-end">
-            <Button variant="secondary" instance="bdp-ventas" onClick={()=>setSalesPreview({mode:'current',date:formatYmdInMadrid(new Date())})}>Ventas</Button>
+            <Button variant="primary" instance="bdp-ventas" onClick={()=>setSalesPreview({mode:'current',date:formatYmdInMadrid(new Date())})}>Ventas</Button>
           </div>
         </>
       ) : canEdit && (
@@ -269,11 +269,14 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
 
       </header>
 
-      {/* The available area excludes the toolbar, status and both safe-area margins.
-          Width is bounded by the intrinsic artwork height, so no zone gets cropped. */}
-      <div className="flex min-h-0 flex-1 items-center justify-center py-3">
+      {/* Preserve each photo's intrinsic aspect ratio. In service mode the
+          remaining vertical space is shared equally before, between and after
+          the three blocks. Reserve four responsive gaps before sizing photos. */}
+      <div className={'flex min-h-0 flex-1 items-center justify-center' + (editing ? ' py-3' : '')}>
         <div className="flex h-full w-full items-center justify-center" style={{containerType: 'size'}}>
-          <div className="flex shrink-0 flex-col gap-4" style={{width: 'min(100cqw, calc((100cqh - 32px) * 0.66))'}}>
+          <div className={editing ? 'flex shrink-0 flex-col gap-4' : 'flex h-full shrink-0 flex-col justify-evenly'} style={{width: editing
+            ? 'min(100cqw, calc((100cqh - 32px) * 0.66))'
+            : 'min(100cqw, max(0px, calc((100cqh - clamp(32px, 12cqh, 112px)) * 0.66)))'}}>
             <ZonePhoto zone="alargadas" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
             <ZonePhoto zone="terraza" layout={displayed} editing={editing} selectedId={selectedId} onSelect={choose}/>
             <div className="grid min-h-0 grid-cols-2 items-center gap-2">
@@ -317,13 +320,13 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
         </div>
       )}
 
-      <footer className="flex h-7 shrink-0 items-center justify-center">
-        {editing && missing>0 && (
+      {editing && <footer className="flex h-7 shrink-0 items-center justify-center">
+        {missing>0 && (
           <span className="rounded-lg bg-slate-900/80 px-3 py-1.5 text-[11px] font-semibold text-white">
             {missing} mesas por numerar
           </span>
         )}
-      </footer>
+      </footer>}
       </>}
       <SalesPreviewModal preview={salesPreview} onClose={()=>setSalesPreview(null)} salesOnly/>
     </main>
