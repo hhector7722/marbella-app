@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { ChevronDown, User } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import {
     addDays,
     addMonths,
@@ -243,6 +243,7 @@ export default function LaborHistoryPage() {
     const [employees, setEmployees] = useState<ProfileOption[]>([]);
 
     const [detailOpen, setDetailOpen] = useState(false);
+    const detailRequestId = useRef(0);
     const [showNoActivity, setShowNoActivity] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
     const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
@@ -448,6 +449,7 @@ export default function LaborHistoryPage() {
     const openDayDetail = useCallback(
         async (day: Date, optionsOverride?: { includeAll?: boolean }) => {
             const key = format(day, 'yyyy-MM-dd');
+            const requestId = ++detailRequestId.current;
             const showAll = optionsOverride?.includeAll ?? false;
             trackUsageModalApply(
                 'labor-day-detail',
@@ -467,6 +469,7 @@ export default function LaborHistoryPage() {
                     includeAllContracted: true,
                 });
 
+                if (requestId !== detailRequestId.current) return;
                 const workers: WorkerRow[] = labor.workers.map((w) => ({
                     id: w.id,
                     name: w.name,
@@ -495,22 +498,31 @@ export default function LaborHistoryPage() {
                     workers,
                 });
             } catch (e) {
+                if (requestId !== detailRequestId.current) return;
                 console.error(e);
                 toast.error('Error al cargar el desglose del día');
                 setDayDetail(null);
             } finally {
-                setDetailLoading(false);
+                if (requestId === detailRequestId.current) setDetailLoading(false);
             }
         },
         [workerFilterId, pathname],
     );
 
     const closeDetail = useCallback(() => {
+        detailRequestId.current++;
         setDetailOpen(false);
         setShowNoActivity(false);
         setDayDetail(null);
         setSelectedDayStr(null);
     }, []);
+
+    const navigateDetailDay = (offset: number) => {
+        if (!selectedDayStr) return;
+        const next = addDays(parseLocalSafe(selectedDayStr), offset);
+        if (format(next, 'yyyy-MM-dd') > todayStr) return;
+        void openDayDetail(next);
+    };
 
     return (
             <>
@@ -746,7 +758,22 @@ export default function LaborHistoryPage() {
                 instance="labor-cost-day-detail"
                 usageId="labor-cost-day-detail"
                 usageLabel="Detalle día laboral"
-                title={selectedDayStr ? format(parseLocalSafe(selectedDayStr), 'EEEE · d MMMM yyyy', { locale: es }) : 'Coste laboral'}
+                title={selectedDayStr ? (
+                    <span className="flex min-w-0 items-center gap-1">
+                        <button type="button" aria-label="Día anterior" onClick={() => navigateDetailDay(-1)}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-white hover:bg-white/10">
+                            <ChevronLeft size={18} strokeWidth={1.75} />
+                        </button>
+                        <span className="min-w-0 truncate tabular-nums">
+                            {format(parseLocalSafe(selectedDayStr), 'EEEE · d MMMM yyyy', { locale: es })}
+                        </span>
+                        <button type="button" aria-label="Día siguiente" onClick={() => navigateDetailDay(1)}
+                            disabled={selectedDayStr >= todayStr}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-white hover:bg-white/10 disabled:cursor-default disabled:opacity-25">
+                            <ChevronRight size={18} strokeWidth={1.75} />
+                        </button>
+                    </span>
+                ) : 'Coste laboral'}
             >
                 <div className="min-w-0 px-3 py-4 text-white sm:px-5 sm:py-5">
                     {detailLoading ? (
@@ -790,14 +817,7 @@ export default function LaborHistoryPage() {
                                     <strong className={cn('mt-2 block text-[32px] font-bold leading-none tracking-tight tabular-nums sm:text-[38px]', tone.text)}>
                                         {ratio === null ? '—' : formatLaborPercent(ratio)}
                                     </strong>
-                                    <p className="mt-2 text-[11px] leading-relaxed text-white/60">
-                                        {incomplete ? 'Hay trabajadores sin ninguna de las dos tarifas positivas, o falta actividad laboral válida.' :
-                                            estimated ? 'Nómina pendiente, costes aproximados: coste ordinario estimado con las nóminas individuales del mes anterior y jornada contractual actual. Las extras conservan su importe calculado.' :
-                                            pending ? 'Nómina oficial mensual pendiente. El coste operativo del día se calcula con las tarifas disponibles; cualquier parte sin tarifa ordinaria se contabiliza a 0 €.' :
-                                            ratio === null ? 'No hay venta neta positiva con la que comparar este día.' :
-                                            'Coste de las jornadas fichadas y la jornada ordinaria fija del propietario, valorado según nómina oficial y extras proyectadas. Sin tarifa verificable, esa parte se computa a 0 €.'}
-                                    </p>
-                                    <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden="true">
+                                                                        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10" aria-hidden="true">
                                         {ratio !== null && (
                                             <div className={cn('h-full rounded-full transition-[width]', tone.bar)}
                                                 style={{ width: Math.min(100, Math.max(0, ratio)) + '%' }} />
