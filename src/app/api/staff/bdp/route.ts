@@ -3,6 +3,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/server'
 import { isMasterDashboardUser } from '@/lib/master-dashboard'
 import { loadEventCartaMenu } from '@/lib/load-event-carta-menu'
+import type { MobileCategory } from '@/lib/staff/bdp-mobile-catalog'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -33,11 +34,11 @@ type InputLine={plu:number;quantity:number;portion?:'entero'|'medio'}
 const verifiedHalfPrices:Readonly<Record<number,number>>={79:3.4,80:3.4,81:4.2,83:4,84:3.4,94:3.5,95:7.3,96:3.5,97:3.5,98:4.4,99:3.2,100:3.4,101:4.6,102:3.4,103:4,104:4,215:4.2}
 type CatalogLine={id:number;nombre:string;precio_base:number;departamento_id:number|null}
 async function catalog(database:ReturnType<typeof db>) {
-  const [a,d]=await Promise.all([
-    database.from('bdp_articulos').select('id,nombre,precio_base,departamento_id').gt('id',0).gt('precio_base',0).order('nombre'),
-    database.from('bdp_departamentos').select('id,nombre').order('nombre'),
+  const [a,config]=await Promise.all([
+    database.from('bdp_articulos').select('id,nombre,precio_base,departamento_id').gt('id',0).order('nombre'),
+    database.from('bdp_mobile_catalog').select('revision,categories').eq('id','principal').single(),
   ])
-  if(a.error||d.error) throw new Error('BDP catalog unavailable')
+  if(a.error||config.error||!config.data) throw new Error('BDP catalog unavailable')
   // Read the exact same image catalogue as /pedido; BDP still owns PLUs and prices.
   const carta=await loadEventCartaMenu(database,[]).catch(()=>null)
   const menu=carta?.ok?carta.data:null
@@ -45,24 +46,17 @@ async function catalog(database:ReturnType<typeof db>) {
   const byPlu=new Map(rows.map(row=>[row.articulo_id,row]))
   const products=((a.data??[]) as CatalogLine[]).map(p=>{
     const row=byPlu.get(p.id)
-    return {...p,photo_url:row?.photo_url??null,carta_photo_scale:row?.carta_photo_scale??null,
+    return {...p,display_name:row?.carta_nombre_es?.trim()||row?.carta_nombre||p.nombre,photo_url:row?.photo_url??null,carta_photo_scale:row?.carta_photo_scale??null,
       category_parent_name:row?.category_parent_name??null,sort_order:row?.sort_order??null,
       medio_price:verifiedHalfPrices[p.id]??null}
   })
-  // Explicit matches verified against the existing BDP department and carta catalogues.
-  const covers:Record<number,string>={
-    1:'Cafetería',2:'Snacks',3:'Bebidas - Refrescos',4:'Bebidas - Cervezas',
-    6:'Tapas',8:'Extras',10:'Platos',11:'Helados',12:'Bebidas - Aperitivos',
-    13:'Bocadillos - Calientes',14:'Bocadillos - Fríos',15:'Bocadillos - Especiales',
-  }
-  const departments=(d.data??[]).map(department=>{
-    const name=covers[department.id]
-    const category=menu?.menuCategories.find(x=>x.name===name)
-    const ownPhoto=products.find(p=>p.departamento_id===department.id&&p.photo_url)?.photo_url
-    return {...department,coverPhotoUrl:(category?menu?.categoryCoverById[category.id]:null)??ownPhoto??'/icons/bdp.svg',
-      coverPhotoScale:category?menu?.categoryCoverScaleById[category.id]??'m':'m'}
+  const categories=(config.data.categories as MobileCategory[]).map(category=>{
+    const ids=[...category.products,...(config.data.categories as MobileCategory[]).filter(x=>x.parentId===category.id).flatMap(x=>x.products)]
+    const ownPhoto=ids.map(id=>products.find(p=>p.id===id)?.photo_url).find(Boolean)
+    return {...category,coverPhotoUrl:(category.sourceId?menu?.categoryCoverById[category.sourceId]:null)??ownPhoto??null,
+      coverPhotoScale:category.sourceId?menu?.categoryCoverScaleById[category.sourceId]??'m':'m'}
   })
-  return {products,departments}
+  return {products,categories,revision:config.data.revision}
 }
 export async function GET(req:Request) {
   try {
