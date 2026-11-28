@@ -99,15 +99,6 @@ export async function getEmployeeLaborConditions(employeeId: string): Promise<{
   };
 }
 
-function civilDatesEqual(
-  a: string | null | undefined,
-  b: string | null | undefined,
-): boolean {
-  const na = a == null || String(a).trim() === '' ? null : String(a).trim();
-  const nb = b == null || String(b).trim() === '' ? null : String(b).trim();
-  return na === nb;
-}
-
 /**
  * Regenera weekly_snapshots vía Writer tras un cambio contractual.
  */
@@ -240,18 +231,12 @@ export async function updateLaborConditions(
     );
     const firstFrom = sortedPlan[0]?.effectiveFrom;
     const lastTerm = sortedPlan.at(-1);
-    const prevLast = [...currentTerms]
-      .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
-      .at(-1);
     const profilePatch: Record<string, unknown> = { ...mirror };
     if (firstFrom) {
       profilePatch.joining_date = firstFrom;
     }
-    if (
-      lastTerm &&
-      prevLast &&
-      !civilDatesEqual(prevLast.effectiveTo, lastTerm.effectiveTo)
-    ) {
+    // El último tramo es la fuente de verdad de la baja del perfil.
+    if (lastTerm) {
       profilePatch.end_date = lastTerm.effectiveTo;
     }
     const { error: updErr } = await supabase
@@ -310,7 +295,12 @@ export async function updateLaborConditions(
 
   const openSnap = openTermSnapshot(plan.terms) ?? validated.snapshot;
   const mirror = snapshotToProfileMirror(openSnap, profile.role ?? 'staff');
-  const { error: updErr } = await supabase.from('profiles').update(mirror).eq('id', id);
+  const lastTerm = [...plan.terms]
+    .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
+    .at(-1);
+  // Una reincorporación abre un nuevo tramo: no arrastrar la baja anterior.
+  const profilePatch = lastTerm ? { ...mirror, end_date: lastTerm.effectiveTo } : mirror;
+  const { error: updErr } = await supabase.from('profiles').update(profilePatch).eq('id', id);
   if (updErr) {
     return {
       success: false,
@@ -394,9 +384,6 @@ export async function deleteLaborTerm(
   );
   const firstFrom = sortedPlan[0]?.effectiveFrom;
   const lastTerm = sortedPlan.at(-1);
-  const prevLast = [...currentTerms]
-    .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
-    .at(-1);
 
   const mirror = openSnap
     ? snapshotToProfileMirror(openSnap, profile.role ?? 'staff')
@@ -414,11 +401,7 @@ export async function deleteLaborTerm(
   if (firstFrom) {
     profilePatch.joining_date = firstFrom;
   }
-  if (
-    lastTerm &&
-    prevLast &&
-    !civilDatesEqual(prevLast.effectiveTo, lastTerm.effectiveTo)
-  ) {
+  if (lastTerm) {
     profilePatch.end_date = lastTerm.effectiveTo;
   }
 
