@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Check, Plus, Save, Search, Trash2, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { SalesPreviewModal, type SalesPreview } from '@/components/dashboards/SalesPreviewModal'
+import { formatYmdInMadrid } from '@/lib/madrid-date-bounds'
 import { toast } from 'sonner'
 import {
   ZONE_LABELS, INDIVIDUAL_SLOT_COUNT, cloneFloorplan, initialFloorplanLayout, alignFloorplanToPhotos,
@@ -118,6 +121,19 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   const [numberInput, setNumberInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [orderTable, setOrderTable] = useState<number|null>(null)
+  const [tableSearch, setTableSearch] = useState('')
+  const [salesPreview, setSalesPreview] = useState<SalesPreview|null>(null)
+
+  const openSearchedTable = () => {
+    if (!/^[0-9]{1,4}$/.test(tableSearch)) return
+    const number = Number(tableSearch)
+    if (!Number.isSafeInteger(number) || number < 1 || number > 9999) {
+      toast.error('Introduce un número de mesa entre 1 y 9999.')
+      return
+    }
+    setTableSearch('')
+    setOrderTable(number)
+  }
 
   const firstSetup = !published
   const displayed = editing ? layout : (published ?? layout)
@@ -198,19 +214,32 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
   return (
     <main className="fixed inset-0 z-[120] isolate flex h-[100dvh] w-full flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top,#153c65_0%,#06264c_45%,#031a39_100%)] px-2.5 pt-[calc(env(safe-area-inset-top)+12px)] pb-[calc(env(safe-area-inset-bottom)+12px)]">
       {orderTable !== null && !editing ? <BdpOrderView key={orderTable} tableNumber={orderTable} onBack={()=>setOrderTable(null)}/> : <>
-      <header className="relative z-40 flex w-full shrink-0 items-center justify-between gap-1">
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <Link href="/master/dashboard" aria-label="Volver a Master"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white shadow-md">
-          <ArrowLeft size={18}/>
+      <header className="relative z-40 grid w-full shrink-0 grid-cols-[80px_minmax(0,1fr)_80px] items-center gap-1">
+      <div className="flex min-w-0 items-center justify-start">
+        <Link href="/master/dashboard" aria-label="Volver a Master" className="flex h-12 w-10 shrink-0 items-center justify-center text-white">
+          <ArrowLeft size={22}/>
         </Link>
-        <span className="min-w-0 truncate rounded-lg px-1 py-2 text-xs font-semibold text-white" title={editing ? 'Bdp · Numeración' : 'Bdp'}>
-          Bdp<span className="hidden sm:inline">{editing ? ' · Numeración' : ''}</span>
-        </span>
+        <img src="/icons/bdp.svg" alt="Bdp" className="size-8 shrink-0 rounded-lg object-contain"/>
       </div>
 
-      {canEdit && (
-        <div className="flex shrink-0 items-center gap-1.5">
+      {!editing ? (
+        <>
+          <form onSubmit={event=>{event.preventDefault();openSearchedTable()}} className="flex min-w-0 items-center justify-center">
+            <div className="flex h-[var(--espacio-8)] w-full min-w-0 items-center gap-2 rounded-full border border-white/15 bg-[var(--buscador-global-fondo)] px-3 text-white/60 focus-within:ring-1 focus-within:ring-white/50">
+              <Search aria-hidden size={14} className="shrink-0"/>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" enterKeyHint="go" autoComplete="off" maxLength={4}
+                aria-label="Buscar mesa" placeholder="Buscar mesa..." value={tableSearch}
+                onChange={event=>setTableSearch(event.target.value.replace(/[^0-9]/g,'').slice(0,4))}
+                className="h-full w-full min-w-0 bg-transparent text-xs text-white outline-none placeholder:text-white/60"/>
+              {tableSearch && <button type="submit" aria-label="Abrir mesa" className="flex h-12 w-8 shrink-0 items-center justify-center text-white"><Check size={16}/></button>}
+            </div>
+          </form>
+          <div className="flex justify-end">
+            <Button variant="secondary" instance="bdp-ventas" onClick={()=>setSalesPreview({mode:'current',date:formatYmdInMadrid(new Date())})}>Ventas</Button>
+          </div>
+        </>
+      ) : canEdit && (
+        <div className="col-span-2 flex min-w-0 justify-end gap-1.5">
           {editing ? (
             <>
               <button type="button" onClick={()=>addIndividual()} aria-label="Añadir mesa individual"
@@ -234,12 +263,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
                 <Save size={15}/>{firstSetup?'Publicar':'Guardar'}
               </button>
             </>
-          ): (
-            <button type="button" onClick={()=>setEditing(true)}
-              className="flex h-9 items-center gap-1 rounded-lg border border-white/70 bg-white/95 px-3 text-xs font-bold shadow-md">
-              <Pencil size={16}/>Editar números
-            </button>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -301,6 +325,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
         )}
       </footer>
       </>}
+      <SalesPreviewModal preview={salesPreview} onClose={()=>setSalesPreview(null)} salesOnly/>
     </main>
   )
 }
