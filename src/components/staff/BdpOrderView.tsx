@@ -2,10 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Minus, Plus, Search, Send } from 'lucide-react'
+import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
+import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
+import { EventEncargoViewOrderButton } from '@/components/eventos/EventEncargoCartFooter'
+import { Button } from '@/components/ui/button'
+import { formatCartaOrderProductName } from '@/lib/carta-menu-i18n'
+import type { EventOrderCartaControl } from '@/lib/event-order-carta'
 import { toast } from 'sonner'
 
-type Product={id:number;nombre:string;precio_base:number;departamento_id:number|null}
-type Department={id:number;nombre:string}
+type Product={id:number;nombre:string;precio_base:number;departamento_id:number|null;photo_url?:string|null;carta_photo_scale?:string|null;category_parent_name?:string|null;sort_order?:number|null}
+type Department={id:number;nombre:string;coverPhotoUrl?:string|null;coverPhotoScale?:string|null}
 type Line={plu:number;quantity:number}
 type Job={id:string;status:'queued'|'executing'|'confirmed'|'rejected'|'uncertain'|'expired';table_number:number;result?:{detail?:string}}
 type Status={ready:boolean;detail:string;active:{status:string;table_number:number;request_key:string}|null;job:Job|null}
@@ -19,6 +25,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const [departments,setDepartments]=useState<Department[]>([])
   const [search,setSearch]=useState('')
   const [department,setDepartment]=useState<number|null>(null)
+  const [cartOpen,setCartOpen]=useState(false)
   const [items,setItems]=useState<Line[]>([])
   const [requestKey,setRequestKey]=useState<string|null>(null)
   const [status,setStatus]=useState<Status|null>(null)
@@ -66,7 +73,13 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const units=items.reduce((sum,x)=>sum+x.quantity,0)
   const byId=new Map(products.map(p=>[p.id,p]))
   const total=items.reduce((sum,x)=>sum+(Number(byId.get(x.plu)?.precio_base)||0)*x.quantity,0)
-  const filtered=products.filter(p=>(department===null||p.departamento_id===department)&&(!search.trim()||p.nombre.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())||String(p.id)===search.trim()))
+  const categoryList=departments.filter(d=>products.some(p=>p.departamento_id===d.id))
+  const orphaned=products.filter(p=>!categoryList.some(d=>d.id===p.departamento_id))
+  const categories=orphaned.length?[...categoryList,{id:-1,nombre:'Otros',coverPhotoUrl:'/icons/bdp.svg',coverPhotoScale:'m'}]:categoryList
+  const activeCategory=categories.find(d=>d.id===department)
+  const filtered=products.filter(p=>(department===null||p.departamento_id===department||(department===-1&&orphaned.includes(p)))&&(!search.trim()||p.nombre.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())||String(p.id)===search.trim()))
+    .sort((a,b)=>(a.sort_order??Number.MAX_SAFE_INTEGER)-(b.sort_order??Number.MAX_SAFE_INTEGER)||a.nombre.localeCompare(b.nombre,'es'))
+  const showProducts=department!==null||Boolean(search.trim())
   const current=status?.job
   const finished=current&&['confirmed','rejected','expired'].includes(current.status)
   const canSend=!!status?.ready&&!status.active&&units>0&&units<=20&&!busy&&!current
@@ -100,31 +113,84 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
     setRequestKey(null);setItems([]);setError('')
     setStatus(old=>old?{...old,job:null}:null)
   }
+  // The reservation product card is purely visual here. Quantity always refers
+  // to one real BDP PLU; no virtual half portions or reservation-specific options.
+  const eventOrder:EventOrderCartaControl={
+    qtyByProductId:Object.fromEntries(items.map(x=>[String(x.plu),x.quantity])),
+    photoControls:true,tapToAdd:true,totalUnits:units,openCart:()=>setCartOpen(true),
+    onQuantityChange:(plu,quantity,options)=>{
+      if(options?.portion==='medio'||!byId.has(plu)||requestKey||busy)return
+      const previous=items.find(x=>x.plu===plu)?.quantity??0
+      const delta=quantity-previous
+      if(delta===1||delta===-1)change(plu,delta)
+    },
+  }
+  const goBack=()=>{
+    if(cartOpen){setCartOpen(false);return}
+    if(showProducts){setDepartment(null);setSearch('');return}
+    onBack()
+  }
   return(
-    <div className="flex h-full min-h-0 flex-1 flex-col gap-3 overflow-hidden text-white">
-      <header className="flex shrink-0 items-center gap-3">
-        <button type="button" onClick={onBack} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15" aria-label="Volver al plano"><ArrowLeft size={22}/></button>
-        <div className="min-w-0 flex-1"><h1 className="text-xl font-semibold">Mesa {tableNumber}</h1><p className="text-xs text-white/70">BDP · Comanda nueva</p></div>
-        <span className="text-xs font-semibold">{status?.ready?'Handy conectado':'Handy no disponible'}</span>
-      </header>
-      <div className="shrink-0 rounded-lg bg-white/10 px-3 py-2 text-xs">
-        {current?labels[current.status]:status?.active?'Otra comanda ocupa el ejecutor.':status?.ready?'Precios base del catálogo BDP. El importe se confirma en el TPV.':'Envío deshabilitado hasta conectar el ejecutor Handy.'}
-        {current?.result?.detail&&<p className="mt-1">{current.result.detail}</p>}
-        {error&&<p className="mt-1 text-rose-200" role="alert">{error}</p>}
-      </div>
-      <div className="flex shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-slate-900"><Search size={18}/><input className="h-12 min-w-0 flex-1 bg-transparent outline-none" placeholder="Buscar producto o PLU" value={search} onChange={e=>setSearch(e.target.value)}/></div>
-      <div className="flex shrink-0 gap-2 overflow-x-auto pb-1">
-        {[{id:null,nombre:'Todos'},...departments].map(d=><button type="button" key={d.id??'all'} onClick={()=>setDepartment(d.id)} className={'min-h-12 shrink-0 rounded-xl px-3 text-sm font-semibold '+(department===d.id?'bg-white text-slate-900':'bg-white/10')}>{d.nombre||'Otros'}</button>)}
-      </div>
-      <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
-        {filtered.map(p=><button key={p.id} type="button" disabled={!!requestKey||busy} onClick={()=>change(p.id,1)} className="flex min-h-16 flex-col justify-between rounded-xl bg-white/95 p-3 text-left text-slate-900 disabled:opacity-60"><span className="text-sm font-semibold">{p.nombre}</span><span className="text-xs text-slate-600">{money(Number(p.precio_base))}</span></button>)}
-      </div>
-      <div className="shrink-0 rounded-xl bg-white p-3 text-slate-900">
-        <div className="mb-2 flex items-center justify-between"><span className="font-semibold">Nueva comanda · {units} uds.</span><span className="font-semibold">{money(total)}</span></div>
-        <div className="max-h-[22dvh] overflow-y-auto">
-          {items.map(x=><div key={x.plu} className="flex min-h-12 items-center gap-1 border-t border-slate-100"><span className="min-w-0 flex-1 text-sm">{byId.get(x.plu)?.nombre??'PLU '+x.plu}</span><button disabled={!!requestKey||busy} type="button" aria-label="Quitar unidad" onClick={()=>change(x.plu,-1)} className="flex h-12 w-12 items-center justify-center disabled:opacity-30"><Minus size={18}/></button><span className="w-5 text-center font-semibold">{x.quantity}</span><button disabled={!!requestKey||busy} type="button" aria-label="Añadir unidad" onClick={()=>change(x.plu,1)} className="flex h-12 w-12 items-center justify-center disabled:opacity-30"><Plus size={18}/></button></div>)}
+    <div className="carta-shared-scene flex h-full min-h-0 flex-1 flex-col overflow-hidden text-white">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-2xl flex-col gap-2 px-2">
+        <header className="flex shrink-0 items-center gap-2">
+          <button type="button" onClick={goBack} className="flex h-12 w-12 shrink-0 items-center justify-center" aria-label="Volver"><ArrowLeft size={22}/></button>
+          <div className="min-w-0 flex-1 text-center">
+            <h1 className="truncate text-xl font-semibold">{cartOpen?'Tu pedido':activeCategory?.nombre||'Mesa '+tableNumber}</h1>
+            {(cartOpen||showProducts)&&<p className="text-xs text-white/70">Mesa {tableNumber}</p>}
+          </div>
+          <div className="w-12 shrink-0"/>
+        </header>
+        <div className="shrink-0 text-center text-xs" role="status">
+          <span>{current?labels[current.status]:status?.active?'Otra comanda ocupa el ejecutor.':status?.ready?'Handy conectado':'Handy no disponible'}</span>
+          {current?.result?.detail&&<p className="mt-1">{current.result.detail}</p>}
+          {error&&<p className="mt-1 text-rose-200" role="alert">{error}</p>}
         </div>
-        {finished?<button type="button" onClick={reset} className="mt-2 h-12 w-full rounded-lg bg-slate-900 font-semibold text-white">Nueva comanda</button>:<button type="button" disabled={!canSend} onClick={()=>void send()} className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0755f5] font-semibold text-white disabled:opacity-40"><Send size={18}/>{busy?'Registrando…':current?labels[current.status]:requestKey?'Consultar y reenviar la misma petición':'Enviar a BDP'}</button>}
+        {!cartOpen&&<div className="flex shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-slate-900"><Search size={18}/><input className="h-12 min-w-0 flex-1 bg-transparent outline-none" placeholder="Buscar producto o PLU" value={search} onChange={e=>setSearch(e.target.value)}/></div>}
+        {cartOpen?(
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white p-3 text-slate-900">
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {items.map(x=>{
+                const p=byId.get(x.plu)
+                return <div key={x.plu} className="flex min-h-12 items-center gap-1 border-b border-zinc-100">
+                  {p?.photo_url&&<img src={p.photo_url} alt="" loading="lazy" className="h-8 w-8 shrink-0 object-contain"/>}
+                  <span className="min-w-0 flex-1 text-xs font-semibold">{formatCartaOrderProductName(p?.nombre??'PLU '+x.plu)}</span>
+                  <button disabled={!!requestKey||busy} type="button" aria-label="Quitar unidad" onClick={()=>change(x.plu,-1)} className="flex h-12 w-10 shrink-0 items-center justify-center disabled:opacity-30"><Minus size={16}/></button>
+                  <span className="w-5 text-center text-xs font-semibold tabular-nums">{x.quantity}</span>
+                  <button disabled={!!requestKey||busy} type="button" aria-label="Añadir unidad" onClick={()=>change(x.plu,1)} className="flex h-12 w-10 shrink-0 items-center justify-center disabled:opacity-30"><Plus size={16}/></button>
+                  <span className="shrink-0 text-xs font-semibold tabular-nums">{money((Number(p?.precio_base)||0)*x.quantity)}</span>
+                </div>
+              })}
+              {!items.length&&<p className="py-6 text-center text-sm text-zinc-500">Aún no hay productos.</p>}
+            </div>
+            <div className="shrink-0">
+              <div className="flex items-center justify-between border-t border-zinc-100 py-3"><span className="text-xs text-zinc-500">{units} uds.</span><span className="font-semibold">Total {money(total)}</span></div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="secondary" layout="fill" instance="bdp-cart-continue" onClick={()=>setCartOpen(false)}>Seguir eligiendo</Button>
+                {finished?<Button type="button" variant="primary" layout="fill" instance="bdp-cart-reset" onClick={()=>{reset();setCartOpen(false)}}>Nueva comanda</Button>:<Button type="button" variant="primary" layout="fill" instance="bdp-cart-send" disabled={!canSend} loading={busy} onClick={()=>void send()}><Send size={16}/>{current?labels[current.status]:requestKey?'Consultar y reenviar':'Enviar a BDP'}</Button>}
+              </div>
+            </div>
+          </div>
+        ):(
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
+            {!showProducts?(
+              <CartaCategoryGrid compact layoutClassName="grid-cols-3">
+                {categories.map(d=><CartaCategoryCard key={d.id} title={d.nombre||'Otros'} coverPhotoUrl={d.coverPhotoUrl??'/icons/bdp.svg'} coverPhotoScale={d.coverPhotoScale} compact nativeImg onClick={()=>setDepartment(d.id)}/>)}
+              </CartaCategoryGrid>
+            ):(
+              <div className="carta-browse-modal">
+                <div className={'grid grid-cols-3 gap-x-2.5 gap-y-4 '+(requestKey||busy?'pointer-events-none opacity-80':'')}>
+                  {filtered.map(p=><CartaStaffMenuProductCard key={p.id} lang="es" squareLayout rowDensity="compact" photoFrameStyle={{aspectRatio:1}} row={{
+                    articulo_id:p.id,carta_nombre:p.nombre,carta_nombre_es:p.nombre,carta_nombre_ca:null,carta_nombre_en:null,
+                    precio:p.precio_base,photo_url:p.photo_url??null,carta_photo_scale:p.carta_photo_scale,
+                  }} eventOrder={eventOrder}/>)}
+                </div>
+                {!filtered.length&&<p className="py-6 text-center text-sm text-white/70">No hay productos.</p>}
+              </div>
+            )}
+          </div>
+        )}
+        {!cartOpen&&<div className="flex shrink-0 justify-center pb-1"><EventEncargoViewOrderButton instance="bdp-ver-pedido" units={units} onClick={()=>setCartOpen(true)}/></div>}
       </div>
     </div>
   )
