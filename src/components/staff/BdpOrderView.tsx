@@ -5,9 +5,10 @@ import { calculateBdpGrid } from '@/lib/staff/bdp-product-grid'
 import styles from './BdpOrderView.module.css'
 import { ArrowLeft, Check, Search, X } from 'lucide-react'
 import { CartaMenuCoverPhoto } from '@/components/carta/CartaMenuCoverPhoto'
-import { UNASSIGNED, unassignedIds, visibleIds, searchableIds, type MobileCategoryDisplay, type MobileCatalogProduct } from '@/lib/staff/bdp-mobile-catalog'
+import { UNASSIGNED, unassignedIds, visibleIds, searchableIds, type MobileCatalog, type MobileCatalogProduct } from '@/lib/staff/bdp-mobile-catalog'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/modal'
 import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
 import { toast } from 'sonner'
@@ -21,10 +22,10 @@ type Stored={requestKey:string;items:Line[]}
 const money=(n:number)=>n.toLocaleString('es-ES',{style:'currency',currency:'EUR'})
 const labels:Record<Job['status'],string>={queued:'En cola',executing:'Ejecutando en Handy',confirmed:'Confirmada en BDP',rejected:'No enviada',uncertain:'Resultado incierto: comprobar BDP',expired:'Caducada sin ejecutar'}
 
-export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=>void}){
+export function BdpOrderView({tableNumber,onBack,catalog,catalogLoading,catalogError,onRetryCatalog}:{tableNumber:number;onBack:()=>void;catalog:MobileCatalog|null;catalogLoading:boolean;catalogError:string;onRetryCatalog:()=>void}){
   const storageKey='marbella-bdp-order-'+tableNumber
-  const [products,setProducts]=useState<Product[]>([])
-  const [categories,setCategories]=useState<MobileCategoryDisplay[]>([])
+  const products=catalog?.products??[]
+  const categories=catalog?.categories??[]
   const [search,setSearch]=useState('')
   const [category,setCategory]=useState<string|null>(null)
   const [child,setChild]=useState<string|null>(null)
@@ -58,13 +59,6 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
         if(value.requestKey&&Array.isArray(value.items)){setItems(value.items);setRequestKey(value.requestKey)}
       }
     }catch{}
-    let cancelled=false
-    fetch('/api/staff/bdp',{cache:'no-store'}).then(async r=>{
-      const data=await r.json()
-      if(!r.ok)throw Error(data.error??'No se pudo cargar el catálogo')
-      if(!cancelled){setProducts(data.products??[]);setCategories(data.categories??[]);setStatus(data)}
-    }).catch(e=>{if(!cancelled)setError(e.message)})
-    return()=>{cancelled=true}
   },[storageKey])
 
   useEffect(()=>{
@@ -121,7 +115,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const displayName=(p:Product)=>p.display_name??p.nombre
   const current=status?.job
   const finished=current&&['confirmed','rejected','expired'].includes(current.status)
-  const canSend=!!status?.ready&&!status.active&&units>0&&units<=20&&!busy&&!current&&!hasHalf
+  const canSend=!!catalog&&!catalogLoading&&!catalogError&&!!status?.ready&&!status.active&&units>0&&units<=20&&!busy&&!current&&!hasHalf
   const change=(plu:number,delta:number,portion:Portion='entero')=>{
     if(requestKey||busy||!(Number(byId.get(plu)?.precio_base)>0))return
     if(portion==='medio'&&!(Number(byId.get(plu)?.medio_price)>0))return
@@ -198,16 +192,17 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
             {error&&<p className="text-rose-200" role="alert">{error}</p>}
           </div>
         )}
-        <nav aria-label="Categorías" className="flex shrink-0 gap-2 overflow-x-auto overscroll-x-contain pb-1 custom-scrollbar">
+        {catalog&&<nav aria-label="Categorías" className="flex shrink-0 gap-2 overflow-x-auto overscroll-x-contain pb-1 custom-scrollbar">
           {tabs.map(tab=><button key={tab.id} type="button" aria-pressed={active===tab.id&&!term} onClick={()=>{setCategory(tab.id);setChild(null);setSearch('')}} className={'flex min-h-12 min-w-[76px] max-w-[120px] shrink-0 items-center justify-center gap-1 rounded-lg border px-2 py-1 text-xs font-semibold '+(active===tab.id&&!term?'border-white bg-white/20 text-white':'border-white/15 bg-white/5 text-white/75')}>
             {tab.coverPhotoUrl&&<span className="relative size-8 shrink-0"><CartaMenuCoverPhoto src={tab.coverPhotoUrl} scale={tab.coverPhotoScale}/></span>}
             <span className="line-clamp-2 text-left">{tab.name}</span>
           </button>)}
-        </nav>
+        </nav>}
         {children.length>0&&!term&&<nav aria-label="Subcategorías" className="flex shrink-0 gap-2 overflow-x-auto overscroll-x-contain pb-1 custom-scrollbar">
           {[{id:null,name:'Todos'},...children].map(tab=><button type="button" key={tab.id??'all'} aria-pressed={activeChild===tab.id} onClick={()=>setChild(tab.id)} className={'min-h-12 shrink-0 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold '+(activeChild===tab.id?'border-white bg-white/20 text-white':'border-white/15 text-white/75')}>{tab.name}</button>)}
         </nav>}
-        <div ref={productViewport} className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
+        <div ref={productViewport} aria-busy={catalogLoading} className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
+          {!catalog&&catalogLoading?<div className="flex h-full items-center justify-center text-white" role="status" aria-label="Cargando productos"><LoadingSpinner size="lg"/></div>:!catalog?<div className="flex h-full flex-col items-center justify-center gap-2 text-center text-white/80" role="alert"><p className="text-sm">{catalogError||'No se pudo cargar el catálogo'}</p><Button type="button" variant="secondary" instance="bdp-catalog-retry" onClick={onRetryCatalog}>Reintentar</Button></div>:
           <div className="carta-browse-modal">
               <div className={styles.grid} style={gridStyle} data-design-exception="product-grid:densidad adaptativa del comandero según productos y viewport">
                 {filtered.map(p=>{
@@ -235,8 +230,9 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
                   </div>
                 })}
               </div>
-              {!filtered.length&&<p className="py-6 text-center text-sm text-white/70">No hay productos.</p>}
-          </div>
+              {!filtered.length&&!catalogLoading&&!catalogError&&<p className="py-6 text-center text-sm text-white/70">No hay productos.</p>}
+              {catalogError&&<div className="flex items-center justify-center gap-2 py-2 text-xs text-rose-200" role="alert"><span>No se pudo actualizar el catálogo.</span><Button type="button" variant="secondary" instance="bdp-catalog-retry" onClick={onRetryCatalog}>Reintentar</Button></div>}
+          </div>}
         </div>
         {hasHalf&&<p role="status" className="shrink-0 text-center text-xs text-amber-200">Envío de medias raciones pendiente de validar en Handy. No se enviará como entero.</p>}
         {(units>0||requestKey)&&(
