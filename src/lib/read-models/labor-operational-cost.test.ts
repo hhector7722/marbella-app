@@ -275,3 +275,25 @@ test('propietario: 8 horas ordinarias laborables, festivos locales y fines de se
   });
   assert.equal(partial[dates[2]!]!.hasWorked,false);
 });
+
+test('propietario: agosto no genera coste ordinario automático, los demás trabajadores y extras reales se conservan', () => {
+  const days = ['2026-08-03','2026-08-04'];
+  const terms = [
+    {user_id:FIXED_OWNER_ID,effective_from:'2025-12-29',effective_to:null,weekly_hours:0,overtime_rate_per_hour:12},
+    {user_id:'a',effective_from:'2025-12-29',effective_to:null,weekly_hours:35},
+  ];
+  const result = allocateOperationalMonth({
+    days,periodStart:days[0]!,periodEnd:days[1]!,
+    facts:[{user_id:FIXED_OWNER_ID,total_company_cost:2000},{user_id:'a',total_company_cost:100}],
+    terms,logs:[log('a',days[0]!,5),log(FIXED_OWNER_ID,days[1]!,2)],
+    extraHours:[{user_id:FIXED_OWNER_ID,day:days[1]!,overtime_hours:2,overtime_cost:24}],
+    payrollPending:false,
+  });
+  assert.equal(expectedContractHours(days,terms,FIXED_OWNER_ID),0);
+  assert.equal(result[days[0]!]!.workers.some(w=>w.userId===FIXED_OWNER_ID),false);
+  assert.equal(result[days[0]!]!.fixed,50);
+  assert.equal(result[days[1]!]!.fixed,0);
+  assert.equal(result[days[1]!]!.overtime,24);
+  assert.equal(ownerOrdinaryHours('2027-08-02',terms),0);
+  assert.equal(ownerOrdinaryHours('2026-09-01',terms),8);
+});

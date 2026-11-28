@@ -71,6 +71,8 @@ const OWNER_HOLIDAYS: Record<string, ReadonlySet<string>> = {
 };
 
 export function ownerOrdinaryHours(day: string, terms: readonly Term[]): number {
+  // Agosto no genera jornada ordinaria imputada al propietario.
+  if (day.slice(5, 7) === '08') return 0;
   const holidays = OWNER_HOLIDAYS[day.slice(0, 4)];
   if (!holidays || holidays.has(day.slice(5))) return 0;
   const weekday = new Date(day + 'T00:00:00Z').getUTCDay();

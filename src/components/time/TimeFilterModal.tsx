@@ -50,6 +50,7 @@ export function TimeFilterModal({
   calendarDayAmounts,
   onCalendarMonthChange,
   salesDesktop = false,
+  stableLaborLayout = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -63,6 +64,8 @@ export function TimeFilterModal({
   onCalendarMonthChange?: (next: Date) => void;
   /** Diseño ampliado y leyenda de colores solo en Ventas escritorio. */
   salesDesktop?: boolean;
+  /** Filtro de mano de obra: altura estable entre todos los tipos de periodo. */
+  stableLaborLayout?: boolean;
 }) {
   const pathname = usePathname();
   const initialKind = useMemo<TimeFilterKind>(() => {
@@ -215,15 +218,17 @@ export function TimeFilterModal({
       variant={salesDesktop ? "standard" : "compact"}
       instance={salesDesktop ? "ventas-desktop-time-filter" : undefined}
       scheme="dark"
+      panelHostClassName={stableLaborLayout ? "h-[min(480px,var(--modal-max-height))]" : undefined}
+      className={stableLaborLayout ? "h-full" : undefined}
       usageId="time-filter"
       usageLabel="Filtro horario"
     >
-        <div className={cn("space-y-3", salesDesktop && "space-y-4")}>
+        <div className={cn(stableLaborLayout ? "flex h-full min-h-0 flex-col gap-3" : "space-y-3", salesDesktop && "space-y-4")}>
           {showKindTabs ? (
             <div
               role="tablist"
               aria-label="Tipo de periodo"
-              className={cn("flex max-w-full overflow-hidden rounded-ds-control border border-white/15 bg-white/5 shadow-sm", salesDesktop && "gap-1 rounded-xl border-white/10 bg-black/20 p-1")}
+              className={cn("flex max-w-full shrink-0 overflow-hidden rounded-ds-control border border-white/15 bg-white/5 shadow-sm", salesDesktop && "gap-1 rounded-xl border-white/10 bg-black/20 p-1")}
             >
               {visibleKinds.map((kind) => {
                 const selected = activeKind === kind;
@@ -310,8 +315,8 @@ export function TimeFilterModal({
           )}
 
           {activeKind !== "hours" && (
-            <div className="flex min-w-0 items-center justify-between gap-2">
-              <div className="min-w-0 flex-1 flex justify-center">
+            <div className={cn("flex min-w-0 items-center justify-between gap-2", stableLaborLayout && "relative h-9 shrink-0 justify-center")}>
+              <div className={cn("min-w-0 flex justify-center", !stableLaborLayout && "flex-1")}>
                 <div className="inline-flex max-w-full items-center gap-0.5 text-white">
                   <button type="button" aria-label="Anterior" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg hover:bg-white/10" onClick={() => {
                     if (activeKind === "month") setPickerYear(y => y - 1);
@@ -330,13 +335,14 @@ export function TimeFilterModal({
               </div>
               <button type="button" onClick={jumpToToday} className={cn(
                 "shrink-0 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-100",
+                stableLaborLayout && "absolute right-0 rounded-md px-2 py-1 text-[11px] leading-tight shadow-sm",
                 salesDesktop && "border border-white/20 !bg-white/10 !text-white hover:!bg-white/20"
               )}>Hoy</button>
             </div>
           )}
 
           {(activeKind === "date" || activeKind === "range" || activeKind === "week") && (
-            <div className="space-y-3">
+            <div className={cn(stableLaborLayout ? "flex min-h-0 flex-1 flex-col gap-2 pb-2 [&>div:first-child]:flex [&>div:first-child]:min-h-0 [&>div:first-child]:flex-1 [&>div:first-child>div]:min-h-0 [&>div:first-child>div]:flex-1 [&>div:first-child>div]:grid-rows-[auto] [&>div:first-child>div]:auto-rows-fr [&>div:first-child>div>button]:aspect-auto [&>div:first-child>div>button]:min-h-0" : "space-y-3")}>
               <MiniMonthCalendar
                 month={calendarBaseDate}
                 monthInHeader
@@ -371,6 +377,7 @@ export function TimeFilterModal({
           )}
 
           {activeKind === "month" && allowedKinds.includes("month") && (
+            <div className={stableLaborLayout ? "flex min-h-0 flex-1 flex-col pb-2 [&>div]:flex [&>div]:min-h-0 [&>div]:flex-1 [&>div>div]:flex-1 [&>div>div]:grid-rows-4 [&>div>div>button]:min-h-0" : undefined}>
             <MonthPickerGrid
               year={pickerYear}
               hideNavigation
@@ -385,12 +392,13 @@ export function TimeFilterModal({
                 applyAndClose({ kind: "month", year: pickerYear, month: monthIndex + 1 })
               }
             />
+            </div>
           )}
 
           {activeKind === "year" && allowedKinds.includes("year") && (
-            <div className="space-y-3">
+            <div className={stableLaborLayout ? "flex min-h-0 flex-1 flex-col gap-3 pb-2" : "space-y-3"}>
               <div className="text-[10px] font-medium uppercase tracking-widest text-white/60 text-center">Selecciona año</div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className={cn("grid grid-cols-3 gap-2", stableLaborLayout && "min-h-0 flex-1 grid-rows-2")}>
                 {Array.from({ length: 6 }).map((_, i) => {
                   const y = pickerYear - 2 + i;
                   const isSelected = initialValue?.kind === "year" && initialValue.year === y;
@@ -399,7 +407,7 @@ export function TimeFilterModal({
                       key={y}
                       type="button"
                       onClick={() => applyAndClose({ kind: "year", year: y })}
-                      className={`min-h-12 ${monthCellDarkClassName(isSelected)}`}
+                      className={cn(monthCellDarkClassName(isSelected), stableLaborLayout ? "min-h-0" : "min-h-12")}
                     >
                       {y}
                     </button>

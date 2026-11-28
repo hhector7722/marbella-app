@@ -565,7 +565,7 @@ export default function LaborHistoryPage() {
                                     kpiTone: undefined,
                                 },
                             ] as const).map(item => (
-                                <div key={item.label} data-kpi-tone={item.kpiTone} className={cn('flex min-h-[61px] min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
+                                <div key={item.label} data-kpi-tone={item.kpiTone} className={cn('flex min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5', item.tone)}>
                                     <span className="block truncate text-[10px] font-medium leading-tight text-white/75 sm:text-[11px]">{item.label}</span>
                                     <strong className="mt-0.5 block truncate text-[clamp(13px,2vw,19px)] font-bold leading-tight tabular-nums text-white" title={item.value}>
                                         {item.value}
@@ -602,7 +602,7 @@ export default function LaborHistoryPage() {
                                     </>
                                 );
                                 const cardClass = cn(
-                                    'flex min-h-[57px] min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5',
+                                    'flex min-w-0 flex-col justify-center rounded-lg border px-2.5 py-1.5',
                                     item.tone,
                                 );
                                 return breakdown ? (
@@ -971,6 +971,7 @@ export default function LaborHistoryPage() {
                 onApply={handleApplyTimeFilter}
                 allowedKinds={['month', 'year', 'range', 'week', 'date']}
                 initialValue={appliedFilter}
+                stableLaborLayout
             />
             <StaffSelectionModal
                 isOpen={isWorkerModalOpen}
