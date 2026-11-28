@@ -260,7 +260,7 @@ export function StaffFloorplanEditor({ record, canEdit }: Props) {
               </div>
             )}
           </form>
-          <div className="flex justify-end">
+          <div className="flex items-center justify-center">
             <Button variant="primary" instance="bdp-ventas" onClick={()=>setSalesPreview({mode:'current',date:formatYmdInMadrid(new Date())})}>Ventas</Button>
           </div>
         </>
