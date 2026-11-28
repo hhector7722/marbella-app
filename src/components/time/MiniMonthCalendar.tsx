@@ -81,7 +81,7 @@ export function MiniMonthCalendar({
 
             <div className={cn("grid grid-cols-7 gap-1", salesDesktop && "rounded-xl border border-white/10 bg-white/[0.045] p-2")}>
                 {WEEKDAYS.map((d) => (
-                    <div key={d} className={cn('py-2 text-center text-[9px]', dark ? 'font-semibold text-white/45' : 'font-black text-zinc-300')}>
+                    <div key={d} className={cn('py-2 text-center text-[9px]', dark ? (dayAmounts ? 'font-semibold text-white/85' : 'font-semibold text-white/45') : 'font-black text-zinc-300')}>
                         {d}
                     </div>
                 ))}
@@ -92,6 +92,7 @@ export function MiniMonthCalendar({
                     const inRange = Boolean(isInRange?.(day));
                     const disabled = Boolean(isDisabled?.(day));
                     const amount = dayAmounts?.[format(day, 'yyyy-MM-dd')];
+                    const hasSalesColor = amount != null && !disabled;
                     return (
                         <button
                             key={day.toISOString()}
@@ -105,29 +106,28 @@ export function MiniMonthCalendar({
                             className={cn(
                                 'flex items-center justify-center rounded-lg text-[11px] font-black transition-all',
                                 dayAmounts ? cn('aspect-auto min-h-[47px] flex-col gap-1 px-0.5 py-1', salesDesktop && 'min-h-[55px] gap-0.5 py-1.5') : 'aspect-square',
-                                salesDesktop ? (muted && !selected ? 'opacity-35' : 'opacity-100') : muted && (!dark || !today) ? 'opacity-20' : 'opacity-100',
+                                dayAmounts ? (muted && !selected && !today ? 'opacity-75' : 'opacity-100') : muted && (!dark || !today) ? 'opacity-20' : 'opacity-100',
                                 disabled && (dark ? 'cursor-not-allowed text-white/25' : 'cursor-not-allowed text-zinc-300'),
                                 salesDesktop
                                     ? cn(
-                                        'border text-slate-900 hover:brightness-[0.98]',
-                                        amount != null && !disabled
-                                            ? salesCalendarTone(amount, sortedSales)
+                                        'border hover:brightness-[0.98]',
+                                        hasSalesColor
+                                            ? 'text-slate-900 ' + salesCalendarTone(amount, sortedSales)
                                             : 'border-white/10 bg-white/[0.06] text-white/85',
                                         selected
                                             ? 'relative z-[1] ring-2 ring-sky-300 ring-offset-2 ring-offset-[#192642]'
                                             : inRange
                                                 ? 'ring-1 ring-inset ring-sky-300'
                                                 : 'hover:border-white/40',
-                                        muted && !selected && 'opacity-35',
                                         disabled && 'cursor-not-allowed opacity-40'
                                     )
                                     : dark
-                                    ? selected
-                                        ? amount != null ? 'border text-zinc-900 ring-2 ring-white ' + salesCalendarTone(amount, sortedSales) : 'bg-[var(--color-envolvente-alto)] text-white'
-                                        : inRange
-                                          ? 'bg-white/15 text-white'
-                                          : amount != null && !disabled
-                                            ? 'border text-zinc-900 ' + salesCalendarTone(amount, sortedSales)
+                                    ? hasSalesColor
+                                        ? cn('border text-slate-900', salesCalendarTone(amount, sortedSales), selected ? 'ring-2 ring-white' : inRange ? 'ring-1 ring-inset ring-sky-300' : undefined)
+                                        : selected
+                                          ? 'bg-[var(--color-envolvente-alto)] text-white'
+                                          : inRange
+                                            ? 'bg-white/15 text-white'
                                             : disabled
                                               ? 'text-white/25'
                                               : 'text-white/85 hover:bg-white/10'
@@ -146,14 +146,15 @@ export function MiniMonthCalendar({
                                 <span className={cn(
                                     'inline-flex h-8 w-8 items-center justify-center rounded-full',
                                     salesDesktop
-                                        ? cn('text-[13px] font-bold', today && (amount != null ? 'border-2 border-sky-700 text-sky-900' : 'border-2 border-white text-white'))
-                                        : today && 'border-2 border-white text-white'
+                                        ? cn('text-[13px] font-bold', today && (hasSalesColor ? 'border-2 border-sky-700 text-sky-900' : 'border-2 border-white text-white'))
+                                        : today && (hasSalesColor ? 'border-2 border-sky-700 text-sky-900' : 'border-2 border-white text-white')
                                 )}>{format(day, 'd')}</span>
                             ) : (
                                 <span>{format(day, 'd')}</span>
                             )}
                             {dayAmounts && amount != null && <span className={cn(
-                                'max-w-full whitespace-nowrap font-semibold tracking-tight text-zinc-900',
+                                'max-w-full whitespace-nowrap font-semibold tracking-tight',
+                                dark ? (hasSalesColor ? 'text-slate-900' : 'text-white/85') : 'text-slate-900',
                                 salesDesktop ? 'text-[10px] tabular-nums' : 'text-[8px]'
                             )}>{Math.round(amount).toLocaleString('es-ES', { useGrouping: 'always' })}€</span>}
                         </button>
