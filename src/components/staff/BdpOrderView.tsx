@@ -5,11 +5,14 @@ import { ArrowLeft, Check, Search, X } from 'lucide-react'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { Button } from '@/components/ui/button'
+import { Modal } from '@/components/ui/modal'
+import { CartaDualRacionPrices } from '@/components/carta/CartaDualRacionPrices'
 import { toast } from 'sonner'
 
-type Product={id:number;nombre:string;precio_base:number;departamento_id:number|null;photo_url?:string|null;carta_photo_scale?:string|null;category_parent_name?:string|null;sort_order?:number|null}
+type Product={id:number;nombre:string;precio_base:number;departamento_id:number|null;photo_url?:string|null;carta_photo_scale?:string|null;category_parent_name?:string|null;sort_order?:number|null;medio_price?:number|null}
 type Department={id:number;nombre:string;coverPhotoUrl?:string|null;coverPhotoScale?:string|null}
-type Line={plu:number;quantity:number}
+type Portion='entero'|'medio'
+type Line={plu:number;quantity:number;portion?:Portion}
 type Job={id:string;status:'queued'|'executing'|'confirmed'|'rejected'|'uncertain'|'expired';table_number:number;result?:{detail?:string}}
 type Status={ready:boolean;detail:string;active:{status:string;table_number:number;request_key:string}|null;job:Job|null}
 type Stored={requestKey:string;items:Line[]}
@@ -23,6 +26,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const [search,setSearch]=useState('')
   const [department,setDepartment]=useState<number|null>(null)
   const [items,setItems]=useState<Line[]>([])
+  const [portionPicker,setPortionPicker]=useState<{product:Product;delta:1|-1}|null>(null)
   const [requestKey,setRequestKey]=useState<string|null>(null)
   const [status,setStatus]=useState<Status|null>(null)
   const [busy,setBusy]=useState(false)
@@ -68,7 +72,9 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
 
   const units=items.reduce((sum,x)=>sum+x.quantity,0)
   const byId=new Map(products.map(p=>[p.id,p]))
-  const total=items.reduce((sum,x)=>sum+(Number(byId.get(x.plu)?.precio_base)||0)*x.quantity,0)
+  const quantityOf=(plu:number,portion:Portion)=>items.find(x=>x.plu===plu&&(x.portion??'entero')===portion)?.quantity??0
+  const hasHalf=items.some(x=>x.portion==='medio')
+  const total=items.reduce((sum,x)=>sum+(Number(x.portion==='medio'?byId.get(x.plu)?.medio_price:byId.get(x.plu)?.precio_base)||0)*x.quantity,0)
   const categoryList=departments.filter(d=>products.some(p=>p.departamento_id===d.id))
   const orphaned=products.filter(p=>!categoryList.some(d=>d.id===p.departamento_id))
   const categories=orphaned.length?[...categoryList,{id:-1,nombre:'Otros',coverPhotoUrl:'/icons/bdp.svg',coverPhotoScale:'m'}]:categoryList
@@ -78,14 +84,25 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const showProducts=department!==null||Boolean(search.trim())
   const current=status?.job
   const finished=current&&['confirmed','rejected','expired'].includes(current.status)
-  const canSend=!!status?.ready&&!status.active&&units>0&&units<=20&&!busy&&!current
-  const change=(plu:number,delta:number)=>{
+  const canSend=!!status?.ready&&!status.active&&units>0&&units<=20&&!busy&&!current&&!hasHalf
+  const change=(plu:number,delta:number,portion:Portion='entero')=>{
     if(requestKey||busy)return
+    if(portion==='medio'&&!(Number(byId.get(plu)?.medio_price)>0))return
     if(delta>0&&units>=20){toast.error('Máximo 20 unidades en el piloto');return}
     setItems(old=>{
-      const amount=(old.find(x=>x.plu===plu)?.quantity??0)+delta
-      return amount<=0?old.filter(x=>x.plu!==plu):old.some(x=>x.plu===plu)?old.map(x=>x.plu===plu?{...x,quantity:amount}:x):[...old,{plu,quantity:amount}]
+      const matches=(x:Line)=>x.plu===plu&&(x.portion??'entero')===portion
+      const amount=(old.find(matches)?.quantity??0)+delta
+      return amount<=0?old.filter(x=>!matches(x)):old.some(matches)?old.map(x=>matches(x)?{...x,quantity:amount}:x):[...old,{plu,quantity:amount,portion}]
     })
+  }
+  const selectPortion=(product:Product,delta:1|-1)=>{
+    if(requestKey||busy)return
+    if(!(Number(product.medio_price)>0)){change(product.id,delta);return}
+    if(delta<0){
+      const entero=quantityOf(product.id,'entero'),medio=quantityOf(product.id,'medio')
+      if(!entero||!medio){if(entero||medio)change(product.id,-1,entero?'entero':'medio');return}
+    }
+    setPortionPicker({product,delta})
   }
   const send=async()=>{
     if(!canSend||submitting.current)return
@@ -155,7 +172,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
             <div className="carta-browse-modal">
               <div className="grid grid-cols-3 gap-x-2.5 gap-y-4">
                 {filtered.map(p=>{
-                  const quantity=items.find(x=>x.plu===p.id)?.quantity??0
+                  const quantity=quantityOf(p.id,'entero')+quantityOf(p.id,'medio')
                   return <div key={p.id} className="carta-square-product-card flex min-w-0 flex-col">
                     <div data-carta-product-photo>
                       <div className="relative min-h-0 w-full flex-1 overflow-hidden">
@@ -165,14 +182,14 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
                         {quantity>0&&<span className="pointer-events-none absolute right-1 top-1 z-10 inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF3B30] px-1 text-[10px] font-semibold tabular-nums leading-none text-white" aria-label={quantity+' unidades seleccionadas'}>{quantity}</span>}
                       </div>
                       <div data-carta-order-controls className={locked?'opacity-60':undefined} aria-label={'Unidades de '+p.nombre}>
-                        {quantity===0?<button type="button" data-action="add" disabled={locked} onClick={()=>change(p.id,1)} aria-label={'Añadir '+p.nombre}>AÑADIR</button>:<>
-                          <button type="button" data-action="remove" disabled={locked} onClick={()=>change(p.id,-1)} aria-label={'Quitar una unidad de '+p.nombre}>−</button>
-                          <button type="button" data-action="increment" disabled={locked} onClick={()=>change(p.id,1)} aria-label={'Añadir una unidad de '+p.nombre}>+</button>
+                        {quantity===0?<button type="button" data-action="add" disabled={locked} onClick={()=>selectPortion(p,1)} aria-label={'Añadir '+p.nombre}>AÑADIR</button>:<>
+                          <button type="button" data-action="remove" disabled={locked} onClick={()=>selectPortion(p,-1)} aria-label={'Quitar una unidad de '+p.nombre}>−</button>
+                          <button type="button" data-action="increment" disabled={locked} onClick={()=>selectPortion(p,1)} aria-label={'Añadir una unidad de '+p.nombre}>+</button>
                         </>}
                       </div>
                     </div>
                     <div data-carta-product-info>
-                      <p data-carta-display-price>{money(Number(p.precio_base))}</p>
+                      {Number(p.medio_price)>0?<CartaDualRacionPrices racionEntero="Entero" racionMedio="Medio" precio={p.precio_base} precioMedio={p.medio_price} variant="staff" singleLine/>:<p data-carta-display-price>{money(Number(p.precio_base))}</p>}
                       <p data-carta-display-name className={p.nombre.length>18?'carta-catalog-long-name':undefined} title={p.nombre}>{p.nombre}</p>
                     </div>
                   </div>
@@ -182,6 +199,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
             </div>
           )}
         </div>
+        {hasHalf&&<p role="status" className="shrink-0 text-center text-xs text-amber-200">Envío de medias raciones pendiente de validar en Handy. No se enviará como entero.</p>}
         {(units>0||requestKey)&&(
           <footer className="flex shrink-0 items-center justify-between gap-2 text-white">
             <div className="min-w-0 text-xs tabular-nums"><span>{units} uds. · </span><strong>{money(total)}</strong></div>
@@ -189,6 +207,19 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
           </footer>
         )}
       </div>
+      <Modal open={portionPicker!==null} onClose={()=>setPortionPicker(null)} title={portionPicker?.product.nombre??''} variant="compact" instance="bdp-portion-picker">
+        {portionPicker&&<div className="grid grid-cols-2 gap-2">
+          {(['entero','medio'] as const).map(portion=>{
+            const p=portionPicker.product
+            const quantity=quantityOf(p.id,portion)
+            return <button key={portion} type="button" disabled={locked||(portionPicker.delta<0&&quantity===0)} onClick={()=>{change(p.id,portionPicker.delta,portion);setPortionPicker(null)}} className="flex min-h-[84px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-2 py-3 text-sky-950 disabled:opacity-40">
+              <span className="text-sm font-semibold">{portion==='entero'?'Entero':'Medio'}</span>
+              <strong className="text-lg tabular-nums">{money(Number(portion==='entero'?p.precio_base:p.medio_price))}</strong>
+              {quantity>0&&<span className="text-xs">{quantity} seleccionado{quantity===1?'':'s'}</span>}
+            </button>
+          })}
+        </div>}
+      </Modal>
     </div>
   )
 }
