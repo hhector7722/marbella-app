@@ -111,6 +111,7 @@ export async function POST(req:Request) {
     // The published plan enables the pilot; it is not a registry of every BDP table.
     // Manual numbers use the same authenticated, bounded and reconciled Handy flow.
     if(!Array.isArray(published?.tables))return response({error:'Plano no publicado'},400)
+    if(!published.tables.some(t=>t.number===input.tableNumber)&&input.tableNumber>999)return response({error:'Número fuera del rango configurado en BDP'},400)
     if(!isFresh(state.data))return response({error:'El agente Handy no está disponible. No se ha enviado la comanda.'},503)
     const byId=new Map((products.data??[]).map(p=>[p.id,p]))
     if([...lines.keys()].some(id=>!byId.has(id)))return response({error:'Uno de los productos no está disponible'},400)
