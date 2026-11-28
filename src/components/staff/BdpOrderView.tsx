@@ -1,13 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Minus, Plus, Search, Send } from 'lucide-react'
+import { ArrowLeft, Search } from 'lucide-react'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
-import { CartaStaffMenuProductCard } from '@/components/carta/CartaStaffMenuProductCard'
-import { EventEncargoViewOrderButton } from '@/components/eventos/EventEncargoCartFooter'
+import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { Button } from '@/components/ui/button'
-import { formatCartaOrderProductName } from '@/lib/carta-menu-i18n'
-import type { EventOrderCartaControl } from '@/lib/event-order-carta'
 import { toast } from 'sonner'
 
 type Product={id:number;nombre:string;precio_base:number;departamento_id:number|null;photo_url?:string|null;carta_photo_scale?:string|null;category_parent_name?:string|null;sort_order?:number|null}
@@ -25,7 +22,6 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const [departments,setDepartments]=useState<Department[]>([])
   const [search,setSearch]=useState('')
   const [department,setDepartment]=useState<number|null>(null)
-  const [cartOpen,setCartOpen]=useState(false)
   const [items,setItems]=useState<Line[]>([])
   const [requestKey,setRequestKey]=useState<string|null>(null)
   const [status,setStatus]=useState<Status|null>(null)
@@ -113,84 +109,82 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
     setRequestKey(null);setItems([]);setError('')
     setStatus(old=>old?{...old,job:null}:null)
   }
-  // The reservation product card is purely visual here. Quantity always refers
-  // to one real BDP PLU; no virtual half portions or reservation-specific options.
-  const eventOrder:EventOrderCartaControl={
-    qtyByProductId:Object.fromEntries(items.map(x=>[String(x.plu),x.quantity])),
-    photoControls:true,tapToAdd:true,totalUnits:units,openCart:()=>setCartOpen(true),
-    onQuantityChange:(plu,quantity,options)=>{
-      if(options?.portion==='medio'||!byId.has(plu)||requestKey||busy)return
-      const previous=items.find(x=>x.plu===plu)?.quantity??0
-      const delta=quantity-previous
-      if(delta===1||delta===-1)change(plu,delta)
-    },
-  }
   const goBack=()=>{
-    if(cartOpen){setCartOpen(false);return}
     if(showProducts){setDepartment(null);setSearch('');return}
     onBack()
   }
+  const handyLabel=status?.ready?'Handy conectado':'Handy no disponible'
+  const locked=!!requestKey||busy
   return(
-    <div className="carta-shared-scene flex h-full min-h-0 flex-1 flex-col overflow-hidden text-white">
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-2xl flex-col gap-2 px-2">
-        <header className="flex shrink-0 items-center gap-2">
-          <button type="button" onClick={goBack} className="flex h-12 w-12 shrink-0 items-center justify-center" aria-label="Volver"><ArrowLeft size={22}/></button>
-          <div className="min-w-0 flex-1 text-center">
-            <h1 className="truncate text-xl font-semibold">{cartOpen?'Tu pedido':activeCategory?.nombre||'Mesa '+tableNumber}</h1>
-            {(cartOpen||showProducts)&&<p className="text-xs text-white/70">Mesa {tableNumber}</p>}
+    <div className="carta-shared-scene flex h-full min-h-0 flex-1 flex-col overflow-hidden text-white" style={{background:'transparent'}}>
+      <div className="flex h-full min-h-0 w-full flex-col gap-2">
+        <header className="relative z-40 grid w-full shrink-0 grid-cols-[minmax(104px,1fr)_minmax(0,1.6fr)_minmax(104px,1fr)] items-center gap-1">
+          <div className="flex min-w-0 items-center justify-start">
+            <button type="button" onClick={goBack} className="flex h-12 w-10 shrink-0 items-center justify-center text-white" aria-label="Volver"><ArrowLeft size={22}/></button>
+            <h1 className="min-w-0 whitespace-nowrap text-xs font-semibold text-white">Mesa {tableNumber}</h1>
           </div>
-          <div className="w-12 shrink-0"/>
+          <div className="flex min-w-0 items-center justify-center">
+            <div className="flex h-[var(--espacio-8)] w-full min-w-0 items-center gap-2 rounded-full border border-white/15 bg-[var(--buscador-global-fondo)] px-3 text-white/60 focus-within:ring-1 focus-within:ring-white/50">
+              <Search aria-hidden size={14} className="shrink-0"/>
+              <input type="search" autoComplete="off" aria-label="Buscar producto" placeholder="Buscar producto..." value={search}
+                onChange={e=>setSearch(e.target.value)}
+                className="h-full w-full min-w-0 bg-transparent text-xs text-white outline-none placeholder:text-white/60"/>
+            </div>
+          </div>
+          <div role="status" className="flex min-w-0 items-center justify-end text-right text-[10px] font-semibold leading-tight text-white/75">
+            {handyLabel}
+          </div>
         </header>
-        <div className="shrink-0 text-center text-xs" role="status">
-          <span>{current?labels[current.status]:status?.active?'Otra comanda ocupa el ejecutor.':status?.ready?'Handy conectado':'Handy no disponible'}</span>
-          {current?.result?.detail&&<p className="mt-1">{current.result.detail}</p>}
-          {error&&<p className="mt-1 text-rose-200" role="alert">{error}</p>}
-        </div>
-        {!cartOpen&&<div className="flex shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-slate-900"><Search size={18}/><input className="h-12 min-w-0 flex-1 bg-transparent outline-none" placeholder="Buscar producto o PLU" value={search} onChange={e=>setSearch(e.target.value)}/></div>}
-        {cartOpen?(
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-white p-3 text-slate-900">
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              {items.map(x=>{
-                const p=byId.get(x.plu)
-                return <div key={x.plu} className="flex min-h-12 items-center gap-1 border-b border-zinc-100">
-                  {p?.photo_url&&<img src={p.photo_url} alt="" loading="lazy" className="h-8 w-8 shrink-0 object-contain"/>}
-                  <span className="min-w-0 flex-1 text-xs font-semibold">{formatCartaOrderProductName(p?.nombre??'PLU '+x.plu)}</span>
-                  <button disabled={!!requestKey||busy} type="button" aria-label="Quitar unidad" onClick={()=>change(x.plu,-1)} className="flex h-12 w-10 shrink-0 items-center justify-center disabled:opacity-30"><Minus size={16}/></button>
-                  <span className="w-5 text-center text-xs font-semibold tabular-nums">{x.quantity}</span>
-                  <button disabled={!!requestKey||busy} type="button" aria-label="Añadir unidad" onClick={()=>change(x.plu,1)} className="flex h-12 w-10 shrink-0 items-center justify-center disabled:opacity-30"><Plus size={16}/></button>
-                  <span className="shrink-0 text-xs font-semibold tabular-nums">{money((Number(p?.precio_base)||0)*x.quantity)}</span>
-                </div>
-              })}
-              {!items.length&&<p className="py-6 text-center text-sm text-zinc-500">Aún no hay productos.</p>}
-            </div>
-            <div className="shrink-0">
-              <div className="flex items-center justify-between border-t border-zinc-100 py-3"><span className="text-xs text-zinc-500">{units} uds.</span><span className="font-semibold">Total {money(total)}</span></div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button type="button" variant="secondary" layout="fill" instance="bdp-cart-continue" onClick={()=>setCartOpen(false)}>Seguir eligiendo</Button>
-                {finished?<Button type="button" variant="primary" layout="fill" instance="bdp-cart-reset" onClick={()=>{reset();setCartOpen(false)}}>Nueva comanda</Button>:<Button type="button" variant="primary" layout="fill" instance="bdp-cart-send" disabled={!canSend} loading={busy} onClick={()=>void send()}><Send size={16}/>{current?labels[current.status]:requestKey?'Consultar y reenviar':'Enviar a BDP'}</Button>}
-              </div>
-            </div>
-          </div>
-        ):(
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
-            {!showProducts?(
-              <CartaCategoryGrid compact layoutClassName="grid-cols-3">
-                {categories.map(d=><CartaCategoryCard key={d.id} title={d.nombre||'Otros'} coverPhotoUrl={d.coverPhotoUrl??'/icons/bdp.svg'} coverPhotoScale={d.coverPhotoScale} compact nativeImg onClick={()=>setDepartment(d.id)}/>)}
-              </CartaCategoryGrid>
-            ):(
-              <div className="carta-browse-modal">
-                <div className={'grid grid-cols-3 gap-x-2.5 gap-y-4 '+(requestKey||busy?'pointer-events-none opacity-80':'')}>
-                  {filtered.map(p=><CartaStaffMenuProductCard key={p.id} lang="es" squareLayout rowDensity="compact" photoFrameStyle={{aspectRatio:1}} row={{
-                    articulo_id:p.id,carta_nombre:p.nombre,carta_nombre_es:p.nombre,carta_nombre_ca:null,carta_nombre_en:null,
-                    precio:p.precio_base,photo_url:p.photo_url??null,carta_photo_scale:p.carta_photo_scale,
-                  }} eventOrder={eventOrder}/>)}
-                </div>
-                {!filtered.length&&<p className="py-6 text-center text-sm text-white/70">No hay productos.</p>}
-              </div>
-            )}
+        {(error||current?.result?.detail||(!current&&status?.active))&&(
+          <div className="shrink-0 text-center text-xs text-white/75" role="status">
+            {!current&&status?.active&&<p>Otra comanda ocupa el ejecutor.</p>}
+            {current?.result?.detail&&<p>{current.result.detail}</p>}
+            {error&&<p className="text-rose-200" role="alert">{error}</p>}
           </div>
         )}
-        {!cartOpen&&<div className="flex shrink-0 justify-center pb-1"><EventEncargoViewOrderButton instance="bdp-ver-pedido" units={units} onClick={()=>setCartOpen(true)}/></div>}
+        {activeCategory&&<h2 className="shrink-0 text-center text-sm font-semibold">{activeCategory.nombre}</h2>}
+        <div className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
+          {!showProducts?(
+            <CartaCategoryGrid compact layoutClassName="grid-cols-3">
+              {categories.map(d=><CartaCategoryCard key={d.id} title={d.nombre||'Otros'} coverPhotoUrl={d.coverPhotoUrl??'/icons/bdp.svg'} coverPhotoScale={d.coverPhotoScale} compact nativeImg onClick={()=>setDepartment(d.id)}/>)}
+            </CartaCategoryGrid>
+          ):(
+            <div className="carta-browse-modal">
+              <div className="grid grid-cols-3 gap-x-2.5 gap-y-4">
+                {filtered.map(p=>{
+                  const quantity=items.find(x=>x.plu===p.id)?.quantity??0
+                  return <div key={p.id} className="carta-square-product-card flex min-w-0 flex-col">
+                    <div data-carta-product-photo>
+                      <div className="relative min-h-0 w-full flex-1 overflow-hidden">
+                        <div className="flex h-full w-full items-center justify-center p-1">
+                          {p.photo_url&&<CartaMenuProductPhoto src={p.photo_url} alt="" scale={p.carta_photo_scale} articuloId={p.id} squareLayout/>}
+                        </div>
+                        {quantity>0&&<span className="pointer-events-none absolute right-1 top-1 z-10 inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF3B30] px-1 text-[10px] font-semibold tabular-nums leading-none text-white" aria-label={quantity+' unidades seleccionadas'}>{quantity}</span>}
+                      </div>
+                      <div data-carta-order-controls className={locked?'opacity-60':undefined} aria-label={'Unidades de '+p.nombre}>
+                        {quantity===0?<button type="button" data-action="add" disabled={locked} onClick={()=>change(p.id,1)} aria-label={'Añadir '+p.nombre}>AÑADIR</button>:<>
+                          <button type="button" data-action="remove" disabled={locked} onClick={()=>change(p.id,-1)} aria-label={'Quitar una unidad de '+p.nombre}>−</button>
+                          <button type="button" data-action="increment" disabled={locked} onClick={()=>change(p.id,1)} aria-label={'Añadir una unidad de '+p.nombre}>+</button>
+                        </>}
+                      </div>
+                    </div>
+                    <div data-carta-product-info>
+                      <p data-carta-display-price>{money(Number(p.precio_base))}</p>
+                      <p data-carta-display-name className={p.nombre.length>18?'carta-catalog-long-name':undefined} title={p.nombre}>{p.nombre}</p>
+                    </div>
+                  </div>
+                })}
+              </div>
+              {!filtered.length&&<p className="py-6 text-center text-sm text-white/70">No hay productos.</p>}
+            </div>
+          )}
+        </div>
+        {(units>0||requestKey)&&(
+          <footer className="flex shrink-0 items-center justify-between gap-2 text-white">
+            <div className="min-w-0 text-xs tabular-nums"><span>{units} uds. · </span><strong>{money(total)}</strong></div>
+            {finished?<Button type="button" variant="primary" instance="bdp-order-reset" onClick={reset}>Nueva comanda</Button>:<Button type="button" variant="primary" instance="bdp-order-send" disabled={!canSend} loading={busy} onClick={()=>void send()}>{current?labels[current.status]:requestKey?'Consultar y reenviar':'Enviar a BDP'}</Button>}
+          </footer>
+        )}
       </div>
     </div>
   )
