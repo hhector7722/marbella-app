@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Search } from 'lucide-react'
+import { ArrowLeft, Check, Search, X } from 'lucide-react'
 import { CartaCategoryCard, CartaCategoryGrid } from '@/components/carta/CartaCategoryGrid'
 import { CartaMenuProductPhoto } from '@/components/carta/CartaMenuProductPhoto'
 import { Button } from '@/components/ui/button'
@@ -121,7 +121,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
         <header className="relative z-40 grid w-full shrink-0 grid-cols-[minmax(104px,1fr)_minmax(0,1.6fr)_minmax(104px,1fr)] items-center gap-1">
           <div className="flex min-w-0 items-center justify-start">
             <button type="button" onClick={goBack} className="flex h-12 w-10 shrink-0 items-center justify-center text-white" aria-label="Volver"><ArrowLeft size={22}/></button>
-            <h1 className="min-w-0 whitespace-nowrap text-xs font-semibold text-white">Mesa {tableNumber}</h1>
+            <h1 className="min-w-0 whitespace-nowrap text-xs font-semibold text-white">M {tableNumber}</h1>
           </div>
           <div className="flex min-w-0 items-center justify-center">
             <div className="flex h-[var(--espacio-8)] w-full min-w-0 items-center gap-2 rounded-full border border-white/15 bg-[var(--buscador-global-fondo)] px-3 text-white/60 focus-within:ring-1 focus-within:ring-white/50">
@@ -131,8 +131,11 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
                 className="h-full w-full min-w-0 bg-transparent text-xs text-white outline-none placeholder:text-white/60"/>
             </div>
           </div>
-          <div role="status" className="flex min-w-0 items-center justify-end text-right text-[10px] font-semibold leading-tight text-white/75">
-            {handyLabel}
+          <div role="status" aria-label={handyLabel} title={handyLabel} className="flex min-w-0 items-center justify-end gap-1.5 text-right text-[10px] font-semibold leading-tight text-white/75">
+            <span>Handy</span>
+            <span aria-hidden="true" className={'flex size-4 shrink-0 items-center justify-center rounded-full text-white '+(status?.ready?'bg-[var(--color-positivo)]':'bg-[var(--color-negativo)]')}>
+              {status?.ready?<Check size={11} strokeWidth={3}/>:<X size={11} strokeWidth={3}/>}
+            </span>
           </div>
         </header>
         {(error||current?.result?.detail||(!current&&status?.active))&&(
