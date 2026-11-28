@@ -68,6 +68,8 @@ export function TimeFilterModal({
   stableLaborLayout?: boolean;
 }) {
   const pathname = usePathname();
+  // Ventas pasa los importes también en móvil; el tamaño no depende del filtro activo.
+  const stableSalesLayout = salesDesktop || calendarDayAmounts !== undefined;
   const initialKind = useMemo<TimeFilterKind>(() => {
     const candidate = defaultKind ?? initialValue?.kind ?? allowedKinds[0] ?? "date";
     return allowedKinds.includes(candidate) ? candidate : (allowedKinds[0] ?? "date");
@@ -218,12 +220,14 @@ export function TimeFilterModal({
       variant={salesDesktop ? "standard" : "compact"}
       instance={salesDesktop ? "ventas-desktop-time-filter" : undefined}
       scheme="dark"
-      panelHostClassName={stableLaborLayout ? "h-[min(480px,var(--modal-max-height))]" : undefined}
-      className={stableLaborLayout ? "h-full" : undefined}
+      panelHostClassName={stableSalesLayout
+        ? (salesDesktop ? "h-[min(680px,var(--modal-max-height))]" : "h-[min(560px,var(--modal-max-height))]")
+        : stableLaborLayout ? "h-[min(480px,var(--modal-max-height))]" : undefined}
+      className={stableLaborLayout || stableSalesLayout ? "h-full" : undefined}
       usageId="time-filter"
       usageLabel="Filtro horario"
     >
-        <div className={cn(stableLaborLayout ? "flex h-full min-h-0 flex-col gap-3" : "space-y-3", salesDesktop && "space-y-4")}>
+        <div className={cn(stableLaborLayout ? "flex h-full min-h-0 flex-col gap-3" : "space-y-3", salesDesktop && "space-y-4", stableSalesLayout && "shrink-0 pb-3")}>
           {showKindTabs ? (
             <div
               role="tablist"
