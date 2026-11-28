@@ -84,7 +84,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const activeChild=children.some(c=>c.id===child)?child:null
   const term=search.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   const normalize=(s:string)=>s.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-  const ids=term?[...searchableIds(categories,products)]:active?visibleIds(categories,products,active,activeChild):[]
+  const ids=term?[...searchableIds(products)]:active?visibleIds(categories,products,active,activeChild):[]
   const filtered=ids.flatMap(id=>{
     const p=byId.get(id)
     return p&&(!term||normalize(p.display_name??p.nombre).includes(term)||normalize(p.nombre).includes(term)||String(p.id)===term)?[p]:[]
