@@ -892,7 +892,7 @@ export default function LaborHistoryPage() {
                                     </div>
                                 </section>
 
-                                {!pending && (
+                                {!dayDetail.payrollPending && (
                                     <p className="text-center text-[10px] leading-relaxed text-white/50">
                                         El coste operativo usa las horas fichadas y la jornada ordinaria fija del propietario, con una tarifa
                                         empresarial estimada de la nómina y la jornada contratada; las extras se toman del motor de horas.
