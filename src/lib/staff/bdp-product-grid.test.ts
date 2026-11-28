@@ -8,7 +8,8 @@ test('pocas referencias tienen cards mayores y caben sin scroll',()=>{
   assert.equal(small.fits,true)
   assert.ok(small.photoHeight>dense.photoHeight)
   assert.ok(small.columns<dense.columns)
-  assert.ok(dense.visibleCount>=12)
+  assert.equal(dense.visibleCount,20)
+  assert.equal(dense.fits,true)
 })
 test('selecciona por capacidad, sin desbordamiento ni recortar filas al calcular',()=>{
   for(const w of [320,369,390,500,672]){
