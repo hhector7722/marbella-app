@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/server'
 import { isMasterDashboardUser } from '@/lib/master-dashboard'
+import { loadEventCartaMenu } from '@/lib/load-event-carta-menu'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -33,7 +34,30 @@ async function catalog(database:ReturnType<typeof db>) {
     database.from('bdp_departamentos').select('id,nombre').order('nombre'),
   ])
   if(a.error||d.error) throw new Error('BDP catalog unavailable')
-  return {products:(a.data??[]) as CatalogLine[],departments:d.data??[]}
+  // Read the exact same image catalogue as /pedido; BDP still owns PLUs and prices.
+  const carta=await loadEventCartaMenu(database,[]).catch(()=>null)
+  const menu=carta?.ok?carta.data:null
+  const rows=menu?.items??[]
+  const byPlu=new Map(rows.map(row=>[row.articulo_id,row]))
+  const products=((a.data??[]) as CatalogLine[]).map(p=>{
+    const row=byPlu.get(p.id)
+    return {...p,photo_url:row?.photo_url??null,carta_photo_scale:row?.carta_photo_scale??null,
+      category_parent_name:row?.category_parent_name??null,sort_order:row?.sort_order??null}
+  })
+  // Explicit matches verified against the existing BDP department and carta catalogues.
+  const covers:Record<number,string>={
+    1:'Cafetería',2:'Snacks',3:'Bebidas - Refrescos',4:'Bebidas - Cervezas',
+    6:'Tapas',8:'Extras',10:'Platos',11:'Helados',12:'Bebidas - Aperitivos',
+    13:'Bocadillos - Calientes',14:'Bocadillos - Fríos',15:'Bocadillos - Especiales',
+  }
+  const departments=(d.data??[]).map(department=>{
+    const name=covers[department.id]
+    const category=menu?.menuCategories.find(x=>x.name===name)
+    const ownPhoto=products.find(p=>p.departamento_id===department.id&&p.photo_url)?.photo_url
+    return {...department,coverPhotoUrl:(category?menu?.categoryCoverById[category.id]:null)??ownPhoto??'/icons/bdp.svg',
+      coverPhotoScale:category?menu?.categoryCoverScaleById[category.id]??'m':'m'}
+  })
+  return {products,departments}
 }
 export async function GET(req:Request) {
   try {
