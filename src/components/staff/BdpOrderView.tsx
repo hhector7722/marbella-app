@@ -33,6 +33,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
   const submitting=useRef(false)
+  const productViewport=useRef<HTMLDivElement>(null)
 
   useEffect(()=>{
     try{
@@ -89,6 +90,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
     const p=byId.get(id)
     return p&&(!term||normalize(p.display_name??p.nombre).includes(term)||normalize(p.nombre).includes(term)||String(p.id)===term)?[p]:[]
   })
+  useEffect(()=>{productViewport.current?.scrollTo({top:0,behavior:'auto'})},[active,activeChild,term])
   const displayName=(p:Product)=>p.display_name??p.nombre
   const current=status?.job
   const finished=current&&['confirmed','rejected','expired'].includes(current.status)
@@ -178,7 +180,7 @@ export function BdpOrderView({tableNumber,onBack}:{tableNumber:number;onBack:()=
         {children.length>0&&!term&&<nav aria-label="Subcategorías" className="flex shrink-0 gap-2 overflow-x-auto overscroll-x-contain pb-1 custom-scrollbar">
           {[{id:null,name:'Todos'},...children].map(tab=><button type="button" key={tab.id??'all'} aria-pressed={activeChild===tab.id} onClick={()=>setChild(tab.id)} className={'min-h-12 shrink-0 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold '+(activeChild===tab.id?'border-white bg-white/20 text-white':'border-white/15 text-white/75')}>{tab.name}</button>)}
         </nav>}
-        <div className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
+        <div ref={productViewport} className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto overscroll-contain custom-scrollbar">
           <div className="carta-browse-modal">
               <div className="grid grid-cols-3 gap-x-2.5 gap-y-4">
                 {filtered.map(p=>{
