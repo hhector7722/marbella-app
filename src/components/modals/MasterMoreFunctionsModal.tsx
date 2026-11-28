@@ -53,10 +53,11 @@ export const MASTER_MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Info', instance: 'info', action: 'info', img: '/icons/information.png' },
     { label: 'Altas', instance: 'altas', href: '/dashboard/altas', img: '/icons/staff-card.png' },
     { label: 'Vitrina', instance: 'vitrina', href: '/master/carta', img: '/icons/menu2.png' },
+    { label: 'Catálogo BDP', instance: 'bdp-catalog', href: '/staff/mesas/catalogo', img: '/icons/bdp.svg' },
 ];
 
 /** Accesos sin posición directa en el mosaico de escritorio; el modal muestra el catálogo completo. */
-export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas', 'asistente', 'asistencia', 'calendario', 'propinas', 'control-compras', 'mesas'] as const;
+export const MASTER_DESKTOP_OTHER_INSTANCES = ['web', 'vitrina', 'consumo', 'altas', 'asistente', 'asistencia', 'calendario', 'propinas', 'control-compras', 'mesas', 'bdp-catalog'] as const;
 
 const desktopOtherIds = new Set<string>(MASTER_DESKTOP_OTHER_INSTANCES);
 export const MASTER_DESKTOP_OTHER_ITEMS = MASTER_MORE_FUNCTIONS_ITEMS.filter(
