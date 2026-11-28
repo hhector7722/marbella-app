@@ -39,7 +39,7 @@ export function visibleIds(categories:MobileCategory[],products:MobileCatalogPro
   const children=categories.filter(c=>c.parentId===root.id&&!c.hidden)
   return [...new Set(child?children.find(c=>c.id===child)?.products??[]:[...root.products,...children.flatMap(c=>c.products)])]
 }
-export function searchableIds(categories:MobileCategory[],products:MobileCatalogProduct[]):Set<number>{
-  const visible=categories.filter(c=>!c.hidden&&(c.parentId===null||categories.some(p=>p.id===c.parentId&&!p.hidden)))
-  return new Set([...visible.flatMap(c=>c.products),...unassignedIds(categories,products)])
+// Ocultar una categoría solo afecta a la navegación, no al catálogo BDP.
+export function searchableIds(products:MobileCatalogProduct[]):Set<number>{
+  return new Set(products.map(p=>p.id))
 }
